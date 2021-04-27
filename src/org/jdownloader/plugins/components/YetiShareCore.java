@@ -1964,24 +1964,15 @@ public class YetiShareCore extends antiDDoSForHost {
     protected static final String PROPERTY_API_KEY2                  = "API_KEY2";
     protected static final String API_LOGIN_HAS_BEEN_SUCCESSFUL_ONCE = "API_LOGIN_HAS_BEEN_SUCCESSFUL_ONCE";
 
+    /**
+     * If enabled, this plugin will only accept API login credentials (key1 and key2) instead of username and password for login. </br>
+     * Also, API usage will be enforced for all other methods (linkcheck & download)!
+     */
     protected boolean enableAPIOnlyMode() {
         return false;
     }
-    // protected boolean canUseAPI(final Account account) {
-    // return enableAPIOnlyMode() || isCrawledAPICredentialsAvailable(account);
-    // }
 
     protected boolean canUseAPI() {
-        // if (enableAPIOnlyMode()) {
-        // return true;
-        // } else {
-        // for (final Account account : AccountController.getInstance().getValidAccounts(this.getHost())) {
-        // if (isCrawledAPICredentialsAvailable(account)) {
-        // return true;
-        // }
-        // }
-        // return false;
-        // }
         /*
          * 2021-04-27: At this moment an account is required to use the API. In the future users might be able to add apikeys via plugin
          * setting.
@@ -2010,11 +2001,13 @@ public class YetiShareCore extends antiDDoSForHost {
         }
     }
 
-    /** true = API will be used for downloading whenever possible. */
+    /**
+     * true = API will be used for downloading whenever possible (usually, a special internal fileID is required to download files via API).
+     */
     protected boolean supportsAPIDownloads(final DownloadLink link, final Account account) {
         return false;
         /* You would typically use the line of code below when overriding this. */
-        // return this.getApiFileID(link) != null && this.canUseAPI();
+        // return enableAPIOnlyMode() || (this.getApiFileID(link) != null && this.canUseAPI());
     }
 
     protected String getAPIBase() {
@@ -2035,7 +2028,7 @@ public class YetiShareCore extends antiDDoSForHost {
     protected boolean supportsAPISingleAvailablecheck(final DownloadLink link) {
         return false;
         /* Typically use the line below to enable this */
-        // return this.getApiFileID(link) != null && this.canUseAPI();
+        // return enableAPIOnlyMode() || (this.getApiFileID(link) != null && this.canUseAPI());
     }
 
     protected String getAPIAccessToken(final Account account, final String key1, final String key2) {
