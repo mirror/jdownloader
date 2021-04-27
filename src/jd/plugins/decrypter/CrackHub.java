@@ -30,7 +30,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crackhub.site" }, urls = { "https?://(?:www\\.)?crackhub\\.site/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crackhub.site" }, urls = { "https?://(?:www\\.)?crackhub\\.site/[a-z0-9\\-]+/?" })
 public class CrackHub extends antiDDoSForDecrypt {
     public CrackHub(PluginWrapper wrapper) {
         super(wrapper);
@@ -51,7 +51,7 @@ public class CrackHub extends antiDDoSForDecrypt {
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.setProperty("ALLOW_MERGE", true);
+            fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
             fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
             fp.addLinks(decryptedLinks);
         }
