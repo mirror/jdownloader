@@ -22,6 +22,7 @@ import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -146,7 +147,7 @@ public class EraiDdlthreeInfo extends YetiShareCore {
     }
 
     @Override
-    public void checkErrors(Browser br, final DownloadLink link, final Account account) throws PluginException {
+    public void checkErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         super.checkErrors(br, link, account);
         if (br.containsHTML(">\\s*Please enter your information to register for an account")) {
             throw new AccountRequiredException();
@@ -154,18 +155,40 @@ public class EraiDdlthreeInfo extends YetiShareCore {
     }
 
     @Override
-    protected String getInternalFileID(final DownloadLink link, final Browser br) throws PluginException {
-        final String internalFileID = super.getInternalFileID(link, br);
-        if (internalFileID == null) {
+    protected void checkErrorsLastResort(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+        if (getInternalFileID(link, br) == null) {
             /*
-             * 2020-11-12: Cannot download without this ID! Needs to be set in crawler in beforehand! --> This should never happen because
-             * of canHandle()!
+             * 2020-11-12: Cannot download without this ID! Needs to be set in crawler in beforehand!
              */
             throw new PluginException(LinkStatus.ERROR_FATAL, "Unable to download files that haven't been added as part of a folder");
         } else {
-            return internalFileID;
+            super.checkErrorsLastResort(br, link, account);
         }
+        final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
+        if (account != null) {
+            this.loggedInOrException(br, account);
+        } else if (new Regex(br.getURL(), "^https?://[^/]+/?$").matches()) {
+            /* Handle redirect to mainpage as premiumonly */
+            throw new AccountRequiredException();
+        } else if (rcID != null) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Website uses reCaptchaV1 which has been shut down by Google. Contact website owner!");
+        }
+        logger.warning("Unknown error happened");
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
+    // @Override
+    // protected String getInternalFileID(final DownloadLink link, final Browser br) throws PluginException {
+    // final String internalFileID = super.getInternalFileID(link, br);
+    // if (internalFileID == null) {
+    // /*
+    // * 2020-11-12: Cannot download without this ID! Needs to be set in crawler in beforehand! --> This should never happen because
+    // * of canHandle()!
+    // */
+    // throw new PluginException(LinkStatus.ERROR_FATAL, "Unable to download files that haven't been added as part of a folder");
+    // } else {
+    // return internalFileID;
+    // }
+    // }
 
     @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {

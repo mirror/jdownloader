@@ -398,7 +398,7 @@ public class YetiShareCore extends antiDDoSForHost {
             link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(fileInfo[1].replace(",", ""))));
         }
         /* Additional offline check. Useful for websites which still provide filename & filesize for offline files. */
-        if (this.isOfflineWebsiteAfterLinkcheck()) {
+        if (this.isOfflineWebsiteAfterLinkcheck(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
             return AvailableStatus.TRUE;
@@ -406,7 +406,7 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /** Return true for cases where filename- and size may still be present on website but content is offline. */
-    protected boolean isOfflineWebsiteAfterLinkcheck() {
+    protected boolean isOfflineWebsiteAfterLinkcheck(final Browser br) {
         /* 2021-04-27: Only relevant for new YetiShare versions. */
         return this.br.containsHTML("(?i)>\\s*Status:</span>\\s*<span>\\s*(Deleted|Usunięto)\\s*</span>");
     }
@@ -536,6 +536,11 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     protected void handleDownloadWebsite(final DownloadLink link, final Account account) throws Exception, PluginException {
+        /* Login if possible although login is usually not required to access directurls. */
+        boolean hasGoneThroughVerifiedLoginOnce = false;
+        if (account != null) {
+            hasGoneThroughVerifiedLoginOnce = loginWebsite(account, false);
+        }
         /* First try to re-use stored directurl */
         checkDirectLink(link, account);
         if (this.dl == null) {
@@ -549,12 +554,8 @@ public class YetiShareCore extends antiDDoSForHost {
             // } catch (final PluginException e) {
             // ignorePluginException(e, this.br, link, account);
             // }
-            /* Login and access downloadurl */
-            boolean hasGoneThroughVerifiedLoginOnce = false;
+            /* Access downloadurl */
             br.setFollowRedirects(false);
-            if (account != null) {
-                hasGoneThroughVerifiedLoginOnce = loginWebsite(account, false);
-            }
             getPage(link.getPluginPatternMatcher());
             final boolean resume = this.isResumeable(link, account);
             final int maxchunks = this.getMaxChunks(account);
@@ -612,8 +613,11 @@ public class YetiShareCore extends antiDDoSForHost {
                 }
             } while (true);
             if (this.dl == null) {
+                parseAndSetYetiShareVersion(this.br, account);
                 this.checkErrors(br, link, account);
                 if (isOfflineWebsite(this.br, link)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (this.isOfflineWebsiteAfterLinkcheck(this.br)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 /* Check for password protected */
@@ -679,6 +683,9 @@ public class YetiShareCore extends antiDDoSForHost {
                             if (internalFileID != null) {
                                 /* New website layout handling */
                                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, "/account/direct_download/" + internalFileID, resume, maxchunks);
+                                if (!link.hasProperty(PROPERTY_INTERNAL_FILE_ID)) {
+                                    link.setProperty(PROPERTY_INTERNAL_FILE_ID, internalFileID);
+                                }
                                 break;
                             } else {
                                 final Form continueform = getContinueForm(i, continueLink);
@@ -790,23 +797,22 @@ public class YetiShareCore extends antiDDoSForHost {
             checkErrors(br, link, account);
             checkErrorsLastResort(br, link, account);
         }
-        final URLConnectionAdapter con = dl.getConnection();
         /*
          * Save directurl before download-attempt as it should be valid even if it e.g. fails because of server issue 503 (= too many
          * connections) --> Should work fine after the next try.
          */
-        link.setProperty(getDownloadModeDirectlinkProperty(account), con.getURL().toString());
+        link.setProperty(getDownloadModeDirectlinkProperty(account), dl.getConnection().getURL().toString());
         try {
-            checkResponseCodeErrors(con);
+            checkResponseCodeErrors(dl.getConnection());
         } catch (final PluginException e) {
             try {
                 br.followConnection(true);
-            } catch (IOException ioe) {
+            } catch (final IOException ioe) {
                 throw Exceptions.addSuppressed(e, ioe);
             }
             throw e;
         }
-        if (!looksLikeDownloadableContent(con)) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (IOException e) {
@@ -815,7 +821,7 @@ public class YetiShareCore extends antiDDoSForHost {
             checkErrors(br, link, account);
             checkErrorsLastResort(br, link, account);
         }
-        dl.setFilenameFix(isContentDispositionFixRequired(dl, con, link));
+        dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), link));
         dl.startDownload();
     }
 
@@ -823,11 +829,19 @@ public class YetiShareCore extends antiDDoSForHost {
         return br.getFormbyKey("filePassword");
     }
 
-    /** This ID is usually used/needed for new YetiShare versions and/or doing file related API requests. */
-    protected String getInternalFileID(final DownloadLink link, final Browser br) throws PluginException {
-        String internalFileID = this.getApiFileID(link);
-        if (internalFileID == null) {
+    /**
+     * API file operations usually requires us to have the internal ID of files. </br>
+     * Most of all times we don't have this but if a website is using the "new" YetiShare script version and files were added as part of a
+     * folder, we do have these internal fileIDs available!
+     */
+    protected String getInternalFileID(final DownloadLink link, final Browser br) {
+        String internalFileID = null;
+        /* try RegEx first, then fallback to stored data! */
+        if (br != null && br.getRequest() != null) {
             internalFileID = br.getRegex("showFileInformation\\((\\d+)\\);").getMatch(0);
+        }
+        if (internalFileID == null) {
+            internalFileID = link.getStringProperty(PROPERTY_INTERNAL_FILE_ID);
         }
         return internalFileID;
     }
@@ -1368,10 +1382,13 @@ public class YetiShareCore extends antiDDoSForHost {
      * @throws Exception
      */
     protected boolean isOfflineWebsite(final Browser br, final DownloadLink link) throws Exception {
+        /* TODO: Improve this to make it more reliable! */
         /* TODO: Consider checking for fuid in URL too in the future --> This might be a good offline indicator */
         // final String fid = this.getFUIDFromURL(link);
         // final boolean currentURLContainsFID = br.getURL().contains(fid);
-        final boolean isDownloadable = this.getContinueLink() != null;
+        final boolean isDownloadableOldWebsiteOrFreeMode = this.getContinueLink() != null;
+        final boolean isDownloadableNewWebsite = this.getInternalFileID(link, br) != null;
+        final boolean isDownloadable = isDownloadableOldWebsiteOrFreeMode || isDownloadableNewWebsite;
         final boolean isFileWebsite = br.containsHTML("class=\"downloadPageTable(V2)?\"") || br.containsHTML("class=\"download\\-timer\"");
         final boolean isErrorPage = br.getURL().contains("/error.html") || br.getURL().contains("/index.html");
         final boolean isOffline404 = br.getHttpConnection().getResponseCode() == 404;
@@ -2078,15 +2095,6 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * API file operations usually requires us to have the internal ID of files. </br>
-     * Most of all times we don't have this but if a website is using the "new" YetiShare script version and files were added as part of a
-     * folder, we do have these internal fileIDs available!
-     */
-    protected String getApiFileID(final DownloadLink link) {
-        return link.getStringProperty(PROPERTY_INTERNAL_FILE_ID);
-    }
-
-    /**
      * According to: https://fhscript.com/api#account-info </br>
      * and: https://fhscript.com/api#account-package </br>
      */
@@ -2231,7 +2239,7 @@ public class YetiShareCore extends antiDDoSForHost {
         final UrlQuery query = new UrlQuery();
         query.add("access_token", this.getAPIAccessToken(account));
         query.add("account_id", Integer.toString(this.getAPIAccountID(account)));
-        query.add("file_id", getApiFileID(link));
+        query.add("file_id", getInternalFileID(link, br));
         /* Availablecheck not required as we do check for offline here! */
         if (this.enableAPIOnlyMode()) {
             prepBrowserAPI(br);
@@ -2325,7 +2333,7 @@ public class YetiShareCore extends antiDDoSForHost {
             final UrlQuery query = new UrlQuery();
             query.add("access_token", this.getAPIAccessToken(account, apikey1, apikey2));
             query.add("account_id", Integer.toString(this.getAPIAccountID(account, apikey1, apikey2)));
-            query.add("file_id", getApiFileID(link));
+            query.add("file_id", getInternalFileID(link, br));
             /* Availablecheck not required as download call will return offline message. */
             // this.requestFileInformationAPI(link, account);
             this.getPage(this.getAPIBase() + "/file/download?" + query.toString());
