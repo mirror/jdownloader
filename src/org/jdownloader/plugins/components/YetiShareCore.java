@@ -539,24 +539,23 @@ public class YetiShareCore extends antiDDoSForHost {
         /* First try to re-use stored directurl */
         checkDirectLink(link, account);
         if (this.dl == null) {
-            try {
-                // requestFileInformationWebsite(link, account, true);
-                /* TODO: Maybe login before this then we could remove the "ignorePluginException" handling. */
-                br.getPage(link.getPluginPatternMatcher());
-                if (isOfflineWebsite(this.br, link)) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                this.checkErrors(br, link, account);
-            } catch (final PluginException e) {
-                ignorePluginException(e, this.br, link, account);
-            }
+            // try {
+            // // requestFileInformationWebsite(link, account, true);
+            // br.getPage(link.getPluginPatternMatcher());
+            // if (isOfflineWebsite(this.br, link)) {
+            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // }
+            // this.checkErrors(br, link, account);
+            // } catch (final PluginException e) {
+            // ignorePluginException(e, this.br, link, account);
+            // }
             /* Login */
             boolean hasGoneThroughVerifiedLoginOnce = false;
+            br.setFollowRedirects(false);
             if (account != null) {
                 hasGoneThroughVerifiedLoginOnce = loginWebsite(account, false);
-                br.setFollowRedirects(false);
-                getPage(link.getPluginPatternMatcher());
             }
+            getPage(link.getPluginPatternMatcher());
             final boolean resume = this.isResumeable(link, account);
             final int maxchunks = this.getMaxChunks(account);
             /*
@@ -613,6 +612,10 @@ public class YetiShareCore extends antiDDoSForHost {
                 }
             } while (true);
             if (this.dl == null) {
+                if (isOfflineWebsite(this.br, link)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                this.checkErrors(br, link, account);
                 /* Check for password protected */
                 if (getPasswordProtectedForm(this.br) != null) {
                     /* Old layout additionally redirects to "/file_password.html?file=<fuid>" */
