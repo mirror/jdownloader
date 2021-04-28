@@ -154,8 +154,8 @@ public class EraiDdlthreeInfo extends YetiShareCore {
     }
 
     @Override
-    protected String getInternalFileIDNewWebsite(final DownloadLink link, final Browser br) throws PluginException {
-        final String internalFileID = super.getInternalFileIDNewWebsite(link, br);
+    protected String getInternalFileID(final DownloadLink link, final Browser br) throws PluginException {
+        final String internalFileID = super.getInternalFileID(link, br);
         if (internalFileID == null) {
             /*
              * 2020-11-12: Cannot download without this ID! Needs to be set in crawler in beforehand! --> This should never happen because

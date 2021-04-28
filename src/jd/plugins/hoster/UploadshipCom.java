@@ -24,6 +24,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -125,7 +126,7 @@ public class UploadshipCom extends YetiShareCore {
     }
 
     @Override
-    protected boolean isOfflineWebsite(final DownloadLink link) throws PluginException {
+    protected boolean isOfflineWebsite(final Browser br, final DownloadLink link) throws PluginException {
         return br.getHttpConnection().getResponseCode() == 404;
     }
 
