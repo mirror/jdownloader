@@ -549,7 +549,7 @@ public class YetiShareCore extends antiDDoSForHost {
             // } catch (final PluginException e) {
             // ignorePluginException(e, this.br, link, account);
             // }
-            /* Login */
+            /* Login and access downloadurl */
             boolean hasGoneThroughVerifiedLoginOnce = false;
             br.setFollowRedirects(false);
             if (account != null) {
