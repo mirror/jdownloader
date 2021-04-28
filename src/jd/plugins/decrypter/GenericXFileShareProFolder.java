@@ -111,10 +111,8 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
      * Sets crawled file items as online right away. 2021-04-27: Enabled this for public testing purposes. Not sure if items inside a folder
      * are necessarily online but it would make sense!
      */
-    private boolean                 fastLinkcheck      = true;
-    private final ArrayList<String> dupe               = new ArrayList<String>();
-    FilePackage                     fp                 = null;
-    int                             totalNumberofFiles = -1;
+    private boolean fastLinkcheck      = true;
+    int             totalNumberofFiles = -1;
 
     /**
      * @author raztoki
@@ -124,13 +122,11 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        dupe.clear();
-        page = 1;
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setCookie(new URL(param.getCryptedUrl()).getHost(), "lang", "english");
         br.setFollowRedirects(true);
-        int counter = 0;
-        final int maxCounter = 1;
+        int loginCheckCounter = 0;
+        final int maxLoginCheck = 1;
         boolean loggedIN = false;
         /* First check for offline and check if we need to be logged in to view this folder. */
         do {
@@ -167,22 +163,24 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                     break;
                 }
             } finally {
-                counter++;
+                loginCheckCounter++;
             }
-        } while (counter <= maxCounter);
-        String fpName = getPackagename(param, this.br);
+        } while (loginCheckCounter <= maxLoginCheck);
+        final String fpName = getPackagename(param, this.br);
+        FilePackage fp = null;
         if (fpName != null) {
-            fpName = Encoding.htmlDecode(fpName);
             fp = FilePackage.getInstance();
-            fp.setName(fpName.trim());
+            fp.setName(Encoding.htmlDecode(fpName).trim());
         }
-        dupe.add(param.getCryptedUrl());
+        final ArrayList<String> dupes = new ArrayList<String>();
+        dupes.add(param.getCryptedUrl());
         /* prevents continuous loop. */
         int lastArraySize = 0;
+        int page = 1;
         do {
             logger.info("Crawling page: " + page);
             lastArraySize = decryptedLinks.size();
-            final boolean foundNewItems = parsePage(param, decryptedLinks);
+            final boolean foundNewItems = parsePage(decryptedLinks, dupes, fp, param);
             if (!foundNewItems) {
                 /* Fail-safe */
                 logger.info("Stopping because failed to find new items on current page");
@@ -190,7 +188,10 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
             } else if (decryptedLinks.size() < lastArraySize) {
                 logger.info("Stopping because: Failed to find any items on current page");
                 break;
-            } else if (!this.accessNextPage()) {
+            }
+            /* Increment to value of next page */
+            page += 1;
+            if (!this.accessNextPage(this.br, page)) {
                 logger.info("Stopping because: Failed to find/access next page");
                 break;
             } else {
@@ -258,7 +259,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         return fpName;
     }
 
-    private boolean parsePage(final CryptedLink param, final ArrayList<DownloadLink> decryptedLinks) throws PluginException {
+    private boolean parsePage(final ArrayList<DownloadLink> decryptedLinks, final ArrayList<String> dupes, final FilePackage fp, final CryptedLink param) throws PluginException {
         boolean foundNewItems = false;
         final String[] links = br.getRegex("href=(\"|')(https?://(?:www\\.)?" + Pattern.quote(br.getHost()) + "/[a-z0-9]{12}(?:/.*?)?)\\1").getColumn(1);
         if (links != null && links.length > 0) {
@@ -269,7 +270,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
             final ArrayList<String> tr_snippets = new ArrayList<String>(Arrays.asList(new Regex(html, "((<tr>)?<td.*?</tr>)").getColumn(0)));
             for (final String link : links) {
                 final String linkid = new Regex(link, Pattern.compile("https?://[^/]+/([a-z0-9]{12})", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                if (dupe.contains(linkid)) {
+                if (dupes.contains(linkid)) {
                     /* Skip dupes */
                     continue;
                 }
@@ -347,11 +348,11 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                     dl.setAvailable(true);
                 }
                 if (fp != null) {
-                    fp.add(dl);
+                    dl._setFilePackage(fp);
                 }
                 decryptedLinks.add(dl);
                 distribute(dl);
-                dupe.add(linkid);
+                dupes.add(linkid);
                 if (this.isAbort()) {
                     return false;
                 }
@@ -365,37 +366,32 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                 final String cleanedUpFoundFolderLink = new Regex(folderlink, "https?://[^/]+/(.+)").getMatch(0);
                 /* Make sure that we're not grabbing the parent folder but only the folder that the user has added + eventual subfolders! */
                 final boolean folderIsChildFolder = cleanedUpFoundFolderLink.length() > cleanedUpAddedFolderLink.length();
-                if (folderlink.matches(this.getSupportedLinks().pattern()) && !dupe.contains(folderlink) && folderIsChildFolder) {
+                if (folderlink.matches(this.getSupportedLinks().pattern()) && !dupes.contains(folderlink) && folderIsChildFolder) {
                     foundNewItems = true;
                     final DownloadLink dlfolder = createDownloadlink(folderlink);
                     decryptedLinks.add(dlfolder);
                     distribute(dlfolder);
-                    dupe.add(folderlink);
+                    dupes.add(folderlink);
                 }
             }
         }
         return foundNewItems;
     }
 
-    private int page        = 1;
-    UrlQuery    folderQuery = null;
+    UrlQuery folderQuery = null;
 
-    private boolean accessNextPage() throws Exception {
-        // not sure if this is the same for normal folders, but the following
-        // picks up users/username/*, 2019-02-08: will also work for photo galleries ('host.tld/g/bla')
-        /* Increment page */
-        page++;
+    protected boolean accessNextPage(final Browser br, final int nextPage) throws Exception {
         /* Make sure to get the next page so we don't accidently parse the same page multiple times! */
-        String nextPage = br.getRegex("<div class=(\"|')paging\\1>.*?<a href=('|\")([^']+\\&amp;page=" + page + "|/go/[a-zA-Z0-9]{12}/\\d+/?)\\2>").getMatch(2);
-        if (nextPage != null) {
-            nextPage = HTMLEntities.unhtmlentities(nextPage);
-            nextPage = Request.getLocation(nextPage, br.getRequest());
+        String nextPageUrl = br.getRegex("<div class=(\"|')paging\\1>.*?<a href=('|\")([^']+\\&amp;page=" + nextPage + "|/go/[a-zA-Z0-9]{12}/\\d+/?)\\2>").getMatch(2);
+        if (nextPageUrl != null) {
+            nextPageUrl = HTMLEntities.unhtmlentities(nextPageUrl);
+            nextPageUrl = Request.getLocation(nextPageUrl, br.getRequest());
             // final String pageStr = UrlQuery.parse(nextPage).get("page");
             // if (pageStr != null && !pageStr.equalsIgnoreCase(i + "")) {
             // logger.info("NextPage doesn't match expected page: Next = " + pageStr + " Expected = " + i);
             // return false;
             // }
-            getPage(nextPage);
+            getPage(br, nextPageUrl);
             return true;
         }
         if (folderQuery == null) {
@@ -431,7 +427,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                 folderQuery.add("usr_id", usr_id);
             }
         }
-        folderQuery.addAndReplace("page", Integer.toString(page));
+        folderQuery.addAndReplace("page", Integer.toString(nextPage));
         // postData = "op=" + Encoding.urlEncode(op) + "&load=files&page=%s&fld_id=" + Encoding.urlEncode(fld_id) + "&usr_login=" +
         // Encoding.urlEncode(usr_login);
         br.getHeaders().put("Accept", "*/*");
