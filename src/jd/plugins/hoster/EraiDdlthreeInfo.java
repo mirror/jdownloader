@@ -176,19 +176,6 @@ public class EraiDdlthreeInfo extends YetiShareCore {
         logger.warning("Unknown error happened");
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
-    // @Override
-    // protected String getInternalFileID(final DownloadLink link, final Browser br) throws PluginException {
-    // final String internalFileID = super.getInternalFileID(link, br);
-    // if (internalFileID == null) {
-    // /*
-    // * 2020-11-12: Cannot download without this ID! Needs to be set in crawler in beforehand! --> This should never happen because
-    // * of canHandle()!
-    // */
-    // throw new PluginException(LinkStatus.ERROR_FATAL, "Unable to download files that haven't been added as part of a folder");
-    // } else {
-    // return internalFileID;
-    // }
-    // }
 
     @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
