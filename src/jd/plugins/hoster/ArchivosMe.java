@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.YetiShareCore;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.Account;
@@ -27,8 +29,6 @@ import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.YetiShareCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class ArchivosMe extends YetiShareCore {
@@ -48,6 +48,7 @@ public class ArchivosMe extends YetiShareCore {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        /* 2021-04-28: IP workaround is still required! */
         ret.add(new String[] { "95.215.205.103", "archivos.club", "archivos.me" });
         return ret;
     }
@@ -123,7 +124,7 @@ public class ArchivosMe extends YetiShareCore {
     }
 
     @Override
-    protected boolean isOfflineWebsite(final DownloadLink link) throws PluginException {
+    protected boolean isOfflineWebsite(final Browser br, final DownloadLink link) throws PluginException {
         /* 2020-01-18: Special */
         return br.getHttpConnection().getResponseCode() == 404;
     }
