@@ -31,6 +31,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
@@ -106,16 +107,14 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
     // other: keep last /.+ for fpName. Not needed otherwise.
     // other: group sister sites or aliased domains together, for easy
     // maintenance.
-    private String                        parameter          = null;
     /*
      * Sets crawled file items as online right away. 2021-04-27: Enabled this for public testing purposes. Not sure if items inside a folder
      * are necessarily online but it would make sense!
      */
-    private boolean                       fastLinkcheck      = true;
-    private final ArrayList<String>       dupe               = new ArrayList<String>();
-    private final ArrayList<DownloadLink> decryptedLinks     = new ArrayList<DownloadLink>();
-    FilePackage                           fp                 = null;
-    int                                   totalNumberofFiles = -1;
+    private boolean                 fastLinkcheck      = true;
+    private final ArrayList<String> dupe               = new ArrayList<String>();
+    FilePackage                     fp                 = null;
+    int                             totalNumberofFiles = -1;
 
     /**
      * @author raztoki
@@ -124,23 +123,22 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         dupe.clear();
-        decryptedLinks.clear();
         page = 1;
-        parameter = param.toString();
-        br.setCookie(new URL(parameter).getHost(), "lang", "english");
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.setCookie(new URL(param.getCryptedUrl()).getHost(), "lang", "english");
         br.setFollowRedirects(true);
         int counter = 0;
         final int maxCounter = 1;
         boolean loggedIN = false;
+        /* First check for offline and check if we need to be logged in to view this folder. */
         do {
-            logger.info("Crawling page: " + page);
             try {
-                getPage(parameter);
+                getPage(param.getCryptedUrl());
                 if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("No such user exist|No such folder")) {
                     logger.info("Incorrect URL, Invalid user or empty folder");
-                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
                     return decryptedLinks;
                 } else if (br.containsHTML(">\\s*?Guest access not possible")) {
                     /* 2019-08-13: Rare special case E.g. easybytez.com */
@@ -172,78 +170,95 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                 counter++;
             }
         } while (counter <= maxCounter);
-        /* name isn't needed, other than than text output for fpName. */
-        final String username = new Regex(parameter, "/users/([^/]+)").getMatch(0);
-        String fpName = new Regex(parameter, "(folder/\\d+/|f/[a-z0-9]+/|go/[a-z0-9]+/)[^/]+/(.+)").getMatch(1); // name
-        if (fpName == null) {
-            fpName = new Regex(parameter, "(folder/\\d+/|f/[a-z0-9]+/|go/[a-z0-9]+/)(.+)").getMatch(1); // id
-            if (fpName == null) {
-                fpName = new Regex(parameter, "users/[a-z0-9_]+/[^/]+/(.+)").getMatch(0); // name
-                if (fpName == null) {
-                    fpName = new Regex(parameter, "users/[a-z0-9_]+/(.+)").getMatch(0); // id
-                    if (fpName == null) {
-                        if ("hotlink.cc".equals(br.getHost())) {
-                            fpName = br.getRegex("<i class=\"glyphicon glyphicon-folder-open\"></i>\\s*(.*?)\\s*</span>").getMatch(0);
-                        } else {
-                            // ex-load.com
-                            fpName = br.getRegex("Files in\\s*(.*?)\\s*folder\\s*</title>").getMatch(0);
-                            if (fpName == null) {
-                                // file-al
-                                fpName = br.getRegex("Files of\\s*(.*?)\\s*folder\\s*</title>").getMatch(0);
-                            }
-                            if (fpName == null) {
-                                fpName = br.getRegex("<title>\\s*(.*?)\\s*folder\\s*</title>").getMatch(0);
-                            }
-                            if (fpName == null) {
-                                fpName = br.getRegex("<h1.*?</i>\\s*(.*?)\\s*</h1>").getMatch(0);
-                            }
-                        }
-                    }
+        String fpName = getPackagename(param, this.br);
+        if (fpName != null) {
+            fpName = Encoding.htmlDecode(fpName);
+            fp = FilePackage.getInstance();
+            fp.setName(fpName.trim());
+        }
+        dupe.add(param.getCryptedUrl());
+        /* prevents continuous loop. */
+        int lastArraySize = 0;
+        do {
+            logger.info("Crawling page: " + page);
+            lastArraySize = decryptedLinks.size();
+            final boolean foundNewItems = parsePage(param, decryptedLinks);
+            if (!foundNewItems) {
+                /* Fail-safe */
+                logger.info("Stopping because failed to find new items on current page");
+                break;
+            } else if (decryptedLinks.size() < lastArraySize) {
+                logger.info("Stopping because: Failed to find any items on current page");
+                break;
+            } else if (!this.accessNextPage()) {
+                logger.info("Stopping because: Failed to find/access next page");
+                break;
+            } else {
+                /* Loggers are different depending on whether we know the total number of expected items or not. */
+                if (totalNumberofFiles == -1) {
+                    logger.info("Found " + decryptedLinks.size() + " items");
+                } else {
+                    logger.info("Found " + decryptedLinks.size() + " / " + this.totalNumberofFiles + " items");
                 }
+                /* Now continue to crawl next page */
+            }
+        } while (!this.isAbort());
+        return decryptedLinks;
+    }
+
+    protected String getPackagename(final CryptedLink param, final Browser br) {
+        final String username = new Regex(param.getCryptedUrl(), "/users/([^/]+)").getMatch(0);
+        String fpName = regexPackagenameFromURL(param.getCryptedUrl());
+        if (fpName == null) {
+            fpName = regexPackagenameFromHTML(br);
+        }
+        if (fpName == null) {
+            /* Final fallback */
+            fpName = username;
+        }
+        return fpName;
+    }
+
+    protected String regexPackagenameFromURL(final String url) {
+        String fpName = new Regex(url, "(folder/\\d+/|f/[a-z0-9]+/|go/[a-z0-9]+/)[^/]+/(.+)").getMatch(1); // name
+        if (fpName == null) {
+            fpName = new Regex(url, "(folder/\\d+/|f/[a-z0-9]+/|go/[a-z0-9]+/)(.+)").getMatch(1); // id
+            if (fpName == null) {
+                fpName = new Regex(url, "users/[a-z0-9_]+/[^/]+/(.+)").getMatch(0); // name
+                if (fpName == null) {
+                    fpName = new Regex(url, "users/[a-z0-9_]+/(.+)").getMatch(0); // id
+                }
+            }
+        }
+        return fpName;
+    }
+
+    protected String regexPackagenameFromHTML(final Browser br) {
+        String fpName;
+        if ("hotlink.cc".equals(br.getHost())) {
+            fpName = br.getRegex("<i class=\"glyphicon glyphicon-folder-open\"></i>\\s*(.*?)\\s*</span>").getMatch(0);
+        } else {
+            // ex-load.com
+            fpName = br.getRegex("Files in\\s*(.*?)\\s*folder\\s*</title>").getMatch(0);
+            if (fpName == null) {
+                // file-al
+                fpName = br.getRegex("Files of\\s*(.*?)\\s*folder\\s*</title>").getMatch(0);
+            }
+            if (fpName == null) {
+                fpName = br.getRegex("<title>\\s*(.*?)\\s*folder\\s*</title>").getMatch(0);
+            }
+            if (fpName == null) {
+                fpName = br.getRegex("<h1.*?</i>\\s*(.*?)\\s*</h1>").getMatch(0);
             }
             if (fpName == null) {
                 /* 2019-02-08: E.g. for photo galleries (e.g. imgbaron.com) */
                 fpName = br.getRegex("<H1>\\s*?(.*?)\\s*?</H1>").getMatch(0);
             }
         }
-        if (fpName == null) {
-            /* Final fallback */
-            fpName = username;
-        }
-        if (fpName != null) {
-            fpName = Encoding.htmlDecode(fpName);
-            fp = FilePackage.getInstance();
-            fp.setName(fpName.trim());
-        }
-        dupe.add(parameter);
-        /* prevents continuous loop. */
-        int lastArraySize = 0;
-        do {
-            lastArraySize = decryptedLinks.size();
-            final boolean foundNewItems = parsePage();
-            if (!foundNewItems) {
-                /* Fail-safe */
-                logger.info("Stopping because failed to find new items on current page");
-                break;
-            }
-            if (decryptedLinks.size() < lastArraySize) {
-                logger.info("Stopping because: Failed to find any items on current page");
-                break;
-            } else if (!this.accessNextPage()) {
-                logger.info("Stopping because: Failed to find/access next page");
-                break;
-            }
-            /* Loggers are different depending on whether we know the total number of expected items or not. */
-            if (totalNumberofFiles == -1) {
-                logger.info("Found " + decryptedLinks.size() + " items");
-            } else {
-                logger.info("Found " + decryptedLinks.size() + " / " + this.totalNumberofFiles + " items");
-            }
-        } while (!this.isAbort());
-        return decryptedLinks;
+        return fpName;
     }
 
-    private boolean parsePage() throws PluginException {
+    private boolean parsePage(final CryptedLink param, final ArrayList<DownloadLink> decryptedLinks) throws PluginException {
         boolean foundNewItems = false;
         final String[] links = br.getRegex("href=(\"|')(https?://(?:www\\.)?" + Pattern.quote(br.getHost()) + "/[a-z0-9]{12}(?:/.*?)?)\\1").getColumn(1);
         if (links != null && links.length > 0) {
@@ -343,7 +358,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
             }
         }
         // these should only be shown when its a /user/ decrypt task
-        final String cleanedUpAddedFolderLink = new Regex(parameter, "https?://[^/]+/(.+)").getMatch(0);
+        final String cleanedUpAddedFolderLink = new Regex(param.getCryptedUrl(), "https?://[^/]+/(.+)").getMatch(0);
         final String folders[] = br.getRegex("folder.?\\.gif.*?<a href=\"(.+?" + Pattern.quote(br.getHost()) + "[^\"]+users/[^\"]+)").getColumn(0);
         if (folders != null && folders.length > 0) {
             for (final String folderlink : folders) {

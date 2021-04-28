@@ -1766,7 +1766,7 @@ public class YetiShareCore extends antiDDoSForHost {
         }
         getPage(this.getAccountNameSpaceUpgrade(account));
         if (this.isPremiumAccount(account, this.br)) {
-            final String expireStr = regexExpireDate();
+            final String expireStr = regexExpireDate(this.br);
             // if (expireStr != null) {
             // final long expire_milliseconds = parseExpireTimeStamp(account, expireStr);
             // final boolean isPremium = expire_milliseconds > System.currentTimeMillis();
@@ -1810,7 +1810,7 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     protected boolean isPremiumAccount(final Account account, final Browser br) {
-        final String expireStr = regexExpireDate();
+        final String expireStr = regexExpireDate(br);
         if (expireStr == null) {
             return false;
         } else {
@@ -1819,7 +1819,7 @@ public class YetiShareCore extends antiDDoSForHost {
         }
     }
 
-    protected String regexExpireDate() {
+    protected String regexExpireDate(final Browser br) {
         String expireStr = br.getRegex("Reverts To Free Account\\s*:\\s*</td>\\s*<td>\\s*(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
         if (expireStr == null) {
             expireStr = br.getRegex("Reverts To Free Account\\s*:\\s*</span>\\s*<input[^>]*value\\s*=\\s*\"(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
@@ -2029,14 +2029,14 @@ public class YetiShareCore extends antiDDoSForHost {
 
     protected Account findAccountWithAPICredentials() {
         for (final Account account : AccountController.getInstance().getValidAccounts(this.getHost())) {
-            if (enableAPIOnlyMode() || isCrawledAPICredentialsAvailable(account)) {
+            if (enableAPIOnlyMode() || isWebsiteCrawledAPICredentialsAvailable(account)) {
                 return account;
             }
         }
         return null;
     }
 
-    protected boolean isCrawledAPICredentialsAvailable(final Account account) {
+    protected boolean isWebsiteCrawledAPICredentialsAvailable(final Account account) {
         if (account == null) {
             return false;
         } else {
