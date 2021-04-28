@@ -138,6 +138,9 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
             synchronized (account) {
                 final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
                 try {
+                    if (!(plg instanceof YetiShareCore)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                     final boolean validatedCookies = ((YetiShareCore) plg).loginWebsite(account, false);
                     br.setFollowRedirects(true);
                     getPage(parameter);
