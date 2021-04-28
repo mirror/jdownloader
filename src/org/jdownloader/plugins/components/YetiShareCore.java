@@ -612,10 +612,10 @@ public class YetiShareCore extends antiDDoSForHost {
                 }
             } while (true);
             if (this.dl == null) {
+                this.checkErrors(br, link, account);
                 if (isOfflineWebsite(this.br, link)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                this.checkErrors(br, link, account);
                 /* Check for password protected */
                 if (getPasswordProtectedForm(this.br) != null) {
                     /* Old layout additionally redirects to "/file_password.html?file=<fuid>" */
