@@ -138,7 +138,7 @@ public class SharingWtf extends YetiShareCore {
     }
 
     @Override
-    protected String getContinueLink() throws Exception {
+    protected String getContinueLink(final Browser br) throws Exception {
         /* 2020-01-18: Special */
         String continue_link = null;
         if (continue_link == null) {
@@ -171,10 +171,11 @@ public class SharingWtf extends YetiShareCore {
              */
             continue_link = br.getRegex("\\$\\(\\'\\.download-timer\\'\\)\\.html.+\\$\\(\\'\\.download-timer\\'\\)\\.html\\(\"[^\\)]+\\'(https://[^\\']+)").getMatch(0);
         }
-        if (continue_link == null) {
-            continue_link = super.getContinueLink();
+        if (continue_link != null) {
+            return continue_link;
+        } else {
+            return super.getContinueLink(br);
         }
-        return continue_link;
     }
 
     @Override

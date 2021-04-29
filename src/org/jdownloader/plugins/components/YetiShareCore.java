@@ -412,6 +412,13 @@ public class YetiShareCore extends antiDDoSForHost {
                 link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(fileInfo[1].replace(",", ""))));
             }
         }
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            if (this.isNewYetiShareVersion(account)) {
+                link.setName("[NewYetiShare] " + link.getName());
+            } else {
+                link.setName("[OldYetiShare] " + link.getName());
+            }
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -656,7 +663,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 /* Now handle pre-download-waittime, captcha and other pre-download steps. */
                 if (this.dl == null) {
                     checkErrors(br, link, account);
-                    String continueLink = getContinueLink();
+                    String continueLink = getContinueLink(this.br);
                     /* Handle up to x pre-download pages before the (eventually existing) captcha */
                     final int startValue = 0;
                     /*
@@ -710,7 +717,7 @@ public class YetiShareCore extends antiDDoSForHost {
                                                 br.followRedirect();
                                             }
                                         } else {
-                                            continueLink = this.getContinueLink();
+                                            continueLink = this.getContinueLink(this.br);
                                             break;
                                         }
                                     }
@@ -783,7 +790,7 @@ public class YetiShareCore extends antiDDoSForHost {
                                 logger.log(e);
                             }
                             /* Get new continue_link for the next run */
-                            continueLink = getContinueLink();
+                            continueLink = getContinueLink(this.br);
                             checkErrors(br, link, account);
                             if (captchaRequired && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                                 logger.info("Wrong captcha");
@@ -870,8 +877,7 @@ public class YetiShareCore extends antiDDoSForHost {
         }
     }
 
-    protected String getContinueLink() throws Exception {
-        /* TODO: Refactor this and provide browser as parameter */
+    protected String getContinueLink(final Browser br) throws Exception {
         String continue_link = br.getRegex("\\$\\(\\'\\.download\\-timer\\'\\)\\.html\\(\"<a href=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
         if (continue_link == null) {
             continue_link = br.getRegex("class=\\'btn btn\\-free\\' href=\\'(https?://[^<>\"]*?)\\'>").getMatch(0);
@@ -883,21 +889,9 @@ public class YetiShareCore extends antiDDoSForHost {
             continue_link = br.getRegex("(https?://[^/]+/[^<>\"\\':]*pt=[^<>\"\\']*)(?:\"|\\')").getMatch(0);
         }
         if (continue_link == null) {
-            continue_link = getDllink();
+            continue_link = getDllink(br);
         }
         return continue_link;
-    }
-
-    // private String getStreamUrl() {
-    // return getStreamUrl(this.br);
-    // }
-    //
-    // private String getStreamUrl(final Browser br) {
-    // return br.getRegex("file\\s*?:\\s*?\"(https?://[^<>\"]+)\"").getMatch(0);
-    // }
-    /** 2019-08-29: Never call this directly - always call it via getContinueLink!! */
-    private String getDllink() {
-        return getDllink(this.br);
     }
 
     /** If overridden, make sure to make isDownloadlink compatible as well! */
@@ -1388,7 +1382,7 @@ public class YetiShareCore extends antiDDoSForHost {
         /* TODO: Consider checking for fuid in URL too in the future --> This might be a good offline indicator */
         // final String fid = this.getFUIDFromURL(link);
         // final boolean currentURLContainsFID = br.getURL().contains(fid);
-        final boolean isDownloadableOldWebsiteOrFreeMode = this.getContinueLink() != null;
+        final boolean isDownloadableOldWebsiteOrFreeMode = this.getContinueLink(br) != null;
         final boolean isDownloadableNewWebsite = this.getInternalFileID(link, br) != null;
         final boolean isDownloadable = isDownloadableOldWebsiteOrFreeMode || isDownloadableNewWebsite;
         final boolean isFileWebsite = br.containsHTML("class=\"downloadPageTable(V2)?\"") || br.containsHTML("class=\"download\\-timer\"");
