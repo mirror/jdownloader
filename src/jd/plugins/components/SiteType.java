@@ -324,6 +324,11 @@ public class SiteType {
         /**
          * engine/ajax/getlink.php and engine/modules/antibot/antibot.php and final redirect
          */
-        AntiBotCMS
+        AntiBotCMS,
+        /**
+         * Use this to tag websites/crawler plugins that are only designed to crawl HTTP directories:
+         * https://en.wikipedia.org/wiki/Webserver_directory_index
+         */
+        GenericHTTPDirectoryIndex
     }
 }
