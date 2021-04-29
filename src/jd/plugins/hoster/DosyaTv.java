@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -104,9 +105,9 @@ public class DosyaTv extends YetiShareCore {
     }
 
     @Override
-    protected String getContinueLink() throws Exception {
+    protected String getContinueLink(final Browser br) throws Exception {
         /* 2020-03-02: Special */
-        String dllink = super.getContinueLink();
+        String dllink = super.getContinueLink(br);
         if (dllink != null) {
             /* E.g. https://docs.google.com/gview?url=https://www.dosya.tv/vk/fizik_1.pdf?download_token=bla */
             final String[] urls = HTMLParser.getHttpLinks(dllink, "");

@@ -22,6 +22,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -105,8 +106,8 @@ public class SundryfilesCom extends YetiShareCore {
     }
 
     @Override
-    protected String getContinueLink() throws Exception {
-        String continueurl = super.getContinueLink();
+    protected String getContinueLink(final Browser br) throws Exception {
+        String continueurl = super.getContinueLink(br);
         if (StringUtils.isEmpty(continueurl)) {
             /* 2019-06-07: E.g. first loop */
             continueurl = br.getRegex("href=\\'(\\?view\\-ads=1)\\'>download( / view)? now<").getMatch(0);
