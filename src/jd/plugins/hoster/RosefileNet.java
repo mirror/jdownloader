@@ -20,9 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -35,6 +32,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RosefileNet extends PluginForHost {
@@ -67,7 +67,7 @@ public class RosefileNet extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-z0-9]{10})/([^/]+)\\.html");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:d/)?([a-z0-9]{10})(/([^/]+)\\.html)?");
         }
         return ret.toArray(new String[0]);
     }
@@ -76,13 +76,13 @@ public class RosefileNet extends PluginForHost {
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 1;
     private static final int     FREE_MAXDOWNLOADS = 1;
+
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
     // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
     // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
@@ -106,15 +106,18 @@ public class RosefileNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* 2021-04-12: Trust filename inside URL. */
-        String filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
-        String filesize = br.getRegex("<span class=\"h4\">(\\d+[^<>\"]+)</span>").getMatch(0);
+        String filename = br.getRegex("<title>\\s*(.*?)\\s*-\\s*RoseFile\\s*</title>").getMatch(0);
+        if (filename == null) {
+            filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
+            filename = Encoding.htmlDecode(filename);
+        }
         if (filename != null) {
-            filename = Encoding.htmlDecode(filename).trim();
-            link.setName(filename);
+            link.setName(filename.trim());
         } else if (!link.isNameSet()) {
             /* Fallback */
             link.setName(this.getFID(link));
         }
+        String filesize = br.getRegex("<span class=\"h4\">(\\d+[^<>\"]+)</span>").getMatch(0);
         if (filesize != null) {
             if (!filesize.toLowerCase(Locale.ENGLISH).contains("b")) {
                 filesize += "b";

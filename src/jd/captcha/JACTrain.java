@@ -13,36 +13,33 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.captcha;
 
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.Application;
+
 /**
  * Jac Training
- * 
+ *
  * @author JD-Team
  */
 public class JACTrain {
-
     public static void main(String args[]) throws InterruptedException {
+        Application.setApplication(".jd_home");
         JACTrain main = new JACTrain();
         main.go();
     }
 
     private void go() throws InterruptedException {
-        final String hoster = "nrdr";
+        final String hoster = "wcrypt.com";
         final JAntiCaptcha jac = new JAntiCaptcha(hoster);
-
         LookAndFeelController.getInstance().setUIManager();
         // EDTEventQueue.initEventQueue();
         jac.trainAllCaptchas(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + hoster);
-
         // jac.saveMTHFile();
-
         // jac.addLetterMap();
         // jac.saveMTHFile();
     }
-
 }

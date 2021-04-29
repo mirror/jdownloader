@@ -9,7 +9,6 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -169,7 +168,7 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         /* First check for direct downloadable content */
         final URLConnectionAdapter con = brc.openGetConnection(url);
         if (this.looksLikeDownloadableContent(con)) {
-            final CrawledLink direct = getCrawler().createDirectHTTPCrawledLink(getCurrentLink(), con);
+            final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(getCurrentLink(), con);
             allImageLinks.add(direct.getDownloadLink());
             con.disconnect();
             return;

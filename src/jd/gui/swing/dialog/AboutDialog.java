@@ -58,6 +58,7 @@ import org.appwork.utils.IO;
 import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
@@ -166,7 +167,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
                 stats.add(disable(map.get("buildDate")));
             }
             stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_runtime()));
-            stats.add(disable(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - SecondLevelLaunch.startup, 0)));
+            stats.add(disable(TimeFormatter.formatMilliSeconds(Time.systemIndependentCurrentJVMTimeMillis() - SecondLevelLaunch.startup, 0)));
             try {
                 stats.add(new JLabel("Java:"), "");
                 java.lang.management.MemoryUsage memory = java.lang.management.ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();

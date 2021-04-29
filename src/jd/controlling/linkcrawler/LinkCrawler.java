@@ -1153,7 +1153,7 @@ public class LinkCrawler {
         }
     }
 
-    public CrawledLink createDirectHTTPCrawledLink(CrawledLink source, URLConnectionAdapter con) {
+    public DownloadLink createDirectHTTPDownloadLink(CrawledLink source, URLConnectionAdapter con) {
         final Request request = con.getRequest();
         final String startURL;
         if (source == null || source.getSourceLink() == null || (request instanceof PostRequest)) {
@@ -1168,7 +1168,7 @@ public class LinkCrawler {
         if (StringUtils.isNotEmpty(cookie)) {
             link.setProperty("cookies", cookie);
         }
-        final long contentLength = con.getLongContentLength();
+        final long contentLength = con.getCompleteContentLength();
         if (contentLength > 0) {
             link.setVerifiedFileSize(contentLength);
         }
@@ -1198,10 +1198,12 @@ public class LinkCrawler {
             if (postString != null) {
                 link.setProperty("post", postString);
             }
-            return crawledLinkFactorybyDownloadLink(link);
-        } else {
-            return crawledLinkFactorybyDownloadLink(link);
         }
+        return link;
+    }
+
+    public CrawledLink createDirectHTTPCrawledLink(CrawledLink source, URLConnectionAdapter con) {
+        return crawledLinkFactorybyDownloadLink(createDirectHTTPDownloadLink(source, con));
     }
 
     protected static interface DeeperOrMatchingRuleModifier extends CrawledLinkModifier {

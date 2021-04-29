@@ -34,6 +34,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Random;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.SSLException;
 import javax.swing.JDialog;
@@ -60,6 +61,8 @@ import jd.plugins.DownloadLink;
 import org.appwork.console.ConsoleDialog;
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
@@ -79,6 +82,7 @@ import org.appwork.utils.JVMVersion;
 import org.appwork.utils.JarHandlerWorkaround;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
@@ -151,7 +155,7 @@ public class SecondLevelLaunch {
     public final static SingleReachableState HOST_PLUGINS_COMPLETE = new SingleReachableState("HOST_PLG_COMPLETE");
     public final static SingleReachableState ACCOUNTLIST_LOADED    = new SingleReachableState("ACCOUNTLIST_LOADED");
     public final static SingleReachableState EXTENSIONS_LOADED     = new SingleReachableState("EXTENSIONS_LOADED");
-    public final static long                 startup               = System.currentTimeMillis();
+    public final static long                 startup               = Time.systemIndependentCurrentJVMTimeMillis();
 
     // private static JSonWrapper webConfig;
     /**
@@ -991,6 +995,32 @@ public class SecondLevelLaunch {
             } catch (final Throwable e) {
                 e.printStackTrace();
             }
+        }
+        if (Application.isHeadless()) {
+            // jvm will shut down when no non-daemon thread is running
+            new Thread("JDownloader:Headless") {
+                @Override
+                public void run() {
+                    final AtomicBoolean waitFlag = new AtomicBoolean(true);
+                    ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+                        @Override
+                        public void onShutdown(ShutdownRequest shutdownRequest) {
+                            synchronized (waitFlag) {
+                                waitFlag.set(false);
+                                waitFlag.notify();
+                            }
+                        }
+                    });
+                    while (waitFlag.get()) {
+                        synchronized (waitFlag) {
+                            try {
+                                waitFlag.wait();
+                            } catch (InterruptedException e) {
+                            }
+                        }
+                    }
+                }
+            }.start();
         }
     }
 }

@@ -16,8 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-
-import org.appwork.utils.Regex;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -26,6 +25,8 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+
+import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "high-way.me" }, urls = { "https?://(?:torrentarchiv|torrent)\\.high-way\\.me/dlt/[a-z0-9]+(?:/$|/.+)" })
 public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
@@ -40,18 +41,15 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
              * Root of the torrent -> Can sometimes contain a .zip file which contains all items again -> Filter that to avoid downloading
              * everything twice!
              */
-            int indexOfCompleteZip = -1;
-            int index = 0;
+            final List<DownloadLink> remove = new ArrayList<DownloadLink>();
             for (final DownloadLink link : crawledItems) {
                 if (link.getName() != null && link.getName().matches("([a-f0-9]{40}|[a-f0-9]{64})\\.zip")) {
-                    indexOfCompleteZip = index;
-                    break;
+                    remove.add(link);
                 }
-                index += 1;
             }
-            if (indexOfCompleteZip > -1) {
+            if (remove.size() > 0) {
                 logger.info("Found- and removed complete zip");
-                crawledItems.remove(indexOfCompleteZip);
+                crawledItems.removeAll(remove);
             } else {
                 logger.info("Failed to find a complete zip file although we're in the torrent root folder -> Probably torrent is very big and thus no extra .zip file is provided");
             }
