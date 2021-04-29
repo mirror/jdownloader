@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import jd.SecondLevelLaunch;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkcollector.LinkCollector;
 
@@ -20,6 +21,10 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
+import org.appwork.utils.os.Docker;
+import org.appwork.utils.os.Snap;
+import org.appwork.utils.os.hardware.HardwareType;
+import org.appwork.utils.os.hardware.HardwareTypeInterface;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.myjdownloader.client.bindings.StorageInformationStorable;
 import org.jdownloader.myjdownloader.client.bindings.SystemInformationStorable;
@@ -30,8 +35,6 @@ import org.jdownloader.updatev2.SmartRlyExitRequest;
 import org.jdownloader.updatev2.SmartRlyRestartRequest;
 
 public class SystemAPIImpl implements SystemAPI {
-    private final long startupTimeStamp = System.currentTimeMillis();
-
     public SystemAPIImpl() {
         RemoteAPIController.validateInterfaces(SystemAPI.class, SystemInterface.class);
     }
@@ -141,6 +144,24 @@ public class SystemAPIImpl implements SystemAPI {
         final OperatingSystem os = CrossSystem.getOS();
         ret.setOperatingSystem(os.name());
         ret.setOsFamily(os.getFamily().name());
+        try {
+            final HardwareTypeInterface hardwareType = HardwareType.getHardware();
+            if (hardwareType != null) {
+                ret.setHardware(hardwareType.toString());
+            }
+        } catch (final Throwable ignore) {
+            LoggerFactory.getDefaultLogger().log(ignore);
+        }
+        try {
+            ret.setDocker(Docker.isInsideDocker());
+        } catch (final Throwable ignore) {
+            LoggerFactory.getDefaultLogger().log(ignore);
+        }
+        try {
+            ret.setSnap(Snap.isInsideSnap());
+        } catch (final Throwable ignore) {
+            LoggerFactory.getDefaultLogger().log(ignore);
+        }
         ret.setOsString(CrossSystem.getOSString());
         ret.setArchFamily(CrossSystem.getARCHFamily().name());
         ret.setArchString(CrossSystem.getARCHString());
@@ -163,7 +184,7 @@ public class SystemAPIImpl implements SystemAPI {
         ret.setHeadless(Application.isHeadless());
         ret.setOs64Bit(CrossSystem.is64BitOperatingSystem());
         ret.setArch64Bit(CrossSystem.is64BitArch());
-        ret.setStartupTimeStamp(startupTimeStamp);
+        ret.setStartupTimeStamp(SecondLevelLaunch.startup);
         try {
             final java.lang.management.MemoryUsage memory = java.lang.management.ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
             if (memory != null) {

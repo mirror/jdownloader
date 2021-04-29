@@ -29,6 +29,7 @@ public class LogAPIImpl implements LogAPI {
 
     @Override
     public List<LogFolderStorable> getAvailableLogs() {
+        new ThreadDump().run(null, new String[0]);
         final ArrayList<LogFolder> folders = AbstractLogAction.getLogFolders();
         final ArrayList<LogFolderStorable> result = new ArrayList<LogFolderStorable>();
         for (final LogFolder folder : folders) {
@@ -53,7 +54,6 @@ public class LogAPIImpl implements LogAPI {
         if (selectedFolders == null || selectedFolders.length == 0) {
             throw new BadParameterException("selection empty or null");
         }
-        new ThreadDump().run(null, new String[0]);
         final ArrayList<LogFolder> availableLogFolders = AbstractLogAction.getLogFolders();
         final ArrayList<LogFolder> logFoldersToSend = new ArrayList<LogFolder>();
         for (final LogFolderStorable selectedFolder : selectedFolders) {
