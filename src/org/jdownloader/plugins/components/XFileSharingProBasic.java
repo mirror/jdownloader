@@ -2139,7 +2139,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /** Removes HTML code which could break the plugin and puts it into correctedBR. */
-    protected String correctBR(Browser br) {
+    protected String correctBR(final Browser br) {
         synchronized (correctedBrowserRequestMap) {
             final Request request = br.getRequest();
             String correctedBR = correctedBrowserRequestMap.get(request);
@@ -2761,7 +2761,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /**
      * Tries to get filename from URL and if this fails, will return <fuid> as filename. <br/>
      */
-    public String getFallbackFilename(final DownloadLink dl) {
+    protected String getFallbackFilename(final DownloadLink dl) {
         String filenameURL = this.getFilenameFromURL(dl);
         if (filenameURL != null) {
             return filenameURL;

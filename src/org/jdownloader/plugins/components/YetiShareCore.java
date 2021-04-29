@@ -369,6 +369,21 @@ public class YetiShareCore extends antiDDoSForHost {
             if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            parseAndSetYetiShareVersion(this.br, account);
+            scanInfo(link, fileInfo);
+            if (!StringUtils.isEmpty(fileInfo[0])) {
+                link.setName(fileInfo[0]);
+            }
+            if (fileInfo[1] != null) {
+                link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(fileInfo[1].replace(",", ""))));
+            }
+            /**
+             * Additional offline check. Useful for websites which still provide filename & filesize for offline files. </br>
+             * This can only happen on special file information page!
+             */
+            if (br.containsHTML("(?i)>\\s*Status:</span>\\s*<span>\\s*(Deleted|Usunięto)\\s*</span>")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         } else {
             getPage(link.getPluginPatternMatcher());
             /* Offline check is very unsafe which is why we need to check for other errors first! */
@@ -388,27 +403,16 @@ public class YetiShareCore extends antiDDoSForHost {
             if (isOfflineWebsite(this.br, link)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            parseAndSetYetiShareVersion(this.br, account);
+            scanInfo(link, fileInfo);
+            if (!StringUtils.isEmpty(fileInfo[0])) {
+                link.setName(fileInfo[0]);
+            }
+            if (fileInfo[1] != null) {
+                link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(fileInfo[1].replace(",", ""))));
+            }
         }
-        parseAndSetYetiShareVersion(this.br, account);
-        scanInfo(link, fileInfo);
-        if (!StringUtils.isEmpty(fileInfo[0])) {
-            link.setName(fileInfo[0]);
-        }
-        if (fileInfo[1] != null) {
-            link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(fileInfo[1].replace(",", ""))));
-        }
-        /* Additional offline check. Useful for websites which still provide filename & filesize for offline files. */
-        if (this.isOfflineWebsiteAfterLinkcheck(this.br)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else {
-            return AvailableStatus.TRUE;
-        }
-    }
-
-    /** Return true for cases where filename- and size may still be present on website but content is offline. */
-    protected boolean isOfflineWebsiteAfterLinkcheck(final Browser br) {
-        /* 2021-04-27: Only relevant for new YetiShare versions. */
-        return this.br.containsHTML("(?i)>\\s*Status:</span>\\s*<span>\\s*(Deleted|Usunięto)\\s*</span>");
+        return AvailableStatus.TRUE;
     }
 
     /**
@@ -616,8 +620,6 @@ public class YetiShareCore extends antiDDoSForHost {
                 parseAndSetYetiShareVersion(this.br, account);
                 this.checkErrors(br, link, account);
                 if (isOfflineWebsite(this.br, link)) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (this.isOfflineWebsiteAfterLinkcheck(this.br)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 /* Check for password protected */
