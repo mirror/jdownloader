@@ -122,8 +122,8 @@ public class PornHubCom extends PluginForDecrypt {
         } catch (PluginException e) {
             logger.log(e);
             // keep pornhub <->pornhubpremium
-            parameter = param.toString().replaceFirst("https?://(?:www\\.|[a-z]{2}\\.)?pornhub\\.(?:com|org)/", "https://www.pornhub.com/");
-            parameter = param.toString().replaceFirst("https?://(?:www\\.|[a-z]{2}\\.)?pornhubpremium\\.(?:com|org)/", "https://www.pornhubpremium.com/");
+            parameter = param.toString().replaceFirst("^https?://(?:www\\.|[a-z]{2}\\.)?pornhub\\.(?:com|org)/", "https://www.pornhub.com/");
+            parameter = parameter.replaceFirst("^https?://(?:www\\.|[a-z]{2}\\.)?pornhubpremium\\.(?:com|org)/", "https://www.pornhubpremium.com/");
         }
         br.setFollowRedirects(true);
         jd.plugins.hoster.PornHubCom.prepBr(br);
@@ -191,7 +191,7 @@ public class PornHubCom extends PluginForDecrypt {
                     }
                     ret = true;
                 } else {
-                    ret = false;
+                    ret = decryptAllVideosOf(br, account, new HashSet<String>());
                 }
             } else {
                 ret = decryptAllVideosOf(br, account, new HashSet<String>());
@@ -210,7 +210,7 @@ public class PornHubCom extends PluginForDecrypt {
                     }
                     ret = true;
                 } else {
-                    ret = false;
+                    ret = decryptAllVideosOf(br, account, new HashSet<String>());
                 }
             } else {
                 ret = decryptAllVideosOf(br, account, new HashSet<String>());

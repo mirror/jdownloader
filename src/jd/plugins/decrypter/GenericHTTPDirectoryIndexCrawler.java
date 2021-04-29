@@ -28,7 +28,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
@@ -49,14 +48,7 @@ public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
         final URLConnectionAdapter con = this.br.openGetConnection(param.getCryptedUrl());
         if (this.looksLikeDownloadableContent(con)) {
             final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            final DownloadLink direct = this.createDownloadlink(param.getCryptedUrl());
-            if (con.isContentDisposition()) {
-                direct.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con));
-            }
-            if (con.getCompleteContentLength() > 0) {
-                direct.setVerifiedFileSize(con.getCompleteContentLength());
-            }
-            direct.setAvailable(true);
+            final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(getCurrentLink(), con);
             decryptedLinks.add(direct);
             try {
                 con.disconnect();

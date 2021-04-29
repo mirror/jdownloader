@@ -25,13 +25,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -58,6 +51,13 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.download.HashInfo;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(?:www\\.|m\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/|file\\?|download/?).*?(?=http:|$|\r|\n))|https?://download\\d+.mediafire\\.com/[a-z0-9]+/([a-z0-9]+)/([^/]+)" })
 public class MediafireCom extends PluginForHost {
@@ -534,7 +534,7 @@ public class MediafireCom extends PluginForHost {
                         br.clearCookies(br.getHost());
                     }
                 } catch (final PluginException ignore) {
-                    logger.info("API returned error -> Full login required");
+                    logger.exception("API returned error -> Full login required", ignore);
                 }
             }
             logger.info("Performing full login");
@@ -586,6 +586,11 @@ public class MediafireCom extends PluginForHost {
                 account.setType(AccountType.PREMIUM);
             }
             account.saveCookies(brLogin.getCookies(this.getHost()), "");
+        } catch (PluginException e) {
+            if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                account.clearCookies("");
+            }
+            throw e;
         } finally {
             brLogin.setFollowRedirects(red);
         }
@@ -647,7 +652,7 @@ public class MediafireCom extends PluginForHost {
                         account.clearCookies("");
                     }
                     throw new PluginException(LinkStatus.ERROR_RETRY);
-                // offline file, to file/get_info as a single file... we need to return so the proper
+                    // offline file, to file/get_info as a single file... we need to return so the proper
                 case 110:
                     // invalid uid
                 case 111:
