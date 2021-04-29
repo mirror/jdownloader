@@ -53,7 +53,7 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
                 logger.info("Found- and removed complete zip");
                 crawledItems.remove(indexOfCompleteZip);
             } else {
-                logger.warning("Failed to find a complete zip file although we're in the torrent root folder -> Probably torrent is very big and thus no extra .zip file is provided");
+                logger.info("Failed to find a complete zip file although we're in the torrent root folder -> Probably torrent is very big and thus no extra .zip file is provided");
             }
         }
         return crawledItems;
