@@ -549,10 +549,7 @@ public class YetiShareCore extends antiDDoSForHost {
 
     protected void handleDownloadWebsite(final DownloadLink link, final Account account) throws Exception, PluginException {
         /* Login if possible although login is usually not required to access directurls. */
-        boolean hasGoneThroughVerifiedLoginOnce = false;
-        if (account != null) {
-            hasGoneThroughVerifiedLoginOnce = loginWebsite(account, false);
-        }
+        boolean hasGoneThroughVerifiedLoginOnce = account != null && loginWebsite(account, false);
         /* First try to re-use stored directurl */
         checkDirectLink(link, account);
         if (this.dl == null) {
@@ -615,10 +612,9 @@ public class YetiShareCore extends antiDDoSForHost {
                          * situations in which we get logged out all of the sudden.
                          */
                         logger.warning("Possible login failure -> Trying again");
-                        loginWebsite(account, true);
+                        hasGoneThroughVerifiedLoginOnce = loginWebsite(account, true);
                         br.setFollowRedirects(false);
                         getPage(link.getPluginPatternMatcher());
-                        hasGoneThroughVerifiedLoginOnce = true;
                         continue;
                     }
                 }
