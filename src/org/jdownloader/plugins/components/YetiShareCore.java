@@ -557,7 +557,7 @@ public class YetiShareCore extends antiDDoSForHost {
         checkDirectLink(link, account);
         if (this.dl == null) {
             // try {
-            // // requestFileInformationWebsite(link, account, true);
+            // requestFileInformationWebsite(link, account, true);
             // br.getPage(link.getPluginPatternMatcher());
             // if (isOfflineWebsite(this.br, link)) {
             // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
