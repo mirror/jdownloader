@@ -501,6 +501,7 @@ public class PornHubCom extends PluginForDecrypt {
     }
 
     private boolean decryptAllGifsOfAUser(final Account account) throws Exception {
+        final boolean webm = SubConfiguration.getConfig(DOMAIN).getBooleanProperty(jd.plugins.hoster.PornHubCom.GIFS_WEBM, true);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(createOfflinelink(parameter));
             return true;
@@ -576,10 +577,16 @@ public class PornHubCom extends PluginForDecrypt {
                 if (viewKey != null && dupes.add(viewKey)) {
                     final String name = new Regex(item, "class\\s*=\\s*\"title\"\\s*>\\s*(.*?)\\s*<").getMatch(0);
                     final DownloadLink dl = createDownloadlink("https://www." + getLinkDomain(br, account) + "/gif/" + viewKey);
-                    if (name != null) {
-                        dl.setName(name + "_" + viewKey + ".webm");
+                    final String ext;
+                    if (webm) {
+                        ext = ".webm";
                     } else {
-                        dl.setName(viewKey + ".webm");
+                        ext = ".gif";
+                    }
+                    if (name != null) {
+                        dl.setName(name + "_" + viewKey + ext);
+                    } else {
+                        dl.setName(viewKey + ext);
                     }
                     /* Force fast linkcheck */
                     dl.setAvailable(true);

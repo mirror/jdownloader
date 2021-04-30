@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -34,10 +32,17 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "HTTPDirectoryCrawler" }, urls = { "" })
 public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
     public GenericHTTPDirectoryIndexCrawler(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public enum DirectoryListingMode {
+        NGINX,
+        APACHE
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -48,21 +53,22 @@ public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
         br.setFollowRedirects(true);
         /* First check if maybe the user has added a directURL. */
         final URLConnectionAdapter con = this.br.openGetConnection(param.getCryptedUrl());
-        if (this.looksLikeDownloadableContent(con)) {
-            final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(getCurrentLink(), con);
-            decryptedLinks.add(direct);
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
+        try {
+            if (this.looksLikeDownloadableContent(con)) {
+                final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+                final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(getCurrentLink(), con);
+                decryptedLinks.add(direct);
+                return decryptedLinks;
+            } else {
+                br.followConnection();
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                return this.parseHTTPDirectory(param, br);
             }
-            return decryptedLinks;
+        } finally {
+            con.disconnect();
         }
-        br.followConnection();
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        return this.parseHTTPDirectory(param, br);
     }
 
     /** Does parsing only, without any HTTP requests! */
@@ -82,28 +88,10 @@ public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
         if (filesAndFolders.length > 0) {
             /* nginx */
             for (final String[] finfo : filesAndFolders) {
-                final String url = this.br.getURL(finfo[0]).toString();
-                final String filesizeStr = finfo[2];
-                /* Is it a file or a folder? */
-                if (filesizeStr.equals("-")) {
-                    /* Folder */
-                    final DownloadLink dlfolder = this.createDownloadlink(url);
-                    decryptedLinks.add(dlfolder);
-                } else {
-                    /* File */
-                    final DownloadLink dlfile = new DownloadLink(null, null, "DirectHTTP", "directhttp://" + url, true);
-                    /* Obtain filename from URL as displayed name may be truncated. */
-                    String name = url.substring(url.lastIndexOf("/") + 1);
-                    if (Encoding.isUrlCoded(name)) {
-                        name = Encoding.htmlDecode(name);
-                    }
-                    dlfile.setName(name);
-                    dlfile.setVerifiedFileSize(Long.parseLong(filesizeStr));
-                    dlfile.setAvailable(true);
-                    dlfile.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
-                    dlfile._setFilePackage(fp);
-                    decryptedLinks.add(dlfile);
-                }
+                final DownloadLink downloadLink = parseEntry(DirectoryListingMode.NGINX, br, finfo);
+                downloadLink.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
+                downloadLink._setFilePackage(fp);
+                decryptedLinks.add(downloadLink);
             }
         } else {
             /* Apache default http dir index */
@@ -113,35 +101,58 @@ public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
                 return decryptedLinks;
             }
             for (final String[] finfo : filesAndFolders) {
-                final String url = this.br.getURL(finfo[0]).toString();
-                final String filesizeStr = finfo[1];
-                /* Is it a file or a folder? */
-                if (filesizeStr.equals("-")) {
-                    /* Folder */
-                    final DownloadLink dlfolder = this.createDownloadlink(url);
-                    decryptedLinks.add(dlfolder);
-                } else {
-                    /* File */
-                    final DownloadLink dlfile = new DownloadLink(null, null, "DirectHTTP", "directhttp://" + url, true);
-                    /* Obtain filename from URL as displayed name may be truncated. */
-                    String name = url.substring(url.lastIndexOf("/") + 1);
-                    if (Encoding.isUrlCoded(name)) {
-                        name = Encoding.htmlDecode(name);
-                    }
-                    dlfile.setName(name);
-                    if (filesizeStr.matches("\\d+")) {
-                        dlfile.setVerifiedFileSize(Long.parseLong(filesizeStr));
-                    } else {
-                        dlfile.setDownloadSize(SizeFormatter.getSize(filesizeStr + "B"));
-                    }
-                    dlfile.setAvailable(true);
-                    dlfile.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
-                    dlfile._setFilePackage(fp);
-                    decryptedLinks.add(dlfile);
-                }
+                final DownloadLink downloadLink = parseEntry(DirectoryListingMode.APACHE, br, finfo);
+                downloadLink.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
+                downloadLink._setFilePackage(fp);
+                decryptedLinks.add(downloadLink);
             }
         }
         return decryptedLinks;
+    }
+
+    protected DownloadLink parseEntry(final DirectoryListingMode directoryListing, final Browser br, final String finfo[]) throws PluginException, IOException {
+        final String url = br.getURL(finfo[0]).toString();
+        final String filesizeStr;
+        switch (directoryListing) {
+        case APACHE:
+            filesizeStr = finfo[1];
+            break;
+        case NGINX:
+            filesizeStr = finfo[2];
+            break;
+        default:
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported:" + directoryListing);
+        }
+        /* Is it a file or a folder? */
+        if (filesizeStr.equals("-")) {
+            /* Folder */
+            final DownloadLink dlfolder = this.createDownloadlink(url);
+            return dlfolder;
+        } else {
+            /* File */
+            final DownloadLink dlfile = new DownloadLink(null, null, "DirectHTTP", "directhttp://" + url, true);
+            /* Obtain filename from URL as displayed name may be truncated. */
+            String name = url.substring(url.lastIndexOf("/") + 1);
+            if (Encoding.isUrlCoded(name)) {
+                name = Encoding.htmlDecode(name);
+            }
+            dlfile.setName(name);
+            final long fileSize = SizeFormatter.getSize(filesizeStr + "b");
+            switch (directoryListing) {
+            case NGINX:
+                if (filesizeStr.matches("^\\d+$")) {
+                    dlfile.setVerifiedFileSize(fileSize);
+                } else {
+                    dlfile.setDownloadSize(fileSize);
+                }
+                break;
+            default:
+                dlfile.setDownloadSize(fileSize);
+                break;
+            }
+            dlfile.setAvailable(true);
+            return dlfile;
+        }
     }
 
     protected String getCurrentDirectoryPath(final Browser br) {

@@ -94,18 +94,19 @@ public class PornHubCom extends PluginForHost {
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
     /* Quality, { videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate } */
     public static LinkedHashMap<String, String[]> formats                               = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-        {
-            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
-            put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
-            put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
-        }
-    });
+                                                                                            {
+                                                                                                put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+                                                                                                put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+                                                                                                put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+                                                                                                put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+                                                                                                put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
+                                                                                                put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
+                                                                                            }
+                                                                                        });
     public static final String                    BEST_ONLY                             = "BEST_ONLY";
     public static final String                    BEST_SELECTION_ONLY                   = "BEST_SELECTION_ONLY";
     public static final String                    FAST_LINKCHECK                        = "FAST_LINKCHECK";
+    public static final String                    GIFS_WEBM                             = "GIFS_WEBM";
     private final String                          REMOVED_VIDEO                         = ">\\s*This video has been removed\\s*<";
     public static final String                    PROPERT_FORMAT                        = "format";
     public static final String                    PROPERT_QUALITY                       = "quality";
@@ -340,6 +341,7 @@ public class PornHubCom extends PluginForHost {
             html_filename = viewKey + "." + ext;
         } else if (link.getDownloadURL().matches(type_gif_webm)) {
             /* Offline links should also have nice filenames */
+            boolean webm = link.getBooleanProperty("webm", getPluginConfig().getBooleanProperty(GIFS_WEBM, true));
             link.setName(viewKey + ".webm");
             br.setFollowRedirects(true);
             getPage(br, createPornhubGifLink(isPremiumFromURL, viewKey, null));
@@ -350,13 +352,27 @@ public class PornHubCom extends PluginForHost {
             } else {
                 html_filename = viewKey + "_" + title;
             }
-            html_filename += ".webm";
-            dlUrl = br.getRegex("data\\-webm\\s*=\\s*\"(https?[^\"]+\\.webm)\"").getMatch(0);
+            if (!webm) {
+                // link or default is gif, check for gif
+                html_filename += ".gif";
+                dlUrl = br.getRegex("data\\-gif\\s*=\\s*\"(https?[^\"]+\\.gif)\"").getMatch(0);
+                if (dlUrl == null) {
+                    dlUrl = br.getRegex("fileGif\\s*=\\s*'(https?[^\"]+\\.gif)'").getMatch(0);
+                }
+            }
             if (dlUrl == null) {
-                dlUrl = br.getRegex("fileWebm\\s*=\\s*'(https?[^\"]+\\.webm)'").getMatch(0);
+                // gif -> don't fail but fallback to webm
+                webm = true;
+                html_filename += ".webm";
+                dlUrl = br.getRegex("data\\-webm\\s*=\\s*\"(https?[^\"]+\\.webm)\"").getMatch(0);
+                if (dlUrl == null) {
+                    dlUrl = br.getRegex("fileWebm\\s*=\\s*'(https?[^\"]+\\.webm)'").getMatch(0);
+                }
             }
             if (dlUrl == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                link.setProperty("webm", webm);
             }
         } else {
             /* Required later if e.g. directurl has to be refreshed! */
@@ -1364,6 +1380,7 @@ public class PornHubCom extends PluginForHost {
         }
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, "Enable fast linkcheck?\r\nNOTE: If enabled, links will appear faster but filesize won't be shown before downloadstart.").setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "USE_ORIGINAL_SERVER_FILENAME", "Use original server filename?").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GIFS_WEBM, "Prefer webm over old gif format?").setDefaultValue(true));
     }
 
     @Override
@@ -1372,5 +1389,8 @@ public class PornHubCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
+        if (link != null) {
+            // link.removeProperty("webm");
+        }
     }
 }
