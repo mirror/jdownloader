@@ -244,16 +244,25 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
         }
         /* Try to construct absolute path to current folder */
         String subfolderPath = "";
-        final String[] subfolderParts = br.getRegex("class=\"btn btn-white mid-item\">([^<>\"]+)<").getColumn(0);
-        for (final String subfolderPart : subfolderParts) {
-            if (subfolderPath.length() > 0) {
-                subfolderPath += "/";
+        final String[] subfolderParts = br.getRegex("<a href=\"[^\"]+\"[^>]*class=\"btn btn-white[^\"]*\">([^<>]+)<").getColumn(0);
+        if (subfolderParts.length > 0) {
+            for (String subfolderPart : subfolderParts) {
+                if (subfolderPath.length() > 0) {
+                    subfolderPath += "/";
+                }
+                if (Encoding.isHtmlEntityCoded(subfolderPart)) {
+                    subfolderPart = Encoding.htmlDecode(subfolderPart);
+                }
+                subfolderPath += subfolderPart;
             }
-            subfolderPath += subfolderPart;
+        } else {
+            /* We'll allow this to happen but it should never happen not even if we're in the root folder! */
+            logger.warning("Failed to find absolute folder path");
         }
         do {
             logger.info("Crawling page: " + page);
-            final String[] fileHTMLSnippets = br.getRegex("<div[^>]*(dttitle.*?)</span></div>").getColumn(0);
+            /* 2021-04-30: "</div></div>" when loggedin */
+            final String[] fileHTMLSnippets = br.getRegex("<div[^>]*(dttitle.*?)(?:</span></div>|</div></div>)").getColumn(0);
             if (fileHTMLSnippets.length > 0) {
                 for (final String html : fileHTMLSnippets) {
                     final String url = new Regex(html, "dtfullurl\\s*=\\s*\"(https?[^\"]+)\"").getMatch(0);
