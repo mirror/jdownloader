@@ -3,7 +3,6 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -105,6 +104,17 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     @Override
+    public boolean enoughTrafficFor(DownloadLink downloadLink, Account account) throws Exception {
+        final String directlinkproperty = getDirectLinkProperty(account);
+        final String dllink = downloadLink.getStringProperty(directlinkproperty, null);
+        if (StringUtils.isNotEmpty(dllink)) {
+            return true;
+        } else {
+            return super.enoughTrafficFor(downloadLink, account);
+        }
+    }
+
+    @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = this.getFUID(link);
         if (fid != null) {
@@ -173,13 +183,31 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
+    protected String getDirectLinkProperty(final Account account) {
+        if (account == null) {
+            return "freelink1";
+        } else {
+            switch (account.getType()) {
+            case FREE:
+                return "freelink2";
+            case PREMIUM:
+            default:
+                return "premlink";
+            }
+        }
+    }
+
     /** Returns stored final downloadurl via given property and resets property if reset == true. */
     protected final String getDirectLinkAndReset(final DownloadLink link, final boolean reset) {
         final String dllink = link.getStringProperty(directlinkproperty, null);
         if (reset) {
             link.removeProperty(directlinkproperty);
         }
-        return dllink;
+        if (StringUtils.isEmpty(dllink)) {
+            return null;
+        } else {
+            return dllink;
+        }
     }
 
     /**
@@ -346,7 +374,7 @@ public abstract class K2SApi extends PluginForHost {
      * @param account
      */
     protected void setConstants(final Account account) {
-        /* Override this */
+        directlinkproperty = getDirectLinkProperty(account);
     }
 
     protected String getLinkIDDomain() {
@@ -500,8 +528,7 @@ public abstract class K2SApi extends PluginForHost {
         return ai;
     }
 
-    protected void setAccountLimits(final Account account) {
-    }
+    abstract protected void setAccountLimits(final Account account);
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
@@ -1145,10 +1172,15 @@ public abstract class K2SApi extends PluginForHost {
             // getInputStream/getErrorStream call connect!
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Connection is not connected!");
         }
+        final byte[] responseBytes;
         final InputStream is = getInputStream(con, ibr);
-        request.setReadLimit(ibr.getLoadLimit());
-        final byte[] responseBytes = Request.read(con, request.getReadLimit());
-        request.setResponseBytes(responseBytes);
+        try {
+            request.setReadLimit(ibr.getLoadLimit());
+            responseBytes = Request.read(con, request.getReadLimit());
+            request.setResponseBytes(responseBytes);
+        } finally {
+            is.close();
+        }
         LogInterface log = ibr.getLogger();
         if (log == null) {
             log = logger;
@@ -1756,20 +1788,7 @@ public abstract class K2SApi extends PluginForHost {
         } else if (!link.isAvailable()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        return getAvailableStatus(link);
-    }
-
-    private AvailableStatus getAvailableStatus(DownloadLink link) {
-        try {
-            final Field field = link.getClass().getDeclaredField("availableStatus");
-            field.setAccessible(true);
-            Object ret = field.get(link);
-            if (ret != null && ret instanceof AvailableStatus) {
-                return (AvailableStatus) ret;
-            }
-        } catch (final Throwable e) {
-        }
-        return AvailableStatus.UNCHECKED;
+        return link.getAvailableStatus();
     }
 
     /**
@@ -1781,11 +1800,7 @@ public abstract class K2SApi extends PluginForHost {
      * @author raztoki
      */
     public boolean inValidate(final String s) {
-        if (s == null || s.matches("\\s+") || s.equals("")) {
-            return true;
-        } else {
-            return false;
-        }
+        return StringUtils.isEmpty(s);
     }
 
     private String getLanguage() {

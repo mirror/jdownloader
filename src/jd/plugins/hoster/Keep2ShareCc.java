@@ -80,19 +80,18 @@ public class Keep2ShareCc extends K2SApi {
      */
     @Override
     protected void setConstants(final Account account) {
+        super.setConstants(account);
         if (account != null) {
             if (account.getType() == AccountType.FREE) {
                 // free account
                 chunks = 1;
                 resumes = true;
                 isFree = true;
-                directlinkproperty = "freelink2";
             } else {
                 // premium account
                 chunks = -10;
                 resumes = true;
                 isFree = false;
-                directlinkproperty = "premlink";
             }
             logger.finer("setConstants = " + account.getUser() + " @ Account Download :: isFree = " + isFree + ", upperChunks = " + chunks + ", Resumes = " + resumes);
         } else {
@@ -100,18 +99,23 @@ public class Keep2ShareCc extends K2SApi {
             chunks = 1;
             resumes = true;
             isFree = true;
-            directlinkproperty = "freelink1";
             logger.finer("setConstants = Guest Download :: isFree = " + isFree + ", upperChunks = " + chunks + ", Resumes = " + resumes);
         }
     }
 
     @Override
     protected void setAccountLimits(Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
-            maxPrem.set(1);
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
-            maxPrem.set(20);
+        final int max;
+        switch (account.getType()) {
+        case PREMIUM:
+            max = 20;
+            break;
+        default:
+            max = 1;
+            break;
         }
+        maxPrem.set(max);
+        account.setMaxSimultanDownloads(max);
     }
 
     @Override
