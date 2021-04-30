@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -73,46 +75,77 @@ public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final FilePackage fp = FilePackage.getInstance();
+        /* Set full path as packagename so users can easily see that for every package. */
         fp.setName(path);
-        /* Entries sometimes contain the create-date, sometimes only the filesize (for folders, only "-"). */
-        final String[][] filesAndFolders = br.getRegex("<a href=\"([^\"]+)\">([^>]+)</a>(?: *\\d{1,2}-[A-Za-z]{3,5}-\\d{4} \\d{1,2}:\\d{1,2})?[ ]+(\\d+|-)").getMatches();
-        if (filesAndFolders.length == 0) {
-            /* TODO: Maybe add dummy DownloadLink in this case */
-            logger.info("Empty directory?");
-        }
-        for (final String[] finfo : filesAndFolders) {
-            final String url = this.br.getURL(finfo[0]).toString();
-            final String filesizeStr = finfo[2];
-            /* Is it a file or a folder? */
-            if (filesizeStr.equals("-")) {
-                /* Folder */
-                final DownloadLink dlfolder = this.createDownloadlink(url);
-                decryptedLinks.add(dlfolder);
-            } else {
-                /* File */
-                final DownloadLink dlfile = this.createDownloadlink(url);
-                /* Obtain filename from URL as displayed name may be truncated. */
-                // String name = finfo[1];
-                // if (Encoding.isUrlCoded(name)) {
-                // name = Encoding.htmlDecode(name);
-                // }
-                String name = url.substring(url.lastIndexOf("/") + 1);
-                if (Encoding.isUrlCoded(name)) {
-                    name = Encoding.htmlDecode(name);
+        /* nginx (default?): Entries sometimes contain the create-date, sometimes only the filesize (for folders, only "-"). */
+        String[][] filesAndFolders = br.getRegex("<a href=\"([^\"]+)\">([^>]+)</a>(?: *\\d{1,2}-[A-Za-z]{3}-\\d{4} \\d{1,2}:\\d{1,2})?[ ]+(\\d+|-)").getMatches();
+        if (filesAndFolders.length > 0) {
+            /* nginx */
+            for (final String[] finfo : filesAndFolders) {
+                final String url = this.br.getURL(finfo[0]).toString();
+                final String filesizeStr = finfo[2];
+                /* Is it a file or a folder? */
+                if (filesizeStr.equals("-")) {
+                    /* Folder */
+                    final DownloadLink dlfolder = this.createDownloadlink(url);
+                    decryptedLinks.add(dlfolder);
+                } else {
+                    /* File */
+                    final DownloadLink dlfile = new DownloadLink(null, null, "DirectHTTP", "directhttp://" + url, true);
+                    /* Obtain filename from URL as displayed name may be truncated. */
+                    String name = url.substring(url.lastIndexOf("/") + 1);
+                    if (Encoding.isUrlCoded(name)) {
+                        name = Encoding.htmlDecode(name);
+                    }
+                    dlfile.setName(name);
+                    dlfile.setVerifiedFileSize(Long.parseLong(filesizeStr));
+                    dlfile.setAvailable(true);
+                    dlfile.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
+                    dlfile._setFilePackage(fp);
+                    decryptedLinks.add(dlfile);
                 }
-                dlfile.setName(name);
-                dlfile.setVerifiedFileSize(Long.parseLong(filesizeStr));
-                dlfile.setAvailable(true);
-                dlfile.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
-                dlfile._setFilePackage(fp);
-                decryptedLinks.add(dlfile);
+            }
+        } else {
+            /* Apache default http dir index */
+            filesAndFolders = br.getRegex("<a href=\"([^\"]+)\">[^<]*</a>\\s*</td><td align=\"right\">\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}\\s*</td><td align=\"right\">[ ]*(\\d+(\\.\\d)?[A-Z]?|-)[ ]*</td>").getMatches();
+            if (filesAndFolders.length == 0) {
+                decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER " + path, "EMPTY_FOLDER " + path));
+                return decryptedLinks;
+            }
+            for (final String[] finfo : filesAndFolders) {
+                final String url = this.br.getURL(finfo[0]).toString();
+                final String filesizeStr = finfo[1];
+                /* Is it a file or a folder? */
+                if (filesizeStr.equals("-")) {
+                    /* Folder */
+                    final DownloadLink dlfolder = this.createDownloadlink(url);
+                    decryptedLinks.add(dlfolder);
+                } else {
+                    /* File */
+                    final DownloadLink dlfile = new DownloadLink(null, null, "DirectHTTP", "directhttp://" + url, true);
+                    /* Obtain filename from URL as displayed name may be truncated. */
+                    String name = url.substring(url.lastIndexOf("/") + 1);
+                    if (Encoding.isUrlCoded(name)) {
+                        name = Encoding.htmlDecode(name);
+                    }
+                    dlfile.setName(name);
+                    if (filesizeStr.matches("\\d+")) {
+                        dlfile.setVerifiedFileSize(Long.parseLong(filesizeStr));
+                    } else {
+                        dlfile.setDownloadSize(SizeFormatter.getSize(filesizeStr + "B"));
+                    }
+                    dlfile.setAvailable(true);
+                    dlfile.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
+                    dlfile._setFilePackage(fp);
+                    decryptedLinks.add(dlfile);
+                }
             }
         }
         return decryptedLinks;
     }
 
     protected String getCurrentDirectoryPath(final Browser br) {
-        String path = br.getRegex("<(?:title|h1)>Index of (/[^<]+)</(?:title|h1)>").getMatch(0);
+        String path = br.getRegex("(?i)<(?:title|h1)>Index of (/[^<]+)</(?:title|h1)>").getMatch(0);
         if (path == null) {
             return null;
         } else {

@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -25,8 +27,6 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-
-import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "high-way.me" }, urls = { "https?://(?:torrentarchiv|torrent)\\.high-way\\.me/dlt/[a-z0-9]+(?:/$|/.+)" })
 public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
@@ -38,8 +38,8 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
         final ArrayList<DownloadLink> crawledItems = super.decryptIt(param, progress);
         if (param.getCryptedUrl().matches("^https?://(?:torrentarchiv|torrent)\\.high-way\\.me/dlt/[a-z0-9]+/$")) {
             /*
-             * Root of the torrent -> Can sometimes contain a .zip file which contains all items again -> Filter that to avoid downloading
-             * everything twice!
+             * Root of the torrent -> Can sometimes contain one single .zip file which contains all items again -> Filter that to avoid
+             * downloading everything twice!
              */
             final List<DownloadLink> remove = new ArrayList<DownloadLink>();
             for (final DownloadLink link : crawledItems) {
