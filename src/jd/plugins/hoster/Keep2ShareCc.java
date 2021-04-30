@@ -16,7 +16,6 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -135,13 +134,6 @@ public class Keep2ShareCc extends K2SApi {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
         super.resetLink(link);
-    }
-
-    /**
-     * because stable is lame!
-     */
-    public void setBrowser(final Browser ibr) {
-        this.br = ibr;
     }
 
     @Override
