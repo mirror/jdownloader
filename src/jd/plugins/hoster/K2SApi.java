@@ -289,7 +289,17 @@ public abstract class K2SApi extends PluginForHost {
             Browser.setBurstRequestIntervalLimitGlobal(getInternalAPIDomain(), true, 3000, 20, 60000);
             Browser.setRequestIntervalLimitGlobal(getInternalAPIDomain(), 2000);
         } catch (final Throwable t) {
-            t.printStackTrace();
+            logger.log(t);
+        }
+        final String[] siteSupportedNames = siteSupportedNames();
+        if (siteSupportedNames != null) {
+            for (String siteSupportedName : siteSupportedNames) {
+                try {
+                    Browser.setRequestIntervalLimitGlobal(siteSupportedName, 2000);
+                } catch (final Throwable t) {
+                    logger.log(t);
+                }
+            }
         }
         /*
          * 2020-05-05: Set user defined value as some hosts may allow more than 1 simultaneous download according to user:

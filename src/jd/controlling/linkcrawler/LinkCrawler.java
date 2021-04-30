@@ -2659,8 +2659,8 @@ public class LinkCrawler {
                             lct.setDebug(true);
                         }
                         wplg.setBrowser(new Browser());
-                        wplg.init();
                         wplg.setLogger(logger);
+                        wplg.init();
                         String url = possibleCryptedLink.getURL();
                         FilePackage sourcePackage = null;
                         if (possibleCryptedLink.getDownloadLink() != null) {
