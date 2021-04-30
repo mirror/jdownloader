@@ -111,8 +111,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
      * Sets crawled file items as online right away. 2021-04-27: Enabled this for public testing purposes. Not sure if items inside a folder
      * are necessarily online but it would make sense!
      */
-    private boolean fastLinkcheck      = true;
-    int             totalNumberofFiles = -1;
+    int totalNumberofFiles = -1;
 
     /**
      * @author raztoki
@@ -312,13 +311,13 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                 String url_filename = new Regex(link, "[a-z0-9]{12}/(.+)\\.html$").getMatch(0);
                 /* E.g. up-4.net */
                 String html_filename = null;
-                String html_filesize = null;
+                String filesizeStr = null;
                 if (html_snippet != null) {
                     html_filename = new Regex(html_snippet, "target=\"_blank\">\\s*([^<>\"]+)\\s*</(a|td)>").getMatch(0);
-                    html_filesize = new Regex(html_snippet, "([\\d\\.]+ (?:KB|MB|GB))").getMatch(0);
-                    if (html_filesize == null) {
+                    filesizeStr = new Regex(html_snippet, "([\\d\\.]+ (?:KB|MB|GB))").getMatch(0);
+                    if (filesizeStr == null) {
                         /* Only look for unit "bytes" as a fallback! */
-                        html_filesize = new Regex(html_snippet, "([\\d\\.]+ B)").getMatch(0);
+                        filesizeStr = new Regex(html_snippet, "([\\d\\.]+ B)").getMatch(0);
                     }
                 }
                 String filename;
@@ -337,16 +336,10 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                     }
                     dl.setName(filename);
                 }
-                /*
-                 * TODO: Maybe set all URLs as offline for which filename + filesize are given. Not sure whether a folder can only contain
-                 * available files / whether dead files get removed from folders automatically ...
-                 */
-                if (!StringUtils.isEmpty(html_filesize)) {
-                    dl.setDownloadSize(SizeFormatter.getSize(html_filesize));
+                if (!StringUtils.isEmpty(filesizeStr)) {
+                    dl.setDownloadSize(SizeFormatter.getSize(filesizeStr));
                 }
-                if (fastLinkcheck) {
-                    dl.setAvailable(true);
-                }
+                dl.setAvailable(true);
                 if (fp != null) {
                     dl._setFilePackage(fp);
                 }
@@ -358,7 +351,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                 }
             }
         }
-        // these should only be shown when its a /user/ decrypt task
+        /* These should only be shown when its a /user/ decrypt task */
         final String cleanedUpAddedFolderLink = new Regex(param.getCryptedUrl(), "https?://[^/]+/(.+)").getMatch(0);
         final String folders[] = br.getRegex("folder.?\\.gif.*?<a href=\"(.+?" + Pattern.quote(br.getHost()) + "[^\"]+users/[^\"]+)").getColumn(0);
         if (folders != null && folders.length > 0) {
@@ -393,47 +386,48 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
             // }
             getPage(br, nextPageUrl);
             return true;
+        } else {
+            if (folderQuery == null) {
+                /* Pagination ? */
+                final String pagination = br.getRegex("setPagination\\('.files_paging',.*?\\);").getMatch(-1); // "files_paging" or also
+                // "#files_paging" (e.g. file.al)
+                if (pagination == null) {
+                    return false;
+                }
+                final String op = new Regex(pagination, "op:\\s*'(\\w+)'").getMatch(0);
+                /* Either userID or userName should be given here! */
+                final String usr_login = new Regex(pagination, "usr_login:\\s*'(\\w+)'").getMatch(0);
+                final String usr_id = new Regex(pagination, "usr_id:\\s*'(\\d+)'").getMatch(0);
+                final String totalNumberofFiles = new Regex(pagination, "total:\\s*'(\\d+)'").getMatch(0);
+                String fld_id = new Regex(pagination, "fld_id:\\s*'(\\w+)'").getMatch(0);
+                if ("user_public".equalsIgnoreCase(op) && fld_id == null) {
+                    /* Decrypt all files of a user --> No folder_id given/required! Example: up-4-net */
+                    fld_id = "";
+                }
+                if (op == null || (usr_login == null && usr_id == null) || fld_id == null) {
+                    return false;
+                }
+                if (totalNumberofFiles != null) {
+                    this.totalNumberofFiles = Integer.parseInt(totalNumberofFiles);
+                }
+                folderQuery = new UrlQuery();
+                folderQuery.add("op", op);
+                folderQuery.add("load", "files");
+                folderQuery.add("fld_id", fld_id);
+                if (usr_login != null) {
+                    folderQuery.add("usr_login", usr_login);
+                } else {
+                    folderQuery.add("usr_id", usr_id);
+                }
+            }
+            folderQuery.addAndReplace("page", Integer.toString(nextPage));
+            // postData = "op=" + Encoding.urlEncode(op) + "&load=files&page=%s&fld_id=" + Encoding.urlEncode(fld_id) + "&usr_login=" +
+            // Encoding.urlEncode(usr_login);
+            br.getHeaders().put("Accept", "*/*");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            postPage(br.getURL(), folderQuery.toString());
+            return true;
         }
-        if (folderQuery == null) {
-            /* Pagination ? */
-            final String pagination = br.getRegex("setPagination\\('.files_paging',.*?\\);").getMatch(-1); // "files_paging" or also
-            // "#files_paging" (e.g. file.al)
-            if (pagination == null) {
-                return false;
-            }
-            final String op = new Regex(pagination, "op:\\s*'(\\w+)'").getMatch(0);
-            /* Either userID or userName should be given here! */
-            final String usr_login = new Regex(pagination, "usr_login:\\s*'(\\w+)'").getMatch(0);
-            final String usr_id = new Regex(pagination, "usr_id:\\s*'(\\d+)'").getMatch(0);
-            final String totalNumberofFiles = new Regex(pagination, "total:\\s*'(\\d+)'").getMatch(0);
-            String fld_id = new Regex(pagination, "fld_id:\\s*'(\\w+)'").getMatch(0);
-            if ("user_public".equalsIgnoreCase(op) && fld_id == null) {
-                /* Decrypt all files of a user --> No folder_id given/required! Example: up-4-net */
-                fld_id = "";
-            }
-            if (op == null || (usr_login == null && usr_id == null) || fld_id == null) {
-                return false;
-            }
-            if (totalNumberofFiles != null) {
-                this.totalNumberofFiles = Integer.parseInt(totalNumberofFiles);
-            }
-            folderQuery = new UrlQuery();
-            folderQuery.add("op", op);
-            folderQuery.add("load", "files");
-            folderQuery.add("fld_id", fld_id);
-            if (usr_login != null) {
-                folderQuery.add("usr_login", usr_login);
-            } else {
-                folderQuery.add("usr_id", usr_id);
-            }
-        }
-        folderQuery.addAndReplace("page", Integer.toString(nextPage));
-        // postData = "op=" + Encoding.urlEncode(op) + "&load=files&page=%s&fld_id=" + Encoding.urlEncode(fld_id) + "&usr_login=" +
-        // Encoding.urlEncode(usr_login);
-        br.getHeaders().put("Accept", "*/*");
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        postPage(br.getURL(), folderQuery.toString());
-        return true;
     }
 
     /* NO OVERRIDE!! */
