@@ -133,7 +133,6 @@ public class EvoloadIo extends PluginForHost {
             try {
                 br.getPage("https://" + this.getHost() + "/v1/EvoAPI/-/file-check/" + this.getFID(link));
                 usedAPIDuringAvailablecheck = true;
-                /* 2020-12-14: E.g. offline: {"status":400,"msg":"File does not exists!"} */
                 final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 final String filename = (String) entries.get("original_name");
                 final long size = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
@@ -154,8 +153,11 @@ public class EvoloadIo extends PluginForHost {
                         link.setDownloadSize(size);
                     }
                 }
-                final String status = (String) entries.get("status");
-                if (StringUtils.equalsIgnoreCase("Online", status)) {
+                final String status = StringUtils.valueOfOrNull(entries.get("status"));
+                if ("400".equals(status.toString())) {
+                    /* 2020-12-14: E.g. offline: {"status":400,"msg":"File does not exists!"} */
+                    return AvailableStatus.FALSE;
+                } else if (StringUtils.equalsIgnoreCase("Online", status)) {
                     return AvailableStatus.TRUE;
                 } else {
                     /* 2021-02-22: E.g. status "Expired". Sometimes even the delete reason is given e.g.: "reason":"Expired" */
