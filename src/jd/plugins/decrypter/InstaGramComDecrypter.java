@@ -514,8 +514,12 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             decryptedLinksCurrentSize = decryptedLinks.size();
             page++;
         } while (!this.isAbort() && nextid != null && decryptedLinksCurrentSize > decryptedLinksLastSize && decryptedLinksCurrentSize < itemCount);
-        if (decryptedLinks.size() == 0) {
-            logger.warning("WTF found no content at all");
+        if (!isAbort()) {
+            if (decryptedLinks.size() == 0) {
+                logger.warning("WTF found no content at all");
+            } else {
+                logger.info("nextid:" + nextid + "|decryptedLinksCurrentSize:" + decryptedLinksCurrentSize + "|decryptedLinksLastSize:" + decryptedLinksLastSize + "|itemCount:" + itemCount);
+            }
         }
     }
 
