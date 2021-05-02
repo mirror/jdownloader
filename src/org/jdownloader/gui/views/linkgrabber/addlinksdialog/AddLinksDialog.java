@@ -4,6 +4,9 @@ import java.awt.Component;
 import java.awt.Dialog.ModalityType;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.awt.event.WindowEvent;
@@ -22,15 +25,18 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPopupMenu;
 import javax.swing.JRootPane;
 import javax.swing.JScrollPane;
+import javax.swing.JSpinner.DefaultEditor;
 import javax.swing.ListCellRenderer;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.text.JTextComponent;
 
 import jd.controlling.ClipboardMonitoring;
 import jd.controlling.ClipboardMonitoring.ClipboardContent;
@@ -490,7 +496,20 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         // extractToggle.setBorderPainted(false);
         extractToggle.setToolTipText(_GUI.T.AddLinksDialog_layoutDialogContent_autoextract_tooltip());
         firstSeason = new ExtSpinner(new SpinnerNumberModel(0, 0, Integer.MAX_VALUE, 1));
+        FocusListener selectOnFocus = new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                // requires invoke later!
+                SwingUtilities.invokeLater(() -> ((JTextComponent) e.getSource()).selectAll());
+            }
+        };
+        if (firstSeason.getEditor() instanceof DefaultEditor) {
+            ((DefaultEditor) firstSeason.getEditor()).getTextField().addFocusListener(selectOnFocus);
+        }
         firstEpisode = new ExtSpinner(new SpinnerNumberModel(0, 0, Integer.MAX_VALUE, 1));
+        if (firstEpisode.getEditor() instanceof DefaultEditor) {
+            ((DefaultEditor) firstEpisode.getEditor()).getTextField().addFocusListener(selectOnFocus);
+        }
         int height = Math.max(24, (int) (comment.getPreferredSize().height * 0.9));
         MigPanel p = new MigPanel("ins 0 0 3 0,wrap 3", "[][grow,fill][]", "[fill,grow][grow," + height + "!][grow," + height + "!][grow," + height + "!][grow," + height + "!]");
         p.add(new JLabel(new AbstractIcon(IconKey.ICON_LINKGRABBER, 32)), "aligny top,height 32!,width 32!");
