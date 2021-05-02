@@ -45,6 +45,8 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     private volatile BrokenCrawlerHandler      brokenCrawlerHandler = null;
     private volatile boolean                   autoConfirmEnabled   = false;
     private volatile UniqueAlltimeID           uniqueID             = null;
+    private volatile int                       firstSeason          = 0;
+    private volatile int                       firstEpisode         = 0;
     private LinkOriginDetails                  origin;
 
     public boolean isAutoConfirmEnabled() {
@@ -89,6 +91,22 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
     public void setUnknownHandler(UnknownCrawledLinkHandler unknownHandler) {
         this.unknownHandler = unknownHandler;
+    }
+
+    public int getFirstSeason() {
+        return firstSeason;
+    }
+
+    public void setFirstSeason(int firstSeason) {
+        this.firstSeason = firstSeason;
+    }
+
+    public int getFirstEpisode() {
+        return firstEpisode;
+    }
+
+    public void setFirstEpisode(int firstEpisode) {
+        this.firstEpisode = firstEpisode;
     }
 
     private volatile LinkCollectingJob         sourceJob          = null;

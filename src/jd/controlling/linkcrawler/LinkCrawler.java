@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
 import jd.controlling.linkcollector.LinknameCleaner;
 import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
@@ -796,6 +797,8 @@ public class LinkCrawler {
                             if (crawledLink.getSourceLink() == null) {
                                 crawledLink.setSourceLink(baseLink);
                             }
+                            LinkCollector.applyJobCrawledLinkModifier(crawledLink, true, logger);
+                            LinkCollector.applyJobCrawledLinkModifier(crawledLink, false, logger);
                             final ArrayList<CrawledLink> crawledLinks = new ArrayList<CrawledLink>(1);
                             crawledLinks.add(crawledLink);
                             crawl(generation, crawledLinks);
@@ -2560,7 +2563,6 @@ public class LinkCrawler {
                     if (!(cryptedLink.getSource() instanceof String)) {
                         cryptedLink.setCryptedUrl(match);
                     }
-                    cryptedLink.setSourceLink(source.getSourceLink());
                     if (source.getMatchingRule() != null) {
                         link.setMatchingRule(source.getMatchingRule());
                     }

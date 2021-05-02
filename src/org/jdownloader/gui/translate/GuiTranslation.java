@@ -1903,6 +1903,12 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Auto Extract" })
     String AddLinksDialog_layoutDialogContent_autoextract_lbl();
 
+    @Default(lngs = { "en" }, values = { "First Season:" })
+    String AddLinksDialog_layoutDialogContent_firstseason_lbl();
+
+    @Default(lngs = { "en" }, values = { "First Episode:" })
+    String AddLinksDialog_layoutDialogContent_firstepisode_lbl();
+
     @Default(lngs = { "en" }, values = { "Subfolder by Package" })
     String SetDownloadFolderInDownloadTableAction_modifiyNamePanel_package_();
 

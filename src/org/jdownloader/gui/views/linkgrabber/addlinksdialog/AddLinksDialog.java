@@ -28,6 +28,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JRootPane;
 import javax.swing.JScrollPane;
 import javax.swing.ListCellRenderer;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
@@ -58,6 +59,7 @@ import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.ExtMergedIcon;
+import org.appwork.swing.components.ExtSpinner;
 import org.appwork.swing.components.ExtTextArea;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.pathchooser.PathChooser;
@@ -101,6 +103,8 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     private LinkgrabberSettings                 config;
     private ExtTextField                        password;
     private ExtCheckBox                         extractToggle;
+    private ExtSpinner                          firstSeason;
+    private ExtSpinner                          firstEpisode;
     private EnableDisableUnchanged              autoStart = EnableDisableUnchanged.UNCHANGED;
 
     /**
@@ -348,6 +352,13 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                 }
             });
         }
+        final int firstSeason = this.firstSeason.getIntValue();
+        final int firstEpisode = this.firstEpisode.getIntValue();
+        modifiers.add(link -> {
+            link.setFirstSeason(firstSeason);
+            link.setFirstEpisode(firstEpisode);
+            return true;
+        });
         if (modifiers.size() > 0) {
             if (overwritePackagizerRules) {
                 job.addPrePackagizerModifier(new CrawledLinkModifiers(requiredPreModifiers));
@@ -478,6 +489,8 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         extractToggle.setSelected(config.isAutoExtractionEnabled());
         // extractToggle.setBorderPainted(false);
         extractToggle.setToolTipText(_GUI.T.AddLinksDialog_layoutDialogContent_autoextract_tooltip());
+        firstSeason = new ExtSpinner(new SpinnerNumberModel(0, 0, Integer.MAX_VALUE, 1));
+        firstEpisode = new ExtSpinner(new SpinnerNumberModel(0, 0, Integer.MAX_VALUE, 1));
         int height = Math.max(24, (int) (comment.getPreferredSize().height * 0.9));
         MigPanel p = new MigPanel("ins 0 0 3 0,wrap 3", "[][grow,fill][]", "[fill,grow][grow," + height + "!][grow," + height + "!][grow," + height + "!][grow," + height + "!]");
         p.add(new JLabel(new AbstractIcon(IconKey.ICON_LINKGRABBER, 32)), "aligny top,height 32!,width 32!");
@@ -497,6 +510,15 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         subpanel.add(lbl = new JLabel(_GUI.T.AddLinksDialog_layoutDialogContent_autoextract_lbl()));
         lbl.setHorizontalAlignment(SwingConstants.RIGHT);
         subpanel.add(extractToggle, "aligny center");
+        p.add(createIconLabel(new ExtMergedIcon(new AbstractIcon(IconKey.ICON_FILTER, 24)), null), "aligny center,height " + height + "!,width 32!");
+        subpanel = new MigPanel("ins 0", "[fill][]", "[" + height + "!,grow]");
+        p.add(subpanel, "spanx,height " + height + "!");
+        subpanel.add(lbl = new JLabel(_GUI.T.AddLinksDialog_layoutDialogContent_firstseason_lbl()));
+        lbl.setHorizontalAlignment(SwingConstants.RIGHT);
+        subpanel.add(firstSeason, "aligny center");
+        subpanel.add(lbl = new JLabel(_GUI.T.AddLinksDialog_layoutDialogContent_firstepisode_lbl()));
+        lbl.setHorizontalAlignment(SwingConstants.RIGHT);
+        subpanel.add(firstEpisode, "aligny center");
         p.add(createIconLabel(new BadgeIcon(IconKey.ICON_PASSWORD, IconKey.ICON_DOWNLOAD, 24), _GUI.T.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,width 32!");
         p.add(downloadPassword);
         p.add(priority, "sg right");
