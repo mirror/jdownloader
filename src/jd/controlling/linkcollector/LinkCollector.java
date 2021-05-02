@@ -94,6 +94,7 @@ import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.io.J7FileList;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -1548,13 +1549,13 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         if (info != null && info.isAborted()) {
                             clearCrawledLinkReferences(link);
                         } else {
-                            applyJobCrawledLinkModifier(link, true);
+                            applyJobCrawledLinkModifier(link, true, logger);
                             final PackagizerInterface pc = PackagizerController.getInstance();
                             if (pc != null) {
                                 /* run packagizer on un-checked link */
                                 pc.runByUrl(link);
                             }
-                            applyJobCrawledLinkModifier(link, false);
+                            applyJobCrawledLinkModifier(link, false, logger);
                             dequeu();
                             addCrawledLink(link);
                         }
@@ -1576,13 +1577,13 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             QUEUE.add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.LOW) {
                 @Override
                 protected Void run() throws RuntimeException {
-                    applyJobCrawledLinkModifier(link, true);
+                    applyJobCrawledLinkModifier(link, true, logger);
                     final PackagizerInterface pc = PackagizerController.getInstance();
                     if (pc != null) {
                         /* run packagizer on checked link */
                         pc.runByFile(link);
                     }
-                    applyJobCrawledLinkModifier(link, false);
+                    applyJobCrawledLinkModifier(link, false, logger);
                     addCrawledLink(link);
                     return null;
                 }
@@ -1590,7 +1591,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
     }
 
-    private void applyJobCrawledLinkModifier(final CrawledLink link, final boolean prePackagizer) {
+    public static void applyJobCrawledLinkModifier(final CrawledLink link, final boolean prePackagizer, final LogSource logger) {
         if (link != null) {
             final LinkCollectingJob job = link.getSourceJob();
             if (job != null) {

@@ -25,6 +25,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
@@ -70,13 +71,27 @@ public class KinoxTo extends antiDDoSForDecrypt {
             }
             /* Crawl all Seasons | Episodes | Mirrors of a Series */
             final String[][] season_info_all = br2.getRegex("value=\"\\d+\" rel=\"([0-9,]+)\"[^>]*?>Staffel (\\d+)</option>").getMatches();
+            int firstSeason = 0;
+            int firstEpisode = 0;
+            if (param.getSource() instanceof CrawledLink) {
+                CrawledLink crawledLink = (CrawledLink) param.getSource();
+                firstSeason = crawledLink.getFirstSeason();
+                firstEpisode = crawledLink.getFirstEpisode();
+            }
             for (final String[] season : season_info_all) {
                 final String season_number = season[1];
+                int season_number_int = Integer.parseInt(season_number);
+                if (season_number_int < firstSeason) {
+                    continue;
+                }
                 final String[] season_episodes = season[0].split(",");
                 for (final String episode : season_episodes) {
                     if (this.isAbort()) {
                         getLogger().info("Decryption aborted by user");
                         return decryptedLinks;
+                    }
+                    if ((season_number_int == firstSeason) && (Integer.parseInt(episode) < firstEpisode)) {
+                        continue;
                     }
                     /* Crawl Season --> Find episodes */
                     br2 = br.cloneBrowser();
