@@ -31,21 +31,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jd.controlling.downloadcontroller.IfFileExistsDialogInterface;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import net.sf.sevenzipjbinding.ArchiveFormat;
-import net.sf.sevenzipjbinding.ExtractOperationResult;
-import net.sf.sevenzipjbinding.IArchiveExtractCallback;
-import net.sf.sevenzipjbinding.IArchiveOpenCallback;
-import net.sf.sevenzipjbinding.IInStream;
-import net.sf.sevenzipjbinding.PropID;
-import net.sf.sevenzipjbinding.SevenZip;
-import net.sf.sevenzipjbinding.SevenZipException;
-import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
-import net.sf.sevenzipjbinding.simple.ISimpleInArchive;
-import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
-
 import org.appwork.utils.Application;
 import org.appwork.utils.BinaryLogic;
 import org.appwork.utils.DebugMode;
@@ -83,6 +68,21 @@ import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.extraction.gui.iffileexistsdialog.IfFileExistsDialog;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.updatev2.UpdateController;
+
+import jd.controlling.downloadcontroller.IfFileExistsDialogInterface;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import net.sf.sevenzipjbinding.ArchiveFormat;
+import net.sf.sevenzipjbinding.ExtractOperationResult;
+import net.sf.sevenzipjbinding.IArchiveExtractCallback;
+import net.sf.sevenzipjbinding.IArchiveOpenCallback;
+import net.sf.sevenzipjbinding.IInStream;
+import net.sf.sevenzipjbinding.PropID;
+import net.sf.sevenzipjbinding.SevenZip;
+import net.sf.sevenzipjbinding.SevenZipException;
+import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
+import net.sf.sevenzipjbinding.simple.ISimpleInArchive;
+import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 
 public class Multi extends IExtraction {
     private volatile int               crack = 0;
@@ -328,6 +328,7 @@ public class Multi extends IExtraction {
                 }
                 break;
             case LINUX:
+                removeLibIDs(libIDs, "Linux-");
                 switch (arch) {
                 case ARM:
                     if (is64BitJvm) {
@@ -371,15 +372,11 @@ public class Multi extends IExtraction {
                             libIDs.add("Linux-amd64-musl");
                         }
                         libIDs.add("Linux-amd64");
-                        libIDs.remove("Linux-i386");
-                        libIDs.remove("Linux-i386-musl");
                     } else {
                         if (LibCDetector.isMuslSupported()) {
                             libIDs.add("Linux-i386-musl");
                         }
                         libIDs.add("Linux-i386");
-                        libIDs.remove("Linux-amd64");
-                        libIDs.remove("Linux-amd64-musl");
                     }
                     break;
                 case PPC:
@@ -390,8 +387,8 @@ public class Multi extends IExtraction {
                 }
                 break;
             case MAC:
+                removeLibIDs(libIDs, "Mac-");
                 if (is64BitJvm) {
-                    libIDs.remove("Mac-i386");
                     if (CrossSystem.ARCHFamily.ARM.equals(arch)) {
                         // AppleSilicon, M1, arm64
                         libIDs.add("Mac-arm64");
@@ -400,23 +397,36 @@ public class Multi extends IExtraction {
                         libIDs.add("Mac-x86_64");
                     }
                 } else {
-                    libIDs.remove("Mac-x86_64");
                     libIDs.add("Mac-i386");
                 }
                 break;
             case WINDOWS:
+                removeLibIDs(libIDs, "Windows-");
                 if (is64BitJvm) {
-                    libIDs.add("Windows-amd64");
-                    libIDs.remove("Windows-x86");
+                    if (CrossSystem.ARCHFamily.ARM.equals(arch)) {
+                        // Windows 10 on ARM, eg Surface X Pro
+                        libIDs.add("Windows-arm64");
+                    } else {
+                        libIDs.add("Windows-amd64");
+                    }
                 } else {
                     libIDs.add("Windows-x86");
-                    libIDs.remove("Windows-amd64");
                 }
                 break;
             default:
                 break;
             }
             return checkLibraries(extractionExtension, filter(libIDs));
+        }
+    }
+
+    private void removeLibIDs(final Set<String> set, final String prefix) {
+        final Iterator<String> it = set.iterator();
+        while (it.hasNext()) {
+            final String next = it.next();
+            if (StringUtils.startsWithCaseInsensitive(next, prefix)) {
+                it.remove();
+            }
         }
     }
 
