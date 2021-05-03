@@ -248,7 +248,8 @@ public class ArchiveOrg extends PluginForHost {
             /* 2021-05-03: Special handling for .txt files */
             return StringUtils.containsIgnoreCase(urlConnection.getContentType(), "text/plain");
         } else {
-            return false;
+            final String extension = getExtensionFromMimeType(urlConnection.getContentType());
+            return extension != null && StringUtils.endsWithCaseInsensitive(urlConnection.getURL().getPath(), "." + extension);
         }
     }
 
