@@ -23,6 +23,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -49,12 +55,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "instagrammdecrypted://[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)?" })
 public class InstaGramCom extends PluginForHost {
@@ -508,6 +508,10 @@ public class InstaGramCom extends PluginForHost {
                 if (cookies != null) {
                     logger.info("Attempting cookie login");
                     br.setCookies(MAINPAGE, cookies);
+                    if (!force) {
+                        logger.info("Trust cookies without check");
+                        return;
+                    }
                     br.getPage(MAINPAGE + "/");
                     if (!isLoggedIn()) {
                         /* Full login required */
