@@ -24,6 +24,9 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.config.PornoneComConfig;
+import org.jdownloader.plugins.components.config.PornoneComConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -108,6 +111,10 @@ public class PorndoeCom extends PluginForHost {
                     this.dllink = dllinkTmp;
                     break;
                 }
+                if (qualityStr.matches(getPreferredStreamQuality())) {
+                    this.dllink = dllinkTmp;
+                    break;
+                }
                 quality_temp = Integer.parseInt(qualityStr);
                 if (quality_temp > quality_max) {
                     quality_max = quality_temp;
@@ -178,6 +185,33 @@ public class PorndoeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getPreferredStreamQuality() {
+        final PornoneComConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
+        final PreferredStreamQuality quality = cfg.getPreferredStreamQuality();
+        switch (quality) {
+        case BEST:
+        default:
+            return "default";
+        case Q2160P:
+            return "default";
+        case Q1080P:
+            return "default";
+        case Q720P:
+            return "720";
+        case Q480P:
+            return "480";
+        case Q360P: // Not available, get next higher
+            return "480";
+        case Q240P:
+            return "240";
+        }
+    }
+
+    @Override
+    public Class<? extends PornoneComConfig> getConfigInterface() {
+        return PornoneComConfig.class;
     }
 
     @Override
