@@ -21,8 +21,6 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -35,6 +33,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kinox.to" }, urls = { "https?://(?:[w0-9]*\\.)?kino[xyzs]\\.(?:ai|af|am|click|cloud|club|digital|direct|express|fun|fyi|gratis|gs|gy|io|li|lol|me|mobi|ms|nu|pe|party|pub|sg|sh|si|space|sx|to|tube|tv|wtf)/Stream/[A-Za-z0-9\\-_]+\\.html" })
 public class KinoxTo extends antiDDoSForDecrypt {
@@ -75,8 +75,9 @@ public class KinoxTo extends antiDDoSForDecrypt {
             int firstEpisode = 0;
             if (param.getSource() instanceof CrawledLink) {
                 CrawledLink crawledLink = (CrawledLink) param.getSource();
-                firstSeason = crawledLink.getFirstSeason();
-                firstEpisode = crawledLink.getFirstEpisode();
+                // TODO: Please show dialog here!
+                // firstSeason = crawledLink.getFirstSeason();
+                // firstEpisode = crawledLink.getFirstEpisode();
             }
             for (final String[] season : season_info_all) {
                 final String season_number = season[1];

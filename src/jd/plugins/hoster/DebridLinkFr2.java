@@ -655,7 +655,14 @@ public class DebridLinkFr2 extends PluginForHost {
                 } catch (final IOException e) {
                     logger.log(e);
                 }
-                errHandling(account, link);
+                try {
+                    errHandling(account, link);
+                } catch (JSonMapperException ignore) {
+                    logger.log(ignore);
+                }
+                if (br.containsHTML("Unable to download the file on the host server")) {
+                    mhm.handleErrorGeneric(account, link, "Unable to download the file on the host server", 50, 5 * 60 * 1000l);
+                }
                 logger.warning("Unhandled download error on Service Provider side:");
                 mhm.handleErrorGeneric(account, link, "final_downloadurl_isnot_a_file", 50, 5 * 60 * 1000l);
             }

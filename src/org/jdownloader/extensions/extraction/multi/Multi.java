@@ -25,11 +25,25 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+
+import jd.controlling.downloadcontroller.IfFileExistsDialogInterface;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import net.sf.sevenzipjbinding.ArchiveFormat;
+import net.sf.sevenzipjbinding.ExtractOperationResult;
+import net.sf.sevenzipjbinding.IArchiveExtractCallback;
+import net.sf.sevenzipjbinding.IArchiveOpenCallback;
+import net.sf.sevenzipjbinding.IInStream;
+import net.sf.sevenzipjbinding.PropID;
+import net.sf.sevenzipjbinding.SevenZip;
+import net.sf.sevenzipjbinding.SevenZipException;
+import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
+import net.sf.sevenzipjbinding.simple.ISimpleInArchive;
+import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.BinaryLogic;
@@ -68,21 +82,6 @@ import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.extraction.gui.iffileexistsdialog.IfFileExistsDialog;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.updatev2.UpdateController;
-
-import jd.controlling.downloadcontroller.IfFileExistsDialogInterface;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import net.sf.sevenzipjbinding.ArchiveFormat;
-import net.sf.sevenzipjbinding.ExtractOperationResult;
-import net.sf.sevenzipjbinding.IArchiveExtractCallback;
-import net.sf.sevenzipjbinding.IArchiveOpenCallback;
-import net.sf.sevenzipjbinding.IInStream;
-import net.sf.sevenzipjbinding.PropID;
-import net.sf.sevenzipjbinding.SevenZip;
-import net.sf.sevenzipjbinding.SevenZipException;
-import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
-import net.sf.sevenzipjbinding.simple.ISimpleInArchive;
-import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 
 public class Multi extends IExtraction {
     private volatile int               crack = 0;
@@ -218,7 +217,7 @@ public class Multi extends IExtraction {
         return false;
     }
 
-    private String checkLibraries(final ExtractionExtension extractionExtension, final Set<String> libIDs) {
+    private String checkLibraries(final ExtractionExtension extractionExtension, final List<String> libIDs) {
         logger.finer("Try LibIDs: " + libIDs);
         if (libIDs.size() > 0) {
             for (final String libID : libIDs) {
@@ -236,10 +235,10 @@ public class Multi extends IExtraction {
         return null;
     }
 
-    private Set<String> filter(Set<String> values) {
-        final Set<String> ret = new LinkedHashSet<String>();
+    private List<String> filter(List<String> values) {
+        final List<String> ret = new ArrayList<String>();
+        final OperatingSystem os = CrossSystem.getOS();
         for (final String value : values) {
-            final OperatingSystem os = CrossSystem.getOS();
             switch (os.getFamily()) {
             case BSD:
                 if (!StringUtils.containsIgnoreCase(value, "BSD")) {
@@ -280,13 +279,7 @@ public class Multi extends IExtraction {
             }
             return null;
         } else {
-            final Set<String> libIDs = new LinkedHashSet<String>();
-            final String lastWorkingLibID = extractionExtension.getSettings().getLastWorkingLibID();
-            if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE && StringUtils.isNotEmpty(lastWorkingLibID)) {
-                libIDs.add(lastWorkingLibID);
-                extractionExtension.getSettings().setLastWorkingLibID(null);
-                extractionExtension.getSettings()._getStorageHandler().write();
-            }
+            final ArrayList<String> libIDs = new ArrayList<String>();
             final OperatingSystem os = CrossSystem.getOS();
             final ARCHFamily arch = CrossSystem.getARCHFamily();
             final boolean is64BitJvm = Application.is64BitJvm();
@@ -304,19 +297,15 @@ public class Multi extends IExtraction {
                     case FREEBSD:
                         if (is64BitJvm) {
                             libIDs.add("FreeBSD-amd64");
-                            libIDs.remove("FreeBSD-i386");
                         } else {
                             libIDs.add("FreeBSD-i386");
-                            libIDs.remove("FreeBSD-amd64");
                         }
                         break;
                     case NETBSD:
                         if (Application.is64BitJvm()) {
                             libIDs.add("NetBSD-amd64");
-                            libIDs.remove("NetBSD-i386");
                         } else {
                             libIDs.add("NetBSD-i386");
-                            libIDs.remove("NetBSD-amd64");
                         }
                         break;
                     default:
@@ -328,7 +317,6 @@ public class Multi extends IExtraction {
                 }
                 break;
             case LINUX:
-                removeLibIDs(libIDs, "Linux-");
                 switch (arch) {
                 case ARM:
                     if (is64BitJvm) {
@@ -387,7 +375,6 @@ public class Multi extends IExtraction {
                 }
                 break;
             case MAC:
-                removeLibIDs(libIDs, "Mac-");
                 if (is64BitJvm) {
                     if (CrossSystem.ARCHFamily.ARM.equals(arch)) {
                         // AppleSilicon, M1, arm64
@@ -401,7 +388,6 @@ public class Multi extends IExtraction {
                 }
                 break;
             case WINDOWS:
-                removeLibIDs(libIDs, "Windows-");
                 if (is64BitJvm) {
                     if (CrossSystem.ARCHFamily.ARM.equals(arch)) {
                         // Windows 10 on ARM, eg Surface X Pro
@@ -416,17 +402,16 @@ public class Multi extends IExtraction {
             default:
                 break;
             }
-            return checkLibraries(extractionExtension, filter(libIDs));
-        }
-    }
-
-    private void removeLibIDs(final Set<String> set, final String prefix) {
-        final Iterator<String> it = set.iterator();
-        while (it.hasNext()) {
-            final String next = it.next();
-            if (StringUtils.startsWithCaseInsensitive(next, prefix)) {
-                it.remove();
+            if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                final String lastWorkingLibID = extractionExtension.getSettings().getLastWorkingLibID();
+                if (StringUtils.isNotEmpty(lastWorkingLibID)) {
+                    libIDs.remove(lastWorkingLibID);
+                    libIDs.add(0, lastWorkingLibID);
+                    extractionExtension.getSettings().setLastWorkingLibID(null);
+                    extractionExtension.getSettings()._getStorageHandler().write();
+                }
             }
+            return checkLibraries(extractionExtension, filter(libIDs));
         }
     }
 
@@ -1224,25 +1209,25 @@ public class Multi extends IExtraction {
                     if (signatureString.length() >= 24) {
                         /*
                          * 0x0001 Volume attribute (archive volume)
-                         *
+                         * 
                          * 0x0002 Archive comment present RAR 3.x uses the separate comment block and does not set this flag.
-                         *
+                         * 
                          * 0x0004 Archive lock attribute
-                         *
+                         * 
                          * 0x0008 Solid attribute (solid archive)
-                         *
+                         * 
                          * 0x0010 New volume naming scheme ('volname.partN.rar')
-                         *
+                         * 
                          * 0x0020 Authenticity information present RAR 3.x does not set this flag.
-                         *
+                         * 
                          * 0x0040 Recovery record present
-                         *
+                         * 
                          * 0x0080 Block headers are encrypted
                          */
                         final String headerBitFlags1 = "" + signatureString.charAt(20) + signatureString.charAt(21);
                         /*
                          * 0x0100 FIRST Volume
-                         *
+                         * 
                          * 0x0200 EncryptedVerion
                          */
                         // final String headerBitFlags2 = "" + signatureString.charAt(22) + signatureString.charAt(23);
