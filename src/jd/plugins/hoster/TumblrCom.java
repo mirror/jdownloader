@@ -19,18 +19,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.plugins.components.config.TumblrComConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -47,10 +35,21 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.components.config.TumblrComConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https://[a-z0-9]+\\.media\\.tumblr\\.com/.+|https?://vtt\\.tumblr\\.com/tumblr_[A-Za-z0-9]+\\.mp4" })
 public class TumblrCom extends PluginForHost {
     public static final long trust_cookie_age = 300000l;
-    private String           dllink           = null;
 
     public TumblrCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -75,9 +74,10 @@ public class TumblrCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         prepareBrowserForDownload(this.br, link);
-        final URLConnectionAdapter con = this.br.openHeadConnection(link.getPluginPatternMatcher());
+        final Browser brc = br.cloneBrowser();
+        final URLConnectionAdapter con = brc.openHeadConnection(link.getPluginPatternMatcher());
         try {
-            connectionAvailablecheck(link, con);
+            connectionAvailablecheck(link, brc, con);
         } finally {
             try {
                 con.disconnect();
@@ -94,8 +94,13 @@ public class TumblrCom extends PluginForHost {
         br.setFollowRedirects(true);
     }
 
-    private void connectionAvailablecheck(final DownloadLink link, final URLConnectionAdapter con) throws PluginException {
+    private void connectionAvailablecheck(final DownloadLink link, final Browser br, final URLConnectionAdapter con) throws PluginException {
         if (!this.looksLikeDownloadableContent(con)) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
@@ -121,8 +126,8 @@ public class TumblrCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         prepareBrowserForDownload(this.br, link);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-        this.connectionAvailablecheck(link, dl.getConnection());
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 1);
+        this.connectionAvailablecheck(link, br, dl.getConnection());
         dl.startDownload();
     }
 
