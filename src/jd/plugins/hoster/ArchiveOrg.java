@@ -245,6 +245,9 @@ public class ArchiveOrg extends PluginForHost {
         if (StringUtils.containsIgnoreCase(urlConnection.getURL().getPath(), ".xml")) {
             /* 2021-02-15: Special handling for .xml files */
             return StringUtils.containsIgnoreCase(urlConnection.getContentType(), "xml");
+        } else if (StringUtils.containsIgnoreCase(urlConnection.getURL().getPath(), ".txt")) {
+            /* 2021-05-03: Special handling for .txt files */
+            return StringUtils.containsIgnoreCase(urlConnection.getContentType(), "text/plain");
         } else {
             return super.looksLikeDownloadableContent(urlConnection);
         }
