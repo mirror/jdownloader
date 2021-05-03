@@ -68,9 +68,11 @@ public class ArchiveOrg extends PluginForDecrypt {
     private final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
     final Set<String>                     dups           = new HashSet<String>();
     final String                          host_decrypted = "archivedecrypted.org";
+    private PluginForHost                 hostPlugin     = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
+        hostPlugin = getNewPluginForHostInstance(getHost());
         final String parameter = param.toString().replace("://www.", "://").replaceFirst("/(stream|embed)/", "/download/");
         /*
          * 2020-08-26: Login might sometimes be required for book downloads.
@@ -371,13 +373,7 @@ public class ArchiveOrg extends PluginForDecrypt {
 
     @Override
     protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
-        /* Sync this between hoster- and decrypter plugin! */
-        if (urlConnection.getURL().toString().contains(".xml")) {
-            /* 2021-02-15: Special handling for .xml files */
-            return urlConnection.getContentType().contains("xml");
-        } else {
-            return super.looksLikeDownloadableContent(urlConnection);
-        }
+        return ((jd.plugins.hoster.ArchiveOrg) hostPlugin).looksLikeDownloadableContent(urlConnection);
     }
 
     /* NO OVERRIDE!! */

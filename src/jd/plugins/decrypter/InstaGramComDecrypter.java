@@ -26,16 +26,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.instagram.Qdb;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -59,6 +49,16 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.InstaGramCom;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.instagram.Qdb;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?instagram\\.com/(stories/[^/]+|explore/tags/[^/]+/?|((?:p|tv|reel)/[A-Za-z0-9_-]+|(?!explore)[^/]+(/saved|/p/[A-Za-z0-9_-]+)?))" })
 public class InstaGramComDecrypter extends PluginForDecrypt {
     public InstaGramComDecrypter(PluginWrapper wrapper) {
@@ -79,10 +79,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     private FilePackage                          fp                                = null;
     private String                               parameter                         = null;
     private static LinkedHashMap<String, String> ID_TO_USERNAME                    = new LinkedHashMap<String, String>() {
-                                                                                       protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
-                                                                                           return size() > 100;
-                                                                                       };
-                                                                                   };
+        protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+            return size() > 100;
+        };
+    };
 
     /** Tries different json paths and returns the first result. */
     private Object get(Map<String, Object> entries, final String... paths) {
@@ -402,8 +402,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     }
 
     /**
-     * Crawl all media items of a user. </br>
-     * Sometimes required user to be logged in to see all/more than X items. <br>
+     * Crawl all media items of a user. </br> Sometimes required user to be logged in to see all/more than X items. <br>
      * Alternatively possible via: /api/v1/feed/user/{userID}.
      */
     private void crawlUser(final CryptedLink param, final Account account, final AtomicBoolean loggedIN) throws UnsupportedEncodingException, Exception {
@@ -472,6 +471,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 try {
                     getPageAutoLogin(account, loggedIN, "/graphql/query", param, br, "/graphql/query/?query_hash=" + qHash + "&variables=" + URLEncode.encodeURIComponent(jsonString), rhxGis, jsonString);
                 } catch (final AccountRequiredException ar) {
+                    logger.log(ar);
                     /* Instagram blocks the amount of items a user can see based on */
                     if (loggedIN.get()) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, ar);
@@ -534,8 +534,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     }
 
     /**
-     * Crawls all saved media items of the currently logged in user. </br>
-     * Obviously this will only work when logged in.
+     * Crawls all saved media items of the currently logged in user. </br> Obviously this will only work when logged in.
      */
     private void crawlUserSavedObjectsWebsite(final CryptedLink param, final Account account, final AtomicBoolean loggedIN) throws UnsupportedEncodingException, Exception {
         /* Login is mandatory! */
@@ -575,6 +574,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 try {
                     getPageAutoLogin(account, loggedIN, "/graphql/query", param, br, "/graphql/query/?query_hash=" + qHash + "&variables=" + URLEncode.encodeURIComponent(jsonString), rhxGis, jsonString);
                 } catch (final AccountRequiredException ar) {
+                    logger.log(ar);
                     /* Instagram blocks the amount of items a user can see based on */
                     if (loggedIN.get()) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, ar);
@@ -633,9 +633,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     }
 
     /**
-     * Crawls all items found when looking for a specified items. </br>
-     * Max. number of items which this returns can be limited by user setting. </br>
-     * Doesn't require the user to be logged in!
+     * Crawls all items found when looking for a specified items. </br> Max. number of items which this returns can be limited by user
+     * setting. </br> Doesn't require the user to be logged in!
      */
     private void crawlHashtag(final CryptedLink param, final Account account, final AtomicBoolean loggedIN) throws UnsupportedEncodingException, Exception {
         getPageAutoLogin(account, loggedIN, null, param, br, parameter, null, null);
@@ -677,6 +676,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 try {
                     getPageAutoLogin(account, loggedIN, "/graphql/query", param, br, "/graphql/query/?query_hash=" + qHash + "&variables=" + URLEncode.encodeURIComponent(jsonString), rhxGis, jsonString);
                 } catch (final AccountRequiredException ar) {
+                    logger.log(ar);
                     /* Instagram blocks the amount of items a user can see based on */
                     if (loggedIN.get()) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, ar);
