@@ -24,8 +24,8 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.config.PornoneComConfig;
-import org.jdownloader.plugins.components.config.PornoneComConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.components.config.PorndoeComConfig;
+import org.jdownloader.plugins.components.config.PorndoeComConfig.PreferredStreamQuality;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -96,6 +96,7 @@ public class PorndoeCom extends PluginForHost {
             entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "payload/video/player/sources");
             final Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
             Map<String, Object> qualityInfo = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final String preferredQualityStr = getPreferredStreamQuality();
             while (iterator.hasNext()) {
                 final Entry<String, Object> entry = iterator.next();
                 qualityInfo = (Map<String, Object>) entry.getValue();
@@ -104,20 +105,21 @@ public class PorndoeCom extends PluginForHost {
                 if (StringUtils.isEmpty(dllinkTmp) || !dllinkTmp.contains(".mp4")) {
                     /* E.g. skip ad-URLs like: "/signup?utm_campaign=porndoe&utm_medium=desktop&utm_source=player_1080p" */
                     continue;
-                }
-                if (!qualityStr.matches("\\d+")) {
+                } else if (!qualityStr.matches("\\d+")) {
                     /* This should never happen */
+                    logger.info("Found abnormal stream quality identifier: " + qualityStr);
                     this.dllink = dllinkTmp;
                     break;
-                }
-                if (qualityStr.matches(getPreferredStreamQuality())) {
+                } else if (qualityStr.matches(preferredQualityStr)) {
+                    logger.info("Found preferred quality: " + preferredQualityStr);
                     this.dllink = dllinkTmp;
                     break;
-                }
-                quality_temp = Integer.parseInt(qualityStr);
-                if (quality_temp > quality_max) {
-                    quality_max = quality_temp;
-                    this.dllink = dllinkTmp;
+                } else {
+                    quality_temp = Integer.parseInt(qualityStr);
+                    if (quality_temp > quality_max) {
+                        quality_max = quality_temp;
+                        this.dllink = dllinkTmp;
+                    }
                 }
             }
         }
@@ -193,16 +195,14 @@ public class PorndoeCom extends PluginForHost {
     }
 
     private String getPreferredStreamQuality() {
-        final PornoneComConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
+        final PorndoeComConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
         final PreferredStreamQuality quality = cfg.getPreferredStreamQuality();
         switch (quality) {
         case BEST:
         default:
             return "default";
-        case Q2160P:
-            return "default";
         case Q1080P:
-            return "default";
+            return "1080";
         case Q720P:
             return "720";
         case Q480P:
@@ -215,8 +215,8 @@ public class PorndoeCom extends PluginForHost {
     }
 
     @Override
-    public Class<? extends PornoneComConfig> getConfigInterface() {
-        return PornoneComConfig.class;
+    public Class<? extends PorndoeComConfig> getConfigInterface() {
+        return PorndoeComConfig.class;
     }
 
     @Override
