@@ -25,6 +25,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
@@ -62,6 +63,7 @@ import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Exceptions;
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
@@ -158,6 +160,41 @@ public abstract class Plugin implements ActionListener {
             ret.add(domains[0]);
         }
         return ret.toArray(new String[0]);
+    }
+
+    public String getExtensionFromMimeType(final String contentType) {
+        final String mimeType = new Regex(contentType, "(\\w+/[\\w\\-]+)").getMatch(0);
+        if (StringUtils.isEmpty(mimeType)) {
+            return null;
+        } else {
+            // developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types
+            final HashMap<String, String> map = new HashMap<String, String>();
+            map.put("application/x-7z-compressed", "7z");
+            map.put("image/gif", "gif");
+            map.put("image/jpeg", "jpg");
+            map.put("image/png", "png");
+            map.put("image/apng", "apng");
+            map.put("image/tiff", "tiff");
+            map.put("image/webp", "webp");
+            map.put("video/mp4", "mp4");
+            map.put("video/ogg", "ogg");
+            map.put("video/webm", "webm");
+            map.put("audio/mp3", "mp3");
+            map.put("audio/mp4", "mp4");
+            map.put("audio/x-flac", "flac");
+            map.put("audio/wav", "wav");
+            map.put("text/css", "css");
+            map.put("text/javascript", "js");
+            map.put("text/xml", "xml");
+            map.put("text/html", "html");
+            map.put("text/plain", "txt");
+            map.put("application/x-xz", "xz");
+            map.put("application/gzip", "gz");
+            map.put("application/json", "json");
+            map.put("application/xml", "xml");
+            map.put("application/pdf", "pdf");
+            return map.get(mimeType.toLowerCase(Locale.ENGLISH));
+        }
     }
 
     protected String[] buildSupportedNames(List<String[]> pluginDomains) {

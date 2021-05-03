@@ -1128,9 +1128,9 @@ public class VimeoCom extends PluginForHost {
                     } else {
                         vvc.setExtension();
                         if (vvc.getExtension() == null) {
-                            ext = DirectHTTP.getExtensionFromMimeType((String) info.get("type"));// api.vimeo.com
+                            ext = plugin.getExtensionFromMimeType((String) info.get("type"));// api.vimeo.com
                             if (ext == null) {
-                                ext = DirectHTTP.getExtensionFromMimeType((String) info.get("mime"));// config
+                                ext = plugin.getExtensionFromMimeType((String) info.get("mime"));// config
                             }
                             if (ext != null) {
                                 vvc.setExtension("." + ext);
@@ -1215,9 +1215,9 @@ public class VimeoCom extends PluginForHost {
                     vvc.setDownloadurl(downloadURL);
                     vvc.setExtension();
                     if (vvc.getExtension() == null) {
-                        String ext = DirectHTTP.getExtensionFromMimeType((String) item.get("type"));// api.vimeo.com
+                        String ext = plugin.getExtensionFromMimeType((String) item.get("type"));// api.vimeo.com
                         if (ext == null) {
-                            ext = DirectHTTP.getExtensionFromMimeType((String) item.get("mime"));// config
+                            ext = plugin.getExtensionFromMimeType((String) item.get("mime"));// config
                         }
                         if (ext != null) {
                             vvc.setExtension("." + ext);

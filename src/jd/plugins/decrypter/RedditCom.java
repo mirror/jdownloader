@@ -40,7 +40,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.JSonStorage;
@@ -320,7 +319,7 @@ public class RedditCom extends PluginForDecrypt {
                     final Map<String, Object> mediaInfo = (Map<String, Object>) entry.getValue();
                     /* "image/png" --> "png" */
                     String mediaType = (String) mediaInfo.get("m");
-                    String extension = DirectHTTP.getExtensionFromMimeType(mediaType);
+                    String extension = getExtensionFromMimeType(mediaType);
                     if (extension == null && mediaType.contains("/")) {
                         final String[] mediaTypeSplit = mediaType.split("/");
                         extension = mediaTypeSplit[mediaTypeSplit.length - 1];

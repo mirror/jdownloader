@@ -445,6 +445,28 @@ public class SecondLevelLaunch {
             LoggerFactory.getDefaultLogger().log(ignore);
         }
         try {
+            final HardwareTypeInterface hardwareType = HardwareType.getHardware();
+            if (HardwareTypeInterface.ID.SYNOLOGY.equals(hardwareType.getHardwareType())) {
+                final String SYNOPKG_PKGNAME = System.getenv("SYNOPKG_PKGNAME");
+                final String SYNOPKG_PKGVER = System.getenv("SYNOPKG_PKGVER");
+                if (StringUtils.isNotEmpty(SYNOPKG_PKGNAME)) {
+                    for (final String thirdPartyLogFile : new String[] { "/var/log/JDownloader.log", "/var/packages/" + SYNOPKG_PKGNAME + "/log", SYNOPKG_PKGNAME + "/log" }) {
+                        if (thirdPartyLogFile.startsWith("/")) {
+                            final File logFile = new File(thirdPartyLogFile);
+                            if (logFile.isFile()) {
+                                if (!logFile.delete()) {
+                                    logFile.deleteOnExit();
+                                }
+                                LoggerFactory.getDefaultLogger().info("Unlink 3rd party(" + SYNOPKG_PKGNAME + "|" + SYNOPKG_PKGVER + ") log:" + thirdPartyLogFile);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (final Throwable ignore) {
+            LoggerFactory.getDefaultLogger().log(ignore);
+        }
+        try {
             java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
             List<String> arguments = runtimeMxBean.getInputArguments();
             if (arguments != null) {
