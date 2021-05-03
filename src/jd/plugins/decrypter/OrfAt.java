@@ -30,10 +30,10 @@ public class OrfAt extends PluginForDecrypt {
     private static final String                  TYPE_NEW      = "https?://radiothek\\.orf\\.at/([a-z0-9]+)/(\\d+)/([a-zA-Z0-9]+)";
     /* E.g. https://radiothek.orf.at/ooe --> "ooe" --> Channel == "oe2o" */
     private static LinkedHashMap<String, String> CHANNEL_CACHE = new LinkedHashMap<String, String>() {
-        protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
-            return size() > 50;
-        };
-    };
+                                                                   protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+                                                                       return size() > 50;
+                                                                   };
+                                                               };
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
@@ -90,7 +90,7 @@ public class OrfAt extends PluginForDecrypt {
             final long startOffset = ((Number) stream.get("startOffset")).longValue();
             final long endOffset = ((Number) stream.get("endOffset")).longValue();
             final long offset = startOffset - endOffset;
-            final DownloadLink link = createDownloadlink("directhttp://http://loopstream01.apa.at/?channel=" + channel + "&shoutcast=0&player=" + domainID + "_v1&referer=" + domainID + ".orf.at&_=" + System.currentTimeMillis() + "&userid=" + userid + "&id=" + loopStreamId + "&offset=" + offset + "&offsetende=" + offsetende);
+            final DownloadLink link = createDownloadlink("directhttp://https://loopstream01.apa.at/?channel=" + channel + "&shoutcast=0&player=" + domainID + "_v1&referer=" + domainID + ".orf.at&_=" + System.currentTimeMillis() + "&userid=" + userid + "&id=" + loopStreamId + "&offset=" + offset + "&offsetende=" + offsetende);
             if (streams.size() > 1) {
                 link.setFinalFileName(title + "_" + broadCastDay + "_" + (++index) + ".mp3");
             } else {
