@@ -101,7 +101,7 @@ public class SnipboardIo extends PluginForHost {
             con = brc.openHeadConnection(dllink);
             if (con.isOK() && con.getContentType().contains("image")) {
                 if (con.getContentType().contains("/")) {
-                    ext_header = DirectHTTP.getExtensionFromMimeType(con.getContentType());
+                    ext_header = getExtensionFromMimeType(con.getContentType());
                     if (ext_header == null) {
                         ext_header = con.getContentType().split("/")[1];
                     }

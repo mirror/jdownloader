@@ -122,7 +122,7 @@ public class VideoGoogle extends PluginForHost {
                 if (link.isNameSet()) {
                     // maybe we set a filename but doesn't have extension yet!
                     fileName = link.getName();
-                    final String ext = jd.plugins.hoster.DirectHTTP.getExtensionFromMimeType(con.getContentType());
+                    final String ext = getExtensionFromMimeType(con.getContentType());
                     if (ext != null && !fileName.contains("." + ext)) {
                         fileName = fileName + "." + ext;
                         link.setName(fileName);
@@ -134,7 +134,7 @@ public class VideoGoogle extends PluginForHost {
                     fileName = HTTPConnectionUtils.getFileNameFromDispositionHeader(con.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_DISPOSITION));
                     if (fileName == null) {
                         if (id != null && itag != null) {
-                            final String ext = jd.plugins.hoster.DirectHTTP.getExtensionFromMimeType(con.getContentType());
+                            final String ext = getExtensionFromMimeType(con.getContentType());
                             fileName = "contentongoogle_" + id + "_" + itag + "." + ext;
                         } else {
                             fileName = Plugin.extractFileNameFromURL(con.getRequest().getUrl());

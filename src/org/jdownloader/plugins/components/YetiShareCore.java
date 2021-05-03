@@ -1910,12 +1910,40 @@ public class YetiShareCore extends antiDDoSForHost {
     @Override
     protected void sendRequest(Browser ibr, Request request) throws Exception {
         request = correctProtocol(ibr, request);
+        final URL before = request.getURL();
         super.sendRequest(ibr, request);
+        final URL after = ibr._getURL();
+        if (after != null) {
+            if (StringUtils.equalsIgnoreCase(Browser.getHost(before, false), Browser.getHost(after, false))) {
+                if (!StringUtils.equals(before.getProtocol(), after.getProtocol())) {
+                    logger.info("@Dev:check supports_https!before=" + before + "|after=" + after);
+                }
+                final String beforeSub = Browser.getSubdomain(before, true);
+                final String afterSub = Browser.getSubdomain(after, true);
+                if ((beforeSub == null && StringUtils.equalsIgnoreCase(afterSub, "www")) || (afterSub == null && StringUtils.equalsIgnoreCase(beforeSub, "www"))) {
+                    logger.info("@Dev:check requires_WWW!before=" + before + "|after=" + after);
+                }
+            }
+        }
     }
 
     protected Request correctProtocol(Browser br, Request request) throws IOException {
+        final String location = br.getSourceLocationForURL(request.getURL());
+        if (location != null && !location.matches("(?i)^https?://.+$")) {
+            // location was no full URI
+            return request;
+        }
+        switch (request.getRequestMethod()) {
+        case POST:
+        case PUT:
+            // redirect does not POST/PUT data again, do not alter request
+            return request;
+        default:
+            break;
+        }
         final URL url = request.getURL();
-        String urlString = url.toString();
+        final String orgUrlString = url.toString();
+        String urlString = orgUrlString;
         if (supports_https()) {
             /* Prefer https whenever possible */
             urlString = urlString.replaceFirst("^(?i)http://", "https://");
@@ -1928,7 +1956,10 @@ public class YetiShareCore extends antiDDoSForHost {
         } else if (!this.requires_WWW() && StringUtils.equalsIgnoreCase(subDomain, "www")) {
             urlString = urlString.replaceFirst("(?i)//www\\.", "//");
         }
-        request.setURL(new URL(urlString));
+        if (!StringUtils.equals(urlString, orgUrlString)) {
+            logger.info("correctProtocol:before=" + orgUrlString + "|after=" + urlString);
+            request.setURL(new URL(urlString));
+        }
         return request;
     }
 

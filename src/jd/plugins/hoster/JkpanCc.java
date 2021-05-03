@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Locale;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -33,6 +31,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jkpan.cc" }, urls = { "https?://(?:www\\.)?jkpan\\.cc/download/([A-Za-z0-9]+)" })
 public class JkpanCc extends PluginForHost {
@@ -50,6 +50,7 @@ public class JkpanCc extends PluginForHost {
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 1;
     private static final int     FREE_MAXDOWNLOADS = 1;
+
     // private static final boolean ACCOUNT_FREE_RESUME = false;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 1;
     // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 1;
@@ -58,7 +59,6 @@ public class JkpanCc extends PluginForHost {
     // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
-
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
@@ -168,7 +168,7 @@ public class JkpanCc extends PluginForHost {
          * 2021-04-08: No content-disposition header given and file-typ0e is missing in filename most of all times but Content-Type is
          * given.
          */
-        final String ext = DirectHTTP.getExtensionFromMimeType(dl.getConnection().getContentType());
+        final String ext = getExtensionFromMimeType(dl.getConnection().getContentType());
         if (ext != null && !link.getName().toLowerCase(Locale.ENGLISH).endsWith("." + ext)) {
             link.setFinalFileName(link.getName() + "." + ext);
         }

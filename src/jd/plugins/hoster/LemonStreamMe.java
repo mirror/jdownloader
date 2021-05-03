@@ -13,10 +13,7 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
-
-import org.jdownloader.plugins.components.RefreshSessionLink;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -28,11 +25,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.jdownloader.plugins.components.RefreshSessionLink;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "streaming.lemonstream.me" }, urls = { "https?://streaming\\.lemonstream\\.me(?::\\d+)?/[a-f0-9]{32,}/[^\"'\\s<>]+" })
 public class LemonStreamMe extends PluginForHost {
-
     // raztoki embed video player template.
-
     private String dllink = null;
 
     public LemonStreamMe(PluginWrapper wrapper) {
@@ -71,7 +68,7 @@ public class LemonStreamMe extends PluginForHost {
         if (downloadLink.isNameSet()) {
             // maybe we set a filename but doesn't have extension yet!
             String fileName = downloadLink.getName();
-            final String ext = jd.plugins.hoster.DirectHTTP.getExtensionFromMimeType(dl.getConnection().getContentType());
+            final String ext = getExtensionFromMimeType(dl.getConnection().getContentType());
             if (ext != null && !fileName.contains("." + ext)) {
                 fileName = fileName + "." + ext;
                 downloadLink.setFinalFileName(fileName);
