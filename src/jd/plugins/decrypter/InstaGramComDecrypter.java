@@ -79,10 +79,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     private FilePackage                          fp                                = null;
     private String                               parameter                         = null;
     private static LinkedHashMap<String, String> ID_TO_USERNAME                    = new LinkedHashMap<String, String>() {
-        protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
-            return size() > 100;
-        };
-    };
+                                                                                       protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+                                                                                           return size() > 100;
+                                                                                       };
+                                                                                   };
 
     /** Tries different json paths and returns the first result. */
     private Object get(Map<String, Object> entries, final String... paths) {
@@ -490,8 +490,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     break;
                 }
                 entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "data/user/edge_owner_to_timeline_media/edges");
-                nextid = (String) JavaScriptEngineFactory.walkJson(entries, "data/user/edge_owner_to_timeline_media/page_info/end_cursor");
+                resource_data_list = (List) get(entries, "data/user/edge_owner_to_timeline_media/edges", "data/user/edge_user_to_photos_of_you/edges");
+                nextid = (String) get(entries, "data/user/edge_owner_to_timeline_media/page_info/end_cursor", "data/user/edge_user_to_photos_of_you/page_info/end_cursor");
             }
             if (resource_data_list == null || resource_data_list.size() == 0) {
                 logger.info("Found no new links on page " + page + " --> Stopping decryption");
@@ -518,8 +518,15 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             if (decryptedLinks.size() == 0) {
                 logger.warning("WTF found no content at all");
             } else {
-                logger.info("nextid:" + nextid + "|decryptedLinksCurrentSize:" + decryptedLinksCurrentSize + "|decryptedLinksLastSize:" + decryptedLinksLastSize + "|itemCount:" + itemCount);
+                logger.info("nextid:" + nextid + "|decryptedLinksCurrentSize:" + decryptedLinksCurrentSize + "|decryptedLinksLastSize:" + decryptedLinksLastSize + "|itemCount:" + itemCount + "|page:" + page);
             }
+        }
+    }
+
+    @Override
+    public void distribute(DownloadLink... links) {
+        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            super.distribute(links);
         }
     }
 
