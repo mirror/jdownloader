@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -72,7 +73,7 @@ public class RestFileCom extends XFileSharingProBasic {
     }
 
     @Override
-    public Form findFormDownload1Free() throws Exception {
+    public Form findFormDownload1Free(final Browser br) throws Exception {
         final Form download1 = br.getFormByInputFieldKeyValue("op", "download1");
         if (download1 != null) {
             download1.remove("method_premium");

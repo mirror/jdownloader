@@ -18,6 +18,10 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -29,10 +33,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class LunaticFilesCom extends XFileSharingProBasic {
@@ -149,7 +149,7 @@ public class LunaticFilesCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected Form findFormDownload2Free() {
+    protected Form findFormDownload2Free(final Browser br) {
         Form dlForm = null;
         /* First try to find Form for video hosts with multiple qualities. */
         final Form[] forms = br.getForms();
@@ -161,11 +161,12 @@ public class LunaticFilesCom extends XFileSharingProBasic {
                 break;
             }
         }
-        if (dlForm == null) {
+        if (dlForm != null) {
+            return dlForm;
+        } else {
             /* Fallback to template handling */
-            dlForm = super.findFormDownload2Free();
+            return super.findFormDownload2Free(br);
         }
-        return dlForm;
     }
 
     @Override

@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -106,8 +107,8 @@ public class FileupupCom extends XFileSharingProBasic {
 
     /* 2019-10-28: Special */
     @Override
-    public Form findFormDownload1Free() throws Exception {
-        final Form download1 = super.findFormDownload1Free();
+    public Form findFormDownload1Free(final Browser br) throws Exception {
+        final Form download1 = super.findFormDownload1Free(br);
         if (download1 != null) {
             download1.remove("method_premium");
             download1.remove("proceed");

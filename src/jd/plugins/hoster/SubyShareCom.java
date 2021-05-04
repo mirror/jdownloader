@@ -236,7 +236,7 @@ public class SubyShareCom extends XFileSharingProBasic {
                      * and most likely end up with error "Fatal countdown error (countdown skipped)"
                      */
                     checkErrors(br, correctedBR, link, account, false);
-                    final Form download1 = findFormDownload1Free();
+                    final Form download1 = findFormDownload1Free(br);
                     if (download1 != null) {
                         logger.info("Found download1 Form");
                         /* 2020-06-15: Special: Two captchas in the row possible! */
@@ -252,7 +252,7 @@ public class SubyShareCom extends XFileSharingProBasic {
             } while (download1counter <= download1max && dllink == null);
         }
         if (StringUtils.isEmpty(dllink)) {
-            Form download2 = findFormDownload2Free();
+            Form download2 = findFormDownload2Free(br);
             if (download2 == null) {
                 /* Last chance - maybe our errorhandling kicks in here. */
                 checkErrors(br, correctedBR, link, account, false);
@@ -316,7 +316,7 @@ public class SubyShareCom extends XFileSharingProBasic {
                 if (dllink == null) {
                     dllink = getDllink(link, account, br, correctedBR);
                 }
-                download2 = findFormDownload2Free();
+                download2 = findFormDownload2Free(br);
                 if (StringUtils.isEmpty(dllink) && (download2 != null || download2counter == download2max)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     /* Check if maybe an error happened before stepping in download2 loop --> Throw that */

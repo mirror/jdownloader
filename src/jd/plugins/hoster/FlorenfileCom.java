@@ -182,7 +182,7 @@ public class FlorenfileCom extends XFileSharingProBasic {
         Form freeDownloadForm = null;
         Form premiumDownloadForm = null;
         try {
-            freeDownloadForm = this.findFormDownload1Free();
+            freeDownloadForm = this.findFormDownload1Free(br);
             premiumDownloadForm = this.findFormDownload2Premium(br);
         } catch (Exception e) {
             e.printStackTrace();
@@ -203,7 +203,7 @@ public class FlorenfileCom extends XFileSharingProBasic {
         Form freeDownloadForm = null;
         Form premiumDownloadForm = null;
         try {
-            freeDownloadForm = this.findFormDownload1Free();
+            freeDownloadForm = this.findFormDownload1Free(br);
             premiumDownloadForm = this.findFormDownload2Premium(br);
         } catch (Exception e) {
             e.printStackTrace();

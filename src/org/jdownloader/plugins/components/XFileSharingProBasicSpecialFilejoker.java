@@ -100,10 +100,10 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
     }
 
     @Override
-    public Form findFormDownload1Free() throws Exception {
+    public Form findFormDownload1Free(final Browser br) throws Exception {
         /* 2019-08-20: Special */
         handleSecurityVerification(br);
-        return super.findFormDownload1Free();
+        return super.findFormDownload1Free(br);
     }
 
     @Override

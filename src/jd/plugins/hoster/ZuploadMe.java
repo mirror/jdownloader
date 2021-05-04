@@ -18,15 +18,16 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.YetiShareCore;
+
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.YetiShareCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class ZuploadMe extends YetiShareCore {
@@ -110,14 +111,14 @@ public class ZuploadMe extends YetiShareCore {
     }
 
     @Override
-    protected Form getContinueForm(final int loop_counter, final String continue_link) throws PluginException {
+    protected Form getContinueForm(final Browser br, final int loop_counter, final String continue_link) throws PluginException {
         /* 2020-12-09: Special */
         final Form continueform = br.getFormbyKey("pt");
         if (continueform != null) {
             return continueform;
         } else {
             /* Fallback to template handling */
-            return super.getContinueForm(loop_counter, continue_link);
+            return super.getContinueForm(this.br, loop_counter, continue_link);
         }
     }
 }
