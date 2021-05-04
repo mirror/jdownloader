@@ -233,7 +233,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
             engine.eval("_0x4ee0[25]=\"replace\"");
             engine.eval("function doodExe(_0xc93ex9,_0xc93ex6){for(var _0xc93ex5=_0xc93ex9[_0x4ee0[20]](_0x4ee0[17])[_0x4ee0[19]]()[_0x4ee0[18]](_0x4ee0[17]),_0xc93ex7=_0x4ee0[17],_0xc93exa=0;_0xc93exa< _0xc93ex6[_0x4ee0[21]];_0xc93exa+= 1){_0xc93ex7+= _0xc93ex5[_0x4ee0[22]](_0xc93ex9[_0x4ee0[23]](_0xc93ex6[_0x4ee0[22]](_0xc93exa)))}; return _0xc93ex7= (_0xc93ex7= (_0xc93ex7= (_0xc93ex7= (_0xc93ex7= _0xc93ex7[_0x4ee0[25]](_0x4ee0[32],_0x4ee0[33]))[_0x4ee0[25]](_0x4ee0[30],_0x4ee0[31]))[_0x4ee0[25]](_0x4ee0[28],_0x4ee0[29]))[_0x4ee0[25]](_0x4ee0[26],_0x4ee0[27]))[_0x4ee0[25]](_0x4ee0[24],_0x4ee0[5])}");
             engine.eval("var result=doodExe(\"" + crp + "\",\"" + crs + "\");");
-            return engine.get("result").toString();
+            return engine.get("result").toString().replace("+", " ");// replace vs replaceAll
         } catch (final Throwable e) {
             logger.log(e);
             return null;
