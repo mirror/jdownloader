@@ -118,7 +118,7 @@ public class ZuploadMe extends YetiShareCore {
             return continueform;
         } else {
             /* Fallback to template handling */
-            return super.getContinueForm(this.br, loop_counter, continue_link);
+            return super.getContinueForm(br, loop_counter, continue_link);
         }
     }
 }
