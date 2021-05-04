@@ -265,10 +265,10 @@ public class FilefoxCc extends XFileSharingProBasic {
     }
 
     @Override
-    public Form findFormDownload1Free() throws Exception {
+    public Form findFormDownload1Free(final Browser br) throws Exception {
         /* 2019-06-13: Special */
         handleSecurityVerification();
-        return super.findFormDownload1Free();
+        return super.findFormDownload1Free(br);
     }
 
     @Override

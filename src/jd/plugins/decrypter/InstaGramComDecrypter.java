@@ -254,7 +254,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         final Account account = AccountController.getInstance().getValidAccount(getHost());
         /* https and www. is required! */
         parameter = param.toString().replaceFirst("^http://", "https://").replaceFirst("://in", "://www.in");
-        /* TODO: Re-check this handling! */
+        /* TODO: Re-check (and possibly remove) this handling! */
         if (parameter.contains("?private_url=true")) {
             isPrivate = Boolean.TRUE;
             /*

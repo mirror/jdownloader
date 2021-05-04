@@ -178,9 +178,9 @@ public class KenfilesCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected Form findFormDownload2Free() {
+    protected Form findFormDownload2Free(final Browser br) {
         /* 2020-09-02: Special */
-        Form dlForm = super.findFormDownload2Free();
+        Form dlForm = super.findFormDownload2Free(br);
         if (dlForm != null) {
             dlForm.remove("method_premium");
         }

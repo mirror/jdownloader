@@ -117,10 +117,10 @@ public class FileAl extends XFileSharingProBasic {
     }
 
     @Override
-    public Form findFormDownload1Free() throws Exception {
+    public Form findFormDownload1Free(final Browser br) throws Exception {
         /* 2019-05-03: Special */
         checkForSpecialCaptcha(br);
-        return super.findFormDownload1Free();
+        return super.findFormDownload1Free(br);
     }
 
     private void checkForSpecialCaptcha(final Browser br) throws Exception {

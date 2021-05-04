@@ -22,6 +22,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -135,9 +136,9 @@ public class VidtodoCom extends XFileSharingProBasic {
     }
 
     @Override
-    public Form findFormDownload1Free() throws Exception {
+    public Form findFormDownload1Free(final Browser br) throws Exception {
         /* 2020-05-04: Special: Captcha on download1 Form */
-        final Form download1 = super.findFormDownload1Free();
+        final Form download1 = super.findFormDownload1Free(br);
         if (download1 != null) {
             this.handleCaptcha(this.getDownloadLink(), download1);
         }

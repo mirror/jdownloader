@@ -100,7 +100,7 @@ public class WorldBytezCom extends XFileSharingProBasic {
         try {
             super.doFree(link, account);
         } catch (final PluginException e) {
-            if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT && this.findFormDownload2Free() == null) {
+            if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT && this.findFormDownload2Free(br) == null) {
                 throw new AccountRequiredException();
             } else {
                 throw e;
