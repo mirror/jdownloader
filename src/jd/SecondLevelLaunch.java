@@ -446,7 +446,7 @@ public class SecondLevelLaunch {
         }
         try {
             final HardwareTypeInterface hardwareType = HardwareType.getHardware();
-            if (HardwareTypeInterface.ID.SYNOLOGY.equals(hardwareType.getHardwareType())) {
+            if (hardwareType != null && HardwareTypeInterface.ID.SYNOLOGY.equals(hardwareType.getHardwareType())) {
                 final String SYNOPKG_PKGNAME = System.getenv("SYNOPKG_PKGNAME");
                 final String SYNOPKG_PKGVER = System.getenv("SYNOPKG_PKGVER");
                 if (StringUtils.isNotEmpty(SYNOPKG_PKGNAME)) {
@@ -457,7 +457,7 @@ public class SecondLevelLaunch {
                                 if (!logFile.delete()) {
                                     logFile.deleteOnExit();
                                 }
-                                LoggerFactory.getDefaultLogger().info("Unlink 3rd party(" + SYNOPKG_PKGNAME + "|" + SYNOPKG_PKGVER + ") log:" + thirdPartyLogFile);
+                                LoggerFactory.getDefaultLogger().info("Unlink 3rd party(" + hardwareType.getHardwareType() + "|" + SYNOPKG_PKGNAME + "|" + SYNOPKG_PKGVER + ") log:" + thirdPartyLogFile);
                             }
                         }
                     }

@@ -12,6 +12,12 @@ import org.jdownloader.plugins.config.Type;
 @PluginHost(host = "gfycat.com", type = Type.HOSTER)
 public interface GfycatConfig extends PluginConfigInterface {
     public static enum PreferredFormat implements LabelInterface {
+        GIF {
+            @Override
+            public String getLabel() {
+                return "GIF";
+            }
+        },
         WEBM {
             @Override
             public String getLabel() {
@@ -22,12 +28,6 @@ public interface GfycatConfig extends PluginConfigInterface {
             @Override
             public String getLabel() {
                 return "MP4";
-            }
-        },
-        GIF {
-            @Override
-            public String getLabel() {
-                return "GIF";
             }
         };
     }

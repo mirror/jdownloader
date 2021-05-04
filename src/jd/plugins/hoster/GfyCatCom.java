@@ -17,6 +17,21 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
+import jd.parser.Regex;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -28,18 +43,6 @@ import org.jdownloader.plugins.components.config.GfycatConfig.PreferredFormat;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gfycat.com" }, urls = { "https?://(?:www\\.)?(?:gfycat\\.com(?:/ifr)?|gifdeliverynetwork\\.com(?:/ifr)?|redgifs\\.com/(?:watch|ifr))/([A-Za-z0-9]+)" })
 public class GfyCatCom extends PluginForHost {
@@ -99,9 +102,9 @@ public class GfyCatCom extends PluginForHost {
         return requestFileInformation(link, false);
     }
 
-    private static String redgifsAccessKey             = "";
-    private static String redgifsAccessToken           = "";
-    private static long   redgifsAccessTokenValidUntil = -1;
+    private static AtomicReference<String> redgifsAccessKey             = new AtomicReference<String>(null);
+    private static AtomicReference<String> redgifsAccessToken           = new AtomicReference<String>(null);
+    private static AtomicLong              redgifsAccessTokenValidUntil = new AtomicLong(-1);
 
     private String[] getDownloadURL(final DownloadLink link, final Map<String, Object> video, final Map<String, Object> photo, final PreferredFormat format) throws Exception {
         // TODO: use JSON in complicatedJSON, it contains all available formats/qualities
@@ -158,63 +161,117 @@ public class GfyCatCom extends PluginForHost {
         br.setAllowedResponseCodes(new int[] { 500 });
         if (Browser.getHost(link.getPluginPatternMatcher()).equals("redgifs.com")) {
             /* 2021-05-04: New API handling required for URLs of this domain */
+            String key = null;
             synchronized (redgifsAccessKey) {
-                if (StringUtils.isEmpty(redgifsAccessKey)) {
+                key = redgifsAccessKey.get();
+                if (StringUtils.isEmpty(key)) {
                     br.getPage(link.getPluginPatternMatcher());
                     /* 2021-05-04: /assets/app.59be79d0c1811e38f695.js */
                     final String jsurl = br.getRegex("<script src=\"(/assets/app\\.[a-f0-9]+\\.js)\">").getMatch(0);
                     if (jsurl == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    br.getPage(jsurl);
-                    redgifsAccessKey = br.getRegex("webloginAccessKey=\"([^\"]+)\"").getMatch(0);
-                    if (redgifsAccessKey == null) {
+                    final Browser brc = br.cloneBrowser();
+                    brc.getPage(jsurl);
+                    key = brc.getRegex("webloginAccessKey=\"([^\"]+)\"").getMatch(0);
+                    if (StringUtils.isEmpty(key)) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else {
+                        redgifsAccessKey.set(key);
                     }
                 }
             }
-            final Browser brapi = br.cloneBrowser();
+            String token = null;
             synchronized (redgifsAccessToken) {
-                if (StringUtils.isEmpty(redgifsAccessToken) || redgifsAccessTokenValidUntil < System.currentTimeMillis()) {
+                token = redgifsAccessToken.get();
+                if (StringUtils.isEmpty(token) || redgifsAccessTokenValidUntil.get() < System.currentTimeMillis()) {
                     if (redgifsAccessToken == null) {
                         logger.info("Creating token for the first time");
                     } else {
                         logger.info("Creating new token because the old one has expired");
                     }
-                    brapi.postPageRaw("https://weblogin.redgifs.com/oauth/webtoken", "{\"access_key\":\"" + redgifsAccessKey + "\"}");
-                    final Map<String, Object> entries = JSonStorage.restoreFromString(brapi.toString(), TypeRef.HASHMAP);
-                    redgifsAccessToken = (String) entries.get("access_token");
-                    if (StringUtils.isEmpty(redgifsAccessToken)) {
+                    final Browser brc = br.cloneBrowser();
+                    brc.postPageRaw("https://weblogin.redgifs.com/oauth/webtoken", "{\"access_key\":\"" + key + "\"}");
+                    final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                    token = (String) entries.get("access_token");
+                    if (StringUtils.isEmpty(token)) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else {
+                        redgifsAccessToken.set(token);
+                        redgifsAccessTokenValidUntil.set(System.currentTimeMillis() + ((Number) entries.get("expires_in")).longValue() * 1000l);
                     }
-                    redgifsAccessTokenValidUntil = System.currentTimeMillis() + ((Number) entries.get("expires_in")).longValue() * 1000l;
                 }
             }
-            brapi.getHeaders().put("Referer", "https://redgifs.com/");
-            brapi.getHeaders().put("Authorization", "Bearer " + redgifsAccessToken);
-            brapi.getPage("https://api.redgifs.com/v1/gfycats/" + this.getFID(link));
+            final Browser brapi = br.cloneBrowser();
+            GetRequest request = brapi.createGetRequest("https://api.redgifs.com/v1/gfycats/" + this.getFID(link));
+            request.getHeaders().put("Origin", "https://redgifs.com/");
+            request.getHeaders().put("Referer", "https://redgifs.com/");
+            request.getHeaders().put("Authorization", "Bearer " + token);
+            brapi.getPage(request);
             if (brapi.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             Map<String, Object> entries = JSonStorage.restoreFromString(brapi.toString(), TypeRef.HASHMAP);
             entries = (Map<String, Object>) entries.get("gfyItem");
             final Map<String, Object> sources = (Map<String, Object>) entries.get("content_urls");
-            final Map<String, Object> selectedSource;
+            String url = null;
+            String ext = null;
+            Number size = null;
+            Map<String, Object> selectedSource = null;
             switch (getPreferredFormat(link)) {
-            case WEBM:
-                selectedSource = (Map<String, Object>) sources.get("webm");
-                break;
             case GIF:
                 selectedSource = (Map<String, Object>) sources.get("largeGif");
-                break;
+                if (selectedSource != null) {
+                    url = (String) selectedSource.get("url");
+                    size = (Number) selectedSource.get("size");
+                }
+                if (url == null) {
+                    url = (String) selectedSource.get("gifUrl");
+                }
+                if (url != null) {
+                    ext = ".gif";
+                    break;
+                }
+                // fallthrough to next best quality
+            case WEBM:
+                selectedSource = (Map<String, Object>) sources.get("webm");
+                if (selectedSource != null) {
+                    url = (String) selectedSource.get("url");
+                    size = (Number) selectedSource.get("size");
+                    if (url != null) {
+                        ext = ".webm";
+                        break;
+                    }
+                }
+                // fallthrough to next best quality
             case MP4: // MP4 == default
             default:
                 selectedSource = (Map<String, Object>) sources.get("mp4");
+                if (selectedSource != null) {
+                    url = (String) selectedSource.get("url");
+                    size = (Number) selectedSource.get("size");
+                }
+                if (url == null) {
+                    url = (String) entries.get("mp4Url");
+                    if (url == null) {
+                        url = (String) entries.get("mobileUrl");
+                    }
+                }
+                if (url != null) {
+                    ext = ".mp4";
+                    break;
+                }
             }
             final String username = (String) entries.get("userName");
-            link.setFinalFileName(username + " - " + this.getFID(link) + ".webm");
-            link.setVerifiedFileSize(((Number) selectedSource.get("size")).longValue());
-            this.dllink = (String) selectedSource.get("url");
+            if (url != null) {
+                link.setFinalFileName(username + " - " + this.getFID(link) + ext);
+                this.dllink = url;
+            } else {
+                link.setName(username + " - " + this.getFID(link));
+            }
+            if (size != null) {
+                link.setVerifiedFileSize(size.longValue());
+            }
         } else {
             br.getPage(link.getPluginPatternMatcher());
             if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
