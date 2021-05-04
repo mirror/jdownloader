@@ -763,10 +763,41 @@ public abstract class SimpleFTP {
         return getDefaultSSLSocketStreamFactory();
     }
 
+    public static enum RESPONSE_CODE {
+        // 234 AUTH command OK. Initializing SSL connection.
+        OK_234,
+        // 334 [ADAT=base64data]
+        // https://tools.ietf.org/html/rfc2228
+        // code is sent in response to the AUTH command when the requested security mechanism is accepted and includes a security data to be
+        // used by the client to construct the next command. The square brackets are not to be included in the response and it is optional
+        // to indicate the security data in the response.
+        OK_334,
+        // Service not available, closing control connection.
+        FAILED_421,
+        // Need unavailable resource to process security.
+        FAILED_431,
+        // Syntax error in parameters or argument.
+        FAILED_501,
+        // Syntax error, command unrecognized.
+        FAILED_500,
+        // Command not implemented
+        FAILED_502,
+        // 504 Command not implemented for that parameter.
+        FAILED_504,
+        // 530 Not logged in.
+        FAILED_530,
+        // Request denied for policy reasons.
+        // command is disabled.
+        FAILED_534;
+        public int code() {
+            return Integer.parseInt(name().substring(name().indexOf("_") + 1));
+        }
+    }
+
     // RFC 4217
     protected boolean AUTH_TLS_CC() throws IOException {
         sendLine("AUTH TLS");
-        final String response = readLines(new int[] { 234, 500, 502, 530 }, "AUTH_TLS FAILED");
+        final String response = readLines(new int[] { RESPONSE_CODE.OK_234.code(), RESPONSE_CODE.FAILED_500.code(), RESPONSE_CODE.FAILED_502.code(), RESPONSE_CODE.FAILED_504.code(), RESPONSE_CODE.FAILED_530.code(), RESPONSE_CODE.FAILED_534.code() }, "AUTH_TLS FAILED");
         if (StringUtils.startsWithCaseInsensitive(response, "234")) {
             // TODO: add SSLSocketStream options support, caching + retry + trustAll
             socket = getSSLSocketStreamFactory().create(getControlSocket(), "", getPort(), true, null);
