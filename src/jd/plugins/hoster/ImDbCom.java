@@ -15,9 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.ArrayList;
+import java.io.IOException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -52,6 +54,7 @@ public class ImDbCom extends PluginForHost {
     public ImDbCom(final PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
+        this.setStartIntervall(1000l);
     }
 
     @SuppressWarnings("deprecation")
@@ -110,19 +113,10 @@ public class ImDbCom extends PluginForHost {
             Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
             /* Now let's find the specific object ... */
             final String idright = new Regex(link.getDownloadURL(), "(rm\\d+)").getMatch(0);
-            String idtemp = null;
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "props/urqlState/{0}/data/title/images/edges");
-            for (final Object imageo : ressourcelist) {
-                entries = getJsonMap(imageo);
-                entries = getJsonMap(entries.get("node"));
-                idtemp = (String) entries.get("id");
-                if (idtemp != null && idtemp.equalsIgnoreCase(idright)) {
-                    filename = (String) JavaScriptEngineFactory.walkJson(entries, "titles/{0}/titleText/text");
-                    dllink = (String) entries.get("url");
-                    break;
-                }
-            }
-            if (filename == null) {
+            final Map<String, Object> targetMap = this.findPictureMap(entries, idright);
+            filename = (String) JavaScriptEngineFactory.walkJson(targetMap, "titles/{0}/titleText/text");
+            dllink = (String) targetMap.get("url");
+            if (StringUtils.isEmpty(filename)) {
                 /* Fallback to fid */
                 filename = this.getFID(link);
             }
@@ -244,8 +238,10 @@ public class ImDbCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 } else {
                     server_issues = true;
                 }
@@ -257,6 +253,38 @@ public class ImDbCom extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    /** Recursive function to find map containing specified key:value pair. */
+    private Map<String, Object> findPictureMap(final Object jsono, final String sectionSlug) throws PluginException {
+        if (jsono instanceof Map) {
+            final Map<String, Object> mapTmp = (Map<String, Object>) jsono;
+            final Iterator<Entry<String, Object>> iterator = mapTmp.entrySet().iterator();
+            while (iterator.hasNext()) {
+                final Entry<String, Object> entry = iterator.next();
+                final String key = entry.getKey();
+                final Object value = entry.getValue();
+                if (key.equals("id") && value instanceof String && value.toString().equalsIgnoreCase(sectionSlug)) {
+                    return mapTmp;
+                } else if (value instanceof List || value instanceof Map) {
+                    final Map<String, Object> result = findPictureMap(value, sectionSlug);
+                    if (result != null) {
+                        return result;
+                    }
+                }
+            }
+        } else if (jsono instanceof List) {
+            final List<Object> ressourcelist = (List<Object>) jsono;
+            for (final Object arrayo : ressourcelist) {
+                if (arrayo instanceof List || arrayo instanceof Map) {
+                    final Map<String, Object> result = findPictureMap(arrayo, sectionSlug);
+                    if (result != null) {
+                        return result;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     /* Simple wrapper due to unexpected LinkedHashMap/HashMap results. */
@@ -271,10 +299,10 @@ public class ImDbCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 1 * 60 * 1000l);
         } else if (this.mature_content) {
             /* Mature content --> Only viewable for registered users */
             logger.info("Video with mature content --> Only downloadable for registered users");
@@ -283,17 +311,21 @@ public class ImDbCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (dllink.contains(".m3u8")) {
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, dllink);
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, dllink);
             dl.startDownload();
         } else {
             int maxChunks = 0;
-            if (downloadLink.getDownloadURL().matches(TYPE_VIDEO)) {
+            if (link.getDownloadURL().matches(TYPE_VIDEO)) {
                 maxChunks = 1;
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
