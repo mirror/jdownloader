@@ -547,7 +547,7 @@ public class MegaConz extends PluginForHost {
                 if ("us".equalsIgnoreCase(action)) {
                     return null;
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    throw new AccountUnavailableException("A temporary congestion or server malfunction prevented your request from being processed", 5 * 60 * 1000l);
                 }
             } else {
                 if (errorCode == -3) {

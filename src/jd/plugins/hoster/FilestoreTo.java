@@ -196,9 +196,7 @@ public class FilestoreTo extends PluginForHost {
                 link.setDownloadSize(SizeFormatter.getSize(filesizeStr.replaceAll(",", "\\.").trim()));
             }
             /** 2020-02-08: File information can be available for offline files too! */
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.containsHTML(">\\s*Datei nicht gefunden")) {
+            if (br.containsHTML(">\\s*Datei nicht gefunden")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.containsHTML(">\\s*Datei gesperrt")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
