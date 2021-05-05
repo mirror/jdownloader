@@ -1036,12 +1036,12 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 filename += username + " - ";
             }
             filename += linkid_main;
-            if (!StringUtils.isEmpty(shortcode) && !shortcode.equals(linkid_main)) {
-                filename += "_" + shortcode;
-            }
             if (orderid != null && addOrderIDToFilename) {
                 /* By default: Include orderid whenever it is given to prevent duplicate filenames for different files! */
                 filename += "_" + orderid;
+            }
+            if (!StringUtils.isEmpty(shortcode) && !shortcode.equals(linkid_main)) {
+                filename += "_" + shortcode;
             }
             filename += ext;
         }
@@ -1405,12 +1405,12 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 filename += username + " - ";
             }
             filename += linkid_main;
-            if (!StringUtils.isEmpty(shortcode) && !shortcode.equals(linkid_main)) {
-                filename += "_" + shortcode;
-            }
             if (orderid != null) {
                 /* Include orderid whenever it is given to prevent duplicate filenames for different files! */
                 filename += "_" + orderid;
+            }
+            if (!StringUtils.isEmpty(shortcode) && !shortcode.equals(linkid_main)) {
+                filename += "_" + shortcode;
             }
             filename += ext;
         }
