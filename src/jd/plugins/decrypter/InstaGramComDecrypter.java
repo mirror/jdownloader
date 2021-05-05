@@ -306,8 +306,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             }
         } else {
             /* Crawl all items of a user */
-            final boolean allowAltAPIUsage = false;
-            final boolean useAltAPI = allowAltAPIUsage && account != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE;
+            final boolean useAltAPI = account != null && SubConfiguration.getConfig(this.getHost()).getBooleanProperty(InstaGramCom.PROFILE_CRAWLER_PREFER_ALTERNATIVE_API, InstaGramCom.defaultPREFER_ALTERNATIVE_API_FOR_PROFILE_CRAWLER);
             if (useAltAPI) {
                 final String user = new Regex(param.getCryptedUrl(), TYPE_PROFILE).getMatch(0);
                 final String userID = getUserIDFromWebsite(param, account, loggedIN, user);
@@ -1191,7 +1190,11 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             final int numberofitemsOnThisPage = (int) JavaScriptEngineFactory.toLong(entries.get("num_results"), 0);
             if (numberofitemsOnThisPage == 0) {
                 /* Rare case */
-                logger.info("Stopping, 0 items available ...");
+                if (page == 0) {
+                    logger.info("This profile doesn't contain any items");
+                } else {
+                    logger.info("Stopping because 0 items available ...");
+                }
                 return;
             }
             logger.info("Crawling items: " + numberofitemsOnThisPage);
@@ -1199,7 +1202,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             final boolean more_available = ((Boolean) entries.get("more_available"));
             List<Object> mediaItems = (List<Object>) entries.get("items");
             if (mediaItems == null || mediaItems.size() == 0) {
-                logger.info("Found no new links on page " + page + " --> Stopping decryption");
+                logger.info("Stopping because: Found no new links on page " + page);
                 break;
             }
             for (final Object mediaItemO : mediaItems) {
@@ -1208,18 +1211,15 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             numberofCrawledItems += numberofitemsOnThisPage;
             logger.info("Total number of items crawled: " + numberofCrawledItems + " of ??");
             if (!more_available) {
-                logger.info("Stopping because more_available == false");
+                logger.info("Stopping because: more_available == false");
                 break;
             } else if (StringUtils.isEmpty(nextid)) {
-                logger.info("Stopping because no nextid available");
+                logger.info("Stopping because: no nextid available");
                 break;
             } else {
                 page++;
             }
         } while (!this.isAbort());
-        if (decryptedLinks.size() == 0) {
-            logger.warning("WTF");
-        }
     }
 
     private void crawlHashtagAltAPI(final CryptedLink param, final Account account, final AtomicBoolean loggedIN) throws UnsupportedEncodingException, Exception {

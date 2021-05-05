@@ -83,37 +83,41 @@ public class InstaGramCom extends PluginForHost {
     /**
      * https://instagram.api-docs.io/1.0 </br>
      */
-    public static String         ALT_API_BASE                                = "https://i.instagram.com/api/v1";
+    public static String         ALT_API_BASE                                      = "https://i.instagram.com/api/v1";
     /* Connection stuff */
-    private static final boolean RESUME                                      = true;
+    private static final boolean RESUME                                            = true;
     /* Chunkload makes no sense for pictures/small files */
-    private static final int     MAXCHUNKS_pictures                          = 1;
+    private static final int     MAXCHUNKS_pictures                                = 1;
     /* 2020-01-21: Multi chunks are possible but it's better not to do this to avoid getting blocked! */
-    private static final int     MAXCHUNKS_videos                            = 1;
-    private static final int     MAXDOWNLOADS                                = -1;
-    private static final String  MAINPAGE                                    = "https://www.instagram.com";
-    public static final String   QUIT_ON_RATE_LIMIT_REACHED                  = "QUIT_ON_RATE_LIMIT_REACHED";
-    public static final String   HASHTAG_CRAWLER_FIND_USERNAMES              = "HASHTAG_CRAWLER_FIND_USERNAMES";
-    public static final String   PREFER_SERVER_FILENAMES                     = "PREFER_SERVER_FILENAMES";
-    public static final String   ADD_ORDERID_TO_FILENAMES                    = "ADD_ORDERID_TO_FILENAMES";
-    private static final String  ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY        = "ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY";
-    public static final String   ONLY_GRAB_X_ITEMS                           = "ONLY_GRAB_X_ITEMS";
-    public static final String   ONLY_GRAB_X_ITEMS_NUMBER                    = "ONLY_GRAB_X_ITEMS_NUMBER";
-    public static final String   ONLY_GRAB_X_ITEMS_HASHTAG_CRAWLER_NUMBER    = "ONLY_GRAB_X_ITEMS_HASHTAG_CRAWLER_NUMBER";
-    /* DownloadLink properties */
-    public static final String   PROPERTY_has_tried_to_crawl_original_url    = "has_tried_to_crawl_original_url";
-    public static final String   PROPERTY_is_part_of_story                   = "is_part_of_story";
-    public static final String   PROPERTY_DIRECTURL                          = "directurl";
-    public static final String   PROPERTY_private_url                        = "private_url";
+    private static final int     MAXCHUNKS_videos                                  = 1;
+    private static final int     MAXDOWNLOADS                                      = -1;
+    /* Plugin settings properties */
+    private static final String  MAINPAGE                                          = "https://www.instagram.com";
+    public static final String   QUIT_ON_RATE_LIMIT_REACHED                        = "QUIT_ON_RATE_LIMIT_REACHED";
+    public static final String   HASHTAG_CRAWLER_FIND_USERNAMES                    = "HASHTAG_CRAWLER_FIND_USERNAMES";
+    public static final String   PREFER_SERVER_FILENAMES                           = "PREFER_SERVER_FILENAMES";
+    public static final String   ADD_ORDERID_TO_FILENAMES                          = "ADD_ORDERID_TO_FILENAMES";
+    private static final String  ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY              = "ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY";
+    private static final String  PROFILE_CRAWLER_PUT_ALL_ITEMS_IN_ONE_PACKAGE      = "PROFILE_CRAWLER_PUT_ALL_ITEMS_IN_ONE_PACKAGE";
+    public static final String   ONLY_GRAB_X_ITEMS                                 = "ONLY_GRAB_X_ITEMS";
+    public static final String   ONLY_GRAB_X_ITEMS_NUMBER                          = "ONLY_GRAB_X_ITEMS_NUMBER";
+    public static final String   ONLY_GRAB_X_ITEMS_HASHTAG_CRAWLER_NUMBER          = "ONLY_GRAB_X_ITEMS_HASHTAG_CRAWLER_NUMBER";
+    public static final String   PROFILE_CRAWLER_PREFER_ALTERNATIVE_API            = "PROFILE_CRAWLER_PREFER_ALTERNATIVE_API";
     /* Settings default values */
-    public static final boolean  defaultPREFER_SERVER_FILENAMES              = false;
-    public static final boolean  defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY = false;
+    public static final boolean  defaultPREFER_SERVER_FILENAMES                    = false;
+    public static final boolean  defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY       = false;
     /* 2020-11-25: Set this to false by default until we can maybe auto-detect the situation in which this is needed. */
-    public static final boolean  defaultADD_ORDERID_TO_FILENAMES             = false;
-    public static final boolean  defaultQUIT_ON_RATE_LIMIT_REACHED           = false;
-    public static final boolean  defaultHASHTAG_CRAWLER_FIND_USERNAMES       = false;
-    public static final boolean  defaultONLY_GRAB_X_ITEMS                    = false;
-    public static final int      defaultONLY_GRAB_X_ITEMS_NUMBER             = 25;
+    public static final boolean  defaultADD_ORDERID_TO_FILENAMES                   = false;
+    public static final boolean  defaultQUIT_ON_RATE_LIMIT_REACHED                 = false;
+    public static final boolean  defaultHASHTAG_CRAWLER_FIND_USERNAMES             = false;
+    public static final boolean  defaultONLY_GRAB_X_ITEMS                          = false;
+    public static final int      defaultONLY_GRAB_X_ITEMS_NUMBER                   = 25;
+    public static final boolean  defaultPREFER_ALTERNATIVE_API_FOR_PROFILE_CRAWLER = false;
+    /* DownloadLink properties */
+    public static final String   PROPERTY_has_tried_to_crawl_original_url          = "has_tried_to_crawl_original_url";
+    public static final String   PROPERTY_is_part_of_story                         = "is_part_of_story";
+    public static final String   PROPERTY_DIRECTURL                                = "directurl";
+    public static final String   PROPERTY_private_url                              = "private_url";
 
     public void correctDownloadLink(final DownloadLink link) {
         String newurl = link.getPluginPatternMatcher().replace("instagrammdecrypted://", "https://www.instagram.com/p/");
@@ -712,7 +716,6 @@ public class InstaGramCom extends PluginForHost {
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Free Account");
         return ai;
     }
 
@@ -746,12 +749,19 @@ public class InstaGramCom extends PluginForHost {
         getConfig().addEntry(cfg);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ADD_ORDERID_TO_FILENAMES, "Add order-ID to filenames if an album contains more than one element?\r\nWarning: Turning this off may lead to duplicated filenames and skipped downloads!").setDefaultValue(defaultADD_ORDERID_TO_FILENAMES).setEnabledCondidtion(cfg, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY, "Try to download original quality (bigger filesize, without image-effects)? [This will slow down the download-process!]").setDefaultValue(defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), QUIT_ON_RATE_LIMIT_REACHED, "Abort crawl process once rate limit is reached?").setDefaultValue(defaultQUIT_ON_RATE_LIMIT_REACHED));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HASHTAG_CRAWLER_FIND_USERNAMES, "Crawl usernames for filenames when crawling '/explore/tags/<hashtag>' URLs? (Can slow down the crawl-process!)").setDefaultValue(defaultHASHTAG_CRAWLER_FIND_USERNAMES));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HASHTAG_CRAWLER_FIND_USERNAMES, "Crawl- and set usernames for filenames when crawling '/explore/tags/<hashtag>' URLs? (Slows down crawl-process!)").setDefaultValue(defaultHASHTAG_CRAWLER_FIND_USERNAMES));
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(),
+        // PROFILE_CRAWLER_PUT_ALL_ITEMS_IN_ONE_PACKAGE, "Put all items of one profile into a single package? If it contains posts with
+        // multiple items, you might lose the relation between those.").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final ConfigEntry grabXitems = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ONLY_GRAB_X_ITEMS, "Only grab the X latest items?").setDefaultValue(defaultONLY_GRAB_X_ITEMS);
         getConfig().addEntry(grabXitems);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), ONLY_GRAB_X_ITEMS_NUMBER, "How many items shall be grabbed?", defaultONLY_GRAB_X_ITEMS_NUMBER, 1025, defaultONLY_GRAB_X_ITEMS_NUMBER).setDefaultValue(defaultONLY_GRAB_X_ITEMS_NUMBER).setEnabledCondidtion(grabXitems, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), ONLY_GRAB_X_ITEMS_NUMBER, "Which amount of latest items shall be grabbed?", defaultONLY_GRAB_X_ITEMS_NUMBER, 1025, defaultONLY_GRAB_X_ITEMS_NUMBER).setDefaultValue(defaultONLY_GRAB_X_ITEMS_NUMBER).setEnabledCondidtion(grabXitems, true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), ONLY_GRAB_X_ITEMS_HASHTAG_CRAWLER_NUMBER, "How many items shall be grabbed (for '/explore/tags/example')?", defaultONLY_GRAB_X_ITEMS_NUMBER, 10000, defaultONLY_GRAB_X_ITEMS_NUMBER).setDefaultValue(defaultONLY_GRAB_X_ITEMS_NUMBER));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Advanced settings:"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROFILE_CRAWLER_PREFER_ALTERNATIVE_API, "Use alternative API for profiler crawler? Can be slower and only works when an Instagram account is active!").setDefaultValue(defaultPREFER_ALTERNATIVE_API_FOR_PROFILE_CRAWLER));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), QUIT_ON_RATE_LIMIT_REACHED, "Abort crawl process once rate limit is reached?").setDefaultValue(defaultQUIT_ON_RATE_LIMIT_REACHED));
     }
 
     @Override
