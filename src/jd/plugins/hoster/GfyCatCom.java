@@ -16,6 +16,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -262,16 +265,39 @@ public class GfyCatCom extends PluginForHost {
                     break;
                 }
             }
+            final String gfyName = (String) entries.get("gfyName");
             final String username = (String) entries.get("userName");
+            String filename = username;
+            final Number createDate = (Number) entries.get("createDate");
+            if (createDate != null) {
+                final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                filename = sdf.format(new Date(createDate.longValue() * 1000)) + "_" + filename;
+            }
+            /* fid is used as fallback-title so in this case we don't want to have it twice in our filename! */
+            if (gfyName != null) {
+                if (!StringUtils.equalsIgnoreCase(gfyName, this.getFID(link))) {
+                    filename += " - " + this.getFID(link);
+                }
+                filename += " - " + gfyName + ext;
+            }
             if (url != null) {
-                link.setFinalFileName(username + " - " + this.getFID(link) + ext);
-                this.dllink = url;
+                if (link.getFinalFileName() == null || !StringUtils.endsWithCaseInsensitive(link.getFinalFileName(), ext)) {
+                    link.setFinalFileName(filename + ext);
+                }
             } else {
-                link.setName(username + " - " + this.getFID(link));
+                link.setName(filename);
             }
             if (size != null) {
                 link.setVerifiedFileSize(size.longValue());
             }
+            if (link.getComment() == null) {
+                final List<Object> tags = (List<Object>) entries.get("tags");
+                if (tags != null) {
+                    final String description = StringUtils.join(tags.toArray(new Object[0]), " ") + " Porn GIF by " + username;
+                    link.setComment(description);
+                }
+            }
+            this.dllink = url;
         } else {
             br.getPage(link.getPluginPatternMatcher());
             if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
@@ -344,7 +370,7 @@ public class GfyCatCom extends PluginForHost {
                          */
                         String filename = dateFormatted + "_" + username;
                         /* fid is used as fallback-title so in this case we don't want to have it twice in our filename! */
-                        if (!title.equals(this.getFID(link))) {
+                        if (!StringUtils.equalsIgnoreCase(title, this.getFID(link))) {
                             filename += " - " + this.getFID(link);
                         }
                         filename += " - " + title + ext;
