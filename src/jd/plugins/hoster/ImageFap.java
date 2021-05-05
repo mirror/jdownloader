@@ -22,6 +22,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.ReflectionUtils;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -42,9 +46,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.ReflectionUtils;
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagefap.com" }, urls = { "https?://(www\\.)?imagefap.com/(imagedecrypted/\\d+|video\\.php\\?vid=\\d+)" })
 public class ImageFap extends PluginForHost {
@@ -75,22 +76,35 @@ public class ImageFap extends PluginForHost {
         }
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        final String addedLink = link.getDownloadURL();
-        if (addedLink.contains("imagedecrypted/")) {
-            final String photoID = new Regex(addedLink, "(\\d+)$").getMatch(0);
+    public void correctDownloadLink(final DownloadLink link) {
+        if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().contains("imagedecrypted/")) {
+            final String photoID = new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
             if (photoID != null) {
                 final String newurl = "https://www.imagefap.com/photo/" + photoID + "/";
-                link.setProperty("photoID", Long.parseLong(photoID));
-                link.setUrlDownload(newurl);
+                link.setPluginPatternMatcher(newurl);
                 link.setContentUrl(newurl);
             }
-        } else if (addedLink.contains("/photo/") && !link.hasProperty("photoID")) {
-            final String photoID = new Regex(addedLink, "/photo/(\\d+)").getMatch(0);
+        } else if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().contains("/photo/") && !link.hasProperty("photoID")) {
+            /* Set Packagizer property */
+            final String photoID = new Regex(link.getPluginPatternMatcher(), "/photo/(\\d+)").getMatch(0);
             if (photoID != null) {
                 link.setProperty("photoID", Long.parseLong(photoID));
             }
         }
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
     }
 
     public static Browser prepBR(final Browser br) {
@@ -99,7 +113,7 @@ public class ImageFap extends PluginForHost {
         return br;
     }
 
-    private static final String VIDEOLINK = "https?://(www\\.)?imagefap.com/video\\.php\\?vid=\\d+";
+    private static final String VIDEOLINK = "(?i)https?://[^/]+/video\\.php\\?vid=\\d+";
 
     private String DecryptLink(final String code) {
         try {
@@ -153,14 +167,13 @@ public class ImageFap extends PluginForHost {
         return -1;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         correctDownloadLink(link);
         prepBR(this.br);
         loadSessionCookies(this.br, this.getHost());
         try {
-            getRequest(this, this.br, br.createGetRequest(link.getDownloadURL()));
+            getRequest(this, this.br, br.createGetRequest(link.getPluginPatternMatcher()));
         } catch (PluginException e) {
             if (!(Thread.currentThread() instanceof SingleDownloadController) && e.getLinkStatus() == LinkStatus.ERROR_IP_BLOCKED) {
                 logger.log(e);
@@ -169,8 +182,15 @@ public class ImageFap extends PluginForHost {
                 throw e;
             }
         }
-        if (link.getDownloadURL().matches(VIDEOLINK)) {
-            final String filename = br.getRegex(">Title:</td>[\t\n\r ]+<td width=35%>([^<>\"]*?)</td>").getMatch(0);
+        if (link.getPluginPatternMatcher().matches(VIDEOLINK)) {
+            link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.FLV);
+            /*
+             * 2021-05-05: Offline videos can't be easily recognized by html code e.g.: https://www.imagefap.com/video.php?vid=999999999999
+             */
+            if (br.containsHTML("<td>Duration:</td>\\s*<td id=\"vid_duration\">00:00</td>")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String filename = br.getRegex(">Title:</td>\\s*<td width=35%>([^<>\"]*?)</td>").getMatch(0);
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -247,8 +267,8 @@ public class ImageFap extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private final String findFinalLink(Browser br, DownloadLink link) throws Exception {
-        if (link.getDownloadURL().matches(VIDEOLINK)) {
+    private final String findFinalLink(final Browser br, final DownloadLink link) throws Exception {
+        if (link.getPluginPatternMatcher().matches(VIDEOLINK)) {
             String configLink = br.getRegex("flashvars\\.config = escape\\(\"(https?://[^<>\"]*?)\"").getMatch(0);
             if (configLink == null) {
                 /* 2020-03-23 */
@@ -302,11 +322,6 @@ public class ImageFap extends PluginForHost {
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.setFollowRedirects(true);
-        String pfilename = link.getName();
-        if (false) {
-            // same request is done in requestFileInformation
-            getRequest(this, this.br, this.br.createGetRequest(link.getDownloadURL()));
-        }
         // TODO: maybe add cache/reuse
         final String finalLink = findFinalLink(br, link);
         if (link.getDownloadURL().matches(VIDEOLINK)) {
@@ -317,7 +332,11 @@ public class ImageFap extends PluginForHost {
                 } catch (IOException e) {
                     logger.log(e);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         } else {
             // Only set subdirectory if it wasn't set before or we'll get
@@ -341,9 +360,9 @@ public class ImageFap extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final String expectedExtension = getExtensionFromMimeType(dl.getConnection().getContentType());
-            if ((expectedExtension != null && !StringUtils.endsWithCaseInsensitive(link.getFinalFileName(), expectedExtension))) {
-                pfilename = pfilename + "." + expectedExtension;
-                link.setFinalFileName(pfilename);
+            if (expectedExtension != null && link.getName() != null) {
+                final String correctedFilename = this.correctOrApplyFileNameExtension(link.getName(), "." + expectedExtension);
+                link.setFinalFileName(correctedFilename);
             }
         }
         dl.startDownload();
@@ -363,7 +382,7 @@ public class ImageFap extends PluginForHost {
             br.getPage(request);
             if (br.getHttpConnection().getResponseCode() == 429) {
                 /*
-                 * 
+                 *
                  * 100 requests per 1 min 200 requests per 5 min 1000 requests per 1 hour
                  */
                 /* 2020-09-22: Most likely they will allow a retry after one hour. */
