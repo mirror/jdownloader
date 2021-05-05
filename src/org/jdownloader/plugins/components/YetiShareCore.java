@@ -879,7 +879,7 @@ public class YetiShareCore extends antiDDoSForHost {
     protected String getContinueLink(final Browser br) throws Exception {
         String continue_link = br.getRegex("\\$\\(\\'\\.download\\-timer\\'\\)\\.html\\(\"<a href=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
         if (continue_link == null) {
-            continue_link = br.getRegex("class=\\'btn btn\\-free\\' href=\\'(https?://[^<>\"]*?)\\'>").getMatch(0);
+            continue_link = br.getRegex("class=\\'btn btn\\-free\\'[^>]*href=\\'([^<>\"\\']*?)\\'>").getMatch(0);
         }
         if (continue_link == null) {
             continue_link = br.getRegex("<div class=\"captchaPageTable\">\\s*<form method=\"POST\" action=\"(https?://[^<>\"]*?)\"").getMatch(0);

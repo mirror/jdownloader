@@ -16,9 +16,13 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -54,26 +58,41 @@ public class AparatCom extends PluginForDecrypt {
             String videoURL = Encoding.htmlDecode(videoMatch[0]).replaceAll("\\\\/", "/");
             decryptedLinks.add(createDownloadlink(videoURL));
         }
+        final String newjson = br.getRegex("var options = (\\{.*?\\});").getMatch(0);
+        final Map<String, Object> entries = JSonStorage.restoreFromString(newjson, TypeRef.HASHMAP);
+        final List<Map<String, Object>> streamingTypesList = (List<Map<String, Object>>) entries.get("multiSRC");
+        /* 0=HLS, 1= HTTP */
+        final List<Map<String, Object>> httpStreams = (List<Map<String, Object>>) streamingTypesList.get(1);
+        /* Last object = highest quality */
+        final Map<String, Object> bestHttpStream = httpStreams.get(httpStreams.size() - 1);
         //
+        String videoTitle = null;
         String[][] jsonMatches = br.getRegex("<script[\\s\\t\\r]+type=\"application/ld\\+json\">[\\s\\t\\r]*(.*?)[\\s\\t\\r]*</script>").getMatches();
-        for (String[] jsonMatch : jsonMatches) {
-            final LinkedHashMap<String, Object> jsonEntries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(jsonMatch[0]);
-            String videoName = jsonEntries.get("name").toString();
-            final String videoURL = jsonEntries.get("contentUrl").toString();
-            if (videoName != null && videoURL != null) {
-                if (Encoding.isHtmlEntityCoded(videoName)) {
-                    videoName = Encoding.htmlDecode(videoName);
-                }
-                final DownloadLink dl = createDownloadlink("directhttp://" + videoURL);
-                dl.setForcedFileName(videoName + ".mp4");
-                decryptedLinks.add(dl);
+        if (jsonMatches.length == 1) {
+            final String[] jsonMatch = jsonMatches[0];
+            final Map<String, Object> jsonEntries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(jsonMatch[0]);
+            videoTitle = jsonEntries.get("name").toString();
+            if (videoTitle != null) {
+                videoTitle = Encoding.htmlDecode(videoTitle);
             }
         }
-        //
-        if (decryptedLinks.isEmpty()) {
-            /* 2020-11-09: Fallback to HLS */
-            decryptedLinks.add(this.createDownloadlink("https://www.aparat.com/video/hls/manifest/visittype/site/videohash/" + itemID + "/f/" + itemID + ".m3u8"));
+        final DownloadLink dl = this.createDownloadlink("directhttp://" + (String) bestHttpStream.get("src"));
+        if (!StringUtils.isEmpty(videoTitle)) {
+            dl.setFinalFileName(videoTitle + ".mp4");
+        } else if (!StringUtils.isEmpty(title)) {
+            dl.setFinalFileName(title + ".mp4");
+        } else {
+            /* Fallback */
+            dl.setFinalFileName(itemID + ".mp4");
         }
+        dl.setAvailable(true);
+        decryptedLinks.add(dl);
+        /* Old HLS fallback: */
+        // if (decryptedLinks.isEmpty()) {
+        // /* 2020-11-09: Fallback to HLS */
+        // decryptedLinks.add(this.createDownloadlink("https://www.aparat.com/video/hls/manifest/visittype/site/videohash/" + itemID + "/f/"
+        // + itemID + ".m3u8"));
+        // }
         if (!title.isEmpty()) {
             final FilePackage filePackage = FilePackage.getInstance();
             filePackage.setName(Encoding.htmlDecode(title));

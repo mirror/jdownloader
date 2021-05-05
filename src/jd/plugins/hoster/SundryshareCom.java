@@ -21,7 +21,6 @@ import java.util.List;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -101,18 +100,5 @@ public class SundryshareCom extends YetiShareCore {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
-    }
-
-    private boolean specialHandlingDone = false;
-
-    @Override
-    protected String getContinueLink(final Browser br) throws Exception {
-        /* 2020-12-11: Special */
-        String continue_link = super.getContinueLink(br);
-        if (continue_link == null && !specialHandlingDone) {
-            continue_link = "/" + this.getFUID(this.getDownloadLink()) + "?view-ads=1";
-            specialHandlingDone = true;
-        }
-        return continue_link;
     }
 }
