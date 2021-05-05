@@ -98,7 +98,6 @@ public class InstaGramCom extends PluginForHost {
     public static final String   PREFER_SERVER_FILENAMES                           = "PREFER_SERVER_FILENAMES";
     public static final String   ADD_ORDERID_TO_FILENAMES                          = "ADD_ORDERID_TO_FILENAMES";
     private static final String  ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY              = "ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY";
-    private static final String  PROFILE_CRAWLER_PUT_ALL_ITEMS_IN_ONE_PACKAGE      = "PROFILE_CRAWLER_PUT_ALL_ITEMS_IN_ONE_PACKAGE";
     public static final String   ONLY_GRAB_X_ITEMS                                 = "ONLY_GRAB_X_ITEMS";
     public static final String   ONLY_GRAB_X_ITEMS_NUMBER                          = "ONLY_GRAB_X_ITEMS_NUMBER";
     public static final String   ONLY_GRAB_X_ITEMS_HASHTAG_CRAWLER_NUMBER          = "ONLY_GRAB_X_ITEMS_HASHTAG_CRAWLER_NUMBER";
@@ -106,7 +105,6 @@ public class InstaGramCom extends PluginForHost {
     /* Settings default values */
     public static final boolean  defaultPREFER_SERVER_FILENAMES                    = false;
     public static final boolean  defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY       = false;
-    /* 2020-11-25: Set this to false by default until we can maybe auto-detect the situation in which this is needed. */
     public static final boolean  defaultADD_ORDERID_TO_FILENAMES                   = false;
     public static final boolean  defaultQUIT_ON_RATE_LIMIT_REACHED                 = false;
     public static final boolean  defaultHASHTAG_CRAWLER_FIND_USERNAMES             = false;
@@ -747,12 +745,9 @@ public class InstaGramCom extends PluginForHost {
     private void setConfigElements() {
         final ConfigEntry cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_SERVER_FILENAMES, "Use server-filenames whenever possible?").setDefaultValue(defaultPREFER_SERVER_FILENAMES);
         getConfig().addEntry(cfg);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ADD_ORDERID_TO_FILENAMES, "Add order-ID to filenames if an album contains more than one element?\r\nWarning: Turning this off may lead to duplicated filenames and skipped downloads!").setDefaultValue(defaultADD_ORDERID_TO_FILENAMES).setEnabledCondidtion(cfg, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ADD_ORDERID_TO_FILENAMES, "Include order-ID in filenames if an album contains more than one element?\r\nCan be useful if you want to be able to keep the original order of multiple elements of an album.").setDefaultValue(defaultADD_ORDERID_TO_FILENAMES).setEnabledCondidtion(cfg, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY, "Try to download original quality (bigger filesize, without image-effects)? [This will slow down the download-process!]").setDefaultValue(defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HASHTAG_CRAWLER_FIND_USERNAMES, "Crawl- and set usernames for filenames when crawling '/explore/tags/<hashtag>' URLs? (Slows down crawl-process!)").setDefaultValue(defaultHASHTAG_CRAWLER_FIND_USERNAMES));
-        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(),
-        // PROFILE_CRAWLER_PUT_ALL_ITEMS_IN_ONE_PACKAGE, "Put all items of one profile into a single package? If it contains posts with
-        // multiple items, you might lose the relation between those.").setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final ConfigEntry grabXitems = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ONLY_GRAB_X_ITEMS, "Only grab the X latest items?").setDefaultValue(defaultONLY_GRAB_X_ITEMS);
         getConfig().addEntry(grabXitems);
