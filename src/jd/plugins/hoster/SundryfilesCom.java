@@ -18,11 +18,9 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -103,16 +101,6 @@ public class SundryfilesCom extends YetiShareCore {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
-    }
-
-    @Override
-    protected String getContinueLink(final Browser br) throws Exception {
-        String continueurl = super.getContinueLink(br);
-        if (StringUtils.isEmpty(continueurl)) {
-            /* 2019-06-07: E.g. first loop */
-            continueurl = br.getRegex("href=\\'(\\?view\\-ads=1)\\'>download( / view)? now<").getMatch(0);
-        }
-        return continueurl;
     }
 
     @Override
