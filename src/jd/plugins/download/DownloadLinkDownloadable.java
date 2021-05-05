@@ -661,8 +661,11 @@ public class DownloadLinkDownloadable implements Downloadable {
     }
 
     public void setHashInfo(final HashInfo hashInfo) {
-        if (hashInfo != null && hashInfo.isTrustworthy() && getHashInfo() == null) {
-            getDownloadLink().setHashInfo(hashInfo);
+        if (hashInfo != null && hashInfo.isTrustworthy()) {
+            final HashInfo existingHashInfo = getHashInfo();
+            if (existingHashInfo == null || hashInfo.equals(existingHashInfo)) {
+                getDownloadLink().setHashInfo(hashInfo);
+            }
         }
     }
 
