@@ -54,7 +54,6 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
@@ -266,22 +265,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      */
     protected String[] supportsPreciseExpireDate() {
         return new String[] { "/?op=payments", "/upgrade" };
-    }
-
-    /**
-     * 2019-05-21: This old method is rarely supported in new XFS versions - you will usually not need this! <br />
-     * <b> Enabling this will perform at least one additional http-request! </b> <br />
-     * Enable this only for websites using <a href="https://sibsoft.net/xvideosharing.html">XVideosharing</a>. <br />
-     * Demo-Website: <a href="http://xvideosharing.com">xvideosharing.com</a> <br />
-     * Example-Host: <a href="http://clipsage.com">clipsage.com</a>
-     *
-     * @return true: Try to find final downloadlink via '/vidembed-<fuid>' request. <br />
-     *         false: Skips this part. <br />
-     *         default: false
-     */
-    @Deprecated
-    protected boolean isVideohosterDirect() {
-        return false;
     }
 
     /**
@@ -792,7 +775,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "").trim();
             if (this.internal_isVideohoster_enforce_video_filename()) {
                 /* For videohosts we often get ugly filenames such as 'some_videotitle.avi.mkv.mp4' --> Correct that! */
-                fileInfo[0] = this.removeDoubleVideoExtensions(fileInfo[0], "mp4");
+                fileInfo[0] = this.correctOrApplyFileNameExtension(fileInfo[0], "." + "mp4");
             }
             link.setName(fileInfo[0]);
         }
@@ -1142,7 +1125,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         } else {
                             checkURL = getMainPage() + "/?op=" + checkTypeCurrent;
                         }
-                        /* Get and prepare Form */
+                        /* Get- and prepare Form */
                         if (this.supports_availablecheck_filesize_alt_fast()) {
                             /* Quick way - we do not access the page before and do not need to parse the Form. */
                             checkForm = new Form();
@@ -1330,44 +1313,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return isChecked;
     }
 
-    /**
-     * Removes double extensions (of video hosts) to correct ugly filenames such as 'some_videoname.mkv.flv.mp4'.<br />
-     *
-     * @param filename
-     *            input filename whose extensions will be replaced by desiredExtension.
-     * @param desiredExtension
-     *            Extension which is supposed to replace all eventually existing wrong extension(s). <br />
-     *            If desiredExtension is null, this function will only remove existing extensions.
-     */
-    private String removeDoubleVideoExtensions(String filename, final String desiredExtension) {
-        if (filename == null || desiredExtension == null) {
-            return filename;
-        }
-        /* First let's remove all [XVideosharing] common video extensions */
-        final VideoExtensions[] videoExtensions = VideoExtensions.values();
-        boolean foundExt = true;
-        while (foundExt) {
-            foundExt = false;
-            /* Check for video extensions at the end of the filename and remove them. Do this until no extension is found anymore */
-            for (final VideoExtensions videoExt : videoExtensions) {
-                final Pattern pattern = videoExt.getPattern();
-                final String extStr = pattern.toString();
-                final Pattern removePattern = Pattern.compile(".+(( |\\.)" + extStr + ")$", Pattern.CASE_INSENSITIVE);
-                final String removeThis = new Regex(filename, removePattern).getMatch(0);
-                if (removeThis != null) {
-                    filename = filename.replace(removeThis, "");
-                    foundExt = true;
-                    break;
-                }
-            }
-        }
-        /* Add desired video extension if given. */
-        if (desiredExtension != null && !StringUtils.endsWithCaseInsensitive(filename, "." + desiredExtension)) {
-            filename += "." + desiredExtension;
-        }
-        return filename;
-    }
-
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         this.resolveShortURL(link, null);
@@ -1414,26 +1359,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     } catch (final Throwable e) {
                         logger.log(e);
                         logger.info("Failed to get link via embed");
-                    }
-                }
-                /* Do they provide direct video URLs? */
-                if (StringUtils.isEmpty(dllink) && this.isVideohosterDirect()) {
-                    /* Legacy - most XFS videohosts do not support this anymore! */
-                    try {
-                        logger.info("Trying to get link via vidembed");
-                        final Browser brv = br.cloneBrowser();
-                        getPage(brv, "/vidembed-" + this.getFUIDFromURL(link), false);
-                        dllink = brv.getRedirectLocation();
-                        if (StringUtils.isEmpty(dllink)) {
-                            logger.info("Failed to get link via vidembed because: " + br.toString());
-                        } else {
-                            logger.info("Successfully found link via vidembed");
-                        }
-                    } catch (final InterruptedException e) {
-                        throw e;
-                    } catch (final Throwable e) {
-                        logger.log(e);
-                        logger.info("Failed to get link via vidembed");
                     }
                 }
                 /* Do we have an imagehost? */
@@ -2115,6 +2040,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
     }
 
+    /** Cleans correctedBrowserRequestMap */
     @Override
     public void clean() {
         try {
@@ -2186,11 +2112,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
         String dllink = br.getRedirectLocation();
         if (dllink == null || new Regex(dllink, this.getSupportedLinks()).matches()) {
-            // dllink = new Regex(src, "(\"|')(" + String.format(dllinkRegexFile, getHostsPatternPart()) + ")\\1").getMatch(1);
-            // /* Use wider and wider RegEx */
-            // if (dllink == null) {
-            // dllink = new Regex(src, "(" + String.format(dllinkRegexFile, getHostsPatternPart()) + ")(\"|')").getMatch(0);
-            // }
             if (StringUtils.isEmpty(dllink)) {
                 for (final Pattern pattern : getDownloadurlRegexes()) {
                     dllink = new Regex(src, pattern).getMatch(0);
@@ -2442,8 +2363,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * Returns URL to the video thumbnail. <br />
-     * This might sometimes be useful when VIDEOHOSTER or VIDEOHOSTER_2 handling is used.
+     * Returns URL to the video thumbnail.
      */
     @Deprecated
     private String getVideoThumbnailURL(final String src) {
@@ -2510,6 +2430,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          * TODO: 2019-05-15: Try to grab the whole line which contains "id"="countdown" and then grab the waittime from inside that as it
          * would probably make this more reliable.
          */
+        /* TODO: Refactor this to obtain browser as parameter. */
         String waitStr = new Regex(correctedBR, "id=(?:\"|\\')countdown_str(?:\"|\\')[^>]*>[^<>]*<span id=[^>]*>\\s*(\\d+)\\s*</span>").getMatch(0);
         if (waitStr == null) {
             waitStr = new Regex(correctedBR, "class=\"seconds\"[^>]*>\\s*(\\d+)\\s*</span>").getMatch(0);
@@ -2977,15 +2898,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Handles all kinds of errors which can happen if we get the final downloadlink but we get html code instead of the file we want to
      * download.
      */
-    public void checkServerErrors(final Browser br, final String correctedBR, final DownloadLink link, final Account account) throws NumberFormatException, PluginException {
-        if (new Regex(correctedBR.trim(), "^No file$").matches()) {
+    public void checkServerErrors(final Browser br, final DownloadLink link, final Account account) throws NumberFormatException, PluginException {
+        if (new Regex(br.toString().trim(), "^No file$").matches()) {
             /* Possibly dead file but it is supposed to be online so let's wait and retry! */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'No file'", 30 * 60 * 1000l);
-        } else if (new Regex(correctedBR.trim(), "^Wrong IP$").matches()) {
+        } else if (new Regex(br.toString().trim(), "^Wrong IP$").matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Wrong IP'", 2 * 60 * 60 * 1000l);
-        } else if (new Regex(correctedBR.trim(), "^Expired$").matches()) {
+        } else if (new Regex(br.toString().trim(), "^Expired$").matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Expired'", 2 * 60 * 60 * 1000l);
-        } else if (new Regex(correctedBR.trim(), "(^File Not Found$|<h1>404 Not Found</h1>)").matches()) {
+        } else if (new Regex(br.toString().trim(), "(^File Not Found$|<h1>404 Not Found</h1>)").matches()) {
             /* most likely result of generated link that has expired -raztoki */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
         }
@@ -3069,6 +2990,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             logger.info("Successfully found complete AccountInfo with trafficleft via API");
             /* API with trafficleft value is uncommon -> Make sure devs easily take note of this! */
             if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                /* Devs only */
                 String accStatus;
                 if (ai.getStatus() != null) {
                     accStatus = ai.getStatus();
@@ -3435,10 +3357,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     public boolean isLoggedin(final Browser brc) {
         /**
          * Please use valid combinations only! login or email alone without xfss is NOT valid!
-         */
-        /**
-         * 2019-07-25: TODO: Maybe check for valid cookies on all supported domains (e.g. special case imgrock.info and some others in
-         * ImgmazeCom plugin)
          */
         final String mainpage = getMainPage(brc);
         logger.info("Doing login-cookiecheck for: " + mainpage);
@@ -3994,10 +3912,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         } else {
             logger.info("Looking for user selected video stream quality: " + userSelectedQuality);
             for (final HlsContainer hlsQualityTmp : hlsQualities) {
-                /*
-                 * TODO: Check if they're always the same or if they can also be crooked numbers. See ZDFMediathekDecrypter -->
-                 * getHeightForQualitySelection()
-                 */
                 final int height = hlsQualityTmp.getHeight();
                 if (height == userSelectedQuality) {
                     logger.info("Successfully found selected quality: " + userSelectedQuality);
@@ -4031,7 +3945,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
             correctBR(br);
             checkResponseCodeErrors(con);
-            checkServerErrors(br, getCorrectBR(br), link, account);
+            checkServerErrors(br, link, account);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadlink did not lead to downloadable content");
         } else {
             try {
@@ -4217,6 +4131,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             account.setUser(email);
         }
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            /* Devs only */
             String accStatus;
             if (ai.getStatus() != null) {
                 accStatus = ai.getStatus();
