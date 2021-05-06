@@ -191,7 +191,7 @@ public class SubyShareCom extends XFileSharingProBasic {
                     }
                 }
                 /* Do they provide direct video URLs? */
-                if (StringUtils.isEmpty(dllink) && this.isVideohosterDirect()) {
+                if (StringUtils.isEmpty(dllink)) {
                     /* Legacy - most XFS videohosts do not support this anymore! */
                     try {
                         logger.info("Trying to get link via vidembed");
