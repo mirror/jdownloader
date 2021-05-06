@@ -293,7 +293,7 @@ public class SubyShareCom extends XFileSharingProBasic {
                 }
                 waitTime(link, timeBefore);
                 final URLConnectionAdapter formCon = openAntiDDoSRequestConnection(br, br.createFormRequest(download2));
-                if (isDownloadableContent(formCon)) {
+                if (looksLikeDownloadableContent(formCon)) {
                     /* Very rare case - e.g. tiny-files.com */
                     handleDownload(link, account, dllink, formCon.getRequest());
                     return;

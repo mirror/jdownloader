@@ -210,7 +210,7 @@ public class GounlimitedTo extends XFileSharingProBasic {
                      */
                     logger.info("directurl lead to 503 | too many connections");
                     dllink_is_valid = true;
-                } else if (con.getCompleteContentLength() > 0 && isDownloadableContent(con)) {
+                } else if (con.getCompleteContentLength() > 0 && looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() == 1301046l) {
                         /* 2020-08-10: "This video is offline" video ... */
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
