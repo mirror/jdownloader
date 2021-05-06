@@ -205,6 +205,12 @@ public class SimplyPremiumCom extends PluginForHost {
         } else if (br.containsHTML("<code>3</code>")) {
             logger.info(this.getHost() + ": Traffic limit reached -> Temp. disabling account");
             throw new AccountUnavailableException("Traffic limit reached", 1 * 60 * 1000l);
+        } else if (br.containsHTML("<code>15</code>")) {
+            /* 2021-05-06: Host specific downloadlimit has been reached -> Disable LINK for 30 minutes (RE: admin) */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Dein hosterspezifisches Request Traffic-Limit wurde erreicht.", 30 * 60 * 1000l);
+        } else if (br.containsHTML("<code>16</code>")) {
+            /* 2021-05-06: Multihost side error, user should contact multihost support RE: admin */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fehler... Kontaktiere den simply-premium.com Support!", 30 * 60 * 1000l);
         }
     }
 
