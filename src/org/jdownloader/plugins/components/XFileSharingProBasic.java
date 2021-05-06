@@ -1446,7 +1446,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
                 waitTime(link, timeBefore);
                 final URLConnectionAdapter formCon = openAntiDDoSRequestConnection(br, br.createFormRequest(download2));
-                if (isDownloadableContent(formCon)) {
+                if (looksLikeDownloadableContent(formCon)) {
                     /* Very rare case - e.g. tiny-files.com */
                     handleDownload(link, account, dllink, formCon.getRequest());
                     return;
@@ -1990,7 +1990,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                      */
                     logger.info("directurl lead to 503 | too many connections");
                     return directurl;
-                } else if (isDownloadableContent(con)) {
+                } else if (looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() >= 0 && con.getCompleteContentLength() < 100) {
                         throw new Exception("very likely no file but an error message!length=" + con.getCompleteContentLength());
                     } else {
@@ -3754,7 +3754,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                             }
                             handlePassword(dlForm, link);
                             final URLConnectionAdapter formCon = br.openFormConnection(dlForm);
-                            if (isDownloadableContent(formCon)) {
+                            if (looksLikeDownloadableContent(formCon)) {
                                 /* Very rare case - e.g. tiny-files.com */
                                 handleDownload(link, account, dllink, formCon.getRequest());
                                 return;
@@ -3774,10 +3774,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 handleDownload(link, account, dllink, null);
             }
         }
-    }
-
-    protected boolean isDownloadableContent(final URLConnectionAdapter con) throws IOException {
-        return looksLikeDownloadableContent(con);
     }
 
     protected void handleDownload(final DownloadLink link, final Account account, String dllink, final Request req) throws Exception {
@@ -3936,7 +3932,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /** Handles errors right before starting the download. */
     protected void handleDownloadErrors(final URLConnectionAdapter con, final DownloadLink link, final Account account) throws Exception {
-        if (!isDownloadableContent(con)) {
+        if (!looksLikeDownloadableContent(con)) {
             logger.warning("The final dllink seems not to be a file!");
             try {
                 br.followConnection(true);
