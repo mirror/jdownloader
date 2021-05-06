@@ -800,7 +800,6 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // br.getPage(TumblrCom.API_BASE + "/blog/" + Encoding.urlEncode(username) + ".tumblr.com/info");
-        /* 2021-04-08: TODO: Limit fields we request so we only get what we need in order to prevent wasting resources (?) */
         br.getPage(TumblrCom.API_BASE + "/blog/" + Encoding.urlEncode(username) + ".tumblr.com/posts");
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
