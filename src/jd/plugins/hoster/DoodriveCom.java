@@ -19,6 +19,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -30,9 +33,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DoodriveCom extends PluginForHost {
@@ -106,8 +106,8 @@ public class DoodriveCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         /**
-         * 2021-03-12: This is NOT a real availablecheck! </br> Website returns error 404 for invalid fileIDs but for expired/deleted files,
-         * status will be unclear until download is started!
+         * 2021-03-12: This is NOT a real availablecheck! </br>
+         * Website returns error 404 for invalid fileIDs but for expired/deleted files, status will be unclear until download is started!
          */
         if (isDownload) {
             br.getPage(link.getPluginPatternMatcher());
@@ -127,36 +127,49 @@ public class DoodriveCom extends PluginForHost {
     private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
             Form preDlForm = br.getFormbyActionRegex(".*bot-verify");
+            if (preDlForm == null) {
+                /* 2021-05-06 */
+                preDlForm = br.getFormbyKey("verify");
+            }
             if (preDlForm != null) {
                 /* Step1 */
+                br.setFollowRedirects(true);
                 br.getHeaders().put("Origin", "https://doodrive.com");
+                /* It may be set to null so it wouldn't be sent then */
+                preDlForm.put("verify", "");
                 br.submitForm(preDlForm);
-                /* Step2 */
-                preDlForm = br.getFormbyActionRegex(".*bot-verify");
-                if (preDlForm != null) {
-                    final long timestampBeforeCaptcha = System.currentTimeMillis();
-                    int waitSeconds = 10;
-                    try {
-                        final Browser brc = br.cloneBrowser();
-                        brc.getPage("https://" + this.br.getHost() + "/assets/js/global.js");
-                        final String waitStr = brc.getRegex("time\\s*:\\s*(\\d+)").getMatch(0);
-                        if (waitStr != null) {
-                            waitSeconds = Integer.parseInt(waitStr);
-                        }
-                    } catch (final Throwable e) {
-                        logger.log(e);
-                        logger.warning("Failed to find pre-download-waittime in js");
-                    }
-                    logger.info("Found preDlForm again this time with captcha");
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    preDlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                    /* Very important! */
-                    preDlForm.put("verify", "");
-                    /* Substract the time the user took to solve the captcha so that time is not wasted. */
-                    final long timeToWait = waitSeconds * 1001l - (System.currentTimeMillis() - timestampBeforeCaptcha);
-                    this.sleep(timeToWait, link);
-                    br.submitForm(preDlForm);
+                /* Step 1.1: Redirect to fake "blog" page */
+                final Form blogForm = br.getFormbyKey("doo-verify");
+                if (blogForm != null) {
+                    br.submitForm(blogForm);
                 }
+                /* Step2: Captcha */
+                preDlForm = br.getFormbyKey("doo-verify");
+                if (preDlForm == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final long timestampBeforeCaptcha = System.currentTimeMillis();
+                int waitSeconds = 10;
+                try {
+                    final Browser brc = br.cloneBrowser();
+                    brc.getPage("https://" + this.br.getHost() + "/assets/js/global.js");
+                    final String waitStr = brc.getRegex("time\\s*:\\s*(\\d+)").getMatch(0);
+                    if (waitStr != null) {
+                        waitSeconds = Integer.parseInt(waitStr);
+                    }
+                } catch (final Throwable e) {
+                    logger.log(e);
+                    logger.warning("Failed to find pre-download-waittime in js");
+                }
+                logger.info("Found preDlForm again this time with captcha");
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                preDlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                /* Very important! */
+                preDlForm.put("verify", "");
+                /* Substract the time the user took to solve the captcha so that time is not wasted. */
+                final long timeToWait = waitSeconds * 1001l - (System.currentTimeMillis() - timestampBeforeCaptcha);
+                this.sleep(timeToWait, link);
+                br.submitForm(preDlForm);
             }
             /* Only now can we know whether or not that file is online. */
             if (br.containsHTML("<title>\\s*File Not Found|>\\s*The file you are trying to download is no longer available|>\\s*The file has expired>\\s*The file was deleted by")) {
@@ -164,10 +177,7 @@ public class DoodriveCom extends PluginForHost {
             }
             /* Step3 */
             br.setFollowRedirects(false);
-            Form dlform = br.getFormbyKey("f");
-            if (dlform == null) {
-                dlform = br.getForm(0);
-            }
+            final Form dlform = br.getFormbyKey("f");
             if (dlform == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
