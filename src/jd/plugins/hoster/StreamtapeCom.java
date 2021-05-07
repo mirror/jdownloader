@@ -19,6 +19,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -32,10 +36,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class StreamtapeCom extends PluginForHost {
@@ -140,6 +140,15 @@ public class StreamtapeCom extends PluginForHost {
                 dllink = "//streamtape.com/get_video?" + dllink + "&stream=1";
             } else {
                 dllink = br.getRegex("document\\.getElementById\\((?:'|\")videolink(?:'|\")\\)(?:;elem\\['innerHTML'\\]|\\.innerHTML)\\s*=\\s*(?:'|\")([^\"\\']+)").getMatch(0);
+                if (dllink == null) {
+                    /* 2021-05-07: This only happens as a kind of rate-limit if you start too many downloads without (waiting inbetween). */
+                    dllink = br.getRegex("eolink'\\)\\.innerHTML = \"(.*?)';").getMatch(0);
+                    if (dllink != null) {
+                        /* Fix js var */
+                        dllink = dllink.replace("\" + \"", "");
+                        dllink = dllink.replace("\" + '", "");
+                    }
+                }
             }
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find final downloadurl");
