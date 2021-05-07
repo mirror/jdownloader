@@ -140,7 +140,7 @@ public class TiktokCom extends antiDDoSForHost {
                 link.setComment(title);
             }
         } else {
-            String text_hashtags = null;
+            String description = null;
             final boolean useWebsiteEmbed = true;
             /* 2021-04-09: Don't use the website-way as their bot protection kicks in right away! */
             final boolean useWebsite = false;
@@ -159,7 +159,7 @@ public class TiktokCom extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 createDate = Long.toString(JavaScriptEngineFactory.toLong(entries.get("createTime"), 0));
-                text_hashtags = (String) entries.get("desc");
+                description = (String) entries.get("desc");
                 final Map<String, Object> videoInfo = (Map<String, Object>) entries.get("itemInfos");
                 this.dllink = (String) videoInfo.get("downloadAddr");
                 if (StringUtils.isEmpty(this.dllink)) {
@@ -214,7 +214,7 @@ public class TiktokCom extends antiDDoSForHost {
                 final Map<String, Object> itemInfos = (Map<String, Object>) entries.get("itemInfos");
                 // entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "videoData/itemInfos");
                 createDate = Long.toString(JavaScriptEngineFactory.toLong(itemInfos.get("createTime"), 0));
-                text_hashtags = (String) itemInfos.get("text");
+                description = (String) itemInfos.get("text");
                 dllink = (String) JavaScriptEngineFactory.walkJson(itemInfos, "video/urls/{0}");
                 if (username == null && entries.containsKey("authorInfos")) {
                     final Map<String, Object> authorInfos = (Map<String, Object>) entries.get("authorInfos");
@@ -238,8 +238,21 @@ public class TiktokCom extends antiDDoSForHost {
                 /* Rev. 40928 and earlier */
                 this.dllink = generateDownloadurlOld(link);
             }
-            if (!StringUtils.isEmpty(text_hashtags) && StringUtils.isEmpty(link.getComment())) {
-                link.setComment(text_hashtags);
+            if (!StringUtils.isEmpty(description)) {
+                final String[] hashtags = new Regex(description, "(#[^# ]+)").getColumn(0);
+                if (hashtags.length > 0) {
+                    final StringBuilder sb = new StringBuilder();
+                    for (final String hashtag : hashtags) {
+                        sb.append(hashtag);
+                    }
+                    /* Set Packagizer property */
+                    link.setProperty("hashtags", sb.toString());
+                }
+                if (StringUtils.isEmpty(link.getComment())) {
+                    link.setComment(description);
+                }
+                /* Set Packagizer property */
+                link.setProperty("description", description);
             }
             /* 2020-09-16: Directurls can only be used one time! If tried to re-use, this will happen: HTTP/1.1 403 Forbidden */
             br.setFollowRedirects(true);
