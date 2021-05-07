@@ -74,10 +74,12 @@ public class TiktokCom extends antiDDoSForHost {
         return new Regex(link.getPluginPatternMatcher(), "/(?:video|v|embed)/(\\d+)").getMatch(0);
     }
 
-    private String              dllink             = null;
-    private boolean             server_issues      = false;
-    private static final String PROPERTY_DIRECTURL = "directurl";
-    private static final String PROPERTY_DATE      = "date";
+    private String              dllink               = null;
+    private boolean             server_issues        = false;
+    private static final String PROPERTY_DIRECTURL   = "directurl";
+    private static final String PROPERTY_DATE        = "date";
+    private static final String PROPERTY_DESCRIPTION = "description";
+    private static final String PROPERTY_HASHTAGS    = "hashtags";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -246,13 +248,13 @@ public class TiktokCom extends antiDDoSForHost {
                         sb.append(hashtag);
                     }
                     /* Set Packagizer property */
-                    link.setProperty("hashtags", sb.toString());
+                    link.setProperty(PROPERTY_HASHTAGS, sb.toString());
                 }
                 if (StringUtils.isEmpty(link.getComment())) {
                     link.setComment(description);
                 }
                 /* Set Packagizer property */
-                link.setProperty("description", description);
+                link.setProperty(PROPERTY_DESCRIPTION, description);
             }
             /* 2020-09-16: Directurls can only be used one time! If tried to re-use, this will happen: HTTP/1.1 403 Forbidden */
             br.setFollowRedirects(true);
