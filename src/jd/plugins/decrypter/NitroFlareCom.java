@@ -36,7 +36,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nitroflare.com" }, urls = { "https?://(?:www\\.)?nitroflare\\.(?:com|net)/folder/(\\d+)/([A-Za-z0-9=]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nitroflare.com" }, urls = { "https?://(?:www\\.)?(?:nitroflare\\.(?:com|net)|nitro\\.download)/folder/(\\d+)/([A-Za-z0-9=]+)" })
 public class NitroFlareCom extends antiDDoSForDecrypt {
     public NitroFlareCom(PluginWrapper wrapper) {
         super(wrapper);

@@ -565,6 +565,7 @@ public class RealDebridCom extends PluginForHost {
                     final TokenResponse existingToken = JSonStorage.restoreFromString(tokenJSon, TokenResponse.TYPE);
                     final ClientSecret clientSecret = JSonStorage.restoreFromString(clientSecretJson, ClientSecret.TYPE);
                     final String tokenResponseJson = br.postPage(API + "/oauth/v2/token", new UrlQuery().append(CLIENT_ID_KEY, clientSecret.getClient_id(), true).append(CLIENT_SECRET_KEY, clientSecret.getClient_secret(), true).append("code", existingToken.getRefresh_token(), true).append("grant_type", "http://oauth.net/grant_type/device/1.0", true));
+                    this.checkErrorsWebsite(br);
                     final TokenResponse newToken = JSonStorage.restoreFromString(tokenResponseJson, TokenResponse.TYPE);
                     if (newToken.validate()) {
                         tokenJSon = JSonStorage.serializeToJson(newToken);
@@ -578,7 +579,9 @@ public class RealDebridCom extends PluginForHost {
                 prepBrowser(br);
                 br.clearCookies(API);
                 final Browser autoSolveBr = br.cloneBrowser();
-                final CodeResponse code = JSonStorage.restoreFromString(br.getPage(API + "/oauth/v2/device/code?client_id=" + CLIENT_ID + "&new_credentials=yes"), new TypeRef<CodeResponse>(CodeResponse.class) {
+                final String responseJson = br.getPage(API + "/oauth/v2/device/code?client_id=" + CLIENT_ID + "&new_credentials=yes");
+                this.checkErrorsWebsite(br);
+                final CodeResponse code = JSonStorage.restoreFromString(responseJson, new TypeRef<CodeResponse>(CodeResponse.class) {
                 });
                 ensureAPIBrowser();
                 final AtomicReference<ClientSecret> clientSecretResult = new AtomicReference<ClientSecret>(null);
@@ -756,6 +759,7 @@ public class RealDebridCom extends PluginForHost {
                     }
                 }
                 final String tokenResponseJson = br.postPage(API + "/oauth/v2/token", new UrlQuery().append(CLIENT_ID_KEY, clientSecret.getClient_id(), true).append(CLIENT_SECRET_KEY, clientSecret.getClient_secret(), true).append("code", code.getDevice_code(), true).append("grant_type", "http://oauth.net/grant_type/device/1.0", true));
+                this.checkErrorsWebsite(br);
                 final TokenResponse newToken = JSonStorage.restoreFromString(tokenResponseJson, new TypeRef<TokenResponse>(TokenResponse.class) {
                 });
                 if (newToken.validate()) {
