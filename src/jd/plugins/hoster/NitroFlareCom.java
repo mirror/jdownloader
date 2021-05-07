@@ -56,18 +56,36 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.components.config.NitroflareConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitroflare.com" }, urls = { "https?://(?:www\\.)?nitroflare\\.(?:com|net)/(?:view|watch)/([A-Z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitroflare.com" }, urls = { "https?://(?:www\\.)?(?:nitroflare\\.(?:com|net)|nitro\\.download)/(?:view|watch)/([A-Z0-9]+)" })
 public class NitroFlareCom extends antiDDoSForHost {
-    private final String         baseURL = "https://nitroflare.com";
+    private final String         baseURL            = "https://nitroflare.com";
     /* Documentation: https://nitroflare.com/member?s=api */
     /* don't touch the following! */
-    private static AtomicInteger maxFree = new AtomicInteger(1);
+    private static AtomicInteger maxFree            = new AtomicInteger(1);
+    private static String[]      siteSupportedNames = new String[] { "nitroflare.com", "nitroflare.net", "nitro.download" };
 
     public NitroFlareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(null);
-        Browser.setRequestIntervalLimitGlobal("nitroflare.com", 500);
-        Browser.setRequestIntervalLimitGlobal("nitroflare.net", 500);
+    }
+
+    @Override
+    public void init() {
+        final String[] siteSupportedNames = siteSupportedNames();
+        if (siteSupportedNames != null) {
+            for (String siteSupportedName : siteSupportedNames) {
+                try {
+                    Browser.setRequestIntervalLimitGlobal(siteSupportedName, 500);
+                } catch (final Throwable t) {
+                    logger.log(t);
+                }
+            }
+        }
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return siteSupportedNames;
     }
 
     /**
@@ -97,18 +115,20 @@ public class NitroFlareCom extends antiDDoSForHost {
                 } else {
                     brc = new Browser();
                 }
-                try {
-                    brc.getPage("https://nitroflare.com");
-                } catch (final IOException e) {
-                    plugin.getLogger().log(e);
+                brc.setFollowRedirects(true);
+                for (final String siteSupportedName : siteSupportedNames) {
                     try {
-                        brc.getPage("https://nitroflare.net");
-                    } catch (final IOException e2) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, -1, e2);
+                        brc.getPage("https://" + siteSupportedName);
+                        baseDomain = brc.getHost();
+                        if (baseDomain != null && brc.containsHTML(siteSupportedName)) {
+                            BASE_DOMAIN.set(baseDomain);
+                            return baseDomain;
+                        }
+                    } catch (final IOException e) {
+                        plugin.getLogger().log(e);
                     }
                 }
-                baseDomain = brc._getURL().getHost();
-                BASE_DOMAIN.set(baseDomain);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             return baseDomain;
         }

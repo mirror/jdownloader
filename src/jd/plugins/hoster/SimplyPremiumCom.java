@@ -19,14 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.translate._JDT;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -43,6 +35,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "simply-premium.com" }, urls = { "" })
 public class SimplyPremiumCom extends PluginForHost {
@@ -181,36 +181,51 @@ public class SimplyPremiumCom extends PluginForHost {
     }
 
     private void downloadErrorhandling(final Account account, final DownloadLink link) throws PluginException, InterruptedException {
-        if (br.containsHTML("<code>9</code>")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("<code>8</code>")) { // temporarily not available
-            logger.info(this.getHost() + ": Host is unavailable at the moment -> Disabling it");
-            mhm.handleErrorGeneric(account, link, "hostererror", 10, 5 * 60 * 1000l);
-        } else if (br.containsHTML("<code>11</code>")) { // Hoster not Reachable
-            logger.info(this.getHost() + ": Host is unavailable at the moment -> Disabling it");
-            mhm.handleErrorGeneric(account, link, "hostererror2", 10, 5 * 60 * 1000l);
-        } else if (br.containsHTML("<code>14</code>")) { // Your host-specific traffic limit has been used up.
-            logger.info(this.getHost() + ": Host-specific traffic limit used up -> Disabling it");
-            mhm.handleErrorGeneric(account, link, "hosttrafficusedup", 10, 5 * 60 * 1000l);
-        } else if (br.containsHTML("<code>12</code>")) { // Maintenance
-            logger.info(this.getHost() + ": Maintenance -> Disabling it");
-            mhm.handleErrorGeneric(account, link, "maintenance", 10, 5 * 60 * 1000l);
-        } else if (br.containsHTML("<code>4</code>")) {
+        final String code = br.getRegex("<code>\\s+(\\d+)\\s*</code>").getMatch(0);
+        final int errorCode = code != null ? Integer.parseInt(code) : -1;
+        switch (errorCode) {
+        case 1:
+        case 2:
+        case 5:
+            logger.info(this.getHost() + ": Account invalid -> Disabling it");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        case 3:
+            logger.info(this.getHost() + ": Traffic limit reached -> Temp. disabling account");
+            throw new AccountUnavailableException("Traffic limit reached", 1 * 60 * 1000l);
+        case 4:
             logger.info(this.getHost() + ": Too many simultan connections");
             /* Temp. disable account */
             throw new AccountUnavailableException("Wait before starting new downloads", 1 * 60 * 1000l);
-        } else if (br.containsHTML("<code>1</code>") || br.containsHTML("<code>2</code>") || br.containsHTML("<code>5</code>")) {
-            logger.info(this.getHost() + ": Account invalid -> Disabling it");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        } else if (br.containsHTML("<code>3</code>")) {
-            logger.info(this.getHost() + ": Traffic limit reached -> Temp. disabling account");
-            throw new AccountUnavailableException("Traffic limit reached", 1 * 60 * 1000l);
-        } else if (br.containsHTML("<code>15</code>")) {
+        case 8:
+            // temporarily not available
+            logger.info(this.getHost() + ": Host is unavailable at the moment -> Disabling it");
+            mhm.handleErrorGeneric(account, link, "hostererror", 10, 5 * 60 * 1000l);
+            break;
+        case 9:
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        case 11:
+            // Hoster not Reachable
+            logger.info(this.getHost() + ": Host is unavailable at the moment -> Disabling it");
+            mhm.handleErrorGeneric(account, link, "hostererror2", 10, 5 * 60 * 1000l);
+            break;
+        case 12:
+            // Maintenance
+            logger.info(this.getHost() + ": Maintenance -> Disabling it");
+            mhm.handleErrorGeneric(account, link, "maintenance", 10, 5 * 60 * 1000l);
+            break;
+        case 14:
+            // Your host-specific traffic limit has been used up.
+            logger.info(this.getHost() + ": Host-specific traffic limit used up -> Disabling it");
+            mhm.handleErrorGeneric(account, link, "hosttrafficusedup", 10, 5 * 60 * 1000l);
+            break;
+        case 15:
             /* 2021-05-06: Host specific downloadlimit has been reached -> Disable LINK for 30 minutes (RE: admin) */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Dein hosterspezifisches Request Traffic-Limit wurde erreicht.", 30 * 60 * 1000l);
-        } else if (br.containsHTML("<code>16</code>")) {
+        case 16:
             /* 2021-05-06: Multihost side error, user should contact multihost support RE: admin */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fehler... Kontaktiere den simply-premium.com Support!", 30 * 60 * 1000l);
+        default:
+            break;
         }
     }
 
