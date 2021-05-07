@@ -178,26 +178,26 @@ public class AboutDialog extends AbstractDialog<Integer> {
                     public void actionPerformed(ActionEvent e) {
                         CrossSystem.showInExplorer(new File(CrossSystem.getJavaBinary()));
                         try {
-                            java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
-                            List<String> arguments = runtimeMxBean.getInputArguments();
-                            StringBuilder sb = new StringBuilder();
+                            final java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
+                            final List<String> arguments = runtimeMxBean.getInputArguments();
+                            final StringBuilder sb = new StringBuilder();
                             for (String s : arguments) {
                                 if (sb.length() > 0) {
                                     sb.append(" ");
                                 }
                                 sb.append(s);
                             }
-                            StringSelection selection = new StringSelection(sb.toString());
-                            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                            final StringSelection selection = new StringSelection(sb.toString());
+                            final Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
                             clipboard.setContents(selection, selection);
                         } catch (final Throwable e1) {
                         }
                     }
                 });
                 try {
-                    java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
-                    List<String> arguments = runtimeMxBean.getInputArguments();
-                    StringBuilder sb = new StringBuilder();
+                    final java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
+                    final List<String> arguments = runtimeMxBean.getInputArguments();
+                    final StringBuilder sb = new StringBuilder();
                     for (String s : arguments) {
                         if (sb.length() > 0) {
                             sb.append("\r\n");
@@ -214,7 +214,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
                 stats.add(comp = disable("Usage: " + SizeFormatter.formatBytes(memory.getUsed()) + " - Allocated: " + SizeFormatter.formatBytes(memory.getCommitted()) + " - Max: " + SizeFormatter.formatBytes(memory.getMax())));
                 try {
                     final List<MemoryPoolMXBean> memoryPoolMXBeans = java.lang.management.ManagementFactory.getMemoryPoolMXBeans();
-                    StringBuilder sb = new StringBuilder();
+                    final StringBuilder sb = new StringBuilder();
                     for (final MemoryPoolMXBean memoryPoolMXBean : memoryPoolMXBeans) {
                         if (sb.length() > 0) {
                             sb.append("\r\n");
