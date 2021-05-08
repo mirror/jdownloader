@@ -24,6 +24,13 @@ import java.util.Map;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -34,13 +41,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DoodstreamCom extends XFileSharingProBasic {
@@ -206,7 +206,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
             // <p>video you are looking for is not found.</p>
             if (new Regex(html, "minimalUserResponseInMiliseconds\\s*=").matches()) {
                 return false;
-            } else if (new Regex(html, "'(/cptr/.*?)'") != null) {
+            } else if (new Regex(html, "'(/cptr/.*?)'").getMatch(0) != null) {
                 return false;
             }
         }
