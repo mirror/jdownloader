@@ -54,7 +54,7 @@ import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 1, names = {}, urls = {})
-public class HighWayCore extends UseNet {
+public abstract class HighWayCore extends UseNet {
     /** General API information: According to admin we can 'hammer' the API every 60 seconds */
     // private static final String API_BASE = "http://http.high-way.me/api.php";
     private static MultiHosterManagement          mhm                                 = new MultiHosterManagement("high-way.me");
