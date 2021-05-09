@@ -20,16 +20,16 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.plugins.HashCheckPluginProgress;
+import org.jdownloader.settings.GeneralSettings;
+
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.raf.FileBytesMap.FileBytesMapView;
-
-import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.plugins.HashCheckPluginProgress;
-import org.jdownloader.settings.GeneralSettings;
 
 abstract public class DownloadInterface {
     @Deprecated
@@ -105,8 +105,11 @@ abstract public class DownloadInterface {
                 }
                 final HashInfo hashInfo = downloadable.getHashInfo();
                 final HashResult hashResult = downloadable.getHashResult(hashInfo, file);
-                if (hashResult != null && hashResult.getFinalLinkState().isFinished()) {
-                    downloadable.setHashInfo(hashResult.getHashInfo());
+                if (hashResult != null) {
+                    downloadable.getLogger().info(hashResult.toString());
+                    if (hashResult.getFinalLinkState().isFinished()) {
+                        downloadable.setHashInfo(hashResult.getHashInfo());
+                    }
                 }
                 return hashResult;
             } finally {
