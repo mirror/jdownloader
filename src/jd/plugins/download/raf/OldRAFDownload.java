@@ -817,10 +817,13 @@ public class OldRAFDownload extends DownloadInterface {
                         }
                     }
                 }
-                HashInfo hashInfo = downloadable.getHashInfo();
-                HashResult hashResult = downloadable.getHashResult(hashInfo, file);
+                final HashInfo hashInfo = downloadable.getHashInfo();
+                final HashResult hashResult = downloadable.getHashResult(hashInfo, file);
                 if (hashResult != null) {
                     logger.info(hashResult.toString());
+                    if (hashResult.getFinalLinkState().isFinished()) {
+                        downloadable.setHashInfo(hashResult.getHashInfo());
+                    }
                 }
                 return hashResult;
             } finally {
