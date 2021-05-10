@@ -367,7 +367,7 @@ public abstract class HighWayCore extends UseNet {
         }
     }
 
-    private String checkDirectLink(final DownloadLink link, final String property) {
+    private final String checkDirectLink(final DownloadLink link, final String property) {
         String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
@@ -400,32 +400,30 @@ public abstract class HighWayCore extends UseNet {
         this.getPage(this.getAPIBase() + "?hoster&user");
         this.checkErrors(this.br, account);
         final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        final Map<String, Object> info_account = (Map<String, Object>) entries.get("user");
-        final List<Object> array_hoster = (List) entries.get("hoster");
-        final int account_maxchunks = ((Number) info_account.get("max_chunks")).intValue();
-        int account_maxdls = ((Number) info_account.get("max_connection")).intValue();
+        final Map<String, Object> accountInfo = (Map<String, Object>) entries.get("user");
+        int account_maxdls = ((Number) accountInfo.get("max_connection")).intValue();
         account_maxdls = this.correctMaxdls(account_maxdls);
-        final int account_resume = ((Number) info_account.get("resume")).intValue();
+        final int account_resume = ((Number) accountInfo.get("resume")).intValue();
         /* TODO: Real traffic is missing. */
-        final long free_traffic_max_daily = ((Number) info_account.get("free_traffic")).longValue();
-        long free_traffic_left = ((Number) info_account.get("remain_free_traffic")).longValue();
-        final long premium_bis = ((Number) info_account.get("premium_bis")).longValue();
-        final long premium_traffic = ((Number) info_account.get("premium_traffic")).longValue();
-        final long premium_traffic_max = ((Number) info_account.get("premium_max")).longValue();
-        /* Set account type and related things */
-        if (premium_bis > 0 && premium_traffic_max > 0) {
+        final long premiumUntil = ((Number) accountInfo.get("premium_bis")).longValue();
+        final long premium_traffic = ((Number) accountInfo.get("premium_traffic")).longValue();
+        final long premium_traffic_max = ((Number) accountInfo.get("premium_max")).longValue();
+        /* Set account type and account information */
+        if (((Integer) accountInfo.get("premium")).intValue() == 1 || premiumUntil > 0 && premium_traffic_max > 0) {
             ai.setTrafficLeft(premium_traffic);
             ai.setTrafficMax(premium_traffic_max);
-            ai.setValidUntil(premium_bis * 1000, this.br);
+            ai.setValidUntil(premiumUntil * 1000, this.br);
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium account");
         } else {
+            final long free_traffic_max_daily = ((Number) accountInfo.get("free_traffic")).longValue();
+            final long free_traffic_left = ((Number) accountInfo.get("remain_free_traffic")).longValue();
             if (free_traffic_left > free_traffic_max_daily) {
                 /* User has more traffic than downloadable daily for free users --> Show max daily traffic. */
                 ai.setTrafficLeft(free_traffic_max_daily);
                 ai.setTrafficMax(free_traffic_max_daily);
             } else {
-                /* User has less traffic than downloadable daily for free users --> Show real traffic left. */
+                /* User has less traffic (or equal) than downloadable daily for free users --> Show real traffic left. */
                 ai.setTrafficLeft(free_traffic_left);
                 ai.setTrafficMax(free_traffic_max_daily);
             }
@@ -434,7 +432,7 @@ public abstract class HighWayCore extends UseNet {
         }
         account.setConcurrentUsePossible(true);
         /* Set supported hosts, limits and account limits */
-        account.setProperty("account_maxchunks", this.correctChunks(account_maxchunks));
+        account.setProperty("account_maxchunks", this.correctChunks(((Number) accountInfo.get("max_chunks")).intValue()));
         account.setMaxSimultanDownloads(account_maxdls);
         if (account_resume == 1) {
             account.setProperty("resume", true);
@@ -447,6 +445,7 @@ public abstract class HighWayCore extends UseNet {
             hostRabattMap.clear();
             hostMaxdlsMap.clear();
             account.setMaxSimultanDownloads(account_maxdls);
+            final List<Object> array_hoster = (List) entries.get("hoster");
             for (final Object hoster : array_hoster) {
                 final Map<String, Object> hoster_map = (Map<String, Object>) hoster;
                 final String domain = (String) hoster_map.get("name");
@@ -469,7 +468,8 @@ public abstract class HighWayCore extends UseNet {
                 }
             }
         }
-        final Map<String, Object> usenetLogins = (Map<String, Object>) info_account.get("usenet");
+        /* Get- and store usenet logindata. These can differ from the logindata the user has added but may as well be equal to those. */
+        final Map<String, Object> usenetLogins = (Map<String, Object>) accountInfo.get("usenet");
         if (usenetLogins != null) {
             final String usenetUsername = (String) usenetLogins.get("username");
             final String usenetPassword = (String) usenetLogins.get("pass");
