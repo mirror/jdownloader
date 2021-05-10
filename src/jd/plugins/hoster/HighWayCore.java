@@ -44,7 +44,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
-import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -267,7 +267,6 @@ public abstract class HighWayCore extends UseNet {
         dl.startDownload();
     }
 
-    @SuppressWarnings("deprecation")
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
@@ -485,7 +484,7 @@ public abstract class HighWayCore extends UseNet {
     }
 
     @Override
-    protected String getUseNetUsername(Account account) {
+    protected String getUseNetUsername(final Account account) {
         final AccountInfo ai = account.getAccountInfo();
         if (ai != null) {
             return ai.getStringProperty("usenetU", null);
@@ -494,7 +493,7 @@ public abstract class HighWayCore extends UseNet {
     }
 
     @Override
-    protected String getUseNetPassword(Account account) {
+    protected String getUseNetPassword(final Account account) {
         final AccountInfo ai = account.getAccountInfo();
         if (ai != null) {
             return ai.getStringProperty("usenetP", null);
@@ -539,11 +538,7 @@ public abstract class HighWayCore extends UseNet {
         return true;
     }
 
-    private boolean isLoggedIN() {
-        return br.getCookie(br.getURL(), "xf_user", Cookies.NOTDELETEDPATTERN) != null;
-    }
-
-    private void accountInvalid() throws PluginException {
+    protected void exceptionAccountInvalid() throws PluginException {
         /* TODO: Remove the note to disable 2FA: The new API can also be used while 2FA is enabled! */
         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Falls du die 2-Faktor-Authentifizierung aktiviert hast, deaktiviere diese und versuche es erneut.\r\n3. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -616,18 +611,26 @@ public abstract class HighWayCore extends UseNet {
             /* No error -> We're good :) */
             return;
         }
+        final int code = ((Number) entries.get("code")).intValue();
         String err = (String) entries.get("error");
         if (StringUtils.isEmpty(err)) {
             err = "Unknown error";
         }
-        if (err.equalsIgnoreCase("NotLoggedIn")) {
-            throw new AccountInvalidException(err);
-        } else if (err.equalsIgnoreCase("UserOrPassInvalid")) {
-            throw new AccountInvalidException(err);
-        } else {
-            /* Unknown error */
-            throw new AccountInvalidException(err);
+        /* TODO: Implement list of errors accordingly */
+        switch (code) {
+        case 1:
+            this.exceptionAccountInvalid();
+        default:
+            throw new AccountUnavailableException("Unknown error: " + err, 5 * 60 * 1000l);
         }
+        // if (err.equalsIgnoreCase("NotLoggedIn")) {
+        // throw new AccountInvalidException(err);
+        // } else if (err.equalsIgnoreCase("UserOrPassInvalid")) {
+        // throw new AccountInvalidException(err);
+        // } else {
+        // /* Unknown error */
+        // throw new AccountInvalidException(err);
+        // }
         /* TODO: Add errorhandling */
     }
 
