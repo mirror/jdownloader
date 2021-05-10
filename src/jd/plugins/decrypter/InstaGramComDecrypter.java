@@ -79,10 +79,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     private FilePackage                          fp                                = null;
     private String                               parameter                         = null;
     private static LinkedHashMap<String, String> ID_TO_USERNAME                    = new LinkedHashMap<String, String>() {
-        protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
-            return size() > 100;
-        };
-    };
+                                                                                       protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+                                                                                           return size() > 100;
+                                                                                       };
+                                                                                   };
 
     /** Tries different json paths and returns the first result. */
     private Object get(Map<String, Object> entries, final String... paths) {
@@ -489,7 +489,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         if (nextid == null) {
             nextid = (String) get(entries, "entry_data/ProfilePage/{0}/user/media/page_info/end_cursor");
         }
-        nextid = "QVFDQkxjMWhCN1FFR1pnMjMwejM5Wlg1QUx5QTNNZEJpeHVDSjV6UTdqRXFtc2tVWElTWGtTMUhwVVVZWEJEeW9WdzBjMk1rQUpVenlRQnBzZGdNYTR0ZQ==";
         do {
             if (page > 0) {
                 final Browser br = this.br.cloneBrowser();
