@@ -845,14 +845,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
     }
 
-    @Override
-    protected DownloadLink createDownloadlink(String link, boolean urlDecode) {
-        if (link.contains("COV6TM2LifF")) {
-            System.out.println("DEBUG");
-        }
-        return super.createDownloadlink(link, urlDecode);
-    }
-
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private void crawlAlbum(final String preGivenUsername, Map<String, Object> entries) throws PluginException {
         long date = JavaScriptEngineFactory.toLong(entries.get("date"), 0);
@@ -865,9 +857,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         // page > 0, now called 'shortcode'
         if (linkid_main == null) {
             linkid_main = (String) entries.get("shortcode");
-        }
-        if ("CNvDOE3niCs".equals(linkid_main)) {
-            System.out.println("dd");
         }
         String usernameForFilename = null;
         if (preGivenUsername != null) {
