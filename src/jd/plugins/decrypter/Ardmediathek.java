@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -67,6 +68,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.MediathekHelper;
@@ -1054,16 +1056,23 @@ public class Ardmediathek extends PluginForDecrypt {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
         this.subtitleLink = getXMLSubtitleURL(this.br);
-        /* E.g. checkeins.de */
-        final String fskRating = this.br.getRegex("<fskRating>fsk(\\d+)</fskRating>").getMatch(0);
-        if (fskRating != null && Short.parseShort(fskRating) >= 12) {
-            /* Video is age restricted --> Only available from >=8PM. */
-            decryptedLinks.add(this.createOfflinelink(parameter, "FSK_BLOCKED"));
-            return;
-        }
         this.title = getDasersteTitle(this.br);
         final ArrayList<String> hls_master_dupelist = new ArrayList<String>();
         final String[] mediaStreamArray = br.getRegex("(<asset.*?</asset>)").getColumn(0);
+        if (mediaStreamArray.length == 0) {
+            /* 2021-05-10: Only check for this if no downloadurls are available! */
+            final String fskRating = this.br.getRegex("<fskRating>fsk(\\d+)</fskRating>").getMatch(0);
+            if (fskRating != null && Short.parseShort(fskRating) >= 12) {
+                /* Video is age restricted --> Only available from >=8PM. */
+                final String filenameURL = Plugin.getFileNameFromURL(new URL(this.parameter));
+                if (filenameURL != null) {
+                    decryptedLinks.add(this.createOfflinelink(parameter, "FSK_BLOCKED_" + filenameURL, "FSK_BLOCKED"));
+                } else {
+                    decryptedLinks.add(this.createOfflinelink(parameter, "FSK_BLOCKED"));
+                }
+                return;
+            }
+        }
         for (final String stream : mediaStreamArray) {
             /* E.g. kika.de */
             final String hls_master;
