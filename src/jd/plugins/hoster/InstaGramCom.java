@@ -72,8 +72,7 @@ public class InstaGramCom extends PluginForHost {
         return br;
     }
 
-    private String  dllink        = null;
-    private boolean server_issues = false;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -134,7 +133,6 @@ public class InstaGramCom extends PluginForHost {
     private AvailableStatus requestFileInformation(final DownloadLink link, Account account, final boolean isDownload) throws Exception {
         this.correctDownloadLink(link);
         dllink = null;
-        server_issues = false;
         this.setBrowserExclusive();
         /*
          * Decrypter can set this status - basically to be able to handle private urls correctly in host plugin in case users' account gets
@@ -188,28 +186,10 @@ public class InstaGramCom extends PluginForHost {
                     logger.warning("missing storable, filename will not be renamed");
                 }
             }
-        }
-        if (!isDownload) {
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openHeadConnection(dllink);
-                if (con.getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 10 * 60 * 1000l);
-                } else if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setDownloadSize(con.getLongContentLength());
-                    }
-                    /* Save it to have it in case it was re-freshed! */
-                    link.setProperty(PROPERTY_DIRECTURL, this.dllink);
-                } else {
-                    /* Will get displayed as unknown error later on */
-                    server_issues = true;
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
+            link.setProperty(PROPERTY_DIRECTURL, this.dllink);
+            /* Only do this extra request if the user triggered a single linkcheck! */
+            if (!isDownload) {
+                this.checkLinkAndSetFilesize(link, this.dllink);
             }
         }
         return AvailableStatus.TRUE;
@@ -469,15 +449,13 @@ public class InstaGramCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link, null, true);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         handleDownload(link);
     }
 
     public void handleDownload(final DownloadLink link) throws Exception {
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         int maxchunks = MAXCHUNKS_pictures;
         if (link.getFinalFileName() != null && link.getFinalFileName().contains(".mp4") || link.getName() != null && link.getName().contains(".mp4")) {
             maxchunks = MAXCHUNKS_videos;
@@ -720,11 +698,6 @@ public class InstaGramCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, account, true);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         this.handleDownload(link);
     }
 
@@ -755,7 +728,7 @@ public class InstaGramCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), ONLY_GRAB_X_ITEMS_HASHTAG_CRAWLER_NUMBER, "How many items shall be grabbed (for '/explore/tags/example')?", defaultONLY_GRAB_X_ITEMS_NUMBER, 10000, defaultONLY_GRAB_X_ITEMS_NUMBER).setDefaultValue(defaultONLY_GRAB_X_ITEMS_NUMBER));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Advanced settings:"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROFILE_CRAWLER_PREFER_ALTERNATIVE_API, "Use alternative API for profiler crawler? Can be slower and only works when an Instagram account is active!").setDefaultValue(defaultPREFER_ALTERNATIVE_API_FOR_PROFILE_CRAWLER));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROFILE_CRAWLER_PREFER_ALTERNATIVE_API, "Use alternative API for profile crawler? Can be slower, only works when an Instagram account is active and doesn't crawl reposts!").setDefaultValue(defaultPREFER_ALTERNATIVE_API_FOR_PROFILE_CRAWLER));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), QUIT_ON_RATE_LIMIT_REACHED, "Abort crawl process once rate limit is reached?").setDefaultValue(defaultQUIT_ON_RATE_LIMIT_REACHED));
     }
 
