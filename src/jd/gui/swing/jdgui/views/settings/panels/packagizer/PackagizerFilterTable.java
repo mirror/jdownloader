@@ -18,21 +18,20 @@ import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.controlling.packagizer.PackagizerRule;
 
 public class PackagizerFilterTable extends BasicJDTable<PackagizerRule> {
+    private static final long      serialVersionUID = 4698030718806607175L;
+    private final PackagizerFilter packagizer;
 
-    private static final long serialVersionUID = 4698030718806607175L;
-
-    public PackagizerFilterTable() {
+    public PackagizerFilterTable(PackagizerFilter packagizer) {
         super(new FilterTableModel("PackagizerFilterTable"));
         this.setSearchEnabled(true);
         getTableHeader().setReorderingAllowed(false);
         this.setDragEnabled(true);
-
         setTransferHandler(new ExtTransferHandler<PackagizerRule>());
         if (Application.getJavaVersion() >= Application.JAVA16) {
             setDropMode(DropMode.INSERT_ROWS);
         }
-
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        this.packagizer = packagizer;
     }
 
     /*
@@ -45,23 +44,19 @@ public class PackagizerFilterTable extends BasicJDTable<PackagizerRule> {
     protected JPopupMenu onContextMenu(JPopupMenu popup, PackagizerRule contextObject, java.util.List<PackagizerRule> selection, ExtColumn<PackagizerRule> column, MouseEvent ev) {
         popup.add(new JMenuItem(new NewAction(this)));
         popup.add(new JMenuItem(new RemoveAction(this, selection, false)));
-
         popup.add(new JMenuItem(new DuplicateAction(contextObject, this)));
-
         popup.addSeparator();
-        popup.add(new ExportAction(selection));
+        popup.add(new ExportAction(packagizer, selection));
         return popup;
     }
 
     @Override
     protected boolean onDoubleClick(MouseEvent e, PackagizerRule obj) {
         PackagizerFilterRuleDialog.showDialog(obj, new Runnable() {
-
             @Override
             public void run() {
                 PackagizerController.getInstance().update();
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         getModel().fireTableDataChanged();

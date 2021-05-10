@@ -547,7 +547,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
                                                 @Override
                                                 public void actionPerformed(ActionEvent e) {
-                                                    CrossSystem.openURL("http://jdownloader.org/knowledge/chat");
+                                                    CrossSystem.openURL("https://jdownloader.org/knowledge/chat");
                                                 }
                                             }));
                                             return ret;

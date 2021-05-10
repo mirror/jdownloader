@@ -16,7 +16,6 @@ import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 
 public class ExceptionsTable extends AbstractFilterTable {
-
     private static final long serialVersionUID = 4698030718806607175L;
     private LinkgrabberFilter linkgrabberFilter;
 
@@ -24,7 +23,6 @@ public class ExceptionsTable extends AbstractFilterTable {
         super(new ExceptionsTableModel("ExceptionsTableModel"));
         this.setSearchEnabled(true);
         this.linkgrabberFilter = linkgrabberFilter;
-
     }
 
     /*
@@ -37,11 +35,9 @@ public class ExceptionsTable extends AbstractFilterTable {
     protected JPopupMenu onContextMenu(JPopupMenu popup, LinkgrabberFilterRule contextObject, java.util.List<LinkgrabberFilterRule> selection, ExtColumn<LinkgrabberFilterRule> column, MouseEvent ev) {
         popup.add(new JMenuItem(new NewAction(this)));
         popup.add(new JMenuItem(new RemoveAction(this, selection, false)));
-
         popup.add(new JMenuItem(new DuplicateAction(contextObject, this)));
         popup.addSeparator();
-
-        popup.add(new ExportAction(selection));
+        popup.add(new ExportAction(linkgrabberFilter, selection));
         return popup;
     }
 

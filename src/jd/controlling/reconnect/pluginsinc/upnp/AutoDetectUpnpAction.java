@@ -81,10 +81,10 @@ public class AutoDetectUpnpAction extends BasicAction {
                     Dialog.getInstance().showDialog(d);
                     if (modemChoose) {
                         Dialog.getInstance().showErrorDialog(_GUI.T.AutoSetupAction_actionPerformed_noautoformodem());
-                        CrossSystem.openURL("http://jdownloader.org/knowledge/wiki/reconnect/modem");
+                        CrossSystem.openURL("https://jdownloader.org/knowledge/wiki/reconnect/modem");
                         return;
                     }
-                    CrossSystem.openURL("http://jdownloader.org/knowledge/wiki/reconnect/modem");
+                    CrossSystem.openURL("https://jdownloader.org/knowledge/wiki/reconnect/modem");
                     // don't know
                 } catch (DialogCanceledException e1) {
                     // router

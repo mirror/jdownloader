@@ -33,6 +33,6 @@ public class KnowledgeAction extends CustomizableAppAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        CrossSystem.openURL("http://jdownloader.org/knowledge/index");
+        CrossSystem.openURL("https://jdownloader.org/knowledge/index");
     }
 }

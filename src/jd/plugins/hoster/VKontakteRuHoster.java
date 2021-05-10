@@ -28,15 +28,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -67,6 +58,15 @@ import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:\\-)?\\d+_\\d+|videolink/[\\d\\-]+)|https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-f0-9]+(\\&dl=[a-f0-9]{18})?)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip).+|[rz][0-9]{2}.+)" })
@@ -158,24 +158,35 @@ public class VKontakteRuHoster extends PluginForHost {
         final CrawledLink ret = super.convert(link);
         final String url = link.getPluginPatternMatcher();
         if (url != null && url.matches(TYPE_DIRECT)) {
-            String filename = extractFileNameFromURL(url);
-            if (filename != null) {
-                final String extension = Files.getExtension(filename);
-                if (StringUtils.endsWithCaseInsensitive(filename, "." + extension)) {
-                    final String urlName = new Regex(url, ".+/([^/].+\\." + Pattern.quote(extension) + ")$").getMatch(0);
-                    if (urlName != null) {
-                        filename = urlName;
-                    }
-                }
-                try {
-                    final String urlDecoded = SimpleFTP.BestEncodingGuessingURLDecode(filename);
-                    link.setFinalFileName(urlDecoded);
-                } catch (final Throwable e) {
-                    link.setName(filename);
-                }
-            }
+            setAndGetFileNameFromDirectURL(link, url);
         }
         return ret;
+    }
+
+    private String setAndGetFileNameFromDirectURL(DownloadLink link, final String url) {
+        String filename = extractFileNameFromURL(url);
+        if (filename != null) {
+            final String extension = Files.getExtension(filename);
+            if (StringUtils.endsWithCaseInsensitive(filename, "." + extension)) {
+                final String urlName = new Regex(url, ".+/([^/].+\\." + Pattern.quote(extension) + ")$").getMatch(0);
+                if (urlName != null) {
+                    filename = urlName;
+                }
+            }
+            try {
+                final String urlDecoded = SimpleFTP.BestEncodingGuessingURLDecode(filename);
+                if (link != null) {
+                    link.setFinalFileName(urlDecoded);
+                }
+                return urlDecoded;
+            } catch (final Throwable e) {
+                if (link != null) {
+                    link.setName(filename);
+                }
+                return filename;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -225,8 +236,14 @@ public class VKontakteRuHoster extends PluginForHost {
                 /* Set fallback filename */
                 link.setName(filenameIDString + ".pdf");
             }
-            br.setFollowRedirects(true);
+            br.setFollowRedirects(false);
             br.getPage(link.getPluginPatternMatcher());
+            final String redirect = br.getRedirectLocation();
+            if (redirect != null && redirect.matches(TYPE_DIRECT)) {
+                finalUrl = redirect;
+                setAndGetFileNameFromDirectURL(link, finalUrl);
+                return AvailableStatus.TRUE;
+            }
             /* 2021-04-26: The handling below should not be needed anymore. Remove commented out lines of code after 2021-09. */
             // if (br.getRedirectLocation() != null) {
             // if (br.getRedirectLocation().matches(VKontakteRuHoster.TYPE_DOCLINK)) {
@@ -346,7 +363,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         *
+                         * 
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         /*
