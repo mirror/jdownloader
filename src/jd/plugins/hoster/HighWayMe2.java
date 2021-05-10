@@ -25,6 +25,8 @@ import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "high-way.me" }, urls = { "https?://high\\-way\\.me/onlinetv\\.php\\?id=\\d+[^/]+|https?://[a-z0-9\\-\\.]+\\.high\\-way\\.me/dlu/[a-z0-9]+/[^/]+" })
 public class HighWayMe2 extends HighWayCore {
@@ -93,5 +95,15 @@ public class HighWayMe2 extends HighWayCore {
         thread.setDaemon(true);
         thread.start();
         return thread;
+    }
+
+    @Override
+    protected void exceptionAccountInvalid() throws PluginException {
+        showAPILoginInformation();
+        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\n Du findest deine Zugangsdaten für JD hier: high-way.me/download.php#credentials", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou can find your login credentials for JD here: high-way.me/download.php#credentials", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
     }
 }
