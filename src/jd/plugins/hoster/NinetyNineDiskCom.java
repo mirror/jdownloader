@@ -31,18 +31,17 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "77file.com" }, urls = { "https?://(?:www\\.)?77file\\.com/((?:s|down)/[A-Za-z0-9]+|(?:file|down)/[^/]+\\.html)" })
-public class SeventySevenFileCom extends PluginForHost {
-    public SeventySevenFileCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "99disk.com" }, urls = { "https?://(?:www\\.)?99disk\\.com/(?:file|down)/([A-Za-z0-9]+)\\.html" })
+public class NinetyNineDiskCom extends PluginForHost {
+    public NinetyNineDiskCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "https://www.77file.com/terms.php";
+        return "https://www.99disk.com/terms.php";
     }
 
     /* Connection stuff */
@@ -51,7 +50,21 @@ public class SeventySevenFileCom extends PluginForHost {
     private static final int     FREE_MAXDOWNLOADS = 1;
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("/down/", "/s/"));
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("/down/", "/file/"));
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
@@ -65,22 +78,18 @@ public class SeventySevenFileCom extends PluginForHost {
         // }
         br.getPage(link.getPluginPatternMatcher());
         /* Empty / Missing filesize --> File offline */
-        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<span id=\"file_size\"></span>")) {
+        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("文件不存在或已删除")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String extFileID = new Regex(br.getURL(), "/s/(.+)").getMatch(0);
-        if (extFileID != null) {
-            link.setLinkID(this.getHost() + "://" + extFileID);
-        }
-        String filename = br.getRegex("align='absbottom' border='0' />([^<>\"]+)<").getMatch(0);
+        String filename = br.getRegex("文件下载：(.*?)</span>").getMatch(0);
         if (filename == null) {
             /* Fallback */
             filename = getFID(link);
         }
-        String filesize = br.getRegex("<span id=\"file_size\">([^<>\"]+)</span>").getMatch(0);
+        String filesize = br.getRegex("文件大小：(.*?)</span>").getMatch(0);
         link.setName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) {
-            filesize += "b";
+            filesize = filesize.trim() + "b";
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
@@ -102,12 +111,12 @@ public class SeventySevenFileCom extends PluginForHost {
             }
             final Browser brAjax = this.br.cloneBrowser();
             brAjax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            brAjax.getPage("/ajax_new.php??a=1&ctime=" + System.currentTimeMillis());
-            /* 2020-04-09: Waittime is skippable */
-            final String longWaittimeStr = PluginJSonUtils.getJson(brAjax, "wtime");
-            if (longWaittimeStr != null && longWaittimeStr.matches("\\d+")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(longWaittimeStr) * 1001l);
-            }
+            // brAjax.getPage("/ajax.php?action=load_time&ctime=" + System.currentTimeMillis());
+            // /* 2020-04-09: Waittime is skippable */
+            // final String longWaittimeStr = PluginJSonUtils.getJson(brAjax, "waittime");
+            // if (longWaittimeStr != null && longWaittimeStr.matches("\\d+")) {
+            // throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(longWaittimeStr) * 1001l);
+            // }
             /* 2020-04-09: Waittime is skippable */
             // final String waittimeStr = PluginJSonUtils.getJson(brAjax, "waittime");
             // if (waittimeStr == null) {
@@ -129,7 +138,7 @@ public class SeventySevenFileCom extends PluginForHost {
             // throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             // }
             br.postPage("/ajax.php", "action=load_down_addr1&file_id=" + fileID2);
-            String dllink = br.getRegex("true\\|<a href=\"([^<>\"]+)").getMatch(0);
+            String dllink = br.getRegex("<a href=\"([^<>\"]*dl\\.php[^<>\"]+)").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("\"(https?://down\\.[^<>\"]+)\"").getMatch(0);
             }
@@ -191,10 +200,6 @@ public class SeventySevenFileCom extends PluginForHost {
             }
             return false;
         }
-    }
-
-    private String getFID(final DownloadLink dl) {
-        return new Regex(dl.getPluginPatternMatcher(), ".+/([^/]+)$").getMatch(0);
     }
 
     @Override
