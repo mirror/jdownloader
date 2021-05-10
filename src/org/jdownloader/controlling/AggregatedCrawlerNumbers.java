@@ -29,8 +29,9 @@ public class AggregatedCrawlerNumbers {
     public final String getTotalBytesString(boolean includeDisabled) {
         if (includeDisabled) {
             return format(totalBytes + disabledTotalBytes);
+        } else {
+            return format(totalBytes);
         }
-        return format(totalBytes);
     }
 
     private final String format(long totalBytes2) {
