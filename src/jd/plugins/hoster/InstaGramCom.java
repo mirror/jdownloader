@@ -23,12 +23,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -55,6 +49,12 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "instagrammdecrypted://[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)?" })
 public class InstaGramCom extends PluginForHost {
@@ -500,6 +500,11 @@ public class InstaGramCom extends PluginForHost {
                     } else {
                         /* Saved cookies were valid */
                         logger.info("Cookie login successful");
+                        final String csrftoken = br.getRegex("\"csrf_token\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+                        if (csrftoken == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        br.setCookie(MAINPAGE, "csrftoken", csrftoken);
                         account.saveCookies(br.getCookies(MAINPAGE), "");
                         return;
                     }
@@ -519,6 +524,11 @@ public class InstaGramCom extends PluginForHost {
                     } else {
                         /* Saved cookies were valid */
                         logger.info("User-Cookie login successful");
+                        final String csrftoken = br.getRegex("\"csrf_token\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+                        if (csrftoken == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        br.setCookie(MAINPAGE, "csrftoken", csrftoken);
                         account.saveCookies(br.getCookies(MAINPAGE), "");
                         /* Make sure account has an unique username set. */
                         final String fullname = PluginJSonUtils.getJson(br, "full_name");

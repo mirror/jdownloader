@@ -1,6 +1,12 @@
 package org.jdownloader.plugins.components.instagram;
 
 public class Qdb {
+    public static enum QUERY {
+        HASHTAG,
+        STORY,
+        USER,
+        USER_SAVED
+    }
 
     public Qdb() {
     }
