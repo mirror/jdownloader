@@ -213,7 +213,7 @@ public class Gui extends AbstractDialog<Object> {
         final JButton help = new JButton(T.T.gui_btn_help());
         help.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
-                CrossSystem.openURL("http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder");
+                CrossSystem.openURL("https://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder");
             }
         });
         buttonBar.add(help, "tag help, sizegroup confirms");

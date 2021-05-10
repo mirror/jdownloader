@@ -333,7 +333,7 @@ public class DownloadLinkDownloadable implements Downloadable {
                     if (dl != getDownloadLink() && FinalLinkState.CheckFinished(dl.getFinalLinkState())) {
                         final File checkSumFile = getFileOutput(dl, false);
                         final String fileName = checkSumFile.getName();
-                        if (fileName.matches(".*\\.(sfv|md5|sha1|sha256|sha512)$") && checkSumFile.exists() && !checkSumFiles.contains(checkSumFile)) {
+                        if (fileName.matches(".*\\.(sfv|md5|sha1|sha256|sha512)$") && checkSumFile.isFile() && !checkSumFiles.contains(checkSumFile)) {
                             checkSumFiles.add(checkSumFile);
                         }
                     }

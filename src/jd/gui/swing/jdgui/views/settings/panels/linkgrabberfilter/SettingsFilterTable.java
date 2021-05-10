@@ -16,7 +16,6 @@ import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 
 public class SettingsFilterTable extends AbstractFilterTable {
-
     private static final long serialVersionUID = 4698030718806607175L;
     private LinkgrabberFilter linkgrabberFilter;
 
@@ -24,12 +23,11 @@ public class SettingsFilterTable extends AbstractFilterTable {
         super(new FilterTableModel("FilterTable2"));
         this.setSearchEnabled(true);
         this.linkgrabberFilter = linkgrabberFilter;
-
     }
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.appwork.swing.exttable.ExtTable#onContextMenu(javax.swing.JPopupMenu , java.lang.Object, java.util.ArrayList,
      * org.appwork.swing.exttable.ExtColumn)
      */
@@ -37,11 +35,9 @@ public class SettingsFilterTable extends AbstractFilterTable {
     protected JPopupMenu onContextMenu(JPopupMenu popup, LinkgrabberFilterRule contextObject, java.util.List<LinkgrabberFilterRule> selection, ExtColumn<LinkgrabberFilterRule> column, MouseEvent ev) {
         popup.add(new JMenuItem(new NewAction(this)));
         popup.add(new JMenuItem(new RemoveAction(this, selection, false)));
-
         popup.add(new JMenuItem(new DuplicateAction(contextObject, this)));
         popup.addSeparator();
-
-        popup.add(new ExportAction(selection));
+        popup.add(new ExportAction(linkgrabberFilter, selection));
         return popup;
     }
 
@@ -61,7 +57,7 @@ public class SettingsFilterTable extends AbstractFilterTable {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.appwork.swing.exttable.ExtTable#onShortcutDelete(java.util.ArrayList , java.awt.event.KeyEvent, boolean)
      */
     @Override

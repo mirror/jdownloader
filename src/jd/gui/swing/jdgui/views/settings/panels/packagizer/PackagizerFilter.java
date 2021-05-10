@@ -22,7 +22,6 @@ public class PackagizerFilter extends JPanel implements SettingsComponent {
     private static final long     serialVersionUID = 6070464296168772795L;
     private MigPanel              tb;
     private PackagizerFilterTable table;
-
     private JButton               btAdd;
     private JButton               btRemove;
     private ExtButton             btImport;
@@ -32,19 +31,14 @@ public class PackagizerFilter extends JPanel implements SettingsComponent {
         super(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[grow,fill][]"));
         tb = new MigPanel("ins 0", "[][][grow,fill][][]", "[]");
         tb.setOpaque(false);
-        table = new PackagizerFilterTable();
+        table = new PackagizerFilterTable(this);
         tb.add(btAdd = new JButton(new NewAction(table)), "height 26!,sg 1");
         RemoveAction ra;
         tb.add(btRemove = new JButton(ra = new RemoveAction(table)), "height 26!,sg 1");
-
         tb.add(Box.createHorizontalGlue());
-
-        tb.add(btImport = new ExtButton(new ImportAction(table)), "height 26!,sg 2");
-
-        tb.add(btExport = new ExtButton(new ExportAction()), "height 26!,sg 2");
-
+        tb.add(btImport = new ExtButton(new ImportAction(this)), "height 26!,sg 2");
+        tb.add(btExport = new ExtButton(new ExportAction(this, null)), "height 26!,sg 2");
         table.getModel().addTableModelListener(new TableModelListener() {
-
             public void tableChanged(TableModelEvent e) {
                 btExport.setEnabled(table.getRowCount() > 0);
             }
@@ -55,9 +49,7 @@ public class PackagizerFilter extends JPanel implements SettingsComponent {
                 boolean en = true;
                 for (PackagizerRule rule : PackagizerFilter.this.table.getModel().getSelectedObjects()) {
                     en &= !rule.isStaticRule();
-
                 }
-
                 if (!en) {
                     btRemove.setToolTipText(_GUI.T.PackagizerFilter_valueChanged_disable_static());
                     action.setEnabled(false);
@@ -65,16 +57,11 @@ public class PackagizerFilter extends JPanel implements SettingsComponent {
                 } else {
                     btRemove.setToolTipText(null);
                 }
-
                 this.action.setEnabled(PackagizerFilter.this.table.getSelectedRowCount() >= this.minSelections);
-
             }
-
         });
-
         add(new JScrollPane(table));
         add(tb);
-
     }
 
     public PackagizerFilterTable getTable() {
@@ -82,7 +69,6 @@ public class PackagizerFilter extends JPanel implements SettingsComponent {
     }
 
     public String getConstraints() {
-
         return "height 60:n:n,pushy,growy";
     }
 
