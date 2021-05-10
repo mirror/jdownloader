@@ -6,6 +6,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import jd.http.Authentication;
 import jd.http.AuthenticationFactory;
@@ -57,7 +59,7 @@ public class AuthenticationController {
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
             @Override
             public void onShutdown(final ShutdownRequest shutdownRequest) {
-                config.setList(AuthenticationController.this.authenticationInfos);
+                save(AuthenticationController.this.authenticationInfos);
             }
 
             @Override
@@ -72,38 +74,40 @@ public class AuthenticationController {
         });
     }
 
+    private void save(List<AuthenticationInfo> authenticationInfos) {
+        config.setList(new ArrayList<AuthenticationInfo>(authenticationInfos));
+    }
+
     public ChangeEventSender getEventSender() {
         return eventSender;
     }
 
-    public java.util.List<AuthenticationInfo> list() {
+    public List<AuthenticationInfo> list() {
         return authenticationInfos;
     }
 
     /* remove invalid entries...without hostmask or without logins */
     private CopyOnWriteArrayList<AuthenticationInfo> cleanup(List<AuthenticationInfo> infos) {
-        if (infos == null || infos.size() == 0) {
-            return null;
-        }
         final CopyOnWriteArrayList<AuthenticationInfo> ret = new CopyOnWriteArrayList<AuthenticationInfo>();
-        for (final AuthenticationInfo info : infos) {
-            if (StringUtils.isEmpty(info.getHostmask())) {
-                continue;
+        if (infos != null && infos.size() > 0) {
+            for (final AuthenticationInfo info : infos) {
+                if (StringUtils.isEmpty(info.getHostmask())) {
+                    continue;
+                } else if (info.getType() == null) {
+                    continue;
+                } else if (StringUtils.isAllEmpty(info.getUsername(), info.getPassword())) {
+                    continue;
+                } else {
+                    ret.add(info);
+                }
             }
-            if (info.getType() == null) {
-                continue;
-            }
-            if (StringUtils.isAllEmpty(info.getPassword(), info.getPassword())) {
-                continue;
-            }
-            ret.add(info);
         }
         return ret;
     }
 
     public boolean add(AuthenticationInfo a) {
         if (a != null && authenticationInfos.addIfAbsent(a)) {
-            config.setList(authenticationInfos);
+            save(authenticationInfos);
             eventSender.fireEvent(new ChangeEvent(this));
             return true;
         } else {
@@ -113,7 +117,7 @@ public class AuthenticationController {
 
     public boolean remove(AuthenticationInfo a) {
         if (a != null && authenticationInfos.remove(a)) {
-            config.setList(authenticationInfos);
+            save(authenticationInfos);
             eventSender.fireEvent(new ChangeEvent(this));
             return true;
         } else {
@@ -121,9 +125,9 @@ public class AuthenticationController {
         }
     }
 
-    public boolean remove(java.util.List<AuthenticationInfo> selectedObjects) {
+    public boolean remove(List<AuthenticationInfo> selectedObjects) {
         if (selectedObjects != null && authenticationInfos.removeAll(selectedObjects)) {
-            config.setList(authenticationInfos);
+            save(authenticationInfos);
             eventSender.fireEvent(new ChangeEvent(this));
             return true;
         } else {
@@ -131,7 +135,7 @@ public class AuthenticationController {
         }
     }
 
-    public Login getBestLogin(URL url, final String realm) {
+    public Login getBestLogin(final URL url, final String realm) {
         final List<Login> ret = getSortedLoginsList(url, realm);
         if (ret != null && ret.size() > 0) {
             return ret.get(0);
@@ -170,41 +174,58 @@ public class AuthenticationController {
     public List<Login> getSortedLoginsList(final URL url, final String realm) {
         final AuthenticationInfo.Type type;
         final String protocol = url.getProtocol();
-        if (StringUtils.equalsIgnoreCase(protocol, "ftp")) {
+        if (protocol != null && protocol.matches("(?i)^ftp$")) {
             type = Type.FTP;
-        } else if (StringUtils.equalsIgnoreCase(protocol, "https") || StringUtils.equalsIgnoreCase(protocol, "http")) {
+        } else if (protocol != null && protocol.matches("(?i)^https?$")) {
             type = Type.HTTP;
         } else {
-            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Unknown Protocoll: " + url);
+            LogController.getRebirthLogger(logger).info("Unknown Protocoll: " + url);
             return null;
         }
-        final List<AuthenticationInfo> selection = new ArrayList<AuthenticationInfo>();
-        final String urlHost = Browser.getHost(url, true);
+        final List<AuthenticationInfo> infos = new ArrayList<AuthenticationInfo>();
+        final String urlHost = url.getHost();
         for (final AuthenticationInfo info : authenticationInfos) {
             if (!info.isEnabled()) {
                 continue;
-            }
-            if (realm != null && !StringUtils.equalsIgnoreCase(realm, info.getRealm())) {
+            } else if (realm != null && !StringUtils.equalsIgnoreCase(realm, info.getRealm())) {
                 continue;
-            }
-            final String authHost = info.getHostmask();
-            if (info.getType().equals(type) && !StringUtils.isEmpty(authHost)) {
-                final boolean contains;
-                if (authHost.length() > urlHost.length()) {
-                    /* hostMask of AuthenticationInfo is longer */
-                    contains = authHost.contains(urlHost);
-                } else {
-                    /* hostMask of urlHost is longer */
-                    contains = urlHost.contains(authHost);
-                }
-                if (contains) {
-                    selection.add(info);
+            } else {
+                final String authHost = info.getHostmask();
+                if (info.getType().equals(type) && !StringUtils.isEmpty(authHost)) {
+                    final boolean contains;
+                    if (authHost.matches(".*(\\*|\\[|\\(|\\||\\?|\\{).*")) {
+                        String pattern = authHost;
+                        Boolean matches = null;
+                        try {
+                            // check with normal pattern
+                            matches = Pattern.compile(pattern).matcher(urlHost).matches();
+                        } catch (PatternSyntaxException e) {
+                        }
+                        if (!Boolean.TRUE.equals(matches)) {
+                            // check again with simple pattern
+                            try {
+                                pattern = authHost.replace("*", ".*");
+                                matches = Pattern.compile(pattern).matcher(urlHost).matches();
+                            } catch (PatternSyntaxException e2) {
+                            }
+                        }
+                        contains = Boolean.TRUE.equals(matches);
+                    } else if (authHost.length() > urlHost.length()) {
+                        /* hostMask of AuthenticationInfo is longer */
+                        contains = authHost.contains(urlHost);
+                    } else {
+                        /* hostMask of urlHost is longer */
+                        contains = urlHost.contains(authHost);
+                    }
+                    if (contains) {
+                        infos.add(info);
+                    }
                 }
             }
         }
         try {
-            Collections.sort(selection, new Comparator<AuthenticationInfo>() {
-                private String getRealm(AuthenticationInfo ai) {
+            Collections.sort(infos, new Comparator<AuthenticationInfo>() {
+                private String getRealm(final AuthenticationInfo ai) {
                     final String realm = ai.getRealm();
                     if (realm == null) {
                         return "";
@@ -240,10 +261,10 @@ public class AuthenticationController {
                 }
             });
         } catch (Throwable e) {
-            logger.log(e);
+            LogController.getRebirthLogger(logger).log(e);
         }
         final List<Login> ret = new ArrayList<Login>();
-        for (final AuthenticationInfo info : selection) {
+        for (final AuthenticationInfo info : infos) {
             ret.add(new Login(info.getType(), info.getHostmask(), info.getRealm(), info.getUsername(), info.getPassword(), info.isAlwaysFlag()) {
                 @Override
                 public void validate() {
@@ -252,42 +273,5 @@ public class AuthenticationController {
             });
         }
         return ret;
-    }
-
-    public void validate(Login login, String url) {
-        if (StringUtils.isEmpty(url)) {
-            return;
-        }
-        AuthenticationInfo.Type type = null;
-        if (url.startsWith("ftp")) {
-            type = Type.FTP;
-        } else if (url.startsWith("http")) {
-            type = Type.HTTP;
-        } else {
-            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Unknown Protocoll: " + url);
-            return;
-        }
-        String urlHost = Browser.getHost(url, true);
-        for (AuthenticationInfo info : authenticationInfos) {
-            if (!info.isEnabled()) {
-                continue;
-            }
-            String authHost = info.getHostmask();
-            if (info.getType().equals(type) && !StringUtils.isEmpty(authHost)) {
-                boolean contains = false;
-                if (authHost.length() > urlHost.length()) {
-                    /* hostMask of AuthenticationInfo is longer */
-                    contains = authHost.contains(urlHost);
-                } else {
-                    /* hostMask of urlHost is longer */
-                    contains = urlHost.contains(authHost);
-                }
-                if (contains) {
-                    if (StringUtils.equals(info.getUsername(), login.getUsername()) && StringUtils.equals(info.getPassword(), login.getPassword())) {
-                        info.setLastValidated(System.currentTimeMillis());
-                    }
-                }
-            }
-        }
     }
 }
