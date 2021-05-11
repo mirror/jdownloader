@@ -222,6 +222,12 @@ public class LinkspremiumDownload extends YetiShareCore {
     }
 
     @Override
+    public boolean requires_WWW() {
+        /* 2021-05-11 */
+        return false;
+    }
+
+    @Override
     public FEATURE[] getFeatures() {
         return new FEATURE[] { FEATURE.MULTIHOST };
     }
