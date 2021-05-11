@@ -65,6 +65,8 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -1066,11 +1068,10 @@ public class Ardmediathek extends PluginForDecrypt {
                 /* Video is age restricted --> Only available from >=8PM. */
                 final String filenameURL = Plugin.getFileNameFromURL(new URL(this.parameter));
                 if (filenameURL != null) {
-                    decryptedLinks.add(this.createOfflinelink(parameter, "FSK_BLOCKED_" + filenameURL, "FSK_BLOCKED"));
+                    throw new DecrypterRetryException(RetryReason.CAPTCHA, "FSK_BLOCKED_" + filenameURL, "FSK_BLOCKED", null);
                 } else {
-                    decryptedLinks.add(this.createOfflinelink(parameter, "FSK_BLOCKED"));
+                    throw new DecrypterRetryException(RetryReason.HOST, "FSK_BLOCKED", "FSK_BLOCKED", null);
                 }
-                return;
             }
         }
         for (final String stream : mediaStreamArray) {
