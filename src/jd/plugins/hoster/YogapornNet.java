@@ -22,18 +22,16 @@ import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class CamwhoresbayCom extends KernelVideoSharingComV2 {
-    public CamwhoresbayCom(final PluginWrapper wrapper) {
+public class YogapornNet extends KernelVideoSharingComV2 {
+    public YogapornNet(final PluginWrapper wrapper) {
         super(wrapper);
-        /* Special: Supports accounts */
-        this.enablePremium("https://" + this.getHost() + "/");
     }
 
     /** Add all KVS hosts to this list that fit the main template without the need of ANY changes to this class. */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "camwhoresbay.com" });
+        ret.add(new String[] { "yogaporn.net" });
         return ret;
     }
 
@@ -47,6 +45,11 @@ public class CamwhoresbayCom extends KernelVideoSharingComV2 {
     }
 
     public static String[] getAnnotationUrls() {
-        return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPattern(getPluginDomains());
+        return KernelVideoSharingComV2.buildAnnotationUrlsDefaultNoVideosNoFUID(getPluginDomains());
+    }
+
+    @Override
+    protected boolean hasFUIDInsideURL(final String url) {
+        return false;
     }
 }

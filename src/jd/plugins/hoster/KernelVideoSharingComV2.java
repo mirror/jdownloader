@@ -174,6 +174,22 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     /**
      * Use this e.g. for:</br>
+     * example.com/title-inside-url OR:</br>
+     * example.com/embed/1234 </br>
+     * Example: <a href="https://yogaporn.net/">yogaporn.net</a> </br>
+     * Example classses: {@link #YogapornNet} </br>
+     * Very rarely used pattern!
+     */
+    public static String[] buildAnnotationUrlsDefaultNoVideosNoFUID(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(embed/\\d+/?|[a-z0-9\\-]+/?)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    /**
+     * Use this e.g. for:</br>
      * example.com/1234</br>
      * OR:</br>
      * example.com/embed/1234 </br>
@@ -201,7 +217,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     /**
      * Set this to false if URLs do not contain a FUID at all! </br>
-     * Especially important for e.g.: example.com/1random-title/ ('1' != FUID!)
+     * Especially important for e.g.: example.com/1random-title/ or example.com/random-title-version10/ ('1' != FUID!)
      */
     protected boolean hasFUIDInsideURL(final String url) {
         return true;

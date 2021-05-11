@@ -2477,6 +2477,7 @@ public class YetiShareCore extends antiDDoSForHost {
              * {"status":"error",
              * "response":"Your account level does not have access to the file upload API. Please contact site support for more information."
              * ,"_datetime":"2021-01-19 16:48:28"}
+             * {"status":"error","response":"Please provide a username.","_datetime":"2021-05-11 10:45:58"}
              */
             boolean result = true;
             String msg = null;
