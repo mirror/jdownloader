@@ -1070,7 +1070,7 @@ public class Ardmediathek extends PluginForDecrypt {
                 if (filenameURL != null) {
                     throw new DecrypterRetryException(RetryReason.CAPTCHA, "FSK_BLOCKED_" + filenameURL, "FSK_BLOCKED", null);
                 } else {
-                    throw new DecrypterRetryException(RetryReason.HOST, "FSK_BLOCKED", "FSK_BLOCKED", null);
+                    throw new DecrypterRetryException(RetryReason.CAPTCHA, "FSK_BLOCKED", "FSK_BLOCKED", null);
                 }
             }
         }
