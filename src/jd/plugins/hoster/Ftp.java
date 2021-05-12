@@ -161,7 +161,7 @@ public class Ftp extends PluginForHost {
             throw e;
         } catch (IOException e) {
             if (throwException && e.getMessage() != null && e.getMessage().contains("530")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Login incorrect");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Login incorrect", e);
             } else {
                 throw e;
             }
@@ -322,11 +322,11 @@ public class Ftp extends PluginForHost {
             ProxyController.getInstance().reportHTTPProxyException(ftp.getProxy(), url, e);
             throw e;
         } catch (ConnectException e) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
         } catch (UnknownHostException e) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
         } catch (IOException e) {
-            logger.severe(e.getMessage());
+            logger.log(e);
             if (e.getMessage().contains("530")) {
                 downloadLink.getLinkStatus().setErrorMessage("Login incorrect");
                 return AvailableStatus.UNCHECKABLE;
@@ -334,7 +334,7 @@ public class Ftp extends PluginForHost {
                 throw e;
             }
         } catch (Exception e) {
-            logger.severe(e.getMessage());
+            logger.log(e);
             throw e;
         } finally {
             try {
