@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
@@ -48,10 +49,11 @@ public class GetComics extends antiDDoSForDecrypt {
         final String parameter = param.toString();
         // Load page
         br.setFollowRedirects(true);
-        final URLConnectionAdapter con = openAntiDDoSRequestConnection(br, br.createGetRequest(parameter));
+        final GetRequest request = br.createGetRequest(parameter);
+        final URLConnectionAdapter con = openAntiDDoSRequestConnection(br, request);
         try {
             if (this.looksLikeDownloadableContent(con)) {
-                final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(getCurrentLink(), con);
+                final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(request, con);
                 decryptedLinks.add(direct.getDownloadLink());
                 // return decryptedLinks;
             } else {
