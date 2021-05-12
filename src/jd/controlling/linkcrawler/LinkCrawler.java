@@ -32,6 +32,27 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
+import jd.controlling.linkcollector.LinknameCleaner;
+import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
+import jd.parser.html.HTMLParser.HtmlParserCharSequence;
+import jd.parser.html.HTMLParser.HtmlParserResultSet;
+import jd.plugins.CryptedLink;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginsC;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.scheduler.DelayedRunnable;
@@ -64,27 +85,6 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
-
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
-import jd.controlling.linkcollector.LinknameCleaner;
-import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.PostRequest;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.parser.html.HTMLParser;
-import jd.parser.html.HTMLParser.HtmlParserCharSequence;
-import jd.parser.html.HTMLParser.HtmlParserResultSet;
-import jd.plugins.CryptedLink;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginsC;
 
 public class LinkCrawler {
     private static enum DISTRIBUTE {
@@ -1153,15 +1153,15 @@ public class LinkCrawler {
         }
     }
 
-    public DownloadLink createDirectHTTPDownloadLink(CrawledLink source, URLConnectionAdapter con) {
+    public DownloadLink createDirectHTTPDownloadLink(final Request sourceRequest, URLConnectionAdapter con) {
         final Request request = con.getRequest();
         final String startURL;
-        if (source == null || source.getSourceLink() == null || (request instanceof PostRequest)) {
-            startURL = request.getUrl();
+        if (sourceRequest == null || (request instanceof PostRequest)) {
+            startURL = request.getURL().toString();
         } else {
             // previous URL is leading/redirecting to this download, so let's use this URL instead
             // for example the current URL might expire
-            startURL = source.getSourceLink().getURL();
+            startURL = sourceRequest.getURL().toString();
         }
         final DownloadLink link = new DownloadLink(null, null, "DirectHTTP", "directhttp://" + startURL, true);
         final String cookie = con.getRequestProperty("Cookie");
@@ -1202,8 +1202,8 @@ public class LinkCrawler {
         return link;
     }
 
-    public CrawledLink createDirectHTTPCrawledLink(CrawledLink source, URLConnectionAdapter con) {
-        return crawledLinkFactorybyDownloadLink(createDirectHTTPDownloadLink(source, con));
+    public CrawledLink createDirectHTTPCrawledLink(CrawledLink source, Request sourceRequest, URLConnectionAdapter con) {
+        return crawledLinkFactorybyDownloadLink(createDirectHTTPDownloadLink(sourceRequest, con));
     }
 
     protected static interface DeeperOrMatchingRuleModifier extends CrawledLinkModifier {
@@ -1347,14 +1347,15 @@ public class LinkCrawler {
                                             if (formPattern.matcher(form.getAction()).matches()) {
                                                 final Browser clone = br.cloneBrowser();
                                                 clone.setFollowRedirects(false);
-                                                final URLConnectionAdapter con = clone.openFormConnection(form);
+                                                final Request request = clone.createFormRequest(form);
+                                                final URLConnectionAdapter con = clone.openRequestConnection(request);
                                                 final String redirect = con.getRequest().getLocation();
                                                 if (redirect != null) {
                                                     clone.followConnection();
                                                     formLinks.add(crawledLinkFactorybyURL(redirect));
                                                 } else if (lDeepInspector.looksLikeDownloadableContent(con)) {
                                                     con.disconnect();
-                                                    final CrawledLink formLink = createDirectHTTPCrawledLink(deeperSource, con);
+                                                    final CrawledLink formLink = createDirectHTTPCrawledLink(deeperSource, request, con);
                                                     if (formLink != null) {
                                                         formLinks.add(formLink);
                                                     }
@@ -3858,7 +3859,7 @@ public class LinkCrawler {
                         }
                         urlConnection.disconnect();
                         final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
-                        final CrawledLink direct = createDirectHTTPCrawledLink(link, urlConnection);
+                        final CrawledLink direct = createDirectHTTPCrawledLink(link, null, urlConnection);
                         if (direct != null) {
                             ret.add(direct);
                         }
@@ -3868,7 +3869,7 @@ public class LinkCrawler {
                 if (looksLikeDownloadableContent(urlConnection)) {
                     urlConnection.disconnect();
                     final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
-                    final CrawledLink direct = createDirectHTTPCrawledLink(link, urlConnection);
+                    final CrawledLink direct = createDirectHTTPCrawledLink(link, null, urlConnection);
                     if (direct != null) {
                         ret.add(direct);
                     }

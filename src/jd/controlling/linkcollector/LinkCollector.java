@@ -2765,7 +2765,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                                 }
                                                 urlConnection.disconnect();
                                                 final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
-                                                final CrawledLink direct = lc.createDirectHTTPCrawledLink(link, urlConnection);
+                                                final CrawledLink direct = lc.createDirectHTTPCrawledLink(link, null, urlConnection);
                                                 if (direct != null) {
                                                     direct.setMatchingRule(rule);
                                                     ret.add(direct);

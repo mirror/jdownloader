@@ -514,7 +514,7 @@ public abstract class Plugin implements ActionListener {
                     throw new PluginException(LinkStatus.ERROR_FATAL, _JDT.T.plugins_errors_wrongusername());
                 }
                 final Type type;
-                if (StringUtils.startsWithCaseInsensitive(link.getDownloadURL(), "ftp")) {
+                if (StringUtils.startsWithCaseInsensitive(link.getPluginPatternMatcher(), "ftp")) {
                     type = Type.FTP;
                 } else {
                     type = Type.HTTP;
