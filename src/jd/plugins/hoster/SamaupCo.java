@@ -41,7 +41,7 @@ public class SamaupCo extends XFileSharingProBasic {
      * captchatype-info: 2019-05-08: null<br />
      * other:<br />
      */
-    private static String[] domains = new String[] { "samaup.co", "samaup.com", "samaup.cc" };
+    private static String[] domains = new String[] { "sama-share.com", "samaup.co", "samaup.com", "samaup.cc" };
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
