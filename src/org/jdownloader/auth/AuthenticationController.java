@@ -191,11 +191,11 @@ public class AuthenticationController {
             } else if (realm != null && !StringUtils.equalsIgnoreCase(realm, info.getRealm())) {
                 continue;
             } else {
-                final String authHost = info.getHostmask();
-                if (info.getType().equals(type) && !StringUtils.isEmpty(authHost)) {
+                final String hostMask = info.getHostmask();
+                if (info.getType().equals(type) && !StringUtils.isEmpty(hostMask)) {
                     final boolean contains;
-                    if (authHost.matches(".*(\\*|\\[|\\(|\\||\\?|\\{).*")) {
-                        String pattern = authHost;
+                    if (hostMask.matches(".*(\\*|\\[|\\(|\\||\\?|\\{).*")) {
+                        String pattern = hostMask;
                         Boolean matches = null;
                         try {
                             // check with normal pattern
@@ -205,18 +205,18 @@ public class AuthenticationController {
                         if (!Boolean.TRUE.equals(matches)) {
                             // check again with simple pattern
                             try {
-                                pattern = authHost.replace("*", ".*");
+                                pattern = hostMask.replace("*", ".*");
                                 matches = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE).matcher(urlHost).matches();
                             } catch (PatternSyntaxException e2) {
                             }
                         }
                         contains = Boolean.TRUE.equals(matches);
-                    } else if (authHost.length() > urlHost.length()) {
+                    } else if (hostMask.length() > urlHost.length()) {
                         /* hostMask of AuthenticationInfo is longer */
-                        contains = authHost.contains(urlHost);
+                        contains = StringUtils.containsIgnoreCase(hostMask, urlHost);
                     } else {
                         /* hostMask of urlHost is longer */
-                        contains = urlHost.contains(authHost);
+                        contains = StringUtils.containsIgnoreCase(urlHost, hostMask);
                     }
                     if (contains) {
                         infos.add(info);

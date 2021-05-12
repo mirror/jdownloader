@@ -11,6 +11,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -166,9 +167,10 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         Browser brc = br.cloneBrowser();
         brc.setFollowRedirects(true);
         /* First check for direct downloadable content */
-        final URLConnectionAdapter con = brc.openGetConnection(url);
+        final GetRequest getRequest = br.createGetRequest(url);
+        final URLConnectionAdapter con = brc.openRequestConnection(getRequest);
         if (this.looksLikeDownloadableContent(con)) {
-            final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(getCurrentLink(), con);
+            final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(getRequest, con);
             allImageLinks.add(direct.getDownloadLink());
             con.disconnect();
             return;
