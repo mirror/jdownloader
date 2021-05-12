@@ -1068,9 +1068,9 @@ public class Ardmediathek extends PluginForDecrypt {
                 /* Video is age restricted --> Only available from >=8PM. */
                 final String filenameURL = Plugin.getFileNameFromURL(new URL(this.parameter));
                 if (filenameURL != null) {
-                    throw new DecrypterRetryException(RetryReason.CAPTCHA, "FSK_BLOCKED_" + filenameURL, "FSK_BLOCKED", null);
+                    throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "FSK_BLOCKED_" + filenameURL, "FSK_BLOCKED", null);
                 } else {
-                    throw new DecrypterRetryException(RetryReason.CAPTCHA, "FSK_BLOCKED", "FSK_BLOCKED", null);
+                    throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "FSK_BLOCKED", "FSK_BLOCKED", null);
                 }
             }
         }
