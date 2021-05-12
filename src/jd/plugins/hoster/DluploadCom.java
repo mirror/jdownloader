@@ -78,9 +78,10 @@ public class DluploadCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 0;
+    private static final boolean FREE_RESUME       = false;
+    private static final int     FREE_MAXCHUNKS    = 1;
     private static final int     FREE_MAXDOWNLOADS = 20;
+    /* Tags: dlplatforms.com, dlupload.com, khabarbabal.online, dlslink.net */
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
     // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
@@ -142,16 +143,25 @@ public class DluploadCom extends PluginForHost {
 
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
-            final Browser brc = br.cloneBrowser();
-            brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            brc.getPage("/Download/FilePage4Ajax/" + this.getFID(link));
-            final Form dlform = brc.getFormbyActionRegex(".*/Download/.*");
+            /* 2021-05-12: Skip this */
+            // final Browser brc = br.cloneBrowser();
+            // brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            // brc.getPage("/Download/FilePage2Ajax/" + this.getFID(link));
+            /* 2021-05-12: If anything fails here, check these cookies first!! */
+            br.setCookie(br.getHost(), "RedirectCookies", "FilePage2");
+            br.getPage("/FilePage2/" + this.getFID(link));
+            final Form dlform = br.getFormbyActionRegex(".*/Download/.*");
             if (dlform == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brc).getToken();
+            /* Skip that */
+            // brc.getPage("/Download/FilePage4Ajax/" + this.getFID(link));
+            dlform.put("ContinentName", "");
+            dlform.put("CountryName", "");
+            dlform.put("CityName", "");
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
             dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-            br.submitForm(dlform);
+            br.setCookie(br.getHost(), "RedirectCookies", "FilePage3");
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, resumable, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
