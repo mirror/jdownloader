@@ -2885,7 +2885,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      */
     public void checkServerErrors(final Browser br, final DownloadLink link, final Account account) throws NumberFormatException, PluginException {
         final String html = getCorrectBR(br);
-        if (new Regex(html, "^No file$").matches()) {
+        if (new Regex(html, "^(No file|error_nofile)$").matches()) {
             /* Possibly dead file but it is supposed to be online so let's wait and retry! */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'No file'", 30 * 60 * 1000l);
         } else if (new Regex(html, "^Wrong IP$").matches()) {

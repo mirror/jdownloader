@@ -17,18 +17,17 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzcloud.me", "myzuka.club" }, urls = { "https?://(?:www\\.)?myzcloud\\.(?:me|pro)/(?:[a-z]{2}/)?Album/(\\d+)(/[A-Za-z0-9\\-]+)?", "https?://(?:www\\.)?myzuka\\.(?:ru|org|fm|me|club)/(?:[a-z]{2}/)?Album/(\\d+)(/[A-Za-z0-9\\-]+)?" })
 public class MyzcloudMe extends antiDDoSForDecrypt {
@@ -73,12 +72,18 @@ public class MyzcloudMe extends antiDDoSForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        final String[] info = br.getRegex("(<div id=\"playerDiv\\d+\".*?)</a>\\s+</div>").getColumn(0);
+        String[] info = br.getRegex("(<div id=\"playerDiv\\d+\".*?)</div>\\s*</div>\\s*</div>").getColumn(0);
+        if (info == null || info.length == 0) {
+            info = br.getRegex("(<div id=\"playerDiv\\d+\".*?)</a>\\s+</div>").getColumn(0);
+        }
         if (info == null || info.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        String fpName = br.getRegex("class=\"content__title\">\\s*?<h1>([^<>\"]+)<").getMatch(0);
+        String fpName = br.getRegex("class=\"content__title\">\\s*?<h1>\\s*([^<>\"]+)\\s*<").getMatch(0);
+        if (fpName == null) {
+            fpName = br.getRegex("<h1>\\s*([^<>\"]+)\\s*<").getMatch(0);
+        }
         if (fpName == null) {
             /* Fallback */
             fpName = url_title;
@@ -102,7 +107,7 @@ public class MyzcloudMe extends antiDDoSForDecrypt {
                 filename += Encoding.htmlDecode(artist) + " - ";
             }
             filename += Encoding.htmlDecode(title) + ".mp3";
-            final DownloadLink fina = createDownloadlink(Request.getLocation(Encoding.htmlDecode(url), br.getRequest()));
+            final DownloadLink fina = createDownloadlink(br.getURL(Encoding.htmlDecode(url)).toString());
             fina.setName(filename);
             if (filesize != null) {
                 fina.setDownloadSize(SizeFormatter.getSize(filesize));
