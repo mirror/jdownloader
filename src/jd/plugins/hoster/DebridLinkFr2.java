@@ -531,6 +531,8 @@ public class DebridLinkFr2 extends PluginForHost {
             if (link != null) {
                 if ("fileNotFound".equals(error)) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Untrusted error 'file not found'");
+                } else if ("notDebrid".equals(error)) {
+                    mhm.putError(account, link, 60 * 60 * 1000l, "Disabled filehost: server error notDebrid");
                 } else if ("disabledHost".equals(error)) {
                     /* The filehoster is disabled */
                     mhm.putError(account, link, 5 * 60 * 1000l, "Disabled filehost");

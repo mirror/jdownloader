@@ -50,11 +50,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.StringTokenizer;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -68,6 +70,7 @@ import org.appwork.utils.net.httpconnection.JavaSSLSocketStreamFactory;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamFactory;
 import org.appwork.utils.net.httpconnection.SocketStreamInterface;
 import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.auth.AuthenticationInfo.Type;
 import org.jdownloader.auth.Login;
 import org.jdownloader.logging.LogController;
 
@@ -1352,46 +1355,39 @@ public abstract class SimpleFTP {
      * @param url
      * @throws IOException
      */
-    public void connect(URL url) throws IOException {
+    public Login connect(URL url) throws IOException {
         final String host = url.getHost();
         int port = url.getPort();
         if (port <= 0) {
-            port = 21;
+            port = url.getDefaultPort();
         }
-        boolean autoTry = false;
-        try {
-            if (url.getUserInfo() != null) {
-                final String[] auth = url.getUserInfo().split(":");
-                if (auth.length == 1) {
-                    connect(host, port, auth[0], "");
+        final List<Login> logins = new ArrayList<Login>();
+        if (url.getUserInfo() != null) {
+            final String[] auth = url.getUserInfo().split(":");
+            final String username = auth.length > 0 ? auth[0] : null;
+            final String password = auth.length == 2 ? auth[1] : null;
+            logins.add(new Login(Type.FTP, url.getHost(), null, username, password, true));
+        }
+        logins.addAll(AuthenticationController.getInstance().getSortedLoginsList(url, null));
+        logins.add(new Login(Type.FTP, url.getHost(), null, "anonymous", "anonymous", false));
+        final Iterator<Login> it = logins.iterator();
+        while (it.hasNext()) {
+            final Login login = it.next();
+            try {
+                connect(host, port, login.getUsername(), login.getPassword());
+                login.validate();
+                return login;
+            } catch (IOException e) {
+                disconnect();
+                final String message = e.getMessage();
+                if (it.hasNext() && (StringUtils.contains(message, "was unable to log in with the supplied") || StringUtils.contains(message, "530 Login or Password incorrect"))) {
+                    continue;
                 } else {
-                    connect(host, port, auth[0], auth[1]);
-                }
-            } else {
-                final Login ret = AuthenticationController.getInstance().getBestLogin(url, null);
-                if (ret != null) {
-                    autoTry = true;
-                    connect(host, port, ret.getUsername(), ret.getPassword());
-                } else {
-                    connect(host, port);
+                    throw e;
                 }
             }
-        } catch (IOException e) {
-            disconnect();
-            final String message = e.getMessage();
-            if (StringUtils.contains(message, "was unable to log in with the supplied") || StringUtils.contains(message, "530 Login or Password incorrect")) {
-                if (autoTry) {
-                    connect(host, port);
-                } else {
-                    final Login ret = AuthenticationController.getInstance().getBestLogin(url, null);
-                    if (ret != null) {
-                        connect(host, port, ret.getUsername(), ret.getPassword());
-                        return;
-                    }
-                }
-            }
-            throw e;
         }
+        throw new WTFException();
     }
 
     public static byte[] toRawBytes(String nameString) throws IOException {

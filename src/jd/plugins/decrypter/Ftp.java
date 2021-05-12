@@ -167,16 +167,15 @@ public class Ftp extends PluginForDecrypt {
                         final String host = url.getHost();
                         int port = url.getPort();
                         if (port <= 0) {
-                            port = 21;
+                            port = url.getDefaultPort();
                         }
                         try {
                             ftp.connect(host, port, login.getUsername(), login.getPassword());
-                            if (false && login.isRememberSelected()) {
-                                // TODO: finish me
+                            if (login.isRememberSelected()) {
                                 final AuthenticationInfo auth = new AuthenticationInfo();
                                 auth.setUsername(login.getUsername());
                                 auth.setPassword(login.getPassword());
-                                auth.setHostmask(login.getHost());
+                                auth.setHostmask(host);
                                 auth.setType(Type.FTP);
                                 AuthenticationController.getInstance().add(auth);
                             }

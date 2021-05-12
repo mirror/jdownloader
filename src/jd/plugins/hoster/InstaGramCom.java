@@ -66,8 +66,8 @@ public class InstaGramCom extends PluginForHost {
     }
 
     public static Browser prepBRAltAPI(final Browser br) {
-        /* 2020-11-17: Also possible: Instagram 123.1.0.26.115 (iPhone12,1; iOS 13_3; en_US; en-US */
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_3 like Mac OS X) AppleWebKit/603.3.8 (KHTML, like Gecko) Mobile/14G60 Instagram 12.0.0.16.90 (iPhone9,4; iOS 10_3_3; en_US; en-US; scale=2.61; gamut=wide; 1080x1920)");
+        // https://github.com/qsniyg/maxurl/blob/master/userscript.user.js
+        br.getHeaders().put("User-Agent", "Instagram 146.0.0.27.125 Android (23/6.0.1; 640dpi; 1440x2560; samsung; SM-G930F; herolte; samsungexynos8890; en_US)");
         br.setAllowedResponseCodes(new int[] { 429 });
         return br;
     }
@@ -314,7 +314,7 @@ public class InstaGramCom extends PluginForHost {
             }
         }
         final boolean removePictureEffects = true;
-        if (dllink != null && removePictureEffects && dllink.contains("&se=")) {
+        if (dllink != null && removePictureEffects && (dllink.contains("&se=") || dllink.contains("?se="))) {
             /*
              * 2020-10-07: By replacing that one parameter, we will additionally remove all filters so we should get the original picture
              * then! The resolution will usually not change - it will only remove the filters!
@@ -324,6 +324,7 @@ public class InstaGramCom extends PluginForHost {
              * https://github.com/instaloader/instaloader/blob/f4ecfea64cc11efba44cda2b44c8cfe41adbd28a/instaloader/structures.py#L247
              */
             dllink = dllink.replaceAll("&se=\\d+(&)?", "&");
+            dllink = dllink.replaceAll("\\?se=\\d+(&)?", "?");
         }
         return dllink;
     }
@@ -713,7 +714,7 @@ public class InstaGramCom extends PluginForHost {
 
     @Override
     public void init() {
-        Browser.setRequestIntervalLimitGlobal("instagram.com", 250);
+        Browser.setRequestIntervalLimitGlobal("instagram.com", 400);
     }
 
     public static Browser prepBRWebsite(final Browser br) {

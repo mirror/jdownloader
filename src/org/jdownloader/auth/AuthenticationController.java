@@ -147,7 +147,7 @@ public class AuthenticationController {
     public List<AuthenticationFactory> getSortedAuthenticationFactories(final URL url, final String realm) {
         final List<AuthenticationFactory> ret = new ArrayList<AuthenticationFactory>();
         final List<Login> logins = getSortedLoginsList(url, realm);
-        if (logins != null) {
+        if (logins != null && logins.size() > 0) {
             for (final Login login : logins) {
                 ret.add(new DefaultAuthenticanFactory(login.getHost(), login.getRealm(), login.getUsername(), login.getPassword()) {
                     protected boolean requiresAuthentication(final Request request) {
@@ -172,6 +172,7 @@ public class AuthenticationController {
     }
 
     public List<Login> getSortedLoginsList(final URL url, final String realm) {
+        final List<Login> ret = new ArrayList<Login>();
         final AuthenticationInfo.Type type;
         final String protocol = url.getProtocol();
         if (protocol != null && protocol.matches("(?i)^ftp$")) {
@@ -180,7 +181,7 @@ public class AuthenticationController {
             type = Type.HTTP;
         } else {
             LogController.getRebirthLogger(logger).info("Unknown Protocoll: " + url);
-            return null;
+            return ret;
         }
         final List<AuthenticationInfo> infos = new ArrayList<AuthenticationInfo>();
         final String urlHost = url.getHost();
@@ -198,14 +199,14 @@ public class AuthenticationController {
                         Boolean matches = null;
                         try {
                             // check with normal pattern
-                            matches = Pattern.compile(pattern).matcher(urlHost).matches();
+                            matches = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE).matcher(urlHost).matches();
                         } catch (PatternSyntaxException e) {
                         }
                         if (!Boolean.TRUE.equals(matches)) {
                             // check again with simple pattern
                             try {
                                 pattern = authHost.replace("*", ".*");
-                                matches = Pattern.compile(pattern).matcher(urlHost).matches();
+                                matches = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE).matcher(urlHost).matches();
                             } catch (PatternSyntaxException e2) {
                             }
                         }
@@ -263,7 +264,6 @@ public class AuthenticationController {
         } catch (Throwable e) {
             LogController.getRebirthLogger(logger).log(e);
         }
-        final List<Login> ret = new ArrayList<Login>();
         for (final AuthenticationInfo info : infos) {
             ret.add(new Login(info.getType(), info.getHostmask(), info.getRealm(), info.getUsername(), info.getPassword(), info.isAlwaysFlag()) {
                 @Override
