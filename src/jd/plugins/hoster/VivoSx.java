@@ -18,10 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.URLDecoder;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -33,7 +29,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vivo.sx" }, urls = { "https?://(?:www\\.)?vivo\\.sx/(?:embed/)?([a-z0-9]{10})" })
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vivo.sx" }, urls = { "https?://(?:www\\.)?vivo\\.(?:sx|st)/(?:embed/)?([a-z0-9]{10})" })
 public class VivoSx extends antiDDoSForHost {
     public VivoSx(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,11 +41,13 @@ public class VivoSx extends antiDDoSForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://" + domain + "/terms";
+        return "https://vivo.sx/terms";
     }
 
-    /* Similar: shared.sx, vivo.sx */
-    private static final String domain = "shared.sx";
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "vivo.sx", "vivo.st" };
+    }
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
