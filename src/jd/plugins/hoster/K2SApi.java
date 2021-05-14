@@ -1095,7 +1095,7 @@ public abstract class K2SApi extends PluginForHost {
                             if (dummyLink) {
                                 setDownloadLink(new DownloadLink(null, "Account", getInternalAPIDomain(), cbr.getURL(), true));
                             }
-                            final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, cbr);
+                            final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, cbr, getReCaptchaV2WebsiteKey());
                             final String recaptchaV2Response = rc2.getToken();
                             if (recaptchaV2Response == null) {
                                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
