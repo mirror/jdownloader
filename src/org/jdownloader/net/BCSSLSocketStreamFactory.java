@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.Socket;
+import java.net.SocketException;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -54,13 +55,14 @@ import org.bouncycastle.util.Strings;
  *
  */
 public class BCSSLSocketStreamFactory implements SSLSocketStreamFactory {
-    protected final static Provider                 BC               = new BouncyCastleProvider();
-    private final static String                     TLS13_ENABLED    = "BC_TLS1.3_ENABLED";
+    protected final static Provider                 BC                = new BouncyCastleProvider();
+    private final static String                     TLS13_ENABLED     = "BC_TLS1.3_ENABLED";
+    private final static String                     TLS10_11_DISABLED = "BC_TLS10_11_DISABLED";
     // raymii.org/s/tutorials/Strong_SSL_Security_On_nginx.html
     // openssl.org/docs/man1.0.1/apps/ciphers.html
     // TODO: sort strength
-    protected static final String                   CIPHERS          = "CHACHA20:EECDH+AESGCM:EDH+AESGCM:ECDHE-RSA-AES128-GCM-SHA256:AES256+EECDH:DHE-RSA-AES128-GCM-SHA256:AES256+EDH:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA:ECDHE-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC3-SHA:AES256-GCM-SHA384:AES128-GCM-SHA256:AES256-SHA256:AES128-SHA256:AES256-SHA:AES128-SHA:DES-CBC3-SHA:HIGH:!anon:!eNULL:!DHE:!SRP:!EXPORT:!DES:!MD5:!PSK:!RC4";
-    protected static final HashMap<Integer, String> CIPHERSUITENAMES = new HashMap<Integer, String>();
+    protected static final String                   CIPHERS           = "CHACHA20:EECDH+AESGCM:EDH+AESGCM:ECDHE-RSA-AES128-GCM-SHA256:AES256+EECDH:DHE-RSA-AES128-GCM-SHA256:AES256+EDH:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA:ECDHE-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC3-SHA:AES256-GCM-SHA384:AES128-GCM-SHA256:AES256-SHA256:AES128-SHA256:AES256-SHA:AES128-SHA:DES-CBC3-SHA:HIGH:!anon:!eNULL:!DHE:!SRP:!EXPORT:!DES:!MD5:!PSK:!RC4";
+    protected static final HashMap<Integer, String> CIPHERSUITENAMES  = new HashMap<Integer, String>();
     protected static int[]                          CIPHERSUITES;
     static {
         try {
@@ -211,10 +213,16 @@ public class BCSSLSocketStreamFactory implements SSLSocketStreamFactory {
         @Override
         public ProtocolVersion[] getProtocolVersions() {
             final ProtocolVersion[] ret = super.getProtocolVersions();
-            if (options.getCustomFactorySettings().contains(TLS13_ENABLED)) {
+            final boolean tls13Enabled = options.getCustomFactorySettings().contains(TLS13_ENABLED);
+            final boolean tls10_11Disabled = options.getCustomFactorySettings().contains(TLS10_11_DISABLED);
+            if (tls13Enabled || tls10_11Disabled) {
                 final List<ProtocolVersion> protocolVersions = new ArrayList<ProtocolVersion>(Arrays.asList(ret));
-                if (!protocolVersions.contains(ProtocolVersion.TLSv13)) {
+                if (tls13Enabled && !protocolVersions.contains(ProtocolVersion.TLSv13)) {
                     protocolVersions.add(0, ProtocolVersion.TLSv13);
+                }
+                if (tls10_11Disabled) {
+                    protocolVersions.remove(ProtocolVersion.TLSv10);
+                    protocolVersions.remove(ProtocolVersion.TLSv11);
                 }
                 return protocolVersions.toArray(new ProtocolVersion[0]);
             } else {
@@ -412,12 +420,23 @@ public class BCSSLSocketStreamFactory implements SSLSocketStreamFactory {
             // https://www.bouncycastle.org/docs/tlsdocs1.5on/org/bouncycastle/tls/AlertDescription.html
             if (options.getCustomFactorySettings().add(TLS13_ENABLED)) {
                 // retry with TLS1.3 enabled
-                return "enable TLS1.3";
+                return options.addRetryReason("enable TLS1.3");
             }
             final String bcRetry = options.enableNextDisabledCipher("GCM");
             if (bcRetry != null) {
                 // retry with TLS1.3 and GCM
-                return "enable " + bcRetry + " for TLS1.3";
+                return options.addRetryReason("enable " + bcRetry + " for TLS1.3");
+            }
+        }
+        if (e instanceof SocketException && StringUtils.containsIgnoreCase(e.getMessage(), "reset")) {
+            final String jsseRetry = options.enableNextDisabledCipher("GCM");
+            if (jsseRetry != null) {
+                // retry with TLS1.2 GCM
+                return options.addRetryReason("enable " + jsseRetry + " for TLS1.2/TLS1.3");
+            }
+            if (options.getCustomFactorySettings().add(TLS10_11_DISABLED)) {
+                // disable old TLS1.0 and TLS1.1 and retry with TLS1.2
+                return options.addRetryReason("disable TLS1.0/TLS1.1");
             }
         }
         return null;
