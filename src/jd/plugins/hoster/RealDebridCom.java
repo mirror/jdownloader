@@ -399,7 +399,18 @@ public class RealDebridCom extends PluginForHost {
         if (account != null && !isDirectRealDBUrl(link)) {
             final String dllink = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
             final String password = link.getStringProperty("pass", null);
-            final CheckLinkResponse checkresp = callRestAPI(account, "/unrestrict/check", new UrlQuery().append("link", dllink, true).append("password", password, true), CheckLinkResponse.TYPE);
+            final CheckLinkResponse checkresp;
+            try {
+                checkresp = callRestAPI(account, "/unrestrict/check", new UrlQuery().append("link", dllink, true).append("password", password, true), CheckLinkResponse.TYPE);
+            } catch (final APIException e) {
+                switch (e.getError()) {
+                case FILE_UNAVAILABLE:
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
+                default:
+                    logger.log(e);
+                    return AvailableStatus.UNCHECKABLE;
+                }
+            }
             if (checkresp != null) {
                 if (StringUtils.isEmpty(checkresp.getHost()) || (checkresp.getFilename() == null && checkresp.getFilesize() == 0)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -411,8 +422,9 @@ public class RealDebridCom extends PluginForHost {
                     link.setFinalFileName(checkresp.getFilename());
                 }
                 return AvailableStatus.TRUE;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.UNCHECKABLE;
     }
