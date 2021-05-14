@@ -15,9 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -41,6 +39,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "https?://(?:www\\.)?filer\\.net/(?:app\\.php/)?(?:get|dl)/([a-z0-9]+)" })
 public class FilerNet extends PluginForHost {
@@ -213,8 +215,12 @@ public class FilerNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             handleErrors(account, true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -273,8 +279,12 @@ public class FilerNet extends PluginForHost {
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             handleErrors(account, true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -412,8 +422,12 @@ public class FilerNet extends PluginForHost {
             /* Important!! */
             br.getHeaders().put("Authorization", "");
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 /**
                  * there error handling is fubared, the message is the same for all /error/\d+ <br />
                  * logs show they can be downloaded, at least in free mode test I've done -raztoki20160510 <br />

@@ -91,6 +91,11 @@ public class TezFilesCom extends K2SApi {
     }
 
     @Override
+    protected String getReCaptchaV2WebsiteKey() {
+        return "6Lc4tNIaAAAAAC8HtrpzNkA3xFIan367hNE3pKxF";
+    }
+
+    @Override
     public void reset() {
     }
 

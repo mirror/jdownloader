@@ -67,7 +67,7 @@ public class Publish2Me extends K2SApi {
 
     @Override
     protected String getReCaptchaV2WebsiteKey() {
-        return "6LcYcN0SAAAAABtMlxKj7X0hRxOY8_2U86kI1vbb";
+        return "6LfzstIaAAAAABq_PJ8RN2fEc2Drs_pbTTskiISu";
     }
 
     @Override
