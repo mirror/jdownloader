@@ -1,10 +1,19 @@
 package jd.gui.swing.jdgui.components.toolbar.actions;
 
 import java.awt.Color;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
 
 import javax.swing.AbstractButton;
 import javax.swing.Icon;
+import javax.swing.JComponent;
 import javax.swing.JToggleButton;
+import javax.swing.TransferHandler;
+
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.gui.swing.jdgui.Flashable;
+import jd.gui.swing.jdgui.JDGui;
 
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
@@ -12,10 +21,8 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.toolbar.action.AbstractToolbarToggleAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
-
-import jd.gui.swing.jdgui.Flashable;
-import jd.gui.swing.jdgui.JDGui;
 
 public class ClipBoardToggleAction extends AbstractToolbarToggleAction implements Flashable {
     private final Icon    iconNormal;
@@ -41,7 +48,6 @@ public class ClipBoardToggleAction extends AbstractToolbarToggleAction implement
     public void onConfigValueModified(final KeyHandler<Boolean> keyHandler, Boolean newValue) {
         super.onConfigValueModified(keyHandler, newValue);
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 final boolean isClipboardEnabled = getKeyHandler().isEnabled();
@@ -65,13 +71,48 @@ public class ClipBoardToggleAction extends AbstractToolbarToggleAction implement
         bt.setSelectedIcon(iconSelected);
         bt.setRolloverSelectedIcon(iconSelected);
         bt.setHideActionText(true);
+        bt.setTransferHandler(new TransferHandler() {
+            /**
+             *
+             */
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public boolean canImport(TransferSupport support) {
+                return ClipboardMonitoring.hasSupportedTransferData(support.getTransferable());
+            }
+
+            @Override
+            public boolean canImport(JComponent comp, DataFlavor[] transferFlavors) {
+                return true;
+            }
+
+            @Override
+            public boolean importData(TransferSupport support) {
+                return importTransferable(support.getTransferable());
+            }
+
+            @Override
+            public boolean importData(JComponent comp, Transferable t) {
+                return importTransferable(t);
+            }
+
+            private final boolean importTransferable(final Transferable t) {
+                try {
+                    ClipboardMonitoring.processSupportedTransferData(t, LinkOrigin.DRAG_DROP_ACTION);
+                    return true;
+                } catch (Exception e) {
+                    LogController.CL().log(e);
+                }
+                return false;
+            }
+        });
         return bt;
     }
 
     @Override
     public void onFlashRegister(long c) {
         onFlash(c);
-
     }
 
     @Override
@@ -111,5 +152,4 @@ public class ClipBoardToggleAction extends AbstractToolbarToggleAction implement
     protected String getNameWhenEnabled() {
         return _GUI.T.ClipBoardToggleAction_getNameWhenEnabled_();
     }
-
 }
