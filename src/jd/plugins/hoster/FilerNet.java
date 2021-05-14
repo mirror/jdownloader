@@ -440,7 +440,7 @@ public class FilerNet extends PluginForHost {
                 // if (br.getURL().equals("http://filer.net/error/430") || br.containsHTML("Diese Adresse ist nicht bekannt oder")) {
                 // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 // }
-                if (br.getURL().matches(".+/error/\\d+")) {
+                if (br.getURL().matches(".+/error/\\d+") || dl.getConnection().getCompleteContentLength() == 0) {
                     final int failed = downloadLink.getIntegerProperty("errorFailure", 0) + 1;
                     downloadLink.setProperty("errorFailure", failed);
                     if (failed > 10) {
