@@ -138,7 +138,7 @@ public class Keep2ShareCc extends K2SApi {
 
     @Override
     protected String getReCaptchaV2WebsiteKey() {
-        return "6LezloQUAAAAAJrSZsWi6lDfGZEwgacI3tTIndGU";
+        return "6LcOsNIaAAAAABzCMnQw7u0u8zd1mrqY6ibFtto8";
     }
 
     @Override
