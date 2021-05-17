@@ -62,7 +62,7 @@ public class DropapkCom extends XFileSharingProBasic {
     public String[] scanInfo(String[] fileInfo) {
         String[] ret = super.scanInfo(fileInfo);
         if (StringUtils.isEmpty(ret[1])) {
-            ret[1] = new Regex(correctedBR, "\\(\\s*(\\d+(?:\\.\\d+)?(?: |\\&nbsp;)?(KB|MB|GB))").getMatch(0);
+            ret[1] = new Regex(correctedBR, "\\(\\s*(\\d+(?:\\.\\d+)?(?: |\\&nbsp;)?(KB|MB|GB|B))").getMatch(0);
         }
         return ret;
     }
