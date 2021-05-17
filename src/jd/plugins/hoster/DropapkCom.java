@@ -18,17 +18,18 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DropapkCom extends XFileSharingProBasic {
@@ -128,15 +129,16 @@ public class DropapkCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected void massLinkcheckerParseFileInfo(final Browser br, final DownloadLink dl) {
+    protected AvailableStatus massLinkcheckerParseFileInfo(final Browser br, final DownloadLink dl) {
         final String fuid = this.getFUIDFromURL(dl);
         /* 2021-05-17: Special */
         final String html_for_fuid = br.getRegex("<li[^>]*>\\s*<span>[^>]*" + fuid + "[^>]*</span>.*?</li>").getMatch(-1);
         if (html_for_fuid == null) {
-            return;
+            return null;
         }
         if (html_for_fuid.contains("Not found")) {
             dl.setAvailable(false);
+            return AvailableStatus.FALSE;
         } else {
             /* We know that the file is online - let's try to find the filesize ... */
             dl.setAvailable(true);
@@ -150,7 +152,9 @@ public class DropapkCom extends XFileSharingProBasic {
                     dl.setDownloadSize(SizeFormatter.getSize(size));
                 }
             } catch (final Throwable e) {
+                logger.log(e);
             }
+            return AvailableStatus.TRUE;
         }
     }
 }

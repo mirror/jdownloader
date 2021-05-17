@@ -92,7 +92,8 @@ public class Ftp extends PluginForDecrypt {
                 try {
                     return internalDecryptIt(cLink, progress, limit);
                 } catch (WTFException e) {
-                    if ("retry".equals(e.getMessage())) {
+                    logger.log(e);
+                    if (StringUtils.startsWithCaseInsensitive(e.getMessage(), "retry")) {
                         continue;
                     } else {
                         throw e;
@@ -125,16 +126,32 @@ public class Ftp extends PluginForDecrypt {
             protected Socket createSocket() {
                 return SocketConnectionFactory.createSocket(getProxy());
             }
+
+            @Override
+            protected boolean AUTH_TLS_CC() throws IOException {
+                final Set<String> set = jd.plugins.hoster.Ftp.AUTH_TLS_DISABLED;
+                synchronized (set) {
+                    if (set.contains(url.getHost())) {
+                        return false;
+                    }
+                }
+                final boolean ret = super.AUTH_TLS_CC();
+                if (!ret) {
+                    synchronized (set) {
+                        set.add(url.getHost());
+                    }
+                }
+                return ret;
+            }
         };
         try {
             try {
                 ftp.connect(url);
             } catch (IOException e) {
                 logger.log(e);
-                final String message = e.getMessage();
-                final Integer limit = jd.plugins.hoster.Ftp.getConnectionLimit(e);
+                final Integer limit = ftp.getConnectionLimitByException(e);
                 if (limit != null && maxFTPConnections == -1) {
-                    final String lockHost = Browser.getHost(cLink.getCryptedUrl());
+                    final String lockHost = Browser.getHost(url);
                     final int maxConcurrency = Math.max(1, limit);
                     synchronized (LIMITS) {
                         LIMITS.put(lockHost, maxConcurrency);
@@ -159,8 +176,8 @@ public class Ftp extends PluginForDecrypt {
                         }
                     });
                     sleep(5000, cLink);
-                    throw new WTFException("retry", e);
-                } else if (StringUtils.contains(message, "was unable to log in with the supplied") || StringUtils.contains(message, "530 Login or Password incorrect")) {
+                    throw new WTFException("retry limit:" + lockHost + "|" + limit, e);
+                } else if (ftp.isWrongLoginException(e)) {
                     final DownloadLink dummyLink = new DownloadLink(null, null, url.getHost(), cLink.getCryptedUrl(), true);
                     final Login login = requestLogins(org.jdownloader.translate._JDT.T.DirectHTTP_getBasicAuth_message(), null, dummyLink);
                     if (login != null) {
@@ -180,7 +197,7 @@ public class Ftp extends PluginForDecrypt {
                                 AuthenticationController.getInstance().add(auth);
                             }
                         } catch (IOException e2) {
-                            if (StringUtils.contains(message, "was unable to log in with the supplied") || StringUtils.contains(message, "530 Login or Password incorrect")) {
+                            if (ftp.isWrongLoginException(e)) {
                                 throw new DecrypterException(DecrypterException.PASSWORD, e2);
                             } else {
                                 throw e2;

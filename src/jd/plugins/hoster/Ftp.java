@@ -21,7 +21,9 @@ import java.net.Socket;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.WeakHashMap;
 
 import jd.PluginWrapper;
@@ -45,7 +47,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.SimpleFTPDownloadInterface;
 
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyException;
 import org.jdownloader.DomainInfo;
@@ -55,6 +56,8 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 // - ftp filenames can contain & characters!
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftpviajd://.*?\\.[\\p{L}\\p{Nd}a-zA-Z0-9]{1,}(:\\d+)?/([^\\?&\"\r\n ]+|$)" })
 public class Ftp extends PluginForHost {
+    public static Set<String> AUTH_TLS_DISABLED = new HashSet<String>();
+
     public Ftp(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -64,11 +67,11 @@ public class Ftp extends PluginForHost {
         if (link != null) {
             // prefer domain via public suffic list
             return Browser.getHost(link.getDownloadURL());
-        }
-        if (account != null) {
+        } else if (account != null) {
             return account.getHoster();
+        } else {
+            return null;
         }
-        return null;
     }
 
     @Override
@@ -84,43 +87,21 @@ public class Ftp extends PluginForHost {
         return false;
     }
 
-    public static Integer getConnectionLimit(IOException e) {
-        final String msg = e.getMessage();
-        if ((StringUtils.containsIgnoreCase(msg, "530 Stop connecting"))) {
-            final String maxConnections = new Regex(e.getMessage(), "You have\\s*(\\d+)\\s*connections now currently opened").getMatch(0);
-            if (maxConnections != null) {
-                return Math.max(1, Integer.parseInt(maxConnections) - 1);
-            } else {
-                return 1;
-            }
-        } else if (StringUtils.containsIgnoreCase(msg, "Sorry, the maximum number of clients") || StringUtils.startsWithCaseInsensitive(msg, "421")) {
-            final String maxConnections = new Regex(e.getMessage(), "Sorry, the maximum number of clients \\((\\d+)\\)").getMatch(0);
-            if (maxConnections != null) {
-                return Math.max(1, Integer.parseInt(maxConnections) - 1);
-            } else {
-                return 1;
-            }
-        } else {
-            return null;
-        }
-    }
-
     private void connect(SimpleFTP ftp, final DownloadLink downloadLink, URL url) throws Exception {
         try {
             ftp.connect(url);
         } catch (IOException e) {
-            logger.log(e);
-            final Integer limit = getConnectionLimit(e);
+            final Integer limit = ftp.getConnectionLimitByException(e);
             if (limit != null) {
                 downloadLink.setProperty("MAX_FTP_CONNECTIONS", limit);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Connection limit reached", 30 * 1000l, e);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Connection limit reached", 60 * 1000l, e);
             } else {
                 throw e;
             }
         }
     }
 
-    protected SimpleFTP createSimpleFTP(URL url) throws IOException {
+    protected SimpleFTP createSimpleFTP(final URL url) throws IOException {
         final List<HTTPProxy> proxies = selectProxies(url);
         final HTTPProxy proxy = proxies.get(0);
         return new SimpleFTP(proxy, logger) {
@@ -137,6 +118,23 @@ public class Ftp extends PluginForHost {
                 default:
                     return Browser.getGlobalReadTimeout();
                 }
+            }
+
+            @Override
+            protected boolean AUTH_TLS_CC() throws IOException {
+                final Set<String> set = AUTH_TLS_DISABLED;
+                synchronized (set) {
+                    if (set.contains(url.getHost())) {
+                        return false;
+                    }
+                }
+                final boolean ret = super.AUTH_TLS_CC();
+                if (!ret) {
+                    synchronized (set) {
+                        set.add(url.getHost());
+                    }
+                }
+                return ret;
             }
 
             @Override
@@ -160,8 +158,8 @@ public class Ftp extends PluginForHost {
             ProxyController.getInstance().reportHTTPProxyException(ftp.getProxy(), url, e);
             throw e;
         } catch (IOException e) {
-            if (throwException && e.getMessage() != null && e.getMessage().contains("530")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Login incorrect", e);
+            if (ftp.isWrongLoginException(e)) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Login incorrect", e);
             } else {
                 throw e;
             }
@@ -197,8 +195,9 @@ public class Ftp extends PluginForHost {
         }
         if (list == null || list.size() == 0) {
             throw new NoGateWayException(selector, "No Gateway or Proxy Found: " + url);
+        } else {
+            return list;
         }
-        return list;
     }
 
     private String buildFilePath(final String currentDirectory, final String filePath) {
@@ -318,6 +317,7 @@ public class Ftp extends PluginForHost {
             final String filePath = new Regex(downloadLink.getDownloadURL(), "://[^/]+/(.+?)(\\?|$)").getMatch(0);
             connect(ftp, downloadLink, url);
             checkFile(ftp, downloadLink, filePath);
+            return AvailableStatus.TRUE;
         } catch (HTTPProxyException e) {
             ProxyController.getInstance().reportHTTPProxyException(ftp.getProxy(), url, e);
             throw e;
@@ -326,15 +326,13 @@ public class Ftp extends PluginForHost {
         } catch (UnknownHostException e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
         } catch (IOException e) {
-            logger.log(e);
-            if (e.getMessage().contains("530")) {
+            if (ftp.isWrongLoginException(e)) {
                 downloadLink.getLinkStatus().setErrorMessage("Login incorrect");
                 return AvailableStatus.UNCHECKABLE;
             } else {
                 throw e;
             }
         } catch (Exception e) {
-            logger.log(e);
             throw e;
         } finally {
             try {
@@ -342,7 +340,6 @@ public class Ftp extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-        return AvailableStatus.TRUE;
     }
 
     @Override
