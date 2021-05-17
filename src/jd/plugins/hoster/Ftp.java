@@ -93,7 +93,7 @@ public class Ftp extends PluginForHost {
         } catch (IOException e) {
             final Integer limit = ftp.getConnectionLimitByException(e);
             if (limit != null) {
-                downloadLink.setProperty("MAX_FTP_CONNECTIONS", limit);
+                downloadLink.setProperty("MAX_FTP_CONNECTIONS", Math.max(1, limit.intValue()));
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Connection limit reached", 60 * 1000l, e);
             } else {
                 throw e;
@@ -327,6 +327,7 @@ public class Ftp extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
         } catch (IOException e) {
             if (ftp.isWrongLoginException(e)) {
+                logger.log(e);
                 downloadLink.getLinkStatus().setErrorMessage("Login incorrect");
                 return AvailableStatus.UNCHECKABLE;
             } else {
