@@ -1474,20 +1474,27 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     dllink = getDllink(link, account, br, getCorrectBR(br));
                 }
                 download2 = findFormDownload2Free(br);
-                if (StringUtils.isEmpty(dllink) && (download2 != null || download2counter == download2max)) {
-                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                    /* Check if maybe an error happened before stepping in download2 loop --> Throw that */
-                    if (download2counter == download2start + 1 && exceptionBeforeDownload2Submit != null) {
-                        logger.info("Throwing exceptionBeforeDownload2Submit");
-                        throw exceptionBeforeDownload2Submit;
-                    }
-                    checkErrorsLastResort(br, account);
-                } else if (StringUtils.isEmpty(dllink) && download2 != null) {
-                    invalidateLastChallengeResponse();
-                    continue;
-                } else {
+                if (!StringUtils.isEmpty(dllink)) {
+                    /* Success */
                     validateLastChallengeResponse();
                     break;
+                } else if (download2 == null) {
+                    /* Failure */
+                    break;
+                } else {
+                    /* Continue to next round / next pre-download page */
+                    invalidateLastChallengeResponse();
+                    continue;
+                }
+            }
+            if (StringUtils.isEmpty(dllink)) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                /* Check if maybe an error happened before stepping in download2 loop --> Throw that */
+                if (exceptionBeforeDownload2Submit != null) {
+                    logger.info("Throwing exceptionBeforeDownload2Submit");
+                    throw exceptionBeforeDownload2Submit;
+                } else {
+                    checkErrorsLastResort(br, account);
                 }
             }
         }
