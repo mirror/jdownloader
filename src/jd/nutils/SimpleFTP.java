@@ -62,7 +62,6 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
@@ -475,6 +474,7 @@ public abstract class SimpleFTP {
             connect(host, port, user, pass, tlsMode);
         } catch (IOException e) {
             if (StringUtils.containsIgnoreCase(e.getMessage(), "plaintext") && (TLS_MODE.EXPLICIT_OPTIONAL_CC.equals(tlsMode) || TLS_MODE.EXPLICIT_OPTIONAL_CC_DC.equals(tlsMode))) {
+                logger.log(e);
                 try {
                     disconnect();
                 } catch (IOException ignore) {
@@ -484,6 +484,33 @@ public abstract class SimpleFTP {
             } else {
                 throw e;
             }
+        }
+    }
+
+    public boolean isWrongLoginException(IOException e) {
+        return StringUtils.containsIgnoreCase(e.getMessage(), "530 Login or Password incorrect");
+    }
+
+    public Integer getConnectionLimitByException(IOException e) {
+        final String msg = e.getMessage();
+        if ((StringUtils.containsIgnoreCase(msg, "530 No more connection allowed"))) {
+            return -1;
+        } else if ((StringUtils.containsIgnoreCase(msg, "530 Stop connecting"))) {
+            final String maxConnections = new Regex(e.getMessage(), "You have\\s*(\\d+)\\s*connections now currently opened").getMatch(0);
+            if (maxConnections != null) {
+                return Math.max(1, Integer.parseInt(maxConnections) - 1);
+            } else {
+                return -1;
+            }
+        } else if (StringUtils.containsIgnoreCase(msg, "Sorry, the maximum number of clients") || StringUtils.startsWithCaseInsensitive(msg, "421")) {
+            final String maxConnections = new Regex(e.getMessage(), "Sorry, the maximum number of clients \\((\\d+)\\)").getMatch(0);
+            if (maxConnections != null) {
+                return Math.max(1, Integer.parseInt(maxConnections) - 1);
+            } else {
+                return -1;
+            }
+        } else {
+            return null;
         }
     }
 
@@ -907,11 +934,12 @@ public abstract class SimpleFTP {
         try {
             size = readLines(new int[] { 200, 213 }, "SIZE failed");
         } catch (IOException e) {
-            LogSource.exception(logger, e);
             if (e.getMessage().contains("SIZE") || e.getMessage().contains("550")) {
+                logger.log(e);
                 return -1;
+            } else {
+                throw e;
             }
-            throw e;
         }
         final String[] split = size.split(" ");
         return Long.parseLong(split[1].trim());
@@ -940,7 +968,7 @@ public abstract class SimpleFTP {
                 bos.writeTo(os);
                 os.flush();
             } catch (IOException e) {
-                LogSource.exception(logger, e);
+                logger.log(e);
                 if (socket != null) {
                     disconnect();
                 }
@@ -954,7 +982,7 @@ public abstract class SimpleFTP {
             this.sendLine("ABOR");
             readLine();
         } catch (IOException e) {
-            LogSource.exception(logger, e);
+            logger.log(e);
         }
     }
 
@@ -973,8 +1001,7 @@ public abstract class SimpleFTP {
                 port = Integer.parseInt(tokenizer.nextToken()) * 256 + Integer.parseInt(tokenizer.nextToken());
                 return new InetSocketAddress(ip, port);
             } catch (Exception e) {
-                LogSource.exception(logger, e);
-                throw new IOException("SimpleFTP received bad data link information: " + response);
+                throw new IOException("SimpleFTP received bad data link information: " + response, e);
             }
         }
         throw new IOException("SimpleFTP received bad data link information: " + response);
@@ -1024,7 +1051,7 @@ public abstract class SimpleFTP {
                     try {
                         response = readLine();
                     } catch (SocketTimeoutException e) {
-                        LogSource.exception(logger, e);
+                        logger.log(e);
                         response = "SocketTimeout because of buggy Server";
                     }
                     this.shutDownSocket(dataSocket);
@@ -1043,26 +1070,26 @@ public abstract class SimpleFTP {
             try {
                 response = readLine();
             } catch (SocketTimeoutException e) {
-                LogSource.exception(logger, e);
+                logger.log(e);
                 response = "SocketTimeout because of buggy Server";
             }
             if (!response.startsWith("226")) {
                 throw new IOException("Download failed: " + response);
             }
         } catch (SocketTimeoutException e) {
-            LogSource.exception(logger, e);
+            logger.log(e);
             sendLine("ABOR");
             readLine();
             download(filename, file);
             return;
         } catch (SocketException e) {
-            LogSource.exception(logger, e);
+            logger.log(e);
             sendLine("ABOR");
             readLine();
             download(filename, file);
             return;
         } catch (ConnectException e) {
-            LogSource.exception(logger, e);
+            logger.log(e);
             sendLine("ABOR");
             readLine();
             download(filename, file);
@@ -1295,11 +1322,12 @@ public abstract class SimpleFTP {
             final ENCODING encoding = getPathEncoding();
             sb.append(encoding.fromBytes(IO.readStream(-1, dataSocket.getInputStream(), new ByteArrayOutputStream(), false)));
         } catch (IOException e) {
-            logger.log(e);
             if (e.getMessage().contains("550")) {
+                logger.log(e);
                 return null;
+            } else {
+                throw e;
             }
-            throw e;
         } finally {
             shutDownSocket(dataSocket);
         }
@@ -1349,18 +1377,7 @@ public abstract class SimpleFTP {
         return preferedTLSMode;
     }
 
-    /**
-     * COnnect to the url.does not change directory
-     *
-     * @param url
-     * @throws IOException
-     */
-    public Login connect(URL url) throws IOException {
-        final String host = url.getHost();
-        int port = url.getPort();
-        if (port <= 0) {
-            port = url.getDefaultPort();
-        }
+    protected List<Login> getLogins(URL url) {
         final List<Login> logins = new ArrayList<Login>();
         if (url.getUserInfo() != null) {
             final String[] auth = url.getUserInfo().split(":");
@@ -1369,7 +1386,29 @@ public abstract class SimpleFTP {
             logins.add(new Login(Type.FTP, url.getHost(), null, username, password, true));
         }
         logins.addAll(AuthenticationController.getInstance().getSortedLoginsList(url, null));
-        logins.add(new Login(Type.FTP, url.getHost(), null, "anonymous", "anonymous", false));
+        if (isAnonymousLoginSupported(url)) {
+            logins.add(new Login(Type.FTP, url.getHost(), null, "anonymous", "anonymous", false));
+        }
+        return logins;
+    }
+
+    protected boolean isAnonymousLoginSupported(URL url) {
+        return true;
+    }
+
+    /**
+     * COnnect to the url.does not change directory
+     *
+     * @param url
+     * @throws IOException
+     */
+    public Login connect(final URL url) throws IOException {
+        final String host = url.getHost();
+        int port = url.getPort();
+        if (port <= 0) {
+            port = url.getDefaultPort();
+        }
+        final List<Login> logins = getLogins(url);
         final Iterator<Login> it = logins.iterator();
         while (it.hasNext()) {
             final Login login = it.next();
@@ -1379,8 +1418,8 @@ public abstract class SimpleFTP {
                 return login;
             } catch (IOException e) {
                 disconnect();
-                final String message = e.getMessage();
-                if (it.hasNext() && (StringUtils.contains(message, "was unable to log in with the supplied") || StringUtils.contains(message, "530 Login or Password incorrect"))) {
+                if (it.hasNext() && isWrongLoginException(e)) {
+                    logger.log(e);
                     continue;
                 } else {
                     throw e;

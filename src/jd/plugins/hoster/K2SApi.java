@@ -48,6 +48,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.download.DownloadInterface;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.simplejson.JSonUtils;
@@ -179,7 +180,7 @@ public abstract class K2SApi extends PluginForHost {
         if (StringUtils.contains(contentType, "text") || StringUtils.containsIgnoreCase(contentType, "html") || con.getCompleteContentLength() == -1 || con.getResponseCode() == 401 || con.getResponseCode() == 404 || con.getResponseCode() == 409 || con.getResponseCode() == 440) {
             return false;
         } else {
-            return con.getResponseCode() == 200 || con.getResponseCode() == 206 || con.isContentDisposition();
+            return looksLikeDownloadableContent(con);
         }
     }
 
@@ -561,11 +562,11 @@ public abstract class K2SApi extends PluginForHost {
         if (!inValidate(dllink)) {
             final Browser obr = br.cloneBrowser();
             logger.info("Reusing cached finallink!");
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(obr, link, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
-                dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
+                logger.warning("The final dllink seems not to be a file!");
                 try {
-                    br.followConnection(true);
+                    obr.followConnection(true);
                 } catch (IOException e) {
                     logger.log(e);
                 }
@@ -574,7 +575,7 @@ public abstract class K2SApi extends PluginForHost {
                  * or
                  * "Download link is outdated, invalid or assigned to another IP address.If you see this error, most likely you will need to get new download link"
                  */
-                handleGeneralServerErrors(account, link);
+                handleGeneralServerErrors(obr, dl, account, link);
                 // we now want to restore!
                 br = obr;
                 dllink = null;
@@ -727,14 +728,13 @@ public abstract class K2SApi extends PluginForHost {
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
-                dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                 logger.warning("The final dllink seems not to be a file!");
                 try {
                     br.followConnection(true);
                 } catch (IOException e) {
                     logger.log(e);
                 }
-                handleGeneralServerErrors(account, link);
+                handleGeneralServerErrors(br, dl, account, link);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
@@ -793,13 +793,13 @@ public abstract class K2SApi extends PluginForHost {
             logger.info("Reusing cached finallink!");
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
-                dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
+                logger.warning("The final dllink seems not to be a file!");
                 try {
                     br.followConnection(true);
                 } catch (IOException e) {
                     logger.log(e);
                 }
-                handleGeneralServerErrors(account, link);
+                handleGeneralServerErrors(obr, dl, account, link);
                 // we now want to restore!
                 br = obr;
                 dllink = null;
@@ -892,14 +892,13 @@ public abstract class K2SApi extends PluginForHost {
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
-                dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                 logger.warning("The final dllink seems not to be a file!");
                 try {
                     br.followConnection(true);
                 } catch (IOException e) {
                     logger.log(e);
                 }
-                handleGeneralServerErrors(account, link);
+                handleGeneralServerErrors(br, dl, account, link);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
@@ -1740,7 +1739,7 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    protected void handleGeneralServerErrors(final Account account, final DownloadLink downloadLink) throws PluginException {
+    protected void handleGeneralServerErrors(final Browser br, final DownloadInterface dl, final Account account, final DownloadLink downloadLink) throws PluginException {
         if (br.containsHTML("You exceeded your Premium (20|50) GB daily limit, try to download tomorrow")) {
             throw new AccountUnavailableException("You exceeded your Premium daily limit, try to download tomorrow", 60 * 60 * 1000l);
         }
