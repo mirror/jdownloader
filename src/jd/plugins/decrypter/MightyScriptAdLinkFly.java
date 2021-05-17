@@ -19,10 +19,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -37,6 +33,10 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 /**
  *
  * @author raztoki
@@ -47,7 +47,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
  *
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
+public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
     public enum CaptchaType {
         reCaptchaV2,
         reCaptchaV2_invisible,
