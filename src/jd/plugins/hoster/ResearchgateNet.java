@@ -31,9 +31,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "researchgate.net" }, urls = { "https?://(?:www\\.)?researchgate\\.net/publication/\\d+_[A-Za-z0-9\\-_]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "researchgate.net" }, urls = { "https?://(?:www\\.)?researchgate\\.net/(publication/\\d+_[A-Za-z0-9\\-_]+|figure/[A-Za-z0-9\\-_]+_\\d+)" })
 public class ResearchgateNet extends PluginForHost {
     public ResearchgateNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -56,7 +57,7 @@ public class ResearchgateNet extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.getURL().length() <= 60) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "publication/(.+)").getMatch(0);
+        final String url_filename = new Regex(link.getDownloadURL(), "(?:publication|figure)/(.+)").getMatch(0);
         final String json_source = this.br.getRegex("createInitialWidget\\((.*?\\})\\s+").getMatch(0);
         dllink = PluginJSonUtils.getJsonValue(json_source, "downloadLink");
         String filename = PluginJSonUtils.getJsonValue(json_source, "fileName");
@@ -67,14 +68,22 @@ public class ResearchgateNet extends PluginForHost {
                 dllink = br.getRegex("\"citation_pdf_url\"\\s*content\\s*=\\s*\"(https?://[^\"]*?\\.pdf)\"").getMatch(0);
             }
         }
+        if (dllink == null && StringUtils.containsIgnoreCase(link.getPluginPatternMatcher(), "/figure/")) {
+            dllink = br.getRegex("property\\s*=\\s*\"og:image\"\\s*content\\s*=\\s*\"(https?://.*?\\.(png|jpe?g))\"").getMatch(0);
+        }
         if (filename == null || filename.equals("")) {
-            filename = br.getRegex("<title>([^<>\"]+)(\\(PDF Download Available\\))?</title>").getMatch(0);
+            filename = br.getRegex("<title>\\s*([^<>\"].*?)\\s*((\\(PDF Download Available\\))|(\\|\\s*Download Scientific Diagram))?\\s*</title>").getMatch(0);
         }
         if (filename == null) {
             /* Fallback */
             filename = url_filename;
         }
-        filename = Encoding.htmlDecode(filename.trim()) + ".pdf";
+        if (StringUtils.containsIgnoreCase(link.getPluginPatternMatcher(), "/figure/")) {
+            final String ext = getFileNameExtensionFromURL(dllink, ".jpg");
+            filename = Encoding.htmlDecode(filename.trim()) + ext;
+        } else {
+            filename = Encoding.htmlDecode(filename.trim()) + ".pdf";
+        }
         link.setName(filename);
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
