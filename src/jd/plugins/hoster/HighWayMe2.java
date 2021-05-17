@@ -47,14 +47,6 @@ public class HighWayMe2 extends HighWayCore {
     public String getAGBLink() {
         return "https://high-way.me/help/terms";
     }
-    // /** According to High-Way staff, Usenet SSL is unavailable since 2017-08-01 */
-    // @Override
-    // public List<UsenetServer> getAvailableUsenetServer() {
-    // final List<UsenetServer> ret = new ArrayList<UsenetServer>();
-    // ret.addAll(UsenetServer.createServerList("reader.high-way.me", false, 119));
-    // ret.addAll(UsenetServer.createServerList("reader.high-way.me", true, 563));
-    // return ret;
-    // }
 
     @Override
     public void reset() {
@@ -66,7 +58,7 @@ public class HighWayMe2 extends HighWayCore {
 
     @Override
     protected void exceptionAccountInvalid(final Account account) throws PluginException {
-        if (account.hasProperty("usenetU") && !account.hasProperty(PROPERTY_ACCOUNT_API_MIGRATION_MESSAGE_DISPLAYED)) {
+        if (account.hasProperty(PROPERTY_ACCOUNT_MAXCHUNKS) && !account.hasProperty(PROPERTY_ACCOUNT_API_MIGRATION_MESSAGE_DISPLAYED)) {
             /**
              * Show this message once for every user after migration to APIv2. </br>
              * This uses property "usenetU" to determine if this account has ever been checked successfully before. </br>
@@ -105,11 +97,11 @@ public class HighWayMe2 extends HighWayCore {
                         title = "high-way.me - einmaliger Logout";
                         message += "Hallo liebe(r) high-way NutzerIn\r\n";
                         message += "Wegen technischer Änderungen wurdest du einmalig automatisch ausgeloggt.\r\n";
-                        message += "Es gibt ab sofort separate high-way Zugangsdaten für JD, die sich von denen des Browser Logins unterscheiden.\r\n";
+                        message += "Es gibt ab sofort separate high-way Zugangsdaten für JD, die sich von denen die du für den Browser benötigst unterscheiden.\r\n";
                         message += "Dies dient der sicherheit deines high-way Accounts!\r\n";
                         message += "Du findest diese hier: " + apiCredsURLWithoutProtocol + "\r\n";
                         message += "Außerdem kannst du JDownloader ab sofort auch mit aktivierter 2 Faktor Authentifizierung verwenden!\r\n";
-                        message += "Es wird empfehlen, die 2 Faktor Authentifizierung hier zu aktivieren: " + twoFALoginSettingsURLWithoutProtocol;
+                        message += "Es wird empfohlen, die 2 Faktor Authentifizierung hier zu aktivieren: " + twoFALoginSettingsURLWithoutProtocol;
                     } else {
                         title = "high-way.me - you've been logged out";
                         message += "Hello dear high-way user\r\n";

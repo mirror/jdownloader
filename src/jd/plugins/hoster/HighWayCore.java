@@ -57,7 +57,7 @@ import jd.plugins.components.PluginJSonUtils;
 public abstract class HighWayCore extends UseNet {
     /** General API information: According to admin we can 'hammer' the API every 60 seconds */
     // private static final String API_BASE = "http://http.high-way.me/api.php";
-    private static MultiHosterManagement          mhm                                 = new MultiHosterManagement("high-way.me");
+    private static MultiHosterManagement          mhm                                 = null;
     private static final String                   TYPE_TV                             = ".+high\\-way\\.me/onlinetv\\.php\\?id=.+";
     private static final String                   TYPE_DIRECT                         = ".+high\\-way\\.me/dlu/[a-z0-9]+/[^/]+";
     private static final int                      STATUSCODE_PASSWORD_NEEDED_OR_WRONG = 13;
@@ -74,6 +74,8 @@ public abstract class HighWayCore extends UseNet {
     private static Object                         UPDATELOCK                          = new Object();
     private static final int                      defaultMAXCHUNKS                    = -4;
     private static final boolean                  defaultRESUME                       = false;
+    protected static final String                 PROPERTY_ACCOUNT_MAXCHUNKS          = "maxchunks";
+    protected static final String                 PROPERTY_ACCOUNT_RESUME             = "resume";
 
     public static interface HighWayMeConfigInterface extends UsenetAccountConfigInterface {
     };
@@ -81,11 +83,10 @@ public abstract class HighWayCore extends UseNet {
     public HighWayCore(PluginWrapper wrapper) {
         super(wrapper);
     }
-    /* TODO */
-    // @Override
-    // public String getAGBLink() {
-    // return "https://high-way.me/help/terms";
-    // }
+
+    public void init() {
+        mhm = new MultiHosterManagement(this.getHost());
+    }
 
     private Browser prepBR(final Browser br) {
         br.setCookiesExclusive(true);
@@ -292,8 +293,8 @@ public abstract class HighWayCore extends UseNet {
             return;
         } else {
             mhm.runCheck(account, link);
-            boolean resume = account.getBooleanProperty("resume", defaultRESUME);
-            int maxChunks = account.getIntegerProperty("account_maxchunks", defaultMAXCHUNKS);
+            boolean resume = account.getBooleanProperty(PROPERTY_ACCOUNT_RESUME, defaultRESUME);
+            int maxChunks = account.getIntegerProperty(PROPERTY_ACCOUNT_MAXCHUNKS, defaultMAXCHUNKS);
             final String thishost = link.getHost();
             synchronized (UPDATELOCK) {
                 if (hostMaxchunksMap.containsKey(thishost)) {
@@ -454,12 +455,12 @@ public abstract class HighWayCore extends UseNet {
         }
         account.setConcurrentUsePossible(true);
         /* Set supported hosts, limits and account limits */
-        account.setProperty("account_maxchunks", this.correctChunks(((Number) accountInfo.get("max_chunks")).intValue()));
+        account.setProperty(PROPERTY_ACCOUNT_MAXCHUNKS, this.correctChunks(((Number) accountInfo.get("max_chunks")).intValue()));
         account.setMaxSimultanDownloads(account_maxdls);
         if (account_resume == 1) {
-            account.setProperty("resume", true);
+            account.setProperty(PROPERTY_ACCOUNT_RESUME, true);
         } else {
-            account.setProperty("resume", false);
+            account.setProperty(PROPERTY_ACCOUNT_RESUME, false);
         }
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         synchronized (UPDATELOCK) {
@@ -648,7 +649,6 @@ public abstract class HighWayCore extends UseNet {
         if (StringUtils.isEmpty(msg)) {
             msg = "Unknown error";
         }
-        /* TODO: Implement list of errors accordingly */
         switch (code) {
         case 1:
             /* Invalid logindata */
@@ -678,16 +678,19 @@ public abstract class HighWayCore extends UseNet {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, 1 * 60 * 1000l);
         case 10:
             /* Host is not supported or not supported for free account users */
+            mhm.putError(account, this.getDownloadLink(), 5 * 60 * 1000l, msg);
         case 11:
-            /* Host (not multihost) is currently under maintenance or offline */
+            /* Host (not multihost) is currently under maintenance or offline --> Disable it for some time */
+            mhm.putError(account, this.getDownloadLink(), 5 * 60 * 1000l, msg);
         case 12:
-            /* Multihost is currently under maintenance --> Temp. disable account for some minutes */
+            /* Multihost itself is currently under maintenance --> Temp. disable account for some minutes */
             throw new AccountUnavailableException(msg, 5 * 60 * 1000l);
         case 13:
             /* Password required or sent password was wrong --> This should never happen here as upper handling should handle this! */
             throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
         case 14:
-            /* Host specific (= account specific) download limit has been reached --> Disable that particular host */
+            /* Host specific (= account specific) download limit has been reached --> Disable that particular host for some time */
+            mhm.putError(account, this.getDownloadLink(), 5 * 60 * 1000l, msg);
         case 15:
             /*
              * Host specific download request limit has been reahed. This is basically the protection of this multihost against users trying
@@ -698,7 +701,8 @@ public abstract class HighWayCore extends UseNet {
             /* Error, user is supposed to contact support of this multihost. */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, 3 * 60 * 1000l);
         default:
-            throw new AccountUnavailableException("Unknown error: " + msg, 5 * 60 * 1000l);
+            /* Treat unknown/other erors as account errors */
+            throw new AccountUnavailableException("Unexpected error: " + msg, 5 * 60 * 1000l);
         }
     }
 
@@ -721,6 +725,7 @@ public abstract class HighWayCore extends UseNet {
                 }
             }
         } else if (link != null && link.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
+            /* Last checked: 2021-05-17 */
             return 5;
         }
         return 1;
