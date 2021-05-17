@@ -30,9 +30,6 @@ import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import javax.script.SimpleScriptContext;
 
-import jd.parser.Regex;
-import jd.plugins.components.ThrowingRunnable;
-
 import org.appwork.storage.JSonMapperException;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
@@ -54,6 +51,9 @@ import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Synchronizer;
 import org.mozilla.javascript.Undefined;
 import org.mozilla.javascript.Wrapper;
+
+import jd.parser.Regex;
+import jd.plugins.components.ThrowingRunnable;
 
 public class JavaScriptEngineFactory {
     /**
@@ -1018,6 +1018,37 @@ public class JavaScriptEngineFactory {
                 }
             } else if (value instanceof Number) {
                 return ((Number) value).longValue();
+            } else if (value == null) {
+                return fallback;
+            } else {
+                throw new Exception("no number?" + value);
+            }
+        } catch (final Throwable e) {
+            LogController.CL(true).log(e);
+            return fallback;
+        }
+    }
+
+    /**
+     * Converts single json parser Objects to long. Works around 2 issues: 1. Often people use Strings instead of number data types in json.
+     * 2. Our parser decides whether to use Long or Integer but most times we need Long also we always need more code to ensure to get the
+     * connect data type. This makes it easier.
+     */
+    public static int toInteger(final Object value, final int fallback) {
+        try {
+            if (value instanceof String) {
+                final String numberStr = (String) value;
+                if (StringUtils.isEmpty(numberStr)) {
+                    return fallback;
+                } else if (numberStr.matches("\\d+")) {
+                    return Integer.parseInt((String) value);
+                } else if (numberStr.matches("\\d+\\.\\d+")) {
+                    return Double.valueOf(numberStr).intValue();
+                } else {
+                    throw new Exception("no number?" + numberStr);
+                }
+            } else if (value instanceof Number) {
+                return ((Number) value).intValue();
             } else if (value == null) {
                 return fallback;
             } else {

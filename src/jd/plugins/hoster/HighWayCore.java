@@ -105,6 +105,10 @@ public abstract class HighWayCore extends UseNet {
         return "https://" + this.getHost() + "/apiV2.php";
     }
 
+    private String getWebsiteBase() {
+        return "https://" + this.getHost() + "/";
+    }
+
     @Override
     public void update(final DownloadLink link, final Account account, long bytesTransfered) throws PluginException {
         synchronized (UPDATELOCK) {
@@ -314,9 +318,9 @@ public abstract class HighWayCore extends UseNet {
                     if (counter > 0) {
                         passCode = getUserInput("Password?", link);
                     }
-                    br.getPage("https://" + this.getHost() + "/load.php?json&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)) + "&pass=" + Encoding.urlEncode(passCode));
+                    br.getPage(getWebsiteBase() + "load.php?json&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)) + "&pass=" + Encoding.urlEncode(passCode));
                     entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                    statuscode = ((Number) entries.get("code")).intValue();
+                    statuscode = JavaScriptEngineFactory.toInteger(entries.get("status"), 0);
                     counter++;
                 } while (statuscode == STATUSCODE_PASSWORD_NEEDED_OR_WRONG && counter <= 2);
                 if (statuscode == STATUSCODE_PASSWORD_NEEDED_OR_WRONG) {
