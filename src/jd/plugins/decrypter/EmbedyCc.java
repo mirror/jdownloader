@@ -21,11 +21,9 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map.Entry;
 
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -34,6 +32,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
+
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "embedy.cc" }, urls = { "https?://(?:www\\.)?embedy\\.cc/movies/([A-Za-z0-9=]+)" })
 public class EmbedyCc extends PluginForDecrypt {
@@ -62,9 +63,17 @@ public class EmbedyCc extends PluginForDecrypt {
         /* 2020-05-29: New */
         final boolean forceOfficialDownload = true;
         if (forceOfficialDownload) {
-            br.postPage("https://embedy.cc/down/", "id=" + Encoding.urlEncode(linkid));
-            final String[] qualities = br.getRegex("(\\d{3,}p)").getColumn(0);
-            final String[] urls = br.getRegex("(https://[^/]+/download/[^<>\"]+)\"").getColumn(0);
+            Browser brc = br.cloneBrowser();
+            brc.postPage("https://embedy.cc/down/", "id=" + Encoding.urlEncode(linkid));
+            String[] qualities = brc.getRegex("(\\d{3,}p)").getColumn(0);
+            String[] urls = brc.getRegex("(https://[^/]+/download/[^<>\"]+)\"").getColumn(0);
+            if (urls.length == 0) {
+                sleep(1000, param);
+                brc = br.cloneBrowser();
+                brc.postPage("https://embedy.cc/down/", "id=" + Encoding.urlEncode(linkid));
+                qualities = brc.getRegex("(\\d{3,}p)").getColumn(0);
+                urls = brc.getRegex("(https://[^/]+/download/[^<>\"]+)\"").getColumn(0);
+            }
             int index = -1;
             for (final String url : urls) {
                 index += 1;
@@ -95,13 +104,15 @@ public class EmbedyCc extends PluginForDecrypt {
                 // dl.setProperty("requestType", "GET");
                 decryptedLinks.add(dl);
             }
-        } else {
-            this.br.postPage("https://" + this.getHost() + "/video.get/", "video=" + Encoding.urlEncode(linkid));
-            if (br.getHttpConnection().getResponseCode() == 404) {
+        }
+        if (decryptedLinks.size() == 0) {
+            final Browser brc = br.cloneBrowser();
+            brc.postPage("https://" + this.getHost() + "/video.get/", "video=" + Encoding.urlEncode(linkid));
+            if (brc.getHttpConnection().getResponseCode() == 404) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "response/1/files");
             final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
             while (it.hasNext()) {
