@@ -16,7 +16,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
+import java.util.Map;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -29,8 +31,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "files.fm" }, urls = { "https?://(?:\\w+\\.)?files\\.fm/(?:down\\.php\\?i=[a-z0-9]+(\\&n=[^/]+)?|f/[a-z0-9]+)" })
 public class FilesFm extends PluginForHost {
@@ -105,7 +105,7 @@ public class FilesFm extends PluginForHost {
                 dllink = "https://files.fm/thumb_show.php" + linkpart + "&refresh1";
                 con = brc.openHeadConnection(dllink);
             }
-            if (con.getContentType().contains("html")) {
+            if (!this.looksLikeDownloadableContent(con)) {
                 final String webdlTorrentID = br.getRegex("new WebTorrentDownloadForm\\( \\'([a-z0-9]+)\\' \\)").getMatch(0);
                 if (webdlTorrentID == null) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -113,21 +113,35 @@ public class FilesFm extends PluginForHost {
                 // br.getHeaders().put("x-requested-with", "XMLHttpRequest");
                 // br.postPage("/ajax/webtorrent_download_form.php?PHPSESSID=" + webdlTorrentID,
                 // "action=init_client&folder_hash=&file_hash=" + linkid + "&file_hashes=%5B%5D");
-                /* Large files are only available via web-/torrent download */
+                /**
+                 * Large files are only available via web-/torrent download </br>
+                 * 2021-05-17: Seems like all downloads are only available as P2P downloads --> In this case all we can do is to download
+                 * the .torrent file so the user can manually download it using a Torrent client.
+                 */
+                logger.info("File is only available via torrent");
                 dllink = String.format("https://files.fm/torrent/get_torrent.php?file_hash=%s", linkid);
                 String filename = null;
                 try {
                     final String jsonFileInfo = br.getRegex("objMainShareParams = (\\{.*?\\});").getMatch(0);
-                    LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(jsonFileInfo);
-                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "one_file/item_info");
+                    Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(jsonFileInfo);
+                    entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "one_file/item_info");
                     filename = (String) entries.get("file_name");
                 } catch (final Throwable e) {
                 }
-                if (filename == null) {
-                    /* Fallback */
-                    filename = linkid + ".torrent";
+                /*
+                 * Website returns non meaningful filenames when downloading torrent files --> Try to use original filename and append
+                 * .torrent extension.
+                 */
+                final String originalFilename = link.getStringProperty("originalname");
+                if (originalFilename != null) {
+                    link.setFinalFileName(applyFilenameExtension(originalFilename, ".torrent"));
+                } else {
+                    if (filename == null) {
+                        /* Fallback */
+                        filename = linkid + ".torrent";
+                    }
+                    link.setFinalFileName(filename);
                 }
-                link.setName(filename);
                 // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 filename_header = Encoding.htmlDecode(getFileNameFromHeader(con));
@@ -150,18 +164,18 @@ public class FilesFm extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
+        link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 

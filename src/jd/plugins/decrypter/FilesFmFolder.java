@@ -112,8 +112,9 @@ public class FilesFmFolder extends PluginForDecrypt {
             dl.setContentUrl(contentUrl);
             dl.setLinkID(fileid);
             dl.setAvailable(true);
-            dl.setFinalFileName(Encoding.htmlDecode(filename));
+            dl.setName(Encoding.htmlDecode(filename));
             dl.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize)));
+            dl.setProperty("originalname", filename);
             decryptedLinks.add(dl);
         }
         if (fpName != null) {

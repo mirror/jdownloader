@@ -81,7 +81,7 @@ public class DluploadCom extends PluginForHost {
     private static final boolean FREE_RESUME       = false;
     private static final int     FREE_MAXCHUNKS    = 1;
     private static final int     FREE_MAXDOWNLOADS = 20;
-    /* Tags: dlplatforms.com, dlupload.com, khabarbabal.online, dlslink.net */
+    /* Tags: dlplatforms.com, dlupload.com, khabarbabal.online, dlslink.net, dlvisit.com */
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
     // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
@@ -118,9 +118,6 @@ public class DluploadCom extends PluginForHost {
             /* 2021-05-12: They don't show any error for offline files, they just display the normal website as offline. */
         }
         String filename = br.getRegex("<title>\\s*DLUpload -(.*?)</title>").getMatch(0);
-        // if (filename != null && filename.isEmpty()) {
-        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // }
         String filesize = br.getRegex(">File Size\\s*</td>\\s*<td[^>]*>([^<>\"]+)</td>").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
