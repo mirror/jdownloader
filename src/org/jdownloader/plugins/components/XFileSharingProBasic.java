@@ -743,10 +743,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             /* Normal handling */
             scanInfo(fileInfo);
             {
-                /* Two possible reasons to use fallback handling to find filename! */
-                /*
-                 * Filename abbreviated over x chars long (common serverside XFS bug) --> Use getFnameViaAbuseLink as a workaround to find
-                 * the full-length filename!
+                /**
+                 * Two possible reasons to use fallback handling to find filename: </br>
+                 * 1. Filename abbreviated over x chars long (common serverside XFS bug) --> Use getFnameViaAbuseLink as a workaround to
+                 * find the full-length filename! </br>
+                 * 2. Missing filename.
                  */
                 if (!StringUtils.isEmpty(fileInfo[0]) && fileInfo[0].trim().endsWith("&#133;") && this.internal_supports_availablecheck_filename_abuse()) {
                     logger.warning("filename length is larrrge");
@@ -765,9 +766,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         if (!StringUtils.isEmpty(fileInfo[0])) {
             /* Correct- and set filename */
-            /*
-             * Decode HtmlEntity encoding in filename if needed.
-             */
             if (Encoding.isHtmlEntityCoded(fileInfo[0])) {
                 fileInfo[0] = Encoding.htmlDecode(fileInfo[0]);
             }
@@ -1164,46 +1162,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                 }
                 for (final DownloadLink dl : links) {
-                    final String fuid = this.getFUIDFromURL(dl);
-                    boolean isNewLinkchecker = true;
-                    String html_for_fuid = br.getRegex("<tr>((?!</?tr>).)*?" + fuid + "((?!</?tr>).)*?</tr>").getMatch(-1);
-                    if (html_for_fuid == null) {
-                        /*
-                         * 2019-07-10: E.g. for old linkcheckers which only return online/offline status in a single line and not as a html
-                         * table.
-                         */
-                        html_for_fuid = br.getRegex("<font color=\\'(?:green|red)\\'>[^>]*?" + fuid + "[^>]*?</font>").getMatch(-1);
-                        isNewLinkchecker = false;
-                    }
-                    if (html_for_fuid == null) {
-                        logger.warning("Failed to find html_for_fuid --> Possible linkchecker failure");
+                    massLinkcheckerParseFileInfo(br, dl);
+                    if (dl.getAvailableStatus() == AvailableStatus.UNCHECKED) {
+                        logger.warning("Failed to find any information for current DownloadLink --> Possible mass-linkchecker failure");
                         linkcheckerHasFailed = true;
-                        dl.setAvailableStatus(AvailableStatus.UNCHECKED);
                         continue;
-                    }
-                    final boolean isOffline;
-                    if (isNewLinkchecker) {
-                        isOffline = new Regex(html_for_fuid, "Not found").matches();
-                    } else {
-                        isOffline = new Regex(html_for_fuid, "<font color='red").matches();
-                    }
-                    if (isOffline) {
-                        dl.setAvailable(false);
-                    } else {
-                        /* We know that the file is online - let's try to find the filesize ... */
-                        dl.setAvailable(true);
-                        try {
-                            final String[] tabla_data = new Regex(html_for_fuid, "<td>?(.*?)</td>").getColumn(0);
-                            final String size = tabla_data[2];
-                            if (size != null) {
-                                /*
-                                 * Filesize should definitly be given - but at this stage we are quite sure that the file is online so let's
-                                 * not throw a fatal error if the filesize cannot be found.
-                                 */
-                                dl.setDownloadSize(SizeFormatter.getSize(size));
-                            }
-                        } catch (final Throwable e) {
-                        }
                     }
                     if (!dl.isNameSet()) {
                         /*
@@ -1232,6 +1195,48 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             return false;
         } else {
             return true;
+        }
+    }
+
+    /** Parses and sets file info returned after doing a mass-linkchecking request to a an XFS website. */
+    protected void massLinkcheckerParseFileInfo(final Browser br, final DownloadLink dl) {
+        final String fuid = this.getFUIDFromURL(dl);
+        boolean isNewLinkchecker = true;
+        String html_for_fuid = br.getRegex("<tr>((?!</?tr>).)*?" + fuid + "((?!</?tr>).)*?</tr>").getMatch(-1);
+        if (html_for_fuid == null) {
+            /*
+             * 2019-07-10: E.g. for old linkcheckers which only return online/offline status in a single line and not as a html table.
+             */
+            html_for_fuid = br.getRegex("<font color=\\'(?:green|red)\\'>[^>]*?" + fuid + "[^>]*?</font>").getMatch(-1);
+            isNewLinkchecker = false;
+        }
+        if (html_for_fuid == null) {
+            return;
+        }
+        final boolean isOffline;
+        if (isNewLinkchecker) {
+            isOffline = new Regex(html_for_fuid, "Not found").matches();
+        } else {
+            isOffline = new Regex(html_for_fuid, "<font color='red").matches();
+        }
+        if (isOffline) {
+            dl.setAvailable(false);
+        } else {
+            /* We know that the file is online - let's try to find the filesize ... */
+            dl.setAvailable(true);
+            try {
+                final String[] tabla_data = new Regex(html_for_fuid, "<td>?(.*?)</td>").getColumn(0);
+                final String size = tabla_data[2];
+                if (size != null) {
+                    /*
+                     * Filesize should definitly be given - but at this stage we are quite sure that the file is online so let's not throw a
+                     * fatal error if the filesize cannot be found.
+                     */
+                    dl.setDownloadSize(SizeFormatter.getSize(size));
+                }
+            } catch (final Throwable ignore) {
+                logger.log(ignore);
+            }
         }
     }
 

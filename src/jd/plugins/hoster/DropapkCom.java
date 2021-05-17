@@ -19,9 +19,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -123,5 +125,32 @@ public class DropapkCom extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    protected void massLinkcheckerParseFileInfo(final Browser br, final DownloadLink dl) {
+        final String fuid = this.getFUIDFromURL(dl);
+        /* 2021-05-17: Special */
+        final String html_for_fuid = br.getRegex("<li[^>]*>\\s*<span>[^>]*" + fuid + "[^>]*</span>.*?</li>").getMatch(-1);
+        if (html_for_fuid == null) {
+            return;
+        }
+        if (html_for_fuid.contains("Not found")) {
+            dl.setAvailable(false);
+        } else {
+            /* We know that the file is online - let's try to find the filesize ... */
+            dl.setAvailable(true);
+            try {
+                final String size = new Regex(html_for_fuid, "<strong class=\"ml-2\">\\s*(\\d+ [^<]+)</strong>\\s*</li").getMatch(0);
+                if (size != null) {
+                    /*
+                     * Filesize should definitly be given - but at this stage we are quite sure that the file is online so let's not throw a
+                     * fatal error if the filesize cannot be found.
+                     */
+                    dl.setDownloadSize(SizeFormatter.getSize(size));
+                }
+            } catch (final Throwable e) {
+            }
+        }
     }
 }
