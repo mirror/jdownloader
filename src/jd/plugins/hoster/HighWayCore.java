@@ -640,28 +640,62 @@ public abstract class HighWayCore extends UseNet {
             return;
         }
         final int code = ((Number) entries.get("code")).intValue();
-        String err = (String) entries.get("error");
-        if (StringUtils.isEmpty(err)) {
-            err = "Unknown error";
+        String msg = (String) entries.get("error");
+        if (StringUtils.isEmpty(msg)) {
+            msg = "Unknown error";
         }
         /* TODO: Implement list of errors accordingly */
         switch (code) {
         case 1:
+            /* Invalid logindata */
             this.exceptionAccountInvalid(account);
+        case 2:
+            /* Session expired (this should never happen) */
+            throw new AccountUnavailableException(msg, 3 * 60 * 1000l);
+        case 3:
+            /* Not enough premium traffic available */
+            throw new AccountUnavailableException(msg, 3 * 60 * 1000l);
+        case 4:
+            /* User requested too many simultaneous downloads */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, 30 * 1000l);
+        case 5:
+            /* Premium package expired --> Temp. deactivate account so next account-check will set correct new account status */
+            throw new AccountUnavailableException(msg, 30 * 60 * 1000l);
+        case 6:
+            /* No- or no valid URL was provided (this should never happen) */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, 3 * 60 * 1000l);
+        case 7:
+            /* There is no case 7 (lol) */
+        case 8:
+            /* Temp. error try again later */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, 1 * 60 * 1000l);
+        case 9:
+            /* File not found --> Do not trust this error whenever a multihoster is answering with it */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, 1 * 60 * 1000l);
+        case 10:
+            /* Host is not supported or not supported for free account users */
+        case 11:
+            /* Host (not multihost) is currently under maintenance or offline */
+        case 12:
+            /* Multihost is currently under maintenance --> Temp. disable account for some minutes */
+            throw new AccountUnavailableException(msg, 5 * 60 * 1000l);
         case 13:
+            /* Password required or sent password was wrong --> This should never happen here as upper handling should handle this! */
             throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+        case 14:
+            /* Host specific (= account specific) download limit has been reached --> Disable that particular host */
+        case 15:
+            /*
+             * Host specific download request limit has been reahed. This is basically the protection of this multihost against users trying
+             * to start a lot of downloads of limited hosts at the same time, trying to exceed the multihosts daily host specific limits.
+             */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, 3 * 60 * 1000l);
+        case 16:
+            /* Error, user is supposed to contact support of this multihost. */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, 3 * 60 * 1000l);
         default:
-            throw new AccountUnavailableException("Unknown error: " + err, 5 * 60 * 1000l);
+            throw new AccountUnavailableException("Unknown error: " + msg, 5 * 60 * 1000l);
         }
-        // if (err.equalsIgnoreCase("NotLoggedIn")) {
-        // throw new AccountInvalidException(err);
-        // } else if (err.equalsIgnoreCase("UserOrPassInvalid")) {
-        // throw new AccountInvalidException(err);
-        // } else {
-        // /* Unknown error */
-        // throw new AccountInvalidException(err);
-        // }
-        /* TODO: Add errorhandling */
     }
 
     @Override
