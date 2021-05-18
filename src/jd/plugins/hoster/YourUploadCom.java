@@ -130,6 +130,10 @@ public class YourUploadCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = br.getRegex("<h1>Downloading ([^<>\"]+)</h1>").getMatch(0);
+            if (filename == null) {
+                /* 2021-05-18 */
+                filename = br.getRegex("<h1>Download ([^<>\"]+)</h1>").getMatch(0);
+            }
             if (filename != null) {
                 link.setName(filename);
             }
