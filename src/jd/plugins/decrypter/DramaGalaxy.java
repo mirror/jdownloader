@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dramagalaxy.tv" }, urls = { "https?://www.dramagalaxy.tv/[A-Za-z0-9_\\-/?=]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dramagalaxy.tv" }, urls = { "https?://(www\\.)?dramagalaxy\\.tv/[A-Za-z0-9_\\-/?=]+" })
 public class DramaGalaxy extends PluginForDecrypt {
     public DramaGalaxy(PluginWrapper wrapper) {
         super(wrapper);
