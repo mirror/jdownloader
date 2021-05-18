@@ -25,21 +25,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountUnavailableException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.components.MultiHosterManagement;
-
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -58,6 +43,21 @@ import org.jdownloader.plugins.components.realDebridCom.api.json.TokenResponse;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 4, names = { "debrid-link.fr" }, urls = { "" })
 public class DebridLinkFr2 extends PluginForHost {
@@ -251,8 +251,8 @@ public class DebridLinkFr2 extends PluginForHost {
             }
         }
         /**
-         * 2021-02-23: This service doesn't allow users to use it whenever they use a VPN/Proxy. </br> Accounts can be checked but downloads
-         * will not work!
+         * 2021-02-23: This service doesn't allow users to use it whenever they use a VPN/Proxy. </br>
+         * Accounts can be checked but downloads will not work!
          */
         if (serverDetected != null && serverDetected instanceof Boolean && ((Boolean) serverDetected).booleanValue()) {
             throw new AccountUnavailableException("VPN/Proxy detected: Turn it off to be able to use this account", 5 * 60 * 1000l);
@@ -417,7 +417,8 @@ public class DebridLinkFr2 extends PluginForHost {
     }
 
     /**
-     * Sets token validity. </br> 2021-02-19: Token validity is set to 1 month via: https://debrid-link.fr/webapp/account/apps
+     * Sets token validity. </br>
+     * 2021-02-19: Token validity is set to 1 month via: https://debrid-link.fr/webapp/account/apps
      */
     private void accountSetTokenValidity(final Account account, final long expiresIn) {
         account.setProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN_TIMESTAMP_VALID_UNTIL, System.currentTimeMillis() + expiresIn * 1000l);
@@ -527,45 +528,46 @@ public class DebridLinkFr2 extends PluginForHost {
                 throw new AccountUnavailableException("API Flood, will retry in 1 hour!", 1 * 60 * 60 * 1001l);
             } else if ("accountLocked".equals(error)) {
                 throw new AccountUnavailableException("Account locked", 1 * 60 * 60 * 1001l);
-            }
-            if (link != null) {
-                if ("fileNotFound".equals(error)) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Untrusted error 'file not found'");
-                } else if ("notDebrid".equals(error)) {
-                    mhm.putError(account, link, 60 * 60 * 1000l, "Disabled filehost: server error notDebrid");
-                } else if ("disabledHost".equals(error)) {
-                    /* The filehoster is disabled */
-                    mhm.putError(account, link, 5 * 60 * 1000l, "Disabled filehost");
-                } else if ("notFreeHost".equals(error)) {
-                    mhm.putError(account, link, 60 * 60 * 1000l, "Disabled filehost as it is only available for premium users");
-                } else if ("maintenanceHost".equals(error) || "noServerHost".equals(error)) {
-                    /* Some generic "Host currently doesn't work" traits! */
-                    mhm.putError(account, link, 5 * 60 * 1000l, error);
-                } else if ("maxLinkHost".equals(error)) {
-                    synchronized (quotaReachedHostsList) {
-                        quotaReachedHostsList.add(link.getHost());
-                    }
-                    mhm.putError(account, link, 5 * 60 * 1000l, "Max links per day limit reached for this host");
-                } else if ("maxDataHost".equals(error)) {
-                    synchronized (quotaReachedHostsList) {
-                        quotaReachedHostsList.add(link.getHost());
-                    }
-                    mhm.putError(account, link, 5 * 60 * 1000l, "Max data per day limit reached for this host");
-                } else if ("maxLink".equals(error)) {
-                    throw new AccountUnavailableException("Download limit reached: Max links per day", 1 * 60 * 60 * 1001l);
-                } else if ("maxData".equals(error)) {
-                    throw new AccountUnavailableException("Download limit reached: Max traffic per day", 1 * 60 * 60 * 1001l);
-                } else if ("freeServerOverload".equals(error)) {
-                    // I assume this means free account downloads from this host are not possible at the moment?
-                    mhm.putError(account, link, 10 * 60 * 1000l, "Free account downloads not possible at the moment");
-                } else if (isErrorPasswordRequiredOrWrong(error)) {
-                    /** This error will usually be handled outside of here! */
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
-                } else {
-                    mhm.handleErrorGeneric(account, link, error, 50);
+            } else if ("fileNotFound".equals(error)) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Untrusted error 'file not found'");
+            } else if ("notDebrid".equals(error)) {
+                mhm.putError(account, link, 60 * 60 * 1000l, "Disabled filehost: server error notDebrid");
+            } else if ("disabledHost".equals(error)) {
+                /* The filehoster is disabled */
+                mhm.putError(account, link, 5 * 60 * 1000l, "Disabled filehost");
+            } else if ("notFreeHost".equals(error)) {
+                mhm.putError(account, link, 60 * 60 * 1000l, "Disabled filehost as it is only available for premium users");
+            } else if ("maintenanceHost".equals(error) || "noServerHost".equals(error)) {
+                /* Some generic "Host currently doesn't work" traits! */
+                mhm.putError(account, link, 5 * 60 * 1000l, error);
+            } else if ("maxLinkHost".equals(error)) {
+                synchronized (quotaReachedHostsList) {
+                    quotaReachedHostsList.add(link.getHost());
                 }
+                mhm.putError(account, link, 5 * 60 * 1000l, "Max links per day limit reached for this host");
+            } else if ("maxDataHost".equals(error)) {
+                synchronized (quotaReachedHostsList) {
+                    quotaReachedHostsList.add(link.getHost());
+                }
+                mhm.putError(account, link, 5 * 60 * 1000l, "Max data per day limit reached for this host");
+            } else if ("maxLink".equals(error)) {
+                throw new AccountUnavailableException("Download limit reached: Max links per day", 1 * 60 * 60 * 1001l);
+            } else if ("maxData".equals(error)) {
+                throw new AccountUnavailableException("Download limit reached: Max traffic per day", 1 * 60 * 60 * 1001l);
+            } else if ("freeServerOverload".equals(error)) {
+                /* I assume this means free account downloads from this host are not possible at the moment? */
+                mhm.putError(account, link, 10 * 60 * 1000l, "Free account downloads not possible at the moment");
+            } else if (isErrorPasswordRequiredOrWrong(error)) {
+                /* This error will usually be handled outside of here! */
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+            } else if ("maxSimultaneousFilesHost".equals(error)) {
+                mhm.putError(account, link, 3 * 60 * 1000l, "Too many simultaneous downloads over this host via debrid-link");
             } else {
-                throw new AccountUnavailableException("Unknown error: " + error, 5 * 60 * 1001l);
+                if (link != null) {
+                    mhm.handleErrorGeneric(account, link, error, 50);
+                } else {
+                    throw new AccountUnavailableException("Unknown error: " + error, 5 * 60 * 1001l);
+                }
             }
         } catch (final JSonMapperException parserFailure) {
             logger.exception("Json parsing failed -> Probably HTML response", parserFailure);
