@@ -497,8 +497,11 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
-            logger.warning("Decrypter out of date for link: " + parameter);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /*
+             * Most likely offline content e.g. meta-data is still available but no video streams ("depublizierter Inhalt") but at the same
+             * time API doesn't return any kind of errormessage!
+             */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return decryptedLinks;
     }
