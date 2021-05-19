@@ -23,6 +23,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.WeakHashMap;
 
@@ -122,16 +123,17 @@ public class Ftp extends PluginForHost {
 
             @Override
             protected boolean AUTH_TLS_CC() throws IOException {
-                final Set<String> set = AUTH_TLS_DISABLED;
+                final Set<String> set = Ftp.AUTH_TLS_DISABLED;
+                final String host = url.getHost().toLowerCase(Locale.ENGLISH);
                 synchronized (set) {
-                    if (set.contains(url.getHost())) {
+                    if (set.contains(host)) {
                         return false;
                     }
                 }
                 final boolean ret = super.AUTH_TLS_CC();
                 if (!ret) {
                     synchronized (set) {
-                        set.add(url.getHost());
+                        set.add(host);
                     }
                 }
                 return ret;

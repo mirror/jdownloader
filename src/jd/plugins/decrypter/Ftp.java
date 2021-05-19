@@ -130,15 +130,16 @@ public class Ftp extends PluginForDecrypt {
             @Override
             protected boolean AUTH_TLS_CC() throws IOException {
                 final Set<String> set = jd.plugins.hoster.Ftp.AUTH_TLS_DISABLED;
+                final String host = url.getHost().toLowerCase(Locale.ENGLISH);
                 synchronized (set) {
-                    if (set.contains(url.getHost())) {
+                    if (set.contains(host)) {
                         return false;
                     }
                 }
                 final boolean ret = super.AUTH_TLS_CC();
                 if (!ret) {
                     synchronized (set) {
-                        set.add(url.getHost());
+                        set.add(host);
                     }
                 }
                 return ret;
