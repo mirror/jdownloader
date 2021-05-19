@@ -62,7 +62,7 @@ public class HighWayMe2 extends HighWayCore {
             /**
              * Show this message once for every user after migration to APIv2. </br>
              * This uses property "usenetU" to determine if this account has ever been checked successfully before. </br>
-             * TODO: Remove this after 2021-09
+             * TODO: Remove this after 2021-09 (some time in 2021-10)
              */
             account.setProperty(PROPERTY_ACCOUNT_API_MIGRATION_MESSAGE_DISPLAYED, true);
             showOneTimeLougoutAPIMigrationMessage();

@@ -321,7 +321,7 @@ public abstract class HighWayCore extends UseNet {
                     }
                     br.getPage(getWebsiteBase() + "load.php?json&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)) + "&pass=" + Encoding.urlEncode(passCode));
                     entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                    statuscode = JavaScriptEngineFactory.toInteger(entries.get("status"), 0);
+                    statuscode = ((Number) entries.get("status")).intValue();
                     counter++;
                 } while (statuscode == STATUSCODE_PASSWORD_NEEDED_OR_WRONG && counter <= 2);
                 if (statuscode == STATUSCODE_PASSWORD_NEEDED_OR_WRONG) {
@@ -332,7 +332,7 @@ public abstract class HighWayCore extends UseNet {
                     link.setDownloadPassword(passCode);
                 }
                 final String dllink = (String) entries.get("download");
-                String hash = (String) entries.get("size");
+                String hash = (String) entries.get("hash");
                 if (hash != null && hash.matches("md5:[a-f0-9]{32}")) {
                     hash = hash.substring(hash.lastIndexOf(":") + 1);
                     logger.info("Set hash given by multihost: " + hash);
