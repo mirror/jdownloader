@@ -16,8 +16,15 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -34,22 +41,42 @@ import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "workers.dev" }, urls = { "https?://(?:[a-z0-9\\-\\.]+\\.)?workers\\.dev/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
-    @Override
-    public String[] siteSupportedNames() {
-        return new String[] { getHost() };
+    private static final String PROPERTY_FOLDER_USE_OLD_POST_REQUEST = "folder_use_old_post_request";
+
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "workers.dev" });
+        ret.add(new String[] { "dragsterps-team.tk" });
+        return ret;
     }
 
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:[a-z0-9\\-\\.]+\\.)?" + buildHostsPatternPart(domains) + "/.+");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    /**
+     * Crawler plugin that can handle instances of this project: https://github.com/ParveenBhadooOfficial/Google-Drive-Index </br>
+     * Be sure to add all domains to host plugin GoogleDriveDirectoryIndex.java too!
+     */
     public GoogleDriveDirectoryIndex(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -62,29 +89,44 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (param.toString().contains("?")) {
-            /* Remove all parameters */
+            /* Remove all URL parameters */
             param.setCryptedUrl(param.getCryptedUrl().substring(0, param.getCryptedUrl().lastIndexOf("?")));
         }
         br.setAllowedResponseCodes(new int[] { 500 });
         final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
         if (acc != null) {
-            // TODO: add basicAuth support
             final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
             ((jd.plugins.hoster.GoogleDriveDirectoryIndex) plg).login(acc, false);
         }
-        br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-        URLConnectionAdapter con = openAntiDDoSRequestConnection(br, br.createPostRequest(param.getCryptedUrl(), "password=&page_token=&page_index=0"));
+        boolean useOldPostRequest;
+        /* Check if we maybe already know which request type is the right one */
+        if (param.getDownloadLink() != null && param.getDownloadLink().hasProperty(PROPERTY_FOLDER_USE_OLD_POST_REQUEST)) {
+            useOldPostRequest = true;
+        } else {
+            useOldPostRequest = false;
+        }
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        /* Older versions required urlquery, newer expect json POST body */
+        URLConnectionAdapter con;
+        if (useOldPostRequest) {
+            con = openAntiDDoSRequestConnection(br, br.createPostRequest(param.getCryptedUrl(), this.getPaginationPostDataQuery(0, "")));
+        } else {
+            con = openAntiDDoSRequestConnection(br, br.createPostRequest(param.getCryptedUrl(), this.getPaginationPostDataJson(0, "")));
+            if (con.getResponseCode() == 500) {
+                logger.info("Trying fallback to old POST request");
+                con = openAntiDDoSRequestConnection(br, br.createPostRequest(param.getCryptedUrl(), this.getPaginationPostDataQuery(0, "")));
+                useOldPostRequest = true;
+            }
+        }
         if (con.getResponseCode() == 405) {
+            /* Fallback? 2021-05-19: Is this still required? */
             br.followConnection(true);
             con = openAntiDDoSRequestConnection(br, br.createGetRequest(param.getCryptedUrl()));
         }
         if (con.isContentDisposition()) {
             con.disconnect();
-            final DownloadLink dl = new DownloadLink(null, null, this.getHost(), param.getCryptedUrl(), true);
-            dl.setAvailable(true);
-            dl.setName(Plugin.getFileNameFromHeader(con));
-            dl.setDownloadSize(con.getCompleteContentLength());
-            decryptedLinks.add(dl);
+            final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(br.getRequest(), con);
+            decryptedLinks.add(direct);
             return decryptedLinks;
         } else {
             br.followConnection();
@@ -102,11 +144,11 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
         } else if (br.containsHTML("\"rateLimitExceeded\"")) {
             throw new DecrypterRetryException(RetryReason.HOST, "Rate Limit Exceeded");
         }
-        crawlFolder(decryptedLinks, param);
+        crawlFolder(decryptedLinks, param, useOldPostRequest);
         return decryptedLinks;
     }
 
-    private void crawlFolder(ArrayList<DownloadLink> decryptedLinks, final CryptedLink param) throws Exception {
+    private void crawlFolder(ArrayList<DownloadLink> decryptedLinks, final CryptedLink param, final boolean useOldPOSTRequest) throws Exception {
         final FilePackage fp = FilePackage.getInstance();
         final boolean isParameterFile = !param.getCryptedUrl().endsWith("/");
         String subFolder = getAdoptedCloudFolderStructure();
@@ -115,11 +157,18 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
          * structure, else base folder with files wont be packaged together just on filename....
          */
         if (subFolder == null) {
-            subFolder = "";
-            final String[] split = param.getCryptedUrl().split("/");
-            final String fpName = Encoding.urlDecode(split[split.length - (isParameterFile ? 2 : 1)], false);
-            fp.setName(fpName);
-            subFolder = fpName;
+            final Regex typicalUrlStructure = new Regex(param.getCryptedUrl(), "https?://[^/]+/0:(/.*)");
+            if (typicalUrlStructure.matches()) {
+                /*
+                 * Set correct (root) folder structure e.g. https://subdomain.example.site/0:/subfolder1/subfolder2 --> Path:
+                 * /subfolder1/subfolder2 /subfolder1/subfolder2
+                 */
+                subFolder = typicalUrlStructure.getMatch(0);
+            } else {
+                final String[] split = param.getCryptedUrl().split("/");
+                subFolder = Encoding.urlDecode(split[split.length - (isParameterFile ? 2 : 1)], false);
+            }
+            fp.setName(subFolder);
         } else {
             final String fpName = subFolder.substring(subFolder.lastIndexOf("/") + 1);
             fp.setName(fpName);
@@ -131,7 +180,6 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
         } else {
             baseUrl = param.getCryptedUrl();
         }
-        /* TODO: Add pagination */
         int page = 0;
         do {
             logger.info("Crawling page: " + (page + 1));
@@ -172,19 +220,24 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
                     dl = this.createDownloadlink(url);
                     final String thisfolder = subFolder + "/" + name;
                     dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, thisfolder);
+                    /* Save this so we need less requests for the next subfolder levels... */
+                    if (useOldPOSTRequest) {
+                        dl.setProperty(PROPERTY_FOLDER_USE_OLD_POST_REQUEST, true);
+                    }
                 } else {
                     dl = new DownloadLink(null, name, this.getHost(), url, true);
                     dl.setAvailable(true);
                     dl.setFinalFileName(name);
                     if (filesize > 0) {
-                        dl.setDownloadSize(filesize);
+                        dl.setVerifiedFileSize(filesize);
                     }
                     if (StringUtils.isNotEmpty(subFolder)) {
                         dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
                     }
                 }
-                fp.add(dl);
+                dl._setFilePackage(fp);
                 decryptedLinks.add(dl);
+                distribute(dl);
             }
             if (this.isAbort()) {
                 break;
@@ -193,12 +246,37 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
                 break;
             } else {
                 page += 1;
-                final UrlQuery query = new UrlQuery();
-                query.add("password", "");
-                query.add("page_index", Integer.toString(page));
-                query.appendEncoded("page_token", nextPageToken);
-                sendRequest(br.createPostRequest(br.getURL(), query));
+                /* Older versions required urlquery, newer expect json POST body */
+                if (useOldPOSTRequest) {
+                    sendRequest(br.createPostRequest(br.getURL(), this.getPaginationPostDataQuery(page, nextPageToken)));
+                } else {
+                    sendRequest(br.createPostRequest(br.getURL(), this.getPaginationPostDataJson(page, nextPageToken)));
+                }
             }
         } while (true);
+        /*
+         * Add dummy URLs for empty folders which will also contain the full path so users know that these are empty and did not just get
+         * skipped by our crawler!
+         */
+        if (decryptedLinks.isEmpty()) {
+            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER " + subFolder, "EMPTY_FOLDER " + subFolder));
+        }
+    }
+
+    private UrlQuery getPaginationPostDataQuery(final int index, final String pageToken) {
+        final UrlQuery query = new UrlQuery();
+        query.add("password", "");
+        query.add("page_index", Integer.toString(index));
+        query.appendEncoded("page_token", pageToken);
+        return query;
+    }
+
+    private String getPaginationPostDataJson(final int index, final String pageToken) {
+        final Map<String, Object> postData = new HashMap<String, Object>();
+        postData.put("q", "");
+        postData.put("password", null);
+        postData.put("page_token", pageToken);
+        postData.put("page_index", index);
+        return JSonStorage.serializeToJson(postData);
     }
 }

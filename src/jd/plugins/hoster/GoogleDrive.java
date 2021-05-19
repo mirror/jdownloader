@@ -196,6 +196,10 @@ public class GoogleDrive extends PluginForHost {
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+        if (!link.isNameSet()) {
+            /* Set fallback name */
+            link.setName(this.getFID(link));
+        }
         if (canUseAPI()) {
             return this.requestFileInformationAPI(link, isDownload);
         } else {
@@ -495,9 +499,6 @@ public class GoogleDrive extends PluginForHost {
             if (filename != null) {
                 filename = Encoding.unicodeDecode(filename.trim());
                 link.setName(filename);
-            } else if (filename == null && !link.isNameSet()) {
-                /* Fallback */
-                link.setName(this.getFID(link));
             }
         }
         if (filesizeStr == null) {
@@ -825,10 +826,7 @@ public class GoogleDrive extends PluginForHost {
                 this.handleErrorsAPI(this.br, link, account);
             }
             this.handleErrorsWebsite(this.br, link, account);
-            if (dl.getConnection().getResponseCode() == 403) {
-                /* Most likely quota error or "Missing permissions" error. */
-                errorOriginalFileDownloadTempUnavailableAndOrOnlyViaAccount(account);
-            } else if (dl.getConnection().getResponseCode() == 416) {
+            if (dl.getConnection().getResponseCode() == 416) {
                 dl.getConnection().disconnect();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
             } else {
@@ -865,6 +863,17 @@ public class GoogleDrive extends PluginForHost {
                 errorOriginalFileDownloadTempUnavailableAndOrOnlyViaAccount(account);
             } else if (br.containsHTML("class=\"uc\\-error\\-caption\"")) {
                 errorOriginalFileDownloadTempUnavailableAndOrOnlyViaAccount(account);
+            } else if (br.getHttpConnection().getResponseCode() == 403) {
+                /**
+                 * Most likely quota error or "Missing permissions" error. </br>
+                 * 2021-05-19: Important: This can also happen if e.g. this is a private file and permissions are missing! It is hard to
+                 * detect the exact reason for error as errormessages differ depending on the user set Google website language!
+                 */
+                if (account != null) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Insufficient permissions (private file) or quota limit reached", 30 * 60 * 1000l);
+                } else {
+                    errorOriginalFileDownloadTempUnavailableAndOrOnlyViaAccount(account);
+                }
             }
         }
     }

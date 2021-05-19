@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -30,9 +32,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
@@ -50,6 +51,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "workers.dev" });
+        ret.add(new String[] { "dragsterps-team.tk" });
         return ret;
     }
 
@@ -70,6 +72,10 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
         return ret.toArray(new String[0]);
     }
 
+    /**
+     * Host plugin that can handle instances of this project: https://github.com/ParveenBhadooOfficial/Google-Drive-Index </br>
+     * Be sure to add all domains to crawler plugin GoogleDriveDirectoryIndex.java too!
+     */
     /* Connection stuff */
     private final boolean FREE_RESUME               = true;
     private final int     FREE_MAXCHUNKS            = 0;
@@ -109,9 +115,13 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 if (con.getCompleteContentLength() > 0) {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
-                return AvailableStatus.TRUE;
+                /* Usually final filename is already set by crawler plugin. */
+                final String fname = Plugin.getFileNameFromDispositionHeader(con);
+                if (fname != null) {
+                    link.setFinalFileName(fname);
+                }
             }
         } finally {
             try {
@@ -119,6 +129,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
             } catch (final Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -143,7 +154,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to file");
             }
         }
         dl.startDownload();
@@ -186,15 +197,6 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
 
     @Override
     public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (acc.getType() == AccountType.FREE) {
-            /* Free accounts can have captchas */
-            return true;
-        }
-        /* Premium accounts do not have captchas */
         return false;
     }
 
