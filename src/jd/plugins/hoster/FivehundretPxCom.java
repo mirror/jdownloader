@@ -105,12 +105,9 @@ public class FivehundretPxCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String photoName = (String) photo.get("name");
-        if (StringUtils.isEmpty(photoName)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         final String userName = (String) JavaScriptEngineFactory.walkJson(photo, "user/username");
-        String user_firstname = (String) JavaScriptEngineFactory.walkJson(photo, "user/firstname");
-        String user_lastname = (String) JavaScriptEngineFactory.walkJson(photo, "user/lastname");
+        // String user_firstname = (String) JavaScriptEngineFactory.walkJson(photo, "user/firstname");
+        // String user_lastname = (String) JavaScriptEngineFactory.walkJson(photo, "user/lastname");
         // array full of images, we need to analyse for best
         List<Object> images = (List<Object>) photo.get("images");
         if (images != null) {
