@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.IconKey;
@@ -1294,7 +1295,7 @@ public class SaveTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unbekannter Serverfehler 1 - bitte dem JDownloader Support mit Log melden!", 60 * 60 * 1000l);
         } else if (dl.getConnection().getCompleteContentLength() <= 1048576l) {
             /* Avoid downloading (too small) trash data */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler: Datei vom Server zu klein", 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler: Datei vom Server zu klein: " + SizeFormatter.formatBytes(dl.getConnection().getCompleteContentLength()), 60 * 60 * 1000l);
         }
         String server_filename = getFileNameFromHeader(dl.getConnection());
         server_filename = fixCharIssues(server_filename);
