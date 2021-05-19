@@ -116,7 +116,7 @@ public class LinkCrawler {
     private final List<LinkCrawlerTask>                              tasks                       = new ArrayList<LinkCrawlerTask>();
     private final static Set<LinkCrawler>                            CRAWLER                     = new HashSet<LinkCrawler>();
     private final Map<String, Object>                                duplicateFinderContainer;
-    private final Map<String, Set<Object>>                           duplicateFinderCrawler;
+    private final Map<String, Set<LazyCrawlerPlugin>>                duplicateFinderCrawler;
     private final Map<String, CrawledLink>                           duplicateFinderFinal;
     private final Map<String, Object>                                duplicateFinderDeep;
     private final Map<CrawledLink, Object>                           loopPreventionEmbedded;
@@ -619,7 +619,7 @@ public class LinkCrawler {
             setDeepInspector(parentCrawler.getDeepInspector());
         } else {
             duplicateFinderContainer = new HashMap<String, Object>();
-            duplicateFinderCrawler = new HashMap<String, Set<Object>>();
+            duplicateFinderCrawler = new HashMap<String, Set<LazyCrawlerPlugin>>();
             duplicateFinderFinal = new HashMap<String, CrawledLink>();
             duplicateFinderDeep = new HashMap<String, Object>();
             loopPreventionEmbedded = new HashMap<CrawledLink, Object>();
@@ -3287,7 +3287,7 @@ public class LinkCrawler {
         }
     }
 
-    private boolean isDuplicatedCrawling(LazyPlugin<?> lazyC, final CrawledLink cryptedLink) {
+    private boolean isDuplicatedCrawling(final LazyCrawlerPlugin lazyC, final CrawledLink cryptedLink) {
         final String url = cryptedLink.getURL();
         final String urlDecodedURL = Encoding.urlDecode(url, false);
         final String value;
@@ -3297,16 +3297,12 @@ public class LinkCrawler {
             value = urlDecodedURL;
         }
         synchronized (duplicateFinderCrawler) {
-            Set<Object> set = duplicateFinderCrawler.get(value);
+            Set<LazyCrawlerPlugin> set = duplicateFinderCrawler.get(value);
             if (set == null) {
-                set = new HashSet<Object>();
+                set = new HashSet<LazyCrawlerPlugin>();
                 duplicateFinderCrawler.put(value, set);
             }
-            if (true) {
-                return !set.add(lazyC);
-            } else {
-                return !set.add(lazyC.getDisplayName() + "_" + lazyC.getClassName());
-            }
+            return !set.add(lazyC);
         }
     }
 
@@ -3349,13 +3345,13 @@ public class LinkCrawler {
                 }
                 final AtomicReference<LinkCrawler> nextLinkCrawler = new AtomicReference<LinkCrawler>(this);
                 wplg.setBrowser(new Browser());
-                wplg.init();
                 LogInterface oldLogger = null;
                 boolean oldVerbose = false;
                 boolean oldDebug = false;
                 final LogInterface logger = LogController.getFastPluginLogger(wplg.getCrawlerLoggerID(cryptedLink));
                 logger.info("Crawling: " + cryptedLink.getURL());
                 wplg.setLogger(logger);
+                wplg.init();
                 /* now we run the plugin and let it find some links */
                 final LinkCrawlerThread lct = getCurrentLinkCrawlerThread();
                 Object owner = null;
