@@ -20,22 +20,13 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -52,17 +43,28 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kink.com" }, urls = { "https?://(?:www\\.)?kink.com/shoot/(\\d+)" })
 public class KinkCom extends PluginForHost {
     public KinkCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.kink.com/join/kink");
     }
+
     /* DEV NOTES */
     // Tags: Porn plugin
     // protocol: no https
     // other:
-
     /* Connection stuff */
     private static final boolean resume        = true;
     private static final int     maxchunks     = 0;
@@ -114,7 +116,7 @@ public class KinkCom extends PluginForHost {
                 this.login(account, false);
             } catch (final Throwable ignore) {
                 /* This should never happen */
-                logger.warning("Error in account login");
+                logger.log(ignore);
             }
         }
         dllink = null;
@@ -124,7 +126,7 @@ public class KinkCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
+        String filename = br.getRegex("<title>\\s*([^<>\"]+)\\s*</title>").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
             filename = this.getFID(link);
         } else {
@@ -133,7 +135,7 @@ public class KinkCom extends PluginForHost {
         if (account != null) {
             /* Look for "official" downloadlinks --> Find highest quality */
             int qualityMax = 0;
-            final String[][] dlinfos = br.getRegex("download=\"(https?://[^\"]+)\">\\s*(\\d+)\\s*<span").getMatches();
+            final String[][] dlinfos = br.getRegex("download\\s*=\\s*\"(https?://[^\"]+)\">\\s*(\\d+)\\s*<span").getMatches();
             for (final String[] dlinfo : dlinfos) {
                 final int qualityTmp = Integer.parseInt(dlinfo[1]);
                 if (qualityTmp > qualityMax) {
@@ -148,7 +150,7 @@ public class KinkCom extends PluginForHost {
             logger.info("Chosen premium download quality: " + qualityMax);
         } else {
             /* Download trailer */
-            dllink = br.getRegex("data\\-type=\"trailer\\-src\" data\\-url=\"(https?[^\"]+)\"").getMatch(0);
+            dllink = br.getRegex("data\\-type\\s*=\\s*\"trailer\\-src\" data\\-url\\s*=\\s*\"(https?://[^\"]+)\"").getMatch(0);
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
@@ -157,15 +159,18 @@ public class KinkCom extends PluginForHost {
             filename += ".mp4";
         }
         link.setName(filename);
-        if (!StringUtils.isEmpty(dllink)) {
+        if (!StringUtils.isEmpty(dllink) && !(Thread.currentThread() instanceof SingleDownloadController)) {
             link.setProperty(this.getDirectlinkProperty(link, account), this.dllink);
             URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(dllink);
+                final Browser brc = br.cloneBrowser();
+                br.setFollowRedirects(true);
+                con = brc.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
+                    return AvailableStatus.TRUE;
                 } else {
                     server_issues = true;
                 }
@@ -188,6 +193,9 @@ public class KinkCom extends PluginForHost {
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                     return dllink;
                 }
             } catch (final Exception e) {
@@ -219,17 +227,18 @@ public class KinkCom extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection();
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to file");
                 }
-                br.followConnection();
-                try {
-                    dl.getConnection().disconnect();
-                } catch (final Throwable e) {
-                }
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to file");
             }
         }
         dl.startDownload();
@@ -259,36 +268,35 @@ public class KinkCom extends PluginForHost {
         }
     }
 
+    @Override
+    public void init() {
+        // see pf value
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:88.0) Gecko/20100101 Firefox/88.0");
+    }
+
     private boolean login(final Account account, final boolean force) throws IOException, InterruptedException, PluginException {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 br.setAllowedResponseCodes(new int[] { 401 });
-                /* 2021-05-18: Website login doesn't work (yet) thus we only allow cookie login for now. */
-                final boolean enforceCookieLogin = true;
                 final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
-                    if (checkAndSaveCookies(cookies, account)) {
+                    if (checkAndSaveCookies(br, cookies, account)) {
                         return true;
                     }
                 }
                 if (userCookies != null) {
-                    if (checkAndSaveCookies(userCookies, account)) {
+                    if (checkAndSaveCookies(br, userCookies, account)) {
                         return true;
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (enforceCookieLogin) {
-                    showCookieLoginInformation();
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
                 logger.info("Performing full login");
                 br.setCookie(this.getHost(), "ktvc", "0");
                 br.setCookie(this.getHost(), "privyOptIn", "false");
-                br.setCookie(this.getHost(), "CookieControl", "DEVTEST_MAYBE_IRRELEVANT");
                 br.getPage("https://www." + this.getHost() + "/login");
                 final Form loginform = br.getFormbyProperty("name", "login");
                 if (loginform == null) {
@@ -308,8 +316,11 @@ public class KinkCom extends PluginForHost {
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 }
-                br.submitForm(loginform);
-                if (!isLoggedin()) {
+                final Request post = br.createFormRequest(loginform);
+                post.getHeaders().put("Origin", "https://www.kink.com");
+                br.getPage(post);
+                if (!isLoggedin(br)) {
+                    showCookieLoginInformation();
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -323,14 +334,14 @@ public class KinkCom extends PluginForHost {
         }
     }
 
-    private boolean checkAndSaveCookies(final Cookies cookies, final Account account) throws IOException {
+    private boolean checkAndSaveCookies(final Browser br, final Cookies cookies, final Account account) throws IOException {
         logger.info("Attempting cookie login");
         this.br.setCookies(this.getHost(), cookies);
         br.getPage("https://www." + this.getHost() + "/my/billing");
-        if (this.isLoggedin()) {
+        if (this.isLoggedin(br)) {
             logger.info("Cookie login successful");
             /* Refresh cookie timestamp */
-            account.saveCookies(this.br.getCookies(this.getHost()), "");
+            account.saveCookies(br.getCookies(this.getHost()), "");
             return true;
         } else {
             logger.info("Cookie login failed");
@@ -344,11 +355,12 @@ public class KinkCom extends PluginForHost {
         if (csrf == null || csrf.getValue() == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String pf = "DEVTEST_DUMMY" + csrf + "%22%7D";
+        final String pf = "%7B%22plugins%22%3A%5B%5D%2C%22mimeTypes%22%3A%5B%5D%2C%22userAgent%22%3A%22Mozilla%2F5.0%20(X11%3B%20Ubuntu%3B%20Linux%20x86_64%3B%20rv%3A88.0)%20Gecko%2F20100101%20Firefox%2F88.0%22%2C%22platform%22%3A%22Linux%20x86_64%22%2C%22languages%22%3A%5B%22de%22%2C%22de-DE%22%2C%22en%22%5D%2C%22screen%22%3A%7B%22wInnerHeight%22%3A1469%2C%22wOuterHeight%22%3A1571%2C%22wOuterWidth%22%3A2560%2C%22wInnerWidth%22%3A2560%2C%22wScreenX%22%3A0%2C%22wPageXOffset%22%3A0%2C%22wPageYOffset%22%3A0%2C%22cWidth%22%3A2560%2C%22cHeight%22%3A1389%2C%22sWidth%22%3A2560%2C%22sHeight%22%3A1600%2C%22sAvailWidth%22%3A2560%2C%22sAvailHeight%22%3A1600%2C%22sColorDepth%22%3A24%2C%22sPixelDepth%22%3A24%2C%22wDevicePixelRatio%22%3A1%7D%2C%22touchScreen%22%3A%5B0%2Cfalse%2Cfalse%5D%2C%22videoCard%22%3A%5B%22NVIDIA%20Corporation%22%2C%22GeForce%20GTX%20660%2FPCIe%2FSSE2%22%5D%2C%22multimediaDevices%22%3A%7B%22speakers%22%3A0%2C%22micros%22%3A3%2C%22webcams%22%3A0%7D%2C%22productSub%22%3A%2220100101%22%2C%22navigatorPrototype%22%3A%5B%22vibrate~~~function%20vibrate()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22javaEnabled~~~function%20javaEnabled()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22getGamepads~~~function%20getGamepads()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22mozGetUserMedia~~~function%20mozGetUserMedia()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22sendBeacon~~~function%20sendBeacon()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22requestMediaKeySystemAccess~~~function%20requestMediaKeySystemAccess()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22registerProtocolHandler~~~function%20registerProtocolHandler()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22taintEnabled~~~function%20taintEnabled()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22permissions~~~function%20permissions()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22mimeTypes~~~function%20mimeTypes()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22plugins~~~function%20plugins()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22doNotTrack~~~function%20doNotTrack()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22maxTouchPoints~~~function%20maxTouchPoints()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22mediaCapabilities~~~function%20mediaCapabilities()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22oscpu~~~function%20oscpu()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22vendor~~~function%20vendor()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22vendorSub~~~function%20vendorSub()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22productSub~~~function%20productSub()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22cookieEnabled~~~function%20cookieEnabled()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22buildID~~~function%20buildID()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22mediaDevices~~~function%20mediaDevices()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22credentials~~~function%20credentials()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22clipboard~~~function%20clipboard()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22mediaSession~~~function%20mediaSession()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22webdriver~~~function%20webdriver()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22hardwareConcurrency~~~function%20hardwareConcurrency()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22geolocation~~~function%20geolocation()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22appCodeName~~~function%20appCodeName()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22appName~~~function%20appName()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22appVersion~~~function%20appVersion()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22platform~~~function%20platform()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22userAgent~~~function%20userAgent()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22product~~~function%20product()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22language~~~function%20language()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22languages~~~function%20languages()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22onLine~~~function%20onLine()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22storage~~~function%20storage()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22constructor~~~function%20Navigator()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22toString~~~%22%2C%22toLocaleString~~~%22%2C%22valueOf~~~%22%2C%22hasOwnProperty~~~%22%2C%22isPrototypeOf~~~%22%2C%22propertyIsEnumerable~~~%22%2C%22__defineGetter__~~~%22%2C%22__defineSetter__~~~%22%2C%22__lookupGetter__~~~%22%2C%22__lookupSetter__~~~%22%2C%22__proto__~~~%22%2C%22constructor~~~function%20Navigator()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%5D%2C%22etsl%22%3A37%2C%22screenDesc%22%3A%22function%20width()%20%7B%5Cn%20%20%20%20%5Bnative%20code%5D%5Cn%7D%22%2C%22phantomJS%22%3A%5Bfalse%2Cfalse%2Cfalse%5D%2C%22nightmareJS%22%3Afalse%2C%22selenium%22%3A%5Bfalse%2Cfalse%2Cfalse%2Cfalse%2Cfalse%2Cfalse%2Cfalse%2Cfalse%2Cfalse%2Cfalse%2Cfalse%2Cfalse%2Cfalse%2Cfalse%2Cfalse%2Cfalse%2Cfalse%5D%2C%22webDriver%22%3Atrue%2C%22webDriverValue%22%3Afalse%2C%22errorsGenerated%22%3A%5B%22azeaze%20is%20not%20defined%22%2C%22https%3A%2F%2Fwww.kink.com%2Fjavascripts%2Fkink.min.1064.js%22%2C1%2Cnull%2Cnull%2C980632%2Cnull%2C%22An%20invalid%20or%20illegal%20string%20was%20specified%22%5D%2C%22resOverflow%22%3A%7B%22depth%22%3A24415%2C%22errorMessage%22%3A%22too%20much%20recursion%22%2C%22errorName%22%3A%22InternalError%22%2C%22errorStacklength%22%3A7808%7D%2C%22accelerometerUsed%22%3Afalse%2C%22screenMediaQuery%22%3Atrue%2C%22hasChrome%22%3Afalse%2C%22detailChrome%22%3A%22unknown%22%2C%22permissions%22%3A%7B%22state%22%3A%22prompt%22%2C%22permission%22%3A%22default%22%7D%2C%22iframeChrome%22%3A%22undefined%22%2C%22debugTool%22%3Afalse%2C%22battery%22%3Afalse%2C%22deviceMemory%22%3A0%2C%22tpCanvas%22%3A%7B%220%22%3A0%2C%221%22%3A0%2C%222%22%3A0%2C%223%22%3A0%7D%2C%22sequentum%22%3Afalse%2C%22audioCodecs%22%3A%7B%22ogg%22%3A%22probably%22%2C%22mp3%22%3A%22maybe%22%2C%22wav%22%3A%22probably%22%2C%22m4a%22%3A%22maybe%22%2C%22aac%22%3A%22maybe%22%7D%2C%22videoCodecs%22%3A%7B%22ogg%22%3A%22probably%22%2C%22h264%22%3A%22probably%22%2C%22webm%22%3A%22probably%22%7D%2C%22csrf%22%3A%22"
+                + csrf.getValue() + "%22%7D";
         return Encoding.Base64Encode(pf);
     }
 
-    private boolean isLoggedin() {
+    private boolean isLoggedin(final Browser br) {
         return br.containsHTML("/logout\"");
     }
 
