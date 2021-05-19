@@ -976,6 +976,7 @@ public class SaveTv extends PluginForHost {
     }
 
     /** Sets available quality as PROPERTY_quality and sets filesize. */
+    @Deprecated
     public static void parseQualityTagWebsite(final DownloadLink dl, final List<Object> sourcelist) {
         final int selected_video_format = getConfiguredVideoFormatID(dl);
         /*
@@ -1071,12 +1072,14 @@ public class SaveTv extends PluginForHost {
                 /**
                  * 2021-02-11: Both serverside given filesizes are very vague. For downloads with ads we use the serverside given
                  * information. </br>
-                 * For ad-free downloads we'll calculate it on our own as that is more precise!
+                 * For ad-free downloads we'll calculate it on our own as that is more precise! </br>
+                 * duration_seconds_adsfree == 0 if adFree is unavailable while cutVideoSize == uncutVideoSize (which is of course not true,
+                 * that's just what their backend does with that here).
                  */
                 final long filesizeAdFree = ((Number) entries.get("cutVideoSize")).longValue();
                 final long filesizeWithAds = ((Number) entries.get("uncutVideoSize")).longValue();
-                if (user_prefers_adsfree && filesizeAdFree > 0) {
-                    final int duration_seconds_adsfree = dl.getIntegerProperty(PROPERTY_site_runtime_seconds_adsfree, 0);
+                final int duration_seconds_adsfree = dl.getIntegerProperty(PROPERTY_site_runtime_seconds_adsfree, 0);
+                if (user_prefers_adsfree && filesizeAdFree > 0 && duration_seconds_adsfree > 0) {
                     final double mb_per_second = getBitrateForFormat(finalFormat);
                     final double calculated_filesize = mb_per_second * duration_seconds_adsfree * 1024 * 1024;
                     dl.setDownloadSize((long) calculated_filesize);
@@ -1123,6 +1126,7 @@ public class SaveTv extends PluginForHost {
     }
 
     @SuppressWarnings({ "unchecked" })
+    @Deprecated
     public void handlePremiumWebsite(final DownloadLink link, final Account account) throws Exception {
         boolean preferAdsFree = getPreferAdsFree(link);
         /* Check if ads-free version is available */
