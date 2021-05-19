@@ -679,10 +679,11 @@ public abstract class SimpleFTP {
             throw new EOFException();
         } else if (length == 0) {
             return null;
+        } else {
+            final String line = encoding.fromBytes(bos.toByteArray());
+            logger.info(host + " < " + line);
+            return line;
         }
-        final String line = encoding.fromBytes(bos.toByteArray());
-        logger.info(host + " < " + line);
-        return line;
     }
 
     public String readLine() throws IOException {
@@ -895,9 +896,10 @@ public abstract class SimpleFTP {
             latestResponseLine = response;
             if (response == null) {
                 if (sb.length() == 0) {
-                    throw new IOException("no response received, EOF?");
+                    throw new EOFException("no response received, EOF?");
+                } else {
+                    return sb.toString();
                 }
-                return sb.toString();
             }
             sb.append(response + "\r\n");
             error = true;

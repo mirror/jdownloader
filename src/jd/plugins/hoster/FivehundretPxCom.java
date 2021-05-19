@@ -15,17 +15,12 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -36,6 +31,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "500px.com" }, urls = { "https?://(?:www\\.)?500px\\.com/photo/(\\d+)(/[^/]+)?" })
 public class FivehundretPxCom extends PluginForHost {
@@ -56,9 +57,9 @@ public class FivehundretPxCom extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String fid = getFID(link);
-        if (fid != null) {
-            return this.getHost() + "://" + fid;
+        final String photoID = getPhotoID(link);
+        if (photoID != null) {
+            return this.getHost() + "://" + photoID;
         } else {
             return super.getLinkID(link);
         }
@@ -68,6 +69,20 @@ public class FivehundretPxCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
+    @Override
+    public void init() {
+        Browser.setRequestIntervalLimitGlobal("https://api.500px.com", 250);
+    }
+
+    private String getPhotoID(final DownloadLink link) {
+        final String photoID = link.getStringProperty("photoID", null);
+        if (photoID == null) {
+            return getFID(link);
+        } else {
+            return photoID;
+        }
+    }
+
     @SuppressWarnings({ "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -75,34 +90,33 @@ public class FivehundretPxCom extends PluginForHost {
         link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage("https://api." + this.getHost() + "/v1/photos?ids=" + this.getFID(link) + "&image_size%5B%5D=1&image_size%5B%5D=2&image_size%5B%5D=32&image_size%5B%5D=31&image_size%5B%5D=33&image_size%5B%5D=34&image_size%5B%5D=35&image_size%5B%5D=36&image_size%5B%5D=2048&image_size%5B%5D=4&image_size%5B%5D=14&include_states=1&expanded_user_info=true&include_tags=true&include_geo=true&is_following=true&include_equipment_info=true&include_licensing=true&include_releases=true&liked_by=1&include_vendor_photos=true");
+        final String photoID = this.getPhotoID(link);
+        if (photoID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage("https://api." + this.getHost() + "/v1/photos?ids=" + photoID + "&image_size%5B%5D=1&image_size%5B%5D=2&image_size%5B%5D=32&image_size%5B%5D=31&image_size%5B%5D=33&image_size%5B%5D=34&image_size%5B%5D=35&image_size%5B%5D=36&image_size%5B%5D=2048&image_size%5B%5D=4&image_size%5B%5D=14&include_states=1&expanded_user_info=true&include_tags=true&include_geo=true&is_following=true&include_equipment_info=true&include_licensing=true&include_releases=true&liked_by=1&include_vendor_photos=true");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "photos/" + this.getFID(link));
-        if (entries == null) {
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> photo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "photos/" + photoID);
+        if (photo == null) {
             /* 2020-09-09: E.g. {"photos":{}} --> Content offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String title = null, user_firstname = null, user_lastname = null, ext = null;
-        title = (String) entries.get("name");
-        user_firstname = (String) JavaScriptEngineFactory.walkJson(entries, "user/firstname");
-        user_lastname = (String) JavaScriptEngineFactory.walkJson(entries, "user/lastname");
-        /*
-         * this will show jpeg when its actually jpg on server. this is because content distribution filename is real name and not
-         * abbreviated.
-         */
-        // ext = (String) entries.get("image_format");
-        if (ext != null) {
-            ext = "." + ext;
+        final String photoName = (String) photo.get("name");
+        if (StringUtils.isEmpty(photoName)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final String userName = (String) JavaScriptEngineFactory.walkJson(photo, "user/username");
+        String user_firstname = (String) JavaScriptEngineFactory.walkJson(photo, "user/firstname");
+        String user_lastname = (String) JavaScriptEngineFactory.walkJson(photo, "user/lastname");
         // array full of images, we need to analyse for best
-        ArrayList<Object> images = (ArrayList<Object>) entries.get("images");
+        List<Object> images = (List<Object>) photo.get("images");
         if (images != null) {
             int sizeMax = -1;
             for (Object o : images) {
-                LinkedHashMap<String, Object> data = (LinkedHashMap<String, Object>) o;
+                Map<String, Object> data = (Map<String, Object>) o;
                 if (data.containsKey("size")) {
                     int s = ((Number) data.get("size")).intValue();
                     if (s > sizeMax) {
@@ -117,26 +131,24 @@ public class FivehundretPxCom extends PluginForHost {
         }
         if (dllink == null) {
             // old raztoki20160430
-            dllink = (String) JavaScriptEngineFactory.walkJson(entries, "images/{4}/https_url");
+            dllink = (String) JavaScriptEngineFactory.walkJson(photo, "images/{4}/https_url");
             if (dllink == null) {
-                dllink = (String) JavaScriptEngineFactory.walkJson(entries, "images/{3}/https_url");
+                dllink = (String) JavaScriptEngineFactory.walkJson(photo, "images/{3}/https_url");
             }
         }
-        if (StringUtils.isEmpty(title)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String fileName = userName;
+        if (StringUtils.isNotEmpty(photoName)) {
+            fileName = fileName + " - " + photoName;
         }
-        String filename = (user_firstname != null ? user_firstname : "");
-        filename += (user_lastname != null ? (filename.equals("") ? user_lastname : " " + user_lastname) : "");
-        filename += (title != null ? (filename.equals("") ? title : " - " + title) : "");
-        filename += (ext != null ? ext : "");
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
+        fileName = fileName + " - " + photoID;
+        fileName = fileName + ".jpg";
         if (!link.isNameSet()) {
             // set part name if not set previously
-            link.setFinalFileName(filename);
+            link.setFinalFileName(fileName);
+        } else {
+            link.setName(fileName);
         }
-        if (!StringUtils.isEmpty(dllink)) {
+        if (!StringUtils.isEmpty(dllink) && !(Thread.currentThread() instanceof SingleDownloadController)) {
             dllink = Encoding.htmlOnlyDecode(dllink);
             final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
@@ -144,17 +156,15 @@ public class FivehundretPxCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br2.openHeadConnection(dllink);
-                // update info
-                ext = getFileNameExtensionFromString(getFileNameFromHeader(con), ".jpg");
-                filename += (ext != null ? ext : "");
-                // set filename here.
-                link.setFinalFileName(filename);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
+                if (looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    }
+                    link.setProperty("directlink", dllink);
+                    return AvailableStatus.TRUE;
                 } else {
                     return AvailableStatus.UNCHECKABLE;
                 }
-                link.setProperty("directlink", dllink);
             } finally {
                 try {
                     con.disconnect();
@@ -172,18 +182,19 @@ public class FivehundretPxCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
