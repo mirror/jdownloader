@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,9 +32,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pic5you.ru", "image2you.ru", "imagecurl.com", "twitpic.com", "pic4you.ru", "turboimagehost.com", "imagebam.com", "imagebam.com", "freeimagehosting.net", "girlswithmuscle.com" }, urls = { "http://pic5you\\.ru/\\d+/\\d+/", "http://(?:www\\.)?image2you\\.ru/\\d+/\\d+/", "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "http://(?:www\\.)?pic4you\\.ru/\\d+/\\d+/", "https?://(?:www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "https?://[\\w\\.]*imagebam\\.com/(image|gallery)/[a-z0-9]+", "https?://thumbs\\d+\\.imagebam\\.com/\\d+/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "https?://(www.)?girlswithmuscle\\.com/\\d+/?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pic5you.ru", "image2you.ru", "imagecurl.com", "twitpic.com", "pic4you.ru", "imagebam.com", "imagebam.com", "freeimagehosting.net", "girlswithmuscle.com" }, urls = { "http://pic5you\\.ru/\\d+/\\d+/", "http://(?:www\\.)?image2you\\.ru/\\d+/\\d+/", "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "http://(?:www\\.)?pic4you\\.ru/\\d+/\\d+/", "https?://[\\w\\.]*imagebam\\.com/(image|gallery)/[a-z0-9]+", "https?://thumbs\\d+\\.imagebam\\.com/\\d+/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "https?://(www.)?girlswithmuscle\\.com/\\d+/?" })
 public class ImageHosterDecrypter extends antiDDoSForDecrypt {
     public ImageHosterDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
@@ -143,15 +143,6 @@ public class ImageHosterDecrypter extends antiDDoSForDecrypt {
             if (finallink == null && br.containsHTML(">\\(Unnamed Gallery\\)<")) {
                 return decryptedLinks;
             }
-        } else if (parameter.contains("turboimagehost.com/")) {
-            br.setFollowRedirects(true);
-            br.getPage(parameter);
-            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(don`t exist on our server|\\- Invalid link<)")) {
-                logger.info("Link offline: " + parameter);
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
-            }
-            finallink = br.getRegex("\"(https?://s\\d+d\\d+\\.(?:turboimagehost\\.com|turboimg\\.net)/sp/[a-z0-9]+/.*?)\"").getMatch(0);
         } else if (parameter.contains("picsapart.com/")) {
             finallink = parameter.replace("/photo/", "/download/");
             finalfilename = new Regex(parameter, "picsapart\\.com/photo/(\\d+)").getMatch(0) + ".jpg";
