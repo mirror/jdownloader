@@ -20,10 +20,12 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.appwork.storage.JSonStorage;
@@ -291,7 +293,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             this.crawlStoryHighlightsAltAPI(param, account, loggedIN);
         } else if (param.getCryptedUrl().matches(TYPE_STORY)) {
             final String user = new Regex(param.getCryptedUrl(), TYPE_STORY).getMatch(0);
-            final String userID = getUserIDFromWebsite(param, account, loggedIN, user);
+            final String userID = findUserID(param, account, loggedIN, user);
             if (StringUtils.isEmpty(userID)) {
                 /* Most likely that profile doesn't exist */
                 decryptedLinks.add(this.createOfflinelink(parameter, "This profile doesn't exist", "This profile doesn't exist"));
@@ -304,7 +306,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             final boolean useAltAPI = account != null && SubConfiguration.getConfig(this.getHost()).getBooleanProperty(InstaGramCom.PROFILE_CRAWLER_PREFER_ALTERNATIVE_API, InstaGramCom.defaultPREFER_ALTERNATIVE_API_FOR_PROFILE_CRAWLER);
             if (useAltAPI) {
                 final String user = new Regex(param.getCryptedUrl(), TYPE_PROFILE).getMatch(0);
-                final String userID = getUserIDFromWebsite(param, account, loggedIN, user);
+                final String userID = findUserID(param, account, loggedIN, user);
                 if (StringUtils.isEmpty(userID)) {
                     /* Most likely that profile doesn't exist */
                     decryptedLinks.add(this.createOfflinelink(parameter, "This profile doesn't exist", "This profile doesn't exist"));
@@ -323,31 +325,63 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
      * Returns userID for given username (userID is required for API requests). </br>
      * 2021-05-04: Failed to find any other more elegant way to do this.
      */
-    private String getUserIDFromWebsite(final CryptedLink param, final Account account, final AtomicBoolean loggedIN, final String username) throws Exception {
-        /* TODO: Also use ID_TO_USERNAME to find IDs based on given username. This could also save us some time and requests! */
-        loginOrFail(account, loggedIN);
+    private String findUserID(final CryptedLink param, final Account account, final AtomicBoolean loggedIN, final String username) throws Exception {
         if (username == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String userProfileURL = "https://www." + this.getHost() + "/" + username + "/";
-        getPageAutoLogin(account, loggedIN, userProfileURL, param, br, userProfileURL, null, null);
-        final String json = websiteGetJson();
-        final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-        /* We need to crawl the userID via website first in order to use the other API. */
-        String userID = (String) get(entries, "entry_data/ProfilePage/{0}/user/id", "entry_data/ProfilePage/{0}/graphql/user/id");
-        if (userID == null) {
-            userID = br.getRegex("\"owner\": ?\\{\"id\": ?\"(\\d+)\"\\}").getMatch(0);
-        }
-        if (StringUtils.isEmpty(userID)) {
-            /* Most likely that profile doesn't exist */
-            decryptedLinks.add(this.createOfflinelink(parameter, "This profile doesn't exist", "This profile doesn't exist"));
-            return null;
-        } else {
-            /* Save for later usage */
-            synchronized (ID_TO_USERNAME) {
-                ID_TO_USERNAME.put(username, userID);
-            }
+        /* First check our cache -> saves time */
+        String userID = getCachedUserID(username);
+        if (userID != null) {
+            /* Return cached userID */
             return userID;
+        } else {
+            /* Use website to find userID. */
+            loginOrFail(account, loggedIN);
+            final String userProfileURL = "https://www." + this.getHost() + "/" + username + "/";
+            getPageAutoLogin(account, loggedIN, userProfileURL, param, br, userProfileURL, null, null);
+            final String json = websiteGetJson();
+            final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            /* We need to crawl the userID via website first in order to use the other API. */
+            userID = (String) get(entries, "entry_data/ProfilePage/{0}/user/id", "entry_data/ProfilePage/{0}/graphql/user/id");
+            if (userID == null) {
+                userID = br.getRegex("\"owner\": ?\\{\"id\": ?\"(\\d+)\"\\}").getMatch(0);
+            }
+            if (StringUtils.isEmpty(userID)) {
+                /* Most likely that profile doesn't exist */
+                decryptedLinks.add(this.createOfflinelink(parameter, "This profile doesn't exist", "This profile doesn't exist"));
+                return null;
+            } else {
+                /* Add to cache for later usage */
+                synchronized (ID_TO_USERNAME) {
+                    ID_TO_USERNAME.put(username, userID);
+                }
+                return userID;
+            }
+        }
+    }
+
+    private String getCachedUserID(final String username) {
+        if (username == null) {
+            return null;
+        }
+        synchronized (ID_TO_USERNAME) {
+            final Iterator<Entry<String, String>> iterator = ID_TO_USERNAME.entrySet().iterator();
+            while (iterator.hasNext()) {
+                final Entry<String, String> entry = iterator.next();
+                if (entry.getValue().equals(username)) {
+                    return entry.getKey();
+                }
+            }
+        }
+        return null;
+    }
+
+    private String getCachedUserName(final String userID) {
+        if (userID == null) {
+            return null;
+        }
+        synchronized (ID_TO_USERNAME) {
+            return ID_TO_USERNAME.get(userID);
         }
     }
 
@@ -1393,9 +1427,15 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         } else {
             final Map<String, Object> highlightsInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "reels/highlight:" + reelID);
             final List<Object> resource_data_list = (List<Object>) highlightsInfo.get("items");
-            final String username = (String) JavaScriptEngineFactory.walkJson(highlightsInfo, "user/username");
+            final Map<String, Object> userInfo = (Map<String, Object>) highlightsInfo.get("user");
+            final String username = (String) userInfo.get("username");
+            final long userID = ((Number) userInfo.get("pk")).longValue();
             if (!StringUtils.isEmpty(username)) {
                 fp.setName("story highlights - " + username);
+                /* Cache information for later usage */
+                synchronized (ID_TO_USERNAME) {
+                    ID_TO_USERNAME.put(Long.toString(userID), username);
+                }
             } else {
                 fp.setName("story highlights - " + reelID);
             }
