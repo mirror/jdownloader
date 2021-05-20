@@ -34,8 +34,6 @@ import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "high-way.me" }, urls = { "https?://high\\-way\\.me/onlinetv\\.php\\?id=\\d+[^/]+|https?://[a-z0-9\\-\\.]+\\.high\\-way\\.me/dlu/[a-z0-9]+/[^/]+" })
 public class HighWayMe2 extends HighWayCore {
-    // public static interface HighWayMeConfigInterface extends UsenetAccountConfigInterface {
-    // };
     private static final String PROPERTY_ACCOUNT_API_MIGRATION_MESSAGE_DISPLAYED = "API_MIGRATION_MESSAGE_DISPLAYED";
 
     public HighWayMe2(PluginWrapper wrapper) {
