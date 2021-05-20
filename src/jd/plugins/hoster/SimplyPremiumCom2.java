@@ -69,7 +69,6 @@ public class SimplyPremiumCom2 extends HighWayCore {
 
     @Override
     protected void exceptionAccountInvalid(final Account account) throws PluginException {
-        /* TODO: Remove the note to disable 2FA: The new API can also be used while 2FA is enabled! */
         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else {
