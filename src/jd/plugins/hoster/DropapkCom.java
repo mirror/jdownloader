@@ -143,7 +143,7 @@ public class DropapkCom extends XFileSharingProBasic {
             /* We know that the file is online - let's try to find the filesize ... */
             dl.setAvailable(true);
             try {
-                final String size = new Regex(html_for_fuid, "<strong class=\"ml-2\">\\s*(\\d+ [^<]+)</strong>\\s*</li").getMatch(0);
+                final String size = new Regex(html_for_fuid, "<strong class=\"ml-2\">\\s*(\\d+(\\.\\d+)? [^<]+)</strong>\\s*</li").getMatch(0);
                 if (size != null) {
                     /*
                      * Filesize should definitly be given - but at this stage we are quite sure that the file is online so let's not throw a
@@ -156,5 +156,11 @@ public class DropapkCom extends XFileSharingProBasic {
             }
             return AvailableStatus.TRUE;
         }
+    }
+
+    @Override
+    protected boolean supportsMassLinkcheckOverWebsite() {
+        /* 2021-05-20: Try to prevent their antiddos ddos-guard.net from kicking in: https://svn.jdownloader.org/issues/87111 */
+        return true;
     }
 }
