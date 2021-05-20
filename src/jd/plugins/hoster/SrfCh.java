@@ -94,7 +94,7 @@ public class SrfCh extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String json = br.getRegex("window\\.__SSR_DATA__ = (\\{.*?)</script>").getMatch(0);
+        final String json = br.getRegex(">\\s*window\\.__SSR_VIDEO_DATA__ = (\\{.*?\\})</script>").getMatch(0);
         Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
         entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "initialData/videoDetail");
         if (entries == null) {
