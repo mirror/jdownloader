@@ -49,6 +49,16 @@ public class HighWayMe2 extends HighWayCore {
     }
 
     @Override
+    protected String getAPIBase() {
+        return "https://" + this.getHost() + "/apiV2.php";
+    }
+
+    @Override
+    protected String getWebsiteBase() {
+        return "https://" + this.getHost() + "/";
+    }
+
+    @Override
     public void reset() {
     }
 
@@ -72,11 +82,10 @@ public class HighWayMe2 extends HighWayCore {
         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\n Du findest deine Zugangsdaten für JD hier: high-way.me/download.php#credentials", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou can find your login credentials for JD here: high-way.me/download.php#credentials", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou can find your JD login credentials here: high-way.me/download.php#credentials", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
-    /** According to High-Way staff, Usenet SSL is unavailable since 2017-08-01 */
     @Override
     public List<UsenetServer> getAvailableUsenetServer() {
         final List<UsenetServer> ret = new ArrayList<UsenetServer>();

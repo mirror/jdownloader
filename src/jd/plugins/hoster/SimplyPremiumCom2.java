@@ -21,13 +21,14 @@ import java.util.List;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 import jd.PluginWrapper;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "simply-premium.com" }, urls = { "" })
 public class SimplyPremiumCom2 extends HighWayCore {
-    // public static interface HighWayMeConfigInterface extends UsenetAccountConfigInterface {
-    // };
     public SimplyPremiumCom2(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.simply-premium.com/vip");
@@ -39,6 +40,18 @@ public class SimplyPremiumCom2 extends HighWayCore {
     }
 
     @Override
+    protected String getAPIBase() {
+        /* Special: Requires "www." */
+        return "https://www." + this.getHost() + "/apiV2.php";
+    }
+
+    @Override
+    protected String getWebsiteBase() {
+        /* Special: Requires "www." */
+        return "https://www." + this.getHost() + "/";
+    }
+
+    @Override
     public void reset() {
     }
 
@@ -46,12 +59,21 @@ public class SimplyPremiumCom2 extends HighWayCore {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    /** According to High-Way staff, Usenet SSL is unavailable since 2017-08-01 */
     @Override
     public List<UsenetServer> getAvailableUsenetServer() {
         final List<UsenetServer> ret = new ArrayList<UsenetServer>();
         ret.addAll(UsenetServer.createServerList("reader.simply-premium.com", false, 119));
         ret.addAll(UsenetServer.createServerList("reader.simply-premium.com", true, 563));
         return ret;
+    }
+
+    @Override
+    protected void exceptionAccountInvalid(final Account account) throws PluginException {
+        /* TODO: Remove the note to disable 2FA: The new API can also be used while 2FA is enabled! */
+        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
     }
 }
