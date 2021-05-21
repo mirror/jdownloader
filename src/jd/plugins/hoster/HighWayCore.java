@@ -69,7 +69,7 @@ public abstract class HighWayCore extends UseNet {
     private static HashMap<String, Integer>       hostMaxdlsMap                       = new HashMap<String, Integer>();
     /* Contains <host><number of currently running simultan downloads> */
     private static HashMap<String, AtomicInteger> hostRunningDlsNumMap                = new HashMap<String, AtomicInteger>();
-    private static HashMap<String, Integer>       hostRabattMap                       = new HashMap<String, Integer>();
+    private static HashMap<String, Integer>       hostTrafficCalculationMap           = new HashMap<String, Integer>();
     private static Object                         UPDATELOCK                          = new Object();
     private static final int                      defaultMAXCHUNKS                    = -4;
     private static final boolean                  defaultRESUME                       = false;
@@ -111,10 +111,10 @@ public abstract class HighWayCore extends UseNet {
     @Override
     public void update(final DownloadLink link, final Account account, long bytesTransfered) throws PluginException {
         synchronized (UPDATELOCK) {
-            if (hostRabattMap.containsKey(link.getHost())) {
-                final Integer rabatt = hostRabattMap.get(link.getHost());
-                if (rabatt != null) {
-                    bytesTransfered = (bytesTransfered * (100 - rabatt)) / 100;
+            if (hostTrafficCalculationMap.containsKey(link.getHost())) {
+                final Integer trafficCalc = hostTrafficCalculationMap.get(link.getHost());
+                if (trafficCalc != null) {
+                    bytesTransfered = (bytesTransfered * trafficCalc) / 100;
                 }
             }
         }
@@ -453,6 +453,10 @@ public abstract class HighWayCore extends UseNet {
             account.setType(AccountType.FREE);
         }
         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+            /*
+             * TODO: Change SizeFormatter.formatBytes to something which returns the size unit depending on the global JD setting ("TiB",
+             * "TB").
+             */
             ai.setStatus(accountInfo.get("type").toString() + " | Traffic übrig heute: " + SizeFormatter.formatBytes(trafficLeftToday));
         } else {
             ai.setStatus(accountInfo.get("type").toString() + " | Traffic left today: " + SizeFormatter.formatBytes(trafficLeftToday));
@@ -477,18 +481,17 @@ public abstract class HighWayCore extends UseNet {
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         synchronized (UPDATELOCK) {
             hostMaxchunksMap.clear();
-            hostRabattMap.clear();
+            hostTrafficCalculationMap.clear();
             hostMaxdlsMap.clear();
             /* Available hosts are returned by API depending on users' account type e.g. free users have much less supported hosts. */
             final List<Object> array_hoster = (List) entries.get("hoster");
             for (final Object hoster : array_hoster) {
                 final Map<String, Object> hoster_map = (Map<String, Object>) hoster;
                 final String domain = (String) hoster_map.get("name");
-                final String active = (String) hoster_map.get("active");
-                final int resume = Integer.parseInt((String) hoster_map.get("resume"));
-                final int maxchunks = Integer.parseInt((String) hoster_map.get("chunks"));
-                final int maxdls = Integer.parseInt((String) hoster_map.get("downloads"));
-                final int rabatt = Integer.parseInt((String) hoster_map.get("rabatt"));
+                final int active = ((Number) hoster_map.get("active")).intValue();
+                final int resume = ((Number) hoster_map.get("resume")).intValue();
+                final int maxchunks = ((Number) hoster_map.get("chunks")).intValue();
+                final int maxdls = ((Number) hoster_map.get("downloads")).intValue();
                 /* Workaround to find the real domain which we need to assign the properties to later on! */
                 final ArrayList<String> supportedHostsTmp = new ArrayList<String>();
                 supportedHostsTmp.add(domain);
@@ -500,15 +503,15 @@ public abstract class HighWayCore extends UseNet {
                 }
                 final String realDomain = realDomainList.get(0);
                 // final String unlimited = (String) hoster_map.get("unlimited");
-                hostRabattMap.put(realDomain, rabatt);
-                if (active.equals("1")) {
+                hostTrafficCalculationMap.put(realDomain, ((Number) hoster_map.get("berechnung")).intValue());
+                if (active == 1) {
                     supportedHosts.add(realDomain);
                     hostMaxchunksMap.put(realDomain, correctChunks(maxchunks));
                     hostMaxdlsMap.put(realDomain, correctMaxdls(maxdls));
-                    if (resume == 0) {
-                        hostResumeMap.put(realDomain, false);
-                    } else {
+                    if (resume == 1) {
                         hostResumeMap.put(realDomain, true);
+                    } else {
+                        hostResumeMap.put(realDomain, false);
                     }
                 }
             }
