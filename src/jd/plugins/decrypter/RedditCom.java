@@ -24,6 +24,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -41,12 +47,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "reddit.com" }, urls = { "https?://(?:(?:www|old)\\.)?reddit\\.com/(?:r/[^/]+(?:/comments/[a-z0-9]+/[A-Za-z0-9\\-_]+)?|gallery/[a-z0-9]+|user/[^/]+(?:/saved)?)" })
 public class RedditCom extends PluginForDecrypt {
@@ -296,9 +296,12 @@ public class RedditCom extends PluginForDecrypt {
             /* 2020-07-23: TODO: This field might indicate selfhosted content: is_reddit_media_domain */
             /* Look for single URLs e.g. single pictures (e.g. often imgur.com URLs, can also be selfhosted content) */
             boolean addedRedditSelfhostedVideo = false;
-            final String externalURL = (String) entries.get("url");
+            String externalURL = (String) entries.get("url");
             if (!StringUtils.isEmpty(externalURL) && !this.canHandle(externalURL)) {
-                logger.info("Found external URL");
+                if (Encoding.isHtmlEntityCoded(externalURL)) {
+                    externalURL = Encoding.htmlDecode(externalURL);
+                }
+                logger.info("Found external URL: " + externalURL);
                 final DownloadLink dl = this.createDownloadlink(externalURL);
                 if (externalURL.matches(TYPE_CRAWLED_SELFHOSTED_VIDEO)) {
                     addedRedditSelfhostedVideo = true;
