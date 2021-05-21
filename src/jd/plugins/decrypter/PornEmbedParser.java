@@ -3,8 +3,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -14,6 +12,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.DecrypterArrayList;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class PornEmbedParser extends antiDDoSForDecrypt {
@@ -638,7 +638,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             }
         }
         /* txxx.com (former tubecup.com) */
-        externID = br.getRegex("\"((?:https?:)?//(?:www\\.)?(txxx|tubecup)\\.com/embed/\\d+)\"").getMatch(0);
+        externID = br.getRegex("\"((?:https?:)?//(?:www\\.)?(txxx|tubecup|videotxxx)\\.com/embed/\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(externID);
             if (!processAll) {

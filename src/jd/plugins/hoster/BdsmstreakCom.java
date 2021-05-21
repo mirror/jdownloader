@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
@@ -31,6 +29,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bdsmstreak.com" }, urls = { "https?://(?:www\\.)?bdsmstreak\\.com/(?:embed/\\d+|video/\\d+(?:/[a-z0-9\\-]+)?)" })
 public class BdsmstreakCom extends PluginForHost {
@@ -104,37 +104,35 @@ public class BdsmstreakCom extends PluginForHost {
         filename = encodeUnicode(filename);
         if (!StringUtils.isEmpty(dllink)) {
             dllink = br.getURL(dllink).toString();
+            if (Encoding.isHtmlEntityCoded(dllink)) {
+                dllink = Encoding.htmlDecode(dllink);
+            }
         }
         if (!filename.endsWith(".mp4")) {
             filename += ".mp4";
         }
         link.setFinalFileName(filename);
-        if (!StringUtils.isEmpty(dllink)) {
-            if (Encoding.isHtmlEntityCoded(dllink)) {
-                dllink = Encoding.htmlDecode(dllink);
-            }
+        if (!StringUtils.isEmpty(dllink) && !(Thread.currentThread() instanceof SingleDownloadController)) {
             /* 2021-05-21: URL is only valid once! Do not check it if we're about to start downloading! */
-            if (!(Thread.currentThread() instanceof SingleDownloadController)) {
-                URLConnectionAdapter con = null;
+            URLConnectionAdapter con = null;
+            try {
+                final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(true);
+                con = brc.openHeadConnection(dllink);
+                if (looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    }
+                    // this.dllink = con.getURL().toString();
+                    link.setProperty("directlink", dllink);
+                    return AvailableStatus.TRUE;
+                } else {
+                    server_issues = true;
+                }
+            } finally {
                 try {
-                    final Browser brc = br.cloneBrowser();
-                    brc.setFollowRedirects(true);
-                    con = brc.openHeadConnection(dllink);
-                    if (looksLikeDownloadableContent(con)) {
-                        if (con.getCompleteContentLength() > 0) {
-                            link.setDownloadSize(con.getCompleteContentLength());
-                        }
-                        // this.dllink = con.getURL().toString();
-                        link.setProperty("directlink", dllink);
-                        return AvailableStatus.TRUE;
-                    } else {
-                        server_issues = true;
-                    }
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (final Throwable e) {
-                    }
+                    con.disconnect();
+                } catch (final Throwable e) {
                 }
             }
         }

@@ -23,20 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.ConditionalSkipReasonException;
-import org.jdownloader.plugins.WaitingSkipReason;
-import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -56,37 +42,46 @@ import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.ConditionalSkipReasonException;
+import org.jdownloader.plugins.WaitingSkipReason;
+import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 1, names = {}, urls = {})
 public abstract class HighWayCore extends UseNet {
     /** General API information: According to admin we can 'hammer' the API every 60 seconds */
-    private static MultiHosterManagement          mhm                                 = null;
-    private static final String                   TYPE_TV                             = "https?://[^/]+/onlinetv\\.php\\?id=.+";
-    private static final String                   TYPE_DIRECT                         = "https?://[^/]+/dlu/[a-z0-9]+/[^/]+";
-    private static final int                      STATUSCODE_PASSWORD_NEEDED_OR_WRONG = 13;
+    private static MultiHosterManagement                   mhm                                 = new MultiHosterManagement();
+    private static final String                            TYPE_TV                             = "https?://[^/]+/onlinetv\\.php\\?id=.+";
+    private static final String                            TYPE_DIRECT                         = "https?://[^/]+/dlu/[a-z0-9]+/[^/]+";
+    private static final int                               STATUSCODE_PASSWORD_NEEDED_OR_WRONG = 13;
     /* Contains <host><Boolean resume possible|impossible> */
-    private static HashMap<String, Boolean>       hostResumeMap                       = new HashMap<String, Boolean>();
+    private static Map<String, Map<String, Boolean>>       hostResumeMap                       = new HashMap<String, Map<String, Boolean>>();
     /* Contains <host><number of max possible chunks per download> */
-    private static HashMap<String, Integer>       hostMaxchunksMap                    = new HashMap<String, Integer>();
+    private static Map<String, Map<String, Integer>>       hostMaxchunksMap                    = new HashMap<String, Map<String, Integer>>();
     /* Contains <host><number of max possible simultan downloads> */
-    private static HashMap<String, Integer>       hostMaxdlsMap                       = new HashMap<String, Integer>();
+    private static Map<String, Map<String, Integer>>       hostMaxdlsMap                       = new HashMap<String, Map<String, Integer>>();
     /* Contains <host><number of currently running simultan downloads> */
-    private static HashMap<String, AtomicInteger> hostRunningDlsNumMap                = new HashMap<String, AtomicInteger>();
-    private static HashMap<String, Integer>       hostTrafficCalculationMap           = new HashMap<String, Integer>();
-    private static Object                         UPDATELOCK                          = new Object();
-    private static final int                      defaultMAXCHUNKS                    = -4;
-    private static final boolean                  defaultRESUME                       = false;
-    protected static final String                 PROPERTY_ACCOUNT_MAXCHUNKS          = "maxchunks";
-    protected static final String                 PROPERTY_ACCOUNT_RESUME             = "resume";
+    private static Map<String, Map<String, AtomicInteger>> hostRunningDlsNumMap                = new HashMap<String, Map<String, AtomicInteger>>();
+    private static Map<String, Map<String, Integer>>       hostTrafficCalculationMap           = new HashMap<String, Map<String, Integer>>();
+    private static Map<String, Object>                     mapLockMap                          = new HashMap<String, Object>();
+    private static final int                               defaultMAXCHUNKS                    = -4;
+    private static final boolean                           defaultRESUME                       = false;
+    protected static final String                          PROPERTY_ACCOUNT_MAXCHUNKS          = "maxchunks";
+    protected static final String                          PROPERTY_ACCOUNT_RESUME             = "resume";
 
     public static interface HighWayMeConfigInterface extends UsenetAccountConfigInterface {
     };
 
     public HighWayCore(PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    public void init() {
-        mhm = new MultiHosterManagement(this.getHost());
     }
 
     private Browser prepBR(final Browser br) {
@@ -100,8 +95,7 @@ public abstract class HighWayCore extends UseNet {
     }
 
     /**
-     * API docs: https://high-way.me/threads/highway-api.201/ </br>
-     * According to admin we can 'hammer' the API every 60 seconds
+     * API docs: https://high-way.me/threads/highway-api.201/ </br> According to admin we can 'hammer' the API every 60 seconds
      */
     protected abstract String getAPIBase();
 
@@ -110,14 +104,35 @@ public abstract class HighWayCore extends UseNet {
     /** If enabled, apikey is used for login instead of username:password. */
     protected abstract boolean useApikeyLogin();
 
+    protected Object getMapLock() {
+        synchronized (mapLockMap) {
+            Object ret = mapLockMap.get(getHost());
+            if (ret == null) {
+                ret = new Object();
+                mapLockMap.put(getHost(), ret);
+            }
+            return ret;
+        }
+    }
+
+    protected <T> Map<String, T> getMap(final Map<String, Map<String, T>> map) {
+        synchronized (map) {
+            Object ret = map.get(getHost());
+            if (ret == null) {
+                ret = new HashMap<String, Object>();
+                map.put(getHost(), (Map<String, T>) ret);
+            }
+            return (Map<String, T>) ret;
+        }
+    }
+
     @Override
     public void update(final DownloadLink link, final Account account, long bytesTransfered) throws PluginException {
-        synchronized (UPDATELOCK) {
-            if (hostTrafficCalculationMap.containsKey(link.getHost())) {
-                final Integer trafficCalc = hostTrafficCalculationMap.get(link.getHost());
-                if (trafficCalc != null) {
-                    bytesTransfered = (bytesTransfered * trafficCalc) / 100;
-                }
+        synchronized (getMapLock()) {
+            final Map<String, Integer> map = getMap(hostTrafficCalculationMap);
+            final Integer trafficCalc = map.get(link.getHost());
+            if (trafficCalc != null) {
+                bytesTransfered = (bytesTransfered * trafficCalc) / 100;
             }
         }
         super.update(link, account, bytesTransfered);
@@ -224,7 +239,9 @@ public abstract class HighWayCore extends UseNet {
             return false;
         } else {
             /* Make sure that we do not start more than the allowed number of max simultan downloads for the current host. */
-            synchronized (UPDATELOCK) {
+            synchronized (getMapLock()) {
+                final Map<String, AtomicInteger> hostRunningDlsNumMap = getMap(HighWayCore.hostRunningDlsNumMap);
+                final Map<String, Integer> hostMaxdlsMap = getMap(HighWayCore.hostMaxdlsMap);
                 if (hostRunningDlsNumMap.containsKey(link.getHost()) && hostMaxdlsMap.containsKey(link.getHost())) {
                     final int maxDlsForCurrentHost = hostMaxdlsMap.get(link.getHost());
                     final AtomicInteger currentRunningDlsForCurrentHost = hostRunningDlsNumMap.get(link.getHost());
@@ -288,11 +305,17 @@ public abstract class HighWayCore extends UseNet {
          * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is
          * needed to get the individual host limits.
          */
-        synchronized (UPDATELOCK) {
-            if (hostMaxchunksMap.isEmpty() || hostMaxdlsMap.isEmpty()) {
-                logger.info("Performing full login to set individual host limits");
-                this.fetchAccountInfo(account);
+        final boolean fetchAccountInfo;
+        synchronized (getMapLock()) {
+            if (getMap(HighWayCore.hostMaxchunksMap).isEmpty() || getMap(HighWayCore.hostMaxdlsMap).isEmpty()) {
+                fetchAccountInfo = true;
+            } else {
+                fetchAccountInfo = false;
             }
+        }
+        if (fetchAccountInfo) {
+            logger.info("Performing full login to set individual host limits");
+            this.fetchAccountInfo(account);
         }
         if (isUsenetLink(link)) {
             super.handleMultiHost(link, account);
@@ -302,10 +325,12 @@ public abstract class HighWayCore extends UseNet {
             boolean resume = account.getBooleanProperty(PROPERTY_ACCOUNT_RESUME, defaultRESUME);
             int maxChunks = account.getIntegerProperty(PROPERTY_ACCOUNT_MAXCHUNKS, defaultMAXCHUNKS);
             final String thishost = link.getHost();
-            synchronized (UPDATELOCK) {
+            synchronized (getMapLock()) {
+                final Map<String, Integer> hostMaxchunksMap = getMap(HighWayCore.hostMaxchunksMap);
                 if (hostMaxchunksMap.containsKey(thishost)) {
                     maxChunks = hostMaxchunksMap.get(thishost);
                 }
+                final Map<String, Boolean> hostResumeMap = getMap(HighWayCore.hostResumeMap);
                 if (hostResumeMap.containsKey(thishost)) {
                     resume = hostResumeMap.get(thishost);
                 }
@@ -435,7 +460,7 @@ public abstract class HighWayCore extends UseNet {
         final long premiumTrafficMax = ((Number) accountInfo.get("premium_max")).longValue();
         final long trafficLeftToday = ((Number) accountInfo.get("traffic_remain_today")).longValue();
         /* Set account type and account information */
-        if (((Boolean) entries.get("premium")).booleanValue() || premiumUntil > 0 && premiumTrafficMax > 0) {
+        if (Boolean.TRUE.equals(entries.get("premium")) || premiumUntil > 0 && premiumTrafficMax > 0) {
             ai.setTrafficLeft(trafficLeftToday);
             ai.setTrafficMax(premiumTrafficMax);
             ai.setValidUntil(premiumUntil * 1000, this.br);
@@ -455,9 +480,9 @@ public abstract class HighWayCore extends UseNet {
             account.setType(AccountType.FREE);
         }
         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-            ai.setStatus(accountInfo.get("type").toString() + " | Heute übrig: " + SIZEUNIT.formatValue(JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit(), trafficLeftToday));
+            ai.setStatus(StringUtils.valueOfOrNull(accountInfo.get("type")) + " | Heute übrig: " + SIZEUNIT.formatValue((SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue(), trafficLeftToday));
         } else {
-            ai.setStatus(accountInfo.get("type").toString() + " | Remaining today: " + SIZEUNIT.formatValue(JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit(), trafficLeftToday));
+            ai.setStatus(StringUtils.valueOfOrNull(accountInfo.get("type")) + " | Remaining today: " + SIZEUNIT.formatValue((SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue(), trafficLeftToday));
         }
         final Map<String, Object> usenetLogins = (Map<String, Object>) accountInfo.get("usenet");
         if (this.useApikeyLogin()) {
@@ -477,7 +502,11 @@ public abstract class HighWayCore extends UseNet {
             account.setProperty(PROPERTY_ACCOUNT_RESUME, false);
         }
         final ArrayList<String> supportedHosts = new ArrayList<String>();
-        synchronized (UPDATELOCK) {
+        synchronized (getMapLock()) {
+            final Map<String, Integer> hostMaxchunksMap = getMap(HighWayCore.hostMaxchunksMap);
+            final Map<String, Integer> hostTrafficCalculationMap = getMap(HighWayCore.hostTrafficCalculationMap);
+            final Map<String, Integer> hostMaxdlsMap = getMap(HighWayCore.hostMaxdlsMap);
+            final Map<String, Boolean> hostResumeMap = getMap(HighWayCore.hostResumeMap);
             hostMaxchunksMap.clear();
             hostTrafficCalculationMap.clear();
             hostMaxdlsMap.clear();
@@ -549,8 +578,7 @@ public abstract class HighWayCore extends UseNet {
     /**
      * Login without errorhandling
      *
-     * @return true = cookies validated </br>
-     *         false = cookies set but not validated
+     * @return true = cookies validated </br> false = cookies set but not validated
      *
      * @throws PluginException
      * @throws InterruptedException
@@ -634,13 +662,14 @@ public abstract class HighWayCore extends UseNet {
      *            (+1|-1)
      */
     private void controlSlot(final int num) {
-        synchronized (UPDATELOCK) {
-            AtomicInteger currentRunningDls = new AtomicInteger(0);
-            if (hostRunningDlsNumMap.containsKey(this.getDownloadLink().getHost())) {
-                currentRunningDls = hostRunningDlsNumMap.get(this.getDownloadLink().getHost());
+        synchronized (getMapLock()) {
+            final Map<String, AtomicInteger> hostRunningDlsNumMap = getMap(HighWayCore.hostRunningDlsNumMap);
+            AtomicInteger currentRunningDls = hostRunningDlsNumMap.get(this.getDownloadLink().getHost());
+            if (currentRunningDls == null) {
+                currentRunningDls = new AtomicInteger(0);
+                hostRunningDlsNumMap.put(this.getDownloadLink().getHost(), currentRunningDls);
             }
-            currentRunningDls.set(currentRunningDls.get() + num);
-            hostRunningDlsNumMap.put(this.getDownloadLink().getHost(), currentRunningDls);
+            currentRunningDls.addAndGet(num);
         }
     }
 
@@ -732,7 +761,8 @@ public abstract class HighWayCore extends UseNet {
                 } else if (link.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
                     return 5;
                 } else {
-                    synchronized (UPDATELOCK) {
+                    synchronized (getMapLock()) {
+                        final Map<String, Integer> hostMaxdlsMap = getMap(HighWayCore.hostMaxdlsMap);
                         if (hostMaxdlsMap.containsKey(link.getHost())) {
                             return hostMaxdlsMap.get(link.getHost());
                         }

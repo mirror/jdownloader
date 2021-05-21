@@ -122,12 +122,12 @@ public class UpvideoTo extends XFileSharingProBasic {
     }
 
     @Override
-    protected String buildEmbedURLPath(final String fuid) {
+    protected String buildEmbedURLPath(DownloadLink link, final String fuid) {
         return "/e/" + fuid;
     }
 
     @Override
-    protected String buildNormalURLPath(final String fuid) {
+    protected String buildNormalURLPath(DownloadLink link, final String fuid) {
         return "/v/" + fuid;
     }
 

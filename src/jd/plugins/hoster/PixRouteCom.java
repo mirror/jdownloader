@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,6 +28,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.Regex;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -43,6 +45,22 @@ public class PixRouteCom extends XFileSharingProBasic {
      * captchatype-info: null<br />
      * other:<br />
      */
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "pixroute.com" });
+        return ret;
+    }
+
+    @Override
+    public String getFUIDFromURL(DownloadLink dl) {
+        String ret = super.getFUIDFromURL(dl);
+        if (ret == null) {
+            ret = new Regex(dl.getPluginPatternMatcher(), "/(?:th|i)/\\d+/([a-z0-9]{12})").getMatch(0);
+        }
+        return ret;
+    }
+
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
     }
@@ -53,14 +71,15 @@ public class PixRouteCom extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
-    }
-
-    public static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "pixroute.com" });
-        return ret;
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            // todo: add optional plugin settings support for the direct images /i/ (see getFUIDFromURL) , optional because ppl might want
+            // to avoid the plugin and
+            // use directhttp
+            // instead
+            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "(" + XFileSharingProBasic.getDefaultAnnotationPatternPart() + "|/(?:th|i)/\\d+/[a-z0-9]{12})");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -89,6 +108,11 @@ public class PixRouteCom extends XFileSharingProBasic {
             /* Free(anonymous) and unknown account type */
             return 1;
         }
+    }
+
+    @Override
+    protected String getCorrectHost(DownloadLink link, URL url) {
+        return getHost();
     }
 
     @Override

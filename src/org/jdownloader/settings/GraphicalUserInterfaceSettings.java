@@ -267,7 +267,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setOverviewPanelSmartInfoVisible(boolean b);
 
     @DefaultBooleanValue(true)
-    @RequiresRestart("A JDownloader Restart is Required")
     @AboutConfig
     boolean isLinkgrabberSidebarVisible();
 
