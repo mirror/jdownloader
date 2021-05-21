@@ -57,6 +57,11 @@ public class HighWayMe2 extends HighWayCore {
     }
 
     @Override
+    protected boolean useApikeyLogin() {
+        return false;
+    }
+
+    @Override
     public void reset() {
     }
 
@@ -114,7 +119,7 @@ public class HighWayMe2 extends HighWayCore {
                         message += "Hello dear high-way user\r\n";
                         message += "Due to technical changes you have been logged out automatically once.\r\n";
                         message += "From now on you need separate high-way login credentials for JD which are different from the ones you need in your browser.\r\n";
-                        message += "This step was taken to improve security.\r\n";
+                        message += "This step was taken to improve account security.\r\n";
                         message += "Your can find your new login credentials here: " + apiCredsURLWithoutProtocol + "\r\n";
                         message += "Also you can now enable two factor authentication for high-way and keep using JDownloader.\r\n";
                         message += "It is recommended to enable two factor authentication here: " + twoFALoginSettingsURLWithoutProtocol;

@@ -105,6 +105,9 @@ public abstract class HighWayCore extends UseNet {
 
     protected abstract String getWebsiteBase();
 
+    /** If enabled, apikey is used for login instead of username:password. */
+    protected abstract boolean useApikeyLogin();
+
     @Override
     public void update(final DownloadLink link, final Account account, long bytesTransfered) throws PluginException {
         synchronized (UPDATELOCK) {
@@ -428,20 +431,15 @@ public abstract class HighWayCore extends UseNet {
         account_maxdls = this.correctMaxdls(account_maxdls);
         final int account_resume = ((Number) accountInfo.get("resume")).intValue();
         final long premiumUntil = ((Number) accountInfo.get("premium_bis")).longValue();
-        final long premium_traffic = ((Number) accountInfo.get("premium_traffic")).longValue();
-        final long premium_traffic_max = ((Number) accountInfo.get("premium_max")).longValue();
+        final long premiumTraffic = ((Number) accountInfo.get("premium_traffic")).longValue();
+        final long premiumTrafficMax = ((Number) accountInfo.get("premium_max")).longValue();
+        final long trafficLeftToday = ((Long) accountInfo.get("traffic_remain_today")).longValue();
         /* Set account type and account information */
-        if (((Integer) accountInfo.get("premium")).intValue() == 1 || premiumUntil > 0 && premium_traffic_max > 0) {
-            final long premiumTrafficLeftToday = ((Long) accountInfo.get("premium_traffic_remain_today")).longValue();
-            ai.setTrafficLeft(premium_traffic);
-            ai.setTrafficMax(premium_traffic_max);
+        if (((Boolean) entries.get("premium")).booleanValue() || premiumUntil > 0 && premiumTrafficMax > 0) {
+            ai.setTrafficLeft(premiumTraffic);
+            ai.setTrafficMax(premiumTrafficMax);
             ai.setValidUntil(premiumUntil * 1000, this.br);
             account.setType(AccountType.PREMIUM);
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                ai.setStatus("Premium account | Traffic übrig heute: " + SizeFormatter.formatBytes(premiumTrafficLeftToday));
-            } else {
-                ai.setStatus("Premium account | Traffic left today: " + SizeFormatter.formatBytes(premiumTrafficLeftToday));
-            }
         } else {
             final long free_traffic_max_daily = ((Number) accountInfo.get("free_traffic")).longValue();
             final long free_traffic_left = ((Number) accountInfo.get("remain_free_traffic")).longValue();
@@ -455,6 +453,11 @@ public abstract class HighWayCore extends UseNet {
                 ai.setTrafficMax(free_traffic_max_daily);
             }
             account.setType(AccountType.FREE);
+        }
+        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+            ai.setStatus(account.getType() + " | Traffic übrig heute: " + SizeFormatter.formatBytes(trafficLeftToday));
+        } else {
+            ai.setStatus(account.getType() + " | Traffic left today: " + SizeFormatter.formatBytes(trafficLeftToday));
         }
         account.setConcurrentUsePossible(true);
         /* Set supported hosts, host specific limits and account limits. */
@@ -562,16 +565,27 @@ public abstract class HighWayCore extends UseNet {
                 logger.info("Checking cookies");
                 this.br.getPage(this.getAPIBase() + "?logincheck");
                 try {
-                    this.checkErrors(this.br, account);
-                    logger.info("Cookie login successful");
-                    return true;
-                } catch (final PluginException ignore) {
+                    /* Don't check for errors here as a failed login can trigger error dialogs which we don't want here! */
+                    // this.checkErrors(this.br, account);
+                    final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    if (getAPIErrorcode(entries) == -1) {
+                        logger.info("Cookie login successful");
+                        return true;
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nCookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                } catch (final Exception ignore) {
+                    logger.log(ignore);
                     logger.info("Cookie login failed");
                 }
             }
         }
         logger.info("Performing full login");
-        br.postPage(this.getAPIBase() + "?login", "pass=" + Encoding.urlEncode(account.getPass()) + "&user=" + Encoding.urlEncode(account.getUser()));
+        if (this.useApikeyLogin()) {
+            br.postPage(this.getAPIBase() + "?login", "apikey=" + Encoding.urlEncode(account.getPass()));
+        } else {
+            br.postPage(this.getAPIBase() + "?login", "pass=" + Encoding.urlEncode(account.getPass()) + "&user=" + Encoding.urlEncode(account.getUser()));
+        }
         this.checkErrors(this.br, account);
         account.saveCookies(this.br.getCookies(this.br.getHost()), "");
         return true;
@@ -627,13 +641,22 @@ public abstract class HighWayCore extends UseNet {
         }
     }
 
+    private int getAPIErrorcode(final Map<String, Object> entries) {
+        if (!entries.containsKey("error")) {
+            /* No error */
+            return -1;
+        } else {
+            return ((Number) entries.get("code")).intValue();
+        }
+    }
+
     private void checkErrors(final Browser br, final Account account) throws PluginException, InterruptedException {
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        if (!entries.containsKey("error")) {
+        final int code = getAPIErrorcode(entries);
+        if (code == -1) {
             /* No error -> We're good :) */
             return;
         }
-        final int code = ((Number) entries.get("code")).intValue();
         String msg = (String) entries.get("error");
         if (StringUtils.isEmpty(msg)) {
             msg = "Unknown error";
