@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
@@ -30,8 +32,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bdsmstreak.com" }, urls = { "https?://(?:www\\.)?bdsmstreak\\.com/(?:embed/\\d+|video/\\d+(?:/[a-z0-9\\-]+)?)" })
 public class BdsmstreakCom extends PluginForHost {
     public BdsmstreakCom(PluginWrapper wrapper) {
@@ -42,8 +42,6 @@ public class BdsmstreakCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 1;
@@ -63,7 +61,20 @@ public class BdsmstreakCom extends PluginForHost {
             name_url = "";
         }
         link.setUrlDownload(String.format("https://%s/video/%s%s", this.getHost(), videoid, name_url));
-        link.setLinkID(videoid);
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "/(?:embed|video)/(\\d+)").getMatch(0);
     }
 
     @SuppressWarnings("deprecation")
@@ -78,9 +89,10 @@ public class BdsmstreakCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "([a-z0-9\\-]+)$").getMatch(0);
+        final String url_filename = new Regex(this.br.getURL(), "([a-z0-9\\-]+)/?$").getMatch(0);
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
         if (filename == null) {
+            /* Fallback */
             filename = url_filename;
         }
         dllink = br.getRegex("\"(https?://[^\"]+\\.mp4[^\"]+)\"").getMatch(0);
@@ -90,57 +102,54 @@ public class BdsmstreakCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        final String ext;
         if (!StringUtils.isEmpty(dllink)) {
             dllink = br.getURL(dllink).toString();
-            ext = getFileNameExtensionFromString(dllink, default_extension);
-        } else {
-            ext = default_extension;
         }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
+        if (!filename.endsWith(".mp4")) {
+            filename += ".mp4";
         }
-        if (!StringUtils.isEmpty(dllink) && !(Thread.currentThread() instanceof SingleDownloadController)) {
+        link.setFinalFileName(filename);
+        if (!StringUtils.isEmpty(dllink)) {
             if (Encoding.isHtmlEntityCoded(dllink)) {
                 dllink = Encoding.htmlDecode(dllink);
             }
-            link.setFinalFileName(filename);
-            URLConnectionAdapter con = null;
-            try {
-                final Browser brc = br.cloneBrowser();
-                brc.setFollowRedirects(true);
-                con = brc.openHeadConnection(dllink);
-                if (looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    }
-                    link.setProperty("directlink", dllink);
-                    return AvailableStatus.TRUE;
-                } else {
-                    server_issues = true;
-                }
-            } finally {
+            /* 2021-05-21: URL is only valid once! Do not check it if we're about to start downloading! */
+            if (!(Thread.currentThread() instanceof SingleDownloadController)) {
+                URLConnectionAdapter con = null;
                 try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+                    final Browser brc = br.cloneBrowser();
+                    brc.setFollowRedirects(true);
+                    con = brc.openHeadConnection(dllink);
+                    if (looksLikeDownloadableContent(con)) {
+                        if (con.getCompleteContentLength() > 0) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        }
+                        // this.dllink = con.getURL().toString();
+                        link.setProperty("directlink", dllink);
+                        return AvailableStatus.TRUE;
+                    } else {
+                        server_issues = true;
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
             }
-        } else {
-            /* We cannot be sure whether we have the correct extension or not! */
-            link.setName(filename);
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
