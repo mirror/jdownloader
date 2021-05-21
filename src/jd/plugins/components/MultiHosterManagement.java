@@ -1,12 +1,18 @@
 package jd.plugins.components;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import jd.config.Property;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkCheckerThread;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.exceptions.WTFException;
 
 /**
  * Instead of duplication we create a class
@@ -17,23 +23,55 @@ import jd.plugins.PluginException;
  *
  */
 public class MultiHosterManagement {
-    private String getHost;
-    private String niceHost;
-    private String hsFailed;
+    private final String host;
 
-    public MultiHosterManagement(final String getHost) {
-        this.getHost = getHost;
-        this.niceHost = getHost.replaceAll("https?://|\\.|\\-", "");
-        this.hsFailed = niceHost + "_failedtimes_";
+    public MultiHosterManagement(final String host) {
+        this.host = host;
     }
 
-    private final HashMap<Object, HashMap<String, UnavailableHost>> db = new HashMap<Object, HashMap<String, UnavailableHost>>();
+    protected String getErrorProperty() {
+        return getHost().replaceAll("https?://|\\.|\\-", "") + "_failedtimes_";
+    }
+
+    public MultiHosterManagement() {
+        this(null);
+    }
+
+    private final Map<String, Map<Object, Map<String, UnavailableHost>>> dataBase = new HashMap<String, Map<Object, Map<String, UnavailableHost>>>();
+
+    protected synchronized Map<Object, Map<String, UnavailableHost>> getDB() {
+        final String host = getHost();
+        Map<Object, Map<String, UnavailableHost>> ret = dataBase.get(host);
+        if (ret == null) {
+            ret = new HashMap<Object, Map<String, UnavailableHost>>();
+            dataBase.put(host, ret);
+        }
+        return ret;
+    }
+
+    protected String getHost() {
+        if (host == null) {
+            final Thread thread = Thread.currentThread();
+            if (thread instanceof SingleDownloadController) {
+                return ((SingleDownloadController) thread).getProcessingPlugin().getHost();
+            } else if (thread instanceof AccountCheckerThread) {
+                return ((AccountCheckerThread) thread).getJob().getAccount().getPlugin().getHost();
+            } else if (thread instanceof LinkCheckerThread) {
+                return ((LinkCheckerThread) thread).getPlugin().getHost();
+            } else {
+                throw new WTFException();
+            }
+        } else {
+            return host;
+        }
+    }
 
     public void putError(final Object account, final DownloadLink downloadLink, final Long timeout, final String reason) throws PluginException {
+        final Map<Object, Map<String, UnavailableHost>> db = getDB();
         synchronized (db) {
             // null(multihosterwide) && AccountType && Account
             final UnavailableHost nue = new UnavailableHost(System.currentTimeMillis() + timeout, reason);
-            HashMap<String, UnavailableHost> unavailableMap = db.get(account);
+            Map<String, UnavailableHost> unavailableMap = db.get(account);
             if (unavailableMap == null) {
                 unavailableMap = new HashMap<String, UnavailableHost>();
                 db.put(account, unavailableMap);
@@ -52,12 +90,13 @@ public class MultiHosterManagement {
      * @throws InterruptedException
      */
     public void runCheck(final Account account, final DownloadLink downloadLink) throws PluginException, InterruptedException {
+        final Map<Object, Map<String, UnavailableHost>> db = getDB();
         synchronized (db) {
             // check for null(multihosterwide) first, AccountTypes(specific to this account type) second, and Account (specific to this
             // account) last!
             final Object[] acc = new Object[] { null, account.getType(), account };
             for (final Object ob : acc) {
-                final HashMap<String, UnavailableHost> unavailableMap = db.get(ob);
+                final Map<String, UnavailableHost> unavailableMap = db.get(ob);
                 final UnavailableHost nue = unavailableMap != null ? (UnavailableHost) unavailableMap.get(downloadLink.getHost()) : null;
                 if (nue != null) {
                     final Long lastUnavailable = nue.getErrorTimeout();
@@ -67,7 +106,7 @@ public class MultiHosterManagement {
                         throw new PluginException(LinkStatus.ERROR_FATAL, "Not possible to download from " + downloadLink.getHost());
                     } else if (System.currentTimeMillis() < lastUnavailable) {
                         final long wait = lastUnavailable - System.currentTimeMillis();
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temporarily unavailable by this MultiHoster Provider: " + errorReason != null ? errorReason : "via " + getHost, wait);
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temporarily unavailable by this MultiHoster Provider: " + errorReason != null ? errorReason : "via " + getHost(), wait);
                     } else {
                         unavailableMap.remove(downloadLink.getHost());
                         if (unavailableMap.size() == 0) {
@@ -109,7 +148,7 @@ public class MultiHosterManagement {
             /* 2019-07-23: Just set account to invalid if called without DownloadLink. */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
-        final String errorID = hsFailed + error;
+        final String errorID = getErrorProperty() + error;
         int timesFailed = downloadLink.getIntegerProperty(errorID, 0);
         if (timesFailed < maxRetries) {
             timesFailed++;

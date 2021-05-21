@@ -26,19 +26,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
-import org.jdownloader.translate._JDT;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -64,6 +51,18 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
+import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(?:www\\.)?save\\.tv/STV/M/obj/(?:archive/VideoArchiveDetails|archive/VideoArchiveStreaming|TC/SendungsDetails)\\.cfm\\?TelecastID=\\d+(?:\\&adsfree=(?:true|false|unset))?(?:\\&preferformat=[0-9])?|https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+" })
 public class SaveTv extends PluginForHost {
@@ -1074,8 +1073,7 @@ public class SaveTv extends PluginForHost {
                 }
                 /**
                  * 2021-02-11: Both serverside given filesizes are very vague. For downloads with ads we use the serverside given
-                 * information. </br>
-                 * For ad-free downloads we'll calculate it on our own as that is more precise! </br>
+                 * information. </br> For ad-free downloads we'll calculate it on our own as that is more precise! </br>
                  * duration_seconds_adsfree == 0 if adFree is unavailable while cutVideoSize == uncutVideoSize (which is of course not true,
                  * that's just what their backend does with that here).
                  */
@@ -1297,7 +1295,7 @@ public class SaveTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unbekannter Serverfehler 1 - bitte dem JDownloader Support mit Log melden!", 60 * 60 * 1000l);
         } else if (dl.getConnection().getCompleteContentLength() <= 1048576l) {
             /* Avoid downloading (too small) trash data */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler: Datei vom Server zu klein: " + SIZEUNIT.formatValue(JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit(), dl.getConnection().getCompleteContentLength()), 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler: Datei vom Server zu klein: " + SIZEUNIT.formatValue((SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue(), dl.getConnection().getCompleteContentLength()), 60 * 60 * 1000l);
         }
         String server_filename = getFileNameFromHeader(dl.getConnection());
         server_filename = fixCharIssues(server_filename);

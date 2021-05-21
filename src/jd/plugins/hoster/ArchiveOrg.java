@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -34,6 +32,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "archive.org" }, urls = { "https?://(?:www\\.)?archivedecrypted\\.org/download/[^/]+/[^/]+(/.+)?" })
 public class ArchiveOrg extends PluginForHost {
@@ -244,7 +244,7 @@ public class ArchiveOrg extends PluginForHost {
         } else if (StringUtils.containsIgnoreCase(urlConnection.getURL().getPath(), ".xml")) {
             /* 2021-02-15: Special handling for .xml files */
             return StringUtils.containsIgnoreCase(urlConnection.getContentType(), "xml");
-        } else if (StringUtils.containsIgnoreCase(urlConnection.getURL().getPath(), ".txt")) {
+        } else if (urlConnection.getURL().getPath().matches("(?i).*\\.(txt|log)$")) {
             /* 2021-05-03: Special handling for .txt files */
             return StringUtils.containsIgnoreCase(urlConnection.getContentType(), "text/plain");
         } else {
