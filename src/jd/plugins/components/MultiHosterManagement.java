@@ -13,6 +13,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.utils.Time;
 
 /**
  * Instead of duplication we create a class
@@ -39,14 +40,16 @@ public class MultiHosterManagement {
 
     private final Map<String, Map<Object, Map<String, UnavailableHost>>> dataBase = new HashMap<String, Map<Object, Map<String, UnavailableHost>>>();
 
-    protected synchronized Map<Object, Map<String, UnavailableHost>> getDB() {
+    protected Map<Object, Map<String, UnavailableHost>> getDB() {
         final String host = getHost();
-        Map<Object, Map<String, UnavailableHost>> ret = dataBase.get(host);
-        if (ret == null) {
-            ret = new HashMap<Object, Map<String, UnavailableHost>>();
-            dataBase.put(host, ret);
+        synchronized (dataBase) {
+            Map<Object, Map<String, UnavailableHost>> ret = dataBase.get(host);
+            if (ret == null) {
+                ret = new HashMap<Object, Map<String, UnavailableHost>>();
+                dataBase.put(host, ret);
+            }
+            return ret;
         }
-        return ret;
     }
 
     protected String getHost() {
@@ -70,7 +73,7 @@ public class MultiHosterManagement {
         final Map<Object, Map<String, UnavailableHost>> db = getDB();
         synchronized (db) {
             // null(multihosterwide) && AccountType && Account
-            final UnavailableHost nue = new UnavailableHost(System.currentTimeMillis() + timeout, reason);
+            final UnavailableHost nue = new UnavailableHost(Time.systemIndependentCurrentJVMTimeMillis() + timeout, reason);
             Map<String, UnavailableHost> unavailableMap = db.get(account);
             if (unavailableMap == null) {
                 unavailableMap = new HashMap<String, UnavailableHost>();
@@ -104,8 +107,8 @@ public class MultiHosterManagement {
                     if (lastUnavailable == null) {
                         // never can download from
                         throw new PluginException(LinkStatus.ERROR_FATAL, "Not possible to download from " + downloadLink.getHost());
-                    } else if (System.currentTimeMillis() < lastUnavailable) {
-                        final long wait = lastUnavailable - System.currentTimeMillis();
+                    } else if (Time.systemIndependentCurrentJVMTimeMillis() < lastUnavailable) {
+                        final long wait = lastUnavailable - Time.systemIndependentCurrentJVMTimeMillis();
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temporarily unavailable by this MultiHoster Provider: " + errorReason != null ? errorReason : "via " + getHost(), wait);
                     } else {
                         unavailableMap.remove(downloadLink.getHost());
