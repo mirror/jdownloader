@@ -62,14 +62,6 @@ public class HighWayMe2 extends HighWayCore {
     }
 
     @Override
-    public void reset() {
-    }
-
-    @Override
-    public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
     protected void exceptionAccountInvalid(final Account account) throws PluginException {
         if (account.hasProperty(PROPERTY_ACCOUNT_MAXCHUNKS) && !account.hasProperty(PROPERTY_ACCOUNT_API_MIGRATION_MESSAGE_DISPLAYED)) {
             /**
@@ -176,5 +168,13 @@ public class HighWayMe2 extends HighWayCore {
         thread.setDaemon(true);
         thread.start();
         return thread;
+    }
+
+    @Override
+    public void reset() {
+    }
+
+    @Override
+    public void resetDownloadlink(DownloadLink link) {
     }
 }

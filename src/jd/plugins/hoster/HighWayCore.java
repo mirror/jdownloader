@@ -25,8 +25,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.ConditionalSkipReasonException;
 import org.jdownloader.plugins.WaitingSkipReason;
@@ -34,6 +34,8 @@ import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -233,9 +235,9 @@ public abstract class HighWayCore extends UseNet {
                          */
                         final String msg;
                         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            msg = "Download von diesem Hoster aktuell nicht möglich: Zu viele gleichzeitige Downloads";
+                            msg = "Download von diesem Hoster aktuell nicht möglich: Zu viele gleichzeitige Downloads (max " + maxDlsForCurrentHost + ")";
                         } else {
-                            msg = "Downloads of this host are currently not possible: Too many simultaneous downloads";
+                            msg = "Downloads of this host are currently not possible: Too many simultaneous downloads (max " + maxDlsForCurrentHost + ")";
                         }
                         throw new ConditionalSkipReasonException(new WaitingSkipReason(CAUSE.HOST_TEMP_UNAVAILABLE, 15 * 1000, msg));
                     }
@@ -429,12 +431,12 @@ public abstract class HighWayCore extends UseNet {
         final Map<String, Object> accountInfo = (Map<String, Object>) entries.get("user");
         final int accountResume = ((Number) accountInfo.get("resume")).intValue();
         final long premiumUntil = ((Number) accountInfo.get("premium_bis")).longValue();
-        final long premiumTraffic = ((Number) accountInfo.get("premium_traffic")).longValue();
+        // final long premiumTraffic = ((Number) accountInfo.get("premium_traffic")).longValue();
         final long premiumTrafficMax = ((Number) accountInfo.get("premium_max")).longValue();
         final long trafficLeftToday = ((Number) accountInfo.get("traffic_remain_today")).longValue();
         /* Set account type and account information */
         if (((Boolean) entries.get("premium")).booleanValue() || premiumUntil > 0 && premiumTrafficMax > 0) {
-            ai.setTrafficLeft(premiumTraffic);
+            ai.setTrafficLeft(trafficLeftToday);
             ai.setTrafficMax(premiumTrafficMax);
             ai.setValidUntil(premiumUntil * 1000, this.br);
             account.setType(AccountType.PREMIUM);
@@ -453,13 +455,9 @@ public abstract class HighWayCore extends UseNet {
             account.setType(AccountType.FREE);
         }
         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-            /*
-             * TODO: Change SizeFormatter.formatBytes to something which returns the size unit depending on the global JD setting ("TiB",
-             * "TB").
-             */
-            ai.setStatus(accountInfo.get("type").toString() + " | Traffic übrig heute: " + SizeFormatter.formatBytes(trafficLeftToday));
+            ai.setStatus(accountInfo.get("type").toString() + " | Heute übrig: " + SIZEUNIT.formatValue(JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit(), trafficLeftToday));
         } else {
-            ai.setStatus(accountInfo.get("type").toString() + " | Traffic left today: " + SizeFormatter.formatBytes(trafficLeftToday));
+            ai.setStatus(accountInfo.get("type").toString() + " | Remaining today: " + SIZEUNIT.formatValue(JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit(), trafficLeftToday));
         }
         final Map<String, Object> usenetLogins = (Map<String, Object>) accountInfo.get("usenet");
         if (this.useApikeyLogin()) {
