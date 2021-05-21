@@ -73,14 +73,6 @@ public class SimplyPremiumCom2 extends HighWayCore {
     }
 
     @Override
-    public void reset() {
-    }
-
-    @Override
-    public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
     public List<UsenetServer> getAvailableUsenetServer() {
         final List<UsenetServer> ret = new ArrayList<UsenetServer>();
         ret.addAll(UsenetServer.createServerList("reader.simply-premium.com", false, 119));
@@ -274,5 +266,13 @@ public class SimplyPremiumCom2 extends HighWayCore {
         public Account getAccount() {
             return new Account(null, getPassword());
         }
+    }
+
+    @Override
+    public void reset() {
+    }
+
+    @Override
+    public void resetDownloadlink(final DownloadLink link) {
     }
 }
