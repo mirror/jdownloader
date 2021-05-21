@@ -427,13 +427,11 @@ public abstract class HighWayCore extends UseNet {
         this.checkErrors(this.br, account);
         final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final Map<String, Object> accountInfo = (Map<String, Object>) entries.get("user");
-        int account_maxdls = ((Number) accountInfo.get("max_connection")).intValue();
-        account_maxdls = this.correctMaxdls(account_maxdls);
-        final int account_resume = ((Number) accountInfo.get("resume")).intValue();
+        final int accountResume = ((Number) accountInfo.get("resume")).intValue();
         final long premiumUntil = ((Number) accountInfo.get("premium_bis")).longValue();
         final long premiumTraffic = ((Number) accountInfo.get("premium_traffic")).longValue();
         final long premiumTrafficMax = ((Number) accountInfo.get("premium_max")).longValue();
-        final long trafficLeftToday = ((Long) accountInfo.get("traffic_remain_today")).longValue();
+        final long trafficLeftToday = ((Number) accountInfo.get("traffic_remain_today")).longValue();
         /* Set account type and account information */
         if (((Boolean) entries.get("premium")).booleanValue() || premiumUntil > 0 && premiumTrafficMax > 0) {
             ai.setTrafficLeft(premiumTraffic);
@@ -455,15 +453,23 @@ public abstract class HighWayCore extends UseNet {
             account.setType(AccountType.FREE);
         }
         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-            ai.setStatus(account.getType() + " | Traffic übrig heute: " + SizeFormatter.formatBytes(trafficLeftToday));
+            ai.setStatus(accountInfo.get("type").toString() + " | Traffic übrig heute: " + SizeFormatter.formatBytes(trafficLeftToday));
         } else {
-            ai.setStatus(account.getType() + " | Traffic left today: " + SizeFormatter.formatBytes(trafficLeftToday));
+            ai.setStatus(accountInfo.get("type").toString() + " | Traffic left today: " + SizeFormatter.formatBytes(trafficLeftToday));
+        }
+        final Map<String, Object> usenetLogins = (Map<String, Object>) accountInfo.get("usenet");
+        if (this.useApikeyLogin()) {
+            /* Try to set unique username as user could enter anything in the username field in this case */
+            final String uniqueUsername = (String) usenetLogins.get("username");
+            if (!StringUtils.isEmpty(uniqueUsername)) {
+                account.setUser(uniqueUsername);
+            }
         }
         account.setConcurrentUsePossible(true);
         /* Set supported hosts, host specific limits and account limits. */
         account.setProperty(PROPERTY_ACCOUNT_MAXCHUNKS, this.correctChunks(((Number) accountInfo.get("max_chunks")).intValue()));
-        account.setMaxSimultanDownloads(account_maxdls);
-        if (account_resume == 1) {
+        account.setMaxSimultanDownloads(correctMaxdls(((Number) accountInfo.get("max_connection")).intValue()));
+        if (accountResume == 1) {
             account.setProperty(PROPERTY_ACCOUNT_RESUME, true);
         } else {
             account.setProperty(PROPERTY_ACCOUNT_RESUME, false);
@@ -473,7 +479,6 @@ public abstract class HighWayCore extends UseNet {
             hostMaxchunksMap.clear();
             hostRabattMap.clear();
             hostMaxdlsMap.clear();
-            account.setMaxSimultanDownloads(account_maxdls);
             /* Available hosts are returned by API depending on users' account type e.g. free users have much less supported hosts. */
             final List<Object> array_hoster = (List) entries.get("hoster");
             for (final Object hoster : array_hoster) {
@@ -509,12 +514,9 @@ public abstract class HighWayCore extends UseNet {
             }
         }
         /* Get- and store usenet logindata. These can differ from the logindata the user has added but may as well be equal to those. */
-        final Map<String, Object> usenetLogins = (Map<String, Object>) accountInfo.get("usenet");
         if (usenetLogins != null) {
-            final String usenetUsername = (String) usenetLogins.get("username");
-            final String usenetPassword = (String) usenetLogins.get("pass");
-            ai.setProperty("usenetU", usenetUsername);
-            ai.setProperty("usenetP", usenetPassword);
+            ai.setProperty("usenetU", usenetLogins.get("username"));
+            ai.setProperty("usenetP", usenetLogins.get("pass"));
         } else {
             supportedHosts.remove("usenet");
             supportedHosts.remove("Usenet");
