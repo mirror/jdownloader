@@ -18,12 +18,15 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 import org.jdownloader.plugins.components.config.XFSConfigVideoDdownloadCom;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -249,9 +252,9 @@ public class DdownloadCom extends XFileSharingProBasic {
                 if (premium_extra_traffic > 0) {
                     traffic_left += premium_extra_traffic;
                     if (ai.getStatus() != null) {
-                        ai.setStatus(ai.getStatus() + " | Extra traffic available: " + SizeFormatter.formatBytes(premium_extra_traffic));
+                        ai.setStatus(ai.getStatus() + " | Extra traffic available: " + SIZEUNIT.formatValue(JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit(), premium_extra_traffic));
                     } else {
-                        ai.setStatus("Premium account | Extra traffic available: " + SizeFormatter.formatBytes(premium_extra_traffic));
+                        ai.setStatus("Premium account | Extra traffic available: " + SIZEUNIT.formatValue(JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit(), premium_extra_traffic));
                     }
                 }
             }
