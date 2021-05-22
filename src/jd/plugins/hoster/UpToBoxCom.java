@@ -419,6 +419,7 @@ public class UpToBoxCom extends antiDDoSForHost {
             } catch (final IOException e) {
                 logger.log(e);
             }
+            this.checkErrorsWebsite(link, null);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
         /* Save final downloadurl for later usage */
@@ -484,6 +485,12 @@ public class UpToBoxCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Website error: 'Warning: Your ip adress may come from a VPN. Please submit your VPN'", 15 * 60 * 1000);
         } else if (br.containsHTML("<h1>\\s*Banned\\s*</h1>|>\\s*We suspected fraudulent activity from your connection")) {
             throw new AccountUnavailableException("Account banned", 3 * 60 * 60 * 1000l);
+        } else if (br.containsHTML("Please use the original uptobox link|Your IP have changed between download link generation and this page|You are using a VPN/Proxy or a data saver|Someone other than you generated this link")) {
+            /*
+             * Most likely an extreme edge case: User has switched IP outside JD between waittime and final downloadlink generation ->
+             * Hotlink protection kicks in
+             */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hot linking is not allowed on Uptobox", 3 * 60 * 1000l);
         }
     }
 
@@ -698,11 +705,12 @@ public class UpToBoxCom extends antiDDoSForHost {
             } else if (!verifySession) {
                 logger.info("Trust apikey without verification");
                 return;
+            } else {
+                logger.info("Performing full login");
+                this.getPage(API_BASE + "/user/me?token=" + Encoding.urlEncode(apikey));
+                this.checkErrorsAPI(this.getDownloadLink(), account);
+                account.setProperty(PROPERTY_timestamp_lastcheck, System.currentTimeMillis());
             }
-            logger.info("Performing full login");
-            this.getPage(API_BASE + "/user/me?token=" + Encoding.urlEncode(apikey));
-            this.checkErrorsAPI(this.getDownloadLink(), account);
-            account.setProperty(PROPERTY_timestamp_lastcheck, System.currentTimeMillis());
         }
     }
 
