@@ -18,10 +18,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -35,8 +33,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imx.to" }, urls = { "https?://(?:www\\.)?imx\\.to/(?:i/|img\\-)([a-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imx.to" }, urls = { "https?://(?:www\\.)?imx\\.to/(u/(?:i|t)/\\d+/\\d+/\\d+/([a-z0-9]+)\\.[a-z]+|(?:i/|img\\-)[a-z0-9]+)" })
 public class ImxTo extends PluginForHost {
+    private static final String PROPERTY_DIRECTURL = "directurl";
+    private static final String TYPE_THUMBNAIL     = "(?i)https?://[^/]+/u/t/\\d+/\\d+/\\d+/([a-z0-9]+)\\.[a-z]+";
+    private static final String TYPE_FULLSIZE      = "(?i)https?://[^/]+/u/i/\\d+/\\d+/\\d+/([a-z0-9]+)\\.[a-z]+";
+
     public ImxTo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -48,19 +50,38 @@ public class ImxTo extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        if (linkid != null) {
-            return linkid;
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
         } else {
             return super.getLinkID(link);
         }
     }
 
+    private String getFID(final DownloadLink link) {
+        if (link.getPluginPatternMatcher() == null) {
+            return null;
+        } else if (link.getPluginPatternMatcher().matches(TYPE_THUMBNAIL)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_THUMBNAIL).getMatch(0);
+        } else if (link.getPluginPatternMatcher().matches(TYPE_FULLSIZE)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_FULLSIZE).getMatch(0);
+        } else {
+            /* Assume we have TYPE_FULLSIZE */
+            return new Regex(link.getPluginPatternMatcher(), "([a-z0-9]+)$").getMatch(0);
+        }
+    }
+
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        final String linkid = getLinkID(link);
-        if (linkid != null) {
-            final String newurl = "https://" + this.getHost() + "/i/" + linkid;
+        final String fid = getFID(link);
+        if (fid != null) {
+            /* 2021-05-25: Don't do this because this way we won't get the original filenames! */
+            // if (link.getPluginPatternMatcher().matches(TYPE_FULLSIZE)) {
+            // link.setProperty(PROPERTY_DIRECTURL, link.getPluginPatternMatcher());
+            // } else if (link.getPluginPatternMatcher().matches(TYPE_THUMBNAIL)) {
+            // link.setProperty(PROPERTY_DIRECTURL, link.getPluginPatternMatcher().replace("/u/t/", "/u/i/"));
+            // }
+            final String newurl = "https://" + this.getHost() + "/i/" + fid;
             link.setPluginPatternMatcher(newurl);
             /*
              * Important as we pickup the 'img-' URLs without '.html' ending and we do not want the user to have broken content-URLs in JD!
@@ -71,80 +92,121 @@ public class ImxTo extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link));
+        }
         this.setBrowserExclusive();
-        link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
-        final String linkid = this.getLinkID(link);
+        if (this.checkDirectLink(link, PROPERTY_DIRECTURL) != null) {
+            logger.info("Availablecheck via directurl complete");
+            return AvailableStatus.TRUE;
+        }
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(linkid)) {
+        br.getPage("https://" + this.getHost() + "/i/" + this.getFID(link));
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(this.getFID(link))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>IMX\\.to / ([^<>\"]+)</title>").getMatch(0);
-        if (filename == null) {
-            filename = linkid;
+        getAndSetFilename(link);
+        /* Find- and set directurl so we can save time and requests on downloadstart. */
+        final String dllink = findDownloadurl(this.br);
+        if (dllink != null) {
+            link.setProperty(PROPERTY_DIRECTURL, dllink);
         }
-        final String existingExt = getFileNameExtensionFromString(filename);
-        if (existingExt == null) {
-            filename += ".jpg";
-        }
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
+    }
+
+    private void getAndSetFilename(final DownloadLink link) {
+        String filename = br.getRegex("<title>IMX\\.to / ([^<>\"]+)</title>").getMatch(0);
+        if (filename != null) {
+            final String existingExt = getFileNameExtensionFromString(filename);
+            if (existingExt == null) {
+                filename += ".jpg";
+            }
+            link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        }
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        String dllink = checkDirectLink(link, "directlink");
-        if (dllink == null) {
+        if (!this.attemptStoredDownloadurlDownload(link)) {
+            requestFileInformation(link);
             /* Form is not always present */
             final Form continueForm = br.getFormbyKey("imgContinue");
             if (continueForm != null) {
+                logger.info("Sending imgContinue Form...");
                 br.submitForm(continueForm);
+                getAndSetFilename(link);
             }
-            dllink = br.getRegex("\"(https?://[^/]+/u/i/[^\"]+)\" ").getMatch(0);
-        }
-        if (StringUtils.isEmpty(dllink)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            final String dllink = findDownloadurl(this.br);
+            if (StringUtils.isEmpty(dllink)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setProperty(PROPERTY_DIRECTURL, dl.getConnection().getURL().toString());
         }
-        link.setProperty("directlink", dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String findDownloadurl(final Browser br) {
+        return br.getRegex("\"(https?://[^/]+/u/i/[^\"]+)\" ").getMatch(0);
+    }
+
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1 || con.getResponseCode() != 200) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    return dllink;
                 }
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                logger.log(e);
+                return null;
             } finally {
-                try {
+                if (con != null) {
                     con.disconnect();
-                } catch (final Throwable e) {
                 }
             }
         }
-        return dllink;
+        return null;
+    }
+
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link) throws Exception {
+        final String url = link.getStringProperty(PROPERTY_DIRECTURL);
+        if (StringUtils.isEmpty(url)) {
+            return false;
+        }
+        try {
+            final Browser brc = br.cloneBrowser();
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, false, 1);
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                return true;
+            } else {
+                brc.followConnection(true);
+                throw new IOException();
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+            try {
+                dl.getConnection().disconnect();
+            } catch (Throwable ignore) {
+            }
+            return false;
+        }
     }
 
     @Override
@@ -158,7 +220,7 @@ public class ImxTo extends PluginForHost {
 
     @Override
     public boolean hasCaptcha(final DownloadLink link, final Account acc) {
-        return true;
+        return false;
     }
 
     @Override
