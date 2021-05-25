@@ -16,6 +16,26 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.config.DropBoxConfig;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
@@ -36,24 +56,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.config.DropBoxConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?(dl\\-web\\.dropbox\\.com/get/.*?w=[0-9a-f]+|([\\w]+:[\\w]+@)?api\\-content\\.dropbox\\.com/\\d+/files/.+|dropboxdecrypted\\.com/.+)" })
 public class DropboxCom extends PluginForHost {
@@ -101,22 +103,25 @@ public class DropboxCom extends PluginForHost {
         }
     }
 
-    public static final String              TYPE_S                                           = "https?://[^/]+/(s/.+)";
-    public static final String              TYPE_SH                                          = "https?://[^/]+/sh/[^/]+/[^/]+/[^/]+";
+    public static final String              TYPE_S                                = "https?://[^/]+/(s/.+)";
+    public static final String              TYPE_SH                               = "https?://[^/]+/sh/[^/]+/[^/]+/[^/]+";
     /* 2019-09-26: API does currently not support this kind of URL. A feature request to support those has been forwarded! */
-    public static final String              TYPE_SC_GALLERY                                  = "https?://[^/]+/sc/.+";
-    private static HashMap<String, Cookies> accountMap                                       = new HashMap<String, Cookies>();
-    private boolean                         temp_unavailable_file_generates_too_much_traffic = false;
-    public static final String              API_BASE                                         = "https://api.dropboxapi.com/2";
-    private static final String             API_BASE_CONTENT                                 = "https://content.dropboxapi.com/2";
+    public static final String              TYPE_SC_GALLERY                       = "https?://[^/]+/sc/.+";
+    private static HashMap<String, Cookies> accountMap                            = new HashMap<String, Cookies>();
+    public static final String              API_BASE                              = "https://api.dropboxapi.com/2";
+    private static final String             API_BASE_CONTENT                      = "https://content.dropboxapi.com/2";
     /** 2019-09-25: Website login is broken - enforce API usage for all users! */
-    private static final boolean            HARDCODED_ENFORCE_API                            = true;
-    public static String                    PROPERTY_MAINPAGE                                = "mainlink";
-    public static String                    PROPERTY_INTERNAL_PATH                           = "serverside_path_to_file_relative";
-    public static String                    PROPERTY_PASSWORD_COOKIE                         = "password_cookie";
-    public static String                    PROPERTY_IS_SINGLE_FILE                          = "is_single_file";
-    public static String                    PROPERTY_ACCOUNT_ACCESS_TOKEN                    = "access_token";
-    public static String                    PROPERTY_ACCOUNT_LAST_AUTH_VALIDATION            = "last_auth_validation";
+    private static final boolean            HARDCODED_ENFORCE_API                 = true;
+    public static String                    PROPERTY_MAINPAGE                     = "mainlink";
+    public static String                    PROPERTY_INTERNAL_PATH                = "serverside_path_to_file_relative";
+    public static String                    PROPERTY_PASSWORD_COOKIE              = "password_cookie";
+    public static String                    PROPERTY_IS_SINGLE_FILE               = "is_single_file";
+    public static String                    PROPERTY_ACCOUNT_ACCESS_TOKEN         = "access_token";
+    public static String                    PROPERTY_ACCOUNT_LAST_AUTH_VALIDATION = "last_auth_validation";
+    public static String                    PROPERTY_DIRECTLINK                   = "directlink";
+    public static String                    PROPERTY_PREVIEW_DOWNLOADLINK         = "preview_downloadlink";
+    public static String                    PROPERTY_ORIGINAL_FILENAME            = "original_filename";
+    public static String                    IS_OFFICIALLY_DOWNLOADABLE            = "is_officially_downloadable";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -132,8 +137,8 @@ public class DropboxCom extends PluginForHost {
         br.setFollowRedirects(true);
         /**
          * 2019-09-24: Consider updating to the new/current website method: https://www.dropbox.com/sharing/fetch_user_content_link. See
-         * also handling for 'TYPE_SC' linktype! </br> This might not be necessary for any other linktype as the old '?dl=1' method is
-         * working just fine!
+         * also handling for 'TYPE_SC' linktype! </br>
+         * This might not be necessary for any other linktype as the old '?dl=1' method is working just fine!
          */
         if (link.getPluginPatternMatcher().matches(TYPE_SC_GALLERY)) {
             String url = link.getPluginPatternMatcher();
@@ -183,9 +188,21 @@ public class DropboxCom extends PluginForHost {
                     } else {
                         /*
                          * 2020-08-04: Rare case: Content is available not not (officially) downloadable. For images, in theory a thumbnail
-                         * might sometimes be downloadable.
+                         * might sometimes be downloadable. Video and audio content can sometimes be streamed.
                          */
-                        throw new PluginException(LinkStatus.ERROR_FATAL, "No download button available");
+                        link.setProperty(IS_OFFICIALLY_DOWNLOADABLE, false);
+                        if (link.hasProperty(PROPERTY_PREVIEW_DOWNLOADLINK)) {
+                            logger.info("No download button available but stream download available --> Correcting filenames");
+                            /*
+                             * TODO: Correct audio filenames all to .mp3 extension, video filenames all to .mp4, photo filenames to .jpeg
+                             * (or URL extension).
+                             */
+                            // final String originalFilename = link.getStringProperty(PROPERTY_ORIGINAL_FILENAME, null);
+                            return AvailableStatus.TRUE;
+                        } else {
+                            logger.info("No download button available");
+                            throw new PluginException(LinkStatus.ERROR_FATAL, "No download button available");
+                        }
                     }
                 } else if (con.getResponseCode() == 404) {
                     try {
@@ -211,13 +228,16 @@ public class DropboxCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
                 } else if (this.looksLikeDownloadableContent(con)) {
                     // this.dllink = con.getURL().toString();
-                    link.setProperty("directlink", dllink);
+                    link.setProperty(PROPERTY_DIRECTLINK, dllink);
+                    link.setProperty(IS_OFFICIALLY_DOWNLOADABLE, true);
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                     String name = getFileNameFromHeader(con);
                     if (!StringUtils.isEmpty(name)) {
-                        name = Encoding.htmlDecode(name).trim();
+                        if (Encoding.isHtmlEntityCoded(name)) {
+                            name = Encoding.htmlDecode(name).trim();
+                        }
                         link.setFinalFileName(name);
                     }
                     return AvailableStatus.TRUE;
@@ -273,8 +293,7 @@ public class DropboxCom extends PluginForHost {
             }
             if (brc.getHttpConnection().getResponseCode() == 429) {
                 /* 2017-01-30 */
-                temp_unavailable_file_generates_too_much_traffic = true;
-                return AvailableStatus.TRUE;
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 429: 'This account's links are generating too much traffic and have been temporarily disabled!'", 60 * 60 * 1000l);
             } else if (brc.containsHTML("images/sharing/error_")) {
                 /* Offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -380,92 +399,96 @@ public class DropboxCom extends PluginForHost {
             return;
         }
         requestFileInformation(link);
-        if (temp_unavailable_file_generates_too_much_traffic) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 429: 'This account's links are generating too much traffic and have been temporarily disabled!'", 60 * 60 * 1000l);
-        }
         /*
          * Important! Files may be password protected but if PROPERTY_PASSWORD_COOKIE has been set before we will not have to send the
          * password again! This is why it is crucial to also check for isPasswordProtectedWebsite here!!
          */
         final boolean resume_supported;
         String dllink = null;
-        if (link.getPluginPatternMatcher().matches(TYPE_SC_GALLERY)) {
-            /* Complete image gallery */
-            if (link.getFinalFileName() != null && link.getFinalFileName().endsWith(".zip")) {
-                /* .zip containing all files of that gallery - this may only happen if the single-object crawler fails */
-                resume_supported = false;
-            } else {
-                /* Single object of a gallery (most likely picture or video) */
-                resume_supported = true;
-            }
-            final String cookie_t = br.getCookie(this.getHost(), "t");
-            if (cookie_t == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final Form dlform = new Form();
-            dlform.setMethod(MethodType.POST);
-            /** 2019-09-26: TODO: Maybe use this for all types of URLs */
-            dlform.setAction("https://www." + this.getHost() + "/sharing/fetch_user_content_link");
-            dlform.put("is_xhr", "true");
-            dlform.put("t", cookie_t);
-            dlform.put("url", link.getPluginPatternMatcher());
-            br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-            /*
-             * All this does is basically change our main URL: https://www.dropbox.com/sc/<value1>/<value2> -->
-             * https://dl-web.dropbox.com/zip_collection/<value1>/<value2>
-             */
-            br.submitForm(dlform);
-            dllink = br.toString();
-            if (!dllink.startsWith("http")) {
-                logger.warning("Failed to find final downloadurl");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        } else if (link.isPasswordProtected() && isPasswordProtectedWebsite(br)) {
-            /* Single file */
-            resume_supported = true;
-            final String content_id = new Regex(br.getURL(), "content_id=([^\\&]+)").getMatch(0);
-            if (content_id == null) {
-                logger.warning("Failed to find content_id");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            Form pwform = this.br.getFormbyProperty("id", "password-form");
-            if (pwform == null) {
-                /* 2019-05-22: New */
-                pwform = this.br.getFormbyAction("/ajax_verify_code");
-            }
-            if (pwform == null) {
-                pwform = new Form();
-                pwform.setMethod(MethodType.POST);
-            }
-            pwform.setAction("https://www.dropbox.com/sm/auth");
-            if (passCode == null) {
-                passCode = getUserInput("Password?", link);
-            }
-            final String cookie_t = br.getCookie(getHost(), "t");
-            if (cookie_t != null) {
-                pwform.put("t", cookie_t);
-            }
-            pwform.put("password", passCode);
-            pwform.put("is_xhr", "true");
-            pwform.put("content_id", content_id);
-            br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-            this.br.submitForm(pwform);
-            /* 2019-09-24: E.g. positive response: {"status": "authed"} */
-            final String status = PluginJSonUtils.getJson(br, "status");
-            if ("error".equalsIgnoreCase(status)) {
-                link.setDownloadPassword(null);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
-            }
-            final String password_cookie = br.getCookie(br.getHost(), "sm_auth");
-            if (!StringUtils.isEmpty(password_cookie)) {
-                /* This may save us some http requests next time! */
-                link.setProperty(PROPERTY_PASSWORD_COOKIE, password_cookie);
-            }
-            link.setDownloadPassword(passCode);
-            dllink = URLHelper.parseLocation(new URL(this.getRootFolderURL(link, link.getPluginPatternMatcher())), "?dl=1");
+        if (link.hasProperty(IS_OFFICIALLY_DOWNLOADABLE) && !link.getBooleanProperty(IS_OFFICIALLY_DOWNLOADABLE, true)) {
+            logger.info("Attempting stream download");
+            dllink = link.getStringProperty(PROPERTY_PREVIEW_DOWNLOADLINK);
+            resume_supported = false;
         } else {
-            resume_supported = true;
-            dllink = URLHelper.parseLocation(new URL(this.getRootFolderURL(link, link.getPluginPatternMatcher())), "&dl=1");
+            logger.info("Attempting official download");
+            if (link.getPluginPatternMatcher().matches(TYPE_SC_GALLERY)) {
+                /* Complete image gallery */
+                if (link.getFinalFileName() != null && link.getFinalFileName().endsWith(".zip")) {
+                    /* .zip containing all files of that gallery - this may only happen if the single-object crawler fails */
+                    resume_supported = false;
+                } else {
+                    /* Single object of a gallery (most likely picture or video) */
+                    resume_supported = true;
+                }
+                final String cookie_t = br.getCookie(this.getHost(), "t");
+                if (cookie_t == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final Form dlform = new Form();
+                dlform.setMethod(MethodType.POST);
+                /** 2019-09-26: TODO: Maybe use this for all types of URLs */
+                dlform.setAction("https://www." + this.getHost() + "/sharing/fetch_user_content_link");
+                dlform.put("is_xhr", "true");
+                dlform.put("t", cookie_t);
+                dlform.put("url", link.getPluginPatternMatcher());
+                br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+                /*
+                 * All this does is basically change our main URL: https://www.dropbox.com/sc/<value1>/<value2> -->
+                 * https://dl-web.dropbox.com/zip_collection/<value1>/<value2>
+                 */
+                br.submitForm(dlform);
+                dllink = br.toString();
+                if (!dllink.startsWith("http")) {
+                    logger.warning("Failed to find final downloadurl");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            } else if (link.isPasswordProtected() && isPasswordProtectedWebsite(br)) {
+                /* Single file */
+                resume_supported = true;
+                final String content_id = new Regex(br.getURL(), "content_id=([^\\&]+)").getMatch(0);
+                if (content_id == null) {
+                    logger.warning("Failed to find content_id");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                Form pwform = this.br.getFormbyProperty("id", "password-form");
+                if (pwform == null) {
+                    /* 2019-05-22: New */
+                    pwform = this.br.getFormbyAction("/ajax_verify_code");
+                }
+                if (pwform == null) {
+                    pwform = new Form();
+                    pwform.setMethod(MethodType.POST);
+                }
+                pwform.setAction("https://www.dropbox.com/sm/auth");
+                if (passCode == null) {
+                    passCode = getUserInput("Password?", link);
+                }
+                final String cookie_t = br.getCookie(getHost(), "t");
+                if (cookie_t != null) {
+                    pwform.put("t", cookie_t);
+                }
+                pwform.put("password", passCode);
+                pwform.put("is_xhr", "true");
+                pwform.put("content_id", content_id);
+                br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+                this.br.submitForm(pwform);
+                /* 2019-09-24: E.g. positive response: {"status": "authed"} */
+                final String status = PluginJSonUtils.getJson(br, "status");
+                if ("error".equalsIgnoreCase(status)) {
+                    link.setDownloadPassword(null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                }
+                final String password_cookie = br.getCookie(br.getHost(), "sm_auth");
+                if (!StringUtils.isEmpty(password_cookie)) {
+                    /* This may save us some http requests next time! */
+                    link.setProperty(PROPERTY_PASSWORD_COOKIE, password_cookie);
+                }
+                link.setDownloadPassword(passCode);
+                dllink = URLHelper.parseLocation(new URL(this.getRootFolderURL(link, link.getPluginPatternMatcher())), "?dl=1");
+            } else {
+                resume_supported = true;
+                dllink = URLHelper.parseLocation(new URL(this.getRootFolderURL(link, link.getPluginPatternMatcher())), "&dl=1");
+            }
         }
         handleDownload(link, dllink, resume_supported);
     }
@@ -476,23 +499,32 @@ public class DropboxCom extends PluginForHost {
             logger.warning("Failed to find final downloadurl");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = dllink.replaceFirst("(?i)/dropbox.com/", "/www.dropbox.com/");
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, 1);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            logger.warning("Final downloadlink lead to HTML code");
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
+        if (dllink.contains(".m3u8")) {
+            /* HLS download (usually only required for stream downloading) */
+            br.getPage(dllink);
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+            dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
+            dl.startDownload();
+        } else {
+            /* http download */
+            dllink = dllink.replaceFirst("(?i)/dropbox.com/", "/www.dropbox.com/");
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, 1);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                logger.warning("Final downloadlink lead to HTML code");
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                final URLConnectionAdapter con = dl.getConnection();
+                if (con.getResponseCode() == 401) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
-            final URLConnectionAdapter con = dl.getConnection();
-            if (con.getResponseCode() == 401) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     @Override
@@ -918,7 +950,8 @@ public class DropboxCom extends PluginForHost {
      * Sets Authorization header. Because once generated, an oauth token is valid 'forever' until user revokes access to application, it
      * must not necessarily be re-validated!
      *
-     * @return true = api_token found and set </br> false = no api_token found
+     * @return true = api_token found and set </br>
+     *         false = no api_token found
      */
     public static boolean setAPILoginHeaders(final Browser br, final Account account) {
         if (account == null || br == null) {
@@ -941,7 +974,8 @@ public class DropboxCom extends PluginForHost {
     }
 
     /**
-     * Also called App-key and can be found here: https://www.dropbox.com/developers/apps </br> TODO: Change this to public static
+     * Also called App-key and can be found here: https://www.dropbox.com/developers/apps </br>
+     * TODO: Change this to public static
      */
     private String getAPIClientID() throws PluginException {
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && force_dev_values) {
