@@ -21,6 +21,14 @@ import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import jd.PluginWrapper;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -32,14 +40,6 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
-
-import jd.PluginWrapper;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "simply-premium.com" }, urls = { "" })
 public class SimplyPremiumCom2 extends HighWayCore {
@@ -84,9 +84,8 @@ public class SimplyPremiumCom2 extends HighWayCore {
     protected void exceptionAccountInvalid(final Account account) throws PluginException {
         if (account.hasProperty(PROPERTY_ACCOUNT_MAXCHUNKS) && !account.hasProperty(PROPERTY_ACCOUNT_API_MIGRATION_MESSAGE_DISPLAYED)) {
             /**
-             * Show this message once for every user after migration to APIv2. </br>
-             * This uses property "usenetU" to determine if this account has ever been checked successfully before. </br>
-             * TODO: Remove this after 2021-09 (some time in 2021-10)
+             * Show this message once for every user after migration to APIv2. </br> This uses property "usenetU" to determine if this
+             * account has ever been checked successfully before. </br> TODO: Remove this after 2021-09 (some time in 2021-10)
              */
             account.setProperty(PROPERTY_ACCOUNT_API_MIGRATION_MESSAGE_DISPLAYED, true);
             showOneTimeLougoutAPIMigrationMessage();

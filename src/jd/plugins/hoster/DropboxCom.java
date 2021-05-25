@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.regex.Pattern;
 
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
@@ -15,26 +16,6 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.config.DropBoxConfig;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -56,6 +37,29 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.controlling.ffmpeg.json.Stream;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.config.DropBoxConfig;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?(dl\\-web\\.dropbox\\.com/get/.*?w=[0-9a-f]+|([\\w]+:[\\w]+@)?api\\-content\\.dropbox\\.com/\\d+/files/.+|dropboxdecrypted\\.com/.+)" })
 public class DropboxCom extends PluginForHost {
@@ -137,8 +141,8 @@ public class DropboxCom extends PluginForHost {
         br.setFollowRedirects(true);
         /**
          * 2019-09-24: Consider updating to the new/current website method: https://www.dropbox.com/sharing/fetch_user_content_link. See
-         * also handling for 'TYPE_SC' linktype! </br>
-         * This might not be necessary for any other linktype as the old '?dl=1' method is working just fine!
+         * also handling for 'TYPE_SC' linktype! </br> This might not be necessary for any other linktype as the old '?dl=1' method is
+         * working just fine!
          */
         if (link.getPluginPatternMatcher().matches(TYPE_SC_GALLERY)) {
             String url = link.getPluginPatternMatcher();
@@ -192,12 +196,6 @@ public class DropboxCom extends PluginForHost {
                          */
                         link.setProperty(IS_OFFICIALLY_DOWNLOADABLE, false);
                         if (link.hasProperty(PROPERTY_PREVIEW_DOWNLOADLINK)) {
-                            logger.info("No download button available but stream download available --> Correcting filenames");
-                            /*
-                             * TODO: Correct audio filenames all to .mp3 extension, video filenames all to .mp4, photo filenames to .jpeg
-                             * (or URL extension).
-                             */
-                            // final String originalFilename = link.getStringProperty(PROPERTY_ORIGINAL_FILENAME, null);
                             return AvailableStatus.TRUE;
                         } else {
                             logger.info("No download button available");
@@ -501,9 +499,41 @@ public class DropboxCom extends PluginForHost {
         }
         if (dllink.contains(".m3u8")) {
             /* HLS download (usually only required for stream downloading) */
-            br.getPage(dllink);
-            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-            dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
+            checkFFmpeg(link, "Download a HLS Stream");
+            final Browser brc = br.cloneBrowser();
+            brc.setFollowRedirects(true);
+            brc.getPage(dllink);
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(brc));
+            if (hlsbest == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl = new HLSDownloader(link, brc, hlsbest.getDownloadurl());
+            final StreamInfo streamInfo = ((HLSDownloader) dl).getProbe();
+            String extension = null;
+            for (final Stream stream : streamInfo.getStreams()) {
+                if ("video".equalsIgnoreCase(stream.getCodec_type())) {
+                    extension = "mov";
+                    break;
+                } else if ("audio".equalsIgnoreCase(stream.getCodec_type())) {
+                    if ("aac".equalsIgnoreCase(stream.getCodec_name())) {
+                        extension = "aac";
+                        break;
+                    } else if ("mp3".equalsIgnoreCase(stream.getCodec_name())) {
+                        extension = "mp3";
+                        break;
+                    }
+                }
+            }
+            if (extension == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                String name = link.getName();
+                final String ext = Files.getExtension(name);
+                if (!StringUtils.equalsIgnoreCase(extension, ext)) {
+                    name = name.replaceFirst(Pattern.quote(ext) + "$", extension);
+                    link.setFinalFileName(name);
+                }
+            }
             dl.startDownload();
         } else {
             /* http download */
@@ -950,8 +980,7 @@ public class DropboxCom extends PluginForHost {
      * Sets Authorization header. Because once generated, an oauth token is valid 'forever' until user revokes access to application, it
      * must not necessarily be re-validated!
      *
-     * @return true = api_token found and set </br>
-     *         false = no api_token found
+     * @return true = api_token found and set </br> false = no api_token found
      */
     public static boolean setAPILoginHeaders(final Browser br, final Account account) {
         if (account == null || br == null) {
@@ -974,8 +1003,7 @@ public class DropboxCom extends PluginForHost {
     }
 
     /**
-     * Also called App-key and can be found here: https://www.dropbox.com/developers/apps </br>
-     * TODO: Change this to public static
+     * Also called App-key and can be found here: https://www.dropbox.com/developers/apps </br> TODO: Change this to public static
      */
     private String getAPIClientID() throws PluginException {
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && force_dev_values) {
