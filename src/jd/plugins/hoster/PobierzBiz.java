@@ -25,6 +25,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -142,7 +144,7 @@ public class PobierzBiz extends PluginForHost {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "yyyy-MM-dd", Locale.ENGLISH));
             }
             ai.setProperty("Available traffic", trafficLeftLong);
-            ai.setStatus(getPhrase("PREMIUM") + " (" + getPhrase("TRAFFIC_LEFT") + ": " + SizeFormatter.formatBytes(trafficLeftLong) + ")");
+            ai.setStatus(getPhrase("PREMIUM") + " (" + getPhrase("TRAFFIC_LEFT") + ": " + SIZEUNIT.formatValue((SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue(), trafficLeftLong) + ")");
         }
         return ai;
     }
@@ -304,9 +306,9 @@ public class PobierzBiz extends PluginForHost {
     public void extendAccountSettingsPanel(Account acc, PluginConfigPanelNG panel) {
         AccountInfo ai = acc.getAccountInfo();
         if (ai != null) {
-            long availableTraffic = Long.parseLong(ai.getProperty("Available traffic").toString(), 10);
+            final long availableTraffic = Long.parseLong(ai.getProperty("Available traffic").toString(), 10);
             if (availableTraffic >= 0) {
-                panel.addStringPair(_GUI.T.lit_traffic_left(), SizeFormatter.formatBytes(availableTraffic));
+                panel.addStringPair(_GUI.T.lit_traffic_left(), SIZEUNIT.formatValue((SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue(), availableTraffic));
             }
         }
     }
