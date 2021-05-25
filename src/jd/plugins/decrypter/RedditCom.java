@@ -306,10 +306,13 @@ public class RedditCom extends PluginForDecrypt {
                 if (externalURL.matches(TYPE_CRAWLED_SELFHOSTED_VIDEO)) {
                     addedRedditSelfhostedVideo = true;
                     dl.setFinalFileName(title + ".mp4");
+                    /* Skip availablecheck as we know that this content is online and is a directurl. */
+                    dl.setAvailable(true);
                 } else if (externalURL.matches(TYPE_CRAWLED_SELFHOSTED_IMAGE)) {
                     dl.setFinalFileName(title + ".jpg");
+                    /* Skip availablecheck as we know that this content is online and is a directurl. */
+                    dl.setAvailable(true);
                 }
-                dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
             if (entries.containsKey("is_gallery") && ((Boolean) entries.get("is_gallery")).booleanValue()) {
