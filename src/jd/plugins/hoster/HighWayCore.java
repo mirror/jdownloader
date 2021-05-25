@@ -58,7 +58,7 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 1, names = {}, urls = {})
 public abstract class HighWayCore extends UseNet {
     /** General API information: According to admin we can 'hammer' the API every 60 seconds */
-    protected static MultiHosterManagement                 mhm                                 = new MultiHosterManagement("test");
+    protected static MultiHosterManagement                 mhm                                 = new MultiHosterManagement();
     private static final String                            TYPE_TV                             = "https?://[^/]+/onlinetv\\.php\\?id=.+";
     private static final String                            TYPE_DIRECT                         = "https?://[^/]+/dlu/[a-z0-9]+/[^/]+";
     private static final int                               STATUSCODE_PASSWORD_NEEDED_OR_WRONG = 13;
