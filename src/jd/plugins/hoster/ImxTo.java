@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -33,11 +31,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imx.to" }, urls = { "https?://(?:www\\.)?imx\\.to/(u/(?:i|t)/\\d+/\\d+/\\d+/([a-z0-9]+)\\.[a-z]+|(?:i/|img\\-)[a-z0-9]+)" })
+import org.appwork.utils.StringUtils;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imx.to" }, urls = { "https?://(?:\\w+\\.)?imx\\.to/((?:u/)?(?:i|t)/\\d+/\\d+/\\d+/([a-z0-9]+)\\.[a-z]+|(?:i/|img\\-)[a-z0-9]+)" })
 public class ImxTo extends PluginForHost {
     private static final String PROPERTY_DIRECTURL = "directurl";
-    private static final String TYPE_THUMBNAIL     = "(?i)https?://[^/]+/u/t/\\d+/\\d+/\\d+/([a-z0-9]+)\\.[a-z]+";
-    private static final String TYPE_FULLSIZE      = "(?i)https?://[^/]+/u/i/\\d+/\\d+/\\d+/([a-z0-9]+)\\.[a-z]+";
+    private static final String TYPE_THUMBNAIL     = "(?i)https?://[^/]+/(?:u/)?t/\\d+/\\d+/\\d+/([a-z0-9]+)\\.[a-z]+";
+    private static final String TYPE_FULLSIZE      = "(?i)https?://[^/]+/(?:u/)?i/\\d+/\\d+/\\d+/([a-z0-9]+)\\.[a-z]+";
 
     public ImxTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -67,7 +67,7 @@ public class ImxTo extends PluginForHost {
             return new Regex(link.getPluginPatternMatcher(), TYPE_FULLSIZE).getMatch(0);
         } else {
             /* Assume we have TYPE_FULLSIZE */
-            return new Regex(link.getPluginPatternMatcher(), "([a-z0-9]+)$").getMatch(0);
+            return new Regex(link.getPluginPatternMatcher(), "/([a-z0-9]+)$").getMatch(0);
         }
     }
 
@@ -86,7 +86,7 @@ public class ImxTo extends PluginForHost {
             /*
              * Important as we pickup the 'img-' URLs without '.html' ending and we do not want the user to have broken content-URLs in JD!
              */
-            link.setContentUrl(newurl);
+            link.setContentUrl(null);
         }
     }
 
@@ -115,7 +115,7 @@ public class ImxTo extends PluginForHost {
     }
 
     private void getAndSetFilename(final DownloadLink link) {
-        String filename = br.getRegex("<title>IMX\\.to / ([^<>\"]+)</title>").getMatch(0);
+        String filename = br.getRegex("<title>\\s*IMX\\.to\\s*/\\s*([^<>\"]+)\\s*</title>").getMatch(0);
         if (filename != null) {
             final String existingExt = getFileNameExtensionFromString(filename);
             if (existingExt == null) {
@@ -142,13 +142,18 @@ public class ImxTo extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             link.setProperty(PROPERTY_DIRECTURL, dl.getConnection().getURL().toString());
         }
@@ -172,6 +177,8 @@ public class ImxTo extends PluginForHost {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                     return dllink;
+                } else {
+                    throw new IOException();
                 }
             } catch (final Exception e) {
                 logger.log(e);
@@ -194,6 +201,9 @@ public class ImxTo extends PluginForHost {
             final Browser brc = br.cloneBrowser();
             dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, false, 1);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                if (dl.getConnection().getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(dl.getConnection().getCompleteContentLength());
+                }
                 return true;
             } else {
                 brc.followConnection(true);
