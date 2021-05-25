@@ -1199,16 +1199,19 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     /*************************************************
      * Methods using alternative API below. All of these require the user to be logged in!
      ***************************************************/
-    /** Crawls all saved data of currently logged-in account. */
+    /**
+     * Crawls all saved items of currently logged-in account: https://www.instagram.com/username/saved/ </br>
+     * Users can save any post: Their own ones or even posts of other users.
+     */
     private void crawlUserSavedObjectsFeedAltAPI(final CryptedLink param, final Account account, final AtomicBoolean loggedIN) throws UnsupportedEncodingException, Exception {
         /* Login is mandatory! */
         loginOrFail(account, loggedIN);
         this.hashtag = new Regex(param.getCryptedUrl(), TYPE_TAGS).getMatch(0);
-        final String usernameURL = new Regex(parameter, TYPE_SAVED_OBJECTS).getMatch(0);
-        if (usernameURL == null) {
+        final String usernameOwnerOfSavedItems = new Regex(parameter, TYPE_SAVED_OBJECTS).getMatch(0);
+        if (usernameOwnerOfSavedItems == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        fp.setName("saved - " + usernameURL);
+        fp.setName("saved - " + usernameOwnerOfSavedItems);
         InstaGramCom.prepBRAltAPI(this.br);
         Map<String, Object> entries;
         String nextid = null;
@@ -1244,7 +1247,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             }
             for (final Object mediaItemO : mediaItems) {
                 final Map<String, Object> mediaItem = (Map<String, Object>) mediaItemO;
-                crawlAlbumAltAPI(param, (Map<String, Object>) mediaItem.get("media"), usernameURL);
+                crawlAlbumAltAPI(param, (Map<String, Object>) mediaItem.get("media"), null);
             }
             numberofCrawledItems += numberofitemsOnThisPage;
             logger.info("Total number of items crawled: " + numberofCrawledItems + " of ??");
