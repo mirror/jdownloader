@@ -150,23 +150,32 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
         return "http://127.0.0.1:" + getBasePort() + "/" + challenge.getHttpPath() + "/";
     }
 
-    protected void openURL(String url) {
-        String[] browserCmd = BrowserSolverService.getInstance().getConfig().getBrowserCommandline();
-        if (browserCmd == null || browserCmd.length == 0) {
-            browserCmd = CFG_GENERAL.BROWSER_COMMAND_LINE.getValue();
-        }
-        browserCmd = CrossSystem.buildBrowserCommandline(browserCmd, url);
-        if (browserCmd != null && browserCmd.length > 0) {
-            final ProcessBuilder pb = ProcessBuilderFactory.create(browserCmd);
-            pb.redirectErrorStream(true);
-            try {
-                pb.start();
-                return;
-            } catch (IOException e) {
-                getLogger().log(e);
+    protected void openURL(final String url) {
+        new Thread("openURL:" + url) {
+            {
+                setDaemon(true);
             }
-        }
-        CrossSystem.openURL(url);
+
+            @Override
+            public void run() {
+                String[] browserCmd = BrowserSolverService.getInstance().getConfig().getBrowserCommandline();
+                if (browserCmd == null || browserCmd.length == 0) {
+                    browserCmd = CFG_GENERAL.BROWSER_COMMAND_LINE.getValue();
+                }
+                browserCmd = CrossSystem.buildBrowserCommandline(browserCmd, url);
+                if (browserCmd != null && browserCmd.length > 0) {
+                    final ProcessBuilder pb = ProcessBuilderFactory.create(browserCmd);
+                    pb.redirectErrorStream(true);
+                    try {
+                        pb.start();
+                        return;
+                    } catch (IOException e) {
+                        getLogger().log(e);
+                    }
+                }
+                CrossSystem.openURL(url);
+            }
+        }.start();
     }
 
     @Override

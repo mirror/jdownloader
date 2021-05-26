@@ -17,9 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -38,7 +35,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pixabay.com" }, urls = { "https?://(?:www\\.)?pixabay\\.com/(?:en/)?(?:(?:photos|illustrations|vectors)/)?([a-z0-9\\-]+)-(\\d+)/?" })
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pixabay.com" }, urls = { "https?://(?:www\\.)?pixabay\\.com/(?:en/)?(?:(?:photos|illustrations|vectors|images/download)/)?([a-z0-9\\-]+)-(\\d+)/?" })
 public class PixaBayCom extends PluginForHost {
     public PixaBayCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -56,7 +57,18 @@ public class PixaBayCom extends PluginForHost {
     private String quality_download_id = null;
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("http://", "https://"));
+        String url = link.getPluginPatternMatcher().replace("http://", "https://");
+        if (StringUtils.containsIgnoreCase(url, "/images/download/")) {
+            final String fid = getFID(link);
+            if (fid != null) {
+                url = "https://pixabay.com/dummy-" + fid;
+            }
+        }
+        link.setPluginPatternMatcher(url);
+    }
+
+    @Override
+    public void setLinkID(DownloadLink link, String linkID) {
     }
 
     @Override
@@ -86,19 +98,22 @@ public class PixaBayCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("?")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        if (StringUtils.containsIgnoreCase(link.getPluginPatternMatcher(), getHost() + "/dummy-")) {
+            link.setPluginPatternMatcher(br.getURL());
+        }
         final String fallback_filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        String filename = br.getRegex("<title>\\s*([^<>]*?)\\s*(?: - Free photo on Pixabay)?</title>").getMatch(0);
+        String filename = br.getRegex("<title>\\s*([^<>]*?)\\s*(?:-\\s*Free photo on Pixabay)?\\s*</title>").getMatch(0);
         /* Find filesize based on whether user has an account or not. Users with account can download the best quality/original. */
         String filesize = null;
         if (aa != null) {
             int heightMax = 0;
             int heightTmp = 0;
-            final String[] qualityInfo = br.getRegex("(<td><input type=\"radio\" name=\"download\".*?/td></tr>)").getColumn(0);
+            final String[] qualityInfo = br.getRegex("(<td>\\s*<input type=\"radio\" name=\"download\".*?/td></tr>)").getColumn(0);
             for (final String quality : qualityInfo) {
                 // logger.info("quality: " + quality);
                 /* Old: TODO: Check if these ones still exist. */
                 boolean isResolution = false;
-                String quality_name = new Regex(quality, "(ORIGINAL|O|S|M|L|XXL|XL|SVG)</td>").getMatch(0);
+                String quality_name = new Regex(quality, "(ORIGINAL|O|S|M|L|XXL|XL|SVG)\\s*</td>").getMatch(0);
                 if (quality_name == null) {
                     /* 2020-11-25: New/current */
                     quality_name = new Regex(quality, "(\\d+(?:x|×)\\d+)").getMatch(0);
@@ -132,9 +147,9 @@ public class PixaBayCom extends PluginForHost {
         }
         /* Also as fallback for account download: Grab publicly visible image (lowest quality). */
         if (filesize == null || quality_download_id == null) { // No account
-            String dllink = br.getRegex("(https?://cdn[^<>\"\\s]+) 1\\.333x").getMatch(0);
+            String dllink = br.getRegex("(https?://cdn[^<>\"\\s]+)\\s*1\\.333x").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("(https?://cdn[^<>\"\\s]+) 1x").getMatch(0);
+                dllink = br.getRegex("(https?://cdn[^<>\"\\s]+)\\s*1x").getMatch(0);
             }
             if (dllink != null) {
                 String ext = dllink.substring(dllink.lastIndexOf("."));
