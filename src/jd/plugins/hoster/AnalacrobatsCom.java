@@ -15,11 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
-import jd.http.Browser.BrowserException;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -86,7 +88,7 @@ public class AnalacrobatsCom extends antiDDoSForHost {
             filename = new Regex(link.getDownloadURL(), type_normal).getMatch(0) + "_" + new Regex(link.getDownloadURL(), type_normal).getMatch(1);
         }
         filename = Encoding.htmlDecode(filename).trim();
-        dllink = jd.plugins.hoster.EvilAngelCom.getDllink(this.br);
+        dllink = getDllink(this.br);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -100,13 +102,11 @@ public class AnalacrobatsCom extends antiDDoSForHost {
         link.setFinalFileName(filename);
         URLConnectionAdapter con = null;
         try {
-            try {
-                con = br.openHeadConnection(dllink);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
+            con = br.openHeadConnection(dllink);
+            if (this.looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -120,10 +120,23 @@ public class AnalacrobatsCom extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
+    /** Find highest quality downloadurl */
+    private static String getDllink(final Browser br) {
+        String dllink = null;
+        final String[] qualities = { "1080p", "720p", "540p", "480p", "240p", "160p" };
+        for (final String quality : qualities) {
+            dllink = br.getRegex("\"(/[^\"]*/download/\\d+/" + quality + "[^\"]*)\"").getMatch(0);
+            if (dllink != null) {
+                break;
+            }
+        }
+        return dllink;
+    }
+
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
@@ -163,14 +176,17 @@ public class AnalacrobatsCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty("premium_directlink", dllink);
