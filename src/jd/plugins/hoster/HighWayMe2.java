@@ -18,13 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import jd.PluginWrapper;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -32,7 +25,14 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "high-way.me" }, urls = { "https?://high\\-way\\.me/onlinetv\\.php\\?id=\\d+[^/]+|https?://[a-z0-9\\-\\.]+\\.high\\-way\\.me/dlu/[a-z0-9]+/[^/]+" })
+import jd.PluginWrapper;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 4, names = { "high-way.me" }, urls = { "https?://high\\-way\\.me/onlinetv\\.php\\?id=\\d+[^/]+|https?://[a-z0-9\\-\\.]+\\.high\\-way\\.me/dlu/[a-z0-9]+/[^/]+" })
 public class HighWayMe2 extends HighWayCore {
     private static final String PROPERTY_ACCOUNT_API_MIGRATION_MESSAGE_DISPLAYED = "API_MIGRATION_MESSAGE_DISPLAYED";
 
@@ -63,10 +63,11 @@ public class HighWayMe2 extends HighWayCore {
 
     @Override
     protected void exceptionAccountInvalid(final Account account) throws PluginException {
-        if (account.hasProperty(PROPERTY_ACCOUNT_MAXCHUNKS) && !account.hasProperty(PROPERTY_ACCOUNT_API_MIGRATION_MESSAGE_DISPLAYED)) {
+        if (account.hasProperty("account_maxchunks") && !account.hasProperty(PROPERTY_ACCOUNT_API_MIGRATION_MESSAGE_DISPLAYED)) {
             /**
-             * Show this message once for every user after migration to APIv2. </br> This uses property "usenetU" to determine if this
-             * account has ever been checked successfully before. </br> TODO: Remove this after 2021-09 (some time in 2021-10)
+             * Show this message once for every user after migration to APIv2. </br>
+             * This uses property "usenetU" to determine if this account has ever been checked successfully before. </br>
+             * TODO: Remove this after 2021-09 (some time in 2021-10)
              */
             account.setProperty(PROPERTY_ACCOUNT_API_MIGRATION_MESSAGE_DISPLAYED, true);
             showOneTimeLougoutAPIMigrationMessage();
@@ -101,8 +102,8 @@ public class HighWayMe2 extends HighWayCore {
                         message += "Hallo liebe(r) high-way NutzerIn\r\n";
                         message += "Wegen technischer Änderungen wurdest du einmalig automatisch ausgeloggt.\r\n";
                         message += "Es gibt ab sofort separate high-way Zugangsdaten für JD, die sich von denen die du für den Browser benötigst unterscheiden.\r\n";
-                        message += "Dies dient der sicherheit deines high-way Accounts!\r\n";
-                        message += "Du findest diese hier: " + apiCredsURLWithoutProtocol + "\r\n";
+                        message += "Dies dient der Sicherheit deines high-way Accounts!\r\n";
+                        message += "Du findest die neuen Zugangsdaten unter: " + apiCredsURLWithoutProtocol + "\r\n";
                         message += "Außerdem kannst du JDownloader ab sofort auch mit aktivierter 2 Faktor Authentifizierung verwenden!\r\n";
                         message += "Es wird empfohlen, die 2 Faktor Authentifizierung hier zu aktivieren: " + twoFALoginSettingsURLWithoutProtocol;
                     } else {
