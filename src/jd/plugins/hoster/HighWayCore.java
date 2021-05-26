@@ -27,6 +27,12 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.BasicNotify;
+import org.jdownloader.gui.notify.BubbleNotify;
+import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
+import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.ConditionalSkipReasonException;
 import org.jdownloader.plugins.WaitingSkipReason;
 import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
@@ -368,7 +374,26 @@ public abstract class HighWayCore extends UseNet {
                     link.setDownloadPassword(passCode);
                 }
                 this.checkErrors(this.br, account);
-                if (entries.containsKey("retry_in_seconds")) {
+                final Object infoMsg = entries.get("info");
+                if (infoMsg instanceof String) {
+                    /* Usually something like "Less than 10% traffic remaining" */
+                    if (!org.appwork.utils.Application.isHeadless()) {
+                        BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
+                            @Override
+                            public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
+                                return new BasicNotify((String) infoMsg, (String) infoMsg, new AbstractIcon(IconKey.ICON_INFO, 32));
+                            }
+                        });
+                    }
+                }
+                /**
+                 * d = download w = wait (retry) q = in queue qn = Download has been added to queue i = direct download without cache s =
+                 * Cached download is ready for downloading
+                 */
+                String cacheStatus = (String) entries.get("cacheStatus");
+                if (entries.containsKey("retry_in_seconds") && entries.containsKey("for_jd") && cacheStatus != null && cacheStatus.matches("d|w|q|qn")) {
+                    /* Old handling/workaround */
+                    logger.info("Old/workarounds cache handling active");
                     /*
                      * File needs to be downloaded to multihost server first --> Retry later and display status e.g. { "status":"success",
                      * "cacheStatus":"d", "retry_in_seconds":5, "percentage_Complete":99, "progress_in_bytes":"73224926/73964572",
@@ -376,6 +401,48 @@ public abstract class HighWayCore extends UseNet {
                      */
                     final String statustext = (String) entries.get("for_jd");
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statustext, ((Integer) entries.get("retry_in_seconds")).intValue() * 1000l);
+                } else if (cacheStatus != null && cacheStatus.matches("d|w|q|qn")) {
+                    /*
+                     * New handling: Check cache status if needed and do a mix between polling handling (max. X seconds) and trying not to
+                     * block download-slots.
+                     */
+                    /* TODO: Update to show the status during waittime (see other cache handlings e.g. LinkSnappyCom cacheDLChecker). */
+                    logger.info("Cache handling active");
+                    final String cachePollingURL = (String) entries.get("cache");
+                    int secondsWaited = 0;
+                    boolean downloadReady = false;
+                    final int sleepSecondsPerLoop = 5;
+                    do {
+                        br.getPage(cachePollingURL);
+                        this.checkErrors(this.br, account);
+                        entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                        cacheStatus = (String) entries.get("cacheStatus");
+                        if (cacheStatus.matches("i|s")) {
+                            downloadReady = true;
+                            if (true) {
+                                /* 2021-05-26: Temp! */
+                                final String statustext = (String) entries.get("for_jd");
+                                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statustext, ((Integer) entries.get("retry_in_seconds")).intValue() * 1000l);
+                            }
+                            break;
+                        } else {
+                            this.sleep(sleepSecondsPerLoop * 1000l, link);
+                            secondsWaited += sleepSecondsPerLoop;
+                            continue;
+                        }
+                        /*
+                         * File needs to be downloaded to multihost server first --> Retry later and display status e.g. {
+                         * "status":"success", "cacheStatus":"d", "retry_in_seconds":5, "percentage_Complete":99,
+                         * "progress_in_bytes":"73224926/73964572", "for_jd":"(73224926/73964572) 99% Please Wait 5 Sec (d)",
+                         * "link":"https://srv15.bla.bla/xyz"}
+                         */
+                    } while (secondsWaited < 90);
+                    if (!downloadReady) {
+                        final String statustext = (String) entries.get("for_jd");
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statustext, ((Integer) entries.get("retry_in_seconds")).intValue() * 1000l);
+                    }
+                } else {
+                    logger.info("Direct download active");
                 }
                 String dllink = (String) entries.get("download");
                 /* Validate URL */
