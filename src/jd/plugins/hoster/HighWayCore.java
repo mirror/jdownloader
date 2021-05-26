@@ -387,8 +387,12 @@ public abstract class HighWayCore extends UseNet {
                     }
                 }
                 /**
-                 * d = download w = wait (retry) q = in queue qn = Download has been added to queue i = direct download without cache s =
-                 * Cached download is ready for downloading
+                 * d = download </br>
+                 * w = wait (retry) </br>
+                 * q = in queue </br>
+                 * qn = Download has been added to queue </br>
+                 * i = direct download without cache </br>
+                 * s = Cached download is ready for downloading
                  */
                 String cacheStatus = (String) entries.get("cacheStatus");
                 if (entries.containsKey("retry_in_seconds") && entries.containsKey("for_jd") && cacheStatus != null && cacheStatus.matches("d|w|q|qn")) {
