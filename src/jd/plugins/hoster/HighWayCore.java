@@ -26,14 +26,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.notify.BasicNotify;
 import org.jdownloader.gui.notify.BubbleNotify;
 import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.ConditionalSkipReasonException;
+import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.plugins.WaitingSkipReason;
 import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
@@ -58,6 +61,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginProgress;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
@@ -386,68 +390,7 @@ public abstract class HighWayCore extends UseNet {
                         });
                     }
                 }
-                /**
-                 * d = download </br>
-                 * w = wait (retry) </br>
-                 * q = in queue </br>
-                 * qn = Download has been added to queue </br>
-                 * i = direct download without cache </br>
-                 * s = Cached download is ready for downloading
-                 */
-                String cacheStatus = (String) entries.get("cacheStatus");
-                if (entries.containsKey("retry_in_seconds") && entries.containsKey("for_jd") && cacheStatus != null && cacheStatus.matches("d|w|q|qn")) {
-                    /* Old handling/workaround */
-                    logger.info("Old/workarounds cache handling active");
-                    /*
-                     * File needs to be downloaded to multihost server first --> Retry later and display status e.g. { "status":"success",
-                     * "cacheStatus":"d", "retry_in_seconds":5, "percentage_Complete":99, "progress_in_bytes":"73224926/73964572",
-                     * "for_jd":"(73224926/73964572) 99% Please Wait 5 Sec (d)", "link":"https://srv15.bla.bla/xyz"}
-                     */
-                    final String statustext = (String) entries.get("for_jd");
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statustext, ((Integer) entries.get("retry_in_seconds")).intValue() * 1000l);
-                } else if (cacheStatus != null && cacheStatus.matches("d|w|q|qn")) {
-                    /*
-                     * New handling: Check cache status if needed and do a mix between polling handling (max. X seconds) and trying not to
-                     * block download-slots.
-                     */
-                    /* TODO: Update to show the status during waittime (see other cache handlings e.g. LinkSnappyCom cacheDLChecker). */
-                    logger.info("Cache handling active");
-                    final String cachePollingURL = (String) entries.get("cache");
-                    int secondsWaited = 0;
-                    boolean downloadReady = false;
-                    final int sleepSecondsPerLoop = 5;
-                    do {
-                        br.getPage(cachePollingURL);
-                        this.checkErrors(this.br, account);
-                        entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                        cacheStatus = (String) entries.get("cacheStatus");
-                        if (cacheStatus.matches("i|s")) {
-                            downloadReady = true;
-                            if (true) {
-                                /* 2021-05-26: Temp! */
-                                final String statustext = (String) entries.get("for_jd");
-                                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statustext, ((Integer) entries.get("retry_in_seconds")).intValue() * 1000l);
-                            }
-                            break;
-                        } else {
-                            this.sleep(sleepSecondsPerLoop * 1000l, link);
-                            secondsWaited += sleepSecondsPerLoop;
-                            continue;
-                        }
-                        /*
-                         * File needs to be downloaded to multihost server first --> Retry later and display status e.g. {
-                         * "status":"success", "cacheStatus":"d", "retry_in_seconds":5, "percentage_Complete":99,
-                         * "progress_in_bytes":"73224926/73964572", "for_jd":"(73224926/73964572) 99% Please Wait 5 Sec (d)",
-                         * "link":"https://srv15.bla.bla/xyz"}
-                         */
-                    } while (secondsWaited < 90);
-                    if (!downloadReady) {
-                        final String statustext = (String) entries.get("for_jd");
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statustext, ((Integer) entries.get("retry_in_seconds")).intValue() * 1000l);
-                    }
-                } else {
-                    logger.info("Direct download active");
-                }
+                this.cacheDLChecker(this.br, link, account);
                 String dllink = (String) entries.get("download");
                 /* Validate URL */
                 dllink = new URL(dllink).toString();
@@ -517,6 +460,105 @@ public abstract class HighWayCore extends UseNet {
             }
             return false;
         }
+    }
+
+    private void cacheDLChecker(final Browser br, final DownloadLink link, final Account account) throws Exception {
+        String status = "Waiting for cache download...";
+        final PluginProgress waitProgress = new PluginProgress(0, 100, null) {
+            protected long lastCurrent    = -1;
+            protected long lastTotal      = -1;
+            protected long startTimeStamp = -1;
+
+            @Override
+            public PluginTaskID getID() {
+                return PluginTaskID.WAIT;
+            }
+
+            @Override
+            public String getMessage(Object requestor) {
+                if (requestor instanceof ETAColumn) {
+                    final long eta = getETA();
+                    if (eta >= 0) {
+                        return TimeFormatter.formatMilliSeconds(eta, 0);
+                    }
+                    return "";
+                }
+                // return status;
+                return "Waiting for cache download...";
+            }
+
+            @Override
+            public void updateValues(long current, long total) {
+                super.updateValues(current, total);
+                if (startTimeStamp == -1 || lastTotal == -1 || lastTotal != total || lastCurrent == -1 || lastCurrent > current) {
+                    lastTotal = total;
+                    lastCurrent = current;
+                    startTimeStamp = System.currentTimeMillis();
+                    // this.setETA(-1);
+                    return;
+                }
+                long currentTimeDifference = System.currentTimeMillis() - startTimeStamp;
+                if (currentTimeDifference <= 0) {
+                    return;
+                }
+                final long speed = (current * 10000) / currentTimeDifference;
+                if (speed == 0) {
+                    return;
+                }
+                long eta = ((total - current) * 10000) / speed;
+                this.setETA(eta);
+            }
+        };
+        waitProgress.setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
+        waitProgress.setProgressSource(this);
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final int maxWaitSeconds = 90;
+        int secondsWaited = 0;
+        final String cachePollingURL = (String) entries.get("cache");
+        try {
+            do {
+                this.checkErrors(br, account);
+                /**
+                 * d = download </br>
+                 * w = wait (retry) </br>
+                 * q = in queue </br>
+                 * qn = Download has been added to queue </br>
+                 * i = direct download without cache </br>
+                 * s = Cached download is ready for downloading
+                 */
+                final String cacheStatus = (String) entries.get("cacheStatus");
+                if (cacheStatus.matches("i|s")) {
+                    logger.info("Stepping out of cache handling");
+                    return;
+                } else {
+                    br.getPage(cachePollingURL);
+                    entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    final int retryInSecondsAPI = ((Number) entries.get("retry_in_seconds")).intValue();
+                    /* Don't wait longer than the max. remaining wait seconds */
+                    final int retryInSeconds = Math.min(retryInSecondsAPI, maxWaitSeconds - secondsWaited);
+                    this.sleep(retryInSeconds * 1000l, link);
+                    secondsWaited += retryInSeconds;
+                    /* TODO: Make use of this message (?!) */
+                    status = (String) entries.get("for_jd");
+                    final Integer currentProgress = ((Number) entries.get("percentage_Complete")).intValue();
+                    this.getDownloadLink().addPluginProgress(waitProgress);
+                    waitProgress.updateValues(currentProgress.intValue(), 100);
+                    for (int sleepRound = 0; sleepRound < retryInSeconds; sleepRound++) {
+                        if (isAbort()) {
+                            throw new PluginException(LinkStatus.ERROR_RETRY);
+                        } else {
+                            Thread.sleep(1000);
+                        }
+                    }
+                    logger.info("Cache handling: Waited " + secondsWaited + " / " + maxWaitSeconds + " | Remaining: " + (maxWaitSeconds - secondsWaited));
+                    continue;
+                }
+            } while (!this.isAbort() && secondsWaited < maxWaitSeconds);
+        } finally {
+            this.getDownloadLink().removePluginProgress(waitProgress);
+        }
+        logger.info("Cache handling: Timeout");
+        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, status, ((Integer) entries.get("retry_in_seconds")).intValue() * 1000l);
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
