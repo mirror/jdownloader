@@ -64,14 +64,13 @@ public class FaceBookComGallery extends PluginForDecrypt {
     /* must be static so all plugins share same lock */
     private static Object       LOCK             = new Object();
     private static final String FACEBOOKMAINPAGE = "https://www.facebook.com";
-    private int                 DIALOGRETURN     = -1;
 
     public static String[] getAnnotationNames() {
         return new String[] { "facebook.com" };
     }
 
     public static String[] getAnnotationUrls() {
-        return new String[] { TYPE_FBSHORTLINK + "|" + TYPE_FB_REDIRECT_TO_EXTERN_SITE + "|" + TYPE_SET_LINK_PHOTO + "|" + TYPE_SET_LINK_VIDEO + "|" + TYPE_PHOTOS_ALBUMS_LINK + "|" + TYPE_PHOTOS_OF_LINK + "|" + TYPE_PHOTOS_ALL_LINK + "|" + TYPE_PHOTOS_STREAM_LINK + "|" + TYPE_PHOTOS_STREAM_LINK_2 + "|" + TYPE_PHOTOS_LINK_2 + "|" + TYPE_GROUPS_PHOTOS + "|" + TYPE_GROUPS_FILES + "|" + TYPE_PROFILE_PHOTOS + "|" + TYPE_PROFILE_ALBUMS + "|" + TYPE_NOTES + "|" + TYPE_MESSAGE };
+        return new String[] { "http://dummy_2021_this_plugin_has_been_broken_for_a_long_time" };
     }
 
     // can be url encoded
@@ -111,11 +110,13 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private final LinkedHashSet<String> dupe                            = new LinkedHashSet<String>();;
     private boolean                     debug                           = false;
 
-    /*
+    /**
      * Dear whoever is looking at this - this is a classic example of spaghetticode. If you like spaghettis, go ahead, and get you some
      * tomatoe sauce and eat it but if not, well have fun re-writing this from scratch ;) Wikipedia:
-     * http://en.wikipedia.org/wiki/Spaghetti_code
+     * http://en.wikipedia.org/wiki/Spaghetti_code </br>
+     * 2021-05-26: Nearly all functionality of this plugin is broken!
      */
+    @Deprecated
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         // for debugging
         if (debug) {
