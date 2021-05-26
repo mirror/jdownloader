@@ -1630,19 +1630,26 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             requestFileInformation(downloadLink);
             final SingleDownloadController dlc = downloadLink.getDownloadLinkController();
             final List<File> locks = new ArrayList<File>();
-            locks.addAll(listProcessFiles(downloadLink));
             HttpServer httpServer = null;
             try {
                 new DownloadLinkDownloadable(downloadLink).checkIfWeCanWrite(new ExceptionRunnable() {
                     @Override
                     public void run() throws Exception {
+                        locks.addAll(listProcessFiles(downloadLink));
                         try {
-                            for (File lock : locks) {
-                                logger.info("Lock " + lock);
-                                dlc.lockFile(lock);
+                            for (final File lock : locks) {
+                                boolean ret = false;
+                                try {
+                                    dlc.lockFile(lock);
+                                    ret = true;
+                                } catch (FileIsLockedException e) {
+                                    throw e;
+                                } finally {
+                                    logger.info("Lock:" + lock + "=" + ret);
+                                }
                             }
                         } catch (FileIsLockedException e) {
-                            for (File lock : locks) {
+                            for (final File lock : locks) {
                                 dlc.unlockFile(lock);
                             }
                             throw e;
@@ -2261,7 +2268,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             default:
             }
         } catch (PluginException e) {
-            e.printStackTrace();
+            logger.log(e);
         }
         return ret;
     }

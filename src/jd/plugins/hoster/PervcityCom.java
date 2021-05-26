@@ -15,10 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -38,6 +37,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PervcityCom extends PluginForHost {
@@ -156,29 +157,22 @@ public class PervcityCom extends PluginForHost {
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+            String filename = br.getRegex("<title>\\s*([^<>\"]*?)\\s*</title>").getMatch(0);
             if (filename == null) {
                 /* Fallback */
                 filename = this.getFID(link);
             }
             link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
-            /* Old handling */
-            // final String setid = this.br.getRegex("\"setId=(\\d+)\"").getMatch(0);
-            // if (setid == null) {
-            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            // }
-            // this.br.postPage("/showsetdata.php", "SetId=" + setid);
-            // if (!this.br.containsHTML("class=\"downloadoption\\-container\"")) {
-            // download_not_yet_possible = true;
-            // return AvailableStatus.TRUE;
-            // }
             /* Find best quality */
             final String downloadHTML = br.getRegex("<select[^>]*>\\s+<option value=\"\" selected=\"selected\">Choose Format</option>(.*?)</select>").getMatch(0);
             final String[] downloadHTMLs = new Regex(downloadHTML, "(<option.*?)</option>").getColumn(0);
             long filesizeMax = 0;
             for (final String html : downloadHTMLs) {
                 String url = new Regex(html, "\"(https?://[^\"]+\\.mp4[^\"]*)\"").getMatch(0);
-                final String filesizeStr = new Regex(html, "\\((\\d+\\.\\d{1,2} (MB|GB))\\)").getMatch(0);
+                if (url == null) {
+                    url = new Regex(html, "\"(/protected/[^\"]+\\.mp4[^\"]*)\"").getMatch(0);
+                }
+                final String filesizeStr = new Regex(html, "\\(\\s*([\\d+\\.]+\\s*(MB|GB))\\s*\\)").getMatch(0);
                 if (url == null || filesizeStr == null) {
                     /* Skip invalid items e.g. non-MP4 items */
                     continue;
@@ -186,7 +180,7 @@ public class PervcityCom extends PluginForHost {
                 final long filesizeTmp = SizeFormatter.getSize(filesizeStr);
                 if (filesizeTmp > filesizeMax) {
                     filesizeMax = filesizeTmp;
-                    this.dllink = url;
+                    this.dllink = br.getURL(url).toString();
                 }
             }
             if (filesizeMax > 0) {
@@ -208,45 +202,23 @@ public class PervcityCom extends PluginForHost {
             throw new AccountRequiredException();
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
             }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
         }
         dl.startDownload();
     }
 
-    // private String checkDirectLink(final DownloadLink link, final String property) {
-    // String dllink = link.getStringProperty(property);
-    // if (dllink != null) {
-    // URLConnectionAdapter con = null;
-    // try {
-    // final Browser br2 = br.cloneBrowser();
-    // con = br2.openHeadConnection(dllink);
-    // if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-    // link.setProperty(property, Property.NULL);
-    // dllink = null;
-    // }
-    // } catch (final Exception e) {
-    // link.setProperty(property, Property.NULL);
-    // dllink = null;
-    // } finally {
-    // try {
-    // con.disconnect();
-    // } catch (final Throwable e) {
-    // }
-    // }
-    // }
-    // return dllink;
-    // }
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return FREE_MAXDOWNLOADS;
@@ -305,7 +277,9 @@ public class PervcityCom extends PluginForHost {
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -336,15 +310,19 @@ public class PervcityCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
             }
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty("premium_directlink", dllink);
         dl.startDownload();

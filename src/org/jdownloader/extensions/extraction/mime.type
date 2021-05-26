@@ -11,6 +11,7 @@ JPG:::ffd8ffee.*:::JPG Image:::((.*\.jpg)|(.*\.jpeg))
 JPG:::ffd8ffdb.*:::JPG Image:::((.*\.jpg)|(.*\.jpeg))
 M4A:::000000206674.*::::::((.*\.m4a)|(.*\.mp4)|(.*\.m4v))
 MDF:::00ffffffffff.*::::::.*\.mdf
+MKA:::1a45.*:::Matroska Audio file:::.*\.mka
 MKV:::1a45.*:::Matroska Video file:::((.*\.mkv)|(.*\.webm)|(.*\.mp4))
 MP3:::000040[a-f0-9]{2}[a-f0-9]{2}00.*::::::.*\.mp3
 MP3:::000064000000.*::::::.*\.mp3

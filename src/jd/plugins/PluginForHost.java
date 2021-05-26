@@ -274,6 +274,14 @@ public abstract class PluginForHost extends Plugin {
         }
     }
 
+    public void setLinkID(DownloadLink link, final String linkID) {
+        if (StringUtils.isEmpty(linkID)) {
+            link.removeProperty(DownloadLink.PROPERTY_LINKDUPEID);
+        } else {
+            link.setProperty(DownloadLink.PROPERTY_LINKDUPEID, linkID);
+        }
+    }
+
     public AccountInfo handleAccountException(final Account account, final LogInterface logger, Throwable throwable) {
         final AccountInfo ai;
         if (account.getAccountInfo() != null) {
