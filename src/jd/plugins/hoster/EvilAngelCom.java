@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -28,6 +29,10 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.EvilangelComConfig;
+import org.jdownloader.plugins.components.config.EvilangelComConfig.Quality;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -122,11 +127,15 @@ public class EvilAngelCom extends antiDDoSForHost {
      */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return this.requestFileInformation(link, account);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         this.dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
-        final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
         final String linkID = this.getFID(link);
         String filename = null;
         final String host = Browser.getHost(link.getPluginPatternMatcher(), true);
@@ -168,8 +177,10 @@ public class EvilAngelCom extends antiDDoSForHost {
                 URLConnectionAdapter con = null;
                 try {
                     con = br.openHeadConnection(dllink);
-                    if (!con.getContentType().contains("html")) {
-                        link.setDownloadSize(con.getLongContentLength());
+                    if (this.looksLikeDownloadableContent(con)) {
+                        if (con.getCompleteContentLength() > 0) {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                         if (StringUtils.isEmpty(filename)) {
                             /* Fallback if everything else fails */
                             filename = Encoding.htmlDecode(getFileNameFromHeader(con));
@@ -185,8 +196,8 @@ public class EvilAngelCom extends antiDDoSForHost {
                     }
                 }
             }
-        } else if (aa != null) {
-            loginEvilAngelNetwork(aa, false, LOGIN_PAGE, HTML_LOGGEDIN);
+        } else if (account != null) {
+            loginEvilAngelNetwork(account, false, LOGIN_PAGE, HTML_LOGGEDIN);
             if (link.getPluginPatternMatcher().matches(URL_EVILANGEL_FILM)) {
                 getPage(link.getPluginPatternMatcher());
                 if (this.br.getHttpConnection().getResponseCode() == 404) {
@@ -237,8 +248,10 @@ public class EvilAngelCom extends antiDDoSForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                     link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
                 } else {
                     server_issues = true;
@@ -256,26 +269,51 @@ public class EvilAngelCom extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
+    private String getUserPreferredqualityStr() {
+        final Quality quality = PluginJsonConfig.get(EvilangelComConfig.class).getPreferredQuality();
+        switch (quality) {
+        case Q160:
+            return "160p";
+        case Q240:
+            return "240p";
+        case Q360:
+            return "360p";
+        case Q480:
+            return "480p";
+        case Q540:
+            return "540p";
+        case Q720:
+            return "720p";
+        case Q1080:
+            return "1080p";
+        case Q2160:
+            return "2160p";
+        default:
+            /* E.g. BEST */
+            return null;
+        }
+    }
+
     public boolean isFreeDownloadable(final DownloadLink link) {
         return link.getPluginPatternMatcher().matches(URL_EVILANGEL_FREE_TRAILER);
     }
 
     @Override
-    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
-        if (account == null && !isFreeDownloadable(downloadLink)) {
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
+        if (account == null && !isFreeDownloadable(link)) {
             return false;
         } else {
-            return super.canHandle(downloadLink, account);
+            return super.canHandle(link, account);
         }
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        if (!isFreeDownloadable(downloadLink)) {
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        if (!isFreeDownloadable(link)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        handleDownload(downloadLink);
+        handleDownload(link);
     }
 
     private String getVideoTitle() {
@@ -289,23 +327,42 @@ public class EvilAngelCom extends antiDDoSForHost {
         return title;
     }
 
-    /** Find highest quality downloadurl */
-    public static String getDllink(final Browser br) {
+    /** Find preferred quality downloadurl */
+    private String getDllink(final Browser br) {
+        final String preferredQualityStr = this.getUserPreferredqualityStr();
         String dllink = null;
-        final String[] qualities = { "1080p", "720p", "540p", "480p", "240p", "160p" };
-        for (final String quality : qualities) {
-            dllink = br.getRegex("\"(/[^\"]*/download/\\d+/" + quality + "[^\"]*)\"").getMatch(0);
+        if (preferredQualityStr == null) {
+            logger.info("User has selected BEST quality");
+        } else {
+            logger.info("User has selected quality: " + preferredQualityStr);
+            dllink = this.findDesiredQuality(br, preferredQualityStr);
             if (dllink != null) {
-                break;
+                logger.info("Found user preferred quality");
+                return dllink;
+            } else {
+                logger.info("Failed to find user selected quality --> Fallback to BEST handling");
             }
         }
-        return dllink;
+        if (dllink == null) {
+            final String[] qualities = { "2160p", "1080p", "720p", "540p", "480p", "240p", "160p" };
+            for (final String qualityStr : qualities) {
+                dllink = this.findDesiredQuality(br, qualityStr);
+                if (dllink != null) {
+                    return dllink;
+                }
+            }
+        }
+        return null;
+    }
+
+    private String findDesiredQuality(final Browser br, final String qualityStr) {
+        return br.getRegex("\"(/[^\"]*/download/\\d+/" + qualityStr + "[^\"]*)\"").getMatch(0);
     }
 
     /** Find highest quality trailer downloadurl (sometimes higher quality than what website player is using) */
     public static String getDllinkTrailer(final Browser br) {
         String dllink = null;
-        final String[] qualities = { "1080p", "720p", "540p", "480p", "240p", "160p" };
+        final String[] qualities = { "2160p", "1080p", "720p", "540p", "480p", "240p", "160p" };
         for (final String quality : qualities) {
             // dllink = br.getRegex("file=\"(/[^<>\"]*?/trailers/[^<>\"]+" + quality + "\\.mp4)\"").getMatch(0);
             dllink = br.getRegex("file=\"(/[^<>\"]*?/trailers/[^<>\"]+\\.mp4)\" size=\"" + quality).getMatch(0);
@@ -512,13 +569,17 @@ public class EvilAngelCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {
@@ -546,16 +607,13 @@ public class EvilAngelCom extends antiDDoSForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
+    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
+        /* No captchas at all */
         return false;
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return EvilangelComConfig.class;
     }
 }
