@@ -21,14 +21,6 @@ import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import jd.PluginWrapper;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -41,7 +33,15 @@ import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "simply-premium.com" }, urls = { "" })
+import jd.PluginWrapper;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 4, names = { "simply-premium.com" }, urls = { "" })
 public class SimplyPremiumCom2 extends HighWayCore {
     private static final String PROPERTY_ACCOUNT_API_MIGRATION_MESSAGE_DISPLAYED = "API_MIGRATION_MESSAGE_DISPLAYED";
 
@@ -82,10 +82,11 @@ public class SimplyPremiumCom2 extends HighWayCore {
 
     @Override
     protected void exceptionAccountInvalid(final Account account) throws PluginException {
-        if (account.hasProperty(PROPERTY_ACCOUNT_MAXCHUNKS) && !account.hasProperty(PROPERTY_ACCOUNT_API_MIGRATION_MESSAGE_DISPLAYED)) {
+        if (account.hasProperty("maxconnections") && !account.hasProperty(PROPERTY_ACCOUNT_API_MIGRATION_MESSAGE_DISPLAYED)) {
             /**
-             * Show this message once for every user after migration to APIv2. </br> This uses property "usenetU" to determine if this
-             * account has ever been checked successfully before. </br> TODO: Remove this after 2021-09 (some time in 2021-10)
+             * Show this message once for every user after migration to APIv2. </br>
+             * This uses property "usenetU" to determine if this account has ever been checked successfully before. </br>
+             * TODO: Remove this after 2021-09 (some time in 2021-10)
              */
             account.setProperty(PROPERTY_ACCOUNT_API_MIGRATION_MESSAGE_DISPLAYED, true);
             showOneTimeLougoutAPIMigrationMessage();
@@ -111,8 +112,8 @@ public class SimplyPremiumCom2 extends HighWayCore {
                         message += "Hallo liebe(r) simply-premium NutzerIn\r\n";
                         message += "Wegen technischer Änderungen wurdest du einmalig automatisch ausgeloggt.\r\n";
                         message += "Ab sofort benötigst du für den simply-premium Login in JD nur noch deinen API Key.\r\n";
-                        message += "Dies dient der Sicherheit deines Accounts.\r\n";
-                        message += "Du findest deinen API Key hier: " + apiCredsURLWithoutProtocol;
+                        message += "Dies dient der Sicherheit deines simply-premium Accounts!\r\n";
+                        message += "Du findest deinen API Key unter: " + apiCredsURLWithoutProtocol;
                     } else {
                         title = "simply-premium.com - you've been logged out";
                         message += "Hello dear simply-premium user\r\n";
