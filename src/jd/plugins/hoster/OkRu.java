@@ -16,19 +16,21 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.OkRuConfig;
+import org.jdownloader.plugins.components.config.OkRuConfig.Quality;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -45,7 +47,6 @@ import jd.plugins.PluginForHost;
 public class OkRu extends PluginForHost {
     public OkRu(PluginWrapper wrapper) {
         super(wrapper);
-        this.setConfigElements();
     }
 
     @Override
@@ -86,15 +87,15 @@ public class OkRu extends PluginForHost {
         br.setFollowRedirects(true);
     }
 
-    public static LinkedHashMap<String, Object> getFlashVars(final Browser br) {
+    public static Map<String, Object> getFlashVars(final Browser br) {
         String playerJsonSrc = br.getRegex("data-module=\"OKVideo\" data-options=\"([^<>]+)\" data-player-container-id=").getMatch(0);
         if (playerJsonSrc == null) {
             return null;
         }
         try {
             playerJsonSrc = playerJsonSrc.replace("&quot;", "\"");
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(playerJsonSrc);
-            entries = (LinkedHashMap<String, Object>) entries.get("flashvars");
+            Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(playerJsonSrc);
+            entries = (Map<String, Object>) entries.get("flashvars");
             String metadataUrl = (String) entries.get("metadataUrl");
             String metadataSrc = (String) entries.get("metadata");
             if (StringUtils.isEmpty(metadataSrc) && metadataUrl != null) {
@@ -103,7 +104,7 @@ public class OkRu extends PluginForHost {
                 metadataSrc = br.toString();
             }
             // final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(metadataSrc);
+            entries = JavaScriptEngineFactory.jsonToJavaMap(metadataSrc);
             return entries;
         } catch (final Throwable e) {
             return null;
@@ -128,7 +129,7 @@ public class OkRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = null;
-        LinkedHashMap<String, Object> entries = getFlashVars(this.br);
+        Map<String, Object> entries = getFlashVars(this.br);
         if (entries != null) {
             filename = (String) JavaScriptEngineFactory.walkJson(entries, "movie/title");
             final Object paymentInfo = entries.get("paymentInfo");
@@ -137,47 +138,61 @@ public class OkRu extends PluginForHost {
                 this.paidContent = true;
             } else {
                 // final String[] qualities = { "full", "hd", "sd", "low", "lowest", "mobile" };
-                final String lowQualityName = "sd";
-                final boolean preferLowQuality = this.getPluginConfig().getBooleanProperty(PREFER_480P, false);
-                LinkedHashMap<String, Object> httpQualityInfo = null;
+                String bestQualityDownloadurl = null;
+                final Map<String, String> collectedQualities = new HashMap<String, String>();
+                Map<String, Object> httpQualityInfo = null;
                 final Object httpQualitiesO = entries.get("videos");
                 if (httpQualitiesO != null) {
                     int maxQuality = 0;
-                    final ArrayList<Object> httpQualities = (ArrayList<Object>) httpQualitiesO;
+                    final List<Object> httpQualities = (List<Object>) httpQualitiesO;
                     for (final Object httpQ : httpQualities) {
-                        httpQualityInfo = (LinkedHashMap<String, Object>) httpQ;
-                        final String quality = (String) httpQualityInfo.get("name");
+                        httpQualityInfo = (Map<String, Object>) httpQ;
+                        final String qualityIdentifier = (String) httpQualityInfo.get("name");
                         final String url = (String) httpQualityInfo.get("url");
-                        if (StringUtils.isEmpty(quality) || StringUtils.isEmpty(url)) {
+                        if (StringUtils.isEmpty(qualityIdentifier) || StringUtils.isEmpty(url)) {
                             continue;
                         }
-                        final int currentQuality;
-                        if (quality.equalsIgnoreCase("full")) {
-                            currentQuality = 200;
-                        } else if (quality.equalsIgnoreCase("hd")) {
-                            currentQuality = 100;
-                        } else if (quality.equalsIgnoreCase("sd")) {
-                            currentQuality = 80;
-                        } else if (quality.equalsIgnoreCase("low")) {
-                            currentQuality = 60;
-                        } else if (quality.equalsIgnoreCase("lowest")) {
-                            currentQuality = 40;
+                        collectedQualities.put(qualityIdentifier, url);
+                        final int currentQualityInt;
+                        if (qualityIdentifier.equalsIgnoreCase("full")) {
+                            currentQualityInt = 200;
+                        } else if (qualityIdentifier.equalsIgnoreCase("hd")) {
+                            currentQualityInt = 100;
+                        } else if (qualityIdentifier.equalsIgnoreCase("sd")) {
+                            currentQualityInt = 80;
+                        } else if (qualityIdentifier.equalsIgnoreCase("low")) {
+                            currentQualityInt = 60;
+                        } else if (qualityIdentifier.equalsIgnoreCase("lowest")) {
+                            currentQualityInt = 50;
+                        } else if (qualityIdentifier.equalsIgnoreCase("mobile")) {
+                            currentQualityInt = 40;
                         } else {
                             /* Mobile or other > 0 */
-                            currentQuality = 1;
+                            currentQualityInt = 1;
+                            logger.info("Unknown qualityIdentifier: " + qualityIdentifier);
                         }
-                        if (preferLowQuality && quality.equalsIgnoreCase(lowQualityName)) {
-                            dllink = url;
-                            break;
-                        } else if (currentQuality > maxQuality) {
-                            dllink = url;
-                            maxQuality = currentQuality;
+                        if (currentQualityInt > maxQuality) {
+                            bestQualityDownloadurl = url;
+                            maxQuality = currentQualityInt;
                         }
                     }
                 }
-                if (StringUtils.isEmpty(dllink)) {
+                final String userPreferredQuality = getUserPreferredqualityStr();
+                if (collectedQualities.containsKey(userPreferredQuality)) {
+                    logger.info("Using user preferred quality: " + userPreferredQuality);
+                    this.dllink = collectedQualities.get(userPreferredQuality);
+                } else if (!StringUtils.isEmpty(bestQualityDownloadurl)) {
+                    logger.info("Using best quality");
+                    this.dllink = bestQualityDownloadurl;
+                } else {
                     /* Prefer http - only use HLS if http is not available! */
+                    logger.info("Trying HLS fallback");
                     dllink = (String) entries.get("hlsManifestUrl");
+                    if (!StringUtils.isEmpty(dllink)) {
+                        logger.info("HLS fallback successful");
+                    } else {
+                        logger.warning("HLS fallback failed");
+                    }
                 }
             }
         }
@@ -329,8 +344,31 @@ public class OkRu extends PluginForHost {
         return free_maxdownloads;
     }
 
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), PREFER_480P, "Prefer download of 480p version instead of the highest video quality?").setDefaultValue(false));
+    private String getUserPreferredqualityStr() {
+        final Quality quality = PluginJsonConfig.get(OkRuConfig.class).getPreferredQuality();
+        switch (quality) {
+        /* 2021-05-27: Seems like mobile is lower than "lowest". */
+        case Q144:
+            return "mobile";
+        case Q240:
+            return "lowest";
+        case Q360:
+            return "low";
+        case Q480:
+            return "sd";
+        case Q720:
+            return "hd";
+        case Q1080:
+            return "full";
+        default:
+            /* E.g. BEST */
+            return null;
+        }
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return OkRuConfig.class;
     }
 
     @Override
