@@ -24,14 +24,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -45,6 +39,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ServusCom extends PluginForHost {
@@ -108,13 +110,13 @@ public class ServusCom extends PluginForHost {
         return fid;
     }
 
-    private static Object        LOCK                                     = new Object();
-    private static String        authToken                                = null;
-    private static long          authLastRefreshedTimestamp               = -1;
-    private static final boolean useNewAPI                                = true;
-    private Map<String, Object>  entries                                  = null;
-    private static final String  PROPERTY_HAS_TRIED_TO_CRAWL_RELEASE_DATE = "HAS_TRIED_TO_CRAWL_RELEASE_DATE";
-    private static final String  PROPERTY_DATE_FORMATTED                  = "DATE_FORMATTED";
+    private static Object                  LOCK                                     = new Object();
+    private static AtomicReference<String> authToken                                = new AtomicReference<String>(null);
+    private static AtomicLong              authLastRefreshedTimestamp               = new AtomicLong(-1);
+    private static final boolean           useNewAPI                                = true;
+    private Map<String, Object>            entries                                  = null;
+    private static final String            PROPERTY_HAS_TRIED_TO_CRAWL_RELEASE_DATE = "HAS_TRIED_TO_CRAWL_RELEASE_DATE";
+    private static final String            PROPERTY_DATE_FORMATTED                  = "DATE_FORMATTED";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -134,13 +136,15 @@ public class ServusCom extends PluginForHost {
         String date = null, title = null, episodename = null, labelGroup = null, description = null;
         final String episodenumber = new Regex(link.getPluginPatternMatcher(), "pisode\\-(\\d+)").getMatch(0);
         String dateFormatted = link.getStringProperty(PROPERTY_DATE_FORMATTED, null);
+        String authToken = null;
         if (useNewAPI) {
             synchronized (LOCK) {
+                authToken = ServusCom.authToken.get();
                 final boolean refreshToken;
                 if (authToken == null) {
                     logger.info("Token refresh needed because none is available");
                     refreshToken = true;
-                } else if (System.currentTimeMillis() - authLastRefreshedTimestamp > 1 * 60 * 60 * 1000l) {
+                } else if (System.currentTimeMillis() - authLastRefreshedTimestamp.get() > 1 * 60 * 60 * 1000l) {
                     logger.info("Token refresh needed because old one is too old");
                     refreshToken = true;
                 } else {
@@ -155,7 +159,8 @@ public class ServusCom extends PluginForHost {
                     if (authToken == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     } else {
-                        authLastRefreshedTimestamp = System.currentTimeMillis();
+                        ServusCom.authToken.set(authToken);
+                        authLastRefreshedTimestamp.set(System.currentTimeMillis());
                     }
                 }
             }

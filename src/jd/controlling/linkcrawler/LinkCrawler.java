@@ -68,6 +68,7 @@ import org.appwork.utils.logging2.ClearableLogInterface;
 import org.appwork.utils.logging2.ClosableLogInterface;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.UniqueAlltimeID;
@@ -116,7 +117,7 @@ public class LinkCrawler {
     private final List<LinkCrawlerTask>                              tasks                       = new ArrayList<LinkCrawlerTask>();
     private final static Set<LinkCrawler>                            CRAWLER                     = new HashSet<LinkCrawler>();
     private final Map<String, Object>                                duplicateFinderContainer;
-    private final Map<String, Set<LazyCrawlerPlugin>>                duplicateFinderCrawler;
+    private final Map<LazyCrawlerPlugin, Set<String>>                duplicateFinderCrawler;
     private final Map<String, CrawledLink>                           duplicateFinderFinal;
     private final Map<String, Object>                                duplicateFinderDeep;
     private final Map<CrawledLink, Object>                           loopPreventionEmbedded;
@@ -619,7 +620,7 @@ public class LinkCrawler {
             setDeepInspector(parentCrawler.getDeepInspector());
         } else {
             duplicateFinderContainer = new HashMap<String, Object>();
-            duplicateFinderCrawler = new HashMap<String, Set<LazyCrawlerPlugin>>();
+            duplicateFinderCrawler = new HashMap<LazyCrawlerPlugin, Set<String>>();
             duplicateFinderFinal = new HashMap<String, CrawledLink>();
             duplicateFinderDeep = new HashMap<String, Object>();
             loopPreventionEmbedded = new HashMap<CrawledLink, Object>();
@@ -3288,21 +3289,25 @@ public class LinkCrawler {
     }
 
     private boolean isDuplicatedCrawling(final LazyCrawlerPlugin lazyC, final CrawledLink cryptedLink) {
-        final String url = cryptedLink.getURL();
-        final String urlDecodedURL = Encoding.urlDecode(url, false);
-        final String value;
-        if (StringUtils.equals(url, urlDecodedURL)) {
-            value = url;
-        } else {
-            value = urlDecodedURL;
+        String url = cryptedLink.getURL();
+        String tmp = Encoding.urlDecode(cryptedLink.getURL(), false);
+        if (!StringUtils.equals(url, tmp)) {
+            url = tmp;
+        }
+        try {
+            tmp = URLHelper.createURL(url).toString();
+            if (!StringUtils.equals(url, tmp)) {
+                url = tmp;
+            }
+        } catch (Exception ignore) {
         }
         synchronized (duplicateFinderCrawler) {
-            Set<LazyCrawlerPlugin> set = duplicateFinderCrawler.get(value);
+            Set<String> set = duplicateFinderCrawler.get(lazyC);
             if (set == null) {
-                set = new HashSet<LazyCrawlerPlugin>();
-                duplicateFinderCrawler.put(value, set);
+                set = new HashSet<String>();
+                duplicateFinderCrawler.put(lazyC, set);
             }
-            return !set.add(lazyC);
+            return !set.add(url);
         }
     }
 

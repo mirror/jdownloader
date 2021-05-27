@@ -408,7 +408,11 @@ public class VimeoCom extends PluginForHost {
                 } else if (url.matches("^https?://player\\.vimeo.com/external/.+")) {
                     return VIMEO_URL_TYPE.EXTERNAL;
                 } else if (url.matches("^https?://player\\.vimeo.com/.+")) {
-                    return VIMEO_URL_TYPE.PLAYER;
+                    if (url.matches(".*(\\?|&)portfolio_id=\\d+.*")) {
+                        return VIMEO_URL_TYPE.RAW;
+                    } else {
+                        return VIMEO_URL_TYPE.PLAYER;
+                    }
                 } else if (url.matches("^https?://(www\\.)?vimeo.com/showcase/\\d+(/embed)?")) {
                     return VIMEO_URL_TYPE.SHOWCASE;
                 }

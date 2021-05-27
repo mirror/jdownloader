@@ -46,9 +46,8 @@ import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "simply-premium.com" }, urls = { "" })
 public class SimplyPremiumCom extends PluginForHost {
-    private static final String          API_BASE = "https://www.simply-premium.com";
-    private static String                APIKEY   = null;
-    private static Object                LOCK     = new Object();
+    private final String                 API_BASE = "https://www.simply-premium.com";
+    private String                       APIKEY   = null;
     private static MultiHosterManagement mhm      = new MultiHosterManagement("simply-premium.com");
 
     public SimplyPremiumCom(PluginWrapper wrapper) {
@@ -329,7 +328,7 @@ public class SimplyPremiumCom extends PluginForHost {
     }
 
     private void getapikey(final Account acc) throws IOException, Exception {
-        synchronized (LOCK) {
+        synchronized (acc) {
             boolean acmatch = Encoding.urlEncode(acc.getUser()).equals(acc.getStringProperty("name", Encoding.urlEncode(acc.getUser())));
             if (acmatch) {
                 acmatch = Encoding.urlEncode(acc.getPass()).equals(acc.getStringProperty("pass", Encoding.urlEncode(acc.getPass())));

@@ -13,17 +13,11 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultIntValue;
-import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -42,15 +36,31 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "otr.datenkeller.net" }, urls = { "https?://otr\\.datenkeller\\.(?:at|net)/\\?(?:file|getFile)=.+" })
 public class OtrDatenkellerNet extends PluginForHost {
+    public static AtomicReference<String> agent = new AtomicReference<String>(null);
 
-    public static String        agent             = RandomUserAgent.generate();
+    private String getUserAgent() {
+        while (true) {
+            String agent = OtrDatenkellerNet.agent.get();
+            if (agent == null) {
+                OtrDatenkellerNet.agent.compareAndSet(null, RandomUserAgent.generate());
+            } else {
+                return agent;
+            }
+        }
+    }
+
     private final String        DOWNLOADAVAILABLE = "onclick=\"startCount";
     private final String        MAINPAGE          = "http://otr.datenkeller.net";
     private final String        API_BASE_URL      = "https://otr.datenkeller.net/api.php";
     private static final String APIVERSION        = "1";
-
     private String              api_waitaws_url   = null;
 
     public static interface OtrDatenKellerInterface extends PluginConfigInterface {
@@ -179,7 +189,7 @@ public class OtrDatenkellerNet extends PluginForHost {
         /* Use random UA again here because we do not use the same API as in linkcheck for free downloads */
         br.setFollowRedirects(true);
         br.clearCookies(this.getHost());
-        br.getHeaders().put("User-Agent", agent);
+        br.getHeaders().put("User-Agent", getUserAgent());
         final String dlPage = getDlpage(downloadLink);
         String dllink = checkDirectLink(downloadLink, "free_finallink");
         if (dllink == null) {
@@ -210,13 +220,11 @@ public class OtrDatenkellerNet extends PluginForHost {
                 br2.getPage("https://staticaws.lastverteiler.net/images/style.css");
                 br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/combo.js?r300613");
                 br2.getPage("https://otr.datenkeller.net/otrfuncs/xajax_js/xajax_core.js");
-
                 br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/jquery-ui-1.8.16.custom.min.js");
                 br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/jquery.jmNotify.js");
                 br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/jquery.cookie.js");
                 br2.openGetConnection("https://staticaws.lastverteiler.net/images/favicon.ico");
                 br2.openGetConnection("https://otr.datenkeller.net/images/de.gif");
-
                 br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/countMe.js");
                 downloadLink.getLinkStatus().setStatusText("Waiting for ticket...");
                 final int minutes = PluginJsonConfig.get(OtrDatenKellerInterface.class).getWaitForTicket();
@@ -224,7 +232,6 @@ public class OtrDatenkellerNet extends PluginForHost {
                 final int maxloops = 2250 / 10 * minutes / 60; // wait x minutes
                 for (int i = 1; i <= maxloops; i++) {
                     br2 = br.cloneBrowser();
-
                     /* Whenever we got an otrUID the first time, we can use it for the whole process */
                     if (api_otrUID == null) {
                         api_otrUID = br.getRegex("waitaws\\.lastverteiler\\.net/([^<>\"]*?)/").getMatch(0);
@@ -233,7 +240,6 @@ public class OtrDatenkellerNet extends PluginForHost {
                         /* Basically the same/not relevant */
                         api_otrUID = br.getCookie("http://otr.datenkeller.net/", "otrUID");
                     }
-
                     if (api_otrUID != null) {
                         logger.info("Newway: New way active");
                         if (!api_otrUID_used) {
@@ -515,7 +521,6 @@ public class OtrDatenkellerNet extends PluginForHost {
     // br.getRequest().setHtmlCode(br.toString().replace(remove, ""));
     // }
     // }
-
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         /*

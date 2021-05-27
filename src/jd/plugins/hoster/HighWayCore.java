@@ -23,6 +23,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import jd.PluginWrapper;
+import jd.controlling.AccountController;
+import jd.http.Browser;
+import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginProgress;
+import jd.plugins.components.MultiHosterManagement;
+import jd.plugins.components.PluginJSonUtils;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
@@ -44,26 +64,6 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
-
-import jd.PluginWrapper;
-import jd.controlling.AccountController;
-import jd.http.Browser;
-import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountUnavailableException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginProgress;
-import jd.plugins.components.MultiHosterManagement;
-import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 1, names = {}, urls = {})
 public abstract class HighWayCore extends UseNet {
@@ -105,8 +105,7 @@ public abstract class HighWayCore extends UseNet {
     }
 
     /**
-     * API docs: https://high-way.me/threads/highway-api.201/ </br>
-     * According to admin we can 'hammer' the API every 60 seconds
+     * API docs: https://high-way.me/threads/highway-api.201/ </br> According to admin we can 'hammer' the API every 60 seconds
      */
     protected abstract String getAPIBase();
 
@@ -518,12 +517,8 @@ public abstract class HighWayCore extends UseNet {
             do {
                 this.checkErrors(br, account);
                 /**
-                 * d = download </br>
-                 * w = wait (retry) </br>
-                 * q = in queue </br>
-                 * qn = Download has been added to queue </br>
-                 * i = direct download without cache </br>
-                 * s = Cached download is ready for downloading
+                 * d = download </br> w = wait (retry) </br> q = in queue </br> qn = Download has been added to queue </br> i = direct
+                 * download without cache </br> s = Cached download is ready for downloading
                  */
                 final String cacheStatus = (String) entries.get("cacheStatus");
                 if (cacheStatus.matches("i|s")) {
@@ -538,7 +533,7 @@ public abstract class HighWayCore extends UseNet {
                     this.sleep(retryInSeconds * 1000l, link);
                     secondsWaited += retryInSeconds;
                     final Integer currentProgress = ((Number) entries.get("percentage_Complete")).intValue();
-                    this.getDownloadLink().addPluginProgress(waitProgress);
+                    link.addPluginProgress(waitProgress);
                     waitProgress.updateValues(currentProgress.intValue(), 100);
                     for (int sleepRound = 0; sleepRound < retryInSeconds; sleepRound++) {
                         if (isAbort()) {
@@ -552,7 +547,7 @@ public abstract class HighWayCore extends UseNet {
                 }
             } while (!this.isAbort() && secondsWaited < maxWaitSeconds);
         } finally {
-            this.getDownloadLink().removePluginProgress(waitProgress);
+            link.removePluginProgress(waitProgress);
         }
         logger.info("Cache handling: Timeout");
         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, (String) entries.get("for_jd"), ((Integer) entries.get("retry_in_seconds")).intValue() * 1000l);
@@ -689,8 +684,7 @@ public abstract class HighWayCore extends UseNet {
     /**
      * Login without errorhandling
      *
-     * @return true = cookies validated </br>
-     *         false = cookies set but not validated
+     * @return true = cookies validated </br> false = cookies set but not validated
      *
      * @throws PluginException
      * @throws InterruptedException

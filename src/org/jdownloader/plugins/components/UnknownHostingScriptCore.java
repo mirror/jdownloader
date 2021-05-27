@@ -4,19 +4,11 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.Map;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensions;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -37,6 +29,15 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensions;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class UnknownHostingScriptCore extends antiDDoSForHost {
@@ -88,7 +89,7 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         return false;
     }
 
-    private static AtomicReference<String> agent = new AtomicReference<String>(null);
+    private static Map<String, String> agent = new HashMap<String, String>();
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -653,10 +654,15 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
          */
         br.setCookie(this.getHost(), "lang", "us");
         if (enable_random_user_agent()) {
-            if (agent.get() == null) {
-                agent.set(UserAgents.stringUserAgent());
+            String ua = null;
+            synchronized (agent) {
+                ua = agent.get(getHost());
+                if (ua == null) {
+                    ua = UserAgents.stringUserAgent();
+                    agent.put(getHost(), ua);
+                }
             }
-            br.getHeaders().put("User-Agent", agent.get());
+            br.getHeaders().put("User-Agent", ua);
         }
         return br;
     }

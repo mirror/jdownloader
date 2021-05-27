@@ -44,13 +44,13 @@ public class AmazonCloud extends PluginForHost {
         return "https://www.amazon.de/gp/help/customer/display.html/ref=ap_footer_condition_of_use?ie=UTF8&nodeId=505048&pop-up=1";
     }
 
-    public static final String   JSON_KIND_FILE     = "FILE";
+    public static final String JSON_KIND_FILE     = "FILE";
     /* Connection stuff */
-    private static final boolean FREE_RESUME        = true;
-    private static final int     FREE_MAXCHUNKS     = 0;
-    private static final int     FREE_MAXDOWNLOADS  = -1;
+    private final boolean      FREE_RESUME        = true;
+    private final int          FREE_MAXCHUNKS     = 0;
+    private final int          FREE_MAXDOWNLOADS  = -1;
     /* Don't touch this! */
-    public static int            max_items_per_page = 200;
+    private static final int   max_items_per_page = 200;
 
     public AvailableStatus requestFileInformationOld(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();

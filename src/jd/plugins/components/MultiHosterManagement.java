@@ -4,12 +4,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.config.Property;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkCheckerThread;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 
 import org.appwork.exceptions.WTFException;
@@ -52,18 +50,11 @@ public class MultiHosterManagement {
         }
     }
 
-    protected String getHost() {
+    private String getHost() {
+        final Plugin plugin = Plugin.getCurrentActivePlugin();
+        final String host = plugin != null ? plugin.getHost() : this.host;
         if (host == null) {
-            final Thread thread = Thread.currentThread();
-            if (thread instanceof SingleDownloadController) {
-                return ((SingleDownloadController) thread).getProcessingPlugin().getHost();
-            } else if (thread instanceof AccountCheckerThread) {
-                return ((AccountCheckerThread) thread).getJob().getAccount().getPlugin().getHost();
-            } else if (thread instanceof LinkCheckerThread) {
-                return ((LinkCheckerThread) thread).getPlugin().getHost();
-            } else {
-                throw new WTFException();
-            }
+            throw new WTFException();
         } else {
             return host;
         }

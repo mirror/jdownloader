@@ -21,10 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -33,6 +29,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DegooCom extends PluginForHost {
@@ -70,16 +70,16 @@ public class DegooCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME        = false;
-    private static final int     FREE_MAXCHUNKS     = 1;
-    private static final int     FREE_MAXDOWNLOADS  = 20;
+    private final boolean      FREE_RESUME        = false;
+    private final int          FREE_MAXCHUNKS     = 1;
+    private final int          FREE_MAXDOWNLOADS  = 20;
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
     // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
     // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    public static String         PROPERTY_DIRECTURL = "free_directlink";
+    public static final String PROPERTY_DIRECTURL = "free_directlink";
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -160,10 +160,9 @@ public class DegooCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 429) {
                 /**
-                 * 2021-01-17: Plaintext response: "Rate Limit" </br>
-                 * This limit sits on the files themselves and/or the uploader account. There is no way to bypass this by reconnecting!
-                 * </br>
-                 * Displayed error on website: "Daily limit reached, upgrade to increase this limit or wait until tomorrow"
+                 * 2021-01-17: Plaintext response: "Rate Limit" </br> This limit sits on the files themselves and/or the uploader account.
+                 * There is no way to bypass this by reconnecting! </br> Displayed error on website:
+                 * "Daily limit reached, upgrade to increase this limit or wait until tomorrow"
                  */
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Daily limit reached");
             } else {

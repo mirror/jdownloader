@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,6 +28,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "motherless.com" }, urls = { "https?://(?:www\\.|members\\.)?motherless\\.com/(g(i|v)?/[\\w\\-_]+/[A-Z0-9]{7}|[A-Z0-9]{6,9}(/[A-Z0-9]{7})?)|https?://(?:www\\.)?motherless\\.com/f/[^/]+/(?:images|videos|galleries)" })
 public class MotherLessCom extends PluginForDecrypt {
@@ -81,6 +81,7 @@ public class MotherLessCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.getPage(parameter);
+        final boolean subscriberPremiumOnly = jd.plugins.hoster.MotherLessCom.isWatchSubscriberPremiumOnly(br);
         if (jd.plugins.hoster.MotherLessCom.isDownloadPremiumOnly(br)) {
             final DownloadLink dl = createDownloadlink(parameter.replace("motherless.com/", "motherlessvideos.com/"));
             dl.setProperty("dltype", "registered");
@@ -95,14 +96,14 @@ public class MotherLessCom extends PluginForDecrypt {
         }
         // Common bug: It can happen that the texts that we use to differ between the kinds of links change so the decrypter breaks down,
         // always check that first!
-        else if (br.containsHTML(jd.plugins.hoster.MotherLessCom.html_contentSubscriberImage) && jd.plugins.hoster.MotherLessCom.isWatchSubscriberPremiumOnly(br)) {
+        else if (subscriberPremiumOnly && br.containsHTML(jd.plugins.hoster.MotherLessCom.html_contentSubscriberImage)) {
             final DownloadLink dl = createDownloadlink(parameter.replace("motherless", "premiummotherlesspictures"));
             dl.setContentUrl(parameter);
             dl.setProperty("dltype", "image");
             dl.setProperty("onlyregistered", "true");
             decryptedLinks.add(dl);
             return decryptedLinks;
-        } else if (br.containsHTML(jd.plugins.hoster.MotherLessCom.html_contentSubscriberVideo) && (jd.plugins.hoster.MotherLessCom.isWatchSubscriberPremiumOnly(br) && br.containsHTML(jd.plugins.hoster.MotherLessCom.html_contentSubscriberVideo))) {
+        } else if (subscriberPremiumOnly && br.containsHTML(jd.plugins.hoster.MotherLessCom.html_contentSubscriberVideo)) {
             final DownloadLink dl = createDownloadlink(parameter.replace("motherless.com/", "motherlessvideos.com/"));
             dl.setContentUrl(parameter);
             dl.setProperty("dltype", "video");

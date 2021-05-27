@@ -48,16 +48,16 @@ public class StaSh extends PluginForHost {
 
     /** Code is very similar to DeviantArtCom - keep it updated! */
     private static final String GENERALFILENAMEREGEX   = "name=\"og:title\" content=\"([^<>\"]*?)\"";
-    private static final String TYPE_HTML              = "class=\"text\">HTML download</span>";
+    private final String        TYPE_HTML              = "class=\"text\">HTML download</span>";
     private boolean             HTMLALLOWED            = false;
     private final String        COOKIE_HOST            = "http://www.deviantart.com";
     private String              DLLINK                 = null;
     private final String        MATURECONTENTFILTER    = ">Mature Content Filter<";
     private final String        INVALIDLINKS           = "https?://(www\\.)?sta\\.sh/(muro|writer|login)";
     private final String        TYPE_ZIP               = "https?://(www\\.)?sta\\.sh/zip/[a-z0-9]+";
-    private static String       FORCEHTMLDOWNLOAD      = "FORCEHTMLDOWNLOAD";
-    private static String       USE_LINKID_AS_FILENAME = "USE_LINKID_AS_FILENAME";
-    private static String       DOWNLOAD_ZIP           = "DOWNLOAD_ZIP";
+    private String              FORCEHTMLDOWNLOAD      = "FORCEHTMLDOWNLOAD";
+    private String              USE_LINKID_AS_FILENAME = "USE_LINKID_AS_FILENAME";
+    private String              DOWNLOAD_ZIP           = "DOWNLOAD_ZIP";
 
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("stadecrypted.sh/", "sta.sh/"));

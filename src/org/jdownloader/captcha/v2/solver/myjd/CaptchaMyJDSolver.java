@@ -4,14 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkCheckerThread;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.plugins.Account;
 import jd.plugins.Plugin;
-import jd.plugins.PluginForHost;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Files;
@@ -80,30 +73,6 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> {
     }
 
     private final boolean enabled = true;
-
-    private Plugin getPluginFromThread() {
-        final Thread thread = Thread.currentThread();
-        if (thread instanceof AccountCheckerThread) {
-            final AccountCheckJob job = ((AccountCheckerThread) thread).getJob();
-            if (job != null) {
-                final Account account = job.getAccount();
-                return account.getPlugin();
-            }
-        } else if (thread instanceof LinkCheckerThread) {
-            final PluginForHost plg = ((LinkCheckerThread) thread).getPlugin();
-            if (plg != null) {
-                return plg;
-            }
-        } else if (thread instanceof SingleDownloadController) {
-            return ((SingleDownloadController) thread).getDownloadLinkCandidate().getCachedAccount().getPlugin();
-        } else if (thread instanceof LinkCrawlerThread) {
-            final Object owner = ((LinkCrawlerThread) thread).getCurrentOwner();
-            if (owner instanceof Plugin) {
-                return (Plugin) owner;
-            }
-        }
-        return null;
-    }
 
     public boolean isEnabled() {
         if (!CFG_GENERAL.CFG.isMyJDownloaderCaptchaSolverEnabled()) {

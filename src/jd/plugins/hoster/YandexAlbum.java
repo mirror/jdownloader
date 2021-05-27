@@ -20,9 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -38,6 +35,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yadi.sk" }, urls = { "https://yadi\\.sk/a/[A-Za-z0-9\\-_]+/([a-f0-9]{24})" })
 public class YandexAlbum extends PluginForHost {
     public YandexAlbum(PluginWrapper wrapper) {
@@ -52,7 +52,7 @@ public class YandexAlbum extends PluginForHost {
     private static final String NORESUME                    = "NORESUME";
     /* Some constants which they used in browser */
     public static final String  CLIENT_ID                   = "2784000881524006529778";
-    public static String        VERSION_YANDEX_PHOTO_ALBUMS = "77.3";
+    public static final String  VERSION_YANDEX_PHOTO_ALBUMS = "77.3";
     public static final String  PROPERTY_HASH               = "hash_main";
 
     @Override

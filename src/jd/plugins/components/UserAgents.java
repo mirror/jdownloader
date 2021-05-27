@@ -5,18 +5,13 @@ import java.util.Collections;
 import java.util.Random;
 import java.util.regex.Pattern;
 
-import org.appwork.exceptions.WTFException;
-
 import jd.parser.Regex;
 
 public class UserAgents {
-
-    private static final ArrayList<String> stringAgent = new ArrayList<String>();
-
+    private static final ArrayList<String> stringAgent   = new ArrayList<String>();
     static {
         // Internet Explorer
         // discontinued browser, removed raztoki-20160208
-
         // chrome
         // release: "Stable release 50.0.2661.87 (April 26, 2016; 9 days ago) http://en.wikipedia.org/wiki/Google_Chrome
         // notes: google changes version like it's going out of fashion! try and give balance in array. (46+)
@@ -30,11 +25,8 @@ public class UserAgents {
         stringAgent.add("Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.75 Safari/537.36");
         stringAgent.add("Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.87 Safari/537.36");
         stringAgent.add("Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.94 Safari/537.36");
-
         stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.86 Safari/537.36");
-
         stringAgent.add("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.57 Safari/537.36"); // 12
-
         // firefox
         // release: "Stable release 46.0.1 (May 3, 2016; 1 day ago)" http://en.wikipedia.org/wiki/Firefox
         // notes: version 41+
@@ -42,33 +34,25 @@ public class UserAgents {
         stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0");
         stringAgent.add("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:46.0) Gecko/20100101 Firefox/46.0");
         stringAgent.add("Mozilla/5.0 (Windows NT 10.0; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0");
-
         stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:46.0) Gecko/20100101 Firefox/46.0");
-
         stringAgent.add("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:46.0) Gecko/20100101 Firefox/46.0"); // 6
-
         // safari
         // "Stable release http://en.wikipedia.org/wiki/Safari_(web_browser)
         // OS X El Capitan 9.1 (March 21, 2016; 43 days ago)
         stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/601.2.7 (KHTML, like Gecko) Version/9.0.1 Safari/601.2.7");
         stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_2) AppleWebKit/601.3.9 (KHTML, like Gecko) Version/9.0.2 Safari/601.3.9");
         stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_3) AppleWebKit/601.4.4 (KHTML, like Gecko) Version/9.0.3 Safari/601.4.4"); // 3
-
         // opera
         // discontinued browser, removed raztoki-20160208
         // now chrome clone!
     }
-
     private static final ArrayList<String> portableAgent = new ArrayList<String>();
-
     static {
         portableAgent.add("Mozilla/5.0 (Android; Tablet; rv:30.0) Gecko/30.0 Firefox/30.0");
         portableAgent.add("Mozilla/5.0 (Android; Tablet; rv:33.0) Gecko/33.0 Firefox/33.0");
         portableAgent.add("Mozilla/5.0 (Android; Tablet; rv:34.0) Gecko/34.0 Firefox/34.0");
         portableAgent.add("Mozilla/5.0 (Android; Tablet; rv:35.0) Gecko/35.0 Firefox/35.0");// 4
-
         // chrome 34(andriod) 33(ios)
-
         portableAgent.add("Mozilla/5.0 (Linux; Android 4.4.4; D5503 Build/14.4.A.0.133) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.93 Mobile Safari/537.36");
         portableAgent.add("Mozilla/5.0 (Linux; Android 4.4.4; Nexus 10 Build/KTU84P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.59 Safari/537.36");
         portableAgent.add("Mozilla/5.0 (Linux; Android 4.4.4; Nexus 7 Build/KTU84P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.59 Safari/537.36");
@@ -82,10 +66,8 @@ public class UserAgents {
         portableAgent.add("Mozilla/5.0 (Linux; Android 5.0; Nexus 7 Build/LRX21P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.93 Safari/537.36");
         portableAgent.add("Mozilla/5.0 (iPad; CPU OS 8_1_2 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) CriOS/39.0.2171.50 Mobile/12B440 Safari/600.1.4");
         portableAgent.add("Mozilla/5.0 (iPhone; CPU iPhone OS 7_1_2 like Mac OS X) AppleWebKit/537.51.2 (KHTML, like Gecko) CriOS/39.0.2171.50 Mobile/11D257 Safari/9537.53");
-
         portableAgent.add("Mozilla/5.0 (Linux; Android 5.0.2; Nexus 10 Build/LRX22G) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.109 Safari/537.36");
         portableAgent.add("Mozilla/5.0 (Linux; Android 5.0.2; Nexus 10 Build/LRX22G) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.89 Safari/537.36"); // 15
-
         // safari
         portableAgent.add("Mozilla/5.0 (iPad; CPU OS 8_0_2 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Version/8.0 Mobile/12A405 Safari/600.1.4");
         portableAgent.add("Mozilla/5.0 (iPad; CPU OS 8_0 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Version/8.0 Mobile/12A365 Safari/600.1.4");
@@ -97,14 +79,11 @@ public class UserAgents {
         portableAgent.add("Mozilla/5.0 (iPhone; CPU iPhone OS 8_1_1 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Version/8.0 Mobile/12B436 Safari/600.1.4");
         portableAgent.add("Mozilla/5.0 (iPhone; CPU iPhone OS 8_1 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Version/8.0 Mobile/12B410 Safari/600.1.4");
         portableAgent.add("Mozilla/5.0 (iPhone; CPU iPhone OS 8_1 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Version/8.0 Mobile/12B411 Safari/600.1.4"); // 10
-
         // opera
         portableAgent.add("Opera/9.80 (Android 2.3.3; Linux; Opera Mobi/ADR-1212030829) Presto/2.11.355 Version/12.10");
         portableAgent.add("Opera/9.80 (Android 2.3.3; Linux; Opera Mobi/ADR-1301080958) Presto/2.11.355 Version/12.10"); // 2
     }
-
-    private static final ArrayList<String> hbbtvAgent = new ArrayList<String>();
-
+    private static final ArrayList<String> hbbtvAgent    = new ArrayList<String>();
     static {
         hbbtvAgent.add("Mozilla/4.0 (compatible; MSIE 5.23; Macintosh; PPC) Escape 5.1.8");
         hbbtvAgent.add("Mozilla/5.0 (SMART-TV; X11; Linux i686) AppleWebKit/534.7 (KHTML, like Gecko) Version/5.0 Safari/534.7");
@@ -147,7 +126,6 @@ public class UserAgents {
         hbbtvAgent.add("Opera/9.80 (Linux sh4; U; HbbTV/1.1.1 (;;;;;); CE-HTML; TechniSat Digit ISIO S; de) Presto/2.9.167 Version/11.50");
         hbbtvAgent.add("Mozilla/5.0 (DTV; TSBNetTV/T32013713.0203.7DD; TVwithVideoPlayer; like Gecko) NetFront/4.1 DTVNetBrowser/2.2 (000039;T32013713;0203;7DD) InettvBrowser/2.2 (000039;T32013713;0203;7DD)");
         hbbtvAgent.add("Mozilla/5.0 (Linux; GoogleTV 3.2; VAP430 Build/MASTER) AppleWebKit/534.24 (KHTML, like Gecko) Chrome/11.0.696.77 Safari/534.24");
-
     }
 
     /**
@@ -157,13 +135,9 @@ public class UserAgents {
      *
      */
     public enum BrowserName {
-        Chrome(
-                " Chrome/"),
-        Firefox(
-                " Firefox/"),
-        Safari(
-                " Version/[0-9]\\.[0-9]\\.[0-9] Safari/[0-9]{3}\\.[0-9]\\.[0-9]");
-
+        Chrome(" Chrome/"),
+        Firefox(" Firefox/"),
+        Safari(" Version/[0-9]\\.[0-9]\\.[0-9] Safari/[0-9]{3}\\.[0-9]\\.[0-9]");
         private final Pattern pattern;
 
         public Pattern getPattern() {
@@ -173,7 +147,6 @@ public class UserAgents {
         private BrowserName(final String s) {
             this.pattern = Pattern.compile(s);
         }
-
     }
 
     /**
@@ -228,13 +201,13 @@ public class UserAgents {
      */
     public static String stringUserAgent(final BrowserName browser) {
         if (browser == null) {
-            throw new WTFException();
+            return stringUserAgent();
+        } else {
+            String ret = null;
+            do {
+                ret = stringUserAgent();
+            } while (!new Regex(ret, browser.getPattern()).matches());
+            return ret;
         }
-        String ret = null;
-        do {
-            ret = stringUserAgent();
-        } while (!new Regex(ret, browser.getPattern()).matches());
-        return ret;
     }
-
 }

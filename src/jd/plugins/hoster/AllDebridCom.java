@@ -90,7 +90,7 @@ public class AllDebridCom extends antiDDoSForHost {
     }
 
     private static MultiHosterManagement mhm                               = new MultiHosterManagement("alldebrid.com");
-    public static String                 api_base                          = "https://api.alldebrid.com/v4";
+    public static final String           api_base                          = "https://api.alldebrid.com/v4";
     // this is used by provider which calculates unique token to agent/client.
     private static final String          agent                             = "agent=JDownloader";
     public static final String           agent_raw                         = "JDownloader";
