@@ -20,11 +20,6 @@ import java.text.DecimalFormat;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -38,6 +33,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8tracks.com" }, urls = { "https?://8tracksdecrypted\\.com/\\d+" })
 public class EightTracksCom extends antiDDoSForHost {
@@ -54,31 +54,30 @@ public class EightTracksCom extends antiDDoSForHost {
         return 1;
     }
 
-    private static final String  MAINPAGE                                          = "https://8tracks.com/";
-    private static final String  NICE_HOST                                         = "8tracks.com";
-    private static final String  NICE_HOSTproperty                                 = "8trackscom";
+    private final String  MAINPAGE                                          = "https://8tracks.com/";
+    private final String  NICE_HOST                                         = "8tracks.com";
+    private final String  NICE_HOSTproperty                                 = "8trackscom";
     // Waittimes
-    private static final int     WAITTIME_SECONDS_DEFAULT                          = 300;
-    private static final int     WAITTIME_SECONDS_BEFORE_TRACK_PLAYED_CONFIRMATION = 32;
-    private static final int     WAITTIME_SECONDS_EXTRA                            = 5;
-    private static final int     WAITTIME_SECONDS_SKIPLIMIT                        = 60;
-    private static final int     WAITTIME_DIVISOR                                  = 2;
-    private static final int     WAITTIME_SECONDS_TEST_MODE                        = 10;
+    private final int     WAITTIME_SECONDS_DEFAULT                          = 300;
+    private final int     WAITTIME_SECONDS_BEFORE_TRACK_PLAYED_CONFIRMATION = 32;
+    private final int     WAITTIME_SECONDS_EXTRA                            = 5;
+    private final int     WAITTIME_SECONDS_SKIPLIMIT                        = 60;
+    private final int     WAITTIME_DIVISOR                                  = 2;
+    private final int     WAITTIME_SECONDS_TEST_MODE                        = 10;
     // private static final long BITRATE_SOUNDCLOUD = 11250;
-    private static final long    SOURCE_8TRACKS_BITRATE                            = 5000;
+    private final long    SOURCE_8TRACKS_BITRATE                            = 5000;
     /* sets wrong waittimes to check skip_failed errorhandling */
-    private static final boolean TEST_MODE                                         = false;
-    private static final String  TEST_MODE_TOKEN                                   = null;
+    private final boolean TEST_MODE                                         = false;
+    private final String  TEST_MODE_TOKEN                                   = null;
     /* 8tracks.com has a bug - the playlists length they tell you is always -1 track */
-    private static final boolean EIGHT_TRACKS_BUG_EXISTS                           = false;
-    private static Object        LOCK                                              = new Object();
-    private String               MAIN_LINK                                         = null;
-    private String               clipData;
-    private boolean              AT_END                                            = false;
-    private boolean              AT_LAST_TRACK                                     = false;
-    private static boolean       pluginloaded                                      = false;
-    private String               currenttrackid                                    = null;
-    private DownloadLink         current_downloadlink                              = null;
+    private final boolean EIGHT_TRACKS_BUG_EXISTS                           = false;
+    private static Object LOCK                                              = new Object();
+    private String        MAIN_LINK                                         = null;
+    private String        clipData;
+    private boolean       AT_END                                            = false;
+    private boolean       AT_LAST_TRACK                                     = false;
+    private String        currenttrackid                                    = null;
+    private DownloadLink  current_downloadlink                              = null;
 
     // XML version needs API key so we use the json version
     @Override

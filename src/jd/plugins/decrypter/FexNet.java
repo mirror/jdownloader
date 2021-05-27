@@ -15,19 +15,12 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -38,13 +31,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FexNet extends PluginForDecrypt {
     public FexNet(PluginWrapper wrapper) {
         super(wrapper);
     }
-
-    private static final String API_BASE = "https://api.fex.net/api";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -74,22 +70,13 @@ public class FexNet extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private static String cachedToken          = null;
-    private static long   cachedTokenTimestamp = 0;
-    private static Object LOCK                 = new Object();
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final String subfolderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(2);
         Map<String, Object> entries = null;
-        synchronized (LOCK) {
-            if (cachedToken == null || System.currentTimeMillis() - cachedTokenTimestamp > 5 * 60 * 1000l) {
-                cachedToken = getFreshAuthToken(this.br);
-                cachedTokenTimestamp = System.currentTimeMillis();
-            }
-        }
+        String cachedToken = jd.plugins.hoster.FexNet.getAuthToken(this, br);
         br.setAllowedResponseCodes(new int[] { 400, 401 });
         br.getHeaders().put("Authorization", "Bearer " + cachedToken);
         br.getHeaders().put("Content-Type", "application/json");
@@ -133,7 +120,7 @@ public class FexNet extends PluginForDecrypt {
             } else {
                 urlpart_share = "share";
             }
-            String url = API_BASE + "/v2/file/" + urlpart_share + "/children/" + folderID;
+            String url = jd.plugins.hoster.FexNet.API_BASE + "/v2/file/" + urlpart_share + "/children/" + folderID;
             if (subfolderID != null) {
                 url += "/" + subfolderID;
             }
@@ -152,7 +139,7 @@ public class FexNet extends PluginForDecrypt {
                     if (passCode == null) {
                         passCode = getUserInput("Password?", param);
                     }
-                    br.postPageRaw(API_BASE + "/v2/file/share/" + folderID + "/auth", "{\"password\":\"" + passCode + "\"}");
+                    br.postPageRaw(jd.plugins.hoster.FexNet.API_BASE + "/v2/file/share/" + folderID + "/auth", "{\"password\":\"" + passCode + "\"}");
                     if (br.getHttpConnection().getResponseCode() == 400) {
                         /* 2021-01-14: {"code":1056,"form":{"password":[1054]},"status":400} */
                         passCode = null;
@@ -163,8 +150,8 @@ public class FexNet extends PluginForDecrypt {
                         entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                         final String tokenNew = (String) entries.get("token");
                         if (!StringUtils.isEmpty(tokenNew)) {
+                            jd.plugins.hoster.FexNet.setAuthToken(tokenNew);
                             cachedToken = tokenNew;
-                            cachedTokenTimestamp = System.currentTimeMillis();
                             br.getHeaders().put("Authorization", "Bearer " + cachedToken);
                             /* Gets auto-set */
                             // br.setCookie(br.getHost(), "token", cachedToken);
@@ -180,7 +167,7 @@ public class FexNet extends PluginForDecrypt {
                     throw new DecrypterException(DecrypterException.PASSWORD);
                 }
                 urlpart_share = "share/s";
-                url = API_BASE + "/v2/file/" + urlpart_share + "/children/" + folderID;
+                url = jd.plugins.hoster.FexNet.API_BASE + "/v2/file/" + urlpart_share + "/children/" + folderID;
                 if (subfolderID != null) {
                     url += "/" + subfolderID;
                 }
@@ -251,17 +238,5 @@ public class FexNet extends PluginForDecrypt {
             return decryptedLinks;
         }
         return decryptedLinks;
-    }
-
-    public static final String getFreshAuthToken(final Browser br) throws PluginException, IOException {
-        // br.getPage(API_BASE + "/v1/config/anonymous");
-        // final String token = (String) JavaScriptEngineFactory.walkJson(entries, "anonymous/anonym_token");
-        br.getPage(API_BASE + "/v1/anonymous/upload-token");
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final String token = (String) entries.get("token");
-        if (StringUtils.isEmpty(token)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        return token;
     }
 }

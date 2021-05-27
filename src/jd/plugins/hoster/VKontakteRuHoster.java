@@ -25,7 +25,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -363,7 +362,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         * 
+                         *
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         /*
@@ -1260,21 +1259,7 @@ public class VKontakteRuHoster extends PluginForHost {
         generalErrorhandling();
     }
 
-    private static AtomicBoolean match = null;
-
     public static Browser prepBrowser(final Browser br, final boolean isDecryption) {
-        // debug
-        if (match == null) {
-            if ("0dd0ecf7f742873d745106adea00b64a".equals(System.getProperty("k", null))) {
-                match = new AtomicBoolean(true);
-            } else {
-                match = new AtomicBoolean(false);
-            }
-        }
-        if (match != null && match.get()) {
-            br.setDebug(true);
-            br.setVerbose(true);
-        }
         String useragent = SubConfiguration.getConfig("vk.com").getStringProperty(VKADVANCED_USER_AGENT, "");
         if (StringUtils.isEmpty(useragent) || useragent.length() <= 3) {
             useragent = null;

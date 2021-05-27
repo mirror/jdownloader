@@ -22,10 +22,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Cookie;
@@ -42,6 +38,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "webshare.cz" }, urls = { "https?://(?:[a-z0-9]+\\.)?webshare\\.cz/(\\?fhash=[A-Za-z0-9]+|[A-Za-z0-9]{10}|(#/)?file/[a-z0-9]+)" })
 public class WebShareCz extends PluginForHost {
@@ -97,15 +97,19 @@ public class WebShareCz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (br.containsHTML("(>Požadovaný soubor nebyl nalezen|>Requested file not found)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (br.getURL().contains("error=")) {
+            } else if (br.getURL().contains("error=")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -118,12 +122,11 @@ public class WebShareCz extends PluginForHost {
         return new Regex(dl.getDownloadURL(), "file/([A-Za-z0-9]+)/").getMatch(0);
     }
 
-    private static final String MAINPAGE = "http://webshare.cz";
-    private static Object       LOCK     = new Object();
+    private final String MAINPAGE = "http://webshare.cz";
 
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
@@ -293,10 +296,10 @@ public class WebShareCz extends PluginForHost {
      *
      * $FreeBSD: src/lib/libcrypt/crypt-md5.c,v 1.5 1999/12/17 20:21:45 peter Exp $
      */
-    private static String magic    = "$1$"; /*
-                                             * This string is magic for this algorithm. Having it this way, we can get get better later on
-                                             */
-    private static int    MD5_SIZE = 16;
+    private final String magic    = "$1$"; /*
+     * This string is magic for this algorithm. Having it this way, we can get get better later on
+     */
+    private final int    MD5_SIZE = 16;
 
     private static void memset(byte[] array) {
         for (int i = 0; i < array.length; i++) {
@@ -307,7 +310,7 @@ public class WebShareCz extends PluginForHost {
     /*
      * UNIX password
      */
-    private static String crypt_md5(byte[] pw, String salt) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+    private String crypt_md5(byte[] pw, String salt) throws NoSuchAlgorithmException, UnsupportedEncodingException {
         StringBuilder passwd = new StringBuilder();
         String sp, ep;
         byte[] finalState = new byte[MD5_SIZE];

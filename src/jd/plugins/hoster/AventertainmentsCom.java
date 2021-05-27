@@ -17,10 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -38,30 +34,34 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgs.aventertainments.com", "aventertainments.com" }, urls = { "https?://imgs\\.aventertainments\\.com/.+", "https?://www\\.aventertainments\\.com/newdlsample\\.aspx.+\\.mp4|https?://ppvclips\\d+\\.aventertainments\\.com/.+\\.m3u9|https?://(?:www\\.)?aventertainments\\.com/ppv/new_detail\\.aspx\\?ProID=\\d+.*?" })
 public class AventertainmentsCom extends PluginForHost {
     public AventertainmentsCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.aventertainments.com/register.aspx?languageID=1&VODTypeID=1&Site=PPV");
     }
+
     /* DEV NOTES */
     // Tags:
     // protocol: no https
-
     /* TODO: 2020-10-21: Check if this linktype still exists */
-    private final String         TYPE_IMAGE        = "https?://imgs\\.aventertainments\\.com/.+";
+    private final String       TYPE_IMAGE        = "https?://imgs\\.aventertainments\\.com/.+";
     /* TODO: 2020-10-21: Check if this linktype still exists */
-    private final String         TYPE_VIDEO_HTTP   = "https?://(?:www\\.)?aventertainments\\.com/newdlsample\\.aspx.*?\\.mp4";
+    private final String       TYPE_VIDEO_HTTP   = "https?://(?:www\\.)?aventertainments\\.com/newdlsample\\.aspx.*?\\.mp4";
     /* TODO: 2020-10-21: Check if this linktype still exists */
-    private final String         TYPE_VIDEO_HLS    = "https?://ppvclips\\d+\\.aventertainments\\.com/.+\\.m3u8";
-    private static final String  TYPE_NEW_2020     = "https?://(?:www\\.)?aventertainments\\.com/ppv/new_detail\\.aspx\\?ProID=\\d+.*?";
-    public static String         html_loggedin     = "aventertainments.com/logout\\.aspx";
+    private final String       TYPE_VIDEO_HLS    = "https?://ppvclips\\d+\\.aventertainments\\.com/.+\\.m3u8";
+    private final String       TYPE_NEW_2020     = "https?://(?:www\\.)?aventertainments\\.com/ppv/new_detail\\.aspx\\?ProID=\\d+.*?";
+    public static final String html_loggedin     = "aventertainments.com/logout\\.aspx";
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
-    private boolean              server_issues     = false;
+    private final boolean      free_resume       = true;
+    private final int          free_maxchunks    = 0;
+    private final int          free_maxdownloads = -1;
+    private String             dllink            = null;
+    private boolean            server_issues     = false;
 
     @Override
     public String getAGBLink() {
@@ -125,7 +125,9 @@ public class AventertainmentsCom extends PluginForHost {
             try {
                 con = br2.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    }
                     link.setProperty("directlink", dllink);
                 } else {
                     server_issues = true;
@@ -152,6 +154,9 @@ public class AventertainmentsCom extends PluginForHost {
 
     public void doFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (dllink.matches(TYPE_VIDEO_HLS)) {
             br.getPage(dllink);
             final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
@@ -169,18 +174,19 @@ public class AventertainmentsCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br.followConnection();
-                try {
-                    dl.getConnection().disconnect();
-                } catch (final Throwable e) {
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
         }
@@ -197,10 +203,8 @@ public class AventertainmentsCom extends PluginForHost {
         return br;
     }
 
-    private static Object LOCK = new Object();
-
     public static void login(Browser br, final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 prepBR(br);
@@ -229,7 +233,9 @@ public class AventertainmentsCom extends PluginForHost {
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -239,12 +245,7 @@ public class AventertainmentsCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(this.br, account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(this.br, account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setMaxSimultanDownloads(free_maxdownloads);

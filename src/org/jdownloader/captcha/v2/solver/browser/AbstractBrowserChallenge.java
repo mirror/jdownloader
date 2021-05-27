@@ -3,13 +3,7 @@ package org.jdownloader.captcha.v2.solver.browser;
 import java.awt.Rectangle;
 import java.io.IOException;
 
-import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkCheckerThread;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.http.Browser;
-import jd.plugins.Account;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -50,7 +44,7 @@ public abstract class AbstractBrowserChallenge extends Challenge<String> {
     public AbstractBrowserChallenge(final String method, final Plugin plugin) {
         super(method, null);
         if (plugin == null) {
-            this.plugin = getPluginFromThread();
+            this.plugin = Plugin.getCurrentActivePlugin();
         } else {
             this.plugin = plugin;
         }
@@ -92,30 +86,6 @@ public abstract class AbstractBrowserChallenge extends Challenge<String> {
 
     public boolean onRawGetRequest(final BrowserReference browserReference, final GetRequest request, final HttpResponse response) throws IOException, RemoteAPIException {
         return false;
-    }
-
-    private Plugin getPluginFromThread() {
-        final Thread thread = Thread.currentThread();
-        if (thread instanceof AccountCheckerThread) {
-            final AccountCheckJob job = ((AccountCheckerThread) thread).getJob();
-            if (job != null) {
-                final Account account = job.getAccount();
-                return account.getPlugin();
-            }
-        } else if (thread instanceof LinkCheckerThread) {
-            final PluginForHost plg = ((LinkCheckerThread) thread).getPlugin();
-            if (plg != null) {
-                return plg;
-            }
-        } else if (thread instanceof SingleDownloadController) {
-            return ((SingleDownloadController) thread).getDownloadLinkCandidate().getCachedAccount().getPlugin();
-        } else if (thread instanceof LinkCrawlerThread) {
-            final Object owner = ((LinkCrawlerThread) thread).getCurrentOwner();
-            if (owner instanceof Plugin) {
-                return (Plugin) owner;
-            }
-        }
-        return null;
     }
 
     abstract protected String getCaptchaNameSpace();

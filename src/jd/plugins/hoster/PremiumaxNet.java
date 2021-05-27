@@ -22,13 +22,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -45,6 +38,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumax.net" }, urls = { "" })
 public class PremiumaxNet extends antiDDoSForHost {
@@ -354,9 +354,11 @@ public class PremiumaxNet extends antiDDoSForHost {
                         }
                         // re-use same agent from cached session.
                         final String ua = account.getStringProperty("ua", null);
-                        if (ua != null && !ua.equals(userAgent.get())) {
-                            // cloudflare routine sets user-agent on first request.
-                            userAgent.set(ua);
+                        synchronized (agent) {
+                            if (ua != null && !ua.equals(agent.get(getHost()))) {
+                                // cloudflare routine sets user-agent on first request.
+                                agent.put(getHost(), ua);
+                            }
                         }
                         /* Avoids unnerving login captchas */
                         if (testCookieSession) {

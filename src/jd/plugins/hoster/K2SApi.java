@@ -79,14 +79,14 @@ public abstract class K2SApi extends PluginForHost {
     private int                            authTokenFail         = 0;
     private int                            loginCaptchaFail      = -1;
     /* Reconnect workaround settings */
-    private Pattern                        IPREGEX               = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private final Pattern                  IPREGEX               = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
     private static AtomicReference<String> lastIP                = new AtomicReference<String>();
     private static AtomicReference<String> currentIP             = new AtomicReference<String>();
     private static HashMap<String, Long>   blockedIPsMap         = new HashMap<String, Long>();
     private String                         PROPERTY_LASTIP       = "K2S_PROPERTY_LASTIP";
     private final String                   PROPERTY_LASTDOWNLOAD = "_lastdownload_timestamp";
     private final long                     FREE_RECONNECTWAIT    = 1 * 60 * 60 * 1000L;
-    private static String[]                IPCHECK               = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
+    private static final String[]          IPCHECK               = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
 
     public K2SApi(PluginWrapper wrapper) {
         super(wrapper);

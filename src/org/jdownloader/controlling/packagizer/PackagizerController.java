@@ -364,11 +364,14 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             private final Pattern pat = Pattern.compile("<jd:" + ORGFILENAME + "\\s*/?\\s*>");
 
             public String replace(REPLACEVARIABLE replaceVariable, String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
+                final String name = link.getName();
                 if (StringUtils.isNotEmpty(modifiers)) {
-                    final String rep = StringUtils.valueOrEmpty(new Regex(link.getName(), lgr.getFileNameRule().getPattern()).getMatch(Integer.parseInt(modifiers) - 1));
+                    final Pattern pattern = lgr.getFileNameRule().getPattern();
+                    final String rep = StringUtils.valueOrEmpty(new Regex(name, pattern).getMatch(Integer.parseInt(modifiers) - 1));
                     return Pattern.compile("<jd:" + ORGFILENAME + ":" + Pattern.quote(modifiers) + "\\s*/?\\s*>").matcher(input).replaceAll(Matcher.quoteReplacement(preprocessReplacement(replaceVariable, rep)));
+                } else {
+                    return pat.matcher(input).replaceAll(Matcher.quoteReplacement(preprocessReplacement(replaceVariable, name)));
                 }
-                return pat.matcher(input).replaceAll(Matcher.quoteReplacement(preprocessReplacement(replaceVariable, link.getName())));
             }
 
             public String getID() {

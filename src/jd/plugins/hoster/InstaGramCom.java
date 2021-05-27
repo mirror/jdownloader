@@ -82,39 +82,39 @@ public class InstaGramCom extends PluginForHost {
     /**
      * https://instagram.api-docs.io/1.0 </br>
      */
-    public static String         ALT_API_BASE                                      = "https://i.instagram.com/api/v1";
+    public static final String  ALT_API_BASE                                      = "https://i.instagram.com/api/v1";
     /* Connection stuff */
-    private static final boolean RESUME                                            = true;
+    private final boolean       RESUME                                            = true;
     /* Chunkload makes no sense for pictures/small files */
-    private static final int     MAXCHUNKS_pictures                                = 1;
+    private final int           MAXCHUNKS_pictures                                = 1;
     /* 2020-01-21: Multi chunks are possible but it's better not to do this to avoid getting blocked! */
-    private static final int     MAXCHUNKS_videos                                  = 1;
-    private static final int     MAXDOWNLOADS                                      = -1;
+    private final int           MAXCHUNKS_videos                                  = 1;
+    private final int           MAXDOWNLOADS                                      = -1;
     /* Plugin settings properties */
-    private static final String  MAINPAGE                                          = "https://www.instagram.com";
-    public static final String   QUIT_ON_RATE_LIMIT_REACHED                        = "QUIT_ON_RATE_LIMIT_REACHED";
-    public static final String   HASHTAG_CRAWLER_FIND_USERNAMES                    = "HASHTAG_CRAWLER_FIND_USERNAMES";
-    public static final String   PREFER_SERVER_FILENAMES                           = "PREFER_SERVER_FILENAMES";
-    public static final String   ADD_ORDERID_TO_FILENAMES                          = "ADD_ORDERID_TO_FILENAMES";
-    private static final String  ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY              = "ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY";
-    public static final String   ONLY_GRAB_X_ITEMS                                 = "ONLY_GRAB_X_ITEMS";
-    public static final String   ONLY_GRAB_X_ITEMS_NUMBER                          = "ONLY_GRAB_X_ITEMS_NUMBER";
-    public static final String   ONLY_GRAB_X_ITEMS_HASHTAG_CRAWLER_NUMBER          = "ONLY_GRAB_X_ITEMS_HASHTAG_CRAWLER_NUMBER";
-    public static final String   PROFILE_CRAWLER_PREFER_ALTERNATIVE_API            = "PROFILE_CRAWLER_PREFER_ALTERNATIVE_API";
+    private static final String MAINPAGE                                          = "https://www.instagram.com";
+    public static final String  QUIT_ON_RATE_LIMIT_REACHED                        = "QUIT_ON_RATE_LIMIT_REACHED";
+    public static final String  HASHTAG_CRAWLER_FIND_USERNAMES                    = "HASHTAG_CRAWLER_FIND_USERNAMES";
+    public static final String  PREFER_SERVER_FILENAMES                           = "PREFER_SERVER_FILENAMES";
+    public static final String  ADD_ORDERID_TO_FILENAMES                          = "ADD_ORDERID_TO_FILENAMES";
+    private final String        ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY              = "ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY";
+    public static final String  ONLY_GRAB_X_ITEMS                                 = "ONLY_GRAB_X_ITEMS";
+    public static final String  ONLY_GRAB_X_ITEMS_NUMBER                          = "ONLY_GRAB_X_ITEMS_NUMBER";
+    public static final String  ONLY_GRAB_X_ITEMS_HASHTAG_CRAWLER_NUMBER          = "ONLY_GRAB_X_ITEMS_HASHTAG_CRAWLER_NUMBER";
+    public static final String  PROFILE_CRAWLER_PREFER_ALTERNATIVE_API            = "PROFILE_CRAWLER_PREFER_ALTERNATIVE_API";
     /* Settings default values */
-    public static final boolean  defaultPREFER_SERVER_FILENAMES                    = false;
-    public static final boolean  defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY       = false;
-    public static final boolean  defaultADD_ORDERID_TO_FILENAMES                   = false;
-    public static final boolean  defaultQUIT_ON_RATE_LIMIT_REACHED                 = false;
-    public static final boolean  defaultHASHTAG_CRAWLER_FIND_USERNAMES             = false;
-    public static final boolean  defaultONLY_GRAB_X_ITEMS                          = false;
-    public static final int      defaultONLY_GRAB_X_ITEMS_NUMBER                   = 25;
-    public static final boolean  defaultPREFER_ALTERNATIVE_API_FOR_PROFILE_CRAWLER = false;
+    public static final boolean defaultPREFER_SERVER_FILENAMES                    = false;
+    public static final boolean defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY       = false;
+    public static final boolean defaultADD_ORDERID_TO_FILENAMES                   = false;
+    public static final boolean defaultQUIT_ON_RATE_LIMIT_REACHED                 = false;
+    public static final boolean defaultHASHTAG_CRAWLER_FIND_USERNAMES             = false;
+    public static final boolean defaultONLY_GRAB_X_ITEMS                          = false;
+    public static final int     defaultONLY_GRAB_X_ITEMS_NUMBER                   = 25;
+    public static final boolean defaultPREFER_ALTERNATIVE_API_FOR_PROFILE_CRAWLER = false;
     /* DownloadLink properties */
-    public static final String   PROPERTY_has_tried_to_crawl_original_url          = "has_tried_to_crawl_original_url";
-    public static final String   PROPERTY_is_part_of_story                         = "is_part_of_story";
-    public static final String   PROPERTY_DIRECTURL                                = "directurl";
-    public static final String   PROPERTY_private_url                              = "private_url";
+    public static final String  PROPERTY_has_tried_to_crawl_original_url          = "has_tried_to_crawl_original_url";
+    public static final String  PROPERTY_is_part_of_story                         = "is_part_of_story";
+    public static final String  PROPERTY_DIRECTURL                                = "directurl";
+    public static final String  PROPERTY_private_url                              = "private_url";
 
     public void correctDownloadLink(final DownloadLink link) {
         String newurl = link.getPluginPatternMatcher().replace("instagrammdecrypted://", "https://www.instagram.com/p/");

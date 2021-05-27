@@ -38,6 +38,7 @@ import javax.swing.Icon;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.SubConfiguration;
+import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkchecker.LinkCheckerThread;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -424,20 +425,6 @@ public abstract class Plugin implements ActionListener {
         } else {
             return filenameOrg + fileExtension;
         }
-    }
-
-    public static Plugin getCurrentActivePlugin() {
-        final Thread currentThread = Thread.currentThread();
-        if (currentThread instanceof LinkCrawlerThread) {
-            //
-            return (PluginForDecrypt) ((LinkCrawlerThread) currentThread).getCurrentOwner();
-        } else if (currentThread instanceof SingleDownloadController) {
-            //
-            return ((SingleDownloadController) currentThread).getProcessingPlugin();
-        } else if (currentThread instanceof LinkCheckerThread) {
-            return ((LinkCheckerThread) currentThread).getPlugin();
-        }
-        return null;
     }
 
     protected boolean isConnectionOffline(Throwable e) {
@@ -963,6 +950,28 @@ public abstract class Plugin implements ActionListener {
         } else {
             throw new IllegalArgumentException();
         }
+    }
+
+    public static Plugin getCurrentActivePlugin() {
+        final Thread thread = Thread.currentThread();
+        if (thread instanceof SingleDownloadController) {
+            final Plugin plugin = ((SingleDownloadController) thread).getProcessingPlugin();
+            if (plugin != null) {
+                return plugin;
+            } else {
+                return ((SingleDownloadController) thread).getDownloadLinkCandidate().getCachedAccount().getPlugin();
+            }
+        } else if (thread instanceof AccountCheckerThread) {
+            return ((AccountCheckerThread) thread).getJob().getAccount().getPlugin();
+        } else if (thread instanceof LinkCheckerThread) {
+            return ((LinkCheckerThread) thread).getPlugin();
+        } else if (thread instanceof LinkCrawlerThread) {
+            final Object owner = ((LinkCrawlerThread) thread).getCurrentOwner();
+            if (owner instanceof Plugin) {
+                return (Plugin) owner;
+            }
+        }
+        return null;
     }
 
     public synchronized void cleanupLastChallengeResponse() {

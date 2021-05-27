@@ -16,8 +16,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -25,29 +29,34 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fex.net" }, urls = { "https?://(?:www\\.)?fex\\.net/folder/([a-z0-9]+)/file/(\\d+)" })
 public class FexNet extends PluginForHost {
     public FexNet(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     // Tags:
     // protocol: no https
     // other:
-
     /* Connection stuff */
-    private static final boolean free_resume          = false;
-    private static final int     free_maxchunks       = 1;
-    private static final int     free_maxdownloads    = -1;
-    private String               dllink               = null;
-    public static final String   PROPERTY_directurl   = "directurl";
-    public static final String   PROPERTY_token       = "authtoken";
-    private static String        cachedToken          = null;
-    private static long          cachedTokenTimestamp = 0;
-    private static Object        LOCK                 = new Object();
+    private final boolean                  free_resume          = false;
+    private final int                      free_maxchunks       = 1;
+    private final int                      free_maxdownloads    = -1;
+    private String                         dllink               = null;
+    public static final String             PROPERTY_directurl   = "directurl";
+    public static final String             PROPERTY_token       = "authtoken";
+    private static AtomicReference<String> cachedToken          = new AtomicReference<String>(null);
+    private static AtomicLong              cachedTokenTimestamp = new AtomicLong(0);
+    public static final String             API_BASE             = "https://api.fex.net/api";
 
     @Override
     public String getAGBLink() {
@@ -68,6 +77,44 @@ public class FexNet extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
     }
 
+    public static String getAuthToken(final Plugin plugin, final Browser br) throws PluginException, IOException {
+        synchronized (cachedToken) {
+            String token = cachedToken.get();
+            if (token == null || System.currentTimeMillis() - cachedTokenTimestamp.get() > 5 * 60 * 1000l) {
+                plugin.getLogger().info("Refreshing token");
+                token = getFreshAuthToken(br);
+                cachedTokenTimestamp.set(System.currentTimeMillis());
+                cachedToken.set(token);
+            }
+            return token;
+        }
+    }
+
+    public static void setAuthToken(final String token) {
+        synchronized (cachedToken) {
+            if (StringUtils.isNotEmpty(token)) {
+                cachedToken.set(token);
+                cachedTokenTimestamp.set(0);
+            } else {
+                cachedToken.set(null);
+            }
+        }
+    }
+
+    public static final String getFreshAuthToken(final Browser br) throws PluginException, IOException {
+        // br.getPage(API_BASE + "/v1/config/anonymous");
+        // final String token = (String) JavaScriptEngineFactory.walkJson(entries, "anonymous/anonym_token");
+        final Browser brc = br.cloneBrowser();
+        brc.getPage(API_BASE + "/v1/anonymous/upload-token");
+        final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+        final String token = (String) entries.get("token");
+        if (StringUtils.isEmpty(token)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            return token;
+        }
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         /* 2020-01-14: At this moment we're working with static URLs */
@@ -83,33 +130,27 @@ public class FexNet extends PluginForHost {
         if (link.hasProperty(PROPERTY_token)) {
             thistoken = link.getStringProperty(PROPERTY_token);
         } else {
-            synchronized (LOCK) {
-                if (cachedToken == null || System.currentTimeMillis() - cachedTokenTimestamp > 5 * 60 * 1000l) {
-                    logger.info("Refreshing token");
-                    cachedToken = jd.plugins.decrypter.FexNet.getFreshAuthToken(this.br);
-                    cachedTokenTimestamp = System.currentTimeMillis();
-                }
-            }
-            thistoken = cachedToken;
+            thistoken = getAuthToken(this, br);
         }
         br.setCookie(this.getHost(), "token", thistoken);
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(this.dllink);
+            final Browser brc = br.cloneBrowser();
+            con = brc.openGetConnection(this.dllink);
             if (this.looksLikeDownloadableContent(con)) {
                 /* Filename is usually set in crawler */
                 if (link.getFinalFileName() == null) {
                     link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
                 }
-                link.setDownloadSize(con.getCompleteContentLength());
-                link.setVerifiedFileSize(con.getCompleteContentLength());
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else if (con.getResponseCode() == 403) {
                 /* Auth token refresh needed */
                 if (link.hasProperty(PROPERTY_token)) {
                     link.removeProperty(PROPERTY_token);
                 } else {
-                    cachedToken = null;
-                    cachedTokenTimestamp = 0;
+                    setAuthToken(null);
                 }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid auth token", 3 * 60 * 1000l);
             } else if (con.getResponseCode() == 404) {
@@ -141,12 +182,9 @@ public class FexNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
             }
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
         }
         dl.startDownload();
     }

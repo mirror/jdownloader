@@ -31,9 +31,10 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.updatev2.ClassLoaderExtension;
 
 public class PluginClassLoader extends URLClassLoader {
-    private static final HashMap<String, HashMap<String, Object>> sharedPluginObjectsPool = new HashMap<String, HashMap<String, Object>>();
+    private static final HashMap<String, HashMap<String, Object>> sharedPluginObjectsPool     = new HashMap<String, HashMap<String, Object>>();
+    private static final WeakHashMap<Object, String>              sharedPluginObjectsPoolLock = new WeakHashMap<Object, String>();              ;
     // http://docs.oracle.com/javase/7/docs/technotes/guides/lang/cl-mt.html
-    private static final HashSet<String>                          immutableClasses        = new HashSet<String>() {
+    private static final HashSet<String>                          immutableClasses            = new HashSet<String>() {
         /**
          *
          */
@@ -228,74 +229,112 @@ public class PluginClassLoader extends URLClassLoader {
             }
         }
 
+        private final Object getClassLock(final Class<?> clazz) {
+            final String clazzID = clazz.getName();
+            synchronized (sharedPluginObjectsPoolLock) {
+                final Iterator<Entry<Object, String>> it = sharedPluginObjectsPoolLock.entrySet().iterator();
+                while (it.hasNext()) {
+                    final Entry<Object, String> next = it.next();
+                    if (next.getValue().equals(clazzID)) {
+                        return next.getKey();
+                    }
+                }
+                final Object lock = new Object();
+                sharedPluginObjectsPoolLock.put(lock, new String(clazzID));
+                return lock;
+            }
+        }
+
+        private final HashMap<String, Object> getSharedPluginObjects(final Class<?> currentClass) {
+            synchronized (sharedPluginObjectsPool) {
+                return sharedPluginObjectsPool.get(currentClass.getName());
+            }
+        }
+
+        private final void setSharedPluginObjects(final Class<?> currentClass, final boolean sharedPluginsObjectsExisting, final HashMap<String, Object> sharedPluginObjects) {
+            synchronized (sharedPluginObjectsPool) {
+                if (sharedPluginObjects != null && sharedPluginObjects.size() == 0) {
+                    sharedPluginObjectsPool.remove(currentClass.getName());
+                } else if (!sharedPluginsObjectsExisting && sharedPluginObjects != null && sharedPluginObjects.size() > 0) {
+                    sharedPluginObjectsPool.put(new String(currentClass.getName()), sharedPluginObjects);
+                }
+            }
+        }
+
         private final Class<?> mapStaticFields(final Class<?> currentClass) {
             if (isMapStaticFields() && currentClass != null && currentClass.getClassLoader() instanceof PluginClassLoaderChild) {
                 final String currentClassName = currentClass.getName();
-                final HashMap<String, Object> sharedPluginObjects;
-                synchronized (sharedPluginObjectsPool) {
-                    HashMap<String, Object> contains = sharedPluginObjectsPool.get(currentClassName);
-                    if (contains == null) {
-                        contains = new HashMap<String, Object>();
-                        sharedPluginObjectsPool.put(new String(currentClassName), contains);// dereference from currentClass
-                    }
-                    sharedPluginObjects = contains;
-                }
                 final Field[] fields = currentClass.getDeclaredFields();
                 LogInterface logger = null;
+                final Object lock = getClassLock(currentClass);
                 try {
-                    synchronized (sharedPluginObjects) {
-                        final HashSet<String> knownFields = new HashSet<String>(sharedPluginObjects.keySet());
-                        for (Field field : fields) {
-                            final String fieldName = field.getName();
-                            if (!field.isSynthetic()) {
-                                final int modifiers = field.getModifiers();
-                                if (Modifier.isStatic(modifiers) && !Modifier.isFinal(modifiers)) {
-                                    if (field.getType().isEnum() || field.isEnumConstant()) {
-                                        logger = getLogger(logger);
-                                        logger.info("Class " + currentClassName + " has static enum: " + fieldName);
-                                        continue;
-                                    }
-                                    if (field.getType().isPrimitive()) {
-                                        logger = getLogger(logger);
-                                        logger.info("Class " + currentClassName + " has static primitive field: " + fieldName);
-                                        continue;
-                                    }
-                                    if (immutableClasses.contains(field.getType().getName())) {
-                                        logger = getLogger(logger);
-                                        logger.info("Class " + currentClassName + " has static immutable field: " + fieldName);
-                                        continue;
-                                    }
-                                    /* we only share static objects */
-                                    field.setAccessible(true);
-                                    if (knownFields.contains(fieldName)) {
-                                        final Object fieldObject = sharedPluginObjects.get(fieldName);
-                                        try {
-                                            field.set(null, fieldObject);
-                                            knownFields.remove(fieldName);
+                    synchronized (lock) {
+                        HashMap<String, Object> sharedPluginObjects = getSharedPluginObjects(currentClass);
+                        final boolean sharedPluginsObjectsExisting = sharedPluginObjects != null;
+                        try {
+                            final HashSet<String> knownFields = new HashSet<String>();
+                            if (sharedPluginObjects != null) {
+                                knownFields.addAll(sharedPluginObjects.keySet());
+                            }
+                            for (Field field : fields) {
+                                final String fieldName = field.getName();
+                                if (!field.isSynthetic()) {
+                                    final int modifiers = field.getModifiers();
+                                    if (Modifier.isStatic(modifiers) && !Modifier.isFinal(modifiers)) {
+                                        if (field.getType().isEnum() || field.isEnumConstant()) {
+                                            logger = getLogger(logger);
+                                            logger.info("Class " + currentClassName + " has static enum: " + fieldName);
                                             continue;
-                                        } catch (final Throwable e) {
-                                            logger = getLogger(logger);
-                                            logger.severe("Cant modify Field " + fieldName + " for " + currentClassName);
                                         }
-                                    }
-                                    Object fieldObject = field.get(null);
-                                    if (fieldObject != null) {
-                                        if (fieldObject.getClass().getClassLoader() instanceof PluginClassLoaderChild) {
+                                        if (field.getType().isPrimitive()) {
                                             logger = getLogger(logger);
-                                            logger.info("FIXME!!!! Class " + currentClassName + " has customized static field: " + fieldName + "!");
+                                            logger.info("Class " + currentClassName + " has static primitive field: " + fieldName);
+                                            continue;
                                         }
-                                        sharedPluginObjects.put(new String(fieldName), fieldObject);// dereference from field
-                                    } else {
-                                        logger = getLogger(logger);
-                                        logger.info("Class " + currentClassName + " has static field: " + fieldName + " with null content!");
+                                        if (immutableClasses.contains(field.getType().getName())) {
+                                            logger = getLogger(logger);
+                                            logger.info("Class " + currentClassName + " has static immutable field: " + fieldName);
+                                            continue;
+                                        }
+                                        /* we only share static objects */
+                                        field.setAccessible(true);
+                                        if (knownFields.contains(fieldName) && sharedPluginObjects != null) {
+                                            final Object fieldObject = sharedPluginObjects.get(fieldName);
+                                            try {
+                                                field.set(null, fieldObject);
+                                                knownFields.remove(fieldName);
+                                                continue;
+                                            } catch (final Throwable e) {
+                                                logger = getLogger(logger);
+                                                logger.severe("Cant modify Field " + fieldName + " for " + currentClassName);
+                                            }
+                                        }
+                                        Object fieldObject = field.get(null);
+                                        if (fieldObject != null) {
+                                            if (fieldObject.getClass().getClassLoader() instanceof PluginClassLoaderChild) {
+                                                logger = getLogger(logger);
+                                                logger.info("FIXME!!!! Class " + currentClassName + " has customized static field: " + fieldName + "!");
+                                            }
+                                            if (sharedPluginObjects == null) {
+                                                sharedPluginObjects = new HashMap<String, Object>();
+                                            }
+                                            sharedPluginObjects.put(new String(fieldName), fieldObject);// dereference from field
+                                        } else {
+                                            logger = getLogger(logger);
+                                            logger.info("Class " + currentClassName + " has static field: " + fieldName + " with null content!");
+                                        }
                                     }
                                 }
                             }
-                        }
-                        for (final String missingField : knownFields) {
-                            logger = getLogger(logger);
-                            logger.info("Class " + currentClassName + " no longer has static field: " + missingField);
-                            sharedPluginObjects.remove(missingField);
+                            for (final String missingField : knownFields) {
+                                logger = getLogger(logger);
+                                logger.info("Class " + currentClassName + " no longer has static field: " + missingField);
+                                if (sharedPluginObjects != null) {
+                                    sharedPluginObjects.remove(missingField);
+                                }
+                            }
+                        } finally {
+                            setSharedPluginObjects(currentClass, sharedPluginsObjectsExisting, sharedPluginObjects);
                         }
                     }
                 } catch (final Throwable e) {

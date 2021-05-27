@@ -16,8 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-
-import org.appwork.utils.formatter.SizeFormatter;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -30,6 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vdisk.cn" }, urls = { "http://(www\\.)?([a-z0-9]+\\.)?vdisk\\.cn/(?:down/index/[A-Z0-9]+|[a-zA-Z0-9]+/.*?\\.html)" })
 public class VdiskCn extends PluginForHost {
     // No HTTPS
@@ -37,7 +38,19 @@ public class VdiskCn extends PluginForHost {
     // locked it to 2(dl) * -4(chunk) = 8 total connection
     // other: they keep changing final download links url structure, best to use
     // regex only on finallink static info and not html
-    private static String       UA       = RandomUserAgent.generate();
+    public static AtomicReference<String> agent = new AtomicReference<String>(null);
+
+    private String getUserAgent() {
+        while (true) {
+            String agent = VdiskCn.agent.get();
+            if (agent == null) {
+                VdiskCn.agent.compareAndSet(null, RandomUserAgent.generate());
+            } else {
+                return agent;
+            }
+        }
+    }
+
     private static final String NOCHUNKS = "NOCHUNKS";
 
     public VdiskCn(PluginWrapper wrapper) {
@@ -126,7 +139,7 @@ public class VdiskCn extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", UA);
+        br.getHeaders().put("User-Agent", getUserAgent());
         br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(true);
         br.setCookie("http://vdisk.cn/", "lang", "en");

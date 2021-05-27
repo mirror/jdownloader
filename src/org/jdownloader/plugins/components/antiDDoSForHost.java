@@ -22,19 +22,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.RequestHistory.TYPE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -55,6 +42,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.RequestHistory.TYPE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
 
 /**
  *
@@ -82,8 +82,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
     private static final String                   suRequiredCookies     = "sucuri_cloudproxy_uuid_[a-f0-9]+";
     private static final String                   bfRequiredCookies     = "rcksid|BLAZINGFAST-WEB-PROTECT";
     protected static HashMap<String, Cookies>     antiDDoSCookies       = new HashMap<String, Cookies>();
-    protected static AtomicReference<String>      userAgent             = new AtomicReference<String>(null);
-    private static AtomicReference<BrowserName>   browserName           = new AtomicReference<BrowserName>(null);
+    protected static Map<String, String>          agent                 = new HashMap<String, String>();
     protected final WeakHashMap<Browser, Boolean> browserPrepped        = new WeakHashMap<Browser, Boolean>();
     public final static String                    antiDDoSCookiePattern = cfRequiredCookies + "|" + icRequiredCookies + "|" + suRequiredCookies + "|" + bfRequiredCookies;
 
@@ -95,14 +94,17 @@ public abstract class antiDDoSForHost extends PluginForHost {
         // required for native cloudflare support, without the need to repeat requests.
         prepBr.addAllowedResponseCodes(new int[] { 429, 503, 504, 520, 521, 522, 523, 524, 525 });
         loadAntiDDoSCookies(prepBr, host);
-        if (setBrowserName() != null && browserName.get() == null) {
-            browserName.set(setBrowserName());
-        }
+        final BrowserName browserName = setBrowserName();
         if (useRUA()) {
-            if (userAgent.get() == null) {
-                userAgent.set(browserName.get() != null ? UserAgents.stringUserAgent(browserName.get()) : UserAgents.stringUserAgent());
+            String ua = null;
+            synchronized (agent) {
+                ua = agent.get(getHost());
+                if (ua == null) {
+                    ua = UserAgents.stringUserAgent(browserName);
+                    agent.put(getHost(), ua);
+                }
             }
-            prepBr.getHeaders().put("User-Agent", userAgent.get());
+            prepBr.getHeaders().put("User-Agent", ua);
         }
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         prepBr.getHeaders().put("Accept-Charset", null);
@@ -116,11 +118,12 @@ public abstract class antiDDoSForHost extends PluginForHost {
         synchronized (antiDDoSCookies) {
             if (!antiDDoSCookies.isEmpty()) {
                 for (final Map.Entry<String, Cookies> cookieEntry : antiDDoSCookies.entrySet()) {
-                    final String key = cookieEntry.getKey();
-                    if (key != null && key.equals(host)) {
+                    final String cookiesHost = cookieEntry.getKey();
+                    if (cookiesHost != null && cookiesHost.equals(host)) {
                         try {
-                            prepBr.setCookies(key, cookieEntry.getValue(), false);
+                            prepBr.setCookies(cookiesHost, cookieEntry.getValue(), false);
                         } catch (final Throwable e) {
+                            logger.log(e);
                         }
                     }
                 }
@@ -488,19 +491,31 @@ public abstract class antiDDoSForHost extends PluginForHost {
         }
     }
 
-    private static AtomicReference<Object> concurrentLock = new AtomicReference<Object>(null);
+    private static Map<String, AtomicReference<Object>> concurrentLock = new HashMap<String, AtomicReference<Object>>();
+
+    protected AtomicReference<Object> getConcurrentLock() {
+        synchronized (concurrentLock) {
+            AtomicReference<Object> lock = concurrentLock.get(getHost());
+            if (lock == null) {
+                lock = new AtomicReference<Object>(null);
+                concurrentLock.put(getHost(), lock);
+            }
+            return lock;
+        }
+    }
 
     protected boolean isLocked() {
-        final Object lock = concurrentLock.get();
+        final Object lock = getConcurrentLock().get();
         return lock != null && Thread.currentThread() != lock;
     }
 
     protected boolean acquireLock(Object lockObject) {
-        return concurrentLock.compareAndSet(null, lockObject) || Thread.currentThread() == concurrentLock.get();
+        final AtomicReference<Object> lock = getConcurrentLock();
+        return lock.compareAndSet(null, lockObject) || Thread.currentThread() == lock.get();
     }
 
     protected void releaseLock(Object lockObject) {
-        concurrentLock.compareAndSet(lockObject, null);
+        getConcurrentLock().compareAndSet(lockObject, null);
     }
 
     protected void followCloudflareRequest(final Object lockObject, Browser br, final Request request, final Cookies cookies) throws IOException {
@@ -1083,7 +1098,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
                     final ConsString y = (ConsString) engine.get("y");
                     ibr.setCookie(ibr.getHost(), y.toString().split("=")[0], y.toString().split("=")[1]);
                 } catch (final Throwable e) {
-                    e.printStackTrace();
+                    logger.log(e);
                 }
                 ibr.getPage(ibr.getURL());
             }

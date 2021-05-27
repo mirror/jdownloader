@@ -413,9 +413,9 @@ public class NitroFlareCom extends antiDDoSForHost {
                 if (br.getURL() == null) {
                     requestFileInformationWeb(link);
                 }
-                handleErrors(br, false);
+                handleErrors(account, br, false);
                 randomHash(br, link);
-                ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFID(link));
+                Browser ajax = ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFID(link));
                 {
                     int i = 0;
                     while (true) {
@@ -424,7 +424,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                         // first post registers time value
                         postPage(br.getURL(), "goToFreePage=");
                         randomHash(br, link);
-                        ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFID(link));
+                        ajax = ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFID(link));
                         if (br.getURL().endsWith("/free")) {
                             break;
                         } else if (++i > 3) {
@@ -434,8 +434,8 @@ public class NitroFlareCom extends antiDDoSForHost {
                         }
                     }
                 }
-                ajaxPost(br, "/ajax/freeDownload.php", "method=startTimer&fileId=" + getFID(link));
-                handleErrors(ajax, false);
+                ajax = ajaxPost(br, "/ajax/freeDownload.php", "method=startTimer&fileId=" + getFID(link));
+                handleErrors(account, ajax, false);
                 if (!ajax.containsHTML("^\\s*1\\s*$")) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -457,7 +457,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                                 sleep(wait * 1000l, link);
                             }
                         }
-                        ajaxPost(br, "/ajax/freeDownload.php", "method=fetchDownload&captcha=" + Encoding.urlEncode(captchaCode));
+                        ajax = ajaxPost(br, "/ajax/freeDownload.php", "method=fetchDownload&captcha=" + Encoding.urlEncode(captchaCode));
                     } else {
                         final int firstLoop = 1;
                         long wait = 60;
@@ -487,7 +487,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                                 logger.info("Congratulation: Captcha solving took so long that we do not have to wait at all");
                             }
                         }
-                        ajaxPost(br, "/ajax/freeDownload.php", "method=fetchDownload&captcha=" + Encoding.urlEncode(c) + "&g-recaptcha-response=" + Encoding.urlEncode(c));
+                        ajax = ajaxPost(br, "/ajax/freeDownload.php", "method=fetchDownload&captcha=" + Encoding.urlEncode(c) + "&g-recaptcha-response=" + Encoding.urlEncode(c));
                     }
                     if (ajax.containsHTML("The captcha wasn't entered correctly|You have to fill the captcha")) {
                         if (i + 1 == repeat) {
@@ -500,7 +500,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                 }
                 dllink = ajax.getRegex("\"(https?://[a-z0-9\\-_]+\\.nitroflare\\.com/[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
-                    handleErrors(ajax, true);
+                    handleErrors(account, ajax, true);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
@@ -546,24 +546,25 @@ public class NitroFlareCom extends antiDDoSForHost {
      *
      * @throws Exception
      **/
-    private final void randomHash(final Browser br, final DownloadLink link) throws Exception {
+    private final Browser randomHash(final Browser br, final DownloadLink link) throws Exception {
         final String randomHash = JDHash.getMD5(link.getDownloadURL() + System.currentTimeMillis());
         // same cookie is set within as a cookie prior to registering
         final String host = getBaseDomain(this, br);
         br.setCookie(host, "randHash", randomHash);
-        ajaxPost(br, "https://" + host + "/ajax/randHash.php", "randHash=" + randomHash);
+        return ajaxPost(br, "https://" + host + "/ajax/randHash.php", "randHash=" + randomHash);
     }
 
-    private void handleErrors(final Browser br, final boolean postCaptcha) throws PluginException {
+    private void handleErrors(final Account account, final Browser br, final boolean postCaptcha) throws PluginException {
         if (postCaptcha) {
             if (br.containsHTML("You don't have an entry ticket\\. Please refresh the page to get a new one")) {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            if (br.containsHTML("File doesn't exist")) {
+            } else if (br.containsHTML("File doesn't exist")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
-        if (StringUtils.startsWithCaseInsensitive(br.toString(), "You can't use free download with a VPN")) {
+        if (StringUtils.startsWithCaseInsensitive(br.toString(), "To continue this download please")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "To continue this download please purchase premium or turn off your VPN.", 60 * 60 * 1000l);
+        } else if (StringUtils.startsWithCaseInsensitive(br.toString(), "You can't use free download with a VPN")) {
             /* You can't use free download with a VPN / proxy turned on. Please turn it off and try again. */
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You can't use free download with a VPN / proxy turned on. Please turn it off and try again", 60 * 60 * 1000l);
         } else if (br.containsHTML("This file is available with premium key only|This file is available with Premium only")) {
@@ -587,13 +588,12 @@ public class NitroFlareCom extends antiDDoSForHost {
         }
     }
 
-    private Browser ajax = null;
-
-    private void ajaxPost(final Browser br, final String url, final String post) throws Exception {
-        ajax = br.cloneBrowser();
+    private Browser ajaxPost(final Browser br, final String url, final String post) throws Exception {
+        final Browser ajax = br.cloneBrowser();
         ajax.getHeaders().put("Accept", "*/*");
         ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         ajax.postPage(url, post);
+        return ajax;
     }
 
     /**
@@ -973,7 +973,7 @@ public class NitroFlareCom extends antiDDoSForHost {
             logger.info("Premium VPN captcha required");
             /* 2020-02-20: Here is their reCaptchaV2 site-key for testing: 6Lenx_USAAAAAF5L1pmTWvWcH73dipAEzNnmNLgy */
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-            ajaxPost(br, "/ajax/validate-dl-recaptcha", "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
+            Browser ajax = ajaxPost(br, "/ajax/validate-dl-recaptcha", "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
             if (!ajax.containsHTML("passed")) {
                 logger.info("Premium captcha failure");
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);

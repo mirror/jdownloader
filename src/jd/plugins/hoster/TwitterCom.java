@@ -17,21 +17,6 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -48,6 +33,21 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com" }, urls = { "https?://[a-z0-9]+\\.twimg\\.com/media/[^/]+|https?://amp\\.twimg\\.com/prod/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap|https?://amp\\.twimg\\.com/v/.+|https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+" })
 public class TwitterCom extends PluginForHost {
@@ -67,24 +67,24 @@ public class TwitterCom extends PluginForHost {
         return link.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
-    private static final String  TYPE_DIRECT                  = "https?://[a-z0-9]+\\.twimg\\.com/.+";
-    private static final String  TYPE_VIDEO                   = "https?://amp\\.twimg\\.com/v/.+";
-    private static final String  TYPE_VIDEO_VMAP              = "https?://amp\\.twimg\\.com/prod/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap";
-    public static final String   TYPE_VIDEO_EMBED             = "https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+";
+    private final String       TYPE_DIRECT                  = "https?://[a-z0-9]+\\.twimg\\.com/.+";
+    private final String       TYPE_VIDEO                   = "https?://amp\\.twimg\\.com/v/.+";
+    private final String       TYPE_VIDEO_VMAP              = "https?://amp\\.twimg\\.com/prod/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap";
+    public static final String TYPE_VIDEO_EMBED             = "https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+";
     /* Connection stuff - don't allow chunks as we only download small pictures */
-    private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = 1;
-    private static final int     FREE_MAXDOWNLOADS            = 20;
-    private static final boolean ACCOUNT_FREE_RESUME          = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private String               dllink                       = null;
-    private boolean              account_required             = false;
-    private boolean              geo_blocked                  = false;
-    private boolean              server_issues                = false;
-    private String               tweetid                      = null;
-    private String               guest_token                  = null;
-    public static String         COOKIE_KEY_LOGINED_CSRFTOKEN = "ct0";
+    private final boolean      FREE_RESUME                  = true;
+    private final int          FREE_MAXCHUNKS               = 1;
+    private final int          FREE_MAXDOWNLOADS            = 20;
+    private final boolean      ACCOUNT_FREE_RESUME          = true;
+    private final int          ACCOUNT_FREE_MAXCHUNKS       = 1;
+    private final int          ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private String             dllink                       = null;
+    private boolean            account_required             = false;
+    private boolean            geo_blocked                  = false;
+    private boolean            server_issues                = false;
+    private String             tweetid                      = null;
+    private String             guest_token                  = null;
+    public static final String COOKIE_KEY_LOGINED_CSRFTOKEN = "ct0";
 
     public static Browser prepBR(final Browser br) {
         br.setAllowedResponseCodes(new int[] { 429 });

@@ -3,10 +3,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.URL;
 import java.security.spec.AlgorithmParameterSpec;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.WeakHashMap;
 import java.util.regex.Pattern;
 
 import javax.crypto.Cipher;
@@ -107,25 +107,25 @@ public class DropboxCom extends PluginForHost {
         }
     }
 
-    public static final String              TYPE_S                                = "https?://[^/]+/(s/.+)";
-    public static final String              TYPE_SH                               = "https?://[^/]+/sh/[^/]+/[^/]+/[^/]+";
+    public static final String                   TYPE_S                                = "https?://[^/]+/(s/.+)";
+    public static final String                   TYPE_SH                               = "https?://[^/]+/sh/[^/]+/[^/]+/[^/]+";
     /* 2019-09-26: API does currently not support this kind of URL. A feature request to support those has been forwarded! */
-    public static final String              TYPE_SC_GALLERY                       = "https?://[^/]+/sc/.+";
-    private static HashMap<String, Cookies> accountMap                            = new HashMap<String, Cookies>();
-    public static final String              API_BASE                              = "https://api.dropboxapi.com/2";
-    private static final String             API_BASE_CONTENT                      = "https://content.dropboxapi.com/2";
+    public static final String                   TYPE_SC_GALLERY                       = "https?://[^/]+/sc/.+";
+    private static WeakHashMap<Account, Cookies> accountMap                            = new WeakHashMap<Account, Cookies>();
+    public static final String                   API_BASE                              = "https://api.dropboxapi.com/2";
+    private static final String                  API_BASE_CONTENT                      = "https://content.dropboxapi.com/2";
     /** 2019-09-25: Website login is broken - enforce API usage for all users! */
-    private static final boolean            HARDCODED_ENFORCE_API                 = true;
-    public static String                    PROPERTY_MAINPAGE                     = "mainlink";
-    public static String                    PROPERTY_INTERNAL_PATH                = "serverside_path_to_file_relative";
-    public static String                    PROPERTY_PASSWORD_COOKIE              = "password_cookie";
-    public static String                    PROPERTY_IS_SINGLE_FILE               = "is_single_file";
-    public static String                    PROPERTY_ACCOUNT_ACCESS_TOKEN         = "access_token";
-    public static String                    PROPERTY_ACCOUNT_LAST_AUTH_VALIDATION = "last_auth_validation";
-    public static String                    PROPERTY_DIRECTLINK                   = "directlink";
-    public static String                    PROPERTY_PREVIEW_DOWNLOADLINK         = "preview_downloadlink";
-    public static String                    PROPERTY_ORIGINAL_FILENAME            = "original_filename";
-    public static String                    IS_OFFICIALLY_DOWNLOADABLE            = "is_officially_downloadable";
+    private final boolean                        HARDCODED_ENFORCE_API                 = true;
+    public static final String                   PROPERTY_MAINPAGE                     = "mainlink";
+    public static final String                   PROPERTY_INTERNAL_PATH                = "serverside_path_to_file_relative";
+    public static final String                   PROPERTY_PASSWORD_COOKIE              = "password_cookie";
+    public static final String                   PROPERTY_IS_SINGLE_FILE               = "is_single_file";
+    public static final String                   PROPERTY_ACCOUNT_ACCESS_TOKEN         = "access_token";
+    public static final String                   PROPERTY_ACCOUNT_LAST_AUTH_VALIDATION = "last_auth_validation";
+    public static final String                   PROPERTY_DIRECTLINK                   = "directlink";
+    public static final String                   PROPERTY_PREVIEW_DOWNLOADLINK         = "preview_downloadlink";
+    public static final String                   PROPERTY_ORIGINAL_FILENAME            = "original_filename";
+    public static final String                   IS_OFFICIALLY_DOWNLOADABLE            = "is_officially_downloadable";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -785,7 +785,7 @@ public class DropboxCom extends PluginForHost {
             setBrowserExclusive();
             br.setFollowRedirects(true);
             if (refresh == false) {
-                Cookies accCookies = accountMap.get(account.getUser());
+                Cookies accCookies = accountMap.get(account);
                 if (accCookies != null) {
                     logger.info("Trust cookies without check");
                     br.getCookies("https://www.dropbox.com").add(accCookies);
@@ -802,7 +802,7 @@ public class DropboxCom extends PluginForHost {
                 if (br.getURL().contains(br.getHost() + "/account")) {
                     // account.saveCookies(br.getCookies(br.getHost()), "");
                     logger.info("User cookie login successful");
-                    accountMap.put(account.getUser(), br.getCookies("https://www.dropbox.com"));
+                    accountMap.put(account, br.getCookies("https://www.dropbox.com"));
                     return;
                 } else {
                     logger.info("User cookie login failed");
@@ -839,9 +839,9 @@ public class DropboxCom extends PluginForHost {
                 ok = true;
             } finally {
                 if (ok) {
-                    accountMap.put(account.getUser(), br.getCookies("https://www.dropbox.com"));
+                    accountMap.put(account, br.getCookies("https://www.dropbox.com"));
                 } else {
-                    accountMap.remove(account.getUser());
+                    accountMap.remove(account);
                 }
             }
         }
@@ -1033,7 +1033,7 @@ public class DropboxCom extends PluginForHost {
     }
 
     /** TODO: Remove this once API tests are completed (Stable release) */
-    private static boolean force_dev_values = true;
+    private static final boolean force_dev_values = true;
 
     private static String getAPIClientIDDev() {
         return "REMOVEME_IN_STABLE";

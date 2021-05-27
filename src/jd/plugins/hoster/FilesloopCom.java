@@ -21,12 +21,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.jdownloader.plugins.ConditionalSkipReasonException;
-import org.jdownloader.plugins.WaitingSkipReason;
-import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -44,14 +38,20 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.jdownloader.plugins.ConditionalSkipReasonException;
+import org.jdownloader.plugins.WaitingSkipReason;
+import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filesloop.com" }, urls = { "https?://(?:www\\.)?filesloop\\.com/myfiles/.+" })
 public class FilesloopCom extends PluginForHost {
     /* Using similar API (and same owner): esoubory.cz, filesloop.com */
-    private static final String                            DOMAIN               = "https://www.filesloop.com/api/";
-    private static final String                            NICE_HOST            = "filesloop.com";
-    private static final String                            NICE_HOSTproperty    = NICE_HOST.replaceAll("(\\.|\\-)", "");
-    private static final String                            NORESUME             = NICE_HOSTproperty + "NORESUME";
-    private static final String                            PROPERTY_LOGINTOKEN  = "fileslooplogintoken";
+    private final String                                   DOMAIN               = "https://www.filesloop.com/api/";
+    private final String                                   NICE_HOST            = "filesloop.com";
+    private final String                                   NICE_HOSTproperty    = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private final String                                   NORESUME             = NICE_HOSTproperty + "NORESUME";
+    private final String                                   PROPERTY_LOGINTOKEN  = "fileslooplogintoken";
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap   = new HashMap<Account, HashMap<String, Long>>();
     /* Contains <host><number of max possible chunks per download> */
     private static HashMap<String, Boolean>                hostResumeMap        = new HashMap<String, Boolean>();
@@ -64,15 +64,15 @@ public class FilesloopCom extends PluginForHost {
     /* Contains <host><number of currently running simultan downloads> */
     private static HashMap<String, AtomicInteger>          hostRunningDlsNumMap = new HashMap<String, AtomicInteger>();
     /* Last updated: 31.03.15 */
-    private static final int                               defaultMAXDOWNLOADS  = 10;
-    private static final int                               defaultMAXCHUNKS     = 1;
-    private static final boolean                           defaultRESUME        = true;
+    private final int                                      defaultMAXDOWNLOADS  = 10;
+    private final int                                      defaultMAXCHUNKS     = 1;
+    private final boolean                                  defaultRESUME        = true;
     private static Object                                  CTRLLOCK             = new Object();
     private int                                            statuscode           = 0;
     private static AtomicInteger                           maxPrem              = new AtomicInteger(1);
     private Account                                        currAcc              = null;
     private DownloadLink                                   currDownloadLink     = null;
-    private static String                                  currLogintoken       = null;
+    private String                                         currLogintoken       = null;
 
     @SuppressWarnings("deprecation")
     public FilesloopCom(PluginWrapper wrapper) {
@@ -220,7 +220,7 @@ public class FilesloopCom extends PluginForHost {
         if (dl.getConnection().getResponseCode() == 416) {
             logger.info("Resume impossible, disabling it for the next try");
             link.setChunksProgress(null);
-            link.setProperty(FilesloopCom.NORESUME, Boolean.valueOf(true));
+            link.setProperty(NORESUME, Boolean.valueOf(true));
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("json")) {
