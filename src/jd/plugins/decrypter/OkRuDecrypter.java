@@ -29,6 +29,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
@@ -117,34 +119,74 @@ public class OkRuDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
             final ArrayList<String> dupes = new ArrayList<String>();
-            final String channelID = new Regex(param.getCryptedUrl(), TYPE_PLAYLIST).getMatch(1);
+            final String albumID = new Regex(param.getCryptedUrl(), TYPE_PLAYLIST).getMatch(1);
             String fpName = br.getRegex("class=\"channel-panel_n ellip\">([^<>\"]+)<").getMatch(0);
             if (StringUtils.isEmpty(fpName)) {
                 /* Fallback */
-                fpName = channelID;
+                fpName = albumID;
             }
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName);
-            final String[] videoIDs = br.getRegex("/video/(\\d+)").getColumn(0);
-            // int addedItems = 0;
-            for (final String videoID : videoIDs) {
-                if (dupes.contains(videoID)) {
-                    continue;
+            final String[] albumVideoIDs = br.getRegex("/video/(\\d+)").getColumn(0);
+            final boolean crawlPlaylist = true;
+            if (crawlPlaylist) {
+                final String gwtHash = PluginJSonUtils.getJson(br, "gwtHash");
+                if (StringUtils.isEmpty(gwtHash) || albumVideoIDs.length == 0) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                // addedItems += 1;
-                dupes.add(videoID);
-                final DownloadLink dl = this.createDownloadlink("https://ok.ru/video/" + videoID);
-                /* Try to find a meaningful title right away */
-                final String title = br.getRegex("openMovie\\([^\"]+" + videoID + "[^\"]+\"[^>]*title=\"([^\"]+)\"").getMatch(0);
-                if (title != null) {
-                    dl.setName(title + ".mp4");
-                } else {
-                    dl.setName(videoID + ".mp4");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.postPage("/dk?cmd=PopLayerVideo", "st.vpl.id=" + albumVideoIDs[0] + "&st._aid=FriendVideo_open_album&st.vpl.vs=album&st.vpl.albumId=" + albumID + "&gwt.requested=" + gwtHash);
+                /* Remove "Similar videos" section from html code... */
+                final String stuffWeDontWant = br.getRegex("id=\"vp_rel_list\"(.+)").getMatch(0);
+                if (stuffWeDontWant != null) {
+                    br.getRequest().setHtmlCode(br.toString().replace(stuffWeDontWant, ""));
                 }
-                dl.setAvailable(true);
-                dl._setFilePackage(fp);
-                distribute(dl);
-                decryptedLinks.add(dl);
+                final String[] playlistVideoIDs = br.getRegex("/video/(\\d+)\" class=\"vp-layer_video").getColumn(0);
+                final String[] playlistVideoNames = br.getRegex("href=\"/video/\\d+\".*?class=\"vp-layer_video_n\">([^<>\"]+)</div>").getColumn(0);
+                int playlistVideoIndex = 0;
+                for (final String videoID : playlistVideoIDs) {
+                    playlistVideoIndex += 1;
+                    if (dupes.contains(videoID)) {
+                        continue;
+                    }
+                    // addedItems += 1;
+                    dupes.add(videoID);
+                    final DownloadLink dl = this.createDownloadlink("https://" + this.getHost() + "/video/" + videoID);
+                    /* Try to find a meaningful title right away */
+                    final String title = playlistVideoNames.length == playlistVideoIDs.length ? playlistVideoNames[playlistVideoIndex] : null;
+                    if (title != null) {
+                        dl.setName(title + ".mp4");
+                    } else {
+                        dl.setName(videoID + ".mp4");
+                    }
+                    dl.setAvailable(true);
+                    dl._setFilePackage(fp);
+                    distribute(dl);
+                    decryptedLinks.add(dl);
+                }
+                // lastElementID = br.getRequest().getResponseHeader("lastelem").toString();
+            } else {
+                /* Simple way: Only add videos of "channel overview" (this may not find all items) */
+                // int addedItems = 0;
+                for (final String videoID : albumVideoIDs) {
+                    if (dupes.contains(videoID)) {
+                        continue;
+                    }
+                    // addedItems += 1;
+                    dupes.add(videoID);
+                    final DownloadLink dl = this.createDownloadlink("https://" + this.getHost() + "/video/" + videoID);
+                    /* Try to find a meaningful title right away */
+                    final String title = br.getRegex("openMovie\\([^\"]+" + videoID + "[^\"]+\"[^>]*title=\"([^\"]+)\"").getMatch(0);
+                    if (title != null) {
+                        dl.setName(title + ".mp4");
+                    } else {
+                        dl.setName(videoID + ".mp4");
+                    }
+                    dl.setAvailable(true);
+                    dl._setFilePackage(fp);
+                    distribute(dl);
+                    decryptedLinks.add(dl);
+                }
             }
         } else {
             /* Crawl single video -> Check for embedded content on external websites */
