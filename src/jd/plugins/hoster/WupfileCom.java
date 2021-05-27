@@ -123,6 +123,12 @@ public class WupfileCom extends XFileSharingProBasic {
     }
 
     @Override
+    protected boolean supports_availablecheck_filesize_html() {
+        /* 2021-05-27 */
+        return false;
+    }
+
+    @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
         return 1;
     }
