@@ -43,7 +43,7 @@ public class FakirdebridCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "fakirdebrid.com" });
+        ret.add(new String[] { "fakirdebrid.com", "fakirserver.info" });
         return ret;
     }
 
