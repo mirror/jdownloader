@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -23,6 +24,10 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.BiqleRuConfig;
+import org.jdownloader.plugins.components.config.BiqleRuConfig.Quality;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -33,6 +38,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
@@ -54,6 +61,11 @@ public class BiqleRu extends PluginForDecrypt {
                 return ret;
             }
             final String title = Encoding.htmlOnlyDecode(br.getRegex("<title>\\s*(.*?)\\s*(—\\s*BIQLE.*?)?</title>").getMatch(0));
+            FilePackage fp = null;
+            if (title != null) {
+                fp = FilePackage.getInstance();
+                fp.setName(title);
+            }
             final String DaxabPlayer = br.getRegex("DaxabPlayer\\.init\\(\\s*(\\{.*?\\})\\s*\\)\\s*;\\s*\\}\\s*</script").getMatch(0);
             String daxab = null;
             if (DaxabPlayer != null) {
@@ -71,39 +83,62 @@ public class BiqleRu extends PluginForDecrypt {
                 sleep(1000, param);
                 brc.getPage(daxab);
                 if (brc.containsHTML("cdn_files")) {
+                    /* TODO: Apply quality setting also for other types of videos e.g. externally hosted/vk */
+                    final Map<String, DownloadLink> qualityMap = new HashMap<String, DownloadLink>();
+                    DownloadLink best = null;
+                    int highestQualityInt = -1;
                     final String server = Base64.decodeToString(new StringBuilder(brc.getRegex("server\\s*:\\s*\"(.*?)\"").getMatch(0)).reverse().toString());
                     final String cdn_id = brc.getRegex("cdn_id\\s*:\\s*\"(.*?)\"").getMatch(0);
                     final String cdn_filesString = brc.getRegex("cdn_files\\s*:\\s*(\\{.*?\\})").getMatch(0);
                     final Map<String, Object> cdn_files = JSonStorage.restoreFromString(cdn_filesString, TypeRef.HASHMAP);
                     for (Entry<String, Object> cdn_file : cdn_files.entrySet()) {
                         if (cdn_file.getKey().startsWith("mp4")) {
-                            String resolution = new Regex(cdn_file, "mp4_(\\d+)").getMatch(0);
-                            if (resolution == null) {
-                                resolution = "";
+                            String heightStr = new Regex(cdn_file, "mp4_(\\d+)").getMatch(0);
+                            if (heightStr == null) {
+                                heightStr = "";
                             }
                             String fileName = (String) cdn_file.getValue();
                             fileName = fileName.replace(".", ".mp4?extra=");
-                            final DownloadLink downloadLink = createDownloadlink(decryptedhost + server + "/videos/" + cdn_id.replace("_", "/") + "/" + fileName);
+                            final DownloadLink dl = createDownloadlink(decryptedhost + server + "/videos/" + cdn_id.replace("_", "/") + "/" + fileName);
                             if (title != null) {
-                                downloadLink.setFinalFileName(title + "_" + resolution + ".mp4");
+                                dl.setFinalFileName(title + "_" + heightStr + ".mp4");
                             } else {
-                                downloadLink.setFinalFileName(cdn_id + "_" + resolution + ".mp4");
+                                dl.setFinalFileName(cdn_id + "_" + heightStr + ".mp4");
                             }
-                            downloadLink.setContainerUrl(param.getCryptedUrl());
-                            ret.add(downloadLink);
+                            if (fp != null) {
+                                dl._setFilePackage(fp);
+                            }
+                            dl.setContainerUrl(param.getCryptedUrl());
+                            if (!heightStr.isEmpty()) {
+                                final int height = Integer.parseInt(heightStr);
+                                if (height > highestQualityInt) {
+                                    highestQualityInt = height;
+                                    best = dl;
+                                }
+                                qualityMap.put(heightStr + "p", dl);
+                            } else if (best == null) {
+                                /* Assume video without quality modifier is BEST. */
+                                best = dl;
+                            }
                         }
                     }
-                    if (title != null) {
-                        final FilePackage fp = FilePackage.getInstance();
-                        fp.setName(title);
-                        fp.addLinks(ret);
+                    if (qualityMap.isEmpty() && best == null) {
+                        /* This should never happen */
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final String userPreferredQuality = getUserPreferredqualityStr();
+                    if (userPreferredQuality == null || !qualityMap.containsKey(userPreferredQuality)) {
+                        ret.add(best);
+                    } else {
+                        logger.info("Adding user preferred quality: " + userPreferredQuality);
+                        ret.add(qualityMap.get(userPreferredQuality));
                     }
                     return ret;
                 } else {
                     final String server = Base64.decodeToString(new StringBuilder(brc.getRegex("server\\s*:\\s*\"(.*?)\"").getMatch(0)).reverse().toString());
                     final String accessToken = brc.getRegex("access_token\\s*:\\s*\"(.*?)\"").getMatch(0);
                     final String videoId = brc.getRegex("id\\s*:\\s*\"(.*?)\"").getMatch(0);
-                    final String sig = brc.getRegex("sig\\s*:\\s*\"(.*?)\"").getMatch(0);
+                    // final String sig = brc.getRegex("sig\\s*:\\s*\"(.*?)\"").getMatch(0);
                     final String credentials = brc.getRegex("credentials\\s*:\\s*\"(.*?)\"").getMatch(0);
                     final String cKey = brc.getRegex("c_key\\s*:\\s*\"(.*?)\"").getMatch(0);
                     final String partialSig = brc.getRegex("\"sig\"\\s*:\\s*\"(.*?)\"").getMatch(0);
@@ -142,10 +177,10 @@ public class BiqleRu extends PluginForDecrypt {
                             StringBuilder sb = new StringBuilder(fileUrl);
                             sb.insert(insertPos, server + "/");
                             sb.append(String.format("&extra_key=%s&videos=%s", partialQuality.get(resolution), videoId));
-                            final DownloadLink downloadLink = createDownloadlink(sb.toString().replaceAll("https?://", decryptedhost));
-                            downloadLink.setFinalFileName(titleName + "_" + resolution + ".mp4");
-                            downloadLink.setContainerUrl(param.getCryptedUrl());
-                            ret.add(downloadLink);
+                            final DownloadLink dl = createDownloadlink(sb.toString().replaceAll("https?://", decryptedhost));
+                            dl.setFinalFileName(titleName + "_" + resolution + ".mp4");
+                            dl.setContainerUrl(param.getCryptedUrl());
+                            ret.add(dl);
                         }
                     }
                     return ret;
@@ -184,5 +219,29 @@ public class BiqleRu extends PluginForDecrypt {
             ret.add(createDownloadlink(finallink));
         }
         return ret;
+    }
+
+    private String getUserPreferredqualityStr() {
+        final Quality quality = PluginJsonConfig.get(BiqleRuConfig.class).getPreferredQuality();
+        switch (quality) {
+        case Q240:
+            return "240p";
+        case Q360:
+            return "360p";
+        case Q480:
+            return "480p";
+        case Q720:
+            return "720p";
+        case Q1080:
+            return "1080p";
+        default:
+            /* E.g. BEST */
+            return null;
+        }
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return BiqleRuConfig.class;
     }
 }

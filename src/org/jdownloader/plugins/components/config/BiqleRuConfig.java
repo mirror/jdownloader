@@ -9,8 +9,8 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
 import org.jdownloader.plugins.config.Type;
 
-@PluginHost(host = "evilangel.com", type = Type.HOSTER)
-public interface EvilangelComConfig extends PluginConfigInterface {
+@PluginHost(host = "biqle.ru", type = Type.CRAWLER)
+public interface BiqleRuConfig extends PluginConfigInterface {
     public static enum Quality implements LabelInterface {
         BEST {
             @Override
@@ -18,52 +18,34 @@ public interface EvilangelComConfig extends PluginConfigInterface {
                 return "Best";
             }
         },
-        Q2160 {
-            @Override
-            public String getLabel() {
-                return "4k 2160p";
-            }
-        },
         Q1080 {
             @Override
             public String getLabel() {
-                return "Full HD 1080p";
+                return "1080p";
             }
         },
         Q720 {
             @Override
             public String getLabel() {
-                return "HD 720p";
-            }
-        },
-        Q540 {
-            @Override
-            public String getLabel() {
-                return "Web HD 540p";
+                return "720p";
             }
         },
         Q480 {
             @Override
             public String getLabel() {
-                return "High 480p";
+                return "480p";
             }
         },
         Q360 {
             @Override
             public String getLabel() {
-                return "Medium 360p";
+                return "360p";
             }
         },
         Q240 {
             @Override
             public String getLabel() {
-                return "Small 240p";
-            }
-        },
-        Q160 {
-            @Override
-            public String getLabel() {
-                return "Low 160p";
+                return "240p";
             }
         };
     }
@@ -72,7 +54,7 @@ public interface EvilangelComConfig extends PluginConfigInterface {
     @DefaultEnumValue("BEST")
     @Order(10)
     @DescriptionForConfigEntry("Best will be used if selected preferred quality does not exist")
-    EvilangelComConfig.Quality getPreferredQuality();
+    BiqleRuConfig.Quality getPreferredQuality();
 
-    void setPreferredQuality(EvilangelComConfig.Quality quality);
+    void setPreferredQuality(BiqleRuConfig.Quality quality);
 }
