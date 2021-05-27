@@ -463,7 +463,6 @@ public abstract class HighWayCore extends UseNet {
     }
 
     private void cacheDLChecker(final Browser br, final DownloadLink link, final Account account) throws Exception {
-        String status = "Waiting for cache download...";
         final PluginProgress waitProgress = new PluginProgress(0, 100, null) {
             protected long lastCurrent    = -1;
             protected long lastTotal      = -1;
@@ -538,8 +537,6 @@ public abstract class HighWayCore extends UseNet {
                     final int retryInSeconds = Math.min(retryInSecondsAPI, maxWaitSeconds - secondsWaited);
                     this.sleep(retryInSeconds * 1000l, link);
                     secondsWaited += retryInSeconds;
-                    /* TODO: Make use of this message (?!) */
-                    status = (String) entries.get("for_jd");
                     final Integer currentProgress = ((Number) entries.get("percentage_Complete")).intValue();
                     this.getDownloadLink().addPluginProgress(waitProgress);
                     waitProgress.updateValues(currentProgress.intValue(), 100);
@@ -558,7 +555,7 @@ public abstract class HighWayCore extends UseNet {
             this.getDownloadLink().removePluginProgress(waitProgress);
         }
         logger.info("Cache handling: Timeout");
-        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, status, ((Integer) entries.get("retry_in_seconds")).intValue() * 1000l);
+        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, (String) entries.get("for_jd"), ((Integer) entries.get("retry_in_seconds")).intValue() * 1000l);
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
