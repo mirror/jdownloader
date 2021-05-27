@@ -68,31 +68,29 @@ public class BiqleRu extends PluginForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        if (!StringUtils.isEmpty(dllink)) {
-            dllink = Encoding.htmlDecode(dllink);
-            URLConnectionAdapter con = null;
-            try {
+        dllink = Encoding.htmlDecode(dllink);
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openHeadConnection(dllink);
+            if (!this.looksLikeDownloadableContent(con)) {
+                dllink = getFreshDirecturl(link);
+                if (dllink == null) {
+                    logger.info("Failed to refresh directurl");
+                    return AvailableStatus.UNCHECKABLE;
+                }
                 con = br.openHeadConnection(dllink);
-                if (!this.looksLikeDownloadableContent(con)) {
-                    dllink = getFreshDirecturl(link);
-                    if (dllink == null) {
-                        logger.info("Failed to refresh directurl");
-                        return AvailableStatus.UNCHECKABLE;
-                    }
-                    con = br.openHeadConnection(dllink);
+            }
+            if (this.looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                } else {
-                    server_issues = true;
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
+            } else {
+                server_issues = true;
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
             }
         }
         return AvailableStatus.TRUE;
@@ -143,7 +141,11 @@ public class BiqleRu extends PluginForHost {
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {

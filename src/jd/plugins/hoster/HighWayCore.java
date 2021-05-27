@@ -423,7 +423,7 @@ public abstract class HighWayCore extends UseNet {
                         logger.log(e);
                     }
                     this.checkErrors(this.br, account);
-                    mhm.handleErrorGeneric(account, this.getDownloadLink(), "unknowndlerror", 10, 5 * 60 * 1000l);
+                    mhm.handleErrorGeneric(account, this.getDownloadLink(), "unknowndlerror", 1, 3 * 60 * 1000l);
                 }
             }
             dl.setFilenameFix(true);
@@ -550,7 +550,7 @@ public abstract class HighWayCore extends UseNet {
                             Thread.sleep(1000);
                         }
                     }
-                    logger.info("Cache handling: Waited " + secondsWaited + " / " + maxWaitSeconds + " | Remaining: " + (maxWaitSeconds - secondsWaited));
+                    logger.info("Cache handling: Seconds waited " + secondsWaited + "/" + maxWaitSeconds + "|Remaining: " + (maxWaitSeconds - secondsWaited));
                     continue;
                 }
             } while (!this.isAbort() && secondsWaited < maxWaitSeconds);
