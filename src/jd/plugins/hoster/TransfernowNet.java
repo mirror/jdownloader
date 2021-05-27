@@ -106,8 +106,8 @@ public class TransfernowNet extends PluginForHost {
         } else if (br.containsHTML("class=\"icon-engine-warning\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("data-name=\"([^\"]+)").getMatch(0);
-        String filesize = br.getRegex("class=\"file-size\">([^<>\"]+)").getMatch(0);
+        String filename = br.getRegex("data-name\\s*=\\s*\"([^\"]+)").getMatch(0);
+        String filesize = br.getRegex("class\\s*=\\s*\"file-size\">\\s*([^<>\"]+)").getMatch(0);
         if (filename != null) {
             filename = Encoding.htmlDecode(filename).trim();
             link.setName(filename);
@@ -127,7 +127,7 @@ public class TransfernowNet extends PluginForHost {
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
             final String dltoken = br.getRegex("token_download\\s*=\\s*\"([^\"]+)\";").getMatch(0);
-            final String keyFile = br.getRegex("data-key_file=\"([^\"]+)").getMatch(0);
+            final String keyFile = br.getRegex("data-key_file\\s*=\\s*\"([^\"]+)").getMatch(0);
             if (StringUtils.isEmpty(dltoken) || StringUtils.isEmpty(keyFile)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -153,8 +153,9 @@ public class TransfernowNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         }
