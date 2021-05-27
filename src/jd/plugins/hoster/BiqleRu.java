@@ -18,10 +18,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
@@ -32,7 +30,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "biqle.ru" }, urls = { "biqledecrypted://.+" })
 public class BiqleRu extends PluginForHost {
@@ -68,29 +68,34 @@ public class BiqleRu extends PluginForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        dllink = Encoding.htmlDecode(dllink);
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openHeadConnection(dllink);
-            if (!this.looksLikeDownloadableContent(con)) {
-                dllink = getFreshDirecturl(link);
-                if (dllink == null) {
-                    logger.info("Failed to refresh directurl");
-                    return AvailableStatus.UNCHECKABLE;
-                }
-                con = br.openHeadConnection(dllink);
-            }
-            if (this.looksLikeDownloadableContent(con)) {
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-            } else {
-                server_issues = true;
-            }
-        } finally {
+        if (!StringUtils.isEmpty(dllink)) {
+            dllink = Encoding.htmlDecode(dllink);
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                final Browser brc = br.cloneBrowser();
+                brc.getHeaders().put("Range", "bytes=" + 0 + "-");
+                con = brc.openHeadConnection(dllink);
+                if (!this.looksLikeDownloadableContent(con)) {
+                    con.disconnect();
+                    dllink = getFreshDirecturl(link);
+                    if (dllink == null) {
+                        logger.info("Failed to refresh directurl");
+                        return AvailableStatus.UNCHECKABLE;
+                    }
+                    con = brc.openHeadConnection(dllink);
+                }
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                } else {
+                    server_issues = true;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         return AvailableStatus.TRUE;
@@ -99,8 +104,7 @@ public class BiqleRu extends PluginForHost {
     private String getFreshDirecturl(final DownloadLink link) throws PluginException {
         logger.info("Trying to find fresh directurl");
         String freshDirecturl = null;
-        final PluginForDecrypt decrypterplugin = JDUtilities.getPluginForDecrypt(this.getHost());
-        decrypterplugin.setBrowser(this.br);
+        final PluginForDecrypt decrypterplugin = getNewPluginForDecryptInstance(getHost());
         /* Match variants via filename */
         final String target_filename = link.getFinalFileName();
         try {
@@ -116,7 +120,7 @@ public class BiqleRu extends PluginForHost {
             }
         } catch (final Throwable e) {
             if (decrypterplugin.getBrowser().getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
             } else {
                 logger.log(e);
             }
@@ -134,23 +138,21 @@ public class BiqleRu extends PluginForHost {
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        link.setProperty("ServerComaptibleForByteRangeRequest", true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
                 logger.log(e);
             }
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
