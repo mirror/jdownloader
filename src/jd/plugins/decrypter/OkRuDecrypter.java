@@ -32,13 +32,14 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?(?:ok\\.ru|odnoklassniki\\.ru)/(?:video|videoembed|web-api/video/moviePlayer|live)/(\\d+(-\\d+)?)|https?://ok\\.ru/video/c(\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?(?:ok\\.ru|odnoklassniki\\.ru)/(?:video|videoembed|web-api/video/moviePlayer|live)/(\\d+(-\\d+)?)|https?://ok\\.ru/video/c(\\d+)|https://(?:www\\.)?ok\\.ru/profile/\\d+/video/c\\d+" })
 public class OkRuDecrypter extends PluginForDecrypt {
     public OkRuDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_CHANNEL = "https?://ok\\.ru/video/c(\\d+)";
+    private static final String TYPE_CHANNEL  = "https?://[^/]+/video/c(\\d+)";
+    private static final String TYPE_PLAYLIST = "https?://[^/]+/profile/(\\d+)/video/(c\\d+)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -109,6 +110,42 @@ public class OkRuDecrypter extends PluginForDecrypt {
                 }
                 logger.info("Found " + addedItems + " items on current page");
             } while (!this.isAbort());
+        } else if (param.getCryptedUrl().matches(TYPE_PLAYLIST)) {
+            br.getPage(param.getCryptedUrl());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
+                return decryptedLinks;
+            }
+            final ArrayList<String> dupes = new ArrayList<String>();
+            final String channelID = new Regex(param.getCryptedUrl(), TYPE_PLAYLIST).getMatch(1);
+            String fpName = br.getRegex("class=\"channel-panel_n ellip\">([^<>\"]+)<").getMatch(0);
+            if (StringUtils.isEmpty(fpName)) {
+                /* Fallback */
+                fpName = channelID;
+            }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName);
+            final String[] videoIDs = br.getRegex("/video/(\\d+)").getColumn(0);
+            // int addedItems = 0;
+            for (final String videoID : videoIDs) {
+                if (dupes.contains(videoID)) {
+                    continue;
+                }
+                // addedItems += 1;
+                dupes.add(videoID);
+                final DownloadLink dl = this.createDownloadlink("https://ok.ru/video/" + videoID);
+                /* Try to find a meaningful title right away */
+                final String title = br.getRegex("openMovie\\([^\"]+" + videoID + "[^\"]+\"[^>]*title=\"([^\"]+)\"").getMatch(0);
+                if (title != null) {
+                    dl.setName(title + ".mp4");
+                } else {
+                    dl.setName(videoID + ".mp4");
+                }
+                dl.setAvailable(true);
+                dl._setFilePackage(fp);
+                distribute(dl);
+                decryptedLinks.add(dl);
+            }
         } else {
             /* Crawl single video -> Check for embedded content on external websites */
             final String vid = new Regex(param.toString(), this.getSupportedLinks()).getMatch(0);
