@@ -16,7 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
@@ -201,7 +201,7 @@ public class OkRuDecrypter extends PluginForDecrypt {
             }
             String externID = null;
             String provider = null;
-            final LinkedHashMap<String, Object> entries = jd.plugins.hoster.OkRu.getFlashVars(br);
+            final Map<String, Object> entries = jd.plugins.hoster.OkRu.getFlashVars(br);
             if (entries != null) {
                 provider = (String) entries.get("provider");
                 externID = (String) JavaScriptEngineFactory.walkJson(entries, "movie/contentId");

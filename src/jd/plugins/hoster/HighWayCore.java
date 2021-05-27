@@ -23,26 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jd.PluginWrapper;
-import jd.controlling.AccountController;
-import jd.http.Browser;
-import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountUnavailableException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginProgress;
-import jd.plugins.components.MultiHosterManagement;
-import jd.plugins.components.PluginJSonUtils;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
@@ -64,6 +44,26 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+
+import jd.PluginWrapper;
+import jd.controlling.AccountController;
+import jd.http.Browser;
+import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginProgress;
+import jd.plugins.components.MultiHosterManagement;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 1, names = {}, urls = {})
 public abstract class HighWayCore extends UseNet {
@@ -105,7 +105,8 @@ public abstract class HighWayCore extends UseNet {
     }
 
     /**
-     * API docs: https://high-way.me/threads/highway-api.201/ </br> According to admin we can 'hammer' the API every 60 seconds
+     * API docs: https://high-way.me/threads/highway-api.201/ </br>
+     * According to admin we can 'hammer' the API every 60 seconds
      */
     protected abstract String getAPIBase();
 
@@ -379,7 +380,7 @@ public abstract class HighWayCore extends UseNet {
                 this.checkErrors(this.br, account);
                 final Object infoMsg = entries.get("info");
                 if (infoMsg instanceof String) {
-                    /* Usually something like "Less than 10% traffic remaining" */
+                    /* Low traffic warning message: Usually something like "Less than 10% traffic remaining" */
                     if (!org.appwork.utils.Application.isHeadless()) {
                         BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
                             @Override
@@ -515,17 +516,21 @@ public abstract class HighWayCore extends UseNet {
         final String cachePollingURL = (String) entries.get("cache");
         try {
             do {
-                this.checkErrors(br, account);
                 /**
-                 * d = download </br> w = wait (retry) </br> q = in queue </br> qn = Download has been added to queue </br> i = direct
-                 * download without cache </br> s = Cached download is ready for downloading
+                 * cacheStatus possible values and what they mean: </br>
+                 * d = download </br>
+                 * w = wait (retry) </br>
+                 * q = in queue </br>
+                 * qn = Download has been added to queue </br>
+                 * i = direct download without cache </br>
+                 * s = Cached download is ready for downloading
                  */
-                final String cacheStatus = (String) entries.get("cacheStatus");
-                if (cacheStatus.matches("i|s")) {
+                if (!entries.containsKey("cacheStatus") || entries.get("cacheStatus").toString().matches("i|s")) {
                     logger.info("Stepping out of cache handling");
                     return;
                 } else {
                     br.getPage(cachePollingURL);
+                    this.checkErrors(br, account);
                     entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                     final int retryInSecondsAPI = ((Number) entries.get("retry_in_seconds")).intValue();
                     /* Don't wait longer than the max. remaining wait seconds */
@@ -684,7 +689,8 @@ public abstract class HighWayCore extends UseNet {
     /**
      * Login without errorhandling
      *
-     * @return true = cookies validated </br> false = cookies set but not validated
+     * @return true = cookies validated </br>
+     *         false = cookies set but not validated
      *
      * @throws PluginException
      * @throws InterruptedException
