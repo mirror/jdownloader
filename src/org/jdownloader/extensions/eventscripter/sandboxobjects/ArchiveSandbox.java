@@ -1,14 +1,11 @@
 package org.jdownloader.extensions.eventscripter.sandboxobjects;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import jd.plugins.DownloadLink;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.utils.IO;
 import org.jdownloader.extensions.eventscripter.EnvironmentException;
 import org.jdownloader.extensions.eventscripter.ScriptThread;
 import org.jdownloader.extensions.extraction.Archive;
@@ -46,18 +43,9 @@ public class ArchiveSandbox {
         }
     }
 
+    @Deprecated
     public String getExtractionLog() {
-        if (archive != null) {
-            final File file = archive.getExtractLogFile();
-            if (file != null && file.exists()) {
-                try {
-                    return IO.readFileToString(file);
-                } catch (IOException e) {
-                    throw new WTFException(e);
-                }
-            }
-        }
-        return null;
+        return "Deprecated";
     }
 
     public boolean isPasswordProtected() {
