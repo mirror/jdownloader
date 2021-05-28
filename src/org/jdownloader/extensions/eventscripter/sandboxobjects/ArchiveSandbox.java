@@ -45,7 +45,7 @@ public class ArchiveSandbox {
 
     @Deprecated
     public String getExtractionLog() {
-        return "Deprecated";
+        return "DEPRECATED, this method may be removed in future version";
     }
 
     public boolean isPasswordProtected() {
