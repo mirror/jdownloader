@@ -180,10 +180,9 @@ public class FakirdebridNet extends PluginForHost {
         }
         account.setType(AccountType.PREMIUM);
         ai.setStatus((String) entries.get("AccountType"));
-        final long maxDailyTraffic = ((Number) entries.get("DailyLimitGB")).longValue();
-        ai.setTrafficLeft(maxDailyTraffic);
-        ai.setTrafficMax(maxDailyTraffic);
-        ai.setValidUntil(JavaScriptEngineFactory.toLong(entries.get("AccountExpire"), 0) * 1000, br);
+        ai.setTrafficLeft(((Number) entries.get("trafficleft")).longValue());
+        ai.setTrafficMax(((Number) entries.get("trafficlimit")).longValue());
+        ai.setValidUntil(JavaScriptEngineFactory.toLong(entries.get("premium_until"), 0) * 1000, br);
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         br.getPage(API_BASE + "/supportedhosts.php?pin=" + Encoding.urlEncode(account.getPass()));
         entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
