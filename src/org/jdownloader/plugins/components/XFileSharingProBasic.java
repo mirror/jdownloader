@@ -3133,27 +3133,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         }
                     }
                     /* Find html snippet which should contain our expiredate. */
-                    final String preciseExpireHTML = new Regex(getCorrectBR(br), "<div[^>]*class=\"accexpire\"[^>]*>.*?</div>").getMatch(-1);
-                    String expireSecond = new Regex(preciseExpireHTML, "Premium(-| )Account expires?\\s*:\\s*(?:</span>)?\\s*(?:<span>)?\\s*([a-zA-Z0-9, ]+)\\s*</").getMatch(-1);
-                    if (StringUtils.isEmpty(expireSecond)) {
-                        /*
-                         * Last attempt - wider RegEx but we expect the 'second(s)' value to always be present!! Example: file-up.org:
-                         * "<p style="direction: ltr; display: inline-block;">1 year, 352 days, 22 hours, 36 minutes, 45 seconds</p>"
-                         */
-                        expireSecond = new Regex(preciseExpireHTML, Pattern.compile(">\\s*(\\d+ years?, )?(\\d+ days?, )?(\\d+ hours?, )?(\\d+ minutes?, )?\\d+ seconds\\s*<", Pattern.CASE_INSENSITIVE)).getMatch(-1);
-                    }
-                    if (StringUtils.isEmpty(expireSecond) && !StringUtils.isEmpty(preciseExpireHTML)) {
-                        /*
-                         * 2019-09-07: This html-class may also be given for non-premium accounts e.g. fileup.cc
-                         */
-                        logger.info("html contains 'accexpire' class but we failed to find a precise expiredate --> Either we have a free account or failed to find precise expiredate although it is given");
-                    }
+                    final String expireSecond = findExpireDate(br);
                     if (!StringUtils.isEmpty(expireSecond)) {
-                        String tmpYears = new Regex(expireSecond, "(\\d+)\\s+years?").getMatch(0);
-                        String tmpdays = new Regex(expireSecond, "(\\d+)\\s+days?").getMatch(0);
-                        String tmphrs = new Regex(expireSecond, "(\\d+)\\s+hours?").getMatch(0);
-                        String tmpmin = new Regex(expireSecond, "(\\d+)\\s+minutes?").getMatch(0);
-                        String tmpsec = new Regex(expireSecond, "(\\d+)\\s+seconds?").getMatch(0);
+                        final String tmpYears = new Regex(expireSecond, "(\\d+)\\s+years?").getMatch(0);
+                        final String tmpdays = new Regex(expireSecond, "(\\d+)\\s+days?").getMatch(0);
+                        final String tmphrs = new Regex(expireSecond, "(\\d+)\\s+hours?").getMatch(0);
+                        final String tmpmin = new Regex(expireSecond, "(\\d+)\\s+minutes?").getMatch(0);
+                        final String tmpsec = new Regex(expireSecond, "(\\d+)\\s+seconds?").getMatch(0);
                         long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
                         if (!StringUtils.isEmpty(tmpYears)) {
                             years = Integer.parseInt(tmpYears);
@@ -3212,6 +3198,25 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
         }
         return ai;
+    }
+
+    protected String findExpireDate(final Browser br) {
+        final String preciseExpireHTML = new Regex(getCorrectBR(br), "<div[^>]*class=\"accexpire\"[^>]*>.*?</div>").getMatch(-1);
+        String expireSecond = new Regex(preciseExpireHTML, "Premium(-| )Account expires?\\s*:\\s*(?:</span>)?\\s*(?:<span>)?\\s*([a-zA-Z0-9, ]+)\\s*</").getMatch(-1);
+        if (StringUtils.isEmpty(expireSecond)) {
+            /*
+             * Last attempt - wider RegEx but we expect the 'second(s)' value to always be present!! Example: file-up.org:
+             * "<p style="direction: ltr; display: inline-block;">1 year, 352 days, 22 hours, 36 minutes, 45 seconds</p>"
+             */
+            expireSecond = new Regex(preciseExpireHTML, Pattern.compile(">\\s*(\\d+ years?, )?(\\d+ days?, )?(\\d+ hours?, )?(\\d+ minutes?, )?\\d+ seconds\\s*<", Pattern.CASE_INSENSITIVE)).getMatch(-1);
+        }
+        if (StringUtils.isEmpty(expireSecond) && !StringUtils.isEmpty(preciseExpireHTML)) {
+            /*
+             * 2019-09-07: This html-class may also be given for non-premium accounts e.g. fileup.cc
+             */
+            logger.info("html contains 'accexpire' class but we failed to find a precise expiredate --> Either we have a free account or failed to find precise expiredate although it is given");
+        }
+        return expireSecond;
     }
 
     /**

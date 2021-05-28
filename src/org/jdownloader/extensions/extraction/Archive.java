@@ -24,7 +24,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import net.sf.sevenzipjbinding.ArchiveFormat;
 
-import org.appwork.utils.Application;
 import org.jdownloader.extensions.extraction.ArchiveFile.ArchiveID;
 import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.multi.ArchiveType;
@@ -353,14 +352,6 @@ public class Archive {
     }
 
     protected void onCleanUp() {
-    }
-
-    public File getExtractLogFile() {
-        return getArchiveLogFileById(getArchiveID());
-    }
-
-    public static File getArchiveLogFileById(String id) {
-        return Application.getResource("logs/extracting/" + id + ".txt");
     }
 
     public void setPasswords(List<String> list) {
