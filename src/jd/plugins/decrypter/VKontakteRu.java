@@ -743,7 +743,8 @@ public class VKontakteRu extends PluginForDecrypt {
             /* Decrypt qualities, selected by the user */
             final ArrayList<String> selectedQualities = new ArrayList<String>();
             final boolean fastLinkcheck = cfg.getBooleanProperty(FASTLINKCHECK_VIDEO, false);
-            if (cfg.getBooleanProperty(ALLOW_BEST, false)) {
+            final boolean grabBestOnly = cfg.getBooleanProperty(ALLOW_BEST, false);
+            if (grabBestOnly) {
                 final ArrayList<String> list = new ArrayList<String>(foundQualities.keySet());
                 final String highestAvailableQualityValue = list.get(0);
                 selectedQualities.add(highestAvailableQualityValue);
@@ -1033,34 +1034,51 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /** NOT Using API --> NOT possible */
     private void decryptVideoAlbum() throws Exception {
+        /* TODO: Update this to use new json parsing/pagination handling! */
         this.getPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
         handleVideoErrors(br);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        final String sectionName = UrlQuery.parse(this.CRYPTEDLINK_FUNCTIONAL).get("section");
         final String albumID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "(-?\\d+)$").getMatch(0);
-        final String videosCount = PluginJSonUtils.getJsonNested(br, "videosCount");
-        String numberofentries = null;
-        if (videosCount != null) {
-            numberofentries = PluginJSonUtils.getJson(videosCount, "all");
+        final String albumsJson = br.getRegex("extend\\(cur, (\\{\"albumsPreload\".*?\\})\\);\\s+").getMatch(0);
+        int numberOfVideos = -1;
+        Map<String, Object> entries = JSonStorage.restoreFromString(albumsJson, TypeRef.HASHMAP);
+        final int maxItemsPerPage = ((Number) entries.get("VIDEO_SILENT_VIDEOS_CHUNK_SIZE")).intValue();
+        final Map<String, Object> videosCountMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "videosCount/" + albumID);
+        if (!StringUtils.isEmpty(sectionName)) {
+            numberOfVideos = ((Number) videosCountMap.get(sectionName)).intValue();
+        } else {
+            numberOfVideos = ((Number) videosCountMap.get("all")).intValue();
         }
-        if (numberofentries == null) {
-            numberofentries = PluginJSonUtils.getJsonValue(br, "videoCount");
+        if (numberOfVideos == -1) {
+            /* 2021-05-31: Old handling - should not be needed anymore! */
+            logger.warning("Jumping into old handling to find numberOfVideos");
+            final String videosCount = PluginJSonUtils.getJsonNested(br, "videosCount");
+            String numberofentries = null;
+            if (videosCount != null) {
+                numberofentries = PluginJSonUtils.getJson(videosCount, "all");
+            }
             if (numberofentries == null) {
-                numberofentries = br.getRegex("class=\"video_summary_count\">(\\d+)<").getMatch(0);
+                numberofentries = PluginJSonUtils.getJsonValue(br, "videoCount");
                 if (numberofentries == null) {
-                    numberofentries = PluginJSonUtils.getJsonValue(br, "count");
+                    numberofentries = br.getRegex("class=\"video_summary_count\">(\\d+)<").getMatch(0);
                     if (numberofentries == null) {
-                        // THIS IS NOT ENTRY COUNT! THIS IS ALUBMS -raztoki20161117.
-                        // numberofentries = PluginJSonUtils.getJsonValue(br, "playlistsCount");
+                        numberofentries = PluginJSonUtils.getJsonValue(br, "count");
+                        if (numberofentries == null) {
+                            // THIS IS NOT ENTRY COUNT! THIS IS ALUBMS -raztoki20161117.
+                            // numberofentries = PluginJSonUtils.getJsonValue(br, "playlistsCount");
+                        }
                     }
                 }
             }
+            numberOfVideos = Integer.parseInt(numberofentries);
         }
-        final int numberOfEntrys = Integer.parseInt(numberofentries);
-        int totalCounter = 0;
+        logger.info("numberofentries=" + numberOfVideos + "|maxItemsPerPage=" + maxItemsPerPage);
+        int offset = 0;
         final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
-        while (totalCounter < numberOfEntrys) {
+        while (offset < numberOfVideos) {
             String[] videos = null;
-            if (totalCounter < 12) {
+            if (offset < 12) {
                 /* 2016-08-24: Updated this */
                 final String jsVideoArray = PluginJSonUtils.getJsonNested(br, "pageVideosList");
                 if (jsVideoArray != null) {
@@ -1075,7 +1093,18 @@ public class VKontakteRu extends PluginForDecrypt {
                     }
                 }
             } else {
-                br.postPage(getBaseURL() + "/al_video.php", "act=load_videos_silent&al=1&offset=" + totalCounter + "&oid=" + albumID);
+                final UrlQuery query = new UrlQuery();
+                query.add("al", "1");
+                query.add("need_albums", "0");
+                query.add("offset", Integer.toString(offset));
+                query.add("oid", albumID);
+                // query.add("rowlen", "3");
+                if (!StringUtils.isEmpty(sectionName)) {
+                    query.add("section", Encoding.urlEncode(sectionName));
+                }
+                // query.add("snippet_video", "0");
+                // br.postPage(getBaseURL() + "/al_video.php", "act=load_videos_silent&al=1&offset=" + offset + "&oid=" + albumID);
+                br.postPage(getBaseURL() + "/al_video.php?act=load_videos_silent", query.toString());
                 videos = br.getRegex("\\[(?:\")?((\\-)?\\d+(?:\")?,(?:\")?\\d+)(?:\")?,\"").getColumn(0);
             }
             if (videos == null || videos.length == 0) {
@@ -1092,7 +1121,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     final String completeVideolink = getProtocol() + "vk.com/video" + singleVideo;
                     this.decryptedLinks.add(createDownloadlink(completeVideolink));
                 } finally {
-                    totalCounter++;
+                    offset++;
                 }
             }
             logger.info("Found " + videos.length + " videos so far");
@@ -1101,7 +1130,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 break;
             }
         }
-        logger.info("Total videolinks found: " + totalCounter);
+        logger.info("Total videolinks found: " + offset);
     }
 
     /**
