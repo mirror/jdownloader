@@ -19,20 +19,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.config.XvideosComConfig;
-import org.jdownloader.plugins.components.config.XvideosComConfig.PreferredHLSQuality;
-import org.jdownloader.plugins.components.config.XvideosComConfig.PreferredHTTPQuality;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
-import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -51,6 +39,17 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.config.XvideosComConfig;
+import org.jdownloader.plugins.components.config.XvideosComConfig.PreferredHLSQuality;
+import org.jdownloader.plugins.components.config.XvideosComConfig.PreferredHTTPQuality;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 //xvideos.com by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -299,8 +298,7 @@ public class XvideosCom extends PluginForHost {
             final String hlsURL = getVideoHLSMaster();
             /**
              * 2021-01-27: This website can "shadow ban" users who download "too much". They will then deliver all videos in 240p only. This
-             * is an attempt to detect this.</br>
-             * See also: https://board.jdownloader.org/showthread.php?t=86587
+             * is an attempt to detect this.</br> See also: https://board.jdownloader.org/showthread.php?t=86587
              */
             if (PluginJsonConfig.get(XvideosComConfig.class).isTryToRecognizeLimit() && isDownload && hlsURL == null) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Low quality block active", 60 * 60 * 1000l);
@@ -315,17 +313,17 @@ public class XvideosCom extends PluginForHost {
                     for (final HlsContainer currentQuality : hlsqualities) {
                         final int width = currentQuality.getHeight();
                         if (width == preferredHLSQuality) {
-                            logger.info("Found user selected HLS quality: " + preferredHLSQuality);
+                            logger.info("Found user selected HLS quality: " + preferredHLSQuality + ">" + currentQuality);
                             selectedQuality = currentQuality;
                             break;
                         }
                     }
                     if (selectedQuality == null) {
-                        logger.info("Failed to find user-selected HLS quality --> Fallback to BEST");
                         selectedQuality = HlsContainer.findBestVideoByBandwidth(hlsqualities);
+                        logger.info("Failed to find user-selected HLS quality --> Fallback to BEST>" + selectedQuality);
                     }
                     if (selectedQuality != null) {
-                        if (Thread.currentThread() instanceof SingleDownloadController) {
+                        if (isDownload) {
                             this.hlsContainer = selectedQuality;
                         }
                         final List<M3U8Playlist> playLists = M3U8Playlist.loadM3U8(selectedQuality.getDownloadurl(), m3u8);
@@ -341,6 +339,8 @@ public class XvideosCom extends PluginForHost {
                         }
                         return AvailableStatus.TRUE;
                     }
+                } else {
+                    logger.info("Failed to find HLS qualities!");
                 }
             } else if (account != null) {
                 /* When logged-in, official downloadlinks can be available */
@@ -366,30 +366,29 @@ public class XvideosCom extends PluginForHost {
             if (StringUtils.isEmpty(videoURL)) {
                 /* Download http streams */
                 final PreferredHTTPQuality qualityhttp = getPreferredHTTPQuality();
-                if (qualityhttp == PreferredHTTPQuality.HIGH) {
+                switch (qualityhttp) {
+                case HIGH:
                     videoURL = getVideoHigh();
-                } else {
+                    if (isValidVideoURL(link, videoURL)) {
+                        break;
+                    }
+                case LOW:
                     videoURL = getVideoLow();
-                }
-                if (videoURL != null && !isValidVideoURL(link, videoURL)) {
-                    videoURL = null;
-                }
-                if (videoURL == null) {
-                    /* Fallback / try to find BEST */
-                    logger.info("Failed to find selected http quality");
-                    videoURL = getVideoHigh();
-                    if (!isValidVideoURL(link, videoURL)) {
-                        videoURL = getVideoLow();
-                        if (!isValidVideoURL(link, videoURL)) {
-                            videoURL = getVideoFlv();
-                        }
+                    if (isValidVideoURL(link, videoURL)) {
+                        break;
+                    }
+                default:
+                    videoURL = getVideoFlv();
+                    if (isValidVideoURL(link, videoURL)) {
+                        break;
                     }
                 }
                 if (!isValidVideoURL(link, videoURL)) {
                     /* Assume that an account is required to access this content */
                     throw new AccountRequiredException();
+                } else {
+                    videoURL = Encoding.htmlOnlyDecode(videoURL);
                 }
-                videoURL = Encoding.htmlOnlyDecode(videoURL);
             }
             if (isDownload) {
                 streamURL = videoURL;
@@ -509,7 +508,7 @@ public class XvideosCom extends PluginForHost {
     }
 
     private int getPreferredHLSQuality() {
-        PreferredHLSQuality preferredHLSQuality = PluginJsonConfig.get(XvideosComConfig.class).getPreferredHLSQuality();
+        final PreferredHLSQuality preferredHLSQuality = PluginJsonConfig.get(XvideosComConfig.class).getPreferredHLSQuality();
         switch (preferredHLSQuality) {
         case Q2160P:
             return 2160;
@@ -521,6 +520,7 @@ public class XvideosCom extends PluginForHost {
             return 480;
         case Q360P:
             return 360;
+        case BEST:
         default:
             return -1;
         }
@@ -672,8 +672,8 @@ public class XvideosCom extends PluginForHost {
     }
 
     /**
-     * Only use this when on this page: https://www.xvideos.red/account/premium </br>
-     * 2021-03-08: Free users cannot even view the account panel so checking for any elements in there is good enough as premium indicator!
+     * Only use this when on this page: https://www.xvideos.red/account/premium </br> 2021-03-08: Free users cannot even view the account
+     * panel so checking for any elements in there is good enough as premium indicator!
      */
     private static boolean isPremium(final Browser br) {
         /*
