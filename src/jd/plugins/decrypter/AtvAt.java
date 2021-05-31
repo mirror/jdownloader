@@ -210,7 +210,7 @@ public class AtvAt extends PluginForDecrypt {
                 final HlsContainer best = HlsContainer.findBestVideoByBandwidth(hlsContainers);
                 final DownloadLink link = this.createDownloadlink(best.getDownloadurl().replaceFirst("https://", "m3u8s://"));
                 String finalname = hybrid_name + "_";
-                finalname += "http_part_";
+                finalname += "hlsHD_part_";
                 finalname += df.format(partCounter) + "_";
                 finalname += best.getHeight() + "p";
                 finalname += ".mp4";
