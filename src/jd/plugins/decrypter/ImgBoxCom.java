@@ -27,6 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.utils.StringUtils;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgbox.com" }, urls = { "https?://(www\\.)?imgbox\\.com/(g/)?[A-Za-z0-9]+" })
 public class ImgBoxCom extends PluginForDecrypt {
     public ImgBoxCom(PluginWrapper wrapper) {
@@ -110,7 +112,12 @@ public class ImgBoxCom extends PluginForDecrypt {
         if (finallink == null) {
             return null;
         }
-        return createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
+        final DownloadLink ret = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
+        final String title = br.getRegex("class\\s*=\\s*\"image-container\".*title\\s*=\\s*\"(.*?)\"").getMatch(0);
+        if (StringUtils.isNotEmpty(title)) {
+            ret.setFinalFileName(Encoding.htmlDecode(title));
+        }
+        return ret;
     }
 
     /* NO OVERRIDE!! */

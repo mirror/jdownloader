@@ -20,15 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.BiqleRuConfig;
-import org.jdownloader.plugins.components.config.BiqleRuConfig.Quality;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -42,6 +33,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.BiqleRuConfig;
+import org.jdownloader.plugins.components.config.BiqleRuConfig.Quality;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "biqle.ru", "daxab.com", "divxcim.com", "daftsex.com" }, urls = { "https?://(?:www\\.)?biqle\\.(com|ru|org)/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?(daxab\\.com|dxb\\.to)/embed/(?:\\-)?\\d+_\\d+", "https?://(?:www\\.)?divxcim\\.com/video_ext\\.php\\?oid=(?:\\-)?\\d+\\&id=\\d+", "https?://(?:www\\.)?daftsex\\.com/watch/(?:-)?\\d+_\\d+" })
 public class BiqleRu extends PluginForDecrypt {
@@ -79,14 +79,15 @@ public class BiqleRu extends PluginForDecrypt {
                 daxab = br.getRegex("((?:https?:)?//(?:daxab\\.com|dxb\\.to)/player/[a-zA-Z0-9_\\-]+)").getMatch(0);
             }
             if (daxab != null) {
+                /* TODO: Apply quality setting also for other types of videos e.g. externally hosted/vk */
+                final String userPreferredQuality = getUserPreferredqualityStr();
+                final Map<String, DownloadLink> qualityMap = new HashMap<String, DownloadLink>();
+                DownloadLink best = null;
+                int highestQualityInt = -1;
                 final Browser brc = br.cloneBrowser();
                 sleep(1000, param);
                 brc.getPage(daxab);
                 if (brc.containsHTML("cdn_files")) {
-                    /* TODO: Apply quality setting also for other types of videos e.g. externally hosted/vk */
-                    final Map<String, DownloadLink> qualityMap = new HashMap<String, DownloadLink>();
-                    DownloadLink best = null;
-                    int highestQualityInt = -1;
                     final String server = Base64.decodeToString(new StringBuilder(brc.getRegex("server\\s*:\\s*\"(.*?)\"").getMatch(0)).reverse().toString());
                     final String cdn_id = brc.getRegex("cdn_id\\s*:\\s*\"(.*?)\"").getMatch(0);
                     final String cdn_filesString = brc.getRegex("cdn_files\\s*:\\s*(\\{.*?\\})").getMatch(0);
@@ -122,18 +123,6 @@ public class BiqleRu extends PluginForDecrypt {
                             }
                         }
                     }
-                    if (qualityMap.isEmpty() && best == null) {
-                        /* This should never happen */
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final String userPreferredQuality = getUserPreferredqualityStr();
-                    if (userPreferredQuality == null || !qualityMap.containsKey(userPreferredQuality)) {
-                        ret.add(best);
-                    } else {
-                        logger.info("Adding user preferred quality: " + userPreferredQuality);
-                        ret.add(qualityMap.get(userPreferredQuality));
-                    }
-                    return ret;
                 } else {
                     final String server = Base64.decodeToString(new StringBuilder(brc.getRegex("server\\s*:\\s*\"(.*?)\"").getMatch(0)).reverse().toString());
                     final String accessToken = brc.getRegex("access_token\\s*:\\s*\"(.*?)\"").getMatch(0);
@@ -180,11 +169,31 @@ public class BiqleRu extends PluginForDecrypt {
                             final DownloadLink dl = createDownloadlink(sb.toString().replaceAll("https?://", decryptedhost));
                             dl.setFinalFileName(titleName + "_" + resolution + ".mp4");
                             dl.setContainerUrl(param.getCryptedUrl());
-                            ret.add(dl);
+                            if (!resolution.isEmpty()) {
+                                final int height = Integer.parseInt(resolution);
+                                if (height > highestQualityInt) {
+                                    highestQualityInt = height;
+                                    best = dl;
+                                }
+                                qualityMap.put(resolution + "p", dl);
+                            } else if (best == null) {
+                                /* Assume video without quality modifier is BEST. */
+                                best = dl;
+                            }
                         }
                     }
-                    return ret;
                 }
+                if (qualityMap.isEmpty() && best == null) {
+                    /* This should never happen */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else if (userPreferredQuality == null || !qualityMap.containsKey(userPreferredQuality)) {
+                    logger.info("Adding best because preferred quality not found: " + userPreferredQuality);
+                    ret.add(best);
+                } else {
+                    logger.info("Adding user preferred quality: " + userPreferredQuality);
+                    ret.add(qualityMap.get(userPreferredQuality));
+                }
+                return ret;
             } else {
                 // vk mode
                 final String daxabExt = br.getRegex("((?:https?:)?//(?:daxab\\.com|dxb\\.to)/ext\\.php\\?oid=[0-9\\-]+&id=\\d+&hash=[a-zA-Z0-9]+)\"").getMatch(0);
@@ -234,6 +243,7 @@ public class BiqleRu extends PluginForDecrypt {
             return "720p";
         case Q1080:
             return "1080p";
+        case BEST:
         default:
             /* E.g. BEST */
             return null;

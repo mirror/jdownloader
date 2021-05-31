@@ -113,9 +113,9 @@ public abstract class FFmpeg extends AbstractFFmpegBinary {
                             okayFlag = true;
                         }
                     } finally {
-                        tmpAudioIn.delete();
+                        deleteFile(tmpAudioIn);
                         if (!okayFlag) {
-                            tmpOut.delete();
+                            deleteFile(tmpOut);
                         }
                     }
                 } else {
@@ -133,6 +133,12 @@ public abstract class FFmpeg extends AbstractFFmpegBinary {
                 return true;
             }
             return false;
+        }
+    }
+
+    protected void deleteFile(File file) {
+        if (!file.delete() && file.exists()) {
+            file.deleteOnExit();
         }
     }
 
@@ -173,10 +179,10 @@ public abstract class FFmpeg extends AbstractFFmpegBinary {
                             okay = true;
                         }
                     } finally {
-                        tmpAudioIn.delete();
-                        tmpVideoIn.delete();
+                        deleteFile(tmpAudioIn);
+                        deleteFile(tmpVideoIn);
                         if (!okay) {
-                            tmpOut.delete();
+                            deleteFile(tmpOut);
                         }
                     }
                 } else {
@@ -245,9 +251,9 @@ public abstract class FFmpeg extends AbstractFFmpegBinary {
                                     okayFlag = true;
                                 }
                             } finally {
-                                tmpAudioIn.delete();
+                                deleteFile(tmpAudioIn);
                                 if (!okayFlag) {
-                                    tmpOut.delete();
+                                    deleteFile(tmpOut);
                                 }
                             }
                         } else {

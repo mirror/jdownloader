@@ -962,7 +962,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             fileInfo[0] = new Regex(correctedBR, sharebox3_videohost).getMatch(0);
             if (StringUtils.isEmpty(fileInfo[0])) {
                 /* 2017-04-11: Typically for XVideoSharing sites */
-                fileInfo[0] = new Regex(correctedBR, Pattern.compile("<title>Watch ([^<>\"]+)</title>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                fileInfo[0] = new Regex(correctedBR, Pattern.compile("<title>\\s*Watch(?:ing)?\\s*([^<>\"]+)\\s*</title>", Pattern.CASE_INSENSITIVE)).getMatch(0);
             }
         }
         if (StringUtils.isEmpty(fileInfo[0])) {
@@ -1235,7 +1235,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             dl.setAvailable(true);
             try {
                 final String[] tabla_data = new Regex(html_for_fuid, "<td>?(.*?)</td>").getColumn(0);
-                final String size = tabla_data[2];
+                final String size = tabla_data.length >= 2 ? tabla_data[2] : null;
                 if (size != null) {
                     /*
                      * Filesize should definitly be given - but at this stage we are quite sure that the file is online so let's not throw a

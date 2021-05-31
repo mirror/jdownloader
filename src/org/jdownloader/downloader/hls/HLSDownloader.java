@@ -391,13 +391,15 @@ public class HLSDownloader extends DownloadInterface {
                         if (format == null) {
                             final ArrayList<String> queryDefaultFormat = new ArrayList<String>();
                             queryDefaultFormat.add(ffmpeg.getFullPath());
-                            final File dummy = Application.getTempResource("ffmpeg_dummy-" + System.currentTimeMillis() + "." + extension);
+                            final File dummy = Application.getTempResource("ffmpeg_dummy-" + org.appwork.utils.UniqueAlltimeID.next() + "." + extension);
                             try {
                                 queryDefaultFormat.add(dummy.getAbsolutePath());
                                 queryDefaultFormat.add("-y");
                                 ffmpeg.runCommand(null, queryDefaultFormat);
                             } finally {
-                                dummy.delete();
+                                if (!dummy.delete() && dummy.exists()) {
+                                    dummy.deleteOnExit();
+                                }
                             }
                         }
                     } catch (FFMpegException e) {
@@ -528,7 +530,7 @@ public class HLSDownloader extends DownloadInterface {
                                 deleteOutput = false;
                             }
                         } finally {
-                            if (deleteTmp && tmpOut.exists() && !tmpOut.delete()) {
+                            if (deleteTmp && !tmpOut.delete() && tmpOut.exists()) {
                                 tmpOut.deleteOnExit();
                             }
                         }
@@ -689,7 +691,7 @@ public class HLSDownloader extends DownloadInterface {
                             destination.delete();
                             tmpOut.renameTo(destination);
                         } finally {
-                            if (deleteTmp && tmpOut.exists() && !tmpOut.delete()) {
+                            if (deleteTmp && !tmpOut.delete() && tmpOut.exists()) {
                                 tmpOut.deleteOnExit();
                             }
                         }
@@ -1382,7 +1384,7 @@ public class HLSDownloader extends DownloadInterface {
                                                 if (connection.getResponseCode() == 200 || connection.getResponseCode() == 206) {
                                                     segment.setSize(Math.max(length, fileBytesMap.getSize()));
                                                 }
-                                                logger.severe("Segment(" + segmentIndex + "):" + segment.getUrl() + "|Loaded:" + segment.getLoaded() + "|Size:" + segment.getSize());
+                                                logger.severe("Segment(" + segmentIndex + "/" + (playList != null ? playList.size() : "~") + "):" + segment.getUrl() + "|Loaded:" + segment.getLoaded() + "|Size:" + segment.getSize());
                                             }
                                             requestLogger.info(fileBytesMap.toString());
                                         } finally {
@@ -1587,8 +1589,8 @@ public class HLSDownloader extends DownloadInterface {
         }
     }
 
-    protected boolean isM3U8SegmentLoaded(M3U8Segment segment) {
-        if (segment != null) {
+    protected boolean isM3U8SegmentLoaded(final M3U8Segment segment) {
+        if (segment != null && segment.getLoaded() >= 0) {
             final long loaded = segment.getLoaded();
             final long size = Math.max(loaded, segment.getSize());
             final double done = (loaded / size) * 100d;
@@ -1608,7 +1610,7 @@ public class HLSDownloader extends DownloadInterface {
                 for (int index = 0; index < m3u8Playlist.size(); index++) {
                     final M3U8Segment segment = m3u8Playlist.getSegment(index);
                     if (!isM3U8SegmentLoaded(segment)) {
-                        logger.severe("Segment(" + index + "):" + segment.getUrl() + "|Loaded:" + segment.getLoaded() + "|Size:" + segment.getSize());
+                        logger.severe("Segment(" + index + "/" + m3u8Playlist.size() + "):" + segment.getUrl() + "|Loaded:" + segment.getLoaded() + "|Size:" + segment.getSize());
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Segment:" + index + " not loaded");
                     }
                 }
