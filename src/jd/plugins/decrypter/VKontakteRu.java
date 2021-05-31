@@ -765,7 +765,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     selectedQualities.add("1080p");
                 }
                 if (selectedQualities.isEmpty()) {
-                    /* Do not allow user to deselect all qualities! */
+                    /* Do not allow user to deselect all qualities! Grab all instead! */
                     selectedQualities = knownQualities;
                 }
             }
