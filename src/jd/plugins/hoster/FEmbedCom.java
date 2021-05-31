@@ -77,7 +77,9 @@ public class FEmbedCom extends PluginForHost {
                     final URLConnectionAdapter con = br.cloneBrowser().openHeadConnection(file);
                     try {
                         if (this.looksLikeDownloadableContent(con)) {
-                            parameter.setVerifiedFileSize(con.getCompleteContentLength());
+                            if (con.getCompleteContentLength() > 0) {
+                                parameter.setVerifiedFileSize(con.getCompleteContentLength());
+                            }
                         } else {
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         }
