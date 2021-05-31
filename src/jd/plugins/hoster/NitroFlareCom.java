@@ -46,6 +46,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
@@ -145,12 +146,21 @@ public class NitroFlareCom extends antiDDoSForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
+        link.setPluginPatternMatcher(getCorrectedDownloadURL(link));
+    }
+
+    protected String getCorrectedDownloadURL(final DownloadLink link) {
+        String host = siteSupportedNames()[0];
         try {
-            final String host = getBaseDomain(this, br);
-            link.setUrlDownload("https://" + host + "/view/" + this.getFID(link));
+            host = getBaseDomain(this, br);
         } catch (final Exception e) {
             logger.log(e);
-            link.setUrlDownload("https://nitroflare.com/view/" + this.getFID(link));
+        }
+        final String fid = getFID(link);
+        if (fid == null) {
+            throw new WTFException("unable to parse fid:" + link.getPluginPatternMatcher());
+        } else {
+            return "https://" + host + "/view/" + fid;
         }
     }
 
@@ -317,7 +327,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     private AvailableStatus requestFileInformationWeb(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
         correctDownloadLink(link);
-        getPage(link.getDownloadURL());
+        getPage(getCorrectedDownloadURL(link));
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*This file has been removed|>\\s*File doesn't exist<|This file has been removed due|>\\s*This file has been removed by its owner")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!this.canHandle(this.br.getURL()) && !this.br.getURL().contains(this.getFID(link))) {
@@ -498,7 +508,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                     }
                     break;
                 }
-                dllink = ajax.getRegex("\"(https?://[a-z0-9\\-_]+\\.nitroflare\\.com/[^<>\"]*?)\"").getMatch(0);
+                dllink = ajax.getRegex("\"(https?://[a-z0-9\\-_]+\\.(?:nitroflare\\.com|nitroflare\\.net|nitro\\.download)|/[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
                     handleErrors(account, ajax, true);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -506,18 +516,19 @@ public class NitroFlareCom extends antiDDoSForHost {
             }
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
-        if (!isDownloadableContent(dl.getConnection())) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
             handleDownloadErrors(account, link, true);
-        }
-        link.setProperty(directlinkproperty, dllink);
-        try {
-            /* add a download slot */
-            controlFree(+1);
-            /* start the dl */
-            dl.startDownload();
-        } finally {
-            /* remove download slot */
-            controlFree(-1);
+        } else {
+            link.setProperty(directlinkproperty, dllink);
+            try {
+                /* add a download slot */
+                controlFree(+1);
+                /* start the dl */
+                dl.startDownload();
+            } finally {
+                /* remove download slot */
+                controlFree(-1);
+            }
         }
     }
 
@@ -884,7 +895,7 @@ public class NitroFlareCom extends antiDDoSForHost {
             if (!inValidate(dllink)) {
                 logger.info("Trying to re-use stored generated directurl");
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
-                if (isDownloadableContent(dl.getConnection())) {
+                if (looksLikeDownloadableContent(dl.getConnection())) {
                     logger.info("Successfully re-used stored generated directurl");
                     link.setProperty(directlinkproperty, dllink);
                     dl.startDownload();
@@ -909,13 +920,13 @@ public class NitroFlareCom extends antiDDoSForHost {
                 // randomHash(br, link);
                 // ajaxPost(br, "https://" + this.getHost() + "/ajax/setCookie.php", "fileId=" + getFUID(link));
                 /* / could be directlink */
-                dllink = link.getDownloadURL();
+                dllink = getCorrectedDownloadURL(link);
                 int counter = 0;
                 final int maxtries = 2;
                 do {
                     logger.info(String.format("Downloadloop %d / %d", counter + 1, maxtries));
                     dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
-                    if (isDownloadableContent(dl.getConnection())) {
+                    if (looksLikeDownloadableContent(dl.getConnection())) {
                         /* Directurl */
                         logger.info("Seems like user has direct downloads enabled");
                         link.setProperty(directlinkproperty, dllink);
@@ -928,23 +939,20 @@ public class NitroFlareCom extends antiDDoSForHost {
                     counter++;
                 } while (handlePremiumVPNWarningCaptcha(link) && counter < maxtries);
                 handleDownloadErrors(account, link, false);
-                dllink = br.getRegex("<a[^>]*id=\"download\"[^>]*href=\"([^\"]+)\"").getMatch(0);
+                dllink = br.getRegex("<a[^>]*id=\"download\"[^>]*href\\s*=\\s*\"([^\"]+)\"").getMatch(0);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Can't find dllink!");
                 }
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
-                if (isDownloadableContent(dl.getConnection())) {
+                if (looksLikeDownloadableContent(dl.getConnection())) {
                     link.setProperty(directlinkproperty, dllink);
                     dl.startDownload();
                     return;
+                } else {
+                    handleDownloadErrors(account, link, true);
                 }
-                handleDownloadErrors(account, link, true);
             }
         }
-    }
-
-    protected boolean isDownloadableContent(final URLConnectionAdapter con) throws IOException {
-        return con != null && con.isContentDisposition();
     }
 
     private void handlePremiumDownloadAPI(final DownloadLink link, final Account account) throws Exception {
@@ -955,7 +963,7 @@ public class NitroFlareCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API download failure");
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
-        if (isDownloadableContent(dl.getConnection())) {
+        if (looksLikeDownloadableContent(dl.getConnection())) {
             link.setProperty(directlinkproperty, dllink);
             dl.startDownload();
         } else {
@@ -988,8 +996,10 @@ public class NitroFlareCom extends antiDDoSForHost {
 
     private final void handleDownloadErrors(final Account account, final DownloadLink downloadLink, final boolean lastChance) throws PluginException, IOException {
         // don't fill logger with crapola
-        if (br.getRequest().getHtmlCode() == null) {
-            br.followConnection();
+        try {
+            br.followConnection(true);
+        } catch (IOException e) {
+            logger.log(e);
         }
         final String err1 = "ERROR: Wrong IP. If you are using proxy, please turn it off / Or buy premium key to remove the limitation";
         if (br.containsHTML(err1)) {
@@ -1004,11 +1014,11 @@ public class NitroFlareCom extends antiDDoSForHost {
         if (lastChance) {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (br.containsHTML("ERROR: link expired. Please unlock the file again")) {
+            } else if (br.containsHTML("ERROR: link expired. Please unlock the file again")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'link expired'", 2 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 
@@ -1028,13 +1038,15 @@ public class NitroFlareCom extends antiDDoSForHost {
                     final Browser br2 = br.cloneBrowser();
                     br2.setFollowRedirects(true);
                     con = br2.openHeadConnection(dllink);
-                    if (!isDownloadableContent(dl.getConnection())) {
-                        link.setProperty(property, Property.NULL);
-                    } else {
+                    if (looksLikeDownloadableContent(con)) {
                         return dllink;
+                    } else {
+                        throw new IOException();
                     }
                 } catch (final Exception e) {
+                    logger.log(e);
                     link.setProperty(property, Property.NULL);
+                    return null;
                 } finally {
                     try {
                         con.disconnect();
