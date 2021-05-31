@@ -107,19 +107,29 @@ public class FakirdebridNet extends PluginForHost {
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         mhm.runCheck(account, link);
         if (!attemptStoredDownloadurlDownload(link, "", resume, maxchunks)) {
-            this.login(account, true);
+            this.login(account, false);
             if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Fakirdebrid.net plugin is still under development");
             }
-            br.getPage("https://" + this.getHost() + "/generate/");
-            final Browser brc = br.cloneBrowser();
-            brc.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-            brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            brc.postPage("/generate/index.php?rand=0." + System.currentTimeMillis(), "captcha=none&urllist=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
-            final String transloadURL = brc.getRegex("(https?://[^/]+/TransLoad/\\?id=[A-Za-z0-9]+)").getMatch(0);
-            if (transloadURL == null) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to find TransLoad URL");
+            br.postPage(API_BASE + "/generate.php?pin=" + Encoding.urlEncode(account.getPass()), "url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = (Map<String, Object>) entries.get("data");
+            final String transloadURL = (String) entries.get("link");
+            if (StringUtils.isEmpty(transloadURL)) {
+                mhm.handleErrorGeneric(account, link, "Failed to generate transloadURL", 10, 5 * 60 * 1000l);
             }
+            final boolean resumable = ((Boolean) entries.get("resume")).booleanValue();
+            // final int maxChunks = ((Number)entries.get("maxchunks")).intValue();
+            // br.getPage("https://" + this.getHost() + "/generate/");
+            // final Browser brc = br.cloneBrowser();
+            // brc.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+            // brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            // brc.postPage("/generate/index.php?rand=0." + System.currentTimeMillis(), "captcha=none&urllist=" +
+            // Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+            // final String transloadURL = brc.getRegex("(https?://[^/]+/TransLoad/\\?id=[A-Za-z0-9]+)").getMatch(0);
+            // if (transloadURL == null) {
+            // throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to find TransLoad URL");
+            // }
             final String transloadID = UrlQuery.parse(transloadURL).get("id");
             br.getPage(transloadURL);
             final String continueURL = br.getRegex("(\\?id=" + transloadID + "[^<>\"\\']+\\&action=download)").getMatch(0);
