@@ -80,10 +80,11 @@ public class VKontakteRuHoster extends PluginForHost {
     public static final long    trust_cookie_age                                                            = 300000l;
     private static final String TEMPORARILYBLOCKED                                                          = jd.plugins.decrypter.VKontakteRu.TEMPORARILYBLOCKED;
     /* Settings stuff */
-    private static final String FASTLINKCHECK_VIDEO                                                         = "FASTLINKCHECK_VIDEO";
+    public static final String  FASTLINKCHECK_VIDEO                                                         = "FASTLINKCHECK_VIDEO";
     private static final String FASTLINKCHECK_PICTURES                                                      = "FASTLINKCHECK_PICTURES_V2";
     private static final String FASTLINKCHECK_AUDIO                                                         = "FASTLINKCHECK_AUDIO";
-    private static final String ALLOW_BEST                                                                  = "ALLOW_BEST";
+    public static final String  ALLOW_BEST                                                                  = "ALLOW_BEST";
+    public static final String  ALLOW_BEST_OF_SELECTION                                                     = "ALLOW_BEST_OF_SELECTION";
     private static final String ALLOW_240P                                                                  = "ALLOW_240P";
     private static final String ALLOW_360P                                                                  = "ALLOW_360P";
     private static final String ALLOW_480P                                                                  = "ALLOW_480P";
@@ -1633,7 +1634,8 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final boolean default_fastlinkcheck_FASTLINKCHECK                                                 = true;
     private static final boolean default_fastlinkcheck_FASTPICTURELINKCHECK                                          = true;
     private static final boolean default_fastlinkcheck_FASTAUDIOLINKCHECK                                            = true;
-    private static final boolean default_ALLOW_BEST                                                                  = false;
+    public static final boolean  default_ALLOW_BEST                                                                  = false;
+    public static final boolean  default_ALLOW_BEST_OF_SELECTION                                                     = false;
     private static final boolean default_ALLOW_240p                                                                  = true;
     private static final boolean default_ALLOW_360p                                                                  = true;
     private static final boolean default_ALLOW_480p                                                                  = true;
@@ -1678,14 +1680,16 @@ public class VKontakteRuHoster extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Video settings:"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        final ConfigEntry hq = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.ALLOW_BEST, JDL.L("plugins.hoster.vkontakteruhoster.checkbest", "Only grab the best available resolution")).setDefaultValue(default_ALLOW_BEST);
-        this.getConfig().addEntry(hq);
+        final ConfigEntry best = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.ALLOW_BEST, JDL.L("plugins.hoster.vkontakteruhoster.checkbest", "Only grab the best available resolution")).setDefaultValue(default_ALLOW_BEST);
+        this.getConfig().addEntry(best);
+        final ConfigEntry bestOfSelection = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.ALLOW_BEST_OF_SELECTION, "Only grab the best available resolution within selected qualities below").setDefaultValue(default_ALLOW_BEST_OF_SELECTION).setEnabledCondidtion(best, false);
+        this.getConfig().addEntry(bestOfSelection);
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.ALLOW_240P, JDL.L("plugins.hoster.vkontakteruhoster.check240", "Grab 240p MP4/FLV?")).setDefaultValue(default_ALLOW_240p).setEnabledCondidtion(hq, false));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.ALLOW_360P, JDL.L("plugins.hoster.vkontakteruhoster.check360", "Grab 360p MP4?")).setDefaultValue(default_ALLOW_360p).setEnabledCondidtion(hq, false));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.ALLOW_480P, JDL.L("plugins.hoster.vkontakteruhoster.check480", "Grab 480p MP4?")).setDefaultValue(default_ALLOW_480p).setEnabledCondidtion(hq, false));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.ALLOW_720P, JDL.L("plugins.hoster.vkontakteruhoster.check720", "Grab 720p MP4?")).setDefaultValue(default_ALLOW_720p).setEnabledCondidtion(hq, false));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.ALLOW_1080P, JDL.L("plugins.hoster.vkontakteruhoster.check1080", "Grab 1080p MP4?")).setDefaultValue(default_ALLOW_1080p).setEnabledCondidtion(hq, false));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.ALLOW_240P, JDL.L("plugins.hoster.vkontakteruhoster.check240", "Grab 240p MP4/FLV?")).setDefaultValue(default_ALLOW_240p).setEnabledCondidtion(best, false));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.ALLOW_360P, JDL.L("plugins.hoster.vkontakteruhoster.check360", "Grab 360p MP4?")).setDefaultValue(default_ALLOW_360p).setEnabledCondidtion(best, false));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.ALLOW_480P, JDL.L("plugins.hoster.vkontakteruhoster.check480", "Grab 480p MP4?")).setDefaultValue(default_ALLOW_480p).setEnabledCondidtion(best, false));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.ALLOW_720P, JDL.L("plugins.hoster.vkontakteruhoster.check720", "Grab 720p MP4?")).setDefaultValue(default_ALLOW_720p).setEnabledCondidtion(best, false));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.ALLOW_1080P, JDL.L("plugins.hoster.vkontakteruhoster.check1080", "Grab 1080p MP4?")).setDefaultValue(default_ALLOW_1080p).setEnabledCondidtion(best, false));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for 'vk.com/wall-123...' and 'vk.com/wall-123..._123...' links:\r\n NOTE: You can't turn off all types. If you do that, JD will decrypt all instead!"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_ALBUMS, JDL.L("plugins.hoster.vkontakteruhoster.wallcheckalbums", "Grab album links ('vk.com/album')?")).setDefaultValue(default_WALL_ALLOW_albums));

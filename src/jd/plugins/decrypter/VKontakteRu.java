@@ -91,10 +91,8 @@ public class VKontakteRu extends PluginForDecrypt {
     public static final String      EXCEPTION_LINKOFFLINE                     = "EXCEPTION_LINKOFFLINE";
     private static final String     EXCEPTION_API_UNKNOWN                     = "EXCEPTION_API_UNKNOWN";
     /* Settings */
-    private static final String     FASTLINKCHECK_VIDEO                       = "FASTLINKCHECK_VIDEO";
     private static final String     FASTLINKCHECK_PICTURES                    = "FASTLINKCHECK_PICTURES_V2";
     private static final String     FASTLINKCHECK_AUDIO                       = "FASTLINKCHECK_AUDIO";
-    private static final String     ALLOW_BEST                                = "ALLOW_BEST";
     private static final String     ALLOW_240P                                = "ALLOW_240P";
     private static final String     ALLOW_360P                                = "ALLOW_360P";
     private static final String     ALLOW_480P                                = "ALLOW_480P";
@@ -741,44 +739,37 @@ public class VKontakteRu extends PluginForDecrypt {
                 fp.setName(filename);
             }
             /* Decrypt qualities, selected by the user */
-            final ArrayList<String> selectedQualities = new ArrayList<String>();
-            final boolean fastLinkcheck = cfg.getBooleanProperty(FASTLINKCHECK_VIDEO, false);
-            final boolean grabBestOnly = cfg.getBooleanProperty(ALLOW_BEST, false);
+            List<String> selectedQualities = new ArrayList<String>();
+            final boolean fastLinkcheck = cfg.getBooleanProperty(VKontakteRuHoster.FASTLINKCHECK_VIDEO, true);
+            final boolean grabBestOnly = cfg.getBooleanProperty(VKontakteRuHoster.ALLOW_BEST, VKontakteRuHoster.default_ALLOW_BEST);
+            final List<String> knownQualities = Arrays.asList(new String[] { "1080p", "720p", "480p", "360p", "240p" });
             if (grabBestOnly) {
                 final ArrayList<String> list = new ArrayList<String>(foundQualities.keySet());
                 final String highestAvailableQualityValue = list.get(0);
                 selectedQualities.add(highestAvailableQualityValue);
             } else {
-                /* User selected nothing -> Decrypt everything */
-                boolean q240p = cfg.getBooleanProperty(ALLOW_240P, false);
-                boolean q360p = cfg.getBooleanProperty(ALLOW_360P, false);
-                boolean q480p = cfg.getBooleanProperty(ALLOW_480P, false);
-                boolean q720p = cfg.getBooleanProperty(ALLOW_720P, false);
-                boolean q1080p = cfg.getBooleanProperty(ALLOW_1080P, false);
-                if (!q240p && !q360p && !q480p && !q720p && !q1080p) {
-                    q240p = true;
-                    q360p = true;
-                    q480p = true;
-                    q720p = true;
-                    q1080p = true;
-                }
-                if (q240p) {
+                /* Collect all user selected qualities */
+                if (cfg.getBooleanProperty(ALLOW_240P, false)) {
                     selectedQualities.add("240p");
                 }
-                if (q360p) {
+                if (cfg.getBooleanProperty(ALLOW_360P, false)) {
                     selectedQualities.add("360p");
                 }
-                if (q480p) {
+                if (cfg.getBooleanProperty(ALLOW_480P, false)) {
                     selectedQualities.add("480p");
                 }
-                if (q720p) {
+                if (cfg.getBooleanProperty(ALLOW_720P, false)) {
                     selectedQualities.add("720p");
                 }
-                if (q1080p) {
+                if (cfg.getBooleanProperty(ALLOW_1080P, false)) {
                     selectedQualities.add("1080p");
                 }
+                if (selectedQualities.isEmpty()) {
+                    /* Do not allow user to deselect all qualities! */
+                    selectedQualities = knownQualities;
+                }
             }
-            final List<String> knownQualities = Arrays.asList(new String[] { "240p", "360p", "480p", "720p", "1080p" });
+            final boolean grabBestOfSelection = !grabBestOnly && cfg.getBooleanProperty(VKontakteRuHoster.ALLOW_BEST_OF_SELECTION, VKontakteRuHoster.default_ALLOW_BEST_OF_SELECTION);
             for (final Map.Entry<String, String> qualityEntry : foundQualities.entrySet()) {
                 final String thisQuality = qualityEntry.getKey();
                 final String finallink = qualityEntry.getValue();
@@ -804,7 +795,14 @@ public class VKontakteRu extends PluginForDecrypt {
                     }
                     dl.setLinkID(LINKID_PREFIX + linkid + "_" + thisQuality);
                     fp.add(dl);
-                    decryptedLinks.add(dl);
+                    if (userSelectedThisQuality && grabBestOfSelection) {
+                        /* Grab first existant quality which is selected by the user and return only this --> BEST of user selected */
+                        decryptedLinks.clear();
+                        decryptedLinks.add(dl);
+                        break;
+                    } else {
+                        decryptedLinks.add(dl);
+                    }
                 }
             }
         } catch (final DecrypterException de) {
