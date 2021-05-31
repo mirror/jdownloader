@@ -21,10 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.requests.GetRequest;
@@ -39,7 +35,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.HashInfo;
-import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class Keep2ShareCcDecrypter extends PluginForDecrypt {
@@ -50,7 +49,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "keep2share.cc", "k2s.cc", "k2share.cc", "keep2s.cc", "keep2.cc" });
+        ret.add(new String[] { "k2s.cc", "keep2share.cc", "k2share.cc", "keep2s.cc", "keep2.cc" });
         ret.add(new String[] { "publish2.me" });
         ret.add(new String[] { "fileboom.me", "fboom.me" });
         ret.add(new String[] { "tezfiles.com" });
@@ -81,9 +80,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         /* 2020-05-13: Use the keep2share plugin for all */
-        final PluginForHost plugin = JDUtilities.getNewPluginForHostInstance("keep2share.cc");
-        plugin.setBrowser(br);
-        plugin.setLogger(getLogger());
+        final PluginForHost plugin = getNewPluginForHostInstance("k2s.cc");
         final String fuid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         if (fuid == null) {
             /* This should never happen */
@@ -153,8 +150,10 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                     response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                     final List<Map<String, Object>> items = (List<Map<String, Object>>) response.get("files");
                     if (items.size() == 0) {
-                        logger.info("Empty folder");
-                        decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
+                        if (dups.size() == 0) {
+                            logger.info("Empty folder");
+                            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
+                        }
                         return decryptedLinks;
                     }
                     final String folderName = (String) response.get("name");

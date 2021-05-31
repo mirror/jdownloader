@@ -760,12 +760,11 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     private volatile String sessionDownloadFilename;
 
     public void setSessionDownloadFilename(String downloadFilename) {
-        if (StringUtils.equals(sessionDownloadFilename, downloadFilename)) {
-            return;
-        }
-        this.sessionDownloadFilename = downloadFilename;
-        if (downloadLink.hasNotificationListener()) {
-            downloadLink.firePropertyChange(new DownloadLinkProperty(downloadLink, DownloadLinkProperty.Property.NAME, downloadFilename));
+        if (!StringUtils.equals(sessionDownloadFilename, downloadFilename)) {
+            this.sessionDownloadFilename = downloadFilename;
+            if (downloadLink.hasNotificationListener()) {
+                downloadLink.firePropertyChange(new DownloadLinkProperty(downloadLink, DownloadLinkProperty.Property.NAME, downloadFilename));
+            }
         }
     }
 

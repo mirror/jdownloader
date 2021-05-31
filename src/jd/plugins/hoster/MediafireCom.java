@@ -245,7 +245,11 @@ public class MediafireCom extends PluginForHost {
                 if (this.looksLikeDownloadableContent(con)) {
                     finalDownloadurl = con.getURL().toString();
                 } else {
-                    br.followConnection();
+                    try {
+                        br.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
                 }
             } finally {
                 try {
@@ -363,15 +367,19 @@ public class MediafireCom extends PluginForHost {
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalDownloadurl, true, -15);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             handleServerErrors();
             logger.info("Error (3)");
-            // logger.info(dl.getConnection() + "");
-            br.followConnection();
             handleNonAPIErrors(link, br);
             if (br.containsHTML("We apologize, but we are having difficulties processing your download request")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Please be patient while we try to repair your download request", 2 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.setFilenameFix(true);
         dl.startDownload();
@@ -442,10 +450,14 @@ public class MediafireCom extends PluginForHost {
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 0);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 handleServerErrors();
                 logger.info("Error (4)");
                 logger.info(dl.getConnection() + "");
-                br.followConnection();
                 handleNonAPIErrors(link, br);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -470,7 +482,13 @@ public class MediafireCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     form.put("downloadp", Encoding.urlEncode(curPw));
-                    br.submitForm(form);
+                    final boolean followRedirect = br.isFollowingRedirects();
+                    try {
+                        br.setFollowRedirects(false);
+                        br.submitForm(form);
+                    } finally {
+                        br.setFollowRedirects(followRedirect);
+                    }
                 }
 
                 @Override
