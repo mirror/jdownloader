@@ -67,7 +67,6 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 1, names = {}, urls = {})
 public abstract class HighWayCore extends UseNet {
-    /** General API information: According to admin we can 'hammer' the API every 60 seconds */
     protected static MultiHosterManagement                 mhm                                 = new MultiHosterManagement();
     private static final String                            TYPE_TV                             = "https?://[^/]+/onlinetv\\.php\\?id=.+";
     private static final String                            TYPE_DIRECT                         = "https?://[^/]+/dlu/[a-z0-9]+/[^/]+";
@@ -137,6 +136,7 @@ public abstract class HighWayCore extends UseNet {
         }
     }
 
+    /** For some hosts this multihost calculates less/more traffic than the actual filesize --> Take this into account here */
     @Override
     public void update(final DownloadLink link, final Account account, long bytesTransfered) throws PluginException {
         synchronized (getMapLock()) {
@@ -208,6 +208,7 @@ public abstract class HighWayCore extends UseNet {
                         }
                     }
                 }
+                /* Stop after the first account */
                 break;
             }
             if (!StringUtils.isEmpty(filename)) {
@@ -378,14 +379,14 @@ public abstract class HighWayCore extends UseNet {
                     link.setDownloadPassword(passCode);
                 }
                 this.checkErrors(this.br, account);
-                final Object infoMsg = entries.get("info");
-                if (infoMsg instanceof String) {
+                final Object infoMsgO = entries.get("info");
+                if (infoMsgO instanceof String) {
                     /* Low traffic warning message: Usually something like "Less than 10% traffic remaining" */
                     if (!org.appwork.utils.Application.isHeadless()) {
                         BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
                             @Override
                             public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
-                                return new BasicNotify((String) infoMsg, (String) infoMsg, new AbstractIcon(IconKey.ICON_INFO, 32));
+                                return new BasicNotify((String) infoMsgO, (String) infoMsgO, new AbstractIcon(IconKey.ICON_INFO, 32));
                             }
                         });
                     }
@@ -641,9 +642,9 @@ public abstract class HighWayCore extends UseNet {
                 }
                 final String realDomain = realDomainList.get(0);
                 // final String unlimited = (String) hoster_map.get("unlimited");
-                hostTrafficCalculationMap.put(realDomain, ((Number) hoster_map.get("berechnung")).intValue());
                 if (active == 1) {
                     supportedHosts.add(realDomain);
+                    hostTrafficCalculationMap.put(realDomain, ((Number) hoster_map.get("berechnung")).intValue());
                     hostMaxchunksMap.put(realDomain, correctChunks(maxchunks));
                     hostMaxdlsMap.put(realDomain, correctMaxdls(maxdls));
                     if (resume == 1) {
@@ -898,6 +899,6 @@ public abstract class HighWayCore extends UseNet {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 }
