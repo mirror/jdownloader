@@ -32,6 +32,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
 import jd.nutils.JDHash;
 import jd.parser.Regex;
@@ -55,7 +56,7 @@ public class GofileIo extends PluginForHost {
         return "https://gofile.io/";
     }
 
-    private String getC(final DownloadLink link) {
+    private String getFolderID(final DownloadLink link) {
         return new Regex(link.getPluginPatternMatcher(), "(?:c=|/d/)([A-Za-z0-9]+)").getMatch(0);
     }
 
@@ -69,6 +70,7 @@ public class GofileIo extends PluginForHost {
     private static final int     FREE_MAXDOWNLOADS                                            = -1;
     private static final String  PROPERTY_DANGEROUS_FILE                                      = "dangerous_file";
     private static final String  PROPERTY_DIRECTURL                                           = "directurl";
+    private static final String  PROPERTY_INTERNAL_FILEID                                     = "internal_fileid";
     private static final String  SETTING_ALLOW_DOWNLOAD_OF_FILES_FLAGGED_AS_MALICIOUS         = "allow_download_of_files_flagged_as_malicious";
     private static final boolean default_SETTING_ALLOW_DOWNLOAD_OF_FILES_FLAGGED_AS_MALICIOUS = false;
 
@@ -81,49 +83,40 @@ public class GofileIo extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String c = getC(link);
+        if (this.checkDirectLink(link, PROPERTY_DIRECTURL) != null) {
+            logger.info("Availablecheck via directurl complete");
+            return AvailableStatus.TRUE;
+        }
+        final String folderID = getFolderID(link);
+        if (folderID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         /* 2020-08-20: Avoid blocks by user-agent - this is just a test based on a weak assumption, it is not necessarily! */
         br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
         /* 2020-08-20: Slow servers, timeouts will often occur --> Try a higher readtimeout */
         br.setReadTimeout(2 * 60 * 1000);
-        br.getPage("https://" + this.getHost() + "/d/" + c);
-        final GetRequest server = br.createGetRequest("https://apiv2.gofile.io/getServer?c=" + c);
-        server.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://gofile.io"));
-        Browser brc = br.cloneBrowser();
-        brc.getPage(server);
-        Map<String, Object> response = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
-        String serverHost = null;
-        if ("ok".equals(response.get("status"))) {
-            final Map<String, Object> data = (Map<String, Object>) response.get("data");
-            serverHost = (String) data.get("server");
-        } else if ("error".equals(response.get("status"))) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (serverHost == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         final UrlQuery query = new UrlQuery();
-        query.add("c", c);
+        query.add("folderId", folderID);
         String passCode = null;
         boolean passwordCorrect = true;
         boolean passwordRequired = false;
         int attempt = 0;
-        brc = br.cloneBrowser();
+        final Browser brc = br.cloneBrowser();
+        Map<String, Object> response = null;
         do {
             if (passwordRequired) {
                 passCode = getUserInput("Password?", link);
-                query.addAndReplace("p", JDHash.getSHA256(passCode));
+                query.addAndReplace("password", JDHash.getSHA256(passCode));
             } else if (link.getDownloadPassword() != null) {
                 /* E.g. first try and password is available from when user added folder via crawler. */
-                query.addAndReplace("p", JDHash.getSHA256(link.getDownloadPassword()));
+                query.addAndReplace("password", JDHash.getSHA256(link.getDownloadPassword()));
             }
-            final GetRequest post = br.createGetRequest("https://" + serverHost + ".gofile.io/getUpload?" + query.toString());
-            post.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://gofile.io"));
-            brc.getPage(post);
+            final GetRequest req = br.createGetRequest("https://api." + this.getHost() + "/getFolder?" + query.toString());
+            req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://gofile.io"));
+            req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://gofile.io"));
+            brc.getPage(req);
             response = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
-            if ("passwordRequired".equals(response.get("status")) || "passwordWrong".equals(response.get("status"))) {
+            if ("error-passwordRequired".equals(response.get("status")) || "error-passwordWrong".equals(response.get("status"))) {
                 if (!isDownload) {
                     /*
                      * Do not ask for passwords during linkcheck! Also we now know that the folder is online but we can't know if the file
@@ -156,12 +149,16 @@ public class GofileIo extends PluginForHost {
              * fileID is needed to find the correct files if multiple ones are in a 'folder'. If this is not available we most likely only
              * have a single file.
              */
-            final String fileID = getFileID(link);
+            final String internalFileID = link.getStringProperty(PROPERTY_INTERNAL_FILEID);
+            if (internalFileID == null) {
+                /* This should never happen */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             final Map<String, Object> data = (Map<String, Object>) response.get("data");
-            final Map<String, Map<String, Object>> files = (Map<String, Map<String, Object>>) data.get("files");
+            final Map<String, Map<String, Object>> files = (Map<String, Map<String, Object>>) data.get("contents");
             for (Entry<String, Map<String, Object>> file : files.entrySet()) {
                 final String id = file.getKey();
-                if (fileID == null || id.toString().equals(fileID)) {
+                if (internalFileID != null && id.toString().equals(internalFileID)) {
                     final Map<String, Object> entry = file.getValue();
                     parseFileInfo(link, entry);
                     return AvailableStatus.TRUE;
@@ -171,11 +168,41 @@ public class GofileIo extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    return dllink;
+                } else {
+                    throw new IOException();
+                }
+            } catch (final Exception e) {
+                logger.log(e);
+                return null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
+            }
+        }
+        return null;
+    }
+
     public static void parseFileInfo(final DownloadLink link, final Map<String, Object> entry) {
-        final String downloadURL = (String) entry.get("link");
-        final Number size = JavaScriptEngineFactory.toLong(entry.get("size"), -1);
-        if (size.longValue() >= 0) {
-            link.setVerifiedFileSize(size.longValue());
+        /* 2021-05-31: Available as "link" and "directLink" */
+        // final String downloadURL = (String) entry.get("link");
+        final String downloadURL = (String) entry.get("directLink");
+        final long size = JavaScriptEngineFactory.toLong(entry.get("size"), -1);
+        if (size > 0) {
+            link.setVerifiedFileSize(size);
         }
         final String name = (String) entry.get("name");
         final String md5 = (String) entry.get("md5");
@@ -198,6 +225,7 @@ public class GofileIo extends PluginForHost {
         if (!StringUtils.isEmpty(downloadURL)) {
             link.setProperty(PROPERTY_DIRECTURL, downloadURL);
         }
+        link.setProperty(PROPERTY_INTERNAL_FILEID, entry.get("id").toString());
     }
 
     @Override

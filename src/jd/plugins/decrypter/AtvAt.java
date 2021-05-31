@@ -31,6 +31,7 @@ import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -194,8 +195,41 @@ public class AtvAt extends PluginForDecrypt {
         hybrid_name += episodename;
         hybrid_name = Encoding.htmlDecode(hybrid_name);
         hybrid_name = decodeUnicode(hybrid_name);
-        final String[] possibleQualities = { "1080", "720", "576", "540", "360", "226" };
-        int part_counter = 1;
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(hybrid_name);
+        int partCounter = 1;
+        /* First check for HD HLS URLs */
+        final String[] hdHLSParts = br.getRegex("(https://[^/]+/\\d{4}/\\d{2}/HD/\\d+/index\\.m3u8)").getColumn(0);
+        if (hdHLSParts.length > 0) {
+            logger.info("Found HD HLS URLs");
+            /* Assume that this is our best quality --> Add best of these for each part */
+            for (final String hdHLSPart : hdHLSParts) {
+                logger.info("Crawling HD HLS quality " + partCounter + " / " + hdHLSParts.length);
+                br.getPage(hdHLSPart);
+                final List<HlsContainer> hlsContainers = HlsContainer.getHlsQualities(this.br);
+                final HlsContainer best = HlsContainer.findBestVideoByBandwidth(hlsContainers);
+                final DownloadLink link = this.createDownloadlink(best.getDownloadurl().replaceFirst("https://", "m3u8s://"));
+                String finalname = hybrid_name + "_";
+                finalname += "http_part_";
+                finalname += df.format(partCounter) + "_";
+                finalname += best.getHeight() + "p";
+                finalname += ".mp4";
+                link.setFinalFileName(finalname);
+                link.setAvailable(true);
+                link.setContentUrl(parameter);
+                link._setFilePackage(fp);
+                decryptedLinks.add(link);
+                distribute(link);
+                partCounter++;
+                if (this.isAbort()) {
+                    break;
+                }
+            }
+            return decryptedLinks;
+        }
+        logger.info("Failed to find HD HLS URLs --> Continuing with older handling");
+        /* Reset variable to recycle it */
+        partCounter = 1;
         /** Collect existing http URLs */
         String randomHTTPUrl = null;
         List<Object> sources = null;
@@ -216,13 +250,13 @@ public class AtvAt extends PluginForDecrypt {
                     httpProtocolAvailable = true;
                     src = fixStreamingURL(src, possiblyGeoBlocked);
                     randomHTTPUrl = src;
-                    partsWithHTTPQuality.put(part_counter, src);
+                    partsWithHTTPQuality.put(partCounter, src);
                 }
             }
             if (!httpProtocolAvailable) {
-                partsWithoutHTTPQuality.add(part_counter);
+                partsWithoutHTTPQuality.add(partCounter);
             }
-            part_counter++;
+            partCounter++;
         }
         /* Construct & collect missing http URLs based on known pattern */
         if (randomHTTPUrl != null && !partsWithoutHTTPQuality.isEmpty()) {
@@ -244,8 +278,6 @@ public class AtvAt extends PluginForDecrypt {
             }
         }
         /* Add all HTTP URLs */
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(hybrid_name);
         final Iterator<Entry<Integer, String>> iterator = partsWithHTTPQuality.entrySet().iterator();
         while (iterator.hasNext()) {
             final Entry<Integer, String> entry = iterator.next();
@@ -258,7 +290,7 @@ public class AtvAt extends PluginForDecrypt {
              * hls) - this is a serverside "issue" and not a JDownloader problem! (See forum 59152 page 7).
              */
             final String quality = "576p";
-            final DownloadLink link = this.createDownloadlink("directhttp://" + url);
+            final DownloadLink link = this.createDownloadlink(url);
             String finalname = hybrid_name + "_";
             finalname += "http_part_";
             finalname += df.format(part_number_real) + "_";
@@ -271,8 +303,9 @@ public class AtvAt extends PluginForDecrypt {
             decryptedLinks.add(link);
             distribute(link);
         }
-        /* Here we go again -> Add all HLS URLs */
-        part_counter = 1;
+        /* Add all older HLS URLs */
+        partCounter = 1;
+        final String[] possibleQualities = { "1080", "720", "576", "540", "360", "226" };
         final int possibleQualitiesCount = possibleQualities.length;
         for (final Object parto : parts) {
             entries = (Map<String, Object>) parto;
@@ -313,10 +346,10 @@ public class AtvAt extends PluginForDecrypt {
                 DownloadLink link = null;
                 String quality = null;
                 String finalname = null;
-                final String part_formatted = df.format(part_counter);
+                final String part_formatted = df.format(partCounter);
                 if (src.contains("chunklist") || src.contains(".m3u8")) {
                     /* Find all hls qualities */
-                    if (partsWithHTTPQuality.containsKey(part_counter)) {
+                    if (partsWithHTTPQuality.containsKey(partCounter)) {
                         logger.info("Skipping HLS quality because HTTP is available");
                         continue;
                     }
@@ -406,7 +439,7 @@ public class AtvAt extends PluginForDecrypt {
                     continue;
                 }
             }
-            part_counter++;
+            partCounter++;
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user");
                 return decryptedLinks;
