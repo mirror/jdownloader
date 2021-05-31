@@ -24,6 +24,17 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.NitroflareConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -45,17 +56,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.exceptions.WTFException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.NitroflareConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitroflare.com" }, urls = { "https?://(?:www\\.)?(?:nitroflare\\.(?:com|net)|nitro\\.download)/(?:view|watch)/([A-Z0-9]+)" })
 public class NitroFlareCom extends antiDDoSForHost {
@@ -92,7 +92,8 @@ public class NitroFlareCom extends antiDDoSForHost {
     /**
      * Use website or API: https://nitroflare.com/member?s=api </br>
      *
-     * @return true: Use API for account login and premium downloading </br> false: Use website for everything (except linkcheck)
+     * @return true: Use API for account login and premium downloading </br>
+     *         false: Use website for everything (except linkcheck)
      */
     private boolean useAPIAccountMode() {
         return PluginJsonConfig.get(NitroflareConfig.class).isUsePremiumAPIEnabled();
@@ -509,6 +510,10 @@ public class NitroFlareCom extends antiDDoSForHost {
                     break;
                 }
                 dllink = ajax.getRegex("\"(https?://[a-z0-9\\-_]+\\.(?:nitroflare\\.com|nitroflare\\.net|nitro\\.download)|/[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) {
+                    /* Domain independant RegEx */
+                    dllink = ajax.getRegex("href=\"(https?://[^\"]+)\"[^>]*>Click here to download").getMatch(0);
+                }
                 if (dllink == null) {
                     handleErrors(account, ajax, true);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -974,7 +979,9 @@ public class NitroFlareCom extends antiDDoSForHost {
     /**
      * Handle rare case: User uses VPN, nitroflare recognizes that and lets user solve an extra captcha to proceed via VPN. </br>
      *
-     * @return: true: Captcha required and successfully solved by user </br> false: Captcha not required </br> exception: Wrong captcha
+     * @return: true: Captcha required and successfully solved by user </br>
+     *          false: Captcha not required </br>
+     *          exception: Wrong captcha
      */
     private boolean handlePremiumVPNWarningCaptcha(final DownloadLink link) throws Exception {
         if (br.containsHTML("To get rid of the captcha, please avoid using a dedicated server")) {
