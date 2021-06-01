@@ -207,14 +207,7 @@ public class RtveEs extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (use_api_for_availablecheck) {
-            br.getPage(link.getPluginPatternMatcher());
-        }
-        String[] flashVars = br.getRegex("assetID\\s*=\\s*(?:\"|')?(\\d+)_([a-z]{2,3})_(audios|videos)(\\&location=alacarta)?").getRow(0);
-        if (flashVars == null || flashVars.length != 4) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final boolean getBestQualityV2 = true;
+        final boolean getBestQualityV2 = false;
         if (getBestQualityV2 && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             /* 2020-07-28: TODO: Higher resolutions are "hidden" in their thumbnail. */
             final Browser brc = br.cloneBrowser();
@@ -231,6 +224,13 @@ public class RtveEs extends PluginForHost {
             final String b64 = brd.toString();
         } else {
             /* encrypt request query */
+            if (use_api_for_availablecheck) {
+                br.getPage(link.getPluginPatternMatcher());
+            }
+            String[] flashVars = br.getRegex("assetID\\s*=\\s*(?:\"|')?(\\d+)_([a-z]{2,3})_(audios|videos)(\\&location=alacarta)?").getRow(0);
+            if (flashVars == null || flashVars.length != 4) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final String mediaType = "audios".equals(flashVars[2]) ? "audio" : "video";
             String getEncData = org.appwork.utils.encoding.Base64.encodeToString(getBlowfish(JDHexUtils.getByteArray(JDHexUtils.getHexString(flashVars[0] + "_default_" + mediaType + "_" + flashVars[1])), false), false);
             getEncData = getEncData.replaceAll("/", "_");
