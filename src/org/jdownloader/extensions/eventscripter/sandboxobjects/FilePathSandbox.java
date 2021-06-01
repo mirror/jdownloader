@@ -13,7 +13,7 @@ public class FilePathSandbox {
     protected final File file;
 
     public FilePathSandbox(String fileOrUrl) {
-        file = new File(fileOrUrl);
+        this(new File(fileOrUrl));
     }
 
     protected FilePathSandbox(File file) {
@@ -32,7 +32,9 @@ public class FilePathSandbox {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof FilePathSandbox) {
-            return ((FilePathSandbox) obj).file == file;
+            final File fA = ((FilePathSandbox) obj).file;
+            final File fB = this.file;
+            return fA == fB || (fA != null && fA.equals(fB));
         } else {
             return super.equals(obj);
         }
