@@ -142,6 +142,11 @@ public class GoogleDrive extends PluginForDecrypt {
             } else if (!newFolderID.equals(folderID)) {
                 logger.info("Folder redirected to new folder: Old: " + folderID + " | New: " + newFolderID);
                 folderID = newFolderID;
+            } else {
+                /*
+                 * This should never happen and chances are high that this object is either offline or API crawler will fail to process it.
+                 */
+                logger.warning("Expected to find new folderID but failed to do so");
             }
         }
         final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
