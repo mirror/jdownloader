@@ -17,7 +17,14 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.PervcityComConfig;
+import org.jdownloader.plugins.components.config.PervcityComConfig.Quality;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -37,8 +44,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PervcityCom extends PluginForHost {
@@ -134,7 +139,7 @@ public class PervcityCom extends PluginForHost {
                 URLConnectionAdapter con = null;
                 try {
                     con = br.openHeadConnection(dllink);
-                    if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
+                    if (!this.looksLikeDownloadableContent(con)) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
                     } else {
                         link.setDownloadSize(con.getCompleteContentLength());
@@ -167,6 +172,8 @@ public class PervcityCom extends PluginForHost {
             final String downloadHTML = br.getRegex("<select[^>]*>\\s+<option value=\"\" selected=\"selected\">Choose Format</option>(.*?)</select>").getMatch(0);
             final String[] downloadHTMLs = new Regex(downloadHTML, "(<option.*?)</option>").getColumn(0);
             long filesizeMax = 0;
+            String bestQualityDownloadlink = null;
+            final HashMap<String, String[]> qualityMap = new HashMap<String, String[]>();
             for (final String html : downloadHTMLs) {
                 String url = new Regex(html, "\"(https?://[^\"]+\\.mp4[^\"]*)\"").getMatch(0);
                 if (url == null) {
@@ -177,14 +184,30 @@ public class PervcityCom extends PluginForHost {
                     /* Skip invalid items e.g. non-MP4 items */
                     continue;
                 }
+                url = br.getURL(url).toString();
+                final String qualityIdentifier = new Regex(html, "(\\d{3,}p)").getMatch(0);
+                if (qualityIdentifier != null) {
+                    qualityMap.put(qualityIdentifier, new String[] { url, filesizeStr });
+                }
                 final long filesizeTmp = SizeFormatter.getSize(filesizeStr);
                 if (filesizeTmp > filesizeMax) {
                     filesizeMax = filesizeTmp;
-                    this.dllink = br.getURL(url).toString();
+                    this.dllink = url;
+                    bestQualityDownloadlink = url;
                 }
             }
-            if (filesizeMax > 0) {
+            final String userPreferredQuality = getUserPreferredqualityStr();
+            if (userPreferredQuality != null && qualityMap.containsKey(userPreferredQuality)) {
+                logger.info("Using user preferred quality " + userPreferredQuality);
+                final String[] selectedQualityInfo = qualityMap.get(userPreferredQuality);
+                this.dllink = selectedQualityInfo[0];
+                link.setDownloadSize(SizeFormatter.getSize(selectedQualityInfo[1]));
+            } else if (bestQualityDownloadlink != null) {
+                logger.info("Using BEST quality");
+                this.dllink = bestQualityDownloadlink;
                 link.setDownloadSize(filesizeMax);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         return AvailableStatus.TRUE;
@@ -326,6 +349,28 @@ public class PervcityCom extends PluginForHost {
         }
         link.setProperty("premium_directlink", dllink);
         dl.startDownload();
+    }
+
+    private String getUserPreferredqualityStr() {
+        final Quality quality = PluginJsonConfig.get(PervcityComConfig.class).getPreferredQuality();
+        switch (quality) {
+        case Q480:
+            return "480p";
+        case Q720:
+            return "720p";
+        case Q1080:
+            return "1080p";
+        case Q2160:
+            return "2160p";
+        default:
+            /* E.g. BEST */
+            return null;
+        }
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return PervcityComConfig.class;
     }
 
     @Override

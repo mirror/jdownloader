@@ -113,6 +113,13 @@ public class FakirdebridNet extends PluginForHost {
             // br.setAllowedResponseCodes(new int[] { 503 });
             br.postPage(API_BASE + "/generate.php?pin=" + Encoding.urlEncode(account.getPass()), "url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
             Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            /*
+             * TODO: E.g. {"error":true,"code":"Limit_Error_Transfer",
+             * "message":"You've spent the entire limit on your transfer package. You need to buy a new pack."}
+             */
+            if (((Boolean) entries.get("error")).booleanValue()) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, entries.get("message").toString(), 1 * 60 * 1000l);
+            }
             entries = (Map<String, Object>) entries.get("data");
             /**
              * E.g. redirect to server2.turkleech.com/TransLoad/?id=bla </br>
