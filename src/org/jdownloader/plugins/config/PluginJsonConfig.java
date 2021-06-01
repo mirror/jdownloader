@@ -51,7 +51,7 @@ public class PluginJsonConfig {
     };
     private final static boolean                                                                   DEBUG         = false;
     static {
-        File pluginsFolder = Application.getResource("cfg/plugins/");
+        final File pluginsFolder = Application.getResource("cfg/plugins/");
         if (!pluginsFolder.exists()) {
             pluginsFolder.mkdirs();
         }
@@ -79,8 +79,8 @@ public class PluginJsonConfig {
     }
 
     private synchronized static void saveAll() {
-        HashMap<String, JsonKeyValueStorage> storages = STORAGE_CACHE;
-        Iterator<Entry<String, JsonKeyValueStorage>> it = storages.entrySet().iterator();
+        final HashMap<String, JsonKeyValueStorage> storages = STORAGE_CACHE;
+        final Iterator<Entry<String, JsonKeyValueStorage>> it = storages.entrySet().iterator();
         while (it.hasNext()) {
             it.next().getValue().save();
         }
@@ -92,13 +92,13 @@ public class PluginJsonConfig {
 
     public synchronized static <T extends PluginConfigInterface> T get(Class<T> configInterface) {
         String host = null;
-        Type type = null;
+        final Type type;
         PluginHost hostAnnotation = configInterface.getAnnotation(PluginHost.class);
         if (hostAnnotation != null) {
             host = hostAnnotation.host();
             type = hostAnnotation.type();
         } else {
-            Class<?> enc = configInterface.getEnclosingClass();
+            final Class<?> enc = configInterface.getEnclosingClass();
             if (enc != null) {
                 if (PluginForHost.class.isAssignableFrom(enc)) {
                     type = Type.HOSTER;
@@ -150,6 +150,8 @@ public class PluginJsonConfig {
                     if (StringUtils.isEmpty(host)) {
                         throw new WTFException("Bad Config Interface Definition. " + enc + " defines " + names.length + " Hosts. you have to define an own config interface class for each one and use the @PluginHost(\"domain.de\") Annotation");
                     }
+                } else {
+                    type = null;
                 }
             } else {
                 throw new WTFException("Bad Config Interface Definition. " + configInterface.getName() + ". @PluginHost(\"domain.de\") or    public Class<? extends UsenetConfigInterface> getConfigInterface() {... is missing");
@@ -157,8 +159,7 @@ public class PluginJsonConfig {
         }
         String ID = JsonConfig.getStorageName(configInterface);
         if (ID.equals(configInterface.getName())) {
-            ID = host;
-            ID = type + "/" + ID;
+            ID = type + "/" + host;
         }
         final ClassLoader cl = configInterface.getClassLoader();
         if (!(cl instanceof PluginClassLoaderChild)) {
