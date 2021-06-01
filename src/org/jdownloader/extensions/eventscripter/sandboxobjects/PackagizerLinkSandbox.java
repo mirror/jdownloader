@@ -14,7 +14,7 @@ import org.jdownloader.extensions.eventscripter.ScriptAPI;
 public class PackagizerLinkSandbox {
     private final CrawledLink link;
 
-    public PackagizerLinkSandbox(CrawledLink link) {
+    public PackagizerLinkSandbox(final CrawledLink link) {
         this.link = link;
     }
 
@@ -41,17 +41,11 @@ public class PackagizerLinkSandbox {
     }
 
     public long getBytesTotal() {
-        if (link != null) {
-            return link.getSize();
-        }
-        return -1;
+        return link != null ? link.getSize() : -1;
     }
 
     public boolean isEnabled() {
-        if (link != null) {
-            return link.isEnabled();
-        }
-        return false;
+        return link != null && link.isEnabled();
     }
 
     public void setEnabled(boolean e) {
@@ -61,17 +55,11 @@ public class PackagizerLinkSandbox {
     }
 
     public String getHost() {
-        if (link != null) {
-            return link.getHost();
-        }
-        return null;
+        return link != null ? link.getHost() : null;
     }
 
     public String getName() {
-        if (link != null) {
-            return link.getName();
-        }
-        return null;
+        return link != null ? link.getName() : null;
     }
 
     public void setName(String name) {
@@ -82,17 +70,11 @@ public class PackagizerLinkSandbox {
 
     @ScriptAPI(description = "Get the Link Priority (HIGHEST|HIGHER|HIGH|DEFAULT|LOWER)")
     public String getPriority() {
-        if (link != null) {
-            return link.getPriority().name();
-        }
-        return null;
+        return link != null ? link.getPriority().name() : null;
     }
 
     public int getChunks() {
-        if (link != null) {
-            return link.getChunks();
-        }
-        return -1;
+        return link != null ? link.getChunks() : -1;
     }
 
     public void setChunks(int chunks) {
@@ -105,8 +87,9 @@ public class PackagizerLinkSandbox {
         if (link != null) {
             final PackageInfo dpi = link.getDesiredPackageInfo();
             return dpi == null ? null : dpi.getDestinationFolder();
+        } else {
+            return null;
         }
-        return null;
     }
 
     public void setDownloadFolder(String destinationFolder) {
@@ -124,32 +107,24 @@ public class PackagizerLinkSandbox {
     }
 
     public String getURL() {
-        if (link != null) {
-            return link.getURL();
-        }
-        return null;
+        return link != null ? link.getURL() : null;
     }
 
     public String getLinkState() {
-        if (link != null) {
-            return link.getLinkState().name();
-        }
-        return null;
+        return link != null ? link.getLinkState().name() : null;
     }
 
     public String[] getSourceUrls() {
-        if (link != null) {
-            return link.getSourceUrls();
-        }
-        return null;
+        return link != null ? link.getSourceUrls() : null;
     }
 
     public String getPackageName() {
         if (link != null) {
             final PackageInfo dpi = link.getDesiredPackageInfo();
             return dpi == null ? null : dpi.getName();
+        } else {
+            return null;
         }
-        return null;
     }
 
     public void setPackageName(String name) {
@@ -163,23 +138,42 @@ public class PackagizerLinkSandbox {
         }
     }
 
-    public Object getProperty(String key) {
-        if (link != null) {
-            return new CrawledLinkSandbox(link).getProperty(key);
+    private CrawledLinkSandbox crawledLinkSandbox = null;
+
+    public CrawledLinkSandbox getCrawledLink() {
+        if (crawledLinkSandbox != null) {
+            return crawledLinkSandbox;
         }
-        return null;
+        if (link != null) {
+            crawledLinkSandbox = new CrawledLinkSandbox(link);
+            return crawledLinkSandbox;
+        } else {
+            return null;
+        }
+    }
+
+    public Object getProperty(String key) {
+        final CrawledLinkSandbox crawledLinkSandbox = getCrawledLink();
+        if (crawledLinkSandbox != null) {
+            return crawledLinkSandbox.getProperty(key);
+        } else {
+            return null;
+        }
     }
 
     public Map<String, Object> getProperties() {
-        if (link != null) {
-            return new CrawledLinkSandbox(link).getProperties();
+        final CrawledLinkSandbox crawledLinkSandbox = getCrawledLink();
+        if (crawledLinkSandbox != null) {
+            return crawledLinkSandbox.getProperties();
+        } else {
+            return null;
         }
-        return null;
     }
 
     public void setProperty(String key, Object value) {
-        if (link != null) {
-            new CrawledLinkSandbox(link).setProperty(key, value);
+        final CrawledLinkSandbox crawledLinkSandbox = getCrawledLink();
+        if (crawledLinkSandbox != null) {
+            crawledLinkSandbox.setProperty(key, value);
         }
     }
 
@@ -191,10 +185,7 @@ public class PackagizerLinkSandbox {
     }
 
     public String getComment() {
-        if (link != null) {
-            return link.getComment();
-        }
-        return null;
+        return link != null ? link.getComment() : null;
     }
 
     public void setComment(String comment) {
@@ -205,10 +196,7 @@ public class PackagizerLinkSandbox {
 
     @ScriptAPI(description = "If true, the link will automove to the downloadlist")
     public boolean isAutoConfirmEnabled() {
-        if (link != null) {
-            return link.isAutoConfirmEnabled();
-        }
-        return false;
+        return link != null && link.isAutoConfirmEnabled();
     }
 
     @ScriptAPI(description = "If true, the link will automove to the downloadlist")
@@ -220,10 +208,7 @@ public class PackagizerLinkSandbox {
 
     @ScriptAPI(description = "If true, the link will autostart download after beeing confirmed")
     public boolean isAutoStartEnabled() {
-        if (link != null) {
-            return link.isAutoStartEnabled();
-        }
-        return false;
+        return link != null && link.isAutoStartEnabled();
     }
 
     @ScriptAPI(description = "If true, the link will autostart download after beeing confirmed")

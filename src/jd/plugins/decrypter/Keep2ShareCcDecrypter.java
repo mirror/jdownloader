@@ -23,8 +23,6 @@ import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.requests.GetRequest;
-import jd.http.requests.PostRequest;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -103,6 +101,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         boolean folderHandling = false;
+        FilePackage fp = null;
         final List<Map<String, Object>> files = (List<Map<String, Object>>) response.get("files");
         if (files.size() == 0) {
             logger.info("Empty object");
@@ -118,7 +117,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                     continue;
                 }
                 final String name = (String) file.get("name");
-                final String size = file.get("size").toString();
+                final String size = StringUtils.valueOfOrNull(file.get("size"));
                 final String md5 = (String) file.get("md5");
                 final String access = (String) file.get("access");
                 final Boolean isFolder = (Boolean) file.get("is_folder");
@@ -135,116 +134,68 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                     link.setProperty("access", access);
                     decryptedLinks.add(link);
                 } else if (StringUtils.equals(id, fuid)) {
+                    fp = FilePackage.getInstance();
+                    if (StringUtils.isNotEmpty(name)) {
+                        fp.setName(name);
+                    }
                     folderHandling = true;
                     break;
                 }
             }
         }
-        FilePackage fp = null;
         if (folderHandling) {
             final Set<String> dups = new HashSet<String>();
-            if (true) {
-                int offset = 0;
-                do {
-                    ((jd.plugins.hoster.Keep2ShareCc) plugin).postPageRaw(br, "/getfilestatus", "{\"id\":\"" + fuid + "\",\"limit\":20,\"offset\":" + offset + "}", null);
-                    response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                    final List<Map<String, Object>> items = (List<Map<String, Object>>) response.get("files");
-                    if (items.size() == 0) {
-                        if (dups.size() == 0) {
-                            logger.info("Empty folder");
-                            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-                        }
-                        return decryptedLinks;
+            final int limit = 50;
+            int offset = 0;
+            do {
+                ((jd.plugins.hoster.Keep2ShareCc) plugin).postPageRaw(br, "/getfilestatus", "{\"id\":\"" + fuid + "\",\"limit\":" + limit + ",\"offset\":" + offset + "}", null);
+                response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final List<Map<String, Object>> items = (List<Map<String, Object>>) response.get("files");
+                if (items.size() == 0) {
+                    if (decryptedLinks.size() == 0) {
+                        logger.info("Empty folder");
+                        decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
                     }
-                    final String folderName = (String) response.get("name");
-                    if (fp == null && StringUtils.isNotEmpty(folderName)) {
-                        fp = FilePackage.getInstance();
-                        fp.setName(folderName);
-                    }
-                    boolean next = false;
-                    if (items != null && items.size() > 0) {
-                        for (Map<String, Object> file : items) {
-                            final Boolean isFolder = (Boolean) file.get("is_folder");
-                            final Boolean isAvailable = (Boolean) file.get("is_available");
-                            final String id = (String) file.get("id");
-                            if (dups.add(id)) {
-                                next = true;
-                            }
-                            final String name = (String) file.get("name");
-                            final String md5 = (String) file.get("md5");
-                            final String size = file.get("size").toString();
-                            if (Boolean.FALSE.equals(isFolder)) {
-                                final DownloadLink link = createDownloadlink("https://" + this.getHost() + "/file/" + id);
-                                if (StringUtils.isNotEmpty(name)) {
-                                    link.setName(name);
-                                }
-                                if (StringUtils.isNotEmpty(size)) {
-                                    link.setVerifiedFileSize(Long.parseLong(size));
-                                }
-                                link.setHashInfo(HashInfo.parse(md5));
-                                link.setAvailable(Boolean.TRUE.equals(isAvailable));
-                                decryptedLinks.add(link);
-                            }
-                        }
-                    } else {
-                        break;
-                    }
-                    offset += 20;
-                    if (next == false) {
-                        break;
-                    }
-                } while (!this.isAbort());
-            } else {
-                // ask for own id/credentials
-                final PostRequest postRequest = br.createPostRequest("https://api.k2s.cc/v1/auth/token", "{\"grant_type\":\"client_credentials\",\"client_id\":\"k2s_web_app\",\"client_secret\":\"pjc8pyZv7vhscexepFNzmu4P\"}");
-                ((jd.plugins.hoster.Keep2ShareCc) plugin).sendRequest(postRequest);
-                int offset = 0;
-                int itemsCount = 0;
-                while (!isAbort()) {
-                    final GetRequest getRequest = br.createGetRequest("https://api.k2s.cc/v1/files?limit=20&offset=" + offset + "&sort=-createdAt&folderId=" + fuid + "&withFolders=true");
-                    ((jd.plugins.hoster.Keep2ShareCc) plugin).sendRequest(getRequest);
-                    response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                    final Number total = (Number) response.get("total");
-                    final List<Map<String, Object>> items = (List<Map<String, Object>>) response.get("items");
-                    boolean next = false;
-                    if (items != null && items.size() > 0) {
-                        itemsCount += items.size();
-                        for (Map<String, Object> file : items) {
-                            final Boolean isFile = "file".equals(file.get("type"));
-                            final Boolean isAvailable = !(Boolean) file.get("isDeleted");
-                            final String id = (String) file.get("id");
-                            if (dups.add(id)) {
-                                next = true;
-                            }
-                            final String name = (String) file.get("name");
-                            final String access = (String) file.get("accessType");
-                            final String size = file.get("size").toString();
-                            if (Boolean.TRUE.equals(isFile)) {
-                                final DownloadLink link = createDownloadlink("https://k2s.cc/file/" + id);
-                                if (StringUtils.isNotEmpty(name)) {
-                                    link.setName(name);
-                                }
-                                if (StringUtils.isNotEmpty(size)) {
-                                    link.setVerifiedFileSize(Long.parseLong(size));
-                                }
-                                link.setAvailable(Boolean.TRUE.equals(isAvailable));
-                                link.setProperty("access", access);
-                                decryptedLinks.add(link);
-                            }
-                        }
-                    } else {
-                        break;
-                    }
-                    if (itemsCount >= total.longValue()) {
-                        break;
-                    } else if (next == false) {
-                        break;
-                    }
-                    offset += 20;
+                    break;
                 }
-            }
+                boolean next = false;
+                if (items != null && items.size() > 0) {
+                    for (Map<String, Object> file : items) {
+                        final Boolean isFolder = (Boolean) file.get("is_folder");
+                        final Boolean isAvailable = (Boolean) file.get("is_available");
+                        final String id = (String) file.get("id");
+                        if (dups.add(id)) {
+                            next = true;
+                        }
+                        final String name = (String) file.get("name");
+                        final String md5 = (String) file.get("md5");
+                        final String size = file.get("size").toString();
+                        if (Boolean.FALSE.equals(isFolder)) {
+                            final DownloadLink link = createDownloadlink("https://" + this.getHost() + "/file/" + id);
+                            if (StringUtils.isNotEmpty(name)) {
+                                link.setName(name);
+                            }
+                            if (StringUtils.isNotEmpty(size)) {
+                                link.setVerifiedFileSize(Long.parseLong(size));
+                            }
+                            link.setHashInfo(HashInfo.parse(md5));
+                            link.setAvailable(Boolean.TRUE.equals(isAvailable));
+                            decryptedLinks.add(link);
+                        } else {
+                            final DownloadLink link = createDownloadlink("https://" + this.getHost() + "/folder/" + id);
+                            decryptedLinks.add(link);
+                        }
+                    }
+                } else {
+                    break;
+                }
+                offset += limit;
+                if (next == false) {
+                    break;
+                }
+            } while (!this.isAbort());
         }
-        if (fp != null && decryptedLinks.size() > 1) {
+        if (fp != null) {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;

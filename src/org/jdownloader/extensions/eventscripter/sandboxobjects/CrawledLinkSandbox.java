@@ -144,11 +144,17 @@ public class CrawledLinkSandbox {
         }
     }
 
+    private DownloadLinkSandBox downloadLinkSandbox = null;
+
     public DownloadLinkSandBox getDownloadLink() {
+        if (downloadLinkSandbox != null) {
+            return downloadLinkSandbox;
+        }
         if (link != null) {
             final DownloadLink downloadLink = link.getDownloadLink();
             if (downloadLink != null) {
-                return new DownloadLinkSandBox(downloadLink);
+                downloadLinkSandbox = new DownloadLinkSandBox(downloadLink);
+                return downloadLinkSandbox;
             } else {
                 return null;
             }
@@ -228,23 +234,21 @@ public class CrawledLinkSandbox {
         }
     }
 
+    public String getHashInfo() {
+        final DownloadLinkSandBox downloadLinkSandBox = getDownloadLink();
+        return downloadLinkSandBox != null ? downloadLinkSandBox.getHashInfo() : null;
+    }
+
     public void setProperty(String key, Object value) {
-        if (link != null) {
-            final DownloadLink downloadLink = link.getDownloadLink();
-            if (downloadLink != null) {
-                new DownloadLinkSandBox(downloadLink).setProperty(key, value);
-            }
+        final DownloadLinkSandBox downloadLinkSandBox = getDownloadLink();
+        if (downloadLinkSandBox != null) {
+            downloadLinkSandBox.setProperty(key, value);
         }
     }
 
     public Map<String, Object> getProperties() {
-        if (link != null) {
-            final DownloadLink downloadLink = link.getDownloadLink();
-            if (downloadLink != null) {
-                return new DownloadLinkSandBox(downloadLink).getProperties();
-            }
-        }
-        return null;
+        final DownloadLinkSandBox downloadLinkSandBox = getDownloadLink();
+        return downloadLinkSandBox != null ? downloadLinkSandBox.getProperties() : null;
     }
 
     private boolean canStore(final Object value) {
@@ -358,11 +362,7 @@ public class CrawledLinkSandbox {
     }
 
     public boolean isEnabled() {
-        if (link != null) {
-            return link.isEnabled();
-        } else {
-            return false;
-        }
+        return link != null && link.isEnabled();
     }
 
     @Override

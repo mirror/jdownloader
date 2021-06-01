@@ -3,9 +3,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -16,14 +13,17 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "manganato.com" }, urls = { "https?://(?:www\\.)?(?:manganelo|readmanganato|manganato)\\.com/manga-[a-z0-9\\-]+(?:/chapter-\\d+)?" })
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "manganato.com" }, urls = { "https?://(?:www\\.)?(?:manganelo|readmanganato|manganato)\\.com/manga-[a-z0-9\\-]+(?:/chapter-\\d+(\\.\\d+)?)?" })
 public class ManganatoCom extends antiDDoSForDecrypt {
     public ManganatoCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private final String TYPE_MANGA         = "^https?://[^/]+/manga-([a-z0-9\\-]+)$";
-    private final String TYPE_MANGA_CHAPTER = "^https?://[^/]+/manga-([a-z0-9\\-]+)/chapter-(\\d+)$";
+    private final String TYPE_MANGA_CHAPTER = "^https?://[^/]+/manga-([a-z0-9\\-]+)/chapter-(\\d+(\\.\\d+)?)$";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {

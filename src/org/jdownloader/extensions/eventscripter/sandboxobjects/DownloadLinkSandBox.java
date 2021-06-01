@@ -17,6 +17,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginProgress;
+import jd.plugins.download.HashInfo;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JsonKeyValueStorage;
@@ -126,6 +127,15 @@ public class DownloadLinkSandBox {
     public String getReferrerURL() {
         if (downloadLink != null) {
             return LinkTreeUtils.getUrlByType(UrlDisplayType.REFERRER, downloadLink);
+        } else {
+            return null;
+        }
+    }
+
+    public String getHashInfo() {
+        if (downloadLink != null) {
+            final HashInfo hashInfo = downloadLink.getHashInfo();
+            return hashInfo != null ? hashInfo.exportAsString() : null;
         } else {
             return null;
         }
