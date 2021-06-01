@@ -97,7 +97,6 @@ public class PervcityCom extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
-    private boolean              download_not_yet_possible    = false;
     private String               dllink                       = null;
 
     @Override
@@ -121,7 +120,6 @@ public class PervcityCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        download_not_yet_possible = false;
         this.setBrowserExclusive();
         prepBR(this.br);
         /* Trailers are only downloadable for free users */
@@ -327,9 +325,7 @@ public class PervcityCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        if (download_not_yet_possible) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not yet possible - content is not yet released!", 3 * 60 * 60 * 1000l);
-        } else if (this.dllink == null) {
+        if (this.dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);

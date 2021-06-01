@@ -25,8 +25,10 @@ import java.util.Map;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
@@ -52,8 +54,8 @@ public class RtveEs extends PluginForHost {
      * (direct URLs) e.g.:
      * https://www.rtve.es/alacarta/audios/documentos-rne/documentos-rne-antoine-saint-exupery-conquista-del-cielo-20-03-20/4822098/
      */
-    private static final String TYPE_NORMAL         = "http://(?:www\\.)?rtve\\.es/alacarta/(?:audios|videos)/[\\w\\-]+/[\\w\\-]+/\\d+/?(?:\\?modl=COMTS)?";
-    private static final String TYPE_SERIES         = "http://(?:www\\.)?rtve\\.es/infantil/serie/[^/]+/video/[^/]+/\\d+/";
+    private static final String TYPE_NORMAL         = "https?://[^/]+/alacarta/(?:audios|videos)/[\\w\\-]+/[\\w\\-]+/(\\d+)/?(?:\\?modl=COMTS)?";
+    private static final String TYPE_SERIES         = "https?://[^/]+/infantil/serie/[^/]+/video/[^/]+/(\\d+)/";
     private String              dllink              = null;
     private String              BLOWFISHKEY         = "eWVMJmRhRDM=";
     private String              dl_not_possible_now = null;
@@ -110,7 +112,14 @@ public class RtveEs extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "/(\\d+)/?.*?$").getMatch(0);
+        if (link.getPluginPatternMatcher() == null) {
+            return null;
+        } else if (link.getPluginPatternMatcher().matches(TYPE_NORMAL)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(0);
+        } else {
+            /* TYPE_SERIES */
+            return new Regex(link.getPluginPatternMatcher(), TYPE_SERIES).getMatch(0);
+        }
     }
 
     @Override
@@ -129,13 +138,17 @@ public class RtveEs extends PluginForHost {
             if (fid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            link.setLinkID(this.getHost() + "://" + fid);
+            /* Alternative (older) request: http://www.rtve.es/api/videos/%s/config/alacarta_videos.json */
             br.getPage(String.format("https://www.rtve.es/api/videos/%s.json", fid));
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "page/items/{0}");
+            final String state = (String) JavaScriptEngineFactory.walkJson(entries, "pubState/code");
+            if (state.equalsIgnoreCase("DESPU")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             final long publicationDateTimestamp = JavaScriptEngineFactory.toLong(entries.get("publicationDateTimestamp"), 0);
             // final String publicationDate = (String) entries.get("publicationDate");
             filename = (String) entries.get("longTitle");
@@ -201,21 +214,36 @@ public class RtveEs extends PluginForHost {
         if (flashVars == null || flashVars.length != 4) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        /* encrypt request query */
-        final String mediaType = "audios".equals(flashVars[2]) ? "audio" : "video";
-        String getEncData = org.appwork.utils.encoding.Base64.encodeToString(getBlowfish(JDHexUtils.getByteArray(JDHexUtils.getHexString(flashVars[0] + "_default_" + mediaType + "_" + flashVars[1])), false), false);
-        getEncData = getEncData.replaceAll("/", "_");
-        Browser enc = br.cloneBrowser();
-        /* 2020-07-28: TODO: Higher resolutions are "hidden" in their thumbnail. */
-        // br.getPage("http://www.rtve.es/ztnr/movil/thumbnail/banebdyede/videos/" + "<fileID>" + ".png");
-        enc.getPage("https://ztnr.rtve.es/ztnr/res/" + getEncData);
-        /* Check for empty page */
-        if (enc.toString().length() <= 22) {
-            logger.info("Empty page --> Content offline?");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final boolean getBestQualityV2 = true;
+        if (getBestQualityV2 && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            /* 2020-07-28: TODO: Higher resolutions are "hidden" in their thumbnail. */
+            final Browser brc = br.cloneBrowser();
+            brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            brc.getPage("https://www." + this.getHost() + "/odin/loki/" + Encoding.urlEncode(br.getRequest().getHeaders().getValue(HTTPConstants.HEADER_REQUEST_USER_AGENT)) + "/");
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            /* 2021-06-01: Usually this will have the value "banebdyede" */
+            final String manager = (String) entries.get("manager");
+            final String thumbnailB64URL = "https://ztnr.rtve.es/ztnr/movil/thumbnail/" + manager + "/videos/" + this.getFID(link) + ".png?q=v2";
+            final Browser brd = new Browser();
+            brd.getPage(thumbnailB64URL);
+            brd.getHeaders().put("Origin", "https://www.rtve.es");
+            brd.getHeaders().put("Referer", "https://www.rtve.es");
+            final String b64 = brd.toString();
+        } else {
+            /* encrypt request query */
+            final String mediaType = "audios".equals(flashVars[2]) ? "audio" : "video";
+            String getEncData = org.appwork.utils.encoding.Base64.encodeToString(getBlowfish(JDHexUtils.getByteArray(JDHexUtils.getHexString(flashVars[0] + "_default_" + mediaType + "_" + flashVars[1])), false), false);
+            getEncData = getEncData.replaceAll("/", "_");
+            final Browser enc = br.cloneBrowser();
+            enc.getPage("https://ztnr.rtve.es/ztnr/res/" + getEncData);
+            /* Check for empty page */
+            if (enc.toString().length() <= 22) {
+                logger.info("Empty page --> Content offline?");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            /* decrypt response body */
+            dllink = getLink(JDHexUtils.toString(JDHexUtils.getHexString(getBlowfish(org.appwork.utils.encoding.Base64.decode(enc.toString()), true))));
         }
-        /* decrypt response body */
-        dllink = getLink(JDHexUtils.toString(JDHexUtils.getHexString(getBlowfish(org.appwork.utils.encoding.Base64.decode(enc.toString()), true))));
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
