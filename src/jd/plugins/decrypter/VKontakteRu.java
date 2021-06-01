@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -140,8 +139,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_VIDEO_SINGLE_ORIGINAL_LIST        = PATTERN_VALID_PREFIXES + "[^/]+/video(\\-)?\\d+_\\d+\\?list=[a-z0-9]+";
     private static final String     PATTERN_VIDEO_SINGLE_EMBED                = PATTERN_VALID_PREFIXES + "[^/]+/video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+.*?";
     private static final String     PATTERN_VIDEO_SINGLE_EMBED_HASH           = PATTERN_VALID_PREFIXES + "[^/]+/video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+\\&hash=[a-z0-9]+.*?";
-    private static final String     PATTERN_VIDEO_ALBUM                       = PATTERN_VALID_PREFIXES + "[^/]+/(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged|videos(\\-)?\\d+(\\?section=album_\\d+)?)";
-    private static final String     PATTERN_VIDEO_ALBUM_WITH_UNKNOWN_PARAMS   = PATTERN_VALID_PREFIXES + "[^/]+/videos(\\-)?\\d+\\?.+";
+    private static final String     PATTERN_VIDEO_ALBUM                       = PATTERN_VALID_PREFIXES + "[^/]+/(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged|videos(?:-)?\\d+(?:\\?section=[^\\&]+)?)";
     private static final String     PATTERN_VIDEO_COMMUNITY_ALBUM             = PATTERN_VALID_PREFIXES + "[^/]+/video\\?gid=\\d+";
     private static final String     PATTERN_PHOTO_SINGLE                      = PATTERN_VALID_PREFIXES + "[^/]+/photo(\\-)?\\d+_\\d+.*?";
     private static final String     PATTERN_PHOTO_SINGLE_Z                    = PATTERN_VALID_PREFIXES + "[^/]+/.+z=photo(?:\\-)?\\d+_\\d+.*?";
@@ -239,7 +237,7 @@ public class VKontakteRu extends PluginForDecrypt {
         vkwall_comments_grab_comments = vkwall_comment_grabphotos || vkwall_comment_grabaudio || vkwall_comment_grabvideo || vkwall_comment_grablink;
         photos_store_picture_directurls = cfg.getBooleanProperty(VKontakteRuHoster.VKWALL_STORE_PICTURE_DIRECTURLS, VKontakteRuHoster.default_VKWALL_STORE_PICTURE_DIRECTURLS);
         prepBrowser(br);
-        prepCryptedLink(null);
+        prepCryptedLink();
         /* Check/fix links before browser access START */
         if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_SHORT)) {
             br.setFollowRedirects(false);
@@ -272,7 +270,7 @@ public class VKontakteRu extends PluginForDecrypt {
             // if (loginrequired && !loggedIn) {
             // throw new DecrypterException(EXCEPTION_ACCOUNT_REQUIRED);
             // }
-            prepCryptedLink(Boolean.valueOf(loggedIn));
+            prepCryptedLink();
             /* Replace section start */
             String newLink = CRYPTEDLINK_FUNCTIONAL;
             if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_PUBLIC_LINK) || isClubUrl(this.CRYPTEDLINK_FUNCTIONAL) || CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_EVENT_LINK)) {
@@ -1030,103 +1028,60 @@ public class VKontakteRu extends PluginForDecrypt {
         }
     }
 
-    /** NOT Using API --> NOT possible */
     private void decryptVideoAlbum() throws Exception {
-        /* TODO: Update this to use new json parsing/pagination handling! */
         this.getPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
         handleVideoErrors(br);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        final String sectionName = UrlQuery.parse(this.CRYPTEDLINK_FUNCTIONAL).get("section");
-        final String albumID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "(-?\\d+)$").getMatch(0);
+        String sectionName = UrlQuery.parse(this.CRYPTEDLINK_FUNCTIONAL).get("section");
+        if (sectionName == null) {
+            sectionName = "all";
+        }
         final String albumsJson = br.getRegex("extend\\(cur, (\\{\"albumsPreload\".*?\\})\\);\\s+").getMatch(0);
-        int numberOfVideos = -1;
         Map<String, Object> entries = JSonStorage.restoreFromString(albumsJson, TypeRef.HASHMAP);
+        final String ownerID = Integer.toString(((Number) entries.get("oid")).intValue());
         final int maxItemsPerPage = ((Number) entries.get("VIDEO_SILENT_VIDEOS_CHUNK_SIZE")).intValue();
-        final Map<String, Object> videosCountMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "videosCount/" + albumID);
-        if (!StringUtils.isEmpty(sectionName)) {
-            numberOfVideos = ((Number) videosCountMap.get(sectionName)).intValue();
-        } else {
-            numberOfVideos = ((Number) videosCountMap.get("all")).intValue();
-        }
-        if (numberOfVideos == -1) {
-            /* 2021-05-31: Old handling - should not be needed anymore! */
-            logger.warning("Jumping into old handling to find numberOfVideos");
-            final String videosCount = PluginJSonUtils.getJsonNested(br, "videosCount");
-            String numberofentries = null;
-            if (videosCount != null) {
-                numberofentries = PluginJSonUtils.getJson(videosCount, "all");
-            }
-            if (numberofentries == null) {
-                numberofentries = PluginJSonUtils.getJsonValue(br, "videoCount");
-                if (numberofentries == null) {
-                    numberofentries = br.getRegex("class=\"video_summary_count\">(\\d+)<").getMatch(0);
-                    if (numberofentries == null) {
-                        numberofentries = PluginJSonUtils.getJsonValue(br, "count");
-                        if (numberofentries == null) {
-                            // THIS IS NOT ENTRY COUNT! THIS IS ALUBMS -raztoki20161117.
-                            // numberofentries = PluginJSonUtils.getJsonValue(br, "playlistsCount");
-                        }
-                    }
-                }
-            }
-            numberOfVideos = Integer.parseInt(numberofentries);
-        }
-        logger.info("numberofentries=" + numberOfVideos + "|maxItemsPerPage=" + maxItemsPerPage);
+        Map<String, Object> videoInfoMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "pageVideosList/" + ownerID + "/" + sectionName);
+        final int numberofVideos = ((Number) videoInfoMap.get("count")).intValue();
+        logger.info("numberofVideos=" + numberofVideos + "|maxVideosPerPage=" + maxItemsPerPage);
         int offset = 0;
-        final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
-        while (offset < numberOfVideos) {
-            String[] videos = null;
-            if (offset < 12) {
-                /* 2016-08-24: Updated this */
-                final String jsVideoArray = PluginJSonUtils.getJsonNested(br, "pageVideosList");
-                if (jsVideoArray != null) {
-                    videos = new Regex(jsVideoArray, "\\[((\\-)?\\d+,\\d+),\"").getColumn(0);
-                } else {
-                    /* 2016 */
-                    videos = br.getRegex("class=\"video_item_title\" href=\"/video((?:\\-)?\\d+_\\d+)\"").getColumn(0);
-                    if (videos == null || videos.length == 0) {
-                        logger.warning("Decrypter broken for link: " + this.CRYPTEDLINK_FUNCTIONAL);
-                        decryptedLinks = null;
-                        return;
-                    }
-                }
-            } else {
-                final UrlQuery query = new UrlQuery();
-                query.add("al", "1");
-                query.add("need_albums", "0");
-                query.add("offset", Integer.toString(offset));
-                query.add("oid", albumID);
-                // query.add("rowlen", "3");
-                if (!StringUtils.isEmpty(sectionName)) {
-                    query.add("section", Encoding.urlEncode(sectionName));
-                }
-                // query.add("snippet_video", "0");
-                // br.postPage(getBaseURL() + "/al_video.php", "act=load_videos_silent&al=1&offset=" + offset + "&oid=" + albumID);
-                br.postPage(getBaseURL() + "/al_video.php?act=load_videos_silent", query.toString());
-                videos = br.getRegex("\\[(?:\")?((\\-)?\\d+(?:\")?,(?:\")?\\d+)(?:\")?,\"").getColumn(0);
-            }
-            if (videos == null || videos.length == 0) {
+        int page = 0;
+        while (true) {
+            List<List<Object>> videosO = (List<List<Object>>) videoInfoMap.get("list");
+            if (videosO.isEmpty()) {
+                logger.info("Stopping because: List of videos is empty");
                 break;
             }
-            for (String singleVideo : videos) {
-                try {
-                    singleVideo = singleVideo.replace(",", "_");
-                    singleVideo = singleVideo.replace(" ", "");
-                    singleVideo = singleVideo.replace("\"", "");
-                    if (!dupe.add(singleVideo)) {
-                        continue;
-                    }
-                    final String completeVideolink = getProtocol() + "vk.com/video" + singleVideo;
-                    this.decryptedLinks.add(createDownloadlink(completeVideolink));
-                } finally {
-                    offset++;
-                }
+            for (final List<Object> videoInfos : videosO) {
+                final int thisOwnerID = ((Number) videoInfos.get(0)).intValue();
+                final int thisContentID = ((Number) videoInfos.get(1)).intValue();
+                // final String videoTitle = (String)videoInfos.get(3);
+                // final String videoAuthorHTML = (String)videoInfos.get(8);
+                final String completeVideolink = getProtocol() + "vk.com/video" + thisOwnerID + "_" + thisContentID;
+                final DownloadLink dl = createDownloadlink(completeVideolink);
+                this.decryptedLinks.add(dl);
+                distribute(dl);
+                offset++;
             }
-            logger.info("Found " + videos.length + " videos so far");
-            if (this.isAbort()) {
-                logger.info("Decryption aborted by user, stopping...");
+            logger.info("Page: " + page + " | Crawled: " + offset + " / " + numberofVideos);
+            final UrlQuery query = new UrlQuery();
+            query.add("al", "1");
+            query.add("need_albums", "0");
+            query.add("offset", Integer.toString(offset));
+            query.add("oid", ownerID);
+            // query.add("rowlen", "3");
+            if (!StringUtils.isEmpty(sectionName)) {
+                query.add("section", Encoding.urlEncode(sectionName));
+            }
+            if (offset >= numberofVideos) {
+                logger.info("Stopping because: Found all items");
+                break;
+            } else if (this.isAbort()) {
                 break;
             }
+            br.postPage(getBaseURL() + "/al_video.php?act=load_videos_silent", query.toString());
+            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            videoInfoMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "payload/{1}/{0}/" + sectionName);
+            page += 1;
         }
         logger.info("Total videolinks found: " + offset);
     }
@@ -2703,13 +2658,13 @@ public class VKontakteRu extends PluginForDecrypt {
      *
      * @throws IOException
      */
-    private void prepCryptedLink(final Boolean a) throws IOException {
+    private void prepCryptedLink() throws IOException {
         /* Correct encoding, domain and protocol. */
         CRYPTEDLINK_ORIGINAL = Encoding.htmlDecode(CRYPTEDLINK_ORIGINAL).replaceAll("(m\\.|new\\.)?(vkontakte|vk)\\.(ru|com)/", "vk.com/");
         // CRYPTEDLINK_ORIGINAL = Encoding.htmlDecode(CRYPTEDLINK_ORIGINAL).replaceAll("(m\\.|new\\.)?(vkontakte|vk)\\.(ru|com)/",
         // Boolean.FALSE.equals(a) ? "new.vk.com/" : "vk.com/");
         /* We cannot simply remove all parameters which we usually don't need because...we do sometimes need em! */
-        if (this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_ALBUM_WITH_UNKNOWN_PARAMS) && !this.isKnownType()) {
+        if (this.CRYPTEDLINK_ORIGINAL.contains("?") && !this.isKnownType()) {
             this.CRYPTEDLINK_ORIGINAL = removeParamsFromURL(CRYPTEDLINK_ORIGINAL);
         } else {
             /* Remove unneeded parameters. */

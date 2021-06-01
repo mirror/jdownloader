@@ -1667,10 +1667,32 @@ public class VKontakteRuHoster extends PluginForHost {
     public static final long     defaultSLEEP_PAGINATION_GENERAL                                                     = 1000;
     public static final long     defaultSLEEP_SLEEP_PAGINATION_COMMUNITY_VIDEO                                       = 1000;
     public static final long     defaultSLEEP_TOO_MANY_REQUESTS                                                      = 3000;
+    // public static enum QualitySelectionMode implements LabelInterface {
+    // BEST {
+    // @Override
+    // public String getLabel() {
+    // return "Best quality";
+    // }
+    // },
+    // BEST_OF_SELECTED {
+    // @Override
+    // public String getLabel() {
+    // return "Best within selected video qualities";
+    // }
+    // };
+    // }
+    //
+    // private String[] getVideoQualitySelectionModeStrings() {
+    // QualitySelectionMode[] qualitySelectionModes = { QualitySelectionMode.BEST, QualitySelectionMode.BEST_OF_SELECTED };
+    // final String[] ret = new String[qualitySelectionModes.length];
+    // for (int i = 0; i < qualitySelectionModes.length; i++) {
+    // ret[i] = qualitySelectionModes[i].getLabel();
+    // }
+    // return ret;
+    // }
 
     public void setConfigElements() {
         // this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "General settings:"));
-        // this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         // this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Linkcheck settings:"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
@@ -1680,6 +1702,8 @@ public class VKontakteRuHoster extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Video settings:"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), "QUALITY_SELECTION_MODE",
+        // getVideoQualitySelectionModeStrings(), "Video quality selection mode").setDefaultValue(0));
         final ConfigEntry best = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.ALLOW_BEST, JDL.L("plugins.hoster.vkontakteruhoster.checkbest", "Only grab the best available resolution")).setDefaultValue(default_ALLOW_BEST);
         this.getConfig().addEntry(best);
         final ConfigEntry bestOfSelection = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.ALLOW_BEST_OF_SELECTION, "Only grab the best available resolution within selected qualities below").setDefaultValue(default_ALLOW_BEST_OF_SELECTION).setEnabledCondidtion(best, false);
