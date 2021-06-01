@@ -49,6 +49,7 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -112,14 +113,8 @@ public class FakirdebridNet extends PluginForHost {
             this.login(account, false);
             // br.setAllowedResponseCodes(new int[] { 503 });
             br.postPage(API_BASE + "/generate.php?pin=" + Encoding.urlEncode(account.getPass()), "url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+            this.handleErrorsAPI(this.br, account);
             Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            /*
-             * TODO: E.g. {"error":true,"code":"Limit_Error_Transfer",
-             * "message":"You've spent the entire limit on your transfer package. You need to buy a new pack."}
-             */
-            if (((Boolean) entries.get("error")).booleanValue()) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, entries.get("message").toString(), 1 * 60 * 1000l);
-            }
             entries = (Map<String, Object>) entries.get("data");
             /**
              * E.g. redirect to server2.turkleech.com/TransLoad/?id=bla </br>
@@ -216,6 +211,9 @@ public class FakirdebridNet extends PluginForHost {
             final Map<String, Object> hostermap = (Map<String, Object>) hoster;
             final String domain = (String) hostermap.get("host");
             final boolean active = ((Boolean) hostermap.get("currently_working")).booleanValue();
+            if (!active) {
+                continue;
+            }
             /* Workaround to find the real domain which we need to assign the properties to later on! */
             final ArrayList<String> supportedHostsTmp = new ArrayList<String>();
             supportedHostsTmp.add(domain);
@@ -226,9 +224,7 @@ public class FakirdebridNet extends PluginForHost {
                 continue;
             }
             final String realDomain = realDomainList.get(0);
-            if (active) {
-                supportedHosts.add(realDomain);
-            }
+            supportedHosts.add(realDomain);
         }
         ai.setMultiHostSupport(this, supportedHosts);
         return ai;
@@ -248,22 +244,58 @@ public class FakirdebridNet extends PluginForHost {
         }
     }
 
-    private void handleErrorsAPI(final Browser br, final Account account) throws AccountInvalidException {
+    /**
+     * 'PIN_Required' => 'PIN Required', </br>
+     * 'URL_Required' => 'You did not add URL data', </br>
+     * 'PIN_Invalid' => 'Invalid PIN',</br>
+     * 'NOT_Supported' => 'This service is not supported or not supported by API.',</br>
+     * 'Limit_Error_Transfer' => 'You have exhausted all transfer limits of your account, You need to purchase a new package.',</br>
+     * 'Limit_Error_Premium' => 'You have filled the daily limits of your account. Please try again after the limits are reset.',</br>
+     * 'Link_Error_Browser' => 'This link can only be downloaded via the browser.',</br>
+     * 'Link_Error' => 'An unknown error occurred while creating the link.',</br>
+     * 'File_not_found' => 'File not found',</br>
+     * 'Password_Required' => 'This file is protected by password. Please add link Password.',</br>
+     * 'Wrong_Password' => 'Wrong Password, Please try again.',</br>
+     * 'File_Unavailable' => 'This link is currently unavailable. Please try again later.',</br>
+     * 'Price_File' => 'This link cannot be downloaded with premium account, You can download it by purchasing this link only.',</br>
+     * 'Download_Server_Error' => 'Download server with your file is temporarily unavailable.',</br>
+     * 'OVH_Yangin' => 'This file seems to have been affected by the fire in the OVH datacenter.',</br>
+     * 'Size_Error' => 'The premium download link for this file is not working.',</br>
+     * 'Banned_Account' => 'Banned Account',</br>
+     * 'Free_Account' => 'Not supported for free members.',
+     */
+    private void handleErrorsAPI(final Browser br, final Account account) throws PluginException, InterruptedException {
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final Object errorO = entries.get("error");
         if (errorO instanceof Boolean && errorO == Boolean.TRUE) {
             final String message = (String) entries.get("message");
-            final int errorcode = JavaScriptEngineFactory.toInteger(entries.get("code"), -1);
-            switch (errorcode) {
-            case -1:
-                /* No error */
-                break;
-            case 1001:
-                /* Invalid PIN */
-                showPINLoginInformation();
-                throw new AccountInvalidException(message);
-            default:
-                throw new AccountInvalidException(message);
+            final Object errorCodeO = entries.get("code");
+            if (errorCodeO instanceof Number || errorCodeO.toString().matches("\\d+")) {
+                final int errorcode = Integer.parseInt(errorCodeO.toString());
+                switch (errorcode) {
+                case -1:
+                    /* No error */
+                    break;
+                case 1001:
+                    /* Invalid PIN */
+                    showPINLoginInformation();
+                    throw new AccountInvalidException(message);
+                default:
+                    throw new AccountInvalidException(message);
+                }
+            } else {
+                /* TODO: Add proper handling for: Password_Required, Wrong_Password --> Add password protected URLs handling */
+                /* Distinguish between temp. account errors, permanent account errors and downloadlink/host related errors. */
+                final String errorStr = errorCodeO.toString();
+                if (errorStr.equalsIgnoreCase("PIN_Invalid") || errorStr.equalsIgnoreCase("Banned_Account") || errorStr.equalsIgnoreCase("Free_Account")) {
+                    /* Permanent account error */
+                    throw new AccountInvalidException(message);
+                } else if (errorStr.equalsIgnoreCase("Limit_Error_Transfer") || errorStr.equalsIgnoreCase("Limit_Error_Premium")) {
+                    /* Temp. account error */
+                    throw new AccountUnavailableException(errorStr, 5 * 60 * 1000l);
+                } else {
+                    mhm.handleErrorGeneric(account, this.getDownloadLink(), errorStr, 10);
+                }
             }
         }
     }
