@@ -20,12 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.PervcityComConfig;
-import org.jdownloader.plugins.components.config.PervcityComConfig.Quality;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -44,6 +38,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.PervcityComConfig;
+import org.jdownloader.plugins.components.config.PervcityComConfig.Quality;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PervcityCom extends PluginForHost {
@@ -196,14 +196,14 @@ public class PervcityCom extends PluginForHost {
             }
             final String userPreferredQuality = getUserPreferredqualityStr();
             if (userPreferredQuality != null && qualityMap.containsKey(userPreferredQuality)) {
-                logger.info("Using user preferred quality " + userPreferredQuality);
                 final String[] selectedQualityInfo = qualityMap.get(userPreferredQuality);
                 this.dllink = selectedQualityInfo[0];
+                logger.info("Using user preferred quality:" + userPreferredQuality + ">" + this.dllink);
                 link.setDownloadSize(SizeFormatter.getSize(selectedQualityInfo[1]));
             } else if (bestQualityDownloadlink != null) {
-                logger.info("Using BEST quality");
                 this.dllink = bestQualityDownloadlink;
                 link.setDownloadSize(filesizeMax);
+                logger.info("Using BEST quality:" + this.dllink);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -358,6 +358,7 @@ public class PervcityCom extends PluginForHost {
             return "1080p";
         case Q2160:
             return "2160p";
+        case BEST:
         default:
             /* E.g. BEST */
             return null;
