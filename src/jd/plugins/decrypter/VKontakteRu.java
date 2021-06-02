@@ -26,15 +26,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -62,6 +53,15 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.VKontakteRuHoster;
 import jd.plugins.hoster.VKontakteRuHoster.QualitySelectionMode;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink)[a-z0-9_/=\\.\\-\\?&%]+|vk\\.cc/[A-Za-z0-9]+)" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -1108,7 +1108,10 @@ public class VKontakteRu extends PluginForDecrypt {
         final Map<String, String> selectedQualities = new HashMap<String, String>();
         // final Map<String, String> fallbackQualities = new HashMap<String, String>();
         final List<String> knownQualities = Arrays.asList(new String[] { "1080p", "720p", "480p", "360p", "240p" });
-        if (mode == QualitySelectionMode.BEST) {
+        if (mode == QualitySelectionMode.ALL) {
+            selectedQualities.putAll(availableVideoQualities);
+            return selectedQualities;
+        } else if (mode == QualitySelectionMode.BEST) {
             /* Crawled qualities are pre-sorted from best to worst. */
             final Map.Entry<String, String> entry = availableVideoQualities.entrySet().iterator().next();
             selectedQualities.put(entry.getKey(), entry.getValue());
@@ -1709,8 +1712,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /**
-     * Decrypts media of single Website html-post snippets. </br>
-     * Wrapper for websiteCrawlContent
+     * Decrypts media of single Website html-post snippets. </br> Wrapper for websiteCrawlContent
      *
      * @throws DecrypterException
      * @param url_source
