@@ -649,8 +649,8 @@ public class VKontakteRu extends PluginForDecrypt {
             listID = UrlQuery.parse(param.getCryptedUrl()).get("listid");
         }
         /* Check if fast-crawl is allowed */
-        final QualitySelectionMode crawlMode = VKontakteRuHoster.getSelectedVideoQualitySelectionMode();
-        final boolean userWantsMultipleQualities = crawlMode == QualitySelectionMode.ALL;
+        final QualitySelectionMode qualitySelectionMode = VKontakteRuHoster.getSelectedVideoQualitySelectionMode();
+        final boolean userWantsMultipleQualities = qualitySelectionMode == QualitySelectionMode.ALL;
         final boolean linkCanBeFastCrawled = param.getDownloadLink() != null && !param.getDownloadLink().hasProperty(VIDEO_PROHIBIT_FASTCRAWL) && param.getDownloadLink().hasProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE);
         if (this.cfg.getBooleanProperty(VKontakteRuHoster.FASTCRAWL_VIDEO, VKontakteRuHoster.default_FASTCRAWL_VIDEO) && !userWantsMultipleQualities && linkCanBeFastCrawled) {
             final DownloadLink dl = this.createDownloadlink(this.getProtocol() + this.getHost() + "/video" + oid_and_id);
@@ -712,7 +712,7 @@ public class VKontakteRu extends PluginForDecrypt {
             } else {
                 fp.setName(title);
             }
-            final Map<String, String> selectedQualities = getSelectedVideoQualities(foundQualities, VKontakteRuHoster.getSelectedVideoQualitySelectionMode(), VKontakteRuHoster.getPreferredQualityString());
+            final Map<String, String> selectedQualities = getSelectedVideoQualities(foundQualities, qualitySelectionMode, VKontakteRuHoster.getPreferredQualityString());
             if (selectedQualities.isEmpty()) {
                 logger.info("User has selected unavailable qualities only (or only unknown qualities are available)");
                 return;
