@@ -28,7 +28,6 @@ import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -86,17 +85,11 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String TEMPORARILYBLOCKED                                                          = jd.plugins.decrypter.VKontakteRu.TEMPORARILYBLOCKED;
     /* Settings stuff */
     public static final String  FASTLINKCHECK_VIDEO                                                         = "FASTLINKCHECK_VIDEO";
+    public static final String  FASTCRAWL_VIDEO                                                             = "FASTCRAWL_VIDEO";
     private static final String FASTLINKCHECK_PICTURES                                                      = "FASTLINKCHECK_PICTURES_V2";
     private static final String FASTLINKCHECK_AUDIO                                                         = "FASTLINKCHECK_AUDIO";
     public static final String  VIDEO_QUALITY_SELECTION_MODE                                                = "VIDEO_QUALITY_SELECTION_MODE";
     public static final String  PREFERRED_VIDEO_QUALITY                                                     = "PREFERRED_VIDEO_QUALITY";
-    public static final String  ALLOW_BEST                                                                  = "ALLOW_BEST";
-    public static final String  ALLOW_BEST_OF_SELECTION                                                     = "ALLOW_BEST_OF_SELECTION";
-    private static final String ALLOW_240P                                                                  = "ALLOW_240P";
-    private static final String ALLOW_360P                                                                  = "ALLOW_360P";
-    private static final String ALLOW_480P                                                                  = "ALLOW_480P";
-    private static final String ALLOW_720P                                                                  = "ALLOW_720P";
-    private static final String ALLOW_1080P                                                                 = "ALLOW_1080P";
     private static final String VKWALL_GRAB_ALBUMS                                                          = "VKWALL_GRAB_ALBUMS";
     private static final String VKWALL_GRAB_PHOTOS                                                          = "VKWALL_GRAB_PHOTOS";
     private static final String VKWALL_GRAB_AUDIO                                                           = "VKWALL_GRAB_AUDIO";
@@ -121,7 +114,6 @@ public class VKontakteRuHoster extends PluginForHost {
     public static final String  VKWALL_STORE_PICTURE_DIRECTURLS_PREFER_STORED_DIRECTURLS                    = "VKWALL_STORE_PICTURE_DIRECTURLS_PREFER_STORED_DIRECTURLS";
     public static final String  VKADVANCED_USER_AGENT                                                       = "VKADVANCED_USER_AGENT";
     /* html patterns */
-    public static final String  HTML_VIDEO_NO_ACCESS                                                        = "NO_ACCESS";
     public static final String  HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS                                       = "This video has been removed from public access";
     public static Object        LOCK                                                                        = new Object();
     private String              finalUrl                                                                    = null;
@@ -146,6 +138,7 @@ public class VKontakteRuHoster extends PluginForHost {
     // public static String PROPERTY_VIDEO_CRAWLMODE = "video_crawlmode";
     // public static String PROPERTY_VIDEO_PREFERRED_QUALITY = "video_preferred_quality";
     public static String        PROPERTY_VIDEO_LIST_ID                                                      = "video_list_id";
+    public static String        PROPERTY_VIDEO_SELECTED_QUALITY                                             = "selectedquality";
 
     public VKontakteRuHoster(final PluginWrapper wrapper) {
         super(wrapper);
@@ -210,7 +203,8 @@ public class VKontakteRuHoster extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, null, false);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return requestFileInformation(link, account, false);
     }
 
     @SuppressWarnings("deprecation")
@@ -280,11 +274,10 @@ public class VKontakteRuHoster extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.containsHTML("This document is available only to its owner\\.")) {
                 /* 2019-07-26: TODO: Improve this handling */
-                final Account acc = account != null ? account : AccountController.getInstance().getValidAccount(this);
-                if (acc == null) {
+                if (account == null) {
                     throw new AccountRequiredException();
                 } else {
-                    login(br, acc, false);
+                    login(br, account, false);
                     br.setFollowRedirects(true);
                     br.getPage(link.getPluginPatternMatcher());
                     if (br.containsHTML("This document is available only to its owner\\.")) {
@@ -321,9 +314,8 @@ public class VKontakteRuHoster extends PluginForHost {
             }
         } else {
             /* Check if login is required to check/download */
-            final boolean anonymousDownloadPossible = checkNoLoginNeeded(link);
             final Account aa = account != null ? account : AccountController.getInstance().getValidAccount(this.getHost());
-            if (!anonymousDownloadPossible && aa == null) {
+            if (!checkNoLoginNeeded(link) && account == null) {
                 link.getLinkStatus().setStatusText("Only downlodable via account!");
                 return AvailableStatus.UNCHECKABLE;
             } else if (aa != null) {
@@ -415,19 +407,40 @@ public class VKontakteRuHoster extends PluginForHost {
                     /* Refresh directlink */
                     final String oid = this.ownerID;
                     final String id = this.contentID;
-                    accessVideo(this.br, oid, id, null, false);
-                    if (br.containsHTML(VKontakteRuHoster.HTML_VIDEO_NO_ACCESS) || br.containsHTML(VKontakteRuHoster.HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS)) {
+                    accessVideo(this.br, oid, id, link.getStringProperty(VKontakteRuHoster.PROPERTY_VIDEO_LIST_ID), false);
+                    if (br.containsHTML(VKontakteRuHoster.HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS)) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else if (br.containsHTML("class=\"message_page_body\">\\s*Access denied")) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    final Map<String, String> availableQualities = findAvailableVideoQualities(br.toString());
-                    if (availableQualities == null) {
+                    final Map<String, String> availableQualities = findAvailableVideoQualities(br);
+                    if (availableQualities.isEmpty()) {
+                        /* This should never happen */
                         logger.info("vk.com: Couldn't find any available qualities for videolink");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    finalUrl = availableQualities.get(link.getStringProperty("selectedquality", null));
+                    final Map<String, String> selectedQualities = VKontakteRu.getSelectedVideoQualities(availableQualities, QualitySelectionMode.values()[link.getIntegerProperty(VIDEO_QUALITY_SELECTION_MODE, default_VIDEO_QUALITY_SELECTION_MODE)], Quality.values()[link.getIntegerProperty(PREFERRED_VIDEO_QUALITY, default_PREFERRED_VIDEO_QUALITY)].getLabel());
+                    if (selectedQualities.isEmpty()) {
+                        /* Rare case: User has to delete- and re-add URL via crawler. */
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Selected quality is not available");
+                    }
+                    if (link.hasProperty(VKontakteRuHoster.PROPERTY_VIDEO_SELECTED_QUALITY)) {
+                        /*
+                         * Pre-set forced quality --> This is basically like a fail safe as we do not want to change the preselected quality
+                         * as it could lead to corrupt files (e.g. resuming started 720p download with 1080p file).
+                         */
+                        finalUrl = selectedQualities.get(link.getStringProperty(VKontakteRuHoster.PROPERTY_VIDEO_SELECTED_QUALITY));
+                    } else {
+                        /* Assume map only contains this one element */
+                        final Entry<String, String> entry = selectedQualities.entrySet().iterator().next();
+                        finalUrl = entry.getValue();
+                        link.setProperty(VKontakteRuHoster.PROPERTY_VIDEO_SELECTED_QUALITY, entry.getKey());
+                        /* Correct filename which did not contain any quality modifier before. */
+                        link.setFinalFileName(link.getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE) + "_" + entry.getKey() + ".mp4");
+                    }
                     if (finalUrl == null) {
-                        logger.warning("Failed to find new link for selected quality...");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        /* This should never happen */
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to refresh directurl - Content offline?");
                     }
                     checkstatus = linkOk(link, isDownload);
                     if (checkstatus != 1) {
@@ -807,15 +820,14 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    private void handleServerErrors(final DownloadLink downloadLink) throws PluginException, IOException {
+    private void handleServerErrors(final DownloadLink link) throws PluginException, IOException {
         final URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() == 416) {
             con.disconnect();
             logger.info("Resume failed --> Retrying from zero");
-            downloadLink.setChunksProgress(null);
+            link.setChunksProgress(null);
             throw new PluginException(LinkStatus.ERROR_RETRY);
-        }
-        if (!this.looksLikeDownloadableContent(con)) {
+        } else if (!this.looksLikeDownloadableContent(con)) {
             logger.info("vk.com: Plugin broken after download-try");
             br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -833,8 +845,8 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     /* Same function in hoster and decrypterplugin, sync it!! */
-    private Map<String, String> findAvailableVideoQualities(final String source) throws Exception {
-        return VKontakteRu.findAvailableVideoQualities(source);
+    private Map<String, String> findAvailableVideoQualities(final Browser br) throws Exception {
+        return VKontakteRu.findAvailableVideoQualities(br);
     }
 
     private void generalErrorhandling() throws PluginException {
@@ -865,14 +877,14 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
         /* Doc-links and other links with permission can be downloaded without login */
-        if (downloadLink.getPluginPatternMatcher().matches(VKontakteRuHoster.TYPE_DOCLINK) || downloadLink.getPluginPatternMatcher().matches(VKontakteRuHoster.TYPE_DIRECT)) {
-            requestFileInformation(downloadLink, null, true);
-            doFree(downloadLink);
-        } else if (checkNoLoginNeeded(downloadLink)) {
-            requestFileInformation(downloadLink, null, true);
-            doFree(downloadLink);
+        if (link.getPluginPatternMatcher().matches(VKontakteRuHoster.TYPE_DOCLINK) || link.getPluginPatternMatcher().matches(VKontakteRuHoster.TYPE_DIRECT)) {
+            requestFileInformation(link, null, true);
+            doFree(link);
+        } else if (checkNoLoginNeeded(link)) {
+            requestFileInformation(link, null, true);
+            doFree(link);
         } else {
             throw new AccountRequiredException();
         }
@@ -1586,6 +1598,8 @@ public class VKontakteRuHoster extends PluginForHost {
             ownerID = new Regex(dl.getPluginPatternMatcher(), TYPE_PICTURELINK).getMatch(0);
         } else if (ownerID == null && dl.getPluginPatternMatcher().matches(TYPE_DOCLINK)) {
             ownerID = new Regex(dl.getPluginPatternMatcher(), TYPE_DOCLINK).getMatch(0);
+        } else if (ownerID == null && dl.getPluginPatternMatcher().matches(TYPE_VIDEOLINK)) {
+            ownerID = new Regex(dl.getPluginPatternMatcher(), TYPE_VIDEOLINK).getMatch(0);
         }
         return ownerID;
     }
@@ -1642,16 +1656,14 @@ public class VKontakteRuHoster extends PluginForHost {
     public static final String   SLEEP_PAGINATION_COMMUNITY_VIDEO                                                    = "SLEEP_PAGINATION_COMMUNITY_VIDEO";
     public static final String   SLEEP_TOO_MANY_REQUESTS                                                             = "SLEEP_TOO_MANY_REQUESTS_V1";
     /* Default values... */
-    private static final boolean default_fastlinkcheck_FASTLINKCHECK                                                 = true;
+    private static final boolean default_fastlinkcheck_FASTLINKCHECK_VIDEO                                           = true;
+    public static final boolean  default_FASTCRAWL_VIDEO                                                             = true;
     private static final boolean default_fastlinkcheck_FASTPICTURELINKCHECK                                          = true;
     private static final boolean default_fastlinkcheck_FASTAUDIOLINKCHECK                                            = true;
+    public static final int      default_VIDEO_QUALITY_SELECTION_MODE                                                = 0;
+    public static final int      default_PREFERRED_VIDEO_QUALITY                                                     = 0;
     public static final boolean  default_ALLOW_BEST                                                                  = false;
     public static final boolean  default_ALLOW_BEST_OF_SELECTION                                                     = false;
-    private static final boolean default_ALLOW_240p                                                                  = true;
-    private static final boolean default_ALLOW_360p                                                                  = true;
-    private static final boolean default_ALLOW_480p                                                                  = true;
-    private static final boolean default_ALLOW_720p                                                                  = true;
-    private static final boolean default_ALLOW_1080p                                                                 = true;
     private static final boolean default_WALL_ALLOW_albums                                                           = true;
     private static final boolean default_WALL_ALLOW_photo                                                            = true;
     private static final boolean default_WALL_ALLOW_audio                                                            = true;
@@ -1683,13 +1695,13 @@ public class VKontakteRuHoster extends PluginForHost {
         BEST {
             @Override
             public String getLabel() {
-                return "Best quality";
+                return "Best quality (ignores quality setting below)";
             }
         },
         BEST_OF_SELECTED {
             @Override
             public String getLabel() {
-                return "Best within selected video qualities";
+                return "Best quality (use selected as highest)";
             }
         },
         SELECTED_ONLY {
@@ -1751,8 +1763,12 @@ public class VKontakteRuHoster extends PluginForHost {
         return ret;
     }
 
+    public static QualitySelectionMode getSelectedVideoQualitySelectionMode() {
+        return QualitySelectionMode.values()[SubConfiguration.getConfig("vk.com").getIntegerProperty(VIDEO_QUALITY_SELECTION_MODE, default_VIDEO_QUALITY_SELECTION_MODE)];
+    }
+
     public static String getPreferredQualityString() {
-        final int preferredQualityIndex = SubConfiguration.getConfig("vk.com").getIntegerProperty(VIDEO_QUALITY_SELECTION_MODE, 0);
+        final int preferredQualityIndex = SubConfiguration.getConfig("vk.com").getIntegerProperty(PREFERRED_VIDEO_QUALITY, default_PREFERRED_VIDEO_QUALITY);
         final Quality quality = Quality.values()[preferredQualityIndex];
         switch (quality) {
         case Q1080:
@@ -1776,26 +1792,15 @@ public class VKontakteRuHoster extends PluginForHost {
         // this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Linkcheck settings:"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTLINKCHECK_VIDEO, JDL.L("plugins.hoster.vkontakteruhoster.fastLinkcheck", "Fast linkcheck for video links (filesize won't be shown in linkgrabber)?")).setDefaultValue(default_fastlinkcheck_FASTLINKCHECK));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTLINKCHECK_VIDEO, JDL.L("plugins.hoster.vkontakteruhoster.fastLinkcheck", "Fast linkcheck for video links (filesize won't be shown in linkgrabber)?")).setDefaultValue(default_fastlinkcheck_FASTLINKCHECK_VIDEO));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTCRAWL_VIDEO, "Enable fast video album crawling? Filenames may change before download and filesize won't be visible until download is started.").setDefaultValue(default_FASTCRAWL_VIDEO));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTLINKCHECK_PICTURES, JDL.L("plugins.hoster.vkontakteruhoster.fastPictureLinkcheck", "Fast linkcheck for all picture links (when true or false filename & filesize wont be shown until download starts, when false only task performed is to check if picture has been deleted!)?")).setDefaultValue(default_fastlinkcheck_FASTPICTURELINKCHECK));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTLINKCHECK_AUDIO, JDL.L("plugins.hoster.vkontakteruhoster.fastAudioLinkcheck", "Fast linkcheck for audio links (filesize won't be shown in linkgrabber)?")).setDefaultValue(default_fastlinkcheck_FASTAUDIOLINKCHECK));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Video settings:"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), VIDEO_QUALITY_SELECTION_MODE, getVideoQualitySelectionModeStrings(), "Video quality selection mode").setDefaultValue(0));
-            this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), PREFERRED_VIDEO_QUALITY, getVideoQualityStrings(), "Preferred/Max video quality").setDefaultValue(0));
-        }
-        final ConfigEntry best = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.ALLOW_BEST, JDL.L("plugins.hoster.vkontakteruhoster.checkbest", "Only grab the best available resolution")).setDefaultValue(default_ALLOW_BEST);
-        this.getConfig().addEntry(best);
-        final ConfigEntry bestOfSelection = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.ALLOW_BEST_OF_SELECTION, "Only grab the best available resolution within selected qualities below").setDefaultValue(default_ALLOW_BEST_OF_SELECTION).setEnabledCondidtion(best, false);
-        this.getConfig().addEntry(bestOfSelection);
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.ALLOW_240P, JDL.L("plugins.hoster.vkontakteruhoster.check240", "Grab 240p MP4/FLV?")).setDefaultValue(default_ALLOW_240p).setEnabledCondidtion(best, false));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.ALLOW_360P, JDL.L("plugins.hoster.vkontakteruhoster.check360", "Grab 360p MP4?")).setDefaultValue(default_ALLOW_360p).setEnabledCondidtion(best, false));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.ALLOW_480P, JDL.L("plugins.hoster.vkontakteruhoster.check480", "Grab 480p MP4?")).setDefaultValue(default_ALLOW_480p).setEnabledCondidtion(best, false));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.ALLOW_720P, JDL.L("plugins.hoster.vkontakteruhoster.check720", "Grab 720p MP4?")).setDefaultValue(default_ALLOW_720p).setEnabledCondidtion(best, false));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.ALLOW_1080P, JDL.L("plugins.hoster.vkontakteruhoster.check1080", "Grab 1080p MP4?")).setDefaultValue(default_ALLOW_1080p).setEnabledCondidtion(best, false));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), VIDEO_QUALITY_SELECTION_MODE, getVideoQualitySelectionModeStrings(), "Video quality selection mode").setDefaultValue(default_VIDEO_QUALITY_SELECTION_MODE));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), PREFERRED_VIDEO_QUALITY, getVideoQualityStrings(), "Preferred video quality").setDefaultValue(default_PREFERRED_VIDEO_QUALITY));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for 'vk.com/wall-123...' and 'vk.com/wall-123..._123...' links:\r\n NOTE: You can't turn off all types. If you do that, JD will decrypt all instead!"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_ALBUMS, JDL.L("plugins.hoster.vkontakteruhoster.wallcheckalbums", "Grab album links ('vk.com/album')?")).setDefaultValue(default_WALL_ALLOW_albums));
