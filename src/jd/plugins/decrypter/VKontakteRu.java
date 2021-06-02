@@ -651,8 +651,8 @@ public class VKontakteRu extends PluginForDecrypt {
         /* Check if fast-crawl is allowed */
         final QualitySelectionMode crawlMode = VKontakteRuHoster.getSelectedVideoQualitySelectionMode();
         final boolean userWantsMultipleQualities = crawlMode == QualitySelectionMode.ALL;
-        final boolean linkCanBeFastCrawled = !userWantsMultipleQualities && param.getDownloadLink() != null && !param.getDownloadLink().hasProperty(VIDEO_PROHIBIT_FASTCRAWL) && param.getDownloadLink().hasProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE);
-        if (this.cfg.getBooleanProperty(VKontakteRuHoster.FASTCRAWL_VIDEO, VKontakteRuHoster.default_FASTCRAWL_VIDEO) && linkCanBeFastCrawled) {
+        final boolean linkCanBeFastCrawled = param.getDownloadLink() != null && !param.getDownloadLink().hasProperty(VIDEO_PROHIBIT_FASTCRAWL) && param.getDownloadLink().hasProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE);
+        if (this.cfg.getBooleanProperty(VKontakteRuHoster.FASTCRAWL_VIDEO, VKontakteRuHoster.default_FASTCRAWL_VIDEO) && !userWantsMultipleQualities && linkCanBeFastCrawled) {
             final DownloadLink dl = this.createDownloadlink(this.getProtocol() + this.getHost() + "/video" + oid_and_id);
             dl.setFinalFileName(param.getDownloadLink().getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE) + "_fastcrawl.mp4");
             dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE, param.getDownloadLink().getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE));
