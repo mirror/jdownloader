@@ -26,6 +26,15 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -53,15 +62,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.VKontakteRuHoster;
 import jd.plugins.hoster.VKontakteRuHoster.QualitySelectionMode;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink)[a-z0-9_/=\\.\\-\\?&%]+|vk\\.cc/[A-Za-z0-9]+)" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -649,7 +649,10 @@ public class VKontakteRu extends PluginForDecrypt {
             listID = UrlQuery.parse(param.getCryptedUrl()).get("listid");
         }
         /* Check if fast-crawl is allowed */
-        if (this.cfg.getBooleanProperty(VKontakteRuHoster.FASTCRAWL_VIDEO, VKontakteRuHoster.default_FASTCRAWL_VIDEO) && param.getDownloadLink() != null && !param.getDownloadLink().hasProperty(VIDEO_PROHIBIT_FASTCRAWL) && param.getDownloadLink().hasProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE)) {
+        final QualitySelectionMode crawlMode = VKontakteRuHoster.getSelectedVideoQualitySelectionMode();
+        final boolean userWantsMultipleQualities = crawlMode == QualitySelectionMode.ALL;
+        final boolean linkCanBeFastCrawled = !userWantsMultipleQualities && param.getDownloadLink() != null && !param.getDownloadLink().hasProperty(VIDEO_PROHIBIT_FASTCRAWL) && param.getDownloadLink().hasProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE);
+        if (this.cfg.getBooleanProperty(VKontakteRuHoster.FASTCRAWL_VIDEO, VKontakteRuHoster.default_FASTCRAWL_VIDEO) && linkCanBeFastCrawled) {
             final DownloadLink dl = this.createDownloadlink(this.getProtocol() + this.getHost() + "/video" + oid_and_id);
             dl.setFinalFileName(param.getDownloadLink().getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE) + "_fastcrawl.mp4");
             dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE, param.getDownloadLink().getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE));
@@ -718,7 +721,7 @@ public class VKontakteRu extends PluginForDecrypt {
             for (final Map.Entry<String, String> qualityEntry : selectedQualities.entrySet()) {
                 final String thisQuality = qualityEntry.getKey();
                 final String finallink = qualityEntry.getValue();
-                final DownloadLink dl = createDownloadlink(getProtocol() + this.getHost() + "/video" + oid_and_id);
+                final DownloadLink dl = createDownloadlink(getProtocol() + this.getHost() + "/video" + oid_and_id + "#quality=" + thisQuality);
                 final String finalfilename = title + "_" + thisQuality + ".mp4";
                 dl.setFinalFileName(finalfilename);
                 dl.setProperty("directlink", finallink);
@@ -1712,7 +1715,8 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /**
-     * Decrypts media of single Website html-post snippets. </br> Wrapper for websiteCrawlContent
+     * Decrypts media of single Website html-post snippets. </br>
+     * Wrapper for websiteCrawlContent
      *
      * @throws DecrypterException
      * @param url_source

@@ -27,6 +27,16 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -59,25 +69,15 @@ import jd.plugins.decrypter.VKontakteRu;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 //Links are coming from a decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://vkontaktedecrypted\\.ru/(picturelink/(?:-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:-)?\\d+_\\d+)|https?://(?:new\\.)?vk\\.com/(doc[\\d\\-]+_[\\d\\-]+|video[\\d\\-]+_[\\d\\-]+)(\\?hash=[a-f0-9]+(\\&dl=[a-f0-9]{18})?)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip).+|[rz][0-9]{2}.+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://vkontaktedecrypted\\.ru/(picturelink/(?:-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:-)?\\d+_\\d+)|https?://(?:new\\.)?vk\\.com/(doc[\\d\\-]+_[\\d\\-]+|video[\\d\\-]+_[\\d\\-]+(?:#quality=\\d+p)?)(\\?hash=[a-f0-9]+(\\&dl=[a-f0-9]{18})?)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip).+|[rz][0-9]{2}.+)" })
 public class VKontakteRuHoster extends PluginForHost {
     /* Current main domain */
     private static final String DOMAIN                                                                      = "vk.com";
     private static final String TYPE_AUDIOLINK                                                              = "https?://vkontaktedecrypted\\.ru/audiolink/((?:\\-)?\\d+)_(\\d+)";
     /* TODO: Remove this */
     private static final String TYPE_VIDEOLINK_LEGACY                                                       = "https?://vkontaktedecrypted\\.ru/videolink/.+";
-    private static final String TYPE_VIDEOLINK                                                              = "https?://[^/]+/video([\\d\\-]+)_([\\d\\-]+)";
+    private static final String TYPE_VIDEOLINK                                                              = "https?://[^/]+/video([\\d\\-]+)_([\\d\\-]+)(#quality=(\\d+p))?";
     private static final String TYPE_DIRECT                                                                 = "https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:[A-Za-z0-9]{1,5})(?:.*)";
     private static final String TYPE_PICTURELINK                                                            = "https?://vkontaktedecrypted\\.ru/picturelink/((?:\\-)?\\d+)_(\\d+)(\\?tag=[\\d\\-]+)?";
     private static final String TYPE_DOCLINK                                                                = "https?://[^/]+/doc([\\d\\-]+)_([\\d\\-]+)(\\?hash=[a-z0-9]+(\\&dl=[a-f0-9]{18})?)?";
@@ -434,6 +434,10 @@ public class VKontakteRuHoster extends PluginForHost {
                         /* Assume map only contains this one element */
                         final Entry<String, String> entry = selectedQualities.entrySet().iterator().next();
                         finalUrl = entry.getValue();
+                        /*
+                         * Set this quality which will also update the linkID of this DownloadLink so user cannot add the same quality
+                         * multiple times.
+                         */
                         link.setProperty(VKontakteRuHoster.PROPERTY_VIDEO_SELECTED_QUALITY, entry.getKey());
                         /* Correct filename which did not contain any quality modifier before. */
                         link.setFinalFileName(link.getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE) + "_" + entry.getKey() + ".mp4");
@@ -1573,8 +1577,25 @@ public class VKontakteRuHoster extends PluginForHost {
     private void setConstants(final DownloadLink dl) {
         this.ownerID = getOwnerID(dl);
         this.contentID = getContentID(dl);
-        if (dl.getLinkID() == null && this.ownerID != null && this.contentID != null) {
-            dl.setLinkID("vkontakte://" + this.ownerID + "_" + this.contentID);
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        if (link.getPluginPatternMatcher() == null) {
+            return super.getLinkID(link);
+        } else {
+            final String ownerID = getOwnerID(link);
+            final String contentID = getContentID(link);
+            if (this.isTypeVideo(link.getPluginPatternMatcher())) {
+                return "vkontakte://" + ownerID + "_" + contentID + "_" + link.getStringProperty(PROPERTY_VIDEO_SELECTED_QUALITY, "noneYet");
+            } else {
+                if (ownerID != null && contentID != null) {
+                    return "vkontakte://" + ownerID + "_" + contentID;
+                } else {
+                    /* Fallback */
+                    return super.getLinkID(link);
+                }
+            }
         }
     }
 
