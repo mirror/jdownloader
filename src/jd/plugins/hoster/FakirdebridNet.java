@@ -112,9 +112,34 @@ public class FakirdebridNet extends PluginForHost {
         if (!attemptStoredDownloadurlDownload(link, this.getHost() + "directlink", link.getBooleanProperty(PROPERTY_RESUME, defaultResume), link.getIntegerProperty(PROPERTY_MAXCHUNKS, defaultMaxchunks))) {
             this.login(account, false);
             // br.setAllowedResponseCodes(new int[] { 503 });
-            br.postPage(API_BASE + "/generate.php?pin=" + Encoding.urlEncode(account.getPass()), "url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+            Map<String, Object> entries = null;
+            int counter = 0;
+            String passCode = link.getDownloadPassword();
+            do {
+                String postData = "url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this));
+                if (counter > 0) {
+                    passCode = getUserInput("Password?", link);
+                }
+                if (passCode != null) {
+                    /* Append password like: "|<password>" */
+                    postData += Encoding.urlEncode("|" + passCode);
+                }
+                br.postPage(API_BASE + "/generate.php?pin=" + Encoding.urlEncode(account.getPass()), postData);
+                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Object errorCodeO = entries.get("code");
+                if (errorCodeO != null && errorCodeO instanceof String && errorCodeO.toString().matches("(?i)(Wrong_Password|Password_Required)")) {
+                    counter += 1;
+                    // continue;
+                } else {
+                    /* No password required or correct password entered */
+                    break;
+                }
+            } while (counter <= 2);
             this.handleErrorsAPI(this.br, account);
-            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            if (passCode != null) {
+                /* Save password for the next time */
+                link.setDownloadPassword(passCode);
+            }
             entries = (Map<String, Object>) entries.get("data");
             /**
              * E.g. redirect to server2.turkleech.com/TransLoad/?id=bla </br>
@@ -284,7 +309,6 @@ public class FakirdebridNet extends PluginForHost {
                     throw new AccountInvalidException(message);
                 }
             } else {
-                /* TODO: Add proper handling for: Password_Required, Wrong_Password --> Add password protected URLs handling */
                 /* Distinguish between temp. account errors, permanent account errors and downloadlink/host related errors. */
                 final String errorStr = errorCodeO.toString();
                 if (errorStr.equalsIgnoreCase("PIN_Invalid") || errorStr.equalsIgnoreCase("Banned_Account") || errorStr.equalsIgnoreCase("Free_Account")) {
@@ -293,6 +317,8 @@ public class FakirdebridNet extends PluginForHost {
                 } else if (errorStr.equalsIgnoreCase("Limit_Error_Transfer") || errorStr.equalsIgnoreCase("Limit_Error_Premium")) {
                     /* Temp. account error */
                     throw new AccountUnavailableException(errorStr, 5 * 60 * 1000l);
+                } else if (errorStr.equalsIgnoreCase("Password_Required") || errorStr.equalsIgnoreCase("Wrong_Password")) {
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                 } else {
                     mhm.handleErrorGeneric(account, this.getDownloadLink(), errorStr, 10);
                 }
