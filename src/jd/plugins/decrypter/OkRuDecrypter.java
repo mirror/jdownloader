@@ -23,8 +23,10 @@ import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -32,7 +34,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.OkRu;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?(?:ok\\.ru|odnoklassniki\\.ru)/(?:video|videoembed|web-api/video/moviePlayer|live)/(\\d+(-\\d+)?)|https?://ok\\.ru/video/c(\\d+)|https://(?:www\\.)?ok\\.ru/profile/\\d+/video/c\\d+" })
 public class OkRuDecrypter extends PluginForDecrypt {
@@ -45,6 +49,13 @@ public class OkRuDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account != null) {
+            final PluginForHost plugin = this.getNewPluginForHostInstance(this.getHost());
+            ((jd.plugins.hoster.OkRu) plugin).login(account, false);
+        } else {
+            OkRu.prepBR(this.br);
+        }
         if (param.getCryptedUrl().matches(TYPE_CHANNEL)) {
             /* Crawl channel -> Assume that all videos are selfhosted */
             br.getPage(param.getCryptedUrl());
@@ -193,7 +204,6 @@ public class OkRuDecrypter extends PluginForDecrypt {
             final String vid = new Regex(param.toString(), this.getSupportedLinks()).getMatch(0);
             final String parameter = "https://ok.ru/video/" + vid;
             param.setCryptedUrl(parameter);
-            jd.plugins.hoster.OkRu.prepBR(this.br);
             br.getPage("https://ok.ru/video/" + vid);
             if (jd.plugins.hoster.OkRu.isOffline(br)) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
