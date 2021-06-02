@@ -80,6 +80,9 @@ public class TiktokCom extends antiDDoSForHost {
     private static final String PROPERTY_DATE        = "date";
     private static final String PROPERTY_DESCRIPTION = "description";
     private static final String PROPERTY_HASHTAGS    = "hashtags";
+    private static final String PROPERTY_LIKE_COUNT  = "like_count";
+    private static final String PROPERTY_PLAY_COUNT  = "play_count";
+    private static final String PROPERTY_SHARE_COUNT = "share_count";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -224,6 +227,16 @@ public class TiktokCom extends antiDDoSForHost {
                     if (!StringUtils.isEmpty(username) && !username.startsWith("@")) {
                         username = "@" + username;
                     }
+                }
+                /* Set more Packagizer properties */
+                if (itemInfos.containsKey("diggCount")) {
+                    link.setProperty(PROPERTY_LIKE_COUNT, ((Number) itemInfos.get("diggCount")).longValue());
+                }
+                if (itemInfos.containsKey("playCount")) {
+                    link.setProperty(PROPERTY_PLAY_COUNT, ((Number) itemInfos.get("playCount")).longValue());
+                }
+                if (itemInfos.containsKey("shareCount")) {
+                    link.setProperty(PROPERTY_SHARE_COUNT, ((Number) itemInfos.get("shareCount")).longValue());
                 }
                 // {
                 // /* 2020-10-26: Test */
