@@ -30,10 +30,10 @@ public class OrfAt extends PluginForDecrypt {
     private static final String                  TYPE_NEW      = "https?://radiothek\\.orf\\.at/([a-z0-9]+)/(\\d+)/([a-zA-Z0-9]+)";
     /* E.g. https://radiothek.orf.at/ooe --> "ooe" --> Channel == "oe2o" */
     private static LinkedHashMap<String, String> CHANNEL_CACHE = new LinkedHashMap<String, String>() {
-                                                                   protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
-                                                                       return size() > 50;
-                                                                   };
-                                                               };
+        protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+            return size() > 50;
+        };
+    };
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
@@ -67,14 +67,19 @@ public class OrfAt extends PluginForDecrypt {
             }
         }
         final String channel = CHANNEL_CACHE.get(domainID);
+        br.setAllowedResponseCodes(410);
         br.getPage("https://audioapi.orf.at/" + domainID + "/api/json/current/broadcast/" + broadCastID + "/" + broadCastKey + "?_s=" + System.currentTimeMillis());
         final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        if (br.getHttpConnection().getResponseCode() == 410 || "Broadcast is no longer available".equals(response.get("message"))) {
+            ret.add(createOfflinelink(parameter.getCryptedUrl(), "Broadcast is no longer available"));
+            return ret;
+        }
         final String broadCastDay = response.get("broadcastDay").toString();
         final String title = (String) response.get("title");
         /* TODO: What are the other items there for? */
         final List<Map<String, Object>> items = (List<Map<String, Object>>) response.get("items");
         final List<Map<String, Object>> streams = (List<Map<String, Object>>) response.get("streams");
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title + "_" + broadCastDay);
         int index = 0;

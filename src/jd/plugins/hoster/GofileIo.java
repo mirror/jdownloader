@@ -20,14 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -43,6 +35,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/(?:\\?c=|d/)[A-Za-z0-9]+(?:#file=[a-f0-9]+)?" })
 public class GofileIo extends PluginForHost {
@@ -197,9 +197,12 @@ public class GofileIo extends PluginForHost {
     }
 
     public static void parseFileInfo(final DownloadLink link, final Map<String, Object> entry) {
-        /* 2021-05-31: Available as "link" and "directLink" */
-        // final String downloadURL = (String) entry.get("link");
-        final String downloadURL = (String) entry.get("directLink");
+        // link, download?
+        String downloadURL = (String) entry.get("link");
+        if (StringUtils.isEmpty(downloadURL)) {
+            // directLink, streaming?
+            downloadURL = (String) entry.get("directLink");
+        }
         final long size = JavaScriptEngineFactory.toLong(entry.get("size"), -1);
         if (size > 0) {
             link.setVerifiedFileSize(size);
@@ -236,49 +239,22 @@ public class GofileIo extends PluginForHost {
 
     private void doFree(final DownloadLink link) throws Exception, PluginException {
         final boolean isDangerousFile = link.getBooleanProperty(PROPERTY_DANGEROUS_FILE, false);
+        final String downloadURL = link.getStringProperty(PROPERTY_DIRECTURL, null);
         if (isDangerousFile && !this.getPluginConfig().getBooleanProperty(SETTING_ALLOW_DOWNLOAD_OF_FILES_FLAGGED_AS_MALICIOUS, default_SETTING_ALLOW_DOWNLOAD_OF_FILES_FLAGGED_AS_MALICIOUS)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file was flagged as to contain malicious software by " + this.getHost() + "!");
+        } else if (StringUtils.isEmpty(downloadURL)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!attemptStoredDownloadurlDownload(link)) {
-            final String downloadURL = link.getStringProperty(PROPERTY_DIRECTURL, null);
-            if (StringUtils.isEmpty(downloadURL)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, FREE_RESUME, FREE_MAXCHUNKS);
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, FREE_RESUME, FREE_MAXCHUNKS);
-            if (!looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    private boolean attemptStoredDownloadurlDownload(final DownloadLink link) throws Exception {
-        final String url = link.getStringProperty(PROPERTY_DIRECTURL);
-        if (StringUtils.isEmpty(url)) {
-            return false;
-        }
-        try {
-            final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, FREE_RESUME, FREE_MAXCHUNKS);
-            if (this.looksLikeDownloadableContent(dl.getConnection())) {
-                return true;
-            } else {
-                brc.followConnection(true);
-                throw new IOException();
-            }
-        } catch (final Throwable e) {
-            logger.log(e);
-            try {
-                dl.getConnection().disconnect();
-            } catch (Throwable ignore) {
-            }
-            return false;
-        }
     }
 
     @Override

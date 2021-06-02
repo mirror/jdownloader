@@ -77,7 +77,7 @@ public class YoutubeStreamData {
 
     private int    width;
     private String fps;
-    private int    projectionType;
+    private int    projectionType         = -1;
     private String src;
     private long   contentLength          = -1;
     private long   estimatedContentLength = -1;

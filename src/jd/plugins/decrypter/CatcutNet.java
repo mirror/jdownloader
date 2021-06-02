@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 import java.net.URL;
 import java.util.ArrayList;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -30,6 +28,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.encoding.Base64;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "catcut.net" }, urls = { "https?://(?:www\\.)?catcut\\.net/(?:s/)?[A-Za-z0-9]+" })
 public class CatcutNet extends PluginForDecrypt {
@@ -53,6 +54,16 @@ public class CatcutNet extends PluginForDecrypt {
             return decryptedLinks;
         } else if (redirect != null) {
             br.setFollowRedirects(true);
+            br.followRedirect();
+        }
+        String base64 = br.getRegex("Base64.decode\\('(.*?)'\\)").getMatch(0);
+        base64 = Base64.decodeToString(base64);
+        if (base64 != null) {
+            br.getRequest().setHtmlCode(base64);
+            base64 = br.getRegex("Base64.decode\\('(.*?)'\\)").getMatch(0);
+            base64 = Base64.decodeToString(base64);
+            this.sleep(15000, param);
+            br.getPage(base64);
             br.followRedirect();
         }
         String finallink = br.getRegex("<span\\s*id\\s*=\\s*\"noCaptchaBlock\"[^<>]+>\\s*?<a href\\s*=\\s*\"(http[^<>\"]+)\"").getMatch(0);
