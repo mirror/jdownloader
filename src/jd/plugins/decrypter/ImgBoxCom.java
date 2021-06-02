@@ -113,7 +113,8 @@ public class ImgBoxCom extends PluginForDecrypt {
             return null;
         }
         final DownloadLink ret = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
-        final String title = br.getRegex("class\\s*=\\s*\"image-container\".*title\\s*=\\s*\"(.*?)\"").getMatch(0);
+        final String imageContainer = br.getRegex("class\\s*=\\s*\"image-container\"[^>]*>\\s*(.*?)\\s*</div>").getMatch(0);
+        final String title = new Regex(imageContainer, "title\\s*=\\s*\"(.*?)\"").getMatch(0);
         if (StringUtils.isNotEmpty(title)) {
             ret.setFinalFileName(Encoding.htmlDecode(title));
         }

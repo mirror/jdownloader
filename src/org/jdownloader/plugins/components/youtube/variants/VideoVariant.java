@@ -28,22 +28,6 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
         super(base);
     }
 
-    // @Override
-    // public VariantGroup getGroup() {
-    // switch (getGenericInfo().getProjection()) {
-    // case ANAGLYPH_3D:
-    // return VariantGroup.VIDEO_3D;
-    // case SPHERICAL:
-    // return VariantGroup.VIDEO_360;
-    // case SPHERICAL_3D:
-    // return VariantGroup.VIDEO_3D_360;
-    // case NORMAL:
-    // return VariantGroup.VIDEO;
-    // default:
-    // throw new WTFException();
-    // }
-    //
-    // }
     @Override
     public String createAdvancedName() {
         switch (getProjection()) {
@@ -53,8 +37,10 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
             return "3D, " + super.createAdvancedName();
         case SPHERICAL_3D:
             return "360° VR, 3D, " + super.createAdvancedName();
+        case NORMAL:
+        default:
+            return super.createAdvancedName();
         }
-        return super.createAdvancedName();
     }
 
     @Override
@@ -74,10 +60,6 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
         id = id.replace("*AUDIO_CODEC*", getAudioCodec() + "");
         id = id.replace("*AUDIO_BITRATE*", getAudioBitrate().getKbit() + "");
         switch (getProjection()) {
-        case NORMAL:
-            id = id.replace("*360*", "");
-            id = id.replace("*3D*", "");
-            break;
         case SPHERICAL:
             id = id.replace("*360*", "360°");
             id = id.replace("*3D*", "");
@@ -89,6 +71,11 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
         case SPHERICAL_3D:
             id = id.replace("*3D*", "3D");
             id = id.replace("*360*", "360°");
+            break;
+        case NORMAL:
+        default:
+            id = id.replace("*360*", "");
+            id = id.replace("*3D*", "");
             break;
         }
         switch (getiTagAudioOrVideoItagEquivalent().getAudioCodec()) {
@@ -184,10 +171,6 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
         id = id.replace("*AUDIO_CODEC*", getAudioCodec().getLabel() + "");
         id = id.replace("*AUDIO_BITRATE*", getAudioBitrate().getKbit() + "");
         switch (getProjection()) {
-        case NORMAL:
-            id = id.replace("*360*", "");
-            id = id.replace("*3D*", "");
-            break;
         case SPHERICAL:
             id = id.replace("*360*", "[360°]");
             id = id.replace("*3D*", "");
@@ -199,6 +182,11 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
         case SPHERICAL_3D:
             id = id.replace("*3D*", "[3D]");
             id = id.replace("*360*", "[360°]");
+            break;
+        default:
+        case NORMAL:
+            id = id.replace("*360*", "");
+            id = id.replace("*3D*", "");
             break;
         }
         switch (getiTagAudioOrVideoItagEquivalent().getAudioCodec()) {
@@ -228,6 +216,7 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
             return getVideoHeight() + "p " + getVideoFrameRate() + "fps" + " 3D";
         case SPHERICAL_3D:
             return getVideoHeight() + "p " + getVideoFrameRate() + "fps" + " 360VR 3D";
+        case NORMAL:
         default:
             return getVideoHeight() + "p " + getVideoFrameRate() + "fps";
         }

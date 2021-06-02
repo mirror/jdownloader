@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -25,11 +26,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -40,6 +41,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.ZdfDeMediathek;
 import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.M3U8Playlist;
@@ -60,6 +62,42 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
     public ZDFMediathekDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    private final static Map<String, List<String>> QUALITIES_MAP = new HashMap<String, List<String>>();
+    static {
+        QUALITIES_MAP.put("v11", Arrays.asList(new String[] { "1456k_p13", "2256k_p14", "2328k_p35" }));
+        QUALITIES_MAP.put("v12", Arrays.asList(new String[] { "1456k_p13", "2256k_p14", "2328k_p35", "3328k_p36", "3256k_p15" }));
+        QUALITIES_MAP.put("v13", Arrays.asList(new String[] { "1496k_p13", "2296k_p14", "2328k_p35", "3328k_p36", "3296k_p15" }));
+        QUALITIES_MAP.put("v14", Arrays.asList(new String[] { "1496k_p13", "2296k_p14", "2328k_p35", "3328k_p36", "3328k_p35" }));
+        QUALITIES_MAP.put("v15", Arrays.asList(new String[] { "1628k_p13", "2360k_p35", "3360k_p36" }));
+    }
+
+    public static List<String> getBetterQualities(final String url) {
+        final String base[] = new Regex(url, "((\\d{4}k_p\\d{2})(v\\d{2})\\.mp4)", Pattern.CASE_INSENSITIVE).getRow(0);
+        if (base != null && base.length == 3) {
+            final List<String> qualities = QUALITIES_MAP.get(base[2].toLowerCase(Locale.ENGLISH));
+            if (qualities != null) {
+                final Iterator<String> it = qualities.iterator();
+                while (it.hasNext()) {
+                    String next = it.next();
+                    if (next.equalsIgnoreCase(base[1])) {
+                        final List<String> ret = new ArrayList<String>();
+                        while (it.hasNext()) {
+                            next = it.next();
+                            final String nextURL = url.replaceFirst("(?i)" + Pattern.quote(base[0]), next + base[2] + ".mp4");
+                            ret.add(nextURL);
+                        }
+                        if (ret.size() > 0) {
+                            return ret;
+                        } else {
+                            return null;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     private List<String> getKnownQualities() {

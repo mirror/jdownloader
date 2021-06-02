@@ -87,27 +87,24 @@ public class YoutubeClipData {
     }
 
     public Projection getProjection() {
-        if (is3D()) {
-            return Projection.ANAGLYPH_3D;
-        }
         int highestProjection = -1;
         for (Entry<YoutubeITAG, StreamCollection> s : streams.entrySet()) {
             for (YoutubeStreamData stream : s.getValue()) {
                 highestProjection = Math.max(highestProjection, stream.getProjectionType());
             }
         }
-        int threeDLayout = -1;
+        int layout3D = -1;
         try {
-            threeDLayout = approxThreedLayout == null ? -1 : Integer.parseInt(approxThreedLayout);
+            layout3D = approxThreedLayout == null ? -1 : Integer.parseInt(approxThreedLayout);
         } catch (Throwable e) {
         }
-        if (highestProjection == 2 && threeDLayout != 3) {
+        if (highestProjection == 0) {
+            return Projection.NORMAL;
+        } else if (highestProjection == 2 && layout3D != 3) {
             return Projection.SPHERICAL;
-        } else if (highestProjection == 3) {
+        } else if ((highestProjection == 2 && layout3D == 3) || highestProjection == 3) {
             return Projection.SPHERICAL_3D;
-        } else if (highestProjection == 2 && threeDLayout == 3) {
-            return Projection.SPHERICAL_3D;
-        } else if (guessSBSorHOU3D()) {
+        } else if (guessSBSorHOU3D() || is3D()) {
             return Projection.ANAGLYPH_3D;
         } else {
             return Projection.NORMAL;
