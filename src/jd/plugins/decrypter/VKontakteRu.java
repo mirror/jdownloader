@@ -649,7 +649,7 @@ public class VKontakteRu extends PluginForDecrypt {
             listID = UrlQuery.parse(param.getCryptedUrl()).get("listid");
         }
         /* Check if fast-crawl is allowed */
-        if (this.cfg.getBooleanProperty(VKontakteRuHoster.FASTCRAWL_VIDEO, VKontakteRuHoster.default_FASTCRAWL_VIDEO) && param.getDownloadLink() != null && !param.getDownloadLink().getBooleanProperty(VIDEO_PROHIBIT_FASTCRAWL, false) && param.getDownloadLink().hasProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE)) {
+        if (this.cfg.getBooleanProperty(VKontakteRuHoster.FASTCRAWL_VIDEO, VKontakteRuHoster.default_FASTCRAWL_VIDEO) && param.getDownloadLink() != null && !param.getDownloadLink().hasProperty(VIDEO_PROHIBIT_FASTCRAWL) && param.getDownloadLink().hasProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE)) {
             final DownloadLink dl = this.createDownloadlink(this.getProtocol() + this.getHost() + "/video" + oid_and_id);
             dl.setFinalFileName(param.getDownloadLink().getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE) + "_fastcrawl.mp4");
             dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE, param.getDownloadLink().getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE));
@@ -2163,7 +2163,8 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.info("Decrypter " + decryptedData.size() + "entries...");
                 break;
             }
-            sleep(this.cfg.getLongProperty(VKontakteRuHoster.SLEEP_PAGINATION_COMMUNITY_VIDEO, VKontakteRuHoster.defaultSLEEP_SLEEP_PAGINATION_COMMUNITY_VIDEO), this.CRYPTEDLINK);
+            // sleep(this.cfg.getLongProperty(VKontakteRuHoster.SLEEP_PAGINATION_COMMUNITY_VIDEO,
+            // VKontakteRuHoster.defaultSLEEP_SLEEP_PAGINATION_COMMUNITY_VIDEO), this.CRYPTEDLINK);
         }
         if (decryptedData == null || decryptedData.size() == 0) {
             logger.warning("Decrypter couldn't find theData for linktype: " + type + "\n");
