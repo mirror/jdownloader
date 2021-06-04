@@ -27,16 +27,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -68,6 +58,16 @@ import jd.plugins.components.UserAgents.BrowserName;
 import jd.plugins.decrypter.VKontakteRu;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://vkontaktedecrypted\\.ru/(picturelink/(?:-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:-)?\\d+_\\d+)|https?://(?:new\\.)?vk\\.com/(doc[\\d\\-]+_[\\d\\-]+|video[\\d\\-]+_[\\d\\-]+(?:#quality=\\d+p)?)(\\?hash=[a-f0-9]+(\\&dl=[a-f0-9]{18})?)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip).+|[rz][0-9]{2}.+)" })
@@ -1621,6 +1621,11 @@ public class VKontakteRuHoster extends PluginForHost {
             ownerID = new Regex(dl.getPluginPatternMatcher(), TYPE_DOCLINK).getMatch(0);
         } else if (ownerID == null && dl.getPluginPatternMatcher().matches(TYPE_VIDEOLINK)) {
             ownerID = new Regex(dl.getPluginPatternMatcher(), TYPE_VIDEOLINK).getMatch(0);
+        } else if (ownerID == null && dl.getPluginPatternMatcher().matches(TYPE_VIDEOLINK_LEGACY)) {
+            ownerID = new Regex(dl.getContentUrl(), TYPE_VIDEOLINK).getMatch(0);
+            if (ownerID == null) {
+                ownerID = dl.getStringProperty("userid", null);
+            }
         }
         return ownerID;
     }
@@ -1636,6 +1641,11 @@ public class VKontakteRuHoster extends PluginForHost {
             contentID = new Regex(dl.getPluginPatternMatcher(), TYPE_DOCLINK).getMatch(1);
         } else if (contentID == null && dl.getPluginPatternMatcher().matches(TYPE_VIDEOLINK)) {
             contentID = new Regex(dl.getPluginPatternMatcher(), TYPE_VIDEOLINK).getMatch(1);
+        } else if (contentID == null && dl.getPluginPatternMatcher().matches(TYPE_VIDEOLINK_LEGACY)) {
+            contentID = new Regex(dl.getContentUrl(), TYPE_VIDEOLINK).getMatch(1);
+            if (contentID == null) {
+                contentID = dl.getStringProperty("videoid", null);
+            }
         }
         return contentID;
     }
