@@ -26,7 +26,6 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
-import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -140,37 +139,47 @@ public class DailyMotionCom extends PluginForHost {
                     downloadLink.setProperty("directlink", Encoding.htmlDecode(foundQualities.get(qualityValue)[0]));
                 }
                 final String dllink = getDirectlink(downloadLink);
-                this.br.getPage(dllink);
-                if (this.br.getHttpConnection().isOK()) {
+                final Browser brc = br.cloneBrowser();
+                brc.getPage(dllink);
+                if (brc.getHttpConnection().isOK()) {
                     final List<HlsContainer> hlsBest;
                     try {
-                        hlsBest = HlsContainer.findBestVideosByBandwidth(HlsContainer.getHlsQualities(this.br));
+                        hlsBest = HlsContainer.findBestVideosByBandwidth(HlsContainer.getHlsQualities(brc));
                     } catch (final Exception e) {
-                        logger.log(e);
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
                     }
-                    if (hlsBest == null) {
+                    if (hlsBest == null || hlsBest.size() == 0) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     } else {
-                        this.dllink = hlsBest.get(0).getDownloadurl();
-                    }
-                    if (!(Thread.currentThread() instanceof SingleDownloadController)) {
-                        // checkFFProbe(downloadLink, "File Checking a HLS Stream");
-                        final HLSDownloader downloader = new HLSDownloader(downloadLink, br, this.dllink);
-                        final StreamInfo streamInfo = downloader.getProbe();
-                        if (downloadLink.getBooleanProperty("encrypted")) {
-                            throw new PluginException(LinkStatus.ERROR_FATAL, "Encrypted HLS is not supported");
-                        }
-                        if (streamInfo != null) {
-                            final long estimatedSize = downloader.getEstimatedSize();
-                            if (downloadLink.getKnownDownloadSize() == -1) {
-                                downloadLink.setDownloadSize(estimatedSize);
-                            } else {
-                                downloadLink.setDownloadSize(Math.max(downloadLink.getKnownDownloadSize(), estimatedSize));
+                        checkFFProbe(downloadLink, "File Checking a HLS Stream");
+                        Exception caughtE = null;
+                        for (final HlsContainer hlsContainer : hlsBest) {
+                            try {
+                                final String hlsURL = hlsContainer.getStreamURL();
+                                final HLSDownloader downloader = new HLSDownloader(downloadLink, brc, hlsURL);
+                                final StreamInfo streamInfo = downloader.getProbe();
+                                if (downloadLink.getBooleanProperty("encrypted")) {
+                                    throw new PluginException(LinkStatus.ERROR_FATAL, "Encrypted HLS is not supported");
+                                }
+                                if (streamInfo != null) {
+                                    final long estimatedSize = downloader.getEstimatedSize();
+                                    if (downloadLink.getKnownDownloadSize() == -1) {
+                                        downloadLink.setDownloadSize(estimatedSize);
+                                    } else {
+                                        downloadLink.setDownloadSize(Math.max(downloadLink.getKnownDownloadSize(), estimatedSize));
+                                    }
+                                }
+                                this.dllink = hlsURL;
+                                return AvailableStatus.TRUE;
+                            } catch (Exception e) {
+                                logger.log(e);
+                                if (caughtE == null) {
+                                    caughtE = e;
+                                }
                             }
                         }
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, caughtE);
                     }
-                    return AvailableStatus.TRUE;
                 }
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
