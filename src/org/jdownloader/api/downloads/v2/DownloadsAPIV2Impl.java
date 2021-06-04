@@ -428,22 +428,25 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
     @Override
     public long getStopMark() {
-        Object mark = DownloadWatchDog.getInstance().getSession().getStopMark();
-        if (mark != STOPMARK.NONE) {
+        final Object mark = DownloadWatchDog.getInstance().getSession().getStopMark();
+        if (mark instanceof AbstractNode) {
             return ((AbstractNode) mark).getUniqueID().getID();
+        } else if (mark == STOPMARK.HIDDEN) {
+            return 0;
+        } else if (mark == STOPMARK.NONE) {
+            return -1;
+        } else {
+            return -1;
         }
-        return -1l;
     }
 
     @Override
     public DownloadLinkAPIStorableV2 getStopMarkedLink() {
         final Object mark = DownloadWatchDog.getInstance().getSession().getStopMark();
-        if (mark != null && mark != STOPMARK.NONE) {
-            if (mark instanceof DownloadLink) {
-                final DownloadLinkAPIStorableV2 dls = new DownloadLinkAPIStorableV2((DownloadLink) mark);
-                dls.setPackageUUID(((DownloadLink) mark).getParentNode().getUniqueID().getID());
-                return dls;
-            }
+        if (mark instanceof DownloadLink) {
+            final DownloadLinkAPIStorableV2 dls = new DownloadLinkAPIStorableV2((DownloadLink) mark);
+            dls.setPackageUUID(((DownloadLink) mark).getParentNode().getUniqueID().getID());
+            return dls;
         }
         return null;
     }
@@ -473,16 +476,22 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
     @Override
     public void setStopMark(long linkId, long packageId) {
-        final SelectionInfo<FilePackage, DownloadLink> selectionInfo = packageControllerUtils.getSelectionInfo(new long[] { linkId }, new long[] { packageId });
-        for (DownloadLink dl : selectionInfo.getChildren()) {
-            DownloadWatchDog.getInstance().setStopMark(dl);
-            break;
+        if (linkId == -0 && packageId == 0) {
+            DownloadWatchDog.getInstance().setStopMark(STOPMARK.HIDDEN);
+        } else if (linkId == -1 && packageId == -1) {
+            DownloadWatchDog.getInstance().setStopMark(STOPMARK.NONE);
+        } else {
+            final SelectionInfo<FilePackage, DownloadLink> selectionInfo = packageControllerUtils.getSelectionInfo(new long[] { linkId }, new long[] { packageId });
+            for (final DownloadLink dl : selectionInfo.getChildren()) {
+                DownloadWatchDog.getInstance().setStopMark(dl);
+                break;
+            }
         }
     }
 
     @Override
     public void removeStopMark() {
-        DownloadWatchDog.getInstance().setStopMark(null);
+        DownloadWatchDog.getInstance().setStopMark(STOPMARK.NONE);
     }
 
     @Override
