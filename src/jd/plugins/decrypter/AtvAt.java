@@ -25,15 +25,6 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.controlling.ffmpeg.json.Stream;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -43,6 +34,15 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.controlling.ffmpeg.json.Stream;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "atv.at" }, urls = { "https?://(?:www\\.)?atv\\.at/[a-z0-9\\-_]+/[a-z0-9\\-_]+/(?:d|v)\\d+/|https?://(?:www\\.)?atvsmart\\.(tv|at)/[^/]+/[^/]+" })
 public class AtvAt extends PluginForDecrypt {
@@ -199,8 +199,9 @@ public class AtvAt extends PluginForDecrypt {
         fp.setName(hybrid_name);
         int partCounter = 1;
         /* First check for HD HLS URLs */
-        final String[] hdHLSParts = br.getRegex("(https://[^/]+/\\d{4}/\\d{2}/HD/\\d+/index\\.m3u8)").getColumn(0);
-        if (hdHLSParts.length > 0) {
+        final String playlist = br.getRegex("(var\\s*playlist\\s*=\\s*\\[\\s*\\{.*?\\}\\s*\\];\\s*)").getMatch(0);
+        final String[] hdHLSParts = new Regex(playlist, "(https://[^/]+/\\d{4}/\\d{2}/HD/\\d+/index\\.m3u8)").getColumn(0);
+        if (hdHLSParts != null && hdHLSParts.length > 0) {
             logger.info("Found HD HLS URLs");
             /* Assume that this is our best quality --> Add best of these for each part */
             for (final String hdHLSPart : hdHLSParts) {
@@ -458,10 +459,10 @@ public class AtvAt extends PluginForDecrypt {
     private boolean isHttpStreamingURL(final String url) {
         return url != null && url.matches(REGEX_HTTP_STREAMING);
     }
+
     // private boolean isHLSUrl(final String url) {
     // return url != null && url.contains(".m3u8");
     // }
-
     private String fixStreamingURL(String src, final boolean expectGeoBlock) {
         /* 2020-11-12: Disabled for testing - seems like this doesn't work for all items --> Sometimes leads to timeouts */
         final boolean allowOldGeoBlockedWorkaround = false;
