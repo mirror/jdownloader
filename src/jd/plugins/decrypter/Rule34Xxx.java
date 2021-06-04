@@ -91,11 +91,13 @@ public class Rule34Xxx extends PluginForDecrypt {
                 } catch (Exception e) {
                     dl.setLinkID(id);
                 }
-                if (".webm".equals(getFileNameExtensionFromString(image))) {
+                final String extension = getFileNameExtensionFromString(image);
+                if (".webm".equals(extension)) {
                     dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.WEBM);
                 } else {
                     dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
                 }
+                dl.setFinalFileName("rule34xxx-" + id + extension);
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
