@@ -17,17 +17,11 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.net.URL;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.TiktokConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -39,6 +33,13 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.TiktokConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tiktok.com" }, urls = { "https?://(?:www\\.)?tiktok\\.com/((@[^/]+)/video/|embed/)(\\d+)|https?://m\\.tiktok\\.com/v/(\\d+)\\.html" })
 public class TiktokCom extends antiDDoSForHost {
@@ -87,6 +88,17 @@ public class TiktokCom extends antiDDoSForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, false);
+    }
+
+    private static String toHumanReadableNumber(Number number) {
+        final long num = number.longValue();
+        if (num > 1000000) {
+            return new DecimalFormat("0.00m").format((1.0f * num) / 1000000);
+        } else if (num > 1000) {
+            return new DecimalFormat("0.00k").format((1.0f * num) / 1000);
+        } else {
+            return number.toString();
+        }
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
@@ -230,13 +242,19 @@ public class TiktokCom extends antiDDoSForHost {
                 }
                 /* Set more Packagizer properties */
                 if (itemInfos.containsKey("diggCount")) {
-                    link.setProperty(PROPERTY_LIKE_COUNT, ((Number) itemInfos.get("diggCount")).longValue());
+                    final Number number = (Number) itemInfos.get("diggCount");
+                    link.setProperty(PROPERTY_LIKE_COUNT + "_string", toHumanReadableNumber(number));
+                    link.setProperty(PROPERTY_LIKE_COUNT, number.longValue());
                 }
                 if (itemInfos.containsKey("playCount")) {
-                    link.setProperty(PROPERTY_PLAY_COUNT, ((Number) itemInfos.get("playCount")).longValue());
+                    final Number number = (Number) itemInfos.get("playCount");
+                    link.setProperty(PROPERTY_PLAY_COUNT + "_string", toHumanReadableNumber(number));
+                    link.setProperty(PROPERTY_PLAY_COUNT, number.longValue());
                 }
                 if (itemInfos.containsKey("shareCount")) {
-                    link.setProperty(PROPERTY_SHARE_COUNT, ((Number) itemInfos.get("shareCount")).longValue());
+                    final Number number = (Number) itemInfos.get("shareCount");
+                    link.setProperty(PROPERTY_SHARE_COUNT + "_string", toHumanReadableNumber(number));
+                    link.setProperty(PROPERTY_SHARE_COUNT, number.longValue());
                 }
                 // {
                 // /* 2020-10-26: Test */
@@ -325,6 +343,7 @@ public class TiktokCom extends antiDDoSForHost {
         }
         return AvailableStatus.TRUE;
     }
+
     // private boolean checkDirecturlAndSetFilesize(final DownloadLink link, final String directurl) throws Exception {
     // URLConnectionAdapter con = null;
     // try {
@@ -343,7 +362,6 @@ public class TiktokCom extends antiDDoSForHost {
     // }
     // return false;
     // }
-
     public static boolean isBotProtectionActive(final Browser br) {
         return br.containsHTML("pageDescKey\\s*=\\s*'user_verify_page_description';|class=\"verify-wrap\"");
     }

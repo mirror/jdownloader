@@ -78,7 +78,7 @@ public class DeathByCaptchaSolverService extends AbstractSolverService implement
 
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        CrossSystem.openURL("http://www.deathbycaptcha.eu/");
+                        CrossSystem.openURL("https://www.deathbycaptcha.com/");
                     }
                 }), "gapleft 37,spanx,pushx,growx");
                 username = new TextInput(CFG_DBC.USER_NAME);
