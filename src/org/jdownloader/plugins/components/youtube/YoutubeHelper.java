@@ -153,8 +153,13 @@ public class YoutubeHelper {
         this.br = br;
     }
 
-    private final YoutubeConfig               cfg;
-    private final LogInterface                logger;
+    private final YoutubeConfig cfg;
+    private final LogInterface  logger;
+
+    public LogInterface getLogger() {
+        return logger;
+    }
+
     private String                            base;
     // private List<YoutubeBasicVariant> variants;
     // public List<YoutubeBasicVariant> getVariants() {

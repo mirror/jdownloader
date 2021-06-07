@@ -29,14 +29,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -50,6 +42,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.ZdfDeMediathek;
 import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "3sat.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?zdf\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)", "https?://(?:www\\.)?3sat\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?3sat\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)" })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
@@ -698,8 +698,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     final_filename = filename_packagename_base_title + "_" + protocol + "_" + quality + "_" + language + "_" + audio_class_user_readable + "." + ext;
                     dl = createDownloadlink(finalDownloadURL);
                     /**
-                     * Usually filesize is only given for the official downloads.</br>
-                     * Only set it here if we haven't touched the original downloadurls!
+                     * Usually filesize is only given for the official downloads.</br> Only set it here if we haven't touched the original
+                     * downloadurls!
                      */
                     if (filesize > 0 && setFilesize) {
                         dl.setAvailable(true);
@@ -770,21 +770,22 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         URLConnectionAdapter con = null;
         final Browser br2 = this.br.cloneBrowser();
         try {
+            br2.setFollowRedirects(true);
             con = br2.openHeadConnection(url);
             if (this.looksLikeDownloadableContent(con)) {
                 return con.getCompleteContentLength();
             } else {
-                return -1;
+                throw new IOException();
             }
         } catch (final Throwable e) {
             logger.log(e);
+            return -1;
         } finally {
             try {
                 con.disconnect();
             } catch (final Throwable e) {
             }
         }
-        return -1;
     }
 
     private String generateQualitySelectorString(final String protocol, final String ext, final String quality, final String language, final String audio_class) {
