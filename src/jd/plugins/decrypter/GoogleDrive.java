@@ -320,8 +320,10 @@ public class GoogleDrive extends PluginForDecrypt {
         br.getPage("https://drive.google.com/drive/folders/" + folderID);
         final String newFolderID = this.getFolderID(br.getURL());
         if (newFolderID == null) {
-            logger.warning("Redirect into the unknown");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /*
+             * Indication that something is wrong. Maybe offline or private folder - errorhandling down bewlow is supposed to find that out!
+             */
+            logger.warning("Failed to find folderID in current URL");
         } else if (!newFolderID.equals(folderID)) {
             logger.info("Folder redirected to new folder: Old: " + folderID + " | New: " + newFolderID);
             folderID = newFolderID;
