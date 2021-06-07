@@ -17,7 +17,6 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 
 public abstract class AbstractExtractionContextAction extends AbstractExtensionAction<ExtractionExtension> {
-
     private volatile List<Archive> archives = null;
 
     public List<Archive> getArchives() {
@@ -41,7 +40,6 @@ public abstract class AbstractExtractionContextAction extends AbstractExtensionA
             setVisible(true);
             final ArchiveValidation result = ArchiveValidator.validate(selection, true);
             result.executeWhenReached(new Runnable() {
-
                 @Override
                 public void run() {
                     archives = result.getArchives();
@@ -78,8 +76,8 @@ public abstract class AbstractExtractionContextAction extends AbstractExtensionA
             return DownloadsTable.getInstance().getSelectionInfo();
         } else if (view instanceof LinkGrabberView) {
             return LinkGrabberTable.getInstance().getSelectionInfo();
+        } else {
+            return null;
         }
-        return null;
     }
-
 }

@@ -12,7 +12,6 @@ import org.jdownloader.extensions.schedulerV2.translate.T;
 
 @ScheduleActionIDAnnotation("SET_CAPTCHASERVICE")
 public class CaptchaServiceAction extends AbstractScheduleAction<CaptchaServiceActionConfig> {
-
     public CaptchaServiceAction(String configJson) {
         super(configJson);
     }
@@ -24,7 +23,6 @@ public class CaptchaServiceAction extends AbstractScheduleAction<CaptchaServiceA
 
     @Override
     public void execute(LogInterface logger) {
-
         switch (getConfig()._getService()) {
         case NINEKWEU:
             org.jdownloader.settings.staticreferences.CFG_9KWCAPTCHA.CFG.setEnabled(true);
@@ -45,8 +43,7 @@ public class CaptchaServiceAction extends AbstractScheduleAction<CaptchaServiceA
     public static enum CAPTCHA_SERVICE {
         NONE(T.T.action_captcha_none()),
         NINEKWEU("9kw.eu"),
-        DEATHBYCAPTCHA("deathbycaptcha.eu");
-
+        DEATHBYCAPTCHA("deathbycaptcha.com");
         private final String readableName;
 
         public final String getReadableName() {
@@ -61,7 +58,6 @@ public class CaptchaServiceAction extends AbstractScheduleAction<CaptchaServiceA
     @Override
     protected void createPanel() {
         panel.put(new JLabel(T.T.action_captcha_service() + ":"), "gapleft 10,");
-
         final ComboBox<CAPTCHA_SERVICE> cbService = new ComboBox<CAPTCHA_SERVICE>(CAPTCHA_SERVICE.values()) {
             @Override
             protected String getLabel(int index, CAPTCHA_SERVICE value) {
@@ -70,13 +66,11 @@ public class CaptchaServiceAction extends AbstractScheduleAction<CaptchaServiceA
         };
         cbService.setSelectedItem(getConfig()._getService());
         cbService.addActionListener(new ActionListener() {
-
             @Override
             public void actionPerformed(ActionEvent e) {
                 getConfig()._setService(cbService.getSelectedItem());
             }
         });
-
         panel.put(cbService, "");
     };
 

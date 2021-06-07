@@ -4,14 +4,6 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.requests.GetRequest;
@@ -23,7 +15,15 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/(?:#download#|\\?c=|d/)([A-Za-z0-9]+)$" })
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.parser.UrlQuery;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/(?:#download#|\\?c=|d/)([A-Za-z0-9\\-]+)$" })
 public class GoFileIo extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink parameter, ProgressController progress) throws Exception {
@@ -87,7 +87,6 @@ public class GoFileIo extends PluginForDecrypt {
                 final String description = (String) entry.get("description");
                 jd.plugins.hoster.GofileIo.parseFileInfo(link, entry);
                 link.setAvailable(true);
-                link._setFilePackage(fp);
                 if (passCode != null) {
                     link.setDownloadPassword(passCode);
                 }
@@ -95,6 +94,9 @@ public class GoFileIo extends PluginForDecrypt {
                     link.setComment(description);
                 }
                 ret.add(link);
+            }
+            if (!StringUtils.startsWithCaseInsensitive(fp.getName(), "quickUpload_") || ret.size() > 1) {
+                fp.addLinks(ret);
             }
         }
         return ret;

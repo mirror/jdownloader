@@ -73,7 +73,7 @@ public class DummyCNL extends PluginForDecrypt {
             infos.put("source", source);
         }
         final String json = JSonStorage.toString(infos);
-        return new DownloadLink(null, null, "dummycnl.jdownloader.org", "http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")), true);
+        return new DownloadLink(null, null, "dummycnl.jdownloader.org", "https://dummycnl.jdownloader.org/#" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")), true);
     }
 
     @Override

@@ -76,7 +76,7 @@ public class PicsVc extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<title>([^<>\"]+) - PICS\\.VC</title>").getMatch(0);
+        String fpName = br.getRegex("<title>\\s*([^<>\"]+)\\s*-\\s*PICS\\.VC\\s*</title>").getMatch(0);
         int offset = 0;
         int lastNextOffset = 0;
         int page = 0;
@@ -115,8 +115,12 @@ public class PicsVc extends PluginForDecrypt {
             }
             final String nextOffsetStr = br.getRegex(galleryID + "\\&off=(\\d+)'[^>]*><div[^>]*class='next_page clip'").getMatch(0);
             if (nextOffsetStr != null && Integer.parseInt(nextOffsetStr) > lastNextOffset) {
-                br.getPage(parameter + "&off=" + nextOffsetStr);
-                lastNextOffset = Integer.parseInt(nextOffsetStr);
+                // 2021-06-07 website given offset is missing about 2 images per page, use smaller steps (16 instead of website 36) to avoid
+                // missing
+                // images
+                final int nextOffset = Math.min(lastNextOffset + 16, Integer.parseInt(nextOffsetStr));
+                lastNextOffset = nextOffset;
+                br.getPage(parameter + "&off=" + nextOffset);
             } else {
                 logger.info("Stopping because failed to find next page");
                 break;
