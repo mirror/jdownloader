@@ -156,8 +156,8 @@ public class AtvAt extends PluginForDecrypt {
                 return decryptedLinks;
             }
         }
-        final String url_seriesname_remove = new Regex(url_seriesname, "((?:\\-)?staffel\\-\\d+)").getMatch(0);
-        final String url_episodename_remove = new Regex(url_episodename, "((?:\\-)?folge\\-\\d+)").getMatch(0);
+        final String urlSeriesnameRemove = new Regex(url_seriesname, "((?:\\-)?staffel\\-\\d+)").getMatch(0);
+        final String urlEpisodenameRemove = new Regex(url_episodename, "((?:\\-)?folge\\-\\d+)").getMatch(0);
         short seasonnumber = -1;
         short episodenumber = -1;
         final DecimalFormat df = new DecimalFormat("00");
@@ -169,19 +169,19 @@ public class AtvAt extends PluginForDecrypt {
             /* Fallback to URL information */
             episodename = url_episodename.replace("-", " ");
         }
-        if (url_seriesname_remove != null) {
+        if (urlSeriesnameRemove != null) {
             if (seasonnumber_str == null) {
-                seasonnumber_str = new Regex(url_seriesname_remove, "(\\d+)$").getMatch(0);
+                seasonnumber_str = new Regex(urlSeriesnameRemove, "(\\d+)$").getMatch(0);
             }
             /* Clean url_seriesname */
-            url_seriesname = url_seriesname.replace(url_seriesname_remove, "");
+            url_seriesname = url_seriesname.replace(urlSeriesnameRemove, "");
         }
-        if (url_episodename_remove != null) {
+        if (urlEpisodenameRemove != null) {
             if (episodenumber_str == null) {
-                episodenumber_str = new Regex(url_episodename_remove, "(\\d+)$").getMatch(0);
+                episodenumber_str = new Regex(urlEpisodenameRemove, "(\\d+)$").getMatch(0);
             }
             /* Clean url_episodename! */
-            url_episodename = url_episodename.replace(url_episodename_remove, "");
+            url_episodename = url_episodename.replace(urlEpisodenameRemove, "");
         }
         if (seasonnumber_str != null && episodenumber_str != null) {
             seasonnumber = Short.parseShort(seasonnumber_str);
@@ -247,7 +247,7 @@ public class AtvAt extends PluginForDecrypt {
                     /* 2021-04-15 */
                     src = (String) qualityInfo.get("url");
                 }
-                if (isHttpStreamingURL(src)) {
+                if (isSupportedHttpStreamingURL(src)) {
                     httpProtocolAvailable = true;
                     src = fixStreamingURL(src, possiblyGeoBlocked);
                     randomHTTPUrl = src;
@@ -456,7 +456,7 @@ public class AtvAt extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private boolean isHttpStreamingURL(final String url) {
+    private boolean isSupportedHttpStreamingURL(final String url) {
         return url != null && url.matches(REGEX_HTTP_STREAMING);
     }
 
