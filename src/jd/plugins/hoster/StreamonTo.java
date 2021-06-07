@@ -18,14 +18,14 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class StreamonTo extends XFileSharingProBasic {
@@ -101,8 +101,9 @@ public class StreamonTo extends XFileSharingProBasic {
     }
 
     @Override
-    protected void resolveShortURL(DownloadLink link, Account account) throws Exception {
-        // /d/(shortURL) are normal links
+    protected boolean isShortURL(DownloadLink link) {
+        /* /d/(shortURL) are normal links */
+        return false;
     }
 
     @Override
