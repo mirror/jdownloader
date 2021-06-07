@@ -1,6 +1,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -8,6 +9,10 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.FEmbedComConfig;
+import org.jdownloader.plugins.components.config.FEmbedComConfig.Quality;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -18,6 +23,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -55,21 +62,21 @@ public class FEmbedDecrypter extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        final String file_id = new Regex(parameter.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
-        String name = parameter.getDownloadLink() != null ? parameter.getDownloadLink().getStringProperty("javclName", null) : null;
+        final String file_id = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        String name = param.getDownloadLink() != null ? param.getDownloadLink().getStringProperty("javclName", null) : null;
         String fembedHost = null;
         Form dlform = null;
         if (name == null) {
-            br.getPage(parameter.getCryptedUrl());
+            br.getPage(param.getCryptedUrl());
             dlform = br.getForm(1);
             fembedHost = br.getHost();
             name = br.getRegex("<title>\\s*([^<]*?)\\s*(-\\s*Free\\s*download)?\\s*</title>").getMatch(0);
         }
         if (fembedHost == null) {
-            fembedHost = Browser.getHost(parameter.getCryptedUrl());
+            fembedHost = Browser.getHost(param.getCryptedUrl());
         }
         final PostRequest postRequest = new PostRequest("https://" + fembedHost + "/api/source/" + file_id);
         br.getPage(postRequest);
@@ -90,10 +97,7 @@ public class FEmbedDecrypter extends PluginForDecrypt {
             return ret;
         }
         if (!Boolean.TRUE.equals(response.get("success"))) {
-            final DownloadLink link = createDownloadlink(parameter.getCryptedUrl().replaceAll("https?://", "decryptedforFEmbedHosterPlugin://"));
-            link.setAvailable(false);
-            ret.add(link);
-            return ret;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final List<Map<String, Object>> videos;
         if (response.get("data") instanceof String) {
@@ -101,8 +105,13 @@ public class FEmbedDecrypter extends PluginForDecrypt {
         } else {
             videos = (List<Map<String, Object>>) response.get("data");
         }
+        if (videos.isEmpty()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Map<String, DownloadLink> foundQualities = new HashMap<String, DownloadLink>();
+        DownloadLink best = null;
         for (final Map<String, Object> video : videos) {
-            final DownloadLink link = createDownloadlink(parameter.getCryptedUrl().replaceAll("https?://", "decryptedforFEmbedHosterPlugin://"));
+            final DownloadLink link = createDownloadlink(param.getCryptedUrl().replaceAll("https?://", "decryptedforFEmbedHosterPlugin://"));
             final String label = (String) video.get("label");
             final String type = (String) video.get("type");
             link.setProperty("label", label);
@@ -114,9 +123,22 @@ public class FEmbedDecrypter extends PluginForDecrypt {
                 link.setName(file_id + "-" + label + "." + type);
             }
             link.setAvailable(true);
-            ret.add(link);
+            /* Last = Best */
+            best = link;
+            foundQualities.put(label, link);
         }
-        if (videos.size() > 1) {
+        final String userPreferredQualityStr = getUserPreferredqualityStr();
+        if (userPreferredQualityStr == null) {
+            logger.info("Adding BEST only (user selected)");
+            ret.add(best);
+        } else if (userPreferredQualityStr != null && foundQualities.containsKey(userPreferredQualityStr)) {
+            logger.info("Adding user preferred quality only: " + userPreferredQualityStr);
+            ret.add(foundQualities.get(userPreferredQualityStr));
+        } else {
+            logger.info("Adding BEST only (fallback)");
+            ret.add(best);
+        }
+        if (ret.size() > 1) {
             final FilePackage filePackage = FilePackage.getInstance();
             final String title;
             if (!StringUtils.isEmpty(name)) {
@@ -128,5 +150,28 @@ public class FEmbedDecrypter extends PluginForDecrypt {
             filePackage.addLinks(ret);
         }
         return ret;
+    }
+
+    private String getUserPreferredqualityStr() {
+        final Quality quality = PluginJsonConfig.get(FEmbedComConfig.class).getPreferredQuality();
+        switch (quality) {
+        case BEST:
+        case Q360:
+            return "360p";
+        case Q480:
+            return "480p";
+        case Q720:
+            return "720p";
+        case Q1080:
+            return "1080p";
+        default:
+            /* E.g. BEST */
+            return null;
+        }
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return FEmbedComConfig.class;
     }
 }

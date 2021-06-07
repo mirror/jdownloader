@@ -27,7 +27,7 @@ public class FEmbedCom extends PluginForHost {
     }
 
     @Override
-    public String getLinkID(DownloadLink link) {
+    public String getLinkID(final DownloadLink link) {
         final String label = link.getStringProperty("label", null);
         final String type = link.getStringProperty("type", null);
         final String id = link.getStringProperty("fembedid", null);
@@ -43,13 +43,13 @@ public class FEmbedCom extends PluginForHost {
     private String url = null;
 
     @Override
-    public void correctDownloadLink(DownloadLink link) {
+    public void correctDownloadLink(final DownloadLink link) {
         String url = link.getDownloadURL().replaceFirst("decryptedforFEmbedHosterPlugin://", "https://");
         link.setUrlDownload(url);
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
         String file_id = new Regex(parameter.getPluginPatternMatcher(), "/(?:f|v)/([a-zA-Z0-9_-]+)").getMatch(0);
         final String fembedHost = parameter.getStringProperty("fembedHost", getHost());
         br.setFollowRedirects(true);
@@ -94,7 +94,7 @@ public class FEmbedCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
+    public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.clearAuthentications();
         if (url == null) {
