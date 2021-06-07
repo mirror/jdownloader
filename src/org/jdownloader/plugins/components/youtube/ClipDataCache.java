@@ -87,6 +87,8 @@ public class ClipDataCache {
                 } else if (cachedData.isExpired()) {
                     helper.getLogger().info("invalidate CachedClipData:" + cachedID + "|reason:expired");
                     cachedData = null;
+                } else {
+                    helper.getLogger().info("valid CachedClipData found:" + cachedID);
                 }
             }
             if (cachedData == null) {
