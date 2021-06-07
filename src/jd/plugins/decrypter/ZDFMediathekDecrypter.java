@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -28,9 +29,19 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -40,14 +51,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.ZdfDeMediathek;
 import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "3sat.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?zdf\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)", "https?://(?:www\\.)?3sat\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?3sat\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)" })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
@@ -89,6 +92,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                             ret.add(nextURL);
                         }
                         if (ret.size() > 0) {
+                            /* Reverse sort so highest quality is on the beginning */
+                            Collections.sort(ret, Collections.reverseOrder());
                             return ret;
                         } else {
                             return null;
@@ -487,6 +492,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             }
             crawledDownloadTypesCounter++;
         } while (!this.isAbort());
+        final ArrayList<String> directurlDupesList = new ArrayList<String>();
         final boolean grabUnknownQualities = cfg.isAddUnknownQualitiesEnabled();
         final ArrayList<DownloadLink> userSelectedQualities = new ArrayList<DownloadLink>();
         final Iterator<Entry<String, Object>> iterator = audioVideoMap.entrySet().iterator();
@@ -533,8 +539,14 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     /* Skip invalid objects */
                     continue;
                 }
+                /* Often the same quality is available twice: Via https://nrodlzdf-a.akamaihd.net/ and https://rodlzdf-a.akamaihd.net/ */
+                final String URIDeduped = uri.replaceFirst("(?i)https://[^/]+/", "");
+                if (directurlDupesList.contains(URIDeduped)) {
+                    continue;
+                }
+                directurlDupesList.add(URIDeduped);
                 final String cdn = (String) entries.get("cdn");
-                final long filesize = JavaScriptEngineFactory.toLong(entries.get("filesize"), 0);
+                long filesize = JavaScriptEngineFactory.toLong(entries.get("filesize"), 0);
                 final String audio_class_user_readable = convertInternalAudioClassToUserReadable(audio_class);
                 String finalDownloadURL;
                 String linkid;
@@ -620,39 +632,77 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     String quality = (String) entries.get("quality");
                     finalDownloadURL = uri;
                     /*
-                     * 2020-12-21: Some tests: There are higher http qualities available than what we get via API (see also mediathekview)
-                     * ...
+                     * 2020-12-21: Some tests: There are higher http qualities available than what we get via API
                      */
-                    /* Do NOT alter official downloadurls such as "http://downloadzdf-a.akamaihd.net/..." */
-                    boolean downloadurlWasModified = true;
-                    if (finalDownloadURL.matches("https?://[a-z0-9]*rodlzdf[^/]+\\.akamaihd\\.net/.+_\\d+k_p\\d+v\\d+\\.mp4")) {
-                        /* Improve "veryhigh" --> hd */
-                        if (finalDownloadURL.contains("_1628k_p13v15.mp4")) {
-                            finalDownloadURL = finalDownloadURL.replace("_1628k_p13v15.mp4", "_3360k_p36v15.mp4");
-                            quality = "hd";
-                        } else if (finalDownloadURL.contains("_808k_p11v15.mp4")) {
-                            /* Improve "high/medium" --> veryhigh (?) */
-                            finalDownloadURL = finalDownloadURL.replace("_808k_p11v15.mp4", "_2360k_p35v15.mp4");
-                            quality = "veryhigh";
-                        } else if (finalDownloadURL.contains("_508k_p9v15.mp4")) {
-                            /* Improve "low" -> medium (?) */
-                            finalDownloadURL = finalDownloadURL.replace("_508k_p9v15.mp4", "_808k_p11v15.mp4");
-                            quality = "medium";
-                        } else {
-                            logger.info("Not altering quality: " + quality);
-                            downloadurlWasModified = false;
+                    String newFinalDownloadURL = null;
+                    final boolean useNewHandling = DebugMode.TRUE_IN_IDE_ELSE_FALSE;
+                    boolean setFilesize = true;
+                    if (useNewHandling) {
+                        final List<String> betterQualities = getBetterQualities(finalDownloadURL);
+                        if (betterQualities != null) {
+                            /* We cannot be 100% sure if these will work thus let's check... */
+                            long filesizeNew = -1;
+                            for (final String betterQualityDownloadurl : betterQualities) {
+                                filesizeNew = this.checkDownloadable(betterQualityDownloadurl);
+                                if (filesizeNew > -1) {
+                                    newFinalDownloadURL = betterQualityDownloadurl;
+                                    break;
+                                }
+                            }
+                            if (newFinalDownloadURL != finalDownloadURL) {
+                                /* Update quality modifier if needed */
+                                logger.info("Optimization for: " + quality + "|Old: " + finalDownloadURL + "|New: " + newFinalDownloadURL);
+                                if (quality.equalsIgnoreCase("low")) {
+                                    /* Improve "low" -> medium (?) */
+                                    quality = "medium";
+                                } else if (quality.equalsIgnoreCase("medium")) {
+                                    /* Improve "high/medium" --> veryhigh (?) */
+                                    quality = "veryhigh";
+                                } else if (quality.equalsIgnoreCase("veryhigh")) {
+                                    /* Improve "veryhigh" --> hd */
+                                    quality = "hd";
+                                } else {
+                                    logger.warning("Unsupported quality string");
+                                }
+                                if (filesizeNew > 0) {
+                                    filesize = filesizeNew;
+                                } else {
+                                    /* Previously crawled filesize is not valid anymore! */
+                                    filesize = -1;
+                                }
+                                finalDownloadURL = newFinalDownloadURL;
+                            }
                         }
                     } else {
-                        downloadurlWasModified = false;
+                        setFilesize = false;
+                        if (finalDownloadURL.matches("https?://[a-z0-9]*rodlzdf[^/]+\\.akamaihd\\.net/.+_\\d+k_p\\d+v\\d+\\.mp4")) {
+                            /* Improve "veryhigh" --> hd */
+                            if (finalDownloadURL.contains("_1628k_p13v15.mp4")) {
+                                finalDownloadURL = finalDownloadURL.replace("_1628k_p13v15.mp4", "_3360k_p36v15.mp4");
+                                quality = "hd";
+                            } else if (finalDownloadURL.contains("_808k_p11v15.mp4")) {
+                                /* Improve "high/medium" --> veryhigh (?) */
+                                finalDownloadURL = finalDownloadURL.replace("_808k_p11v15.mp4", "_2360k_p35v15.mp4");
+                                quality = "veryhigh";
+                            } else if (finalDownloadURL.contains("_508k_p9v15.mp4")) {
+                                /* Improve "low" -> medium (?) */
+                                finalDownloadURL = finalDownloadURL.replace("_508k_p9v15.mp4", "_808k_p11v15.mp4");
+                                quality = "medium";
+                            } else {
+                                logger.info("Not altering quality: " + quality);
+                            }
+                        } else {
+                            setFilesize = true;
+                        }
                     }
                     linkid = this.getHost() + "://" + String.format(linkid_format, internal_videoid, type, cdn, language, audio_class, protocol, quality);
                     final_filename = filename_packagename_base_title + "_" + protocol + "_" + quality + "_" + language + "_" + audio_class_user_readable + "." + ext;
                     dl = createDownloadlink(finalDownloadURL);
                     /**
-                     * Usually filesize is only given for the official downloads.</br> Only set it here if we haven't touched the original
-                     * downloadurls!
+                     * Usually filesize is only given for the official downloads.</br>
+                     * Only set it here if we haven't touched the original downloadurls!
                      */
-                    if (filesize > 0 && !downloadurlWasModified) {
+                    if (filesize > 0 && setFilesize) {
                         dl.setAvailable(true);
                         dl.setVerifiedFileSize(filesize);
                         // dl.setDownloadSize(filesize);
@@ -715,6 +765,27 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             fp.addLinks(allDownloadLinks);
             return allDownloadLinks;
         }
+    }
+
+    private long checkDownloadable(final String url) {
+        URLConnectionAdapter con = null;
+        final Browser br2 = this.br.cloneBrowser();
+        try {
+            con = br2.openHeadConnection(url);
+            if (this.looksLikeDownloadableContent(con)) {
+                return con.getCompleteContentLength();
+            } else {
+                return -1;
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+        return -1;
     }
 
     private String generateQualitySelectorString(final String protocol, final String ext, final String quality, final String language, final String audio_class) {
