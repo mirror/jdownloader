@@ -29,7 +29,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -635,7 +634,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                      * 2020-12-21: Some tests: There are higher http qualities available than what we get via API
                      */
                     String newFinalDownloadURL = null;
-                    final boolean useNewHandling = DebugMode.TRUE_IN_IDE_ELSE_FALSE;
+                    final boolean useNewHandling = true;
                     boolean setFilesize = true;
                     if (useNewHandling) {
                         final List<String> betterQualities = getBetterQualities(finalDownloadURL);
