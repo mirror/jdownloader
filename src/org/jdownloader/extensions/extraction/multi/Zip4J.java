@@ -66,28 +66,33 @@ public class Zip4J extends IExtraction {
             final ReusableByteArrayOutputStream buffer = new ReusableByteArrayOutputStream(64 * 1024);
             final SignatureCheckingOutStream signatureOutStream = new SignatureCheckingOutStream(ctl, passwordFound, ctl.getFileSignatures(), buffer, getConfig().getMaxCheckedFileSizeDuringOptimizedPasswordFindingInBytes(), optimized);
             final byte[] readBuffer = new byte[32767];
-            for (int index = 0; index < items.size(); index++) {
+            fileLoop: for (int index = 0; index < items.size(); index++) {
                 final FileHeader item = (FileHeader) items.get(index);
                 // Skip folders
                 if (item == null || item.isDirectory() || !item.isEncrypted()) {
-                    continue;
+                    continue fileLoop;
                 } else if (ctl.gotKilled()) {
                     /* extraction got aborted */
-                    break;
+                    break fileLoop;
                 } else if (passwordFound.get() != null) {
-                    break;
-                }
-                final String path = item.getFileName();
-                final String ext = Files.getExtension(path);
-                if (checkedExtensions.add(ext) || !optimized) {
-                    if (passwordFound.get() == null) {
+                    /* pw found */
+                    break fileLoop;
+                } else {
+                    final String path = item.getFileName();
+                    final String ext = Files.getExtension(path);
+                    if (checkedExtensions.add(ext) || !optimized) {
                         try {
                             long remaining = item.getUncompressedSize();
                             signatureOutStream.reset();
                             signatureOutStream.setSignatureLength(path, remaining);
                             logger.fine("Validating password: " + path + "|" + password);
                             zipFile.setPassword(password);
-                            final InputStream is = zipFile.getInputStream(item);
+                            final InputStream is;
+                            try {
+                                is = zipFile.getInputStream(item);
+                            } catch (ZipException e) {
+                                throw new IOException(e.getMessage(), e);
+                            }
                             try {
                                 while (passwordFound.get() == null) {
                                     final int read = is.read(readBuffer);
@@ -106,24 +111,22 @@ public class Zip4J extends IExtraction {
                                 is.close();
                             }
                             if (remaining == 0) {
-                                passwordFound.set(new Signature("UNKNOWN:Extraction:OK", null, null, ext));
+                                passwordFound.compareAndSet(null, new Signature("UNKNOWN:Extraction:OK", null, null, ext));
+                                break fileLoop;
                             }
                         } catch (SevenZipException e) {
                             logger.log(e);
                         } catch (IOException e) {
-                            if (!StringUtils.containsIgnoreCase(e.getMessage(), "Wrong Password")) {
-                                throw e;
-                            } else {
+                            if (StringUtils.startsWithCaseInsensitive(e.getMessage(), "Wrong Password")) {
                                 logger.log(e);
+                            } else {
+                                throw e;
                             }
                         } finally {
                             if (passwordFound.get() != null) {
                                 logger.info("Verified Password:" + password + "|" + path + "|" + passwordFound.get());
                             }
                         }
-                    } else {
-                        /* pw found */
-                        break;
                     }
                 }
             }
