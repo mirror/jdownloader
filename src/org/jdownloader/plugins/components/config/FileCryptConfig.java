@@ -18,9 +18,9 @@ public interface FileCryptConfig extends PluginConfigInterface {
     @SpinnerValidator(min = 0, max = 10, step = 1)
     @Order(10)
     @DescriptionForConfigEntry("Define max number of retries to avoid cutcaptcha")
-    int getMaxCutCaptchaAvoidaneRetries();
+    int getMaxCutCaptchaAvoidanceRetries();
 
-    void setMaxCutCaptchaAvoidaneRetries(int maxretries);
+    void setMaxCutCaptchaAvoidanceRetries(int maxretries);
 
     public static enum CrawlMode implements LabelInterface {
         PREFER_GIVEN_MIRROR_ID {
