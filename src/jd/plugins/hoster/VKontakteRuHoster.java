@@ -27,16 +27,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -68,6 +58,16 @@ import jd.plugins.components.UserAgents.BrowserName;
 import jd.plugins.decrypter.VKontakteRu;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://vkontaktedecrypted\\.ru/(picturelink/(?:-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:-)?\\d+_\\d+)|https?://(?:new\\.)?vk\\.com/(doc[\\d\\-]+_[\\d\\-]+|video[\\d\\-]+_[\\d\\-]+(?:#quality=\\d+p)?)(\\?hash=[a-f0-9]+(\\&dl=[a-f0-9]{18})?)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip).+|[rz][0-9]{2}.+)" })
@@ -382,17 +382,19 @@ public class VKontakteRuHoster extends PluginForHost {
                                  * a good test case to identify offline urls.
                                  */
                                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server issue - content might be offline", 5 * 60 * 1000l);
+                            } else {
+                                logger.warning("Failed to refresh audiolink directlink");
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
-                            logger.warning("Failed to refresh audiolink directlink");
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         finalUrl = url;
                         checkstatus = linkOk(link, isDownload);
                         if (checkstatus != 1) {
                             logger.info("Refreshed audiolink directlink seems not to work --> Link is probably offline");
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        } else {
+                            link.setProperty("directlink", finalUrl);
                         }
-                        link.setProperty("directlink", finalUrl);
                     }
                 } else if (this.isTypeVideo(link.getPluginPatternMatcher())) {
                     br.setFollowRedirects(true);
@@ -406,7 +408,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         accessVideo(this.br, oid, id, link.getStringProperty(VKontakteRuHoster.PROPERTY_VIDEO_LIST_ID), false);
                         if (br.containsHTML(VKontakteRuHoster.HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS)) {
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        } else if (br.containsHTML("class=\"message_page_body\">\\s*Access denied")) {
+                        } else if (br.containsHTML("class\\s*=\\s*\"message_page_body\">\\s*Access denied")) {
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         }
                         final Map<String, String> availableQualities = findAvailableVideoQualities(br);
@@ -415,18 +417,31 @@ public class VKontakteRuHoster extends PluginForHost {
                             logger.info("vk.com: Couldn't find any available qualities for videolink");
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        final Map<String, String> selectedQualities = VKontakteRu.getSelectedVideoQualities(availableQualities, QualitySelectionMode.values()[link.getIntegerProperty(VIDEO_QUALITY_SELECTION_MODE, default_VIDEO_QUALITY_SELECTION_MODE)], Quality.values()[link.getIntegerProperty(PREFERRED_VIDEO_QUALITY, default_PREFERRED_VIDEO_QUALITY)].getLabel());
-                        if (selectedQualities.isEmpty()) {
-                            /* Rare case: User has to delete- and re-add URL via crawler. */
-                            throw new PluginException(LinkStatus.ERROR_FATAL, "Selected quality is not available");
-                        }
-                        if (link.hasProperty(VKontakteRuHoster.PROPERTY_VIDEO_SELECTED_QUALITY)) {
-                            /*
-                             * Pre-set forced quality --> This is basically like a fail safe as we do not want to change the preselected
-                             * quality as it could lead to corrupt files (e.g. resuming started 720p download with 1080p file).
-                             */
-                            finalUrl = selectedQualities.get(link.getStringProperty(VKontakteRuHoster.PROPERTY_VIDEO_SELECTED_QUALITY));
+                        final String linkQuality = link.getStringProperty(VKontakteRuHoster.PROPERTY_VIDEO_SELECTED_QUALITY);
+                        if (StringUtils.isNotEmpty(linkQuality)) {
+                            final Map<String, String> selectedQualities = VKontakteRu.getSelectedVideoQualities(availableQualities, QualitySelectionMode.ALL, null);
+                            finalUrl = selectedQualities.get(linkQuality);
+                            if (finalUrl == null) {
+                                if (selectedQualities.isEmpty()) {
+                                    throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to refresh directurl - Content offline?");
+                                } else {
+                                    /* Rare case: User has to delete- and re-add URL via crawler. */
+                                    throw new PluginException(LinkStatus.ERROR_FATAL, "Selected quality is not available:ALL|" + linkQuality);
+                                }
+                            }
                         } else {
+                            final QualitySelectionMode mode = QualitySelectionMode.values()[link.getIntegerProperty(VIDEO_QUALITY_SELECTION_MODE, default_VIDEO_QUALITY_SELECTION_MODE)];
+                            final Quality quality = Quality.values()[link.getIntegerProperty(PREFERRED_VIDEO_QUALITY, default_PREFERRED_VIDEO_QUALITY)];
+                            Map<String, String> selectedQualities = VKontakteRu.getSelectedVideoQualities(availableQualities, mode, quality.getLabel());
+                            if (selectedQualities.isEmpty()) {
+                                selectedQualities = VKontakteRu.getSelectedVideoQualities(availableQualities, QualitySelectionMode.ALL, null);
+                                if (selectedQualities.isEmpty()) {
+                                    throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to refresh directurl - Content offline?");
+                                } else {
+                                    /* Rare case: User has to delete- and re-add URL via crawler. */
+                                    throw new PluginException(LinkStatus.ERROR_FATAL, "Selected quality is not available:" + mode + "|" + quality);
+                                }
+                            }
                             /* Assume map only contains this one element */
                             final Entry<String, String> entry = selectedQualities.entrySet().iterator().next();
                             finalUrl = entry.getValue();
@@ -437,14 +452,6 @@ public class VKontakteRuHoster extends PluginForHost {
                             link.setProperty(VKontakteRuHoster.PROPERTY_VIDEO_SELECTED_QUALITY, entry.getKey());
                             /* Correct filename which did not contain any quality modifier before. */
                             link.setFinalFileName(link.getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE) + "_" + entry.getKey() + ".mp4");
-                        }
-                        if (finalUrl == null) {
-                            /* This should never happen */
-                            throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to refresh directurl - Content offline?");
-                        }
-                        checkstatus = linkOk(link, isDownload);
-                        if (checkstatus != 1) {
-                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - this video might be offline");
                         }
                     }
                 } else {
