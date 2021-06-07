@@ -141,21 +141,38 @@ public class FakirdebridNet extends PluginForHost {
                 link.setDownloadPassword(passCode);
             }
             entries = (Map<String, Object>) entries.get("data");
-            /**
-             * E.g. redirect to server2.turkleech.com/TransLoad/?id=bla </br>
-             * Such URLs will also work fine without login cookies
-             */
-            final String transloadURL = (String) entries.get("link");
-            if (StringUtils.isEmpty(transloadURL)) {
+            final List<String> urls = (List<String>) entries.get("links");
+            if (urls.isEmpty()) {
                 mhm.handleErrorGeneric(account, link, "Failed to generate transloadURL", 10, 5 * 60 * 1000l);
             }
+            String transloadURL = null;
+            /*
+             * Go through array of list containing the same URL with different domains as some are blocked. Typical domains include:
+             * turkleech.com, fakirdebrid.xyz, fakirdebrid.info
+             */
+            for (final String url : urls) {
+                try {
+                    /**
+                     * E.g. server2.turkleech.com/TransLoad/?id=bla </br>
+                     * Such URLs will also work fine without login cookies
+                     */
+                    br.getPage(url);
+                    transloadURL = url;
+                    break;
+                } catch (final IOException ignore) {
+                    logger.log(ignore);
+                }
+            }
+            if (StringUtils.isEmpty(transloadURL)) {
+                mhm.handleErrorGeneric(account, link, "Failed to find working transloadURL", 10, 5 * 60 * 1000l);
+            }
+            logger.info("Selected transloadURL/domain: " + transloadURL);
             final boolean resumable = ((Boolean) entries.get("resumable")).booleanValue();
             int maxChunks = ((Number) entries.get("maxchunks")).intValue();
             if (maxChunks > 1) {
                 maxChunks = -maxChunks;
             }
             final String transloadID = UrlQuery.parse(transloadURL).get("id");
-            br.getPage(transloadURL);
             final String continueURL = br.getRegex("(\\?id=" + Regex.escape(transloadID) + "[^<>\"\\']+\\&action=download)").getMatch(0);
             if (continueURL == null) {
                 mhm.handleErrorGeneric(account, link, "Failed to find continueURL", 10, 5 * 60 * 1000l);
