@@ -2578,11 +2578,11 @@ public class VKontakteRu extends PluginForDecrypt {
      */
     private void siteGeneralErrorhandling() throws DecrypterException, PluginException {
         /* General errorhandling start */
-        if (br.containsHTML(">\\s+Unknown error|Неизвестная ошибка|Nieznany b\\&#322;\\&#261;d")) {
+        if (br.containsHTML(">\\s*Unknown error")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML(">Only logged in users can see this profile\\.<")) {
+        } else if (br.containsHTML(">\\s*Only logged in users can see this profile\\.<")) {
             throw new AccountRequiredException();
-        } else if (br.containsHTML("Access denied|Ошибка доступа|>You do not have permission to do this")) {
+        } else if (br.containsHTML(">\\s*Access denied|>\\s*You do not have permission to do this")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("vk.com/blank.php")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
