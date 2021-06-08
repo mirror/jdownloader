@@ -25,6 +25,15 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -54,15 +63,6 @@ import jd.plugins.hoster.VKontakteRuHoster;
 import jd.plugins.hoster.VKontakteRuHoster.Quality;
 import jd.plugins.hoster.VKontakteRuHoster.QualitySelectionMode;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink)[a-z0-9_/=\\.\\-\\?&%]+|vk\\.cc/[A-Za-z0-9]+)" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -98,7 +98,6 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     VKWALL_GRAB_VIDEO                         = "VKWALL_GRAB_VIDEO";
     private static final String     VKWALL_GRAB_LINK                          = "VKWALL_GRAB_LINK";
     private static final String     VKWALL_GRAB_DOCS                          = "VKWALL_GRAB_DOCS";
-    private static final String     VKVIDEO_USEIDASPACKAGENAME                = "VKVIDEO_USEIDASPACKAGENAME";
     private static final String     VKAUDIOS_USEIDASPACKAGENAME               = "VKAUDIOS_USEIDASPACKAGENAME";
     private static final String     VKDOCS_USEIDASPACKAGENAME                 = "VKDOCS_USEIDASPACKAGENAME";
     /* Settings 'in action' */
@@ -700,15 +699,15 @@ public class VKontakteRu extends PluginForDecrypt {
                     title = oid_and_id;
                 }
             }
-            final FilePackage fp = FilePackage.getInstance();
             /* Find needed information */
             final Map<String, String> foundQualities = findAvailableVideoQualities(br);
             if (foundQualities == null || foundQualities.isEmpty()) {
                 /* Assume that content is offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            title = Encoding.htmlDecode(title.trim());
-            if (cfg.getBooleanProperty(VKVIDEO_USEIDASPACKAGENAME, false)) {
+            final FilePackage fp = FilePackage.getInstance();
+            title = Encoding.htmlDecode(title).trim();
+            if (cfg.getBooleanProperty(VKontakteRuHoster.VKVIDEO_USEIDASPACKAGENAME, VKontakteRuHoster.default_VKVIDEO_USEIDASPACKAGENAME)) {
                 fp.setName("video" + oid + "_" + id);
             } else {
                 fp.setName(title);
@@ -725,11 +724,9 @@ public class VKontakteRu extends PluginForDecrypt {
                 final String finallink = qualityEntry.getValue();
                 final String contentURL = getProtocol() + this.getHost() + "/video" + oid_and_id + "#quality=" + thisQuality;
                 /*
-                 * Do not use this.createDownloadlink() to prevent URL from going back into this crawler whenever used has turned off fast
-                 * linkcheck for video URLs.
+                 * plugin instance is required to avoid being picked up by this plugin again because hoster and decrypter plugin do match on
+                 * same URL pattern
                  */
-                // plugin instance is required to avoid being picked up by this plugin again because hoster and decrypter plugin do match on
-                // same URL pattern
                 final DownloadLink dl = new DownloadLink(plugin, null, this.getHost(), contentURL, true);
                 final String finalfilename = title + "_" + thisQuality + ".mp4";
                 dl.setFinalFileName(finalfilename);
@@ -977,9 +974,12 @@ public class VKontakteRu extends PluginForDecrypt {
         this.getPageSafe(param.getCryptedUrl());
         handleVideoErrors(br);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        String sectionName = UrlQuery.parse(br.getURL()).get("section");
-        if (StringUtils.isEmpty(sectionName)) {
-            sectionName = "all";
+        final String internalSectionName;
+        final String sectionNameURL = UrlQuery.parse(br.getURL()).get("section");
+        if (sectionNameURL != null) {
+            internalSectionName = sectionNameURL;
+        } else {
+            internalSectionName = "all";
         }
         String albumsJson = br.getRegex("extend\\(cur, (\\{\"albumsPreload\".*?\\})\\);\\s+").getMatch(0);
         if (albumsJson == null) {
@@ -987,20 +987,26 @@ public class VKontakteRu extends PluginForDecrypt {
             albumsJson = br.getRegex("extend\\(cur, (\\{\".*?\\})\\);\\s+").getMatch(0);
         }
         Map<String, Object> entries = JSonStorage.restoreFromString(albumsJson, TypeRef.HASHMAP);
-        final String ownerID = Integer.toString(((Number) entries.get("oid")).intValue());
+        final String oid = Integer.toString(((Number) entries.get("oid")).intValue());
         final int maxItemsPerPage = ((Number) entries.get("VIDEO_SILENT_VIDEOS_CHUNK_SIZE")).intValue();
-        Map<String, Object> videoInfoMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "pageVideosList/" + ownerID + "/" + sectionName);
+        Map<String, Object> videoInfoMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "pageVideosList/" + oid + "/" + internalSectionName);
         final int numberofVideos = ((Number) videoInfoMap.get("count")).intValue();
         logger.info("numberofVideos=" + numberofVideos + "|maxVideosPerPage=" + maxItemsPerPage);
         int offset = 0;
         int page = 0;
+        String containerURL = "https://" + this.getHost() + "/videos" + oid;
+        if (internalSectionName != null) {
+            containerURL += "=section=" + Encoding.urlEncode(internalSectionName);
+        }
         final FilePackage fp = FilePackage.getInstance();
-        String fpName = br.getRegex("<title>([^>]+) \\| VK</title>").getMatch(0);
-        if (fpName != null) {
-            fp.setName(Encoding.htmlDecode(fpName).trim() + " - " + sectionName);
-        } else {
+        String galleryTitle = br.getRegex("<title>([^>]+) \\| VK</title>").getMatch(0);
+        if (cfg.getBooleanProperty(VKontakteRuHoster.VKVIDEO_ALBUM_USEIDASPACKAGENAME, VKontakteRuHoster.default_VKVIDEO_ALBUM_USEIDASPACKAGENAME)) {
+            fp.setName("videos" + oid);
+        } else if (galleryTitle == null) {
             /* Fallback */
-            fp.setName(ownerID + " - " + sectionName);
+            fp.setName(oid + " - " + internalSectionName);
+        } else {
+            fp.setName(Encoding.htmlDecode(galleryTitle).trim() + " - " + internalSectionName);
         }
         final LinkedHashSet<Integer> dupes = new LinkedHashSet<Integer>();
         while (true) {
@@ -1024,6 +1030,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 }
                 final String completeVideolink = getProtocol() + this.getHost() + "/video" + thisOwnerID + "_" + thisContentID;
                 final DownloadLink dl = createDownloadlink(completeVideolink);
+                dl.setContainerUrl(containerURL);
                 dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE, Encoding.htmlDecode(videoTitle).trim());
                 if (videoInfos.size() >= 12) {
                     /* Check for external content. Fast-crawling is only possible for stuff hosted on vk.com! */
@@ -1051,14 +1058,14 @@ public class VKontakteRu extends PluginForDecrypt {
             query.add("al", "1");
             query.add("need_albums", "0");
             query.add("offset", Integer.toString(offset));
-            query.add("oid", ownerID);
+            query.add("oid", oid);
             // query.add("rowlen", "3");
-            if (!StringUtils.isEmpty(sectionName)) {
-                query.add("section", Encoding.urlEncode(sectionName));
+            if (!StringUtils.isEmpty(internalSectionName)) {
+                query.add("section", Encoding.urlEncode(internalSectionName));
             }
             br.postPage(getBaseURL() + "/al_video.php?act=load_videos_silent", query.toString());
             entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            videoInfoMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "payload/{1}/{0}/" + sectionName);
+            videoInfoMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "payload/{1}/{0}/" + internalSectionName);
             page += 1;
         }
         logger.info("Total videolinks found: " + offset);
