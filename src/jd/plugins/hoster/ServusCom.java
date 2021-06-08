@@ -20,7 +20,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -62,7 +61,7 @@ public class ServusCom extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "servus.com", "servustv.com" });
+        ret.add(new String[] { "servustv.com", "servus.com" });
         ret.add(new String[] { "pm-wissen.com" });
         return ret;
     }
@@ -283,9 +282,9 @@ public class ServusCom extends PluginForHost {
 
     /** 2020-10-19: Wrapper for sparkle-api.liiift.io json. Contains ArrayLists with maps containing keys and values. */
     private Object getAttribute(final ArrayList<Object> fields, final String targetKey) {
-        HashMap<String, Object> entries = null;
+        Map<String, Object> entries = null;
         for (final Object fieldO : fields) {
-            entries = (HashMap<String, Object>) fieldO;
+            entries = (Map<String, Object>) fieldO;
             final String fieldKey = (String) entries.get("fieldKey");
             if (fieldKey.equals(targetKey)) {
                 return entries.get("fieldValue");
@@ -310,10 +309,28 @@ public class ServusCom extends PluginForHost {
              * Find http stream - skip everything else! HLS = split audio/video which we cannot handle properly yet so we'll have to skip
              * that too!
              */
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("resources");
+            final List<Object> ressourcelist = (List<Object>) entries.get("resources");
             /* 2021-04-23: Lazy errorhandling fix: Assume that empty list == GEO-blocked. */
             if (ressourcelist.isEmpty()) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
+                Browser brc = br.cloneBrowser();
+                GetRequest request = brc.createGetRequest("https://api.redbull.tv/v3/session?os_family=http");
+                request.getHeaders().put("Origin", "https://www.servustv.com");
+                request.getHeaders().put("Referer", "https://www.servustv.com");
+                brc.getPage(request);
+                final Map<String, Object> response = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                final String v3Token = (String) response.get("token");
+                if (v3Token != null) {
+                    brc.setRequest(null);
+                    request = brc.createGetRequest("https://dms.redbull.tv/v3/" + getFID(link) + "/" + v3Token + "/playlist.m3u8?namespace=stv");
+                    request.getHeaders().put("Origin", "https://www.servustv.com");
+                    request.getHeaders().put("Referer", "https://www.servustv.com");
+                    brc.getPage(request);
+                    hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(brc));
+                    hlsMaster = brc.getURL();
+                }
+                if (hlsbest == null) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked?");
+                }
             }
             for (final Object ressourceO : ressourcelist) {
                 entries = (Map<String, Object>) ressourceO;
@@ -332,20 +349,6 @@ public class ServusCom extends PluginForHost {
                     hlsMaster = url;
                 }
             }
-            /*
-             * 2020-1021: They got a 2nd HLS stream available that can contain multiple language/quality audio streams. Also that one is in
-             * #EXT-X-VERSION:6 while the other one is #EXT-X-VERSION:4. See root json/_meta/links/manifest/href. E.g.
-             * https://rd-manifests.liiift.io/api/v1/dam/STV/hls/stv-international-<fid>/master.m3u8
-             */
-            final boolean preferHLS = false;
-            if (!StringUtils.isEmpty(hlsMaster) && preferHLS) {
-                br.getPage(hlsMaster);
-                hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-                if (hlsbest == null) {
-                    /* No content available --> Probably the user wants to download hasn't aired yet --> Wait and retry later! */
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Sendung wurde noch nicht ausgestrahlt oder GEO-blocked", 60 * 60 * 1000l);
-                }
-            }
         } else {
             /* Old */
             if (httpstream == null) {
@@ -362,7 +365,7 @@ public class ServusCom extends PluginForHost {
         }
         /* 2020-10-21: Prefer HLS downloads as http may only be available in up to 720p while HLS is available in 1080p or higher. */
         if (hlsbest != null) {
-            final String url_hls = hlsbest.getDownloadurl();
+            final String url_hls = hlsbest.getStreamURL();
             checkFFmpeg(link, "Download a HLS Stream");
             dl = new HLSDownloader(link, br, url_hls);
             dl.startDownload();
