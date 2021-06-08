@@ -18,22 +18,12 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -61,8 +51,18 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.VKontakteRuHoster;
+import jd.plugins.hoster.VKontakteRuHoster.Quality;
 import jd.plugins.hoster.VKontakteRuHoster.QualitySelectionMode;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink)[a-z0-9_/=\\.\\-\\?&%]+|vk\\.cc/[A-Za-z0-9]+)" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -1119,7 +1119,10 @@ public class VKontakteRu extends PluginForDecrypt {
     public static Map<String, String> getSelectedVideoQualities(final Map<String, String> availableVideoQualities, final QualitySelectionMode mode, final String preferredVideoQuality) {
         final Map<String, String> selectedQualities = new HashMap<String, String>();
         // final Map<String, String> fallbackQualities = new HashMap<String, String>();
-        final List<String> knownQualities = Arrays.asList(new String[] { "1080p", "720p", "480p", "360p", "240p" });
+        final List<String> knownQualities = new ArrayList<String>();
+        for (Quality quality : Quality.values()) {
+            knownQualities.add(quality.getLabel());
+        }
         if (mode == QualitySelectionMode.ALL) {
             selectedQualities.putAll(availableVideoQualities);
             return selectedQualities;
@@ -1129,18 +1132,18 @@ public class VKontakteRu extends PluginForDecrypt {
             selectedQualities.put(entry.getKey(), entry.getValue());
             return selectedQualities;
         } else if (mode == QualitySelectionMode.BEST_OF_SELECTED) {
-            boolean allowAllFollowingQualities = false;
-            for (final String possibleQuality : knownQualities) {
-                if (preferredVideoQuality.equals(possibleQuality)) {
-                    if (availableVideoQualities.containsKey(possibleQuality)) {
+            boolean allowNextBestQuality = false;
+            for (final String quality : knownQualities) {
+                if (preferredVideoQuality.equals(quality)) {
+                    if (availableVideoQualities.containsKey(quality)) {
                         selectedQualities.put(preferredVideoQuality, availableVideoQualities.get(preferredVideoQuality));
                         return selectedQualities;
                     } else {
-                        allowAllFollowingQualities = true;
+                        allowNextBestQuality = true;
                     }
-                } else if (allowAllFollowingQualities) {
+                } else if (allowNextBestQuality && availableVideoQualities.containsKey(quality)) {
                     /* Use next-best (well, next worst) quality if user preferred quality was not found */
-                    selectedQualities.put(preferredVideoQuality, availableVideoQualities.get(preferredVideoQuality));
+                    selectedQualities.put(quality, availableVideoQualities.get(quality));
                     return selectedQualities;
                 }
             }
