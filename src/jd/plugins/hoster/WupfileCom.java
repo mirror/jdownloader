@@ -18,14 +18,16 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class WupfileCom extends XFileSharingProBasic {
@@ -59,6 +61,15 @@ public class WupfileCom extends XFileSharingProBasic {
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "wupfile.com", "salefiles.com" });
         return ret;
+    }
+
+    @Override
+    protected String replaceCorrectBR(Browser br, String pattern, String target) {
+        if (StringUtils.containsIgnoreCase(target, "recaptcha")) {
+            return null;
+        } else {
+            return super.replaceCorrectBR(br, pattern, target);
+        }
     }
 
     @Override

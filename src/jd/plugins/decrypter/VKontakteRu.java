@@ -26,15 +26,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -62,7 +53,15 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.VKontakteRuHoster;
 import jd.plugins.hoster.VKontakteRuHoster.QualitySelectionMode;
-import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink)[a-z0-9_/=\\.\\-\\?&%]+|vk\\.cc/[A-Za-z0-9]+)" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -727,7 +726,7 @@ public class VKontakteRu extends PluginForDecrypt {
                  * Do not use this.createDownloadlink() to prevent URL from going back into this crawler whenever used has turned off fast
                  * linkcheck for video URLs.
                  */
-                final DownloadLink dl = new DownloadLink(JDUtilities.getPluginForHost(this.getHost()), this.getHost(), this.getHost(), contentURL, true);
+                final DownloadLink dl = new DownloadLink(null, null, this.getHost(), contentURL, true);
                 final String finalfilename = title + "_" + thisQuality + ".mp4";
                 dl.setFinalFileName(finalfilename);
                 dl.setProperty("directlink", finallink);
@@ -1721,8 +1720,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /**
-     * Decrypts media of single Website html-post snippets. </br>
-     * Wrapper for websiteCrawlContent
+     * Decrypts media of single Website html-post snippets. </br> Wrapper for websiteCrawlContent
      *
      * @throws DecrypterException
      * @param url_source
