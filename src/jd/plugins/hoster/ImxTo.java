@@ -67,7 +67,7 @@ public class ImxTo extends PluginForHost {
             return new Regex(link.getPluginPatternMatcher(), TYPE_FULLSIZE).getMatch(0);
         } else {
             /* Assume we have TYPE_FULLSIZE */
-            return new Regex(link.getPluginPatternMatcher(), "/([a-z0-9]+)$").getMatch(0);
+            return new Regex(link.getPluginPatternMatcher(), "/(?:img-)?([a-z0-9]+)$").getMatch(0);
         }
     }
 
@@ -81,12 +81,21 @@ public class ImxTo extends PluginForHost {
             // } else if (link.getPluginPatternMatcher().matches(TYPE_THUMBNAIL)) {
             // link.setProperty(PROPERTY_DIRECTURL, link.getPluginPatternMatcher().replace("/u/t/", "/u/i/"));
             // }
+            // remember original direct full/thumbnai link
+            final String url = link.getPluginPatternMatcher();
+            if (url.matches(TYPE_THUMBNAIL)) {
+                link.setProperty("imageLink", url);
+            } else if (url.matches(TYPE_FULLSIZE)) {
+                link.setProperty("imageLink", url);
+            }
             final String newurl = "https://" + this.getHost() + "/i/" + fid;
             link.setPluginPatternMatcher(newurl);
             /*
              * Important as we pickup the 'img-' URLs without '.html' ending and we do not want the user to have broken content-URLs in JD!
              */
-            link.setContentUrl(null);
+            if (url.matches(TYPE_THUMBNAIL) || url.matches(TYPE_FULLSIZE)) {
+                link.setContentUrl(url);
+            }
         }
     }
 
@@ -103,6 +112,18 @@ public class ImxTo extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage("https://" + this.getHost() + "/i/" + this.getFID(link));
         if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(this.getFID(link))) {
+            String imageLink = link.getStringProperty("imageLink", null);
+            if (imageLink != null) {
+                imageLink = imageLink.replaceFirst("/t/", "/i/");
+                imageLink = imageLink.replaceFirst("https?://x", "https://i");
+                link.setProperty(PROPERTY_DIRECTURL, imageLink);
+                if (this.checkDirectLink(link, PROPERTY_DIRECTURL) != null) {
+                    logger.info("Availablecheck via directurl complete");
+                    return AvailableStatus.TRUE;
+                } else {
+                    link.removeProperty(PROPERTY_DIRECTURL);
+                }
+            }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         getAndSetFilename(link);
@@ -176,6 +197,14 @@ public class ImxTo extends PluginForHost {
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
+                    if (link.getFinalFileName() == null) {
+                        String name = link.getName();
+                        final String existingExt = getFileNameExtensionFromString(name);
+                        if (existingExt == null) {
+                            name += ".jpg";
+                        }
+                        link.setFinalFileName(name);
+                    }
                     return dllink;
                 } else {
                     throw new IOException();
@@ -235,5 +264,6 @@ public class ImxTo extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
+        link.removeProperty(PROPERTY_DIRECTURL);
     }
 }
