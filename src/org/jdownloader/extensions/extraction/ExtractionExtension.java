@@ -876,41 +876,19 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             return updateMainToolbar(mr);
         } else if (manager instanceof MenuManagerMainmenu) {
             return updateMainMenu(mr);
-        } else if (manager instanceof MenuManagerLinkgrabberTableContext) {
-            int addonLinkIndex = -1;
-            for (int i = 0; i < mr.getItems().size(); i++) {
-                if (mr.getItems().get(i) instanceof LinkGrabberMoreSubMenu) {
-                    addonLinkIndex = i;
-                    break;
-                }
-            }
-            final ArchivesSubMenu root = new ArchivesSubMenu();
-            root.add(new MenuItemData(new ActionData(ValidateArchivesAction.class)));
-            root.add(new SeparatorData());
-            root.add(new MenuItemData(new ActionData(AutoExtractEnabledToggleAction.class)));
-            root.add(new MenuItemData(new ActionData(SetExtractToAction.class)));
-            root.add(new MenuItemData(new ActionData(SetExtractPasswordAction.class)));
-            final CleanupSubMenu cleanup = new CleanupSubMenu();
-            cleanup.add(new MenuItemData(new ActionData(CleanupAutoDeleteFilesEnabledToggleAction.class)));
-            cleanup.add(new MenuItemData(new ActionData(CleanupAutoDeleteLinksEnabledToggleAction.class)));
-            root.add(cleanup);
-            if (addonLinkIndex != -1) {
-                mr.getItems().add(addonLinkIndex, root);
-            } else {
-                mr.getItems().add(root);
-            }
-            return null;
-        } else if (manager instanceof MenuManagerDownloadTableContext) {
+        } else if (manager instanceof MenuManagerDownloadTableContext || manager instanceof MenuManagerLinkgrabberTableContext) {
             int addonLinkIndex = 0;
             for (int i = 0; i < mr.getItems().size(); i++) {
-                if (mr.getItems().get(i) instanceof MoreMenuContainer) {
+                if (mr.getItems().get(i) instanceof MoreMenuContainer || mr.getItems().get(i) instanceof LinkGrabberMoreSubMenu) {
                     addonLinkIndex = i;
                     break;
                 }
             }
             final ArchivesSubMenu root = new ArchivesSubMenu();
-            root.add(new MenuItemData(new ActionData(ExtractArchiveNowAction.class)));
-            root.add(new MenuItemData(new ActionData(AbortExtractionAction.class)));
+            if (manager instanceof MenuManagerDownloadTableContext) {
+                root.add(new MenuItemData(new ActionData(ExtractArchiveNowAction.class)));
+                root.add(new MenuItemData(new ActionData(AbortExtractionAction.class)));
+            }
             root.add(new MenuItemData(new ActionData(ValidateArchivesAction.class)));
             root.add(new SeparatorData());
             root.add(new MenuItemData(new ActionData(AutoExtractEnabledToggleAction.class)));

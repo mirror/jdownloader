@@ -12,19 +12,15 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 
 public class SetExtractToAction extends AbstractExtractionContextAction {
-
     public SetExtractToAction() {
         super();
         setName(org.jdownloader.extensions.extraction.translate.T.T.contextmenu_extract_to());
-
         setIconKey(IconKey.ICON_FOLDER);
-
     }
 
     @Override
     protected void onAsyncInitDone() {
         super.onAsyncInitDone();
-
     }
 
     public void actionPerformed(ActionEvent e) {
