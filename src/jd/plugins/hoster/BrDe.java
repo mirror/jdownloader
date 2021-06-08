@@ -66,8 +66,8 @@ public class BrDe extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        dllink = downloadLink.getStringProperty("direct_link", null);
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        dllink = link.getStringProperty("direct_link", null);
         if (dllink == null) {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -76,15 +76,25 @@ public class BrDe extends PluginForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String filename = downloadLink.getStringProperty("plain_filename", null);
+        final String filename = link.getStringProperty("plain_filename", null);
         dllink = Encoding.htmlDecode(dllink.trim());
-        downloadLink.setFinalFileName(filename);
+        link.setFinalFileName(filename);
         URLConnectionAdapter con = null;
         try {
             br.getHeaders().put("Accept-Encoding", "identity");
             con = br.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            if (this.looksLikeDownloadableContent(con)) {
+                if (con.getURL().toString().matches("(?i)^https://[^/]+/tafeln/br-fernsehen/br-fernsehen-tafel_E\\.mp4$")) {
+                    /*
+                     * 2021-06-08 Redirect to static "GEO-blocked" video:
+                     * https://cdn-storage.br.de/tafeln/br-fernsehen/br-fernsehen-tafel_E.mp4
+                     */
+                    geo_or_age_blocked = true;
+                    // throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
+                    return AvailableStatus.TRUE;
+                } else if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else {
                 if (con.getResponseCode() == 403) {
                     /* E.g. content is not available before 10PM (Germany). */
@@ -105,8 +115,8 @@ public class BrDe extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (geo_or_age_blocked) {
@@ -115,15 +125,20 @@ public class BrDe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getHeaders().put("Accept-Encoding", "identity");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (dl.getConnection().getLongContentLength() == 0) {
             /* 2019-12-14: E.g. broken/empty subtitles */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wrong length - broken file?", 30 * 60 * 1000l);
