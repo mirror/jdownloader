@@ -27,6 +27,16 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -58,16 +68,6 @@ import jd.plugins.components.UserAgents.BrowserName;
 import jd.plugins.decrypter.VKontakteRu;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://vkontaktedecrypted\\.ru/(picturelink/(?:-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:-)?\\d+_\\d+)|https?://(?:new\\.)?vk\\.com/(doc[\\d\\-]+_[\\d\\-]+|video[\\d\\-]+_[\\d\\-]+(?:#quality=\\d+p)?)(\\?hash=[a-f0-9]+(\\&dl=[a-f0-9]{18})?)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip).+|[rz][0-9]{2}.+)" })
@@ -461,8 +461,8 @@ public class VKontakteRuHoster extends PluginForHost {
                         this.finalUrl = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null), isDownload);
                     }
                     if (this.finalUrl == null) {
-                        String photo_list_id = link.getStringProperty(PROPERTY_PHOTOS_photo_list_id, null);
-                        final String module = link.getStringProperty(PROPERTY_PHOTOS_photo_module, null);
+                        String photo_list_id = link.getStringProperty(PROPERTY_PHOTOS_photo_list_id);
+                        final String module = link.getStringProperty(PROPERTY_PHOTOS_photo_module);
                         final String photoID = getPhotoID(link);
                         if (module != null) {
                             /* Access photo inside wall-post or qwall reply or photo album */
@@ -485,25 +485,23 @@ public class VKontakteRuHoster extends PluginForHost {
                                     if (content_url == null || !content_url.contains(photoID)) {
                                         break;
                                     }
-                                    if (content_url != null && content_url.contains(photoID)) {
-                                        logger.info("Attempting photo_list_id workaround");
-                                        this.getPageSafe(account, link, content_url);
-                                        photo_list_id = br.getRegex(photoID + "(?:%2F|/)([a-f0-9]+)").getMatch(0);
-                                        if (photo_list_id == null) {
-                                            logger.warning("photo_list_id workaround failed");
-                                            break;
-                                        } else {
-                                            logger.warning("Successfully found new photo_list_id");
-                                            photo_list_id_workaround_failed = false;
-                                        }
+                                    logger.info("Attempting photo_list_id workaround");
+                                    this.getPageSafe(account, link, content_url);
+                                    photo_list_id = br.getRegex(photoID + "(?:%2F|/)([a-f0-9]+)").getMatch(0);
+                                    if (photo_list_id == null) {
+                                        logger.warning("photo_list_id workaround failed");
+                                        break;
+                                    } else {
+                                        logger.warning("Successfully found new photo_list_id");
+                                        photo_list_id_workaround_failed = false;
                                     }
                                 }
                                 /*
                                  * 2020-01-27: Browser request would also contain "&dmcah=" - at least for items which came from walls
                                  * (module=wall)
                                  */
-                                String postData = String.format("act=show&al=1&al_ad=0&list=%s&module=%s&photo=%s", photo_list_id, module, photoID);
-                                postPageSafe(account, link, getBaseURL() + "/al_photos.php", postData);
+                                final String postData = String.format("act=show&al=1&dmcah=&list=%s&module=%s&photo=%s", photo_list_id, module, photoID);
+                                postPageSafe(account, link, getBaseURL() + "/al_photos.php?act=show", postData);
                             } while (photo_counter <= 1 && PluginJSonUtils.unescape(br.toString()).contains("\"Access denied\""));
                             if (photo_list_id_workaround_failed) {
                                 logger.warning("Failed to get photo because photo_list_id_workaround_failed");
@@ -802,6 +800,7 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     public static void setHeaderRefererPhoto(final Browser br) {
+        /* TODO: This is wrong! Use the main URL/Content-URL instead! */
         br.getHeaders().put("Referer", "https://" + DOMAIN + "/al_photos.php");
     }
 
@@ -1784,6 +1783,12 @@ public class VKontakteRuHoster extends PluginForHost {
             public String getLabel() {
                 return "240p";
             }
+        },
+        Q144 {
+            @Override
+            public String getLabel() {
+                return "144p";
+            }
         };
     }
 
@@ -1815,6 +1820,8 @@ public class VKontakteRuHoster extends PluginForHost {
             return "360p";
         case Q240:
             return "240p";
+        case Q144:
+            return "144p";
         default:
             /* This should never happen */
             return null;
