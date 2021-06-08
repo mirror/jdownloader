@@ -26,6 +26,15 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -53,15 +62,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.VKontakteRuHoster;
 import jd.plugins.hoster.VKontakteRuHoster.QualitySelectionMode;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink)[a-z0-9_/=\\.\\-\\?&%]+|vk\\.cc/[A-Za-z0-9]+)" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -249,7 +249,7 @@ public class VKontakteRu extends PluginForDecrypt {
             /**
              * Single photo links, those are just passed to the hoster plugin! Example:http://vk.com/photo125005168_269986868
              */
-            decryptWallPostSpecifiedPhoto();
+            decryptWallPostSpecifiedPhoto(param);
             return decryptedLinks;
         } else if (isTypeSingleVideo(CRYPTEDLINK_ORIGINAL)) {
             if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_Z) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_ORIGINAL_LIST)) {
@@ -298,7 +298,7 @@ public class VKontakteRu extends PluginForDecrypt {
             /* Replace section end */
             /* Decryption process START */
             if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_PHOTO_MODULE)) {
-                decryptWallPostSpecifiedPhoto();
+                decryptWallPostSpecifiedPhoto(param);
             } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_AUDIO_AUDIOS_ALBUM_2020)) {
                 decryptAudiosAlbum2020();
             } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_GENERAL_AUDIO)) {
@@ -702,7 +702,7 @@ public class VKontakteRu extends PluginForDecrypt {
             final FilePackage fp = FilePackage.getInstance();
             /* Find needed information */
             final Map<String, String> foundQualities = findAvailableVideoQualities(br);
-            if (foundQualities.isEmpty()) {
+            if (foundQualities == null || foundQualities.isEmpty()) {
                 /* Assume that content is offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -1094,7 +1094,7 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             /* Now try more fallbacks */
             /* Use cachexxx as workaround e.g. for special videos that need groups permission. */
-            final String[][] qualities = { { "cache1080", "url1080", "1080p" }, { "cache720", "url720", "720p" }, { "cache480", "url480", "480p" }, { "cache360", "url360", "360p" }, { "cache240", "url240", "240p" } };
+            final String[][] qualities = { { "cache1080", "url1080", "1080p" }, { "cache720", "url720", "720p" }, { "cache480", "url480", "480p" }, { "cache360", "url360", "360p" }, { "cache240", "url240", "240p" }, { "cache144", "url144", "144p" } };
             for (final String[] qualityInfo : qualities) {
                 String finallink = PluginJSonUtils.getJsonValue(source, qualityInfo[0]);
                 if (finallink == null) {
@@ -1720,34 +1720,6 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /**
-     * Decrypts media of single Website html-post snippets. </br> Wrapper for websiteCrawlContent
-     *
-     * @throws DecrypterException
-     * @param url_source
-     *            : ID of the initial post.
-     * @param html
-     *            : html Code containing post and (maybe) comments
-     */
-    private void decryptWallPostHTMLWebsite(final String wall_post_ids, String html, final FilePackage fp) throws IOException, DecrypterException {
-        html = cleanupHTMLWebsite(html);
-        /* Crawl contents inside post */
-        websiteCrawlContent(wall_post_ids, html, fp, this.vkwall_grabaudio, this.vkwall_grabvideo, this.vkwall_grabphotos, this.vkwall_grabdocs, this.vkwall_graburlsinsideposts, this.photos_store_picture_directurls);
-    }
-
-    private String cleanupHTMLWebsite(String html) {
-        /* Remove some js / json which could cause duplicates */
-        final String[] scriptData = new Regex(html, "<script[^<>]*?type=\"text/javascript\"[^<>]*?>(.*?)</script>").getColumn(0);
-        for (final String script_html : scriptData) {
-            html = html.replace(script_html, "");
-        }
-        return html;
-    }
-
-    private String[] getCommentsFromHTML(final String html) {
-        return new Regex(html, "<div class=\"reply_content\"[^>]*?>.*?return showWiki\\(").getColumn(-1);
-    }
-
-    /**
      * Crawls desired content from website html code from either a wall-POST or wall-COMMENT or ALBUMS URL from below a post.
      *
      * @throws IOException
@@ -2001,25 +1973,25 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /** Works offline, simply converts the added link into a DownloadLink for the host plugin and sets required properties. */
-    private void decryptWallPostSpecifiedPhoto() throws Exception {
+    private void decryptWallPostSpecifiedPhoto(final CryptedLink param) throws Exception {
         String module = null;
         String list_id = null;
         /* URLs may contain multiple list_id-like strings! It is important to use the source URL as an orientation. */
-        if (new Regex(this.CRYPTEDLINK_FUNCTIONAL, "https?://[^/]+/photo-?\\d+_\\d+\\?tag=\\d+").matches()) {
+        if (new Regex(param.getCryptedUrl(), "https?://[^/]+/photo-?\\d+_\\d+\\?tag=\\d+").matches()) {
             module = "photos";
-            list_id = "tag" + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "(\\d+)$").getMatch(0);
-        } else if (!isSinglePicture(this.CRYPTEDLINK_ORIGINAL)) {
-            if (this.CRYPTEDLINK_FUNCTIONAL.contains("/wall")) {
+            list_id = "tag" + new Regex(param.getCryptedUrl(), "(\\d+)$").getMatch(0);
+        } else if (!isSinglePicture(param.getCryptedUrl())) {
+            if (param.getCryptedUrl().contains("/wall")) {
                 module = "wall";
             } else {
                 module = "public";
             }
-            list_id = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "((?:wall|album)(\\-)?\\d+_\\d+)$").getMatch(0);
+            list_id = new Regex(param.getCryptedUrl(), "((?:wall|album)(\\-)?\\d+_\\d+)$").getMatch(0);
         }
-        final String owner_id = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "photo(-?\\d+)_\\d+").getMatch(0);
-        final String content_id = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "photo-?\\d+_(\\d+)").getMatch(0);
+        final String owner_id = new Regex(param.getCryptedUrl(), "photo(-?\\d+)_\\d+").getMatch(0);
+        final String content_id = new Regex(param.getCryptedUrl(), "photo-?\\d+_(\\d+)").getMatch(0);
         final DownloadLink dl = getSinglePhotoDownloadLink(owner_id + "_" + content_id, null);
-        dl.setContentUrl(CRYPTEDLINK_FUNCTIONAL);
+        dl.setContentUrl(param.getCryptedUrl());
         dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
         if (module != null) {
             dl.setProperty(VKontakteRuHoster.PROPERTY_PHOTOS_photo_module, module);
