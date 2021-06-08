@@ -102,11 +102,12 @@ public class ServusCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        String fid = new Regex(link.getPluginPatternMatcher(), "([A-Za-z0-9\\-]+)$").getMatch(0);
+        final String fid = new Regex(link.getPluginPatternMatcher(), "([A-Za-z0-9\\-]+)$").getMatch(0);
         if (fid != null) {
-            fid = fid.toUpperCase();
+            return fid.toUpperCase(Locale.ENGLISH);
+        } else {
+            return null;
         }
-        return fid;
     }
 
     private static Object                  LOCK                                     = new Object();
@@ -312,21 +313,25 @@ public class ServusCom extends PluginForHost {
             final List<Object> ressourcelist = (List<Object>) entries.get("resources");
             /* 2021-04-23: Lazy errorhandling fix: Assume that empty list == GEO-blocked. */
             if (ressourcelist.isEmpty()) {
-                Browser brc = br.cloneBrowser();
-                GetRequest request = brc.createGetRequest("https://api.redbull.tv/v3/session?os_family=http");
-                request.getHeaders().put("Origin", "https://www.servustv.com");
-                request.getHeaders().put("Referer", "https://www.servustv.com");
-                brc.getPage(request);
-                final Map<String, Object> response = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
-                final String v3Token = (String) response.get("token");
-                if (v3Token != null) {
+                if ("servustv.com".equals(getHost())) {
+                    Browser brc = br.cloneBrowser();
                     brc.setRequest(null);
-                    request = brc.createGetRequest("https://dms.redbull.tv/v3/" + getFID(link) + "/" + v3Token + "/playlist.m3u8?namespace=stv");
+                    GetRequest request = brc.createGetRequest("https://api.redbull.tv/v3/session?os_family=http");
                     request.getHeaders().put("Origin", "https://www.servustv.com");
                     request.getHeaders().put("Referer", "https://www.servustv.com");
                     brc.getPage(request);
-                    hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(brc));
-                    hlsMaster = brc.getURL();
+                    final Map<String, Object> response = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                    final String v3Token = (String) response.get("token");
+                    if (v3Token != null) {
+                        brc = br.cloneBrowser();
+                        brc.setRequest(null);
+                        request = brc.createGetRequest("https://dms.redbull.tv/v3/" + getFID(link) + "/" + v3Token + "/playlist.m3u8?namespace=stv");
+                        request.getHeaders().put("Origin", "https://www.servustv.com");
+                        request.getHeaders().put("Referer", "https://www.servustv.com");
+                        brc.getPage(request);
+                        hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(brc));
+                        hlsMaster = brc.getURL();
+                    }
                 }
                 if (hlsbest == null) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked?");
@@ -363,6 +368,8 @@ public class ServusCom extends PluginForHost {
                 }
             }
         }
+        br.setRequest(null);
+        br.setCurrentURL(link.getPluginPatternMatcher());
         /* 2020-10-21: Prefer HLS downloads as http may only be available in up to 720p while HLS is available in 1080p or higher. */
         if (hlsbest != null) {
             final String url_hls = hlsbest.getStreamURL();
