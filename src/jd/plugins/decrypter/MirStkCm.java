@@ -32,14 +32,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadmagnet.com", "mirr.re" }, urls = { "https?://(?:www\\.)?(?:multi\\.hotshare\\.biz|uploadmagnet\\.com|pdownload\\.net|zlinx\\.me|filesuploader\\.com|multiupload\\.biz|multimirrorupload\\.com|multifilemirror\\.com)/([a-zA-Z0-9]{1,2}_)?([a-zA-Z0-9]{12})", "https?://(?:www\\.)?(?:mirr\\.re)/d/([a-zA-Z0-9]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadmagnet.com" }, urls = { "https?://(?:www\\.)?(?:multi\\.hotshare\\.biz|uploadmagnet\\.com)/([a-zA-Z0-9]{1,2}_)?([a-zA-Z0-9]{12})" })
 public class MirStkCm extends antiDDoSForDecrypt {
     @Override
     public String[] siteSupportedNames() {
-        if ("uploadmagnet.com".equals(getHost())) {
-            return new String[] { "multi.hotshare.biz", "uploadmagnet.com", "pdownload.net", "zlinx.me", "filesuploader.com", "multiupload.biz", "multimirrorupload.com", "multifilemirror.com", "mirr.re" };
-        }
-        return null;
+        return new String[] { "multi.hotshare.biz", "uploadmagnet.com" };
     }
 
     /*
@@ -52,17 +49,6 @@ public class MirStkCm extends antiDDoSForDecrypt {
      * links (parts), JD loads many instances of the decrypter and each url/parameter/instance gets a separate packagename and that sucks.
      * It's best to use linkgrabbers default auto packagename sorting.
      */
-    // 16/12/2012
-    // mirrorstack.com = up, multiple pages deep, requiring custom r_counter, link offline errorhandling
-    // uploading.to = down/sudoparked = 173.192.223.71-static.reverse.softlayer.com
-    // copyload.com = down/sudoparked = 208.43.167.115-static.reverse.softlayer.com
-    // onmirror.com = up, finallink are redirects on first singleLink page
-    // multiupload.biz = up, multiple pages deep, with waits on last page
-    // mirrorhive.com = up, finallink are redirects on first singleLink page
-    // 05/07/2013
-    // filesuploader.com = up, finallink are redirects on first singleLink page
-    // 09/09/2013
-    // pdownload.net = up, finallinks are redriects on first singleLink page
     // version 0.6
     // Tags: Multi file upload, mirror, mirrorstack, GeneralMultiuploadDecrypter
     // Single link format eg. http://sitedomain/xx_uid. xx = hoster abbreviation
@@ -120,82 +106,66 @@ public class MirStkCm extends antiDDoSForDecrypt {
             return null;
         }
         // make sites with long waits return back into the script making it multi-threaded, otherwise singleLinks * results = long time.
-        if (singleLinks.length > 1 && parameter.matches(".+(multiupload\\.biz)/.+")) {
-            for (String singleLink : singleLinks) {
-                final DownloadLink link = createDownloadlink(singleLink);
-                if (fp != null) {
-                    fp.add(link);
-                }
-                decryptedLinks.add(link);
+        // Process links found. Each provider has a slightly different requirement and outcome
+        for (String singleLink : singleLinks) {
+            String finallink = null;
+            if (!singleLink.matches(regexSingleLink)) {
+                finallink = singleLink;
             }
-        } else {
-            // Process links found. Each provider has a slightly different requirement and outcome
-            for (String singleLink : singleLinks) {
-                String finallink = null;
-                if (!singleLink.matches(regexSingleLink)) {
-                    finallink = singleLink;
+            if (isAbort()) {
+                break;
+            }
+            final Browser brc = br.cloneBrowser();
+            if (finallink == null) {
+                // if parameter == singlelink, no need for another page get
+                if (!parameter.matches(regexSingleLink)) {
+                    getPage(brc, singleLink);
                 }
-                if (isAbort()) {
-                    break;
-                }
-                final Browser brc = br.cloneBrowser();
+                finallink = brc.getRedirectLocation();
                 if (finallink == null) {
-                    // if parameter == singlelink, no need for another page get
-                    if (!parameter.matches(regexSingleLink)) {
-                        getPage(brc, singleLink);
-                    }
+                    String referer = null;
+                    String add_char = "";
+                    Integer wait = 0;
+                    referer = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0) + "/r_counter";
+                    brc.getHeaders().put("Referer", referer);
+                    sleep(wait * 1000, param);
+                    getPage(brc, singleLink + add_char);
                     finallink = brc.getRedirectLocation();
-                    if (finallink == null) {
-                        String referer = null;
-                        String add_char = "";
-                        Integer wait = 0;
-                        if (parameter.matches(".+(multiupload\\.biz)/.+")) {
-                            add_char = "?";
-                            referer = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0) + "/r_counter";
-                            wait = 10;
-                        } else {
-                            referer = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0) + "/r_counter";
-                        }
-                        brc.getHeaders().put("Referer", referer);
-                        sleep(wait * 1000, param);
-                        getPage(brc, singleLink + add_char);
-                        finallink = brc.getRedirectLocation();
+                    if (StringUtils.isEmpty(finallink)) {
+                        finallink = brc.getRegex("name\\s*=\\s*\"shturl\"[^>]*value\\s*=\\s*\"(https?://[^>]*?)\"").getMatch(0);
                         if (StringUtils.isEmpty(finallink)) {
-                            finallink = brc.getRegex("name\\s*=\\s*\"shturl\"[^>]*value\\s*=\\s*\"(https?://[^>]*?)\"").getMatch(0);
+                            final Form button = brc.getFormBySubmitvalue("Download");
+                            if (button != null) {
+                                final Browser br2 = brc.cloneBrowser();
+                                br2.submitForm(button);
+                                finallink = br2.getRedirectLocation();
+                            }
                             if (StringUtils.isEmpty(finallink)) {
-                                final Form button = brc.getFormBySubmitvalue("Download");
-                                if (button != null) {
-                                    final Browser br2 = brc.cloneBrowser();
-                                    br2.submitForm(button);
-                                    finallink = br2.getRedirectLocation();
-                                }
-                                if (StringUtils.isEmpty(finallink)) {
-                                    // fail over
-                                    final String[] links = HTMLParser.getHttpLinks(brc.toString(), "");
-                                    for (final String link : links) {
-                                        if (!Browser.getHost(link).contains(Browser.getHost(brc.getURL()))) {
-                                            final DownloadLink dl = createDownloadlink(link);
-                                            if (fp != null) {
-                                                fp.add(dl);
-                                            }
-                                            decryptedLinks.add(dl);
-                                            distribute(dl);
+                                // fail over
+                                final String[] links = HTMLParser.getHttpLinks(brc.toString(), "");
+                                for (final String link : links) {
+                                    if (!Browser.getHost(link).contains(Browser.getHost(brc.getURL()))) {
+                                        final DownloadLink dl = createDownloadlink(link);
+                                        if (fp != null) {
+                                            fp.add(dl);
                                         }
+                                        decryptedLinks.add(dl);
+                                        distribute(dl);
                                     }
-                                    continue;
                                 }
+                                continue;
                             }
                         }
                     }
                 }
-                if (!Browser.getHost(finallink).contains(Browser.getHost(brc.getURL()))) {
-                    final DownloadLink dl = createDownloadlink(finallink);
-                    if (fp != null) {
-                        fp.add(dl);
-                    }
-                    decryptedLinks.add(dl);
-                    distribute(dl);
+            }
+            if (!Browser.getHost(finallink).contains(Browser.getHost(brc.getURL()))) {
+                final DownloadLink dl = createDownloadlink(finallink);
+                if (fp != null) {
+                    fp.add(dl);
                 }
+                decryptedLinks.add(dl);
+                distribute(dl);
             }
         }
         return decryptedLinks;
