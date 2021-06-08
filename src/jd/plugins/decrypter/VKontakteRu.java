@@ -62,6 +62,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.VKontakteRuHoster;
 import jd.plugins.hoster.VKontakteRuHoster.QualitySelectionMode;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink)[a-z0-9_/=\\.\\-\\?&%]+|vk\\.cc/[A-Za-z0-9]+)" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -718,6 +719,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 return;
             }
             final boolean fastLinkcheck = cfg.getBooleanProperty(VKontakteRuHoster.FASTLINKCHECK_VIDEO, true);
+            final PluginForHost plugin = JDUtilities.getPluginForHost(getHost());
             for (final Map.Entry<String, String> qualityEntry : selectedQualities.entrySet()) {
                 final String thisQuality = qualityEntry.getKey();
                 final String finallink = qualityEntry.getValue();
@@ -726,7 +728,9 @@ public class VKontakteRu extends PluginForDecrypt {
                  * Do not use this.createDownloadlink() to prevent URL from going back into this crawler whenever used has turned off fast
                  * linkcheck for video URLs.
                  */
-                final DownloadLink dl = new DownloadLink(null, null, this.getHost(), contentURL, true);
+                // plugin instance is required to avoid being picked up by this plugin again because hoster and decrypter plugin do match on
+                // same URL pattern
+                final DownloadLink dl = new DownloadLink(plugin, null, this.getHost(), contentURL, true);
                 final String finalfilename = title + "_" + thisQuality + ".mp4";
                 dl.setFinalFileName(finalfilename);
                 dl.setProperty("directlink", finallink);

@@ -357,7 +357,7 @@ public class VKontakteRuHoster extends PluginForHost {
                             /*
                              * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink
                              * for our ID.
-                             *
+                             * 
                              * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                              */
                             /*
@@ -425,6 +425,7 @@ public class VKontakteRuHoster extends PluginForHost {
                                 if (selectedQualities.isEmpty()) {
                                     throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to refresh directurl - Content offline?");
                                 } else {
+                                    logger.info("Qualities:" + selectedQualities);
                                     /* Rare case: User has to delete- and re-add URL via crawler. */
                                     throw new PluginException(LinkStatus.ERROR_FATAL, "Selected quality is not available:ALL|" + linkQuality);
                                 }
@@ -438,6 +439,7 @@ public class VKontakteRuHoster extends PluginForHost {
                                 if (selectedQualities.isEmpty()) {
                                     throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to refresh directurl - Content offline?");
                                 } else {
+                                    logger.info("Qualities:" + selectedQualities);
                                     /* Rare case: User has to delete- and re-add URL via crawler. */
                                     throw new PluginException(LinkStatus.ERROR_FATAL, "Selected quality is not available:" + mode + "|" + quality);
                                 }
