@@ -84,6 +84,7 @@ public class WickedCom extends PluginForDecrypt {
             final ArrayList<DownloadLink> selectedAndFoundQualities = new ArrayList<DownloadLink>();
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(dateFormatted + "_" + title);
+            final String contentID = new Regex(param.getCryptedUrl(), TYPE_VIDEO).getMatch(2);
             for (final Map<String, Object> streamingSource : streamingSources) {
                 final String label = (String) streamingSource.get("label");
                 final String url = (String) streamingSource.get("src");
@@ -94,6 +95,7 @@ public class WickedCom extends PluginForDecrypt {
                 final DownloadLink dl = this.createDownloadlink(url.replace("https://", "m3u8s://"));
                 dl.setFinalFileName(dateFormatted + "_" + title + "_" + label + ".mp4");
                 dl.setAvailable(true);
+                dl.setLinkID(this.getHost() + "_" + contentID + "_" + label);
                 dl._setFilePackage(fp);
                 if (cfg.getBooleanProperty(label, true)) {
                     selectedAndFoundQualities.add(dl);
@@ -107,9 +109,12 @@ public class WickedCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
         } else if (param.getCryptedUrl().matches(TYPE_PHOTO)) {
+            final Regex urlinfo = new Regex(param.getCryptedUrl(), TYPE_PHOTO);
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(new Regex(param.getCryptedUrl(), TYPE_PHOTO).getMatch(0));
+            fp.setName(urlinfo.getMatch(0));
+            final String contentID = urlinfo.getMatch(1);
             final String[] pics = br.getRegex("class=\"imgLink start-image-viewer\" href=\"(https?://[^/]+/[^\"]+)").getColumn(0);
+            int index = 0;
             for (final String pic : pics) {
                 final DownloadLink dl = this.createDownloadlink("directhttp://" + pic);
                 final String fname = Plugin.getFileNameFromURL(new URL(pic));
@@ -117,8 +122,10 @@ public class WickedCom extends PluginForDecrypt {
                     dl.setName(fname);
                 }
                 dl.setAvailable(true);
+                dl.setLinkID(this.getHost() + "_" + contentID + "_" + index);
                 dl._setFilePackage(fp);
                 decryptedLinks.add(dl);
+                index += 1;
             }
             return decryptedLinks;
         } else {
