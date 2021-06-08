@@ -43,7 +43,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wicked.com" }, urls = { "" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wicked.com" }, urls = { "https?://members\\.wicked\\.com/[a-z]{2}/(video/[^/]+/[^/]+/\\d+|picture/[^/]+/\\d+)" })
 public class WickedCom extends PluginForDecrypt {
     public WickedCom(PluginWrapper wrapper) {
         super(wrapper);
