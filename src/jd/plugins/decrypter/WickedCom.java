@@ -42,8 +42,9 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wicked.com" }, urls = { "https?://members\\.wicked\\.com/[a-z]{2}/(video/[^/]+/[^/]+/\\d+|picture/[^/]+/\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wicked.com" }, urls = { "https?://members\\.wicked\\.com/[a-z]{2}/(video/[^/]+/[^/]+/\\d+|dvd/[^/]+/\\d+|picture/[^/]+/\\d+)" })
 public class WickedCom extends PluginForDecrypt {
     public WickedCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,9 +53,14 @@ public class WickedCom extends PluginForDecrypt {
     public static String        DOMAIN_BASE           = "wicked.com";
     public static String        DOMAIN_PREFIX_PREMIUM = "members.";
     private static final String TYPE_VIDEO            = "https?://members\\.wicked\\.com/[a-z]{2}/video/([^/]+)/([^/]+)/(\\d+)";
+    private static final String TYPE_DVD              = "https?://members\\.wicked\\.com/[a-z]{2}/dvd/([^/]+)/(\\d+)";
     private static final String TYPE_PHOTO            = "https?://members\\.wicked\\.com/[a-z]{2}/picture/([^/]+)/(\\d+)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        return this.crawl(param, false);
+    }
+
+    public ArrayList<DownloadLink> crawl(final CryptedLink param, final boolean returnAllVideoQualities) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         final boolean is_logged_in = getUserLogin(false);
@@ -73,18 +79,32 @@ public class WickedCom extends PluginForDecrypt {
          * Users can also perform official downloads but they're not unlocked for all premium users (costs extra lol) so let's just download
          * the streams right away.
          */
-        if (param.getCryptedUrl().matches(TYPE_VIDEO)) {
-            final String playerJson = br.getRegex("window\\.ScenePlayerOptions = (\\{.+\\});window\\.ScenePlayerName").getMatch(0);
-            Map<String, Object> entries = JSonStorage.restoreFromString(playerJson, TypeRef.HASHMAP);
-            entries = (Map<String, Object>) entries.get("playerOptions");
-            final Map<String, Object> sceneInfos = (Map<String, Object>) entries.get("sceneInfos");
-            final String dateFormatted = (String) sceneInfos.get("sceneReleaseDate");
-            final String title = (String) sceneInfos.get("sceneTitle");
+        final PluginForHost hosterplugin = JDUtilities.getPluginForHost(this.getHost());
+        if (param.getCryptedUrl().matches(TYPE_VIDEO) || param.getCryptedUrl().matches(TYPE_DVD)) {
+            final String contentID;
+            Map<String, Object> entries;
+            final String title;
+            final String dateFormatted;
+            if (param.getCryptedUrl().matches(TYPE_DVD)) {
+                contentID = new Regex(param.getCryptedUrl(), TYPE_DVD).getMatch(1);
+                final String playerJson = br.getRegex("var player  = new Cms_Player\\((\\{.*?);\\s+").getMatch(0);
+                entries = JSonStorage.restoreFromString(playerJson, TypeRef.HASHMAP);
+                final Map<String, Object> movieInfos = (Map<String, Object>) entries.get("movieInfos");
+                dateFormatted = (String) movieInfos.get("dvdReleaseDate");
+                title = (String) movieInfos.get("dvdName");
+            } else {
+                contentID = new Regex(param.getCryptedUrl(), TYPE_VIDEO).getMatch(2);
+                final String playerJson = br.getRegex("window\\.ScenePlayerOptions = (\\{.+\\});window\\.ScenePlayerName").getMatch(0);
+                entries = JSonStorage.restoreFromString(playerJson, TypeRef.HASHMAP);
+                entries = (Map<String, Object>) entries.get("playerOptions");
+                final Map<String, Object> sceneInfos = (Map<String, Object>) entries.get("sceneInfos");
+                dateFormatted = (String) sceneInfos.get("sceneReleaseDate");
+                title = (String) sceneInfos.get("sceneTitle");
+            }
             final List<Map<String, Object>> streamingSources = (List<Map<String, Object>>) entries.get("streamingSources");
             final ArrayList<DownloadLink> selectedAndFoundQualities = new ArrayList<DownloadLink>();
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(dateFormatted + "_" + title);
-            final String contentID = new Regex(param.getCryptedUrl(), TYPE_VIDEO).getMatch(2);
             for (final Map<String, Object> streamingSource : streamingSources) {
                 final String label = (String) streamingSource.get("label");
                 final String url = (String) streamingSource.get("src");
@@ -92,7 +112,7 @@ public class WickedCom extends PluginForDecrypt {
                     /* E.g. "auto" */
                     continue;
                 }
-                final DownloadLink dl = this.createDownloadlink(url.replace("https://", "m3u8s://"));
+                final DownloadLink dl = new DownloadLink(hosterplugin, null, this.getHost(), url, true);
                 dl.setFinalFileName(dateFormatted + "_" + title + "_" + label + ".mp4");
                 dl.setAvailable(true);
                 dl.setLinkID(this.getHost() + "_" + contentID + "_" + label);
@@ -115,9 +135,9 @@ public class WickedCom extends PluginForDecrypt {
             final String contentID = urlinfo.getMatch(1);
             final String[] pics = br.getRegex("class=\"imgLink start-image-viewer\" href=\"(https?://[^/]+/[^\"]+)").getColumn(0);
             int index = 0;
-            for (final String pic : pics) {
-                final DownloadLink dl = this.createDownloadlink("directhttp://" + pic);
-                final String fname = Plugin.getFileNameFromURL(new URL(pic));
+            for (final String url : pics) {
+                final DownloadLink dl = new DownloadLink(hosterplugin, null, this.getHost(), url, true);
+                final String fname = Plugin.getFileNameFromURL(new URL(url));
                 if (fname != null) {
                     dl.setName(fname);
                 }

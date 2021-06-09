@@ -16,14 +16,15 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -32,15 +33,17 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wicked.com" }, urls = { "https://wickeddecrypted.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wicked.com" }, urls = { "" })
 public class WickedCom extends PluginForHost {
     public WickedCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -50,21 +53,15 @@ public class WickedCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://ma.wicked.com/docs/terms/";
+        return "https://www.wicked.com/de/terms";
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME                  = false;
-    private static final int     FREE_MAXCHUNKS               = 1;
     private static final int     FREE_MAXDOWNLOADS            = 1;
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    private final String         type_pic                     = ".+\\.jpg.*?";
-    public static final String   html_loggedin                = "class=\"account\\-info\"";
     private String               dllink                       = null;
-    private boolean              server_issues                = false;
-    private boolean              logged_in                    = false;
 
     public static Browser prepBR(final Browser br) {
         br.setFollowRedirects(true);
@@ -83,124 +80,61 @@ public class WickedCom extends PluginForHost {
         return br;
     }
 
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("https://wickeddecrypted", "https://"));
-    }
-
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        dllink = null;
-        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa == null && !link.getDownloadURL().matches(type_pic)) {
-            link.getLinkStatus().setStatusText("Cannot check links without valid premium account");
-            return AvailableStatus.UNCHECKABLE;
-        }
-        if (aa != null) {
-            this.login(aa, false);
-            logged_in = true;
-        } else {
-            logged_in = false;
-        }
-        dllink = link.getDownloadURL();
+        dllink = link.getPluginPatternMatcher();
         URLConnectionAdapter con = null;
         try {
             con = br.openHeadConnection(dllink);
-            if (!this.looksLikeDownloadableContent(con)) {
-                /* Refresh directurl */
-                refreshDirecturl(link);
-                con = br.openHeadConnection(dllink);
-                if (!this.looksLikeDownloadableContent(con)) {
-                    logger.info("Fresh directurl has failed too...");
-                    server_issues = true;
-                    return AvailableStatus.TRUE;
+            if (this.looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
-                /* If user copies url he should always get a valid one too :) */
-                link.setContentUrl(dllink);
+                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                return AvailableStatus.TRUE;
+            } else {
+                logger.info("Cannot perform linkcheck as directurl needs refresh");
             }
-            if (con.getCompleteContentLength() > 0) {
-                link.setVerifiedFileSize(con.getCompleteContentLength());
-            }
-            link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
         } finally {
             try {
                 con.disconnect();
             } catch (final Throwable e) {
             }
         }
-        return AvailableStatus.TRUE;
+        return AvailableStatus.UNCHECKABLE;
     }
 
-    private void refreshDirecturl(final DownloadLink link) throws PluginException, IOException {
-        final String fid = getFID(link);
-        if (fid == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    private void refreshDirecturl(final DownloadLink link) throws Exception {
+        logger.info("Refreshing final downloadurl");
+        final PluginForDecrypt decrypter = getNewPluginForDecryptInstance(getHost());
+        final CryptedLink param = new CryptedLink(link.getContainerUrl(), link);
+        /* 2021-04-24: Handling has been changed so array should only contain the one element we need! */
+        final ArrayList<DownloadLink> items = ((jd.plugins.decrypter.WickedCom) decrypter).crawl(param, true);
+        DownloadLink target = null;
+        for (final DownloadLink tmp : items) {
+            if (StringUtils.equals(link.getLinkID(), tmp.getLinkID())) {
+                target = tmp;
+                break;
+            }
         }
-        if (link.getDownloadURL().matches(type_pic)) {
-            if (logged_in) {
-                this.br.getPage(jd.plugins.decrypter.WickedCom.getPicUrl(fid));
-            } else {
-                this.br.getPage(jd.plugins.decrypter.WickedCom.getVideoUrlFree(fid));
-            }
-            final String number_formatted = link.getStringProperty("picnumber_formatted", null);
-            if (fid == null || number_formatted == null) {
-                /* User added url without decrypter --> Impossible to refresh this directurl! */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (jd.plugins.decrypter.WickedCom.isOffline(this.br)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            /* TODO */
-            return;
-            // final String pictures[] = jd.plugins.decrypter.WickedCom.getPictureArray(this.br);
-            // for (final String finallink : pictures) {
-            // if (finallink.contains(number_formatted + ".jpg")) {
-            // dllink = finallink;
-            // break;
-            // }
-            // }
+        if (target == null) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to refresh directurl - content offline?");
         } else {
-            this.br.getPage(jd.plugins.decrypter.WickedCom.getVideoUrlPremium(fid));
-            final String quality = link.getStringProperty("quality", null);
-            if (quality == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            /* We don't need the exact json source for that! */
-            dllink = PluginJSonUtils.getJsonValue(this.br, quality);
-        }
-        if (dllink == null || !dllink.startsWith("http")) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.info("Successfully refreshed final downloadurl");
+            /* Store new directurl */
+            link.setPluginPatternMatcher(target.getPluginPatternMatcher());
         }
     }
 
-    private String getFID(final DownloadLink dl) {
-        return dl.getStringProperty("fid", null);
+    private boolean isVideoHLS(final DownloadLink link) {
+        return link.getPluginPatternMatcher().contains(".m3u8");
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
-    }
-
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        /* 2016-11-03: Free Users can download image galleries (only). */
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } else if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        downloadLink.setProperty("premium_directlink", dllink);
-        dl.startDownload();
+        throw new AccountRequiredException();
     }
 
     @Override
@@ -281,45 +215,55 @@ public class WickedCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (this.isVideoHLS(link)) {
+            br.getPage(link.getPluginPatternMatcher());
+            if (br.getRequest().getHttpConnection().getResponseCode() != 200) {
+                this.refreshDirecturl(link);
+            }
+            dl = new HLSDownloader(link, br, link.getPluginPatternMatcher());
+            dl.startDownload();
+        } else {
+            /* Photo or http video */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                this.refreshDirecturl(link);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+            }
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                logger.warning("The final dllink seems not to be a file!");
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setProperty("premium_directlink", dllink);
-        dl.startDownload();
     }
 
-    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
-        final boolean is_this_plugin = downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+    public boolean allowHandle(final DownloadLink link, final PluginForHost plugin) {
+        final boolean is_this_plugin = link.getHost().equalsIgnoreCase(plugin.getHost());
         if (is_this_plugin) {
             /* The original plugin is always allowed to download. */
             return true;
         } else {
-            /* Multihosts should not be tried for picture-downloads! */
-            return !downloadLink.getDownloadURL().matches(type_pic);
+            /* Multihosts should not be tried! */
+            return false;
         }
     }
-
-    @Override
-    public String buildExternalDownloadURL(final DownloadLink link, final PluginForHost buildForThisPlugin) {
-        if (StringUtils.equals("premiumize.me", buildForThisPlugin.getHost())) {
-            try {
-                return jd.plugins.decrypter.WickedCom.getVideoUrlFree(getFID(link));
-            } catch (final Throwable ignore) {
-                return null;
-            }
-        } else {
-            return super.buildExternalDownloadURL(link, buildForThisPlugin);
-        }
-    }
+    // @Override
+    // public String buildExternalDownloadURL(final DownloadLink link, final PluginForHost buildForThisPlugin) {
+    // if (StringUtils.equals("premiumize.me", buildForThisPlugin.getHost())) {
+    // try {
+    // return jd.plugins.decrypter.WickedCom.getVideoUrlFree(getFID(link));
+    // } catch (final Throwable ignore) {
+    // return null;
+    // }
+    // } else {
+    // return super.buildExternalDownloadURL(link, buildForThisPlugin);
+    // }
+    // }
 
     @Override
     public String getDescription() {
