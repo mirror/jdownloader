@@ -3294,7 +3294,7 @@ public class LinkCrawler {
             final URL tmp = URLHelper.createURL(url);
             final String urlDecodedPath = URLDecoder.decode(tmp.getPath(), "UTF-8");
             if (!StringUtils.equals(tmp.getPath(), urlDecodedPath)) {
-                url = URLHelper.createURL(tmp.getProtocol(), tmp.getUserInfo(), tmp.getHost(), tmp.getPort(), urlDecodedPath, tmp.getQuery(), tmp.getRef()).toString();
+                url = URLHelper.createURL(tmp.getProtocol(), tmp.getUserInfo(), tmp.getHost(), tmp.getPort(), urlDecodedPath, tmp.getQuery(), tmp.getRef());
             } else {
                 if (!StringUtils.contains(url, tmp.getHost())) {
                     url = tmp.toString();
