@@ -55,7 +55,7 @@ ISO:::[a-f0-9]{75266}4344303031.*:::ISO 9960:::.+\.(iso|img)
 UDF:::[a-f0-9]*4e5352303(3|2).*:::UDF:::.+\.(iso|img|udf)
 PKG:::7F504B47.*:::PS4 PKG:::.+\.(pkg|cnt)
 CNT:::7F434E54.*:::PS4 CNT:::.+\.(pkg|cnt)
-FLV:::464c56.*:::Flv Video:::.+\.flv
+FLV:::464c56.*:::Flv Video:::.((.*\.flv)|(.*\.mp4))
 CSO:::4349534f.*:::Compressed ISO Image:::.+\.cso
 RMF:::2E524D46.*:::RealMediaFile:::.+\.rmvb
 FLAC:::664c6143.*:::FLAC:::.+\.flac

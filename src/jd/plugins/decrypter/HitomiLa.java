@@ -17,14 +17,10 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -39,6 +35,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  *
@@ -99,7 +99,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
             fpName = br.getRegex("<title>([^<>\"]*?) \\| Hitomi\\.la</title>").getMatch(0);
             if (fpName == null) {
                 /* Fallback */
-                fpName = url_name;
+                fpName = URLEncode.decodeURIComponent(url_name);
             }
             // get the image host.
             // retval = subdomain_from_galleryid(g) + retval;
@@ -111,21 +111,21 @@ public class HitomiLa extends antiDDoSForDecrypt {
             }
             final Browser brc = br.cloneBrowser();
             getPage(brc, js);
-            LinkedHashMap<String, Object> entries = null;
+            Map<String, Object> entries = null;
             final Object picsO = JavaScriptEngineFactory.jsonToJavaObject(brc.toString().replace("var galleryinfo = ", ""));
-            final ArrayList<Object> ressourcelist;
-            if (picsO instanceof ArrayList) {
-                ressourcelist = (ArrayList<Object>) picsO;
+            final List<Object> ressourcelist;
+            if (picsO instanceof List) {
+                ressourcelist = (List<Object>) picsO;
             } else {
-                entries = (LinkedHashMap<String, Object>) picsO;
-                ressourcelist = (ArrayList<Object>) entries.get("files");
+                entries = (Map<String, Object>) picsO;
+                ressourcelist = (List<Object>) entries.get("files");
             }
             numberOfPages = ressourcelist.size();
             final DecimalFormat df = numberOfPages > 999 ? new DecimalFormat("0000") : numberOfPages > 99 ? new DecimalFormat("000") : new DecimalFormat("00");
             // boolean checked = false;
             for (final Object picO : ressourcelist) {
                 ++i;
-                final Map<String, String> picInfo = (HashMap<String, String>) picO;
+                final Map<String, String> picInfo = (Map<String, String>) picO;
                 boolean use_new_way = true;
                 final String ext;
                 final String url;
@@ -133,7 +133,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
                     url = url_from_url_from_hash(gallery_id, picInfo, null, null, null);
                     ext = Plugin.getFileNameExtensionFromURL(url);
                 } else {
-                    entries = (LinkedHashMap<String, Object>) picO;
+                    entries = (Map<String, Object>) picO;
                     final String hash = (String) entries.get("hash");
                     final long haswebp = JavaScriptEngineFactory.toLong(entries.get("haswebp"), 0);
                     final String type;
@@ -222,16 +222,16 @@ public class HitomiLa extends antiDDoSForDecrypt {
             retval = base;
         }
         int number_of_frontends = 3;
-        Matcher m = SUBDOMAIN_FROM_URL_PATTERN.matcher(url);
+        final Matcher m = SUBDOMAIN_FROM_URL_PATTERN.matcher(url);
         if (!m.find()) {
             return "a";
         }
         try {
             int g = Integer.parseInt(m.group(1), 16);
-            if (g < 0x30) {
+            if (g < 0x80) {
                 number_of_frontends = 2;
             }
-            if (g < 0x09) {
+            if (g < 0x59) {
                 g = 1;
             }
             retval = subdomain_from_galleryid(g, number_of_frontends) + retval;
