@@ -14,11 +14,14 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -41,7 +44,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
@@ -117,25 +119,27 @@ public class HLSDownloader extends DownloadInterface {
         FILE
     }
 
-    private final AtomicLong                     bytesWritten         = new AtomicLong(0);
-    private DownloadLinkDownloadable             downloadable;
-    private DownloadLink                         link;
-    private long                                 startTimeStamp       = -1;
-    private LogInterface                         logger;
-    private URLConnectionAdapter                 currentConnection;
-    private ManagedThrottledConnectionHandler    connectionHandler;
-    private File                                 outputCompleteFile;
-    private PluginException                      caughtPluginException;
-    private String                               m3uUrl;
-    private String                               persistentParameters;
-    private HttpServer                           server;
-    private Browser                              sourceBrowser;
-    private long                                 processID;
-    private List<M3U8Playlist>                   m3u8Playlists;
-    private final List<PartFile>                 outputPartFiles      = new ArrayList<PartFile>();
-    private volatile Map<String, File>           fileMap              = new HashMap<String, File>();
-    private final AtomicInteger                  currentPlayListIndex = new AtomicInteger(0);
-    private final HashMap<String, SecretKeySpec> aes128Keys           = new HashMap<String, SecretKeySpec>();
+    private final AtomicLong                                 bytesWritten         = new AtomicLong(0);
+    private DownloadLinkDownloadable                         downloadable;
+    private DownloadLink                                     link;
+    private long                                             startTimeStamp       = -1;
+    private LogInterface                                     logger               = LogController.CL();
+    private URLConnectionAdapter                             currentConnection;
+    private ManagedThrottledConnectionHandler                connectionHandler;
+    private File                                             outputCompleteFile;
+    private PluginException                                  caughtPluginException;
+    private String                                           m3uUrl;
+    private String                                           persistentParameters;
+    private HttpServer                                       server;
+    private Browser                                          sourceBrowser;
+    private long                                             processID;
+    private List<M3U8Playlist>                               m3u8Playlists;
+    private final List<PartFile>                             outputPartFiles      = new ArrayList<PartFile>();
+    private volatile Map<String, File>                       fileMap              = new HashMap<String, File>();
+    private final AtomicInteger                              currentPlayListIndex = new AtomicInteger(0);
+    private final HashMap<String, SecretKeySpec>             aes128Keys           = new HashMap<String, SecretKeySpec>();
+    private final WeakHashMap<M3U8Segment, M3U8SEGMENTSTATE> m3u8SegmentsStates   = new WeakHashMap<M3U8Playlist.M3U8Segment, M3U8SEGMENTSTATE>();
+    private volatile Thread                                  ffmpegThread;
 
     public CONCATSOURCE getConcatSource() {
         return CONCATSOURCE.HTTP;
@@ -158,7 +162,7 @@ public class HLSDownloader extends DownloadInterface {
         this.m3uUrl = Request.getLocation(m3uUrl, br.getRequest());
         this.sourceBrowser = br.cloneBrowser();
         this.link = link;
-        logger = initLogger(link);
+        logger = initLogger();
         connectionHandler = new ManagedThrottledConnectionHandler() {
             @Override
             public void addThrottledConnection(ThrottledConnection con) {
@@ -271,8 +275,8 @@ public class HLSDownloader extends DownloadInterface {
         }
     }
 
-    public LogInterface initLogger(final DownloadLink link) {
-        final PluginForHost plg = link.getLivePlugin();
+    protected LogInterface initLogger() {
+        final Plugin plg = Plugin.getCurrentActivePlugin();
         LogInterface log = null;
         if (plg != null) {
             log = plg.getLogger();
@@ -281,17 +285,20 @@ public class HLSDownloader extends DownloadInterface {
             log = sourceBrowser.getLogger();
         }
         if (log == null) {
-            log = LogController.TRASH;
+            log = LogController.CL();
         }
         return log;
     }
 
     protected void terminate() {
         if (terminated.getAndSet(true) == false) {
+            final Thread thread = ffmpegThread;
+            if (thread != null) {
+                logger.log(new Exception("Interrupt ffmpegThread:" + thread));
+                thread.interrupt();
+            }
             if (!externalDownloadStop()) {
-                if (logger != null) {
-                    logger.severe("A critical Downloaderror occured. Terminate...");
-                }
+                logger.log(new Exception("A critical Downloaderror occured. Terminate..."));
             }
         }
     }
@@ -312,6 +319,16 @@ public class HLSDownloader extends DownloadInterface {
                 public LogInterface getLogger() {
                     return HLSDownloader.this.logger;
                 }
+
+                @Override
+                public String runCommand(FFMpegProgress progress, ArrayList<String> commandLine) throws IOException, InterruptedException, FFMpegException {
+                    ffmpegThread = Thread.currentThread();
+                    try {
+                        return super.runCommand(progress, commandLine);
+                    } finally {
+                        ffmpegThread = null;
+                    }
+                }
             };
             if (!ffprobe.isAvailable()) {
                 logger.info("FFProbe is not available");
@@ -325,10 +342,7 @@ public class HLSDownloader extends DownloadInterface {
                 return ffprobe.getStreamInfo("http://127.0.0.1:" + server.getPort() + "/m3u8?id=" + processID);
             }
         } finally {
-            final HttpServer server = this.server;
-            this.server = null;
-            if (server != null) {
-                server.stop();
+            if (stopHttpServer()) {
                 waitForProcessingRequests();
             }
         }
@@ -339,8 +353,9 @@ public class HLSDownloader extends DownloadInterface {
             synchronized (requestsInProcess) {
                 if (requestsInProcess.get() == 0) {
                     break;
+                } else {
+                    requestsInProcess.wait(50);
                 }
-                requestsInProcess.wait(50);
             }
         }
     }
@@ -423,6 +438,16 @@ public class HLSDownloader extends DownloadInterface {
                 @Override
                 public LogInterface getLogger() {
                     return HLSDownloader.this.logger;
+                }
+
+                @Override
+                public String runCommand(FFMpegProgress progress, ArrayList<String> commandLine) throws IOException, InterruptedException, FFMpegException {
+                    ffmpegThread = Thread.currentThread();
+                    try {
+                        return super.runCommand(progress, commandLine);
+                    } finally {
+                        ffmpegThread = null;
+                    }
                 }
 
                 @Override
@@ -557,17 +582,11 @@ public class HLSDownloader extends DownloadInterface {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, e.getMessage(), -1, e);
             }
         } catch (Exception e) {
-            if (logger != null) {
-                logger.log(e);
-            }
+            logger.log(e);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, e.getMessage(), -1, e);
         } finally {
             // link.removePluginProgress(set);
-            final HttpServer server = this.server;
-            this.server = null;
-            if (server != null) {
-                server.stop();
-            }
+            stopHttpServer();
         }
     }
 
@@ -590,6 +609,16 @@ public class HLSDownloader extends DownloadInterface {
                         } else {
                             throw e;
                         }
+                    }
+                }
+
+                @Override
+                public String runCommand(FFMpegProgress progress, ArrayList<String> commandLine) throws IOException, InterruptedException, FFMpegException {
+                    ffmpegThread = Thread.currentThread();
+                    try {
+                        return super.runCommand(progress, commandLine);
+                    } finally {
+                        ffmpegThread = null;
                     }
                 }
 
@@ -654,9 +683,7 @@ public class HLSDownloader extends DownloadInterface {
                             downloadable.setDownloadTotalBytes(Math.max(M3U8Playlist.getEstimatedSize(m3u8Playlists), estimatedSize));
                         }
                     } catch (Throwable e) {
-                        if (logger != null) {
-                            logger.log(e);
-                        }
+                        logger.log(e);
                     }
                 };
             };
@@ -709,9 +736,7 @@ public class HLSDownloader extends DownloadInterface {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, e.getMessage(), -1, e);
             }
         } catch (Exception e) {
-            if (logger != null) {
-                logger.log(e);
-            }
+            logger.log(e);
             throw e;
         } finally {
             currentPlayListIndex.set(0);
@@ -723,12 +748,19 @@ public class HLSDownloader extends DownloadInterface {
                 }
             } finally {
                 // link.removePluginProgress(set);
-                final HttpServer server = this.server;
-                this.server = null;
-                if (server != null) {
-                    server.stop();
-                }
+                stopHttpServer();
             }
+        }
+    }
+
+    protected boolean stopHttpServer() {
+        final HttpServer server = this.server;
+        this.server = null;
+        if (server != null) {
+            server.stop();
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -933,6 +965,14 @@ public class HLSDownloader extends DownloadInterface {
         }
     }
 
+    protected HttpServer startHttpServer() throws IOException {
+        final HttpServer server = new HttpServer(0);
+        server.setLocalhostOnly(true);
+        this.server = server;
+        server.start();
+        return server;
+    }
+
     private void initPipe(final AbstractFFmpegBinary ffmpeg) throws IOException {
         final LinkedList<MeteredThrottledInputStream> connectedMeteredThrottledInputStream = new LinkedList<MeteredThrottledInputStream>();
         final DelayedRunnable delayedCleanup = new DelayedRunnable(5000) {
@@ -952,10 +992,7 @@ public class HLSDownloader extends DownloadInterface {
                 }
             }
         };
-        server = new HttpServer(0);
-        server.setLocalhostOnly(true);
-        final HttpServer finalServer = server;
-        server.start();
+        final HttpServer finalServer = startHttpServer();
         finalServer.registerRequestHandler(new HttpRequestHandler() {
             final byte[] readBuf = new byte[512];
 
@@ -963,9 +1000,7 @@ public class HLSDownloader extends DownloadInterface {
             public boolean onPostRequest(PostRequest request, HttpResponse response) {
                 requestsInProcess.incrementAndGet();
                 try {
-                    if (logger != null) {
-                        logger.info(request.toString());
-                    }
+                    logger.info(request.toString());
                     if (!validateID(request)) {
                         return false;
                     }
@@ -976,9 +1011,7 @@ public class HLSDownloader extends DownloadInterface {
                         return true;
                     }
                 } catch (Exception e) {
-                    if (logger != null) {
-                        logger.log(e);
-                    }
+                    logger.log(e);
                 } finally {
                     synchronized (requestsInProcess) {
                         requestsInProcess.decrementAndGet();
@@ -1056,7 +1089,7 @@ public class HLSDownloader extends DownloadInterface {
                                 if (fileID == null) {
                                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                                 } else {
-                                    sb.append("http://127.0.0.1:" + server.getPort() + "/file?fileID=" + fileID + "&id=" + processID);
+                                    sb.append("http://127.0.0.1:" + finalServer.getPort() + "/file?fileID=" + fileID + "&id=" + processID);
                                 }
                                 break;
                             }
@@ -1146,6 +1179,16 @@ public class HLSDownloader extends DownloadInterface {
                                 } else {
                                     requestLogger.info("Forward segment:" + (index + 1) + "/" + playList.size());
                                     downloadURL = segment.getUrl();
+                                }
+                                if (checkAbortDownloadCondition(playList, segment)) {
+                                    requestLogger.info("Abort segment:" + (index + 1) + "/" + playList.size());
+                                    response.setResponseCode(ResponseCode.get(404));
+                                    return true;
+                                }
+                                synchronized (m3u8SegmentsStates) {
+                                    if (!m3u8SegmentsStates.containsKey(segment)) {
+                                        m3u8SegmentsStates.put(segment, M3U8SEGMENTSTATE.UNKNOWN);
+                                    }
                                 }
                             } catch (final NumberFormatException e) {
                                 requestLogger.log(e);
@@ -1381,7 +1424,11 @@ public class HLSDownloader extends DownloadInterface {
                                     } finally {
                                         try {
                                             if (segment != null) {
-                                                if (connection.getResponseCode() == 200 || connection.getResponseCode() == 206) {
+                                                final boolean validResponseCode = connection.getResponseCode() == 200 || connection.getResponseCode() == 206;
+                                                synchronized (m3u8SegmentsStates) {
+                                                    m3u8SegmentsStates.put(segment, validResponseCode ? M3U8SEGMENTSTATE.ONLINE : M3U8SEGMENTSTATE.FAILED);
+                                                }
+                                                if (validResponseCode) {
                                                     segment.setSize(Math.max(length, fileBytesMap.getSize()));
                                                 }
                                                 logger.severe("Segment(" + segmentIndex + "/" + (playList != null ? playList.size() : "~") + "):" + segment.getUrl() + "|Loaded:" + segment.getLoaded() + "|Size:" + segment.getSize());
@@ -1412,9 +1459,7 @@ public class HLSDownloader extends DownloadInterface {
                     requestLogger.log(e);
                 } finally {
                     requestLogger.info("END:" + requestOkay + ">" + request.getRequestedURL());
-                    if (logger != null) {
-                        logger.info(requestLogger.toString());
-                    }
+                    logger.info(requestLogger.toString());
                     synchronized (requestsInProcess) {
                         requestsInProcess.decrementAndGet();
                         requestsInProcess.notifyAll();
@@ -1600,6 +1645,19 @@ public class HLSDownloader extends DownloadInterface {
         }
     }
 
+    public static enum M3U8SEGMENTSTATE {
+        UNKNOWN,
+        ONLINE,
+        FAILED
+    }
+
+    protected M3U8SEGMENTSTATE getM3U8SegmentState(final M3U8Segment segment) {
+        synchronized (m3u8SegmentsStates) {
+            final M3U8SEGMENTSTATE ret = m3u8SegmentsStates.get(segment);
+            return ret;
+        }
+    }
+
     private boolean handleErrors() throws PluginException {
         if (externalDownloadStop() && !isAcceptDownloadStopAsValidEnd()) {
             return false;
@@ -1677,12 +1735,33 @@ public class HLSDownloader extends DownloadInterface {
         return currentConnection;
     }
 
+    protected boolean checkAbortDownloadCondition(M3U8Playlist playList, M3U8Segment segment) {
+        if (externalDownloadStop()) {
+            return true;
+        } else {
+            final int index = playList.indexOf(segment);
+            if (index != -1) {
+                final Set<M3U8Segment> failed = new HashSet<M3U8Segment>();
+                for (int checkPreviousSegmentIndex = index - 1; checkPreviousSegmentIndex >= 0; checkPreviousSegmentIndex--) {
+                    final M3U8Segment check = playList.getSegment(checkPreviousSegmentIndex);
+                    if (getM3U8SegmentState(check) != null && !isM3U8SegmentLoaded(check)) {
+                        failed.add(check);
+                        if (failed.size() > 5) {
+                            logger.info("Too many failed segments:" + failed);
+                            terminate();
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+    }
+
     @Override
     public void stopDownload() {
         if (abort.getAndSet(true) == false) {
-            if (logger != null) {
-                logger.info("externalStop recieved");
-            }
+            logger.info("externalStop recieved");
             terminate();
         }
     }
