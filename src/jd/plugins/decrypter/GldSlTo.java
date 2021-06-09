@@ -17,7 +17,16 @@ package jd.plugins.decrypter;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
+
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.components.config.GldSlToConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -29,10 +38,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class GldSlTo extends antiDDoSForDecrypt {
@@ -80,29 +85,86 @@ public class GldSlTo extends antiDDoSForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<title>\\s*([^<>\"]*?)\\s*\\&raquo; goldesel\\.to\\s*</title>").getMatch(0);
+        String fpName = br.getRegex(">Release\\s*:\\s*([^<>]+)<").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("<title>\\s*([^<>\"]*?)\\s*</title>").getMatch(0);
         }
         if (fpName == null) {
-            fpName = new Regex(br.getURL(), "goldesel\\.to/.*/(.+)").getMatch(0);
+            fpName = br.getRegex("<title>\\s*([^<>\"]*?)\\s*</title>").getMatch(0);
+        }
+        if (fpName == null) {
+            fpName = new Regex(br.getURL(), "https?://[^/]+/.*/(.+)").getMatch(0);
         }
         fpName = Encoding.htmlDecode(fpName).trim();
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
-        String[] decryptIDs = br.getRegex("data\\s*=\\s*\"([^<>\"]*?)\"").getColumn(0);
-        if (decryptIDs == null || decryptIDs.length == 0) {
+        final String[] decryptIDs = br.getRegex("data\\s*=\\s*\"([^<>\"]*?)\"").getColumn(0);
+        if (decryptIDs.length == 0) {
             /* 2020-10-19: Some URLs only got P2P/usenet sources available! */
             logger.info("Failed to find any OCH mirrors");
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
+        final String[] hosterPrioList;
+        String userHosterPrioListStr = PluginJsonConfig.get(GldSlToConfig.class).getHosterPriorityString();
+        if (userHosterPrioListStr != null) {
+            userHosterPrioListStr = userHosterPrioListStr.replace(" ", "");
+            hosterPrioList = userHosterPrioListStr.split(",");
+        } else {
+            hosterPrioList = null;
+        }
+        final HashMap<String, List<String>> packages = new HashMap<String, List<String>>();
+        for (final String decryptID : decryptIDs) {
+            /* Structure of each ID: 1;123456;12345;12345;<hostername>;<season>;<episode> */
+            final String[] idInfo = decryptID.split(";");
+            final String hoster = idInfo[4];
+            final String uniqueID = decryptID.replace(";" + hoster, "");
+            if (packages.containsKey(uniqueID)) {
+                packages.get(uniqueID).add(decryptID);
+            } else {
+                final List<String> newList = new ArrayList<String>();
+                newList.add(decryptID);
+                packages.put(uniqueID, newList);
+            }
+        }
+        logger.info("Total number of decryptIDs: " + decryptIDs.length);
+        final List<String> userAllowedDecryptIDs = new ArrayList<String>();
+        /* Now decide which mirrors we actually want to crawl based on a user setting. */
+        for (final Entry<String, List<String>> entry : packages.entrySet()) {
+            final List<String> mirrorIDs = entry.getValue();
+            if (mirrorIDs.size() == 1) {
+                /* Only 1 host available -> Crawl that */
+                userAllowedDecryptIDs.add(mirrorIDs.get(0));
+            } else if (hosterPrioList != null) {
+                /* Try to prefer user selected hosts/mirrors */
+                boolean hasFoundPreferredHost = false;
+                mirrorLoop: for (final String userPreferredHost : hosterPrioList) {
+                    for (final String mirrorID : mirrorIDs) {
+                        final String[] idInfo = mirrorID.split(";");
+                        final String hoster = idInfo[4];
+                        if (hoster.equalsIgnoreCase(userPreferredHost)) {
+                            userAllowedDecryptIDs.add(mirrorID);
+                            hasFoundPreferredHost = true;
+                            break mirrorLoop;
+                        }
+                    }
+                }
+                if (!hasFoundPreferredHost) {
+                    /* Fallback */
+                    userAllowedDecryptIDs.addAll(mirrorIDs);
+                }
+            } else {
+                /* Crawl all mirrors */
+                userAllowedDecryptIDs.addAll(mirrorIDs);
+            }
+        }
+        logger.info("Number of userAllowedDecryptIDs: " + userAllowedDecryptIDs.size());
         br.getHeaders().put("Accept", "*/*");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         final int maxc = decryptIDs.length;
         int counter = 1;
         boolean captchafailed = false;
-        for (final String decryptID : decryptIDs) {
+        for (final String decryptID : userAllowedDecryptIDs) {
             logger.info("Crawling item " + counter + " / " + decryptIDs.length + " | " + decryptID);
             // br.setCookie("goldesel.to", "__utma", "222304525.384242273.1432990594.1432990594.1433159390.2");
             // br.setCookie("goldesel.to", "__utmz", "222304525.1432990594.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none)");
@@ -198,5 +260,10 @@ public class GldSlTo extends antiDDoSForDecrypt {
 
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return GldSlToConfig.class;
     }
 }
