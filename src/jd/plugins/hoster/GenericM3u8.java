@@ -35,7 +35,7 @@ import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "M3u8" }, urls = { "m3u8s?://.+?(\\.m3u8?(\\?.+)?|$)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "M3u8" }, urls = { "m3u8s?://.+?\\.m3u8?($|(?:\\?|%3F)[^\\s<>\"']*|#.*)" })
 public class GenericM3u8 extends PluginForHost {
     public static final String PRESET_NAME_PROPERTY = "preSetName";
 
