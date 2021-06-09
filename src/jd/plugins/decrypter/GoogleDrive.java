@@ -386,7 +386,6 @@ public class GoogleDrive extends PluginForDecrypt {
         logger.info("Using key: " + key);
         // final String eof = br.getRegex("\\|eof\\|([^<>\"]*)\\\\x22").getMatch(0);
         final String teamDriveID = new Regex(json_src, ",null,\\d{10,},\\d+,\"([A-Za-z0-9_]{10,30})\",null,null").getMatch(0);
-        /* TODO: Make us of this to cleanup requests in order to get a better overview */
         final UrlQuery query = new UrlQuery();
         query.add("openDrive", "false");
         query.add("reason", "102");
