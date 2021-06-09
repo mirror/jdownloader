@@ -123,7 +123,7 @@ public class HLSDownloader extends DownloadInterface {
     private DownloadLinkDownloadable                         downloadable;
     private DownloadLink                                     link;
     private long                                             startTimeStamp       = -1;
-    private LogInterface                                     logger               = LogController.CL();
+    private final LogInterface                               logger               = initLogger();
     private URLConnectionAdapter                             currentConnection;
     private ManagedThrottledConnectionHandler                connectionHandler;
     private File                                             outputCompleteFile;
@@ -162,7 +162,6 @@ public class HLSDownloader extends DownloadInterface {
         this.m3uUrl = Request.getLocation(m3uUrl, br.getRequest());
         this.sourceBrowser = br.cloneBrowser();
         this.link = link;
-        logger = initLogger();
         connectionHandler = new ManagedThrottledConnectionHandler() {
             @Override
             public void addThrottledConnection(ThrottledConnection con) {
@@ -280,9 +279,6 @@ public class HLSDownloader extends DownloadInterface {
         LogInterface log = null;
         if (plg != null) {
             log = plg.getLogger();
-        }
-        if (log == null && sourceBrowser != null) {
-            log = sourceBrowser.getLogger();
         }
         if (log == null) {
             log = LogController.CL();
