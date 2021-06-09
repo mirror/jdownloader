@@ -79,25 +79,28 @@ public class VivoSx extends antiDDoSForHost {
         if (br.getHttpConnection().getResponseCode() == 204) {
             /* 2021-02-22: hmm */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 204 no content");
-        } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">The file you have requested does not exist")) {
+        } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*The file you have requested does not exist")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String streamContent = br.getRegex("\"stream-content\"\\s*data-name\\s*=\\s*\"(.*?)\"").getMatch(0);
-        final String dataType = br.getRegex("data\\-type=\"video\">(Watch|Listen to) ([^<>\"]*?)(\\&hellip;)?(\\&nbsp;)?<strong>").getMatch(1);
-        String filename = br.getRegex("<h1>Watch ([^<>\"]+)(\\&nbsp;)?<").getMatch(0);
+        final String dataType = encodeUnicode(Encoding.htmlDecode(br.getRegex("data\\-type=\"video\">.*?(Watch|Listen to)\\s*([^<>\"]*?)(\\&hellip;)?(\\&nbsp;)?<strong>").getMatch(1)));
+        String filename = encodeUnicode(Encoding.htmlDecode(br.getRegex("<title>.*?(?:Watch|Listen to)\\s*(?:&#34;)?([^<>\"]*?)(?:&#34;)?\\s*<").getMatch(0)));
         if (filename == null) {
             filename = dataType;
         }
-        if (StringUtils.startsWithCaseInsensitive(streamContent, filename) || StringUtils.startsWithCaseInsensitive(streamContent, dataType) || filename.endsWith("&hellip;&nbsp;") || filename.endsWith("...")) {
+        if (StringUtils.startsWithCaseInsensitive(streamContent, filename) || StringUtils.startsWithCaseInsensitive(streamContent, dataType)) {
+            filename = streamContent;
+        } else if (streamContent != null && streamContent.length() > filename.length() && filename.contains("…")) {
             filename = streamContent;
         }
-        final String filesize = br.getRegex("<strong>\\((\\d+(\\.\\d{2})? (KB|MB|GB))\\)</strong>").getMatch(0);
+        final String filesize = br.getRegex("<strong>\\s*\\((\\d+(\\.\\d{2})?\\s*(KB|MB|GB))\\)\\s*</strong>").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        filename = encodeUnicode(Encoding.htmlDecode(filename.trim()));
-        if (filename.endsWith(" (...)")) {
-            filename = filename.replace(" (...)", ".mp4");
+        if (filename.endsWith("(...)")) {
+            filename = filename.replace("(...)", ".mp4");
+        } else if (filename.endsWith("(…)")) {
+            filename = filename.replace("(…)", ".mp4");
         }
         link.setFinalFileName(filename);
         link.setDownloadSize(SizeFormatter.getSize(filesize));

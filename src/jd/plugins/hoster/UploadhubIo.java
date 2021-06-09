@@ -48,8 +48,13 @@ public class UploadhubIo extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "uploadhub.io" });
+        ret.add(new String[] { "uploadhub.ws", "uploadhub.io" });
         return ret;
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        return this.rewriteHost(getPluginDomains(), null);
     }
 
     public static String[] getAnnotationNames() {
