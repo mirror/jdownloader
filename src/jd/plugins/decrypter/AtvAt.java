@@ -387,7 +387,7 @@ public class AtvAt extends PluginForDecrypt {
                                 /* try to get the video quality */
                                 final HLSDownloader downloader = new HLSDownloader(link, br, link.getDownloadURL()) {
                                     @Override
-                                    public LogInterface initLogger(DownloadLink link) {
+                                    protected LogInterface initLogger() {
                                         return getLogger();
                                     }
                                 };

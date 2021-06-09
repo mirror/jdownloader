@@ -38,7 +38,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "m3u8" }, urls = { "https?://.+\\.m3u8($|\\?[^\\s<>\"']*|#.*)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "m3u8" }, urls = { "https?://.+\\.m3u8($|(?:\\?|%3F)[^\\s<>\"']*|#.*)" })
 public class GenericM3u8Decrypter extends PluginForDecrypt {
     @Override
     public Boolean siteTesterDisabled() {
@@ -154,7 +154,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
             URLConnectionAdapter con = null;
             try {
                 con = brc.openRequestConnection(new HeadRequest(url));
-                if (con.isOK() && (StringUtils.equalsIgnoreCase(con.getContentType(), "application/vnd.apple.mpegurl") || StringUtils.endsWithCaseInsensitive(con.getURL().getPath(), ".m3u8"))) {
+                if (con.isOK() && ((StringUtils.equalsIgnoreCase(con.getContentType(), "application/vnd.apple.mpegurl") || (StringUtils.equalsIgnoreCase(con.getContentType(), "application/x-mpegURL")) || StringUtils.endsWithCaseInsensitive(con.getURL().getPath(), ".m3u8")))) {
                     link.setPluginPatternMatcher("m3u8" + url.toString().substring(4));
                     results.add(link);
                 }
