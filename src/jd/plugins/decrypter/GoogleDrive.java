@@ -23,6 +23,7 @@ import java.util.Map;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -372,98 +373,75 @@ public class GoogleDrive extends PluginForDecrypt {
                 results = json_src.split("\\][\r\n]+,\\[");
             }
         }
-        if (results != null && results.length != 0) {
-            /* Handle the json way. */
-            String key = null;
-            final String keys[] = br.getRegex("\"([A-Za-z0-9\\-_]{6})([A-Za-z0-9\\-_]+)\"\\s*,\\s*\"\\1[A-Za-z0-9\\-_]+\"\\s*,\\s*null").getRow(0);
-            logger.info("Keys:" + Arrays.asList(keys));
-            if (keys != null && keys.length == 2) {
-                key = keys[0] + keys[1];
-            }
-            if (StringUtils.isEmpty(key)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            logger.info("Using key: " + key);
-            // final String eof = br.getRegex("\\|eof\\|([^<>\"]*)\\\\x22").getMatch(0);
-            final String teamDriveID = new Regex(json_src, ",null,\\d{10,},\\d+,\"([A-Za-z0-9_]{10,30})\",null,null").getMatch(0);
-            String nextPageToken = null;
-            boolean firstRequest = true;
-            int page = -1;
-            /* TODO: Make us of this to cleanup requests in order to get a better overview */
-            // final UrlQuery baseQuery = new UrlQuery();
-            // baseQuery.add("openDrive", "false");
-            // baseQuery.add("reason", "102");
-            // baseQuery.add("syncType", "0");
-            // baseQuery.add("errorRecovery", "false");
-            // baseQuery.add("q", "TODO");
-            // baseQuery.add("appDataFilter", "NO_APP_DATA");
-            // baseQuery.add("spaces", "drive");
-            // baseQuery.add("maxResults", "50");
-            // baseQuery.add("orderBy", "folder%2Ctitle_natural%20asc");
-            // baseQuery.add("retryCount", "0");
-            // baseQuery.add("key", key);
-            // /* Optional params (team drives only) */
-            // baseQuery.add("supportsTeamDrives", "true");
-            // baseQuery.add("includeTeamDriveItems", "true");
-            // baseQuery.add("teamDriveId", "TODO");
-            // baseQuery.add("corpora", "teamDrive");
-            do {
-                page++;
-                logger.info("Crawling page: " + (page + 1));
-                final Browser brc = br.cloneBrowser();
-                brc.addAllowedResponseCodes(400);
-                sleep(500, param);
-                /* Most common reason of failure: teamDriveID was not found thus the request is wrong! */
-                if (firstRequest) {
-                    /* 2017-05-10: Updated these requests / URLs! */
-                    /* Required to get the first "nextPageToken". */
-                    if (teamDriveID != null) {
-                        /* 2020-10-08 */
-                        brc.getPage("https://clients6.google.com/drive/v2beta/files?openDrive=false&reason=102&syncType=0&errorRecovery=false&q=trashed%20%3D%20false%20and%20'" + folderID
-                                + "'%20in%20parents&fields=kind%2CnextPageToken%2Citems(kind%2CmodifiedDate%2CmodifiedByMeDate%2ClastViewedByMeDate%2CfileSize%2Cowners(kind%2CpermissionId%2CdisplayName%2Cpicture)%2ClastModifyingUser(kind%2CpermissionId%2CdisplayName%2Cpicture)%2ChasThumbnail%2CthumbnailVersion%2Ctitle%2Cid%2Cshared%2CsharedWithMeDate%2CuserPermission(role)%2CexplicitlyTrashed%2CmimeType%2CquotaBytesUsed%2Ccopyable%2CfileExtension%2CsharingUser(kind%2CpermissionId%2CdisplayName%2Cpicture)%2Cspaces%2Cversion%2CteamDriveId%2ChasAugmentedPermissions%2CcreatedDate%2CtrashingUser(kind%2CpermissionId%2CdisplayName%2Cpicture)%2CtrashedDate%2Cparents(id)%2CshortcutDetails(targetId%2CtargetMimeType%2CtargetLookupStatus)%2Ccapabilities(canCopy%2CcanDownload%2CcanEdit%2CcanAddChildren%2CcanDelete%2CcanRemoveChildren%2CcanShare%2CcanTrash%2CcanRename%2CcanReadTeamDrive%2CcanMoveTeamDriveItem)%2Clabels(starred%2Ctrashed%2Crestricted%2Cviewed))%2CincompleteSearch&appDataFilter=NO_APP_DATA&spaces=drive&maxResults=50&supportsTeamDrives=true&includeTeamDriveItems=true&teamDriveId="
-                                + teamDriveID + "&corpora=teamDrive&orderBy=folder%2Ctitle_natural%20asc&retryCount=0&key=" + key);
-                    } else {
-                        brc.getPage("https://clients6.google.com/drive/v2beta/files?openDrive=false&reason=102&syncType=0&errorRecovery=false&q=trashed%20%3D%20false%20and%20'" + folderID
-                                + "'%20in%20parents&fields=kind%2CnextPageToken%2Citems(kind%2Ctitle%2CmimeType%2CcreatedDate%2CmodifiedDate%2CmodifiedByMeDate%2ClastViewedByMeDate%2CfileSize%2ClastModifyingUser(kind%2C%20displayName%2C%20picture%2C%20permissionId%2C%20emailAddress)%2ChasThumbnail%2CthumbnailVersion%2CiconLink%2Cid%2Cshared%2CsharedWithMeDate%2CuserPermission(role)%2CexplicitlyTrashed%2CquotaBytesUsed%2Cshareable%2Ccopyable%2CfileExtension%2CsharingUser(kind%2CdisplayName%2Cpicture%2CpermissionId%2CemailAddress)%2Cspaces%2Ceditable%2Cversion%2CteamDriveId%2ChasAugmentedPermissions%2CtrashingUser(kind%2CdisplayName%2Cpicture%2CpermissionId%2CemailAddress)%2CtrashedDate%2Cparents(id)%2Clabels(starred%2Chidden%2Ctrashed%2Crestricted%2Cviewed)%2Cowners(permissionId%2CdisplayName%2Cpicture%2Ckind)%2Ccapabilities(canCopy%2CcanDownload%2CcanEdit%2CcanAddChildren%2CcanDelete%2CcanRemoveChildren%2CcanShare%2CcanTrash%2CcanRename%2CcanReadTeamDrive%2CcanMoveTeamDriveItem))%2CincompleteSearch&appDataFilter=NO_APP_DATA&spaces=DRIVE&maxResults=50&orderBy=folder%2Ctitle%20asc&key="
-                                + key);
-                    }
-                    firstRequest = false;
-                } else {
-                    if (teamDriveID != null) {
-                        /* 2020-10-08 */
-                        brc.getPage("https://clients6.google.com/drive/v2beta/files?openDrive=false&reason=102&syncType=0&errorRecovery=false&q=trashed%20%3D%20false%20and%20'" + folderID
-                                + "'%20in%20parents&fields=kind%2CnextPageToken%2Citems(kind%2CmodifiedDate%2CmodifiedByMeDate%2ClastViewedByMeDate%2CfileSize%2Cowners(kind%2CpermissionId%2CdisplayName%2Cpicture)%2ClastModifyingUser(kind%2CpermissionId%2CdisplayName%2Cpicture)%2ChasThumbnail%2CthumbnailVersion%2Ctitle%2Cid%2Cshared%2CsharedWithMeDate%2CuserPermission(role)%2CexplicitlyTrashed%2CmimeType%2CquotaBytesUsed%2Ccopyable%2CfileExtension%2CsharingUser(kind%2CpermissionId%2CdisplayName%2Cpicture)%2Cspaces%2Cversion%2CteamDriveId%2ChasAugmentedPermissions%2CcreatedDate%2CtrashingUser(kind%2CpermissionId%2CdisplayName%2Cpicture)%2CtrashedDate%2Cparents(id)%2CshortcutDetails(targetId%2CtargetMimeType%2CtargetLookupStatus)%2Ccapabilities(canCopy%2CcanDownload%2CcanEdit%2CcanAddChildren%2CcanDelete%2CcanRemoveChildren%2CcanShare%2CcanTrash%2CcanRename%2CcanReadTeamDrive%2CcanMoveTeamDriveItem)%2Clabels(starred%2Ctrashed%2Crestricted%2Cviewed))%2CincompleteSearch&appDataFilter=NO_APP_DATA&spaces=drive&maxResults=50&supportsTeamDrives=true&includeTeamDriveItems=true&teamDriveId="
-                                + teamDriveID + "&corpora=teamDrive&orderBy=folder%2Ctitle_natural%20asc&retryCount=0&key=" + key + "&pageToken=" + nextPageToken);
-                    } else {
-                        brc.getPage("https://clients6.google.com/drive/v2beta/files?openDrive=false&reason=102&syncType=0&errorRecovery=false&q=trashed%20%3D%20false%20and%20'" + folderID
-                                + "'%20in%20parents&fields=kind%2CnextPageToken%2Citems(kind%2Ctitle%2CmimeType%2CcreatedDate%2CmodifiedDate%2CmodifiedByMeDate%2ClastViewedByMeDate%2CfileSize%2ClastModifyingUser(kind%2C%20displayName%2C%20picture%2C%20permissionId%2C%20emailAddress)%2ChasThumbnail%2CthumbnailVersion%2CiconLink%2Cid%2Cshared%2CsharedWithMeDate%2CuserPermission(role)%2CexplicitlyTrashed%2CquotaBytesUsed%2Cshareable%2Ccopyable%2CfileExtension%2CsharingUser(kind%2CdisplayName%2Cpicture%2CpermissionId%2CemailAddress)%2Cspaces%2Ceditable%2Cversion%2CteamDriveId%2ChasAugmentedPermissions%2CtrashingUser(kind%2CdisplayName%2Cpicture%2CpermissionId%2CemailAddress)%2CtrashedDate%2Cparents(id)%2Clabels(starred%2Chidden%2Ctrashed%2Crestricted%2Cviewed)%2Cowners(permissionId%2CdisplayName%2Cpicture%2Ckind)%2Ccapabilities(canCopy%2CcanDownload%2CcanEdit%2CcanAddChildren%2CcanDelete%2CcanRemoveChildren%2CcanShare%2CcanTrash%2CcanRename%2CcanReadTeamDrive%2CcanMoveTeamDriveItem))%2CincompleteSearch&appDataFilter=NO_APP_DATA&spaces=drive&maxResults=50&orderBy=folder%2Ctitle%20asc&key="
-                                + key + "&pageToken=" + nextPageToken);
-                    }
-                }
-                Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
-                final ArrayList<Object> items = (ArrayList<Object>) entries.get("items");
-                if (items == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else if (items.isEmpty()) {
-                    if (decryptedLinks.isEmpty()) {
-                        decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER " + offlineOrEmptyFolderName, "EMPTY_FOLDER " + offlineOrEmptyFolderName));
-                    } else {
-                        break;
-                    }
-                }
-                nextPageToken = (String) entries.get("nextPageToken");
-                parseFolderJsonWebsite(decryptedLinks, entries, subfolderPath, currentFolderTitle);
-                logger.info("Number of items found on current page: " + items.size());
-                if (StringUtils.isEmpty(nextPageToken)) {
-                    /* Either we found everything or plugin failure ... */
-                    logger.info("Stopping because: Failed to find nextPageToken");
-                    break;
-                } else if (items.isEmpty()) {
-                    logger.info("Stopping because: Failed to find any items on current page");
-                    break;
-                }
-            } while (key != null && !isAbort());
+        /* Handle the json way. */
+        String key = null;
+        final String keys[] = br.getRegex("\"([A-Za-z0-9\\-_]{6})([A-Za-z0-9\\-_]+)\"\\s*,\\s*\"\\1[A-Za-z0-9\\-_]+\"\\s*,\\s*null").getRow(0);
+        logger.info("Keys:" + Arrays.asList(keys));
+        if (keys != null && keys.length == 2) {
+            key = keys[0] + keys[1];
         }
+        if (StringUtils.isEmpty(key)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        logger.info("Using key: " + key);
+        // final String eof = br.getRegex("\\|eof\\|([^<>\"]*)\\\\x22").getMatch(0);
+        final String teamDriveID = new Regex(json_src, ",null,\\d{10,},\\d+,\"([A-Za-z0-9_]{10,30})\",null,null").getMatch(0);
+        /* TODO: Make us of this to cleanup requests in order to get a better overview */
+        final UrlQuery query = new UrlQuery();
+        query.add("openDrive", "false");
+        query.add("reason", "102");
+        query.add("syncType", "0");
+        query.add("errorRecovery", "false");
+        query.add("q", URLEncode.encodeURIComponent("trashed = false and '" + folderID + "' in parents"));
+        query.add("fields", URLEncode.encodeURIComponent("kind,nextPageToken,items(kind,modifiedDate,modifiedByMeDate,lastViewedByMeDate,fileSize,owners(kind,permissionId,displayName,picture),lastModifyingUser(kind,permissionId,displayName,picture),hasThumbnail,thumbnailVersion,title,id,shared,sharedWithMeDate,userPermission(role),explicitlyTrashed,mimeType,quotaBytesUsed,copyable,fileExtension,sharingUser(kind,permissionId,displayName,picture),spaces,version,teamDriveId,hasAugmentedPermissions,createdDate,trashingUser(kind,permissionId,displayName,picture),trashedDate,parents(id),shortcutDetails(targetId,targetMimeType,targetLookupStatus),capabilities(canCopy,canDownload,canEdit,canAddChildren,canDelete,canRemoveChildren,canShare,canTrash,canRename,canReadTeamDrive,canMoveTeamDriveItem),labels(starred,trashed,restricted,viewed)),incompleteSearch"));
+        query.add("appDataFilter", "NO_APP_DATA");
+        query.add("spaces", "drive");
+        query.add("maxResults", "50");
+        query.add("orderBy", "folder%2Ctitle_natural%20asc");
+        // query.add("retryCount", "0");
+        query.add("key", key);
+        /* Optional params (team drives only) */
+        if (teamDriveID != null) {
+            query.add("supportsTeamDrives", "true");
+            query.add("includeTeamDriveItems", "true");
+            query.add("teamDriveId", teamDriveID);
+            query.add("corpora", "teamDrive");
+        }
+        String nextPageToken = null;
+        int page = 0;
+        do {
+            page++;
+            logger.info("Crawling page: " + page);
+            final Browser brc = br.cloneBrowser();
+            brc.addAllowedResponseCodes(new int[] { 400 });
+            sleep(500, param);
+            /* Most common reason of failure: teamDriveID was not found thus the request is wrong! */
+            brc.getPage("https://clients6.google.com/drive/v2beta/files?" + query.toString());
+            Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+            final List<Object> items = (List<Object>) entries.get("items");
+            if (items == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if (items.isEmpty()) {
+                if (decryptedLinks.isEmpty()) {
+                    decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER " + offlineOrEmptyFolderName, "EMPTY_FOLDER " + offlineOrEmptyFolderName));
+                } else {
+                    break;
+                }
+            }
+            nextPageToken = (String) entries.get("nextPageToken");
+            parseFolderJsonWebsite(decryptedLinks, entries, subfolderPath, currentFolderTitle);
+            logger.info("Items current page: " + items.size() + " | Total: " + decryptedLinks.size());
+            if (StringUtils.isEmpty(nextPageToken)) {
+                /* Either we found everything or plugin failure ... */
+                logger.info("Stopping because: Failed to find nextPageToken");
+                break;
+            } else if (items.isEmpty()) {
+                logger.info("Stopping because: Failed to find any items on current page");
+                break;
+            } else {
+                query.addAndReplace("pageToken", Encoding.urlEncode(nextPageToken));
+            }
+        } while (key != null && !isAbort());
         if (decryptedLinks.size() == 0) {
             logger.info("Found nothing to download: " + param.getCryptedUrl());
             return decryptedLinks;
