@@ -433,8 +433,7 @@ public class BCSSLSocketStreamFactory implements SSLSocketStreamFactory {
             if (jsseRetry != null) {
                 // retry with TLS1.2 GCM
                 return options.addRetryReason("enable " + jsseRetry + " for TLS1.2/TLS1.3");
-            }
-            if (options.getCustomFactorySettings().add(TLS10_11_DISABLED)) {
+            } else if (options.getCustomFactorySettings().add(TLS10_11_DISABLED)) {
                 // disable old TLS1.0 and TLS1.1 and retry with TLS1.2
                 return options.addRetryReason("disable TLS1.0/TLS1.1");
             }
