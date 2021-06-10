@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import jd.controlling.proxy.ProxyController;
 import jd.http.SocketConnectionFactory;
 
+import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.UniqueAlltimeID;
@@ -142,7 +143,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                     request.getConnectionHelper().mark();
                     boolean closeSocket = true;
                     try {
-                        final List<HTTPProxy> list = ProxyController.getInstance().getProxiesByURL(url, false, false);
+                        final List<HTTPProxy> list = ProxyController.getInstance().getProxiesWithNoneFallBack(url, Application.isHeadless());
                         if (list != null && list.size() > 0) {
                             proxy = list.get(0);
                             connectThread.log("Connect:" + addr + "|" + proxy);

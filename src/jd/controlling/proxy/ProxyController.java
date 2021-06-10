@@ -110,11 +110,11 @@ import com.btr.proxy.util.Logger.LogLevel;
 //import com.btr.proxy.util.Logger.LogLevel;
 public class ProxyController implements ProxySelectorInterface {
     public static final URLStreamHandler SOCKETURLSTREAMHANDLER = new URLStreamHandler() {
-                                                                    @Override
-                                                                    protected URLConnection openConnection(URL u) throws IOException {
-                                                                        throw new IOException("not implemented");
-                                                                    }
-                                                                };
+        @Override
+        protected URLConnection openConnection(URL u) throws IOException {
+            throw new IOException("not implemented");
+        }
+    };
     private static final ProxyController INSTANCE               = new ProxyController();
 
     public static final ProxyController getInstance() {
@@ -126,21 +126,21 @@ public class ProxyController implements ProxySelectorInterface {
     private final InternetConnectionSettings                                config;
     private final LogSource                                                 logger;
     private final Queue                                                     QUEUE           = new Queue(getClass().getName()) {
-                                                                                                @Override
-                                                                                                public void killQueue() {
-                                                                                                    LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
-                                                                                                    /*
-                                                                                                     * this queue can ' t be killed
-                                                                                                     */
-                                                                                                }
-                                                                                            };
+        @Override
+        public void killQueue() {
+            LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
+            /*
+             * this queue can ' t be killed
+             */
+        }
+    };
     private final ConfigEventSender<Object>                                 customProxyListEventSender;
     private final EventSuppressor<ConfigEvent>                              eventSuppressor = new EventSuppressor<ConfigEvent>() {
-                                                                                                @Override
-                                                                                                public boolean suppressEvent(ConfigEvent eventType) {
-                                                                                                    return true;
-                                                                                                }
-                                                                                            };
+        @Override
+        public boolean suppressEvent(ConfigEvent eventType) {
+            return true;
+        }
+    };
 
     public Queue getQUEUE() {
         return QUEUE;
@@ -192,16 +192,16 @@ public class ProxyController implements ProxySelectorInterface {
         });
         getEventSender().addListener(new DefaultEventListener<ProxyEvent<AbstractProxySelectorImpl>>() {
             final DelayedRunnable asyncSaving = new DelayedRunnable(5000l, 60000l) {
-                                                  @Override
-                                                  public void delayedrun() {
-                                                      ProxyController.this.saveProxySettings();
-                                                  }
+                @Override
+                public void delayedrun() {
+                    ProxyController.this.saveProxySettings();
+                }
 
-                                                  @Override
-                                                  public String getID() {
-                                                      return "ProxyController";
-                                                  }
-                                              };
+                @Override
+                public String getID() {
+                    return "ProxyController";
+                }
+            };
 
             @Override
             public void onEvent(final ProxyEvent<AbstractProxySelectorImpl> event) {
@@ -239,6 +239,9 @@ public class ProxyController implements ProxySelectorInterface {
                     continue;
                 } else {
                     if (entry.matches("(?i)^.*appwork.org$") || entry.matches("(?i)^.*jdownloader.org$")) {
+                        /*
+                         * do not modify JDownloader/MyJDownloader infrastructure URLs
+                         */
                         entries[i] = entry.toLowerCase(Locale.ENGLISH);
                     } else {
                         final int index = entry.lastIndexOf("@");
@@ -1009,14 +1012,12 @@ public class ProxyController implements ProxySelectorInterface {
     }
 
     public List<HTTPProxy> getProxiesForUpdater(final URL url) {
-        List<HTTPProxy> ret = getProxiesForUpdater(url, false, false);
-        if (ret == null || ret.size() == 0) {
-            ret = getProxiesForUpdater(url, true, false);
-        }
-        if (ret == null || ret.size() == 0) {
-            ret = getProxiesForUpdater(url, true, true);
-        }
-        if (ret == null || ret.size() == 0) {
+        return getProxiesWithNoneFallBack(url, true);
+    }
+
+    public List<HTTPProxy> getProxiesWithNoneFallBack(final URL url, final boolean includeNoneFallback) {
+        List<HTTPProxy> ret = getProxiesByURL(url);
+        if ((ret == null || ret.size() == 0) && includeNoneFallback) {
             final HTTPProxy noneFallBack = getNone().getProxy();
             if (noneFallBack != null) {
                 if (ret == null) {
@@ -1026,39 +1027,6 @@ public class ProxyController implements ProxySelectorInterface {
             }
         }
         return ret;
-    }
-
-    /**
-     * Used by the updatesystem. it returnes all "NOT banned" proxies for the given url.
-     *
-     * @param url
-     * @return
-     */
-    private List<HTTPProxy> getProxiesForUpdater(final URL url, final boolean ignoreConnectionBans, final boolean ignoreAllBans) {
-        final LinkedHashSet<HTTPProxy> ret = new LinkedHashSet<HTTPProxy>();
-        try {
-            final String host = Browser.getHost(url, true);
-            final Plugin plugin = getPluginFromThread();
-            for (final AbstractProxySelectorImpl selector : _getList()) {
-                try {
-                    if (selector.isEnabled() && selector.isAllowedByFilter(host, null)) {
-                        final List<HTTPProxy> lst = selector.getProxiesByURL(url);
-                        if (lst != null) {
-                            for (HTTPProxy p : lst) {
-                                if (ignoreAllBans || !selector.isProxyBannedFor(p, url, plugin, ignoreConnectionBans)) {
-                                    ret.add(p);
-                                }
-                            }
-                        }
-                    }
-                } catch (Throwable e) {
-                    LogController.getRebirthLogger(logger).log(e);
-                }
-            }
-        } catch (Throwable e) {
-            LogController.getRebirthLogger(logger).log(e);
-        }
-        return new ArrayList<HTTPProxy>(ret);
     }
 
     /**
@@ -1081,27 +1049,29 @@ public class ProxyController implements ProxySelectorInterface {
     }
 
     public List<HTTPProxy> getProxiesByURL(final URL url, final boolean ignoreConnectionBans, final boolean ignoreAllBans) {
-        final Plugin plugin = getPluginFromThread();
-        final boolean proxyRotationEnabled;
-        final Thread thread = Thread.currentThread();
-        Account acc = getAccountFromThread();
-        if (plugin != null) {
-            if (thread instanceof AccountCheckerThread) {
-                proxyRotationEnabled = plugin.isProxyRotationEnabled(true);
-            } else if (thread instanceof LinkCheckerThread) {
-                proxyRotationEnabled = ((PluginForHost) plugin).isProxyRotationEnabledForLinkChecker();
-            } else if (thread instanceof SingleDownloadController && ((SingleDownloadController) thread).getDownloadLinkCandidate().getCachedAccount().getAccount() != null) {
-                proxyRotationEnabled = plugin.isProxyRotationEnabled(true);
-            } else if (thread instanceof LinkCrawlerThread) {
-                proxyRotationEnabled = plugin.isProxyRotationEnabledForLinkCrawler();
-            } else {
-                proxyRotationEnabled = plugin.isProxyRotationEnabled(false);
-            }
-        } else {
-            proxyRotationEnabled = true;
-        }
         final LinkedHashSet<HTTPProxy> ret = new LinkedHashSet<HTTPProxy>();
         try {
+            final Plugin plugin = getPluginFromThread();
+            final boolean proxyRotationEnabled;
+            final Account acc;
+            if (plugin != null) {
+                acc = getAccountFromThread();
+                final Thread thread = Thread.currentThread();
+                if (thread instanceof AccountCheckerThread) {
+                    proxyRotationEnabled = plugin.isProxyRotationEnabled(true);
+                } else if (thread instanceof LinkCheckerThread) {
+                    proxyRotationEnabled = ((PluginForHost) plugin).isProxyRotationEnabledForLinkChecker();
+                } else if (thread instanceof SingleDownloadController && ((SingleDownloadController) thread).getDownloadLinkCandidate().getCachedAccount().getAccount() != null) {
+                    proxyRotationEnabled = plugin.isProxyRotationEnabled(true);
+                } else if (thread instanceof LinkCrawlerThread) {
+                    proxyRotationEnabled = plugin.isProxyRotationEnabledForLinkCrawler();
+                } else {
+                    proxyRotationEnabled = plugin.isProxyRotationEnabled(false);
+                }
+            } else {
+                acc = null;
+                proxyRotationEnabled = true;
+            }
             final String host = Browser.getHost(url, true);
             final String plgHost;
             if (plugin == null || plugin.isHandlingMultipleHosts()) {

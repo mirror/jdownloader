@@ -3,6 +3,7 @@ package jd.controlling.proxy;
 import jd.http.Request;
 
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxy.TYPE;
 import org.jdownloader.updatev2.ProxyData;
 
 public class NoProxySelector extends SingleBasicProxySelectorImpl {
@@ -26,10 +27,11 @@ public class NoProxySelector extends SingleBasicProxySelectorImpl {
 
     @Override
     public Type getType() {
-        if (HTTPProxy.TYPE.NONE.equals(getProxy().getType())) {
+        final TYPE type = getProxy().getType();
+        if (HTTPProxy.TYPE.NONE.equals(type)) {
             return Type.NONE;
         } else {
-            throw new IllegalStateException();
+            throw new IllegalStateException(type.name());
         }
     }
 

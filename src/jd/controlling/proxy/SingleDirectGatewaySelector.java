@@ -3,10 +3,10 @@ package jd.controlling.proxy;
 import jd.http.Request;
 
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxy.TYPE;
 import org.jdownloader.updatev2.ProxyData;
 
 public class SingleDirectGatewaySelector extends SingleBasicProxySelectorImpl {
-
     public SingleDirectGatewaySelector(ProxyData proxyData) {
         super(proxyData);
     }
@@ -67,11 +67,11 @@ public class SingleDirectGatewaySelector extends SingleBasicProxySelectorImpl {
 
     @Override
     public Type getType() {
-        if (HTTPProxy.TYPE.DIRECT.equals(getProxy().getType())) {
+        final TYPE type = getProxy().getType();
+        if (HTTPProxy.TYPE.DIRECT.equals(type)) {
             return Type.DIRECT;
         } else {
-            throw new IllegalStateException();
+            throw new IllegalStateException(type.name());
         }
     }
-
 }
