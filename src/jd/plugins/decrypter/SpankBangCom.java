@@ -21,6 +21,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -38,11 +45,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?spankbang\\.com/(?:[a-z0-9]+/video/\\?quality=[\\w\\d]+|[a-z0-9]+/(?:video|embed)/([^/]+)?)" })
 public class SpankBangCom extends PluginForDecrypt {
@@ -162,7 +164,7 @@ public class SpankBangCom extends PluginForDecrypt {
         if (q240p) {
             selectedQualities.add("240p");
         }
-        String predefinedVariant = new Regex(param.getCryptedUrl(), "\\?quality=([\\w\\d]+)").getMatch(0);
+        final String predefinedVariant = UrlQuery.parse(param.getCryptedUrl()).get("quality");
         for (final String selectedQualityValue : selectedQualities) {
             // if quality marker is in the url. skip all others
             if (predefinedVariant != null && !predefinedVariant.equalsIgnoreCase(selectedQualityValue)) {
@@ -197,63 +199,90 @@ public class SpankBangCom extends PluginForDecrypt {
 
     public static LinkedHashMap<String, String> findQualities(final Browser br, final String source_url) throws DecrypterException, PluginException, IOException {
         final LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
+        final String[] knownQualities = new String[] { "4k", "1080p", "720p", "480p", "320p", "240p" };
         // final String fid = getFid(source_url);
-        final String dataStreamKey = br.getRegex("data-streamkey\\s*=\\s*\"(.*?)\"").getMatch(0);
-        if (dataStreamKey == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final String x_csrftoken = br.getCookie(br.getURL(), "sb_csrf_session");
-        Request request = br.createPostRequest("/api/videos/stream", "data=0&id=" + dataStreamKey + "&sb_csrf_session=" + x_csrftoken);
-        request.getHeaders().put("accept", "application/json, text/javascript, */*; q=0.01");
-        request.getHeaders().put("x-requested-with", "XMLHttpRequest");
-        if (x_csrftoken != null) {
-            request.getHeaders().put("x-csrftoken", x_csrftoken);
-        }
-        final String page = br.getPage(request);
-        final String[] qualities = new String[] { "4k", "1080p", "720p", "480p", "320p", "240p" };
-        if (page.matches("(?s)^\\s*\\{.*") && page.matches("(?s).*\\}\\s*$")) {
-            final Map<String, Object> map = JSonStorage.restoreFromString(page, TypeRef.HASHMAP);
-            final String stream_url_m3u8 = String.valueOf(map.get("m3u8"));
-            for (final String quality : qualities) {
-                final String qualityID = getQuality(quality);
-                final Object entry = map.get(quality);
-                String value = null;
-                if (entry instanceof String) {
-                    value = (String) entry;
-                } else if (entry instanceof List && ((List) entry).size() != 0) {
-                    value = ((List<String>) entry).get(0);
-                }
-                System.out.println("value: " + value);
-                if (StringUtils.isEmpty(value) && StringUtils.isNotEmpty(stream_url_m3u8)) {
-                    final String one_stream_url_m3u8 = new Regex(stream_url_m3u8, "(http.*?d=\\d)").getMatch(0);
-                    // System.out.println("one_stream_url_m3u8: " + one_stream_url_m3u8);
-                    final String page_m3u8 = br.getPage(one_stream_url_m3u8);
-                    final String[] single_url_m3u8s = new Regex(page_m3u8, "(http.*?d=\\d)\\s").getColumn(0);
-                    // System.out.println("single_url_m3u8s.length: " + single_url_m3u8s.length);
-                    for (final String single_url_m3u8 : single_url_m3u8s) {
-                        // System.out.println("single_url_m3u8: " + single_url_m3u8);
-                        if (single_url_m3u8.contains(quality)) {
-                            value = single_url_m3u8;
-                            System.out.println("value: " + value);
-                        }
+        /* 2021-06-10: API no longer required/available */
+        final boolean useAPI = false;
+        if (useAPI) {
+            final String dataStreamKey = br.getRegex("data-streamkey\\s*=\\s*\"(.*?)\"").getMatch(0);
+            if (dataStreamKey == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String x_csrftoken = br.getCookie(br.getURL(), "sb_csrf_session");
+            Request request = br.createPostRequest("/api/videos/stream", "data=0&id=" + dataStreamKey + "&sb_csrf_session=" + x_csrftoken);
+            request.getHeaders().put("accept", "application/json, text/javascript, */*; q=0.01");
+            request.getHeaders().put("x-requested-with", "XMLHttpRequest");
+            if (x_csrftoken != null) {
+                request.getHeaders().put("x-csrftoken", x_csrftoken);
+            }
+            final String page = br.getPage(request);
+            if (page.matches("(?s)^\\s*\\{.*") && page.matches("(?s).*\\}\\s*$")) {
+                final Map<String, Object> map = JSonStorage.restoreFromString(page, TypeRef.HASHMAP);
+                final String stream_url_m3u8 = String.valueOf(map.get("m3u8"));
+                for (final String quality : knownQualities) {
+                    final String qualityID = getQuality(quality);
+                    final Object entry = map.get(quality);
+                    String value = null;
+                    if (entry instanceof String) {
+                        value = (String) entry;
+                    } else if (entry instanceof List && ((List) entry).size() != 0) {
+                        value = ((List<String>) entry).get(0);
                     }
-                } else {
-                    // continue;
+                    System.out.println("value: " + value);
+                    if (StringUtils.isEmpty(value) && StringUtils.isNotEmpty(stream_url_m3u8)) {
+                        final String one_stream_url_m3u8 = new Regex(stream_url_m3u8, "(http.*?d=\\d)").getMatch(0);
+                        // System.out.println("one_stream_url_m3u8: " + one_stream_url_m3u8);
+                        final String page_m3u8 = br.getPage(one_stream_url_m3u8);
+                        final String[] single_url_m3u8s = new Regex(page_m3u8, "(http.*?d=\\d)\\s").getColumn(0);
+                        // System.out.println("single_url_m3u8s.length: " + single_url_m3u8s.length);
+                        for (final String single_url_m3u8 : single_url_m3u8s) {
+                            // System.out.println("single_url_m3u8: " + single_url_m3u8);
+                            if (single_url_m3u8.contains(quality)) {
+                                value = single_url_m3u8;
+                                System.out.println("value: " + value);
+                            }
+                        }
+                    } else {
+                        // continue;
+                    }
+                    if (StringUtils.isNotEmpty(value)) {
+                        foundQualities.put(qualityID, value);
+                    }
                 }
-                if (StringUtils.isNotEmpty(value)) {
-                    foundQualities.put(qualityID, value);
+            } else {
+                // final String streamkey = br.getRegex("var stream_key = \\'([^<>\"]*?)\\'").getMatch(0);
+                for (final String q : knownQualities) {
+                    final String quality = getQuality(q);
+                    // final String directlink = "http://spankbang.com/_" + fid + "/" + streamkey + "/title/" + quality + "__mp4";
+                    final String directlink = PluginJSonUtils.getJson(br, "stream_url_" + q);
+                    if (StringUtils.isEmpty(directlink)) {
+                        continue;
+                    }
+                    foundQualities.put(quality, directlink);
                 }
             }
         } else {
-            // final String streamkey = br.getRegex("var stream_key = \\'([^<>\"]*?)\\'").getMatch(0);
-            for (final String q : qualities) {
-                final String quality = getQuality(q);
-                // final String directlink = "http://spankbang.com/_" + fid + "/" + streamkey + "/title/" + quality + "__mp4";
-                final String directlink = PluginJSonUtils.getJson(br, "stream_url_" + q);
-                if (StringUtils.isEmpty(directlink)) {
-                    continue;
+            /* 2021-06-10 */
+            final String js = br.getRegex("var stream_data = (\\{.*?\\})").getMatch(0);
+            try {
+                final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(js);
+                for (final String q : knownQualities) {
+                    final Object qO = entries.get(q);
+                    if (qO == null) {
+                        continue;
+                    }
+                    final List<Object> temp = (List<Object>) qO;
+                    if (temp.isEmpty()) {
+                        continue;
+                    }
+                    final String directlink = (String) temp.get(0);
+                    if (StringUtils.isEmpty(directlink)) {
+                        continue;
+                    }
+                    foundQualities.put(q, directlink);
                 }
-                foundQualities.put(quality, directlink);
+            } catch (final Exception ignore) {
+                ignore.printStackTrace();
             }
         }
         return foundQualities;
