@@ -54,7 +54,7 @@ public class UploadhubIo extends XFileSharingProBasic {
 
     @Override
     public String rewriteHost(final String host) {
-        return this.rewriteHost(getPluginDomains(), null);
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     public static String[] getAnnotationNames() {

@@ -21,6 +21,22 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkCheckerThread;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.http.Browser;
+import jd.http.ClonedProxy;
+import jd.http.ProxySelectorInterface;
+import jd.http.Request;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForHost;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
@@ -78,22 +94,6 @@ import com.btr.proxy.util.Logger;
 import com.btr.proxy.util.Logger.LogBackEnd;
 import com.btr.proxy.util.Logger.LogLevel;
 
-import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
-import jd.controlling.downloadcontroller.DownloadLinkCandidate;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkCheckerThread;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.http.Browser;
-import jd.http.ClonedProxy;
-import jd.http.ProxySelectorInterface;
-import jd.http.Request;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Account;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForHost;
-
 //import com.btr.proxy.search.ProxySearchStrategy;
 //import com.btr.proxy.search.browser.firefox.FirefoxProxySearchStrategy;
 //import com.btr.proxy.search.desktop.DesktopProxySearchStrategy;
@@ -109,11 +109,11 @@ import jd.plugins.PluginForHost;
 //import com.btr.proxy.util.Logger.LogLevel;
 public class ProxyController implements ProxySelectorInterface {
     public static final URLStreamHandler SOCKETURLSTREAMHANDLER = new URLStreamHandler() {
-                                                                    @Override
-                                                                    protected URLConnection openConnection(URL u) throws IOException {
-                                                                        throw new IOException("not implemented");
-                                                                    }
-                                                                };
+        @Override
+        protected URLConnection openConnection(URL u) throws IOException {
+            throw new IOException("not implemented");
+        }
+    };
     private static final ProxyController INSTANCE               = new ProxyController();
 
     public static final ProxyController getInstance() {
@@ -125,27 +125,21 @@ public class ProxyController implements ProxySelectorInterface {
     private final InternetConnectionSettings                                config;
     private final LogSource                                                 logger;
     private final Queue                                                     QUEUE           = new Queue(getClass().getName()) {
-                                                                                                @Override
-                                                                                                public void killQueue() {
-                                                                                                    LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
-                                                                                                                                                                    /*
-                                                                                                                                                                     * this
-                                                                                                                                                                     * queue
-                                                                                                                                                                     * can
-                                                                                                                                                                     * '
-                                                                                                                                                                     * t
-                                                                                                                                                                     * be
-                                                                                                                                                                     * killed
-                                                                                                                                                                     */
-                                                                                                }
-                                                                                            };
+        @Override
+        public void killQueue() {
+            LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
+                                                                                                    /*
+                                                                                                     * this queue can ' t be killed
+                                                                                                     */
+        }
+    };
     private final ConfigEventSender<Object>                                 customProxyListEventSender;
     private final EventSuppressor<ConfigEvent>                              eventSuppressor = new EventSuppressor<ConfigEvent>() {
-                                                                                                @Override
-                                                                                                public boolean suppressEvent(ConfigEvent eventType) {
-                                                                                                    return true;
-                                                                                                }
-                                                                                            };
+        @Override
+        public boolean suppressEvent(ConfigEvent eventType) {
+            return true;
+        }
+    };
 
     public Queue getQUEUE() {
         return QUEUE;
@@ -197,16 +191,16 @@ public class ProxyController implements ProxySelectorInterface {
         });
         getEventSender().addListener(new DefaultEventListener<ProxyEvent<AbstractProxySelectorImpl>>() {
             final DelayedRunnable asyncSaving = new DelayedRunnable(5000l, 60000l) {
-                @Override
-                public void delayedrun() {
-                    ProxyController.this.saveProxySettings();
-                }
+                                                  @Override
+                                                  public void delayedrun() {
+                                                      ProxyController.this.saveProxySettings();
+                                                  }
 
-                @Override
-                public String getID() {
-                    return "ProxyController";
-                }
-            };
+                                                  @Override
+                                                  public String getID() {
+                                                      return "ProxyController";
+                                                  }
+                                              };
 
             @Override
             public void onEvent(final ProxyEvent<AbstractProxySelectorImpl> event) {
@@ -439,27 +433,7 @@ public class ProxyController implements ProxySelectorInterface {
     }
 
     private Plugin getPluginFromThread() {
-        final Thread thread = Thread.currentThread();
-        if (thread instanceof AccountCheckerThread) {
-            final AccountCheckJob job = ((AccountCheckerThread) thread).getJob();
-            if (job != null) {
-                final Account account = job.getAccount();
-                return account.getPlugin();
-            }
-        } else if (thread instanceof LinkCheckerThread) {
-            final PluginForHost plg = ((LinkCheckerThread) thread).getPlugin();
-            if (plg != null) {
-                return plg;
-            }
-        } else if (thread instanceof SingleDownloadController) {
-            return ((SingleDownloadController) thread).getDownloadLinkCandidate().getCachedAccount().getPlugin();
-        } else if (thread instanceof LinkCrawlerThread) {
-            final Object owner = ((LinkCrawlerThread) thread).getCurrentOwner();
-            if (owner instanceof Plugin) {
-                return (Plugin) owner;
-            }
-        }
-        return null;
+        return Plugin.getCurrentActivePlugin();
     }
 
     public void setFilter(final AbstractProxySelectorImpl proxySelector, final FilterList filterList) {
