@@ -133,7 +133,7 @@ public class SpankBangCom extends antiDDoSForHost {
         return AvailableStatus.UNCHECKED;
     }
 
-    private boolean isValidURL(final Browser br, final DownloadLink downloadLink, final String url) throws IOException {
+    private boolean isValidURL(final Browser br, final DownloadLink link, final String url) throws IOException {
         if (StringUtils.isEmpty(url)) {
             return false;
         }
@@ -146,7 +146,7 @@ public class SpankBangCom extends antiDDoSForHost {
                 return true;
             } else if (!url.contains("m3u8") && looksLikeDownloadableContent(con)) {
                 if (con.getCompleteContentLength() > 0) {
-                    downloadLink.setDownloadSize(con.getCompleteContentLength());
+                    link.setDownloadSize(con.getCompleteContentLength());
                 }
                 return true;
             } else {
@@ -158,19 +158,19 @@ public class SpankBangCom extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (dllink.contains("m3u8")) {
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, dllink);
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, dllink);
             dl.startDownload();
         } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (!looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection(true);
