@@ -20,7 +20,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -56,7 +55,6 @@ public class DebridItaliaCom extends antiDDoSForHost {
     private static final String          API_BASE = "https://debriditalia.com/api.php";
     private static MultiHosterManagement mhm      = new MultiHosterManagement("debriditalia.com");
     private static final String          NOCHUNKS = "NOCHUNKS";
-    private String                       dllink   = null;
 
     @Override
     protected Browser prepBrowser(final Browser prepBr, final String host) {
@@ -65,7 +63,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
             prepBr.setConnectTimeout(60 * 1000);
             prepBr.setReadTimeout(60 * 1000);
             /* 401 can happen when user enters invalid logindata */
-            prepBr.addAllowedResponseCodes(401);
+            prepBr.addAllowedResponseCodes(new int[] { 401 });
             prepBr.getHeaders().put("User-Agent", "JDownloader " + getVersion());
         }
         return prepBr;
@@ -85,19 +83,19 @@ public class DebridItaliaCom extends antiDDoSForHost {
                 ac.setStatus("Account is expired!");
                 ac.setExpired(true);
                 return ac;
+            } else {
+                accountInvalid();
             }
-            accountInvalid();
         }
         final String expire = br.getRegex("<expiration>(\\d+)</expiration>").getMatch(0);
         if (expire == null) {
             ac.setStatus("Account is invalid. Invalid or unsupported accounttype!");
             accountInvalid();
         }
-        ac.setValidUntil(Long.parseLong(expire) * 1000l);
+        ac.setValidUntil(Long.parseLong(expire) * 1000l, this.br);
         getPage(API_BASE + "?hosts");
         final String[] hosts = br.getRegex("\"([^<>\"]*?)\"").getColumn(0);
-        final List<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-        ac.setMultiHostSupport(this, supportedHosts);
+        ac.setMultiHostSupport(this, new ArrayList<String>(Arrays.asList(hosts)));
         ac.setStatus("Premium Account");
         return ac;
     }
@@ -123,13 +121,13 @@ public class DebridItaliaCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        handleDl(link, null);
+        handleDl(link, null, link.getPluginPatternMatcher());
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        handleDl(link, account);
+        handleDl(link, account, link.getPluginPatternMatcher());
     }
 
     @Override
@@ -142,8 +140,8 @@ public class DebridItaliaCom extends antiDDoSForHost {
         mhm.runCheck(account, link);
         showMessage(link, "Generating link");
         /* since no requests are done with this.br we need to manually set so checkdirectlink is correct */
-        prepBrowser(br, "https://debriditalia.com/");
-        dllink = checkDirectLink(link, "debriditaliadirectlink");
+        prepBrowser(br, "https://" + this.getHost());
+        String dllink = checkDirectLink(link, "debriditaliadirectlink");
         if (dllink == null) {
             String host_downloadlink = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
             /* Workaround for server side debriditalia bug. */
@@ -151,8 +149,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
              * Known hosts for which they do definitely not accept https urls [ last updated 2015-10-05]: share-online.biz, inclouddrive.com
              */
             host_downloadlink = host_downloadlink.replaceFirst("^https", "http");
-            final String encodedLink = Encoding.urlEncode(host_downloadlink);
-            getPage(API_BASE + "?generate=on&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + encodePassword(account.getPass()) + "&link=" + encodedLink);
+            getPage(API_BASE + "?generate=on&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + encodePassword(account.getPass()) + "&link=" + Encoding.urlEncode(host_downloadlink));
             /* Either server error or the host is broken (we have to find out by retrying) */
             if (br.containsHTML("ERROR: not_available")) {
                 mhm.handleErrorGeneric(account, link, "not_available", 20, 5 * 60 * 1000l);
@@ -162,21 +159,23 @@ public class DebridItaliaCom extends antiDDoSForHost {
             }
             try {
                 dllink = new URL(br.toString()).toString();
+                /* Directlinks can be used for up to 2 days */
+                link.setProperty("debriditaliadirectlink", dllink);
             } catch (final MalformedURLException e) {
                 mhm.handleErrorGeneric(account, link, "dllinknull", 20, 5 * 60 * 1000l);
             }
         }
-        handleDl(link, account);
+        handleDl(link, account, dllink);
     }
 
-    private void handleDl(final DownloadLink link, final Account account) throws Exception {
-        int chunks = 0;
-        if (link.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false)) {
-            chunks = 1;
-        }
+    private void handleDl(final DownloadLink link, final Account account, final String dllink) throws Exception {
         if (StringUtils.isEmpty(dllink)) {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        int chunks = 0;
+        if (link.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false)) {
+            chunks = 1;
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, Encoding.htmlDecode(dllink.trim()), true, chunks);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
@@ -187,8 +186,6 @@ public class DebridItaliaCom extends antiDDoSForHost {
             }
             mhm.handleErrorGeneric(account, link, "", 50);
         }
-        /* Directlinks can be used for up to 2 days */
-        link.setProperty("debriditaliadirectlink", dllink);
         if (link.getFinalFileName() == null) {
             /* They sometimes return html-encoded filenames - let's fix this! */
             final String server_filename = getFileNameFromHeader(this.dl.getConnection());
@@ -247,7 +244,6 @@ public class DebridItaliaCom extends antiDDoSForHost {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
                 link.setAvailable(true);
-                dllink = br.getURL();
                 return AvailableStatus.TRUE;
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -276,11 +272,12 @@ public class DebridItaliaCom extends antiDDoSForHost {
     }
 
     /** Workaround(s) for special chars issues with login passwords. */
-    private String encodePassword(String password) {
-        if (!password.contains("%")) {
-            password = Encoding.urlEncode(password);
+    private String encodePassword(final String password) {
+        if (password.contains("%")) {
+            return password;
+        } else {
+            return Encoding.urlEncode(password);
         }
-        return password;
     }
 
     private void showMessage(DownloadLink link, String message) {
@@ -323,15 +320,14 @@ public class DebridItaliaCom extends antiDDoSForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         return false;
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
-        if (isDirectLink(downloadLink)) {
-            // generated links do not require an account to download
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
+        if (isDirectLink(link)) {
+            /* Generated links do not require an account to download */
             return true;
         } else if (account == null) {
             // no non account handleMultiHost support.
@@ -341,8 +337,8 @@ public class DebridItaliaCom extends antiDDoSForHost {
         }
     }
 
-    private boolean isDirectLink(final DownloadLink downloadLink) {
-        if (downloadLink.getDownloadURL().matches(this.getLazyP().getPatternSource())) {
+    private boolean isDirectLink(final DownloadLink link) {
+        if (link.getDownloadURL().matches(this.getLazyP().getPatternSource())) {
             return true;
         } else {
             return false;
