@@ -38,6 +38,7 @@ import javax.swing.Icon;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.SubConfiguration;
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
 import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkchecker.LinkCheckerThread;
@@ -962,16 +963,24 @@ public abstract class Plugin implements ActionListener {
                 return ((SingleDownloadController) thread).getDownloadLinkCandidate().getCachedAccount().getPlugin();
             }
         } else if (thread instanceof AccountCheckerThread) {
-            return ((AccountCheckerThread) thread).getJob().getAccount().getPlugin();
+            final AccountCheckJob job = ((AccountCheckerThread) thread).getJob();
+            if (job != null) {
+                return job.getAccount().getPlugin();
+            } else {
+                return null;
+            }
         } else if (thread instanceof LinkCheckerThread) {
             return ((LinkCheckerThread) thread).getPlugin();
         } else if (thread instanceof LinkCrawlerThread) {
             final Object owner = ((LinkCrawlerThread) thread).getCurrentOwner();
             if (owner instanceof Plugin) {
                 return (Plugin) owner;
+            } else {
+                return null;
             }
+        } else {
+            return null;
         }
-        return null;
     }
 
     public synchronized void cleanupLastChallengeResponse() {
