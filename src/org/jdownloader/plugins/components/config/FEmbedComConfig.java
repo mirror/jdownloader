@@ -48,7 +48,7 @@ public interface FEmbedComConfig extends PluginConfigInterface {
     @DefaultEnumValue("BEST")
     @DescriptionForConfigEntry("If your preferred stream quality is not found, best quality will be downloaded instead.")
     @Order(100)
-    Quality getPreferredQuality();
+    Quality getPreferredStreamQuality();
 
     void setPreferredStreamQuality(Quality quality);
 }
