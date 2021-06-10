@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
@@ -109,11 +110,11 @@ import com.btr.proxy.util.Logger.LogLevel;
 //import com.btr.proxy.util.Logger.LogLevel;
 public class ProxyController implements ProxySelectorInterface {
     public static final URLStreamHandler SOCKETURLSTREAMHANDLER = new URLStreamHandler() {
-        @Override
-        protected URLConnection openConnection(URL u) throws IOException {
-            throw new IOException("not implemented");
-        }
-    };
+                                                                    @Override
+                                                                    protected URLConnection openConnection(URL u) throws IOException {
+                                                                        throw new IOException("not implemented");
+                                                                    }
+                                                                };
     private static final ProxyController INSTANCE               = new ProxyController();
 
     public static final ProxyController getInstance() {
@@ -125,21 +126,21 @@ public class ProxyController implements ProxySelectorInterface {
     private final InternetConnectionSettings                                config;
     private final LogSource                                                 logger;
     private final Queue                                                     QUEUE           = new Queue(getClass().getName()) {
-        @Override
-        public void killQueue() {
-            LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
+                                                                                                @Override
+                                                                                                public void killQueue() {
+                                                                                                    LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
                                                                                                     /*
                                                                                                      * this queue can ' t be killed
                                                                                                      */
-        }
-    };
+                                                                                                }
+                                                                                            };
     private final ConfigEventSender<Object>                                 customProxyListEventSender;
     private final EventSuppressor<ConfigEvent>                              eventSuppressor = new EventSuppressor<ConfigEvent>() {
-        @Override
-        public boolean suppressEvent(ConfigEvent eventType) {
-            return true;
-        }
-    };
+                                                                                                @Override
+                                                                                                public boolean suppressEvent(ConfigEvent eventType) {
+                                                                                                    return true;
+                                                                                                }
+                                                                                            };
 
     public Queue getQUEUE() {
         return QUEUE;
@@ -237,23 +238,27 @@ public class ProxyController implements ProxySelectorInterface {
                      */
                     continue;
                 } else {
-                    final int index = entry.lastIndexOf("@");
-                    if (index != -1) {
-                        if (index + 1 < entry.length()) {
-                            final String host = entry.substring(index + 1);
-                            if (host.matches("^[a-zA-Z0-9.-_]+$") && host.contains(".") && host.length() >= 3) {
-                                final String username = entry.substring(0, index);
-                                final String assignedHost = pluginFinder.assignHost(host);
-                                if (assignedHost != null && !StringUtils.equals(host, assignedHost)) {
-                                    entries[i] = username.concat("@").concat(assignedHost);
+                    if (entry.matches("(?i)^.*appwork.org$") || entry.matches("(?i)^.*jdownloader.org$")) {
+                        entries[i] = entry.toLowerCase(Locale.ENGLISH);
+                    } else {
+                        final int index = entry.lastIndexOf("@");
+                        if (index != -1) {
+                            if (index + 1 < entry.length()) {
+                                final String host = entry.substring(index + 1);
+                                if (host.matches("^[a-zA-Z0-9.-_]+$") && host.contains(".") && host.length() >= 3) {
+                                    final String username = entry.substring(0, index);
+                                    final String assignedHost = pluginFinder.assignHost(host);
+                                    if (assignedHost != null && !StringUtils.equals(host, assignedHost)) {
+                                        entries[i] = username.concat("@").concat(assignedHost);
+                                    }
                                 }
                             }
-                        }
-                    } else {
-                        if (entry.matches("^[a-zA-Z0-9.-_]+$") && entry.contains(".") && entry.length() >= 3) {
-                            final String assignedHost = pluginFinder.assignHost(entry);
-                            if (assignedHost != null && !StringUtils.equals(entry, assignedHost)) {
-                                entries[i] = assignedHost;
+                        } else {
+                            if (entry.matches("^[a-zA-Z0-9.-_]+$") && entry.contains(".") && entry.length() >= 3) {
+                                final String assignedHost = pluginFinder.assignHost(entry);
+                                if (assignedHost != null && !StringUtils.equals(entry, assignedHost)) {
+                                    entries[i] = assignedHost;
+                                }
                             }
                         }
                     }
