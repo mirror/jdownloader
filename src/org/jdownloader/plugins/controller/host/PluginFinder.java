@@ -1,31 +1,64 @@
 package org.jdownloader.plugins.controller.host;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.logging.LogController;
 
 public class PluginFinder {
-
-    private final HashMap<String, String>        hostMappings = new HashMap<String, String>();
-    private final HashMap<String, PluginForHost> pluginCaches = new HashMap<String, PluginForHost>();
-
+    private final HashMap<String, String>        hostMappings            = new HashMap<String, String>();
+    private final HashMap<String, PluginForHost> pluginCaches            = new HashMap<String, PluginForHost>();
+    private final static Set<String>             BROKENPLUGINS           = new HashSet<String>();
+    private final static AtomicLong              PLUGINSLASTMODIFICATION = new AtomicLong(-1);
     private final LogInterface                   logger;
 
     public PluginFinder() {
         this(null);
     }
 
-    public PluginFinder(LogInterface logger) {
+    public PluginFinder(final LogInterface logger) {
         if (logger == null) {
             this.logger = LogController.CL(true);
         } else {
             this.logger = logger;
+        }
+        blacklistBrokenPlugins();
+    }
+
+    protected synchronized void blacklistBrokenPlugins() {
+        synchronized (BROKENPLUGINS) {
+            final long lastmodification = HostPluginController.getInstance().getLastModification();
+            if (PLUGINSLASTMODIFICATION.get() != lastmodification) {
+                try {
+                    final String checkDomain = UniqueAlltimeID.create() + ".com";
+                    while (true) {
+                        final String assignHost = assignHost(checkDomain);
+                        if (assignHost == null) {
+                            break;
+                        } else {
+                            final PluginForHost plugin = pluginCaches.get(assignHost);
+                            if (plugin != null) {
+                                final LazyHostPlugin lazyP = plugin.getLazyP();
+                                logger.severe("Please fix rewriteHost in HostPlugin:" + lazyP);
+                                BROKENPLUGINS.add(lazyP.toString());
+                            } else {
+                                logger.severe("Please fix rewriteHost in HostPlugin:" + assignHost);
+                            }
+                        }
+                    }
+                } finally {
+                    PLUGINSLASTMODIFICATION.set(lastmodification);
+                }
+            }
         }
     }
 
@@ -61,6 +94,11 @@ public class PluginFinder {
                 }
                 for (final LazyHostPlugin lazyHostPlugin : HostPluginController.getInstance().list()) {
                     if (lazyHostPlugin.isHasRewrite()) {
+                        synchronized (BROKENPLUGINS) {
+                            if (BROKENPLUGINS.contains(lazyHostPlugin.toString())) {
+                                continue;
+                            }
+                        }
                         try {
                             PluginForHost plugin = pluginCaches.get(lazyHostPlugin.getHost());
                             if (plugin == null) {
@@ -99,11 +137,13 @@ public class PluginFinder {
                     logger.log(e);
                 }
                 return true;
+            } else {
+                return false;
             }
         } catch (final Throwable e) {
             logger.log(e);
+            return false;
         }
-        return false;
     }
 
     public synchronized PluginForHost assignPlugin(final DownloadLink link, final boolean assignPlugin) {

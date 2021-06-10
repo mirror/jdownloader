@@ -70,6 +70,10 @@ public class HostPluginController extends PluginController<PluginForHost> {
         return "hosterCache";
     }
 
+    public long getLastModification() {
+        return lastModification.get();
+    }
+
     /**
      * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using
      * {@link #getInstance()}.
