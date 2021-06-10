@@ -100,6 +100,7 @@ public class UploadhavenCom extends PluginForHost {
         br.getPage(link.getPluginPatternMatcher());
         if (this.isRefererProtected()) {
             /* We can't obtain more file information in this state! */
+            link.setComment("Hotlink protection active. Please set original site as DownloadPassword!");
             return AvailableStatus.TRUE;
         } else if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/error") || !br.getURL().contains(this.getFID(link))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -166,22 +167,28 @@ public class UploadhavenCom extends PluginForHost {
             }
             while (this.isRefererProtected()) {
             }
-            final Form dlform = br.getFormbyProperty("id", "form-join");
+            Form dlform = br.getFormbyProperty("id", "form-join");
+            if (dlform == null) {
+                dlform = br.getFormbyProperty("id", "form-download");
+            }
             if (dlform == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             int wait = 5;
-            final String waitStr = br.getRegex("var\\s*?seconds\\s*?=\\s*?(\\d+);").getMatch(0);
+            String waitStr = br.getRegex("var\\s*?seconds\\s*?=\\s*?(\\d+)\\s*;").getMatch(0);
+            if (waitStr == null) {
+                waitStr = br.getRegex("class\\s*=\\s*\"download-timer-seconds.*?\"\\s*>\\s*(\\d+)").getMatch(0);
+            }
             if (waitStr != null) {
                 wait = Integer.parseInt(waitStr);
             }
             this.sleep((wait + 3) * 1001l, link);
             br.submitForm(dlform);
-            dllink = br.getRegex("downloadFile\"\\)\\.attr\\(\"src\",\\s*?\"(http[^\">]+)").getMatch(0);
+            dllink = br.getRegex("downloadFile\"\\)\\.attr\\(\"src\",\\s*?\"(https?[^\">]+)").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
                 dllink = br.getRegex("(https?://[A-Za-z0-9\\-]+\\.uploadhaven\\.com/[^\"]+key=[^\"]+)").getMatch(0);
             }
-            if (StringUtils.isEmpty(dllink)) {
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }

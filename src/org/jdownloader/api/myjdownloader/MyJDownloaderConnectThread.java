@@ -27,6 +27,7 @@ import jd.controlling.reconnect.ReconnecterListener;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.controlling.reconnect.ipcheck.IPCheckException;
 import jd.controlling.reconnect.ipcheck.OfflineException;
+import jd.http.NoGateWayException;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
@@ -617,6 +618,9 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge, Re
         if (error != null) {
             if (connection != null) {
                 switch (error) {
+                case NO_INTERNET_CONNECTION:
+                    connection.requestbackoff(10);
+                    break;
                 case SERVER_MAINTENANCE:
                 case SERVER_DOWN:
                     connection.requestbackoff(5);
@@ -727,6 +731,8 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge, Re
                         } else if (e instanceof AuthException) {
                             setConnectionStatus(currentConnection, MyJDownloaderConnectionStatus.UNCONNECTED, MyJDownloaderError.BAD_LOGINS);
                             return;
+                        } else if (Exceptions.containsInstanceOf(e, NoGateWayException.class)) {
+                            setConnectionStatus(currentConnection, MyJDownloaderConnectionStatus.PENDING, MyJDownloaderError.NO_INTERNET_CONNECTION);
                         } else if (Exceptions.containsInstanceOf(e, ConnectException.class, SocketTimeoutException.class)) {
                             log("Could not connect! Server down?", e);
                             if (isConnectionOffline(currentConnection)) {

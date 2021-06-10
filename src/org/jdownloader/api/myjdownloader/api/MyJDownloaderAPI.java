@@ -5,12 +5,16 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.SocketTimeoutException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
+import jd.controlling.proxy.ProxyController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
+import jd.http.ProxySelectorInterface;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.URLConnectionAdapterDirectImpl;
@@ -32,6 +36,7 @@ import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.net.Base64InputStream;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.Docker;
 import org.appwork.utils.os.hardware.HardwareType;
@@ -136,7 +141,10 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
             try {
                 return br.openRequestConnection(request);
             } catch (BrowserException e) {
-                logger.log(e);
+                final LogSource logger = this.logger;
+                if (logger != null) {
+                    logger.log(e);
+                }
                 if (Exceptions.containsInstanceOf(e, SocketTimeoutException.class) && request.getHttpConnection() instanceof URLConnectionAdapterDirectImpl && retryDirectSocketTimeoutException-- > 0) {
                     request.getHeaders().put("X-RDSTE", Integer.toString(retryDirectSocketTimeoutException));
                     logger.info("retryDirectSocketTimeoutException:" + retryDirectSocketTimeoutException);
@@ -206,6 +214,22 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
             setDebug(true);
             setVerbose(true);
             setAllowedResponseCodes(200, 503, 401, 407, 403, 500, 429);
+            setProxySelector(new ProxySelectorInterface() {
+                @Override
+                public boolean updateProxy(Request request, int retryCounter) {
+                    return ProxyController.getInstance().updateProxy(request, retryCounter);
+                }
+
+                @Override
+                public boolean reportConnectException(Request request, int retryCounter, IOException e) {
+                    return ProxyController.getInstance().reportConnectException(request, retryCounter, e);
+                }
+
+                @Override
+                public List<HTTPProxy> getProxiesByURL(URL uri) {
+                    return ProxyController.getInstance().getProxiesWithNoneFallBack(uri, Application.isHeadless());
+                }
+            });
         }
 
         @Override
