@@ -134,49 +134,65 @@ public class DoodriveCom extends PluginForHost {
             if (preDlForm != null) {
                 /* Step1 */
                 br.setFollowRedirects(true);
-                br.getHeaders().put("Origin", "https://doodrive.com");
+                br.getHeaders().put("Origin", "https://" + this.getHost());
                 /* It may be set to null so it wouldn't be sent then */
                 preDlForm.put("verify", "");
                 br.submitForm(preDlForm);
-                /* Step 1.1: Redirect to fake "blog" page */
+                /* Step 1.1: (Optional) Redirect to fake "blog" page e.g. "gositestat.com" */
                 final Form blogForm = br.getFormbyKey("doo-verify");
                 if (blogForm != null) {
                     br.submitForm(blogForm);
                 }
-                /* Step2: Captcha */
+                /* Step2: Captcha & waittime */
                 preDlForm = br.getFormbyKey("doo-verify");
                 if (preDlForm == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                final long timestampBeforeCaptcha = System.currentTimeMillis();
-                int waitSeconds = 10;
-                try {
-                    final Browser brc = br.cloneBrowser();
-                    brc.getPage("https://" + this.br.getHost() + "/assets/js/global.js");
-                    final String waitStr = brc.getRegex("time\\s*:\\s*(\\d+)").getMatch(0);
-                    if (waitStr != null) {
-                        waitSeconds = Integer.parseInt(waitStr);
-                    }
-                } catch (final Throwable e) {
-                    logger.log(e);
-                    logger.warning("Failed to find pre-download-waittime in js");
-                }
-                logger.info("Found preDlForm again this time with captcha");
+                /* 2021-06-11: No waittime required anymore */
+                // final long timestampBeforeCaptcha = System.currentTimeMillis();
+                // int waitSeconds = 10;
+                // try {
+                // final Browser brc = br.cloneBrowser();
+                // brc.getPage("https://" + this.br.getHost() + "/assets/js/global.js");
+                // final String waitStr = brc.getRegex("time\\s*:\\s*(\\d+)").getMatch(0);
+                // if (waitStr != null) {
+                // waitSeconds = Integer.parseInt(waitStr);
+                // }
+                // } catch (final Throwable e) {
+                // logger.log(e);
+                // logger.warning("Failed to find pre-download-waittime in js");
+                // }
                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                 preDlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 /* Very important! */
                 preDlForm.put("verify", "");
-                /* Substract the time the user took to solve the captcha so that time is not wasted. */
-                final long timeToWait = waitSeconds * 1001l - (System.currentTimeMillis() - timestampBeforeCaptcha);
-                this.sleep(timeToWait, link);
+                // /* Substract the time the user took to solve the captcha so that time is not wasted. */
+                // final long timeToWait = waitSeconds * 1001l - (System.currentTimeMillis() - timestampBeforeCaptcha);
+                // this.sleep(timeToWait, link);
                 br.submitForm(preDlForm);
+                /* Look for final Form leading back from "external" site to doodrive --> Download */
+                Form verifyOut = null;
+                for (final Form form : this.br.getForms()) {
+                    if (form.containsHTML("doo-verify-out")) {
+                        verifyOut = form;
+                        break;
+                    }
+                }
+                if (verifyOut != null) {
+                    br.submitForm(verifyOut);
+                    /* 2021-06-11: Typically redirect to "/f/<fuid>?f=<someHash>" */
+                } else {
+                    /* Let's continue and hope this Form just wasn't required. */
+                    logger.warning("Failed to find verifyOut Form");
+                }
+            } else {
+                logger.info("No 'verify' Form required");
             }
             /* Only now can we know whether or not that file is online. */
             if (br.containsHTML("<title>\\s*File Not Found|>\\s*The file you are trying to download is no longer available|>\\s*The file has expired>\\s*The file was deleted by")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            /* Step3 */
-            br.setFollowRedirects(false);
+            /* Final step */
             final Form dlform = br.getFormbyKey("f");
             if (dlform == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
