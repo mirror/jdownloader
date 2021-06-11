@@ -11,13 +11,34 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "fembed.com", type = Type.CRAWLER)
 public interface FEmbedComConfig extends PluginConfigInterface {
-    public static enum Quality implements LabelInterface {
+    public static enum QualitySelectionMode implements LabelInterface {
         BEST {
             @Override
             public String getLabel() {
-                return "Best";
+                return "Best quality";
             }
         },
+        // BEST_OF_SELECTED {
+        // @Override
+        // public String getLabel() {
+        // return "Best quality (use selected as highest)";
+        // }
+        // },
+        // SELECTED_ONLY {
+        // @Override
+        // public String getLabel() {
+        // return "Selected quality only";
+        // }
+        // },
+        ALL {
+            @Override
+            public String getLabel() {
+                return "All available qualities";
+            }
+        };
+    }
+
+    public static enum Quality implements LabelInterface {
         Q360 {
             @Override
             public String getLabel() {
@@ -46,6 +67,14 @@ public interface FEmbedComConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultEnumValue("BEST")
+    @DescriptionForConfigEntry("Define how this plugin should pick your desired qualities?")
+    @Order(50)
+    QualitySelectionMode getQualitySelectionMode();
+
+    void setQualitySelectionMode(QualitySelectionMode mode);
+
+    @AboutConfig
+    @DefaultEnumValue("Q1080")
     @DescriptionForConfigEntry("If your preferred stream quality is not found, best quality will be downloaded instead.")
     @Order(100)
     Quality getPreferredStreamQuality();
