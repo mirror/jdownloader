@@ -135,7 +135,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
         return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
-    /** no override to keep plugin compatible to old stable */
+    @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         mhm.runCheck(account, link);
         showMessage(link, "Generating link");
@@ -150,12 +150,14 @@ public class DebridItaliaCom extends antiDDoSForHost {
              */
             host_downloadlink = host_downloadlink.replaceFirst("^https", "http");
             getPage(API_BASE + "?generate=on&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + encodePassword(account.getPass()) + "&link=" + Encoding.urlEncode(host_downloadlink));
-            /* Either server error or the host is broken (we have to find out by retrying) */
-            if (br.containsHTML("ERROR: not_available")) {
-                mhm.handleErrorGeneric(account, link, "not_available", 20, 5 * 60 * 1000l);
-            } else if (br.containsHTML("ERROR: not_supported")) {
-                logger.info("Current host is not supported");
-                mhm.putError(account, link, 5 * 60 * 1000l, "not_supported");
+            final String error = br.getRegex("(?i)^ERROR: (.+)$").getMatch(0);
+            if (error != null) {
+                if (error.equalsIgnoreCase("not_supported")) {
+                    mhm.putError(account, link, 5 * 60 * 1000l, "not_supported");
+                } else {
+                    /* Treat a generic error e.g. "not_available" or "bandwidth_limit" (daily host specific bandwidth limit reached) */
+                    mhm.handleErrorGeneric(account, link, "not_available", 20, 1 * 60 * 1000l);
+                }
             }
             try {
                 dllink = new URL(br.toString()).toString();
@@ -184,12 +186,13 @@ public class DebridItaliaCom extends antiDDoSForHost {
             } catch (IOException e) {
                 logger.log(e);
             }
-            mhm.handleErrorGeneric(account, link, "", 50);
+            mhm.handleErrorGeneric(account, link, "Final downloadurl does not lead to file", 50);
         }
         if (link.getFinalFileName() == null) {
-            /* They sometimes return html-encoded filenames - let's fix this! */
-            final String server_filename = getFileNameFromHeader(this.dl.getConnection());
-            link.setFinalFileName(server_filename);
+            final String serverFilename = getFileNameFromHeader(this.dl.getConnection());
+            if (serverFilename != null) {
+                link.setFinalFileName(serverFilename);
+            }
         }
         try {
             // start the dl
@@ -223,6 +226,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
         if (StringUtils.equalsIgnoreCase("Download", ret)) {
             return null;
         } else {
+            /* They sometimes return html-encoded filenames - let's fix this! */
             return Encoding.htmlDecode(ret);
         }
     }
