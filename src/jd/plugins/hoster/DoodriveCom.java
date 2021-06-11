@@ -18,12 +18,15 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -71,9 +74,10 @@ public class DoodriveCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 0;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    private static final boolean            FREE_RESUME       = true;
+    private static final int                FREE_MAXCHUNKS    = 0;
+    private static final int                FREE_MAXDOWNLOADS = -1;
+    private static AtomicReference<Cookies> cookies           = new AtomicReference<Cookies>(null);
 
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
@@ -102,20 +106,69 @@ public class DoodriveCom extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         if (!link.isNameSet()) {
+            /* Set fallback filename */
             link.setName(this.getFID(link));
         }
         br.setFollowRedirects(true);
-        /**
-         * 2021-03-12: This is NOT a real availablecheck! </br>
-         * Website returns error 404 for invalid fileIDs but for expired/deleted files, status will be unclear until download is started!
-         */
         if (isDownload) {
+            /* Download: Do not waste any time/steps as we should already know the onlinestatus by now. */
+            synchronized (cookies) {
+                if (cookies.get() != null) {
+                    br.setCookies(cookies.get());
+                }
+            }
+            br.getPage(link.getPluginPatternMatcher());
+            parseFileInfo(link);
+        } else {
+            /*
+             * Do first check without cookies - this way we can only find the online status of wrong fileIDs but therefore we will be able
+             * to find the file info (filename & size) of offline items.
+             */
             br.getPage(link.getPluginPatternMatcher());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            parseFileInfo(link);
+            boolean attemptSecondLinkcheck = false;
+            synchronized (cookies) {
+                if (cookies.get() != null) {
+                    br.setCookies(cookies.get());
+                    attemptSecondLinkcheck = true;
+                }
+            }
+            if (attemptSecondLinkcheck) {
+                br.getPage(link.getPluginPatternMatcher());
+                parseFileInfo(link);
+            }
         }
-        return AvailableStatus.UNCHECKABLE;
+        return AvailableStatus.TRUE;
+    }
+
+    private void parseFileInfo(final DownloadLink link) throws PluginException {
+        /*
+         * Offline message may only appear once appropriate cookies (after captcha) are set. Some files may appear to be online at first
+         * (filename and filesize given) but this errormessage will be displayed after the captcha.
+         */
+        if (br.containsHTML("<title>\\s*File Not Found|>\\s*The file you are trying to download is no longer available|>\\s*The file has expired>\\s*The file was deleted by")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("<h1 class=\"uk-h4 uk-margin-small uk-text-truncate\"[^>]*>([^<>\"]+)<").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex(">Name:</strong><span[^>]*>([^<>\"]+)<").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("readonly>[url=https?://[^/]+/f/[a-z0-9]+\\](.*?)\\[/url\\]").getMatch(0);
+            }
+        }
+        String filesize = br.getRegex("Download\\s*\\((\\d+(?:\\.\\d+) [A-Za-z]+)\\)").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("File size:</strong><span[^>]*>([^<]+)<").getMatch(0);
+        }
+        if (filename != null) {
+            link.setName(filename);
+        }
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
     }
 
     @Override
@@ -185,17 +238,38 @@ public class DoodriveCom extends PluginForHost {
                     /* Let's continue and hope this Form just wasn't required. */
                     logger.warning("Failed to find verifyOut Form");
                 }
+                /*
+                 * Now we should have cookies that allow us to linkcheck other links without having to enter more captchas. A download
+                 * captcha will still be required for each download!
+                 */
+                synchronized (cookies) {
+                    if (cookies != null) {
+                        cookies.set(br.getCookies(br.getURL()));
+                    }
+                }
+                /* Only now can we know whether or not that file is online. */
+                parseFileInfo(link);
             } else {
                 logger.info("No 'verify' Form required");
-            }
-            /* Only now can we know whether or not that file is online. */
-            if (br.containsHTML("<title>\\s*File Not Found|>\\s*The file you are trying to download is no longer available|>\\s*The file has expired>\\s*The file was deleted by")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             /* Final step */
             final Form dlform = br.getFormbyKey("f");
             if (dlform == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            /*
+             * This captcha should only be required if we're using the cookies of another "verified" session meaning that the user should
+             * never have to solve two captchas to download one file!
+             */
+            if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(dlform) || dlform.containsHTML("class=\"recaptcha-submit\"")) {
+                final String key = dlform.getRegex("data-sitekey=\"([^\"]+)\"").getMatch(0);
+                final String recaptchaV2Response;
+                if (key != null) {
+                    recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, key).getToken();
+                } else {
+                    recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                }
+                dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, resumable, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {

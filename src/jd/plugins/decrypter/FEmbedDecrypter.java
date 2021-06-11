@@ -4,6 +4,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.FEmbedComConfig;
+import org.jdownloader.plugins.components.config.FEmbedComConfig.QualitySelectionMode;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -17,15 +27,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.FEmbedComConfig;
-import org.jdownloader.plugins.components.config.FEmbedComConfig.Quality;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FEmbedDecrypter extends PluginForDecrypt {
@@ -127,15 +128,15 @@ public class FEmbedDecrypter extends PluginForDecrypt {
             best = link;
             foundQualities.put(label, link);
         }
-        final String userPreferredQualityStr = getUserPreferredqualityStr();
-        if (userPreferredQualityStr == null) {
-            logger.info("Adding BEST only (user selected)");
-            ret.add(best);
-        } else if (userPreferredQualityStr != null && foundQualities.containsKey(userPreferredQualityStr)) {
-            logger.info("Adding user preferred quality only: " + userPreferredQualityStr);
-            ret.add(foundQualities.get(userPreferredQualityStr));
-        } else {
-            logger.info("Adding BEST only (fallback)");
+        final QualitySelectionMode mode = PluginJsonConfig.get(FEmbedComConfig.class).getQualitySelectionMode();
+        switch (mode) {
+        case ALL:
+            for (final Entry<String, DownloadLink> entry : foundQualities.entrySet()) {
+                ret.add(entry.getValue());
+            }
+            break;
+        default:
+            /* BEST */
             ret.add(best);
         }
         if (ret.size() > 1) {
@@ -150,24 +151,6 @@ public class FEmbedDecrypter extends PluginForDecrypt {
             filePackage.addLinks(ret);
         }
         return ret;
-    }
-
-    private String getUserPreferredqualityStr() {
-        final Quality quality = PluginJsonConfig.get(FEmbedComConfig.class).getPreferredStreamQuality();
-        switch (quality) {
-        case BEST:
-        case Q360:
-            return "360p";
-        case Q480:
-            return "480p";
-        case Q720:
-            return "720p";
-        case Q1080:
-            return "1080p";
-        default:
-            /* E.g. BEST */
-            return null;
-        }
     }
 
     @Override
