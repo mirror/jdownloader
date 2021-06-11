@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -33,9 +36,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onedrive.live.com" }, urls = { "http://onedrivedecrypted\\.live\\.com/\\d+" })
 public class OneDriveLiveCom extends PluginForHost {
@@ -104,18 +104,18 @@ public class OneDriveLiveCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        if (downloadLink.getBooleanProperty("account_only", false)) {
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        if (link.getBooleanProperty("account_only", false)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         if (br.getRequest().getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 30 * 60 * 1000l);
         }
-        final String dllink = getDownloadURL(br, downloadLink);
+        final String dllink = getDownloadURL(br, link);
         boolean resume = true;
         int maxchunks = 0;
-        if (isCompleteFolder(downloadLink)) {
+        if (isCompleteFolder(link)) {
             // resume = false;
             // maxchunks = 1;
             /* Only registered users can download all files of folders as .zip file */
@@ -126,8 +126,8 @@ public class OneDriveLiveCom extends PluginForHost {
         }
         /* This header is especially important for smaller files! See DirectHTTP Host Plugin. */
         br.getHeaders().put("Accept-Encoding", "identity");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection();
             } catch (IOException e) {

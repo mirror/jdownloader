@@ -18,13 +18,16 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
@@ -37,9 +40,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onedrive.live.com" }, urls = { "https?://([a-zA-Z0-9\\-]+\\.)?(onedrive\\.live\\.com/.+|skydrive\\.live\\.com/.+|(sdrv|1drv)\\.ms/[A-Za-z0-9&!=#\\.,-_]+)" })
 public class OneDriveLiveCom extends PluginForDecrypt {
@@ -74,18 +74,12 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         parameter = Encoding.urlDecode(param.toString(), false);
         original_link = parameter;
-        CrawledLink current = getCurrentLink();
-        String subFolderBase = "";
-        while (current != null) {
-            if (current.getDownloadLink() != null && getSupportedLinks().matcher(current.getURL()).matches()) {
-                final String path = current.getDownloadLink().getStringProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, null);
-                if (path != null) {
-                    subFolderBase = path;
-                }
-                break;
-            }
-            current = current.getSourceLink();
-        }
+        /*
+         * 2021-06-11: We can now find the absolute path to ther current folder in their json -> No need to store it in crawler folders that
+         * go back into the crawler
+         */
+        // String subFolderBase = getAdoptedCloudFolderStructure();
+        String subFolderBase = null;
         br.setLoadLimit(Integer.MAX_VALUE);
         final DownloadLink main = createDownloadlink("http://onedrivedecrypted.live.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
         try {
@@ -169,17 +163,14 @@ public class OneDriveLiveCom extends PluginForDecrypt {
             }
             int startIndex = 0;
             int nextStartIndex = 0;
-            int lastSize = -1;
+            int lastSize;
             final Set<String> dups = new HashSet<String>();
-            while (!isAbort()) {
-                if (decryptedLinks.size() == lastSize) {
-                    break;
-                }
+            do {
                 startIndex = nextStartIndex;
+                lastSize = decryptedLinks.size();
                 accessItems_API(this.br, original_link, cid, id, additional_data, startIndex, MAX_ENTRIES_PER_REQUEST);
                 nextStartIndex = startIndex + MAX_ENTRIES_PER_REQUEST;
-                lastSize = decryptedLinks.size();
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 final Object error = entries.get("error");
                 if (error != null) {
                     /*
@@ -189,21 +180,39 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                      */
                     final DownloadLink offline = this.createOfflinelink(parameter);
                     offline.setFinalFileName(new Regex(parameter, "onedrive\\.live\\.com/(.+)").getMatch(0));
-                    if (fp != null) {
-                        fp.add(offline);
-                    }
                     decryptedLinks.add(offline);
                     return decryptedLinks;
                 }
-                ArrayList<Object> ressourcelist = (ArrayList) entries.get("items");
-                entries = (LinkedHashMap<String, Object>) ressourcelist.get(0);
-                if (fp == null) {
-                    final String fpName = (String) entries.get("name");
-                    if (fpName != null) {
-                        fp = FilePackage.getInstance();
-                        fp.setName(fpName);
+                List<Map<String, Object>> ressourcelist = (List) entries.get("items");
+                if (ressourcelist.size() > 1 && StringUtils.isEmpty(subFolderBase)) {
+                    /* Try to build absolute path to current folder */
+                    subFolderBase = "";
+                    for (final Map<String, Object> folder : ressourcelist) {
+                        final String folderID = (String) folder.get("id");
+                        if (folderID.equalsIgnoreCase("root")) {
+                            /* Reached end */
+                            break;
+                        }
+                        final String name = (String) folder.get("name");
+                        if (StringUtils.isEmpty(name)) {
+                            /* This should never happen! */
+                            logger.warning("Folder without name??");
+                        }
+                        subFolderBase = name + "/" + subFolderBase;
                     }
+                    logger.info("Found absolute path: " + subFolderBase);
                 }
+                if (fp == null && !StringUtils.isEmpty(subFolderBase)) {
+                    /* 2021-06-11: Old attempt was to set current folder name as packagename. New one is to set full path as packagename. */
+                    // final String fpName = (String) entries.get("name");
+                    // if (fpName != null) {
+                    // fp = FilePackage.getInstance();
+                    // fp.setName(subFolderBase);
+                    // }
+                    fp = FilePackage.getInstance();
+                    fp.setName(subFolderBase);
+                }
+                entries = ressourcelist.get(0);
                 final long totalItemType = JavaScriptEngineFactory.toLong(entries.get("itemType"), -1);
                 if (totalItemType == ITEM_TYPE_FILE || totalItemType == ITEM_TYPE_PICTURE || totalItemType == ITEM_TYPE_VIDEO) {
                     /* Single file */
@@ -212,7 +221,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                         if (fp != null) {
                             fp.add(link);
                         }
-                        if (StringUtils.isNotEmpty(subFolderBase)) {
+                        if (!StringUtils.isEmpty(subFolderBase)) {
                             link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolderBase);
                         }
                         decryptedLinks.add(link);
@@ -220,8 +229,8 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                     }
                 } else {
                     if (entries.containsKey("folder")) {
-                        entries = (LinkedHashMap<String, Object>) entries.get("folder");
-                        ressourcelist = (ArrayList) entries.get("children");
+                        entries = (Map<String, Object>) entries.get("folder");
+                        ressourcelist = (List<Map<String, Object>>) entries.get("children");
                     }
                     if (fp == null) {
                         /* This should NEVER happen */
@@ -255,8 +264,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                     main.setProperty("plain_cid", cid);
                     main.setProperty("plain_id", id);
                     main.setProperty("plain_authkey", authkey);
-                    for (final Object ressource : ressourcelist) {
-                        final LinkedHashMap<String, Object> entry = (LinkedHashMap<String, Object>) ressource;
+                    for (final Map<String, Object> entry : ressourcelist) {
                         final boolean isPlaceholder = entry.containsKey("isPlaceholder") ? ((Boolean) entry.get("isPlaceholder")).booleanValue() : false;
                         final long type = ((Number) entry.get("itemType")).longValue();
                         final String item_id = (String) entry.get("id");
@@ -278,16 +286,6 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                             }
                             if (dups.add(folderlink)) {
                                 final DownloadLink dl = createDownloadlink(folderlink);
-                                final String name = (String) entry.get("name");
-                                if (StringUtils.isNotEmpty(name)) {
-                                    final String path;
-                                    if (StringUtils.isNotEmpty(subFolderBase)) {
-                                        path = subFolderBase + "/" + name;
-                                    } else {
-                                        path = name;
-                                    }
-                                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
-                                }
                                 decryptedLinks.add(dl);
                             }
                         } else {
@@ -297,13 +295,16 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                                 if (fp != null) {
                                     fp.add(link);
                                 }
-                                if (StringUtils.isNotEmpty(subFolderBase)) {
+                                if (!StringUtils.isEmpty(subFolderBase)) {
                                     link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolderBase);
                                 }
                                 decryptedLinks.add(link);
                                 distribute(link);
                             }
                         }
+                    }
+                    if (decryptedLinks.size() == lastSize) {
+                        break;
                     }
                     // if (decryptedLinks.size() > 1 && SubConfiguration.getConfig("onedrive.live.com").getBooleanProperty(DOWNLOAD_ZIP,
                     // false))
@@ -320,7 +321,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                     // // decryptedLinks.add(main);
                     // }
                 }
-            }
+            } while (!this.isAbort());
         } catch (final BrowserException e) {
             final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName(new Regex(parameter, "onedrive\\.live\\.com/(.+)").getMatch(0));
@@ -330,9 +331,9 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private DownloadLink parseFile(final LinkedHashMap<String, Object> entry, final int startIndex, final int maxItems) throws DecrypterException {
+    private DownloadLink parseFile(final Map<String, Object> entry, final int startIndex, final int maxItems) throws DecrypterException {
         /* File --> Grab information & return to decrypter. All found links are usually ONLINE and downloadable! */
-        final LinkedHashMap<String, Object> urls = (LinkedHashMap<String, Object>) entry.get("urls");
+        final Map<String, Object> urls = (Map<String, Object>) entry.get("urls");
         final String name = (String) entry.get("name");
         final String view_url = (String) urls.get("viewInBrowser");
         final String iconType = (String) entry.get("iconType");
