@@ -20,10 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -36,6 +32,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DoodriveCom extends PluginForHost {
@@ -243,9 +243,7 @@ public class DoodriveCom extends PluginForHost {
                  * captcha will still be required for each download!
                  */
                 synchronized (cookies) {
-                    if (cookies != null) {
-                        cookies.set(br.getCookies(br.getURL()));
-                    }
+                    cookies.set(br.getCookies(br.getURL()));
                 }
                 /* Only now can we know whether or not that file is online. */
                 parseFileInfo(link);
@@ -263,12 +261,7 @@ public class DoodriveCom extends PluginForHost {
              */
             if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(dlform) || dlform.containsHTML("class=\"recaptcha-submit\"")) {
                 final String key = dlform.getRegex("data-sitekey=\"([^\"]+)\"").getMatch(0);
-                final String recaptchaV2Response;
-                if (key != null) {
-                    recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, key).getToken();
-                } else {
-                    recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                }
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, key).getToken();
                 dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, resumable, maxchunks);
@@ -299,6 +292,7 @@ public class DoodriveCom extends PluginForHost {
         }
         try {
             final Browser brc = br.cloneBrowser();
+            brc.setFollowRedirects(true);
             dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resumable, maxchunks);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 return true;

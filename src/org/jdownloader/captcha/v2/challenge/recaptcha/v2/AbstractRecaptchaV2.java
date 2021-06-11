@@ -347,7 +347,7 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
             final String[] divs = getDIVs(source);
             if (divs != null) {
                 for (final String div : divs) {
-                    if (new Regex(div, "class\\s*=\\s*('|\")(?:.*?\\s+)?g-recaptcha(-response)?(\\1|\\s+)").matches()) {
+                    if (new Regex(div, "class\\s*=\\s*('|\")(?:.*?\\s+)?g-recaptcha(-response)?(\\1|\\s+)").matches() || new Regex(div, "class\\s*=\\s*('|\")(?:.*?\\s+)?recaptcha-submit(\\1|\\s+)").matches()) {
                         final String siteKey = new Regex(div, "data-sitekey\\s*=\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
                         if (siteKey != null) {
                             return siteKey;
@@ -400,6 +400,18 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
             final String siteKey = new Regex(source, "grecaptcha(?:\\.enterprise)?\\.execute\\s*\\(\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
             if (siteKey != null) {
                 return siteKey;
+            }
+        }
+        {
+            // within form
+            final Form forms[] = Form.getForms(source);
+            if (forms != null) {
+                for (final Form form : forms) {
+                    final String siteKey = new Regex(form.getHtmlCode(), "data-sitekey\\s*=\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
+                    if (siteKey != null) {
+                        return siteKey;
+                    }
+                }
             }
         }
         return null;
