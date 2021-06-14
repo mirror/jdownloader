@@ -134,7 +134,7 @@ public class Rule34Xxx extends PluginForDecrypt {
                 // no links found we should break!
                 return null;
             }
-            final String nexts[] = br.getRegex("<a href=\"(\\?page=post&(:?amp;)?s=list&(:?amp;)?tags=[a-zA-Z0-9_\\-%\\.]+&(:?amp;)?pid=\\d+)\"").getColumn(0);
+            final String nexts[] = br.getRegex("<a href=\"(\\?page=post&(:?amp;)?s=list&(:?amp;)?tags=[a-zA-Z0-9_\\-%\\.\\+]+&(:?amp;)?pid=\\d+)\"").getColumn(0);
             for (final String next : nexts) {
                 if (loop.add(next)) {
                     sleep(1000, param);

@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -203,28 +204,46 @@ public class YouPornCom extends PluginForHost {
         String filesize = null;
         final String mediaDefinition = br.getRegex("(?:video\\.)?mediaDefinition\\s*[=:]\\s*(\\[.*?\\]);").getMatch(0);
         if (mediaDefinition != null) {
+            ArrayList<HashMap<String, Object>> list = JSonStorage.restoreFromString(mediaDefinition, TypeRef.LIST_HASHMAP);
+            for (Map<String, Object> entry : list) {
+                final String videoUrl = (String) entry.get("videoUrl");
+                final String format = (String) entry.get("format");
+                if (StringUtils.isEmpty(videoUrl)) {
+                    continue;
+                } else if (StringUtils.equals("mp4", format)) {
+                    final Browser brc = br.cloneBrowser();
+                    brc.getPage(videoUrl);
+                    list = JSonStorage.restoreFromString(brc.toString(), TypeRef.LIST_HASHMAP);
+                    break;
+                }
+            }
             final String userPreferredQuality = getPreferredStreamQuality();
             qualityMax = 0;
-            final List<Object> list = JSonStorage.restoreFromString(mediaDefinition, TypeRef.LIST);
             if (list != null) {
                 for (Object entry : list) {
-                    final Map<String, Object> video = (Map<String, Object>) entry;
-                    final Object quality = video.get("quality");
-                    if (quality == null) {
-                        continue;
-                    }
+                    Map<String, Object> video = (Map<String, Object>) entry;
                     final String videoUrl = (String) video.get("videoUrl");
+                    final Object quality = video.get("quality");
                     if (StringUtils.isEmpty(videoUrl)) {
                         continue;
+                    } else if (quality == null) {
+                        continue;
                     }
+                    final Number fileSize = (Number) video.get("videoSize");
                     final String qualityTempStr = (String) quality;
                     if (StringUtils.equals(qualityTempStr, userPreferredQuality)) {
                         logger.info("Found user preferred quality: " + userPreferredQuality);
+                        if (filesize != null) {
+                            link.setDownloadSize(fileSize.longValue());
+                        }
                         dllink = videoUrl;
                         break;
                     }
                     final int qualityTemp = Integer.parseInt(qualityTempStr);
                     if (qualityTemp > qualityMax) {
+                        if (filesize != null) {
+                            link.setDownloadSize(fileSize.longValue());
+                        }
                         qualityMax = qualityTemp;
                         dllink = videoUrl;
                     }
