@@ -565,7 +565,7 @@ public class XvideosCom extends PluginForHost {
                         return true;
                     } else {
                         plugin.getLogger().info("User-Cookie login failed");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -611,7 +611,7 @@ public class XvideosCom extends PluginForHost {
                 final String premium_redirect = PluginJSonUtils.getJson(br, "premium_redirect");
                 final String redirect_domain = PluginJSonUtils.getJson(br, "redirect_domain");
                 if (StringUtils.isEmpty(premium_redirect) && StringUtils.isEmpty(redirect_domain)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    invalidLogin();
                 }
                 if (redirect_domain != null) {
                     /* xvideos.com FREE account */
@@ -622,7 +622,7 @@ public class XvideosCom extends PluginForHost {
                 }
                 /* Double-check! */
                 if (!isLoggedin(br)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    invalidLogin();
                 }
                 if (premium_redirect != null && StringUtils.containsIgnoreCase(br.getHost(), "xvideos.red")) {
                     account.setType(AccountType.PREMIUM);
@@ -640,6 +640,16 @@ public class XvideosCom extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    private void invalidLogin() throws PluginException {
+        final String msg;
+        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+            msg = "Ungültige Zugangsdaten!\r\nPrüfe deine Zugangsdaten und gib deine E-Mail Adresse in das Benutzername Feld ein!";
+        } else {
+            msg = "Invalid logins!\r\nCheck your login credentials and enter your E-Mail address into the username field!";
+        }
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     private boolean attemptCookieLogin(final Plugin plugin, final Account account) throws IOException {

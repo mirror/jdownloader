@@ -24,12 +24,12 @@ public interface FEmbedComConfig extends PluginConfigInterface {
         // return "Best quality (use selected as highest)";
         // }
         // },
-        // SELECTED_ONLY {
-        // @Override
-        // public String getLabel() {
-        // return "Selected quality only";
-        // }
-        // },
+        SELECTED_ONLY {
+            @Override
+            public String getLabel() {
+                return "Selected quality only (fallback = best)";
+            }
+        },
         ALL {
             @Override
             public String getLabel() {

@@ -24,14 +24,16 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "parteeey.de" }, urls = { "https?://(?:www\\.)?parteeey\\.de/galerie/(?:uploads/)?[A-Za-z0-9\\-_]*?\\d+$" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "parteeey.de" }, urls = { "https?://(?:www\\.)?parteeey\\.de/galerie/(?:uploads/)?[A-Za-z0-9\\-_]+\\-\\d+" })
 public class ParteeeyDeGallery extends PluginForDecrypt {
     public ParteeeyDeGallery(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,14 +50,11 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
         }
         final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
         if (aa == null) {
-            return decryptedLinks;
+            /* Account required to access their content */
+            throw new AccountRequiredException();
         }
-        try {
-            jd.plugins.hoster.ParteeeyDe.login(this.br, aa, true);
-        } catch (final Throwable e) {
-            logger.info("Login failure, cannot crawl anything from this host without account");
-            return decryptedLinks;
-        }
+        final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
+        ((jd.plugins.hoster.ParteeeyDe) hostPlugin).login(aa, false);
         /*
          * Show 1000 links per page --> Usually we'll only get one page no matter how big a gallery is and big galleries will usually only
          * have to up to 150 items.
@@ -67,11 +66,11 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        final String url_name = new Regex(parameter, "parteeey\\.de/galerie/(.+)").getMatch(0);
+        final String urlGalleryName = new Regex(parameter, "(?i)parteeey\\.de/galerie/(.+)").getMatch(0);
         String fpName = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         if (fpName == null) {
             /* Packagename fallback */
-            fpName = url_name;
+            fpName = urlGalleryName;
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
@@ -88,10 +87,6 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
         int counter = 1;
         final DecimalFormat df = new DecimalFormat("0000");
         for (int i = 1; i <= page_int_max; i++) {
-            if (this.isAbort()) {
-                logger.info("User aborted decryption for link: " + parameter);
-                return decryptedLinks;
-            }
             logger.info("Decrypting page " + i + " / " + page_int_max);
             if (i > 1) {
                 br.getPage(parameter + "&p=" + i);
@@ -109,18 +104,22 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
                 if (linkid == null) {
                     linkid = new Regex(html, "datei\\?p=(\\d+)").getMatch(0);
                 }
-                String url_thumb = new Regex(html, "img data\\-src=\"(tmp/[^<>\"]*?)\"").getMatch(0);
-                if (url_thumb == null) {
-                    url_thumb = new Regex(html, "<img data\\-src=\"(http[^<>\"]+)\"").getMatch(0);
+                String urlThumb = new Regex(html, "img data\\-src=\"(tmp/[^<>\"]*?)\"").getMatch(0);
+                if (urlThumb == null) {
+                    urlThumb = new Regex(html, "<img data\\-src=\"(http[^<>\"]+)\"").getMatch(0);
                 }
-                if (url_thumb == null) {
-                    url_thumb = new Regex(html, "\"(https?://[^<>\"]*/thumbnails/[^<>\"]*)\"").getMatch(0);
+                if (urlThumb == null) {
+                    urlThumb = new Regex(html, "\"(https?://[^<>\"]*/thumbnails/[^<>\"]*)\"").getMatch(0);
+                }
+                if (urlThumb == null) {
+                    /* 2021-06-14 */
+                    urlThumb = new Regex(html, "(/thumb\\.php\\?f=[^<>\"\\']+)").getMatch(0);
                 }
                 if (linkid == null) {
                     return null;
                 }
                 // final String finallink = "directhttp://https://www.parteeey.de/files/mul/galleries/" + gal_ID + "/" + url_fname;
-                final String url_fname = jd.plugins.hoster.ParteeeyDe.getFilenameFromDirecturl(url_thumb);
+                final String url_fname = jd.plugins.hoster.ParteeeyDe.getFilenameFromThumbnailDirecturl(urlThumb);
                 String finalname;
                 if (url_fname != null) {
                     finalname = df.format(counter) + "_" + url_fname;
@@ -130,11 +129,11 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
                 if (!finalname.endsWith(jd.plugins.hoster.ParteeeyDe.default_extension)) {
                     finalname += jd.plugins.hoster.ParteeeyDe.default_extension;
                 }
-                final String contenturl = "https://www.parteeey.de/#mulFile-" + linkid;
+                final String contenturl = "https://www." + this.getHost() + "/#mulFile-" + linkid;
                 final DownloadLink dl = createDownloadlink(contenturl);
                 dl.setName(finalname);
                 dl.setProperty("decrypterfilename", finalname);
-                dl.setProperty("thumburl", url_thumb);
+                dl.setProperty("thumburl", urlThumb);
                 dl.setProperty("galleryid", galleryID);
                 dl.setContentUrl(contenturl);
                 dl.setAvailable(true);
@@ -142,6 +141,10 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 this.distribute(dl);
                 counter++;
+            }
+            if (this.isAbort()) {
+                logger.info("User aborted decryption for link: " + parameter);
+                return decryptedLinks;
             }
         }
         if (decryptedLinks.size() == 0) {
