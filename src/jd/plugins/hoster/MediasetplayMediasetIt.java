@@ -139,7 +139,7 @@ public class MediasetplayMediasetIt extends PluginForHost {
     }
 
     @Override
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
         return false;
     }
 
