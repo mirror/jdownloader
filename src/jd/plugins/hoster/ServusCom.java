@@ -337,22 +337,33 @@ public class ServusCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked?");
                 }
             }
-            for (final Object ressourceO : ressourcelist) {
-                entries = (Map<String, Object>) ressourceO;
-                final String type = (String) entries.get("type");
-                final String url = (String) entries.get("url");
-                if (StringUtils.isEmpty(url)) {
-                    /* Skip invalid items */
-                    continue;
-                }
-                if (url.contains(".mp4")) {
-                    logger.info("Found http stream: " + httpstream);
-                    if (StringUtils.isEmpty(httpstream)) {
-                        httpstream = url;
+            if (ressourcelist.size() > 0) {
+                int mp4Height = -1;
+                String mp4Stream = null;
+                for (final Object ressourceO : ressourcelist) {
+                    entries = (Map<String, Object>) ressourceO;
+                    final String type = (String) entries.get("type");
+                    final String url = (String) entries.get("url");
+                    final Number height = (Number) entries.get("height");
+                    if (StringUtils.isEmpty(url)) {
+                        /* Skip invalid items */
+                        continue;
+                    } else if (StringUtils.containsIgnoreCase(type, "short_preview") || StringUtils.containsIgnoreCase(type, "_keyframe") || StringUtils.containsIgnoreCase(type, "sprites_")) {
+                        continue;
                     }
-                } else if (type.equalsIgnoreCase("hls")) {
-                    hlsMaster = url;
+                    if (url.contains(".mp4")) {
+                        logger.info("Found http stream: " + ressourceO);
+                        if (mp4Stream == null || height.intValue() > mp4Height) {
+                            logger.info("Found now best stream: " + ressourceO);
+                            mp4Height = height.intValue();
+                            mp4Stream = url;
+                        }
+                    } else if (type.equalsIgnoreCase("hls")) {
+                        // split audio/video not yet supported
+                        // hlsMaster = url;
+                    }
                 }
+                httpstream = mp4Stream;
             }
         } else {
             /* Old */

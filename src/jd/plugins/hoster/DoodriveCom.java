@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -264,7 +265,22 @@ public class DoodriveCom extends PluginForHost {
                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, key).getToken();
                 dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, resumable, maxchunks);
+            URLConnectionAdapter con = br.openFormConnection(dlform);
+            if (!looksLikeDownloadableContent(con)) {
+                br.followConnection();
+                final Form form = br.getFormbyKey("data");
+                if (form == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.submitForm(form);
+                final String url = br.getRegex("window\\.location\\.href\\s*=\\s*\"(https?://.*?)\"").getMatch(0);
+                if (url == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, resumable, maxchunks);
+            } else {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, con.getRequest(), resumable, maxchunks);
+            }
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection(true);

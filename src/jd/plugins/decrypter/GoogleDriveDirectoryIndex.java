@@ -15,16 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -43,6 +38,12 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
@@ -74,8 +75,8 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
     }
 
     /**
-     * Crawler plugin that can handle instances of this project: https://github.com/ParveenBhadooOfficial/Google-Drive-Index </br>
-     * Be sure to add all domains to host plugin GoogleDriveDirectoryIndex.java too!
+     * Crawler plugin that can handle instances of this project: https://github.com/ParveenBhadooOfficial/Google-Drive-Index </br> Be sure
+     * to add all domains to host plugin GoogleDriveDirectoryIndex.java too!
      */
     public GoogleDriveDirectoryIndex(PluginWrapper wrapper) {
         super(wrapper);
@@ -107,29 +108,52 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         /* Older versions required urlquery, newer expect json POST body */
-        URLConnectionAdapter con;
-        if (useOldPostRequest) {
-            con = openAntiDDoSRequestConnection(br, br.createPostRequest(param.getCryptedUrl(), this.getPaginationPostDataQuery(0, "")));
-        } else {
-            con = openAntiDDoSRequestConnection(br, br.createPostRequest(param.getCryptedUrl(), this.getPaginationPostDataJson(0, "")));
-            if (con.getResponseCode() == 500) {
-                logger.info("Trying fallback to old POST request");
+        URLConnectionAdapter con = null;
+        try {
+            if (useOldPostRequest) {
                 con = openAntiDDoSRequestConnection(br, br.createPostRequest(param.getCryptedUrl(), this.getPaginationPostDataQuery(0, "")));
-                useOldPostRequest = true;
+            } else {
+                con = openAntiDDoSRequestConnection(br, br.createPostRequest(param.getCryptedUrl(), this.getPaginationPostDataJson(0, "")));
+                if (con.getResponseCode() == 500) {
+                    try {
+                        br.followConnection(true);
+                    } catch (IOException e) {
+                        logger.log(e);
+                    }
+                    con = openAntiDDoSRequestConnection(br, br.createPostRequest(param.getCryptedUrl(), this.getPaginationPostDataQuery(0, "")));
+                    useOldPostRequest = true;
+                }
             }
-        }
-        if (con.getResponseCode() == 405) {
-            /* Fallback? 2021-05-19: Is this still required? */
-            br.followConnection(true);
-            con = openAntiDDoSRequestConnection(br, br.createGetRequest(param.getCryptedUrl()));
-        }
-        if (con.isContentDisposition()) {
-            con.disconnect();
-            final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(br.getRequest(), con);
-            decryptedLinks.add(direct);
-            return decryptedLinks;
-        } else {
-            br.followConnection();
+            if (con.getResponseCode() == 401) {
+                // POST request failed but simple GET may work fine
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
+                con = openAntiDDoSRequestConnection(br, br.createGetRequest(param.getCryptedUrl()));
+            }
+            if (con.getResponseCode() == 405) {
+                /* Fallback? 2021-05-19: Is this still required? */
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
+                con = openAntiDDoSRequestConnection(br, br.createGetRequest(param.getCryptedUrl()));
+            }
+            if (looksLikeDownloadableContent(con)) {
+                con.disconnect();
+                final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(br.getRequest(), con);
+                decryptedLinks.add(direct);
+                return decryptedLinks;
+            } else {
+                br.followConnection();
+            }
+        } finally {
+            if (con != null) {
+                con.disconnect();
+            }
         }
         if (br.getHttpConnection().getResponseCode() == 401) {
             if (acc != null) {
