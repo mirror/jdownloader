@@ -15,7 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.LinkedHashMap;
+import java.io.IOException;
+import java.util.Map;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -30,6 +31,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -54,7 +56,6 @@ public class ParteeeyDe extends PluginForHost {
     private static final int     FREE_MAXCHUNKS    = 1;
     private static final int     FREE_MAXDOWNLOADS = 20;
     public static final String   default_extension = ".jpg";
-    public static final long     trust_cookie_age  = 300000l;
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
@@ -64,22 +65,22 @@ public class ParteeeyDe extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, false);
+        final Account account = AccountController.getInstance().getValidAccount(this);
+        return requestFileInformation(link, account, false);
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         dllink = null;
         server_issues = false;
         final String fid = getFID(link);
         link.setLinkID(this.getHost() + "://" + fid);
         this.setBrowserExclusive();
         prepBR(this.br);
-        final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa == null) {
+        if (account == null) {
             link.getLinkStatus().setStatusText("Account needed for linkcheck- and download");
             return AvailableStatus.UNCHECKABLE;
         }
-        String url_thumb = link.getStringProperty("thumburl", null);
+        String urlThumb = link.getStringProperty("thumburl", null);
         String filename = null;
         final String filename_decrypter = link.getStringProperty("decrypterfilename", null);
         final String galleryid = link.getStringProperty("galleryid", null);
@@ -91,23 +92,24 @@ public class ParteeeyDe extends PluginForHost {
              * KBs) better than the image displayed in the gallery via browser.
              */
             /* Login with validating cookies */
-            login(this.br, aa, true);
+            login(account, true);
             dllink = "https://www." + this.getHost() + "/galerie/datei/herunterladen/" + fid;
         } else {
-            final String original_filename_in_thumbnail = new Regex(url_thumb, "/[^/]*(" + fid + ".+)").getMatch(0);
+            final String original_filename_in_thumbnail = getFilenameFromThumbnailDirecturl(urlThumb);
             if (original_filename_in_thumbnail != null && galleryid != null) {
                 /* 2019-08-21: Best way to generate downloadlinks - and we do not even have to login to download them! */
-                dllink = String.format("https://www.parteeey.de/files/mul/galleries/%s/%s", galleryid, original_filename_in_thumbnail);
-            }
-            if (StringUtils.isEmpty(dllink)) {
+                logger.info("Using thumbnail to original download (fast way)");
+                dllink = String.format("https://www." + this.getHost() + "/files/mul/galleries/%s/%s", galleryid, original_filename_in_thumbnail);
+            } else {
+                logger.info("Using official download (slower way)");
                 final boolean grabAjax = false;
                 if (grabAjax) {
                     /* 2016-08-21: Set width & height to higher values so that we get the max quality possible. */
                     /* Login with validating cookies */
-                    login(this.br, aa, true);
+                    login(account, true);
                     this.br.postPage("https://www." + this.getHost() + "/Ajax/mulFileInfo", "filId=" + fid + "&width=5000&height=5000&filIdPrevious=&filIdNext=");
                     try {
-                        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                        final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                         dllink = (String) entries.get("path");
                     } catch (final Throwable e) {
                     }
@@ -117,11 +119,11 @@ public class ParteeeyDe extends PluginForHost {
                      * extracted via ajax request will contain the String '/tumbnail/'.)
                      */
                     /* Login WITHOUT validating cookies - this speeds up the downloading process! */
-                    final boolean verifiedLogin = login(this.br, aa, false);
-                    br.getPage("https://www.parteeey.de/galerie/datei?p=" + fid);
+                    final boolean verifiedLogin = login(account, false);
+                    br.getPage("https://www." + this.getHost() + "/galerie/datei?p=" + fid);
                     if (!verifiedLogin && !isLoggedin(br)) {
                         logger.info("Login cookies did not work - trying again!");
-                        login(this.br, aa, true);
+                        login(account, true);
                         br.getPage("/galerie/datei?p=" + fid);
                     }
                     if (br.getHttpConnection().getResponseCode() == 404) {
@@ -136,7 +138,7 @@ public class ParteeeyDe extends PluginForHost {
             }
         }
         if (!StringUtils.isEmpty(dllink) && !isDownload) {
-            final String url_filename = getFilenameFromDirecturl(dllink);
+            final String url_filename = getFilenameFromThumbnailDirecturl(dllink);
             if (url_filename != null) {
                 filename = url_filename;
             } else if (filename_decrypter != null) {
@@ -151,8 +153,10 @@ public class ParteeeyDe extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = this.br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 } else {
                     server_issues = true;
                 }
@@ -172,27 +176,31 @@ public class ParteeeyDe extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink, true);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link, null, true);
         /* Account required to download. */
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        throw new AccountRequiredException();
     }
 
-    private void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link) throws Exception, PluginException {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content");
         }
         dl.startDownload();
     }
@@ -202,8 +210,7 @@ public class ParteeeyDe extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    public static boolean login(final Browser br, final Account account, final boolean validateCookies) throws Exception {
-        boolean loggedIN = false;
+    public boolean login(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
             try {
                 prepBR(br);
@@ -212,28 +219,36 @@ public class ParteeeyDe extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(account.getHoster(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age && !validateCookies) {
+                    if (!validateCookies) {
                         /* We trust these cookies as they're not that old --> Do not check them */
+                        logger.info("Trust cookies without validation");
                         return false;
+                    } else {
+                        logger.info("Checking cookies...");
+                        br.getPage("https://www." + this.getHost());
+                        if (isLoggedin(this.br)) {
+                            logger.info("Cookie login successful");
+                            return true;
+                        } else {
+                            logger.info("Cookie login failed");
+                        }
                     }
-                    br.getPage("https://www." + account.getHoster());
-                    loggedIN = isLoggedin(br);
                 }
-                if (!loggedIN) {
-                    /* Perform full login */
-                    br.postPage("https://www." + account.getHoster() + "/login", "loginData%5BauthsysAuthProvider%5D%5BrememberLogin%5D=on&sent=true&url=%2F&usedProvider=authsysAuthProvider&loginData%5BauthsysAuthProvider%5D%5Busername%5D=" + Encoding.urlEncode(account.getUser()) + "&loginData%5BauthsysAuthProvider%5D%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()));
-                    loggedIN = isLoggedin(br);
-                    if (br.containsHTML("Ihre Login\\-Daten sind ungültig") || !loggedIN) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                /* Perform full login */
+                logger.info("Performing full login");
+                br.postPage("https://www." + this.getHost() + "/login", "loginData%5BauthsysAuthProvider%5D%5BrememberLogin%5D=on&sent=true&url=%2F&usedProvider=authsysAuthProvider&loginData%5BauthsysAuthProvider%5D%5Busername%5D=" + Encoding.urlEncode(account.getUser()) + "&loginData%5BauthsysAuthProvider%5D%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()));
+                if (br.containsHTML("Ihre Login\\-Daten sind ungültig")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
-        return loggedIN;
+        return true;
     }
 
     public static boolean isLoggedin(final Browser br) {
@@ -243,36 +258,35 @@ public class ParteeeyDe extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(this.br, account, true);
-        } catch (PluginException e) {
-            throw e;
-        }
+        login(account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Registered (free) user");
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link, true);
-        doFree(link);
+        requestFileInformation(link, account, true);
+        handleDownload(link);
     }
 
-    public static String getFilenameFromDirecturl(final String directurl) {
+    public static String getFilenameFromThumbnailDirecturl(final String directurl) {
         if (directurl == null) {
             return null;
         }
-        final String url_name = new Regex(directurl, "/[a-z]+_\\d+_\\d+_\\d+_(.+)$").getMatch(0);
-        return url_name;
+        final Regex newStyle = new Regex(directurl, "(?i).*/thumb\\.php\\?f=assets%3A%2F%2Fmul%2Fgalleries%2F\\d+%2F(\\d+_[^\\&]+).*");
+        if (newStyle.matches()) {
+            /* 2021-06-14: New */
+            return newStyle.getMatch(0);
+        } else {
+            return new Regex(directurl, "(?i)/[a-z]+_\\d+_\\d+_\\d+_(.+)$").getMatch(0);
+        }
     }
 
     public static Browser prepBR(final Browser br) {
-        /* Use current FF UA here */
-        /* Last updated: 2017-10-06 */
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:55.0) Gecko/20100101 Firefox/55.0");
+        /* Last updated: 2021-06-14 */
+        br.getHeaders().put("User-Agent", "JDownloader");
         br.setFollowRedirects(true);
         return br;
     }

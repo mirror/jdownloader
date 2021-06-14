@@ -152,8 +152,11 @@ public class DebridItaliaCom extends antiDDoSForHost {
             getPage(API_BASE + "?generate=on&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + encodePassword(account.getPass()) + "&link=" + Encoding.urlEncode(host_downloadlink));
             final String error = br.getRegex("(?i)^ERROR: (.+)$").getMatch(0);
             if (error != null) {
+                /* First known errors with immediate waittime, then generic */
                 if (error.equalsIgnoreCase("not_supported")) {
-                    mhm.putError(account, link, 5 * 60 * 1000l, "not_supported");
+                    mhm.putError(account, link, 5 * 60 * 1000l, "Host not supported");
+                } else if (error.equalsIgnoreCase("bandwidth_limit")) {
+                    mhm.putError(account, link, 5 * 60 * 1000l, "Bandwidth limit reached");
                 } else {
                     /* Treat a generic error e.g. "not_available" or "bandwidth_limit" (daily host specific bandwidth limit reached) */
                     mhm.handleErrorGeneric(account, link, "not_available", 20, 1 * 60 * 1000l);
