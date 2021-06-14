@@ -67,6 +67,7 @@ public class VideoMediasetIt extends PluginForHost {
         br.setReadTimeout(3 * 60 * 1000);
         String streamID = null;
         if (link.getDownloadURL().matches(TYPE_VIDEO_WITTYTV)) {
+            /* 2021-06-04: Old handling: First API request may still work but final downloadurl will not... */
             streamID = new Regex(link.getDownloadURL(), "/[^/]+/(?:[^/]+/)(\\d+)/?$").getMatch(0);
             if (StringUtils.isEmpty(streamID)) {
                 br.getPage(link.getDownloadURL());
