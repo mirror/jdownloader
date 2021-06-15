@@ -1,12 +1,12 @@
 package org.jdownloader.captcha.blacklist;
 
+import jd.controlling.captcha.SkipRequest;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.captcha.v2.Challenge;
 
 public class BlockAllDownloadCaptchasEntry implements SessionBlackListEntry {
-
     public BlockAllDownloadCaptchasEntry() {
     }
 
@@ -30,4 +30,8 @@ public class BlockAllDownloadCaptchasEntry implements SessionBlackListEntry {
         }
     }
 
+    @Override
+    public SkipRequest getSkipRequest() {
+        return SkipRequest.BLOCK_ALL_CAPTCHAS;
+    }
 }
