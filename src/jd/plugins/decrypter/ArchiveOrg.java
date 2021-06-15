@@ -72,7 +72,7 @@ public class ArchiveOrg extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
-        hostPlugin = getNewPluginForHostInstance(getHost());
+        hostPlugin = getNewPluginForHostInstance("archive.org");
         final String parameter = param.toString().replace("://www.", "://").replaceFirst("/(stream|embed)/", "/download/");
         /*
          * 2020-08-26: Login might sometimes be required for book downloads.
