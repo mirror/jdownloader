@@ -15,7 +15,22 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.LinkedHashMap;
+import java.util.Map;
+
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -33,21 +48,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com" }, urls = { "https?://[a-z0-9]+\\.twimg\\.com/media/[^/]+|https?://amp\\.twimg\\.com/prod/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap|https?://amp\\.twimg\\.com/v/.+|https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+" })
 public class TwitterCom extends PluginForHost {
@@ -70,7 +70,7 @@ public class TwitterCom extends PluginForHost {
     private final String       TYPE_DIRECT                  = "https?://[a-z0-9]+\\.twimg\\.com/.+";
     private final String       TYPE_VIDEO                   = "https?://amp\\.twimg\\.com/v/.+";
     private final String       TYPE_VIDEO_VMAP              = "https?://amp\\.twimg\\.com/prod/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap";
-    public static final String TYPE_VIDEO_EMBED             = "https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+";
+    public static final String TYPE_VIDEO_EMBED             = "https?://[^/]+/i/videos/tweet/(\\d+)";
     /* Connection stuff - don't allow chunks as we only download small pictures */
     private final boolean      FREE_RESUME                  = true;
     private final int          FREE_MAXCHUNKS               = 1;
@@ -144,7 +144,7 @@ public class TwitterCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } else if (link.getPluginPatternMatcher().matches(TYPE_VIDEO_EMBED)) {
-            final String tweet_id = new Regex(link.getPluginPatternMatcher(), "/tweet/(\\d+)$").getMatch(0);
+            final String tweetID = new Regex(link.getPluginPatternMatcher(), "/tweet/(\\d+)$").getMatch(0);
             /* 2018-11-13: Using static token */
             final boolean use_static_token = true;
             final String authorization_token;
@@ -171,7 +171,7 @@ public class TwitterCom extends PluginForHost {
             br.getHeaders().put("Authorization", "Bearer " + authorization_token);
             br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("Origin", "https://twitter.com");
-            br.getHeaders().put("Referer", "https://" + this.getHost() + "/i/videos/tweet/" + tweet_id);
+            br.getHeaders().put("Referer", "https://" + this.getHost() + "/i/videos/tweet/" + tweetID);
             synchronized (LOCK) {
                 jd.plugins.decrypter.TwitterCom.prepAPIHeaders(br);
                 /* Set guest_token header if needed. */
@@ -190,13 +190,13 @@ public class TwitterCom extends PluginForHost {
                  * Without guest_token in header we might often get blocked here with this response: HTTP/1.1 429 Too Many Requests -->
                  * {"errors":[{"message":"Rate limit exceeded","code":88}]}
                  */
-                br.getPage("https://api.twitter.com/1.1/videos/tweet/config/" + tweet_id + ".json");
+                br.getPage("https://api.twitter.com/1.1/videos/tweet/config/" + tweetID + ".json");
                 if (br.getHttpConnection().getResponseCode() == 429) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Rate-limit reached", 5 * 60 * 1000l);
                 }
                 try {
-                    LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "track/mediaAvailability");
+                    Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                    entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "track/mediaAvailability");
                     final String status = (String) entries.get("status");
                     if (status.equalsIgnoreCase("unavailable")) {
                         final String reason = (String) entries.get("reason");
@@ -239,8 +239,8 @@ public class TwitterCom extends PluginForHost {
             // this.br.getRequest().setHtmlCode(Encoding.htmlDecode(this.br.toString()));
             dllink = PluginJSonUtils.getJson(this.br, "playbackUrl");
             if (StringUtils.isEmpty(dllink)) {
-                final LinkedHashMap<String, Object> entries = jd.plugins.decrypter.TwitterCom.getPlayerData(br);
-                final LinkedHashMap<String, Object> videoInfo = (LinkedHashMap<String, Object>) entries.get("videoInfo");
+                final Map<String, Object> entries = jd.plugins.decrypter.TwitterCom.getPlayerData(br);
+                final Map<String, Object> videoInfo = (Map<String, Object>) entries.get("videoInfo");
                 title = (String) videoInfo.get("title");
                 description = (String) videoInfo.get("description");
                 vmap_url = (String) entries.get("vmap_url");
@@ -251,9 +251,9 @@ public class TwitterCom extends PluginForHost {
                 this.dllink = regexVideoVmapHighestQualityURL(this.br);
             }
             if (!StringUtils.isEmpty(title)) {
-                filename = tweetid + "_" + title + ".mp4";
+                filename = tweetID + "_" + title + ".mp4";
             } else {
-                filename = tweetid + "_" + tweetid + ".mp4";
+                filename = tweetID + "_" + tweetID + ".mp4";
             }
         } else { // TYPE_DIRECT - jpg/png/mp4
             dllink = link.getDownloadURL();

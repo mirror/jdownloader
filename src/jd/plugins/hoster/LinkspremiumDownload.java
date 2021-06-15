@@ -180,8 +180,13 @@ public class LinkspremiumDownload extends YetiShareCore {
                 dllink = brc.getRegex("(https?://[^/]+/download/[^\">]+)\"").getMatch(0);
             }
             if (dllink == null) {
-                /* Use previous browser for errorchecking here . we don't want to run into logout failure accidently! */
-                this.checkErrorsLastResort(this.br, link, account);
+                final String errormsg = brc.getRegex("<i class=\"fa fa-exclamation-triangle\"></i>(.*?)</div>").getMatch(0);
+                if (errormsg != null) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormsg.trim(), 1 * 60 * 1000l);
+                } else {
+                    /* Use previous browser for errorchecking here . We don't want to run into logout failure accidently! */
+                    this.checkErrorsLastResort(this.br, link, account);
+                }
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(account));
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
