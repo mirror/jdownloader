@@ -1383,7 +1383,7 @@ public class HLSDownloader extends DownloadInterface {
                                                 try {
                                                     outputStream.write(readWriteBuffer, 0, len);
                                                 } catch (IOException e) {
-                                                    requestLogger.log(e);
+                                                    requestLogger.exception("ReadWriteBuffer:" + len + "|Position:" + position, e);
                                                     throw e;
                                                 }
                                                 try {
