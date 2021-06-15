@@ -1019,9 +1019,15 @@ public class VKontakteRu extends PluginForDecrypt {
             for (final List<Object> videoInfos : videosO) {
                 final int thisOwnerID = ((Number) videoInfos.get(0)).intValue();
                 final int thisContentID = ((Number) videoInfos.get(1)).intValue();
-                final String videoTitle = (String) videoInfos.get(3);
+                String videoTitle = (String) videoInfos.get(3);
                 /* TODO: Convert this html String to String and set it as a DownloadLink property and/or even make use of it. */
-                // final String videoAuthorHTML = (String)videoInfos.get(8);
+                final String videoAuthorHTML = (String) videoInfos.get(8);
+                if (videoAuthorHTML != null) {
+                    final String uploader = new Regex(videoAuthorHTML, "<a href=[^>]*>(.*?)</a>").getMatch(0);
+                    if (uploader != null && !uploader.equals("DELETED")) {
+                        videoTitle = uploader + "_" + videoTitle;
+                    }
+                }
                 if (dupes.add(thisContentID)) {
                     // /* Fail-safe */
                     // logger.info("Stopping because: Found dupe");
