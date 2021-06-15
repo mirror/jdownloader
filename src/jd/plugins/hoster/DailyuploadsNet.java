@@ -18,14 +18,14 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DailyuploadsNet extends XFileSharingProBasic {
@@ -111,7 +111,7 @@ public class DailyuploadsNet extends XFileSharingProBasic {
         /* 2020-05-08: Special */
         String dllink = super.getDllink(link, account, br, src);
         /* Avoid bad URLs which the main plugin may pickup. */
-        if (dllink.matches("https?://.+adskeeper.+\\.\\d+\\.js")) {
+        if (dllink != null && dllink.matches("https?://.+adskeeper.+\\.\\d+\\.js")) {
             return null;
         }
         return dllink;
