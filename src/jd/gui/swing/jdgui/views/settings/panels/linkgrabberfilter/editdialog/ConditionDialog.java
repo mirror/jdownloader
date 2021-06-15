@@ -466,7 +466,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cobFilename = new JComboBox(new String[] { _GUI.T.FilterRuleDialog_layoutDialogContent_contains(), _GUI.T.FilterRuleDialog_layoutDialogContent_equals(), _GUI.T.FilterRuleDialog_layoutDialogContent_contains_not(), _GUI.T.FilterRuleDialog_layoutDialogContent_equals_not() });
         txtFilename = new ExtTextField() {
             @Override
-            public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
+            public JPopupMenu getPopupMenu(MouseEvent event, AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
                 menu.add(new TestAction(getFilenameFilter(), _GUI.T.ConditionDialog_getPopupMenu_filename_()));
                 menu.add(new JSeparator());
@@ -506,7 +506,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cobPackage = new JComboBox(new String[] { _GUI.T.FilterRuleDialog_layoutDialogContent_contains(), _GUI.T.FilterRuleDialog_layoutDialogContent_equals(), _GUI.T.FilterRuleDialog_layoutDialogContent_contains_not(), _GUI.T.FilterRuleDialog_layoutDialogContent_equals_not() });
         txtPackage = new ExtTextField() {
             @Override
-            public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
+            public JPopupMenu getPopupMenu(MouseEvent event, AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
                 menu.add(new TestAction(getPackagenameFilter(), _GUI.T.ConditionDialog_getPopupMenu_Package_()));
                 menu.add(new JSeparator());
@@ -622,7 +622,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         // various
         txtCustumMime = new ExtTextField() {
             @Override
-            public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
+            public JPopupMenu getPopupMenu(MouseEvent event, AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
                 menu.add(new TestAction(getFiletypeFilter(), _GUI.T.ConditionDialog_getPopupMenu_filename_()));
                 menu.add(new JSeparator());
@@ -675,7 +675,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cobHoster = new JComboBox(new String[] { _GUI.T.FilterRuleDialog_layoutDialogContent_contains(), _GUI.T.FilterRuleDialog_layoutDialogContent_equals(), _GUI.T.FilterRuleDialog_layoutDialogContent_contains_not(), _GUI.T.FilterRuleDialog_layoutDialogContent_equals_not() });
         txtHoster = new ExtTextField() {
             @Override
-            public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
+            public JPopupMenu getPopupMenu(MouseEvent event, AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
                 menu.add(new TestAction(getHosterFilter(), _GUI.T.ConditionDialog_getPopupMenu_hosterurl_()));
                 menu.add(new JSeparator());
@@ -707,7 +707,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cobSource = new JComboBox(new String[] { _GUI.T.FilterRuleDialog_layoutDialogContent_contains(), _GUI.T.FilterRuleDialog_layoutDialogContent_equals(), _GUI.T.FilterRuleDialog_layoutDialogContent_contains_not(), _GUI.T.FilterRuleDialog_layoutDialogContent_equals_not() });
         txtSource = new ExtTextField() {
             @Override
-            public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
+            public JPopupMenu getPopupMenu(MouseEvent event, AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
                 menu.add(new TestAction(getSourceFilter(), _GUI.T.ConditionDialog_getPopupMenu_sourceurl_()));
                 menu.add(new JSeparator());

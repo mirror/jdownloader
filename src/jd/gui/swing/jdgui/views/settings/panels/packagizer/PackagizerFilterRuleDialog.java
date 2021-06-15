@@ -428,7 +428,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
             private static final long serialVersionUID = 1L;
 
             @Override
-            public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
+            public JPopupMenu getPopupMenu(MouseEvent event, AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
                 menu.add(createVariablesMenu(txtPackagename));
                 menu.add(new JSeparator());
@@ -448,7 +448,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
             private static final long serialVersionUID = 1L;
 
             @Override
-            public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
+            public JPopupMenu getPopupMenu(MouseEvent event, AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
                 menu.add(createVariablesMenu(txtPackagekey));
                 menu.add(new JSeparator());
@@ -468,7 +468,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
             private static final long serialVersionUID = 1L;
 
             @Override
-            public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
+            public JPopupMenu getPopupMenu(MouseEvent event, AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
                 menu.add(createVariablesMenu(txtNewFilename));
                 menu.add(new JSeparator());
@@ -488,7 +488,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
             private static final long serialVersionUID = 1L;
 
             @Override
-            public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
+            public JPopupMenu getPopupMenu(MouseEvent event, AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
                 menu.add(createVariablesMenu(txtComment));
                 menu.add(new JSeparator());
@@ -610,7 +610,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
             private static final long serialVersionUID = 1L;
 
             @Override
-            public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
+            public JPopupMenu getPopupMenu(MouseEvent event, AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
                 menu.add(createVariablesMenu(txtRename));
                 menu.add(new JSeparator());
