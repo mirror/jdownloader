@@ -734,10 +734,10 @@ public class PornportalCom extends PluginForHost {
                 final Boolean isExpired = (Boolean) map.get("isExpired");
                 final Boolean isTrial = (Boolean) map.get("isTrial");
                 final Boolean isCanceled = (Boolean) map.get("isCanceled");
-                if (Boolean.TRUE.equals(isTrial) || Boolean.TRUE.equals(isExpired)) {
+                if (Boolean.TRUE.equals(isExpired)) {
                     account.setType(AccountType.FREE);
                     /* Free accounts can be used to download trailers */
-                    ai.setStatus("Free Account");
+                    ai.setStatus("Free Account (expired premium)");
                 } else if (isTrial) {
                     ai.setStatus("Free Account (Trial)");
                 } else {
