@@ -127,6 +127,8 @@ public class VKontakteRuHoster extends PluginForHost {
     public static final String  PROPERTY_GENERAL_owner_id                                                   = "owner_id";
     public static final String  PROPERTY_GENERAL_content_id                                                 = "content_id";
     public static String        PROPERTY_GENERAL_TITLE                                                      = "title";
+    public static String        PROPERTY_GENERAL_DATE                                                       = "date";
+    public static String        PROPERTY_GENERAL_UPLOADER                                                   = "uploader";
     /* For single photos */
     public static final String  PROPERTY_PHOTOS_picturedirectlink                                           = "picturedirectlink";
     public static final String  PROPERTY_PHOTOS_directurls_fallback                                         = "directurls_fallback";
@@ -412,7 +414,8 @@ public class VKontakteRuHoster extends PluginForHost {
                         } else if (br.containsHTML("class\\s*=\\s*\"message_page_body\">\\s*Access denied")) {
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         }
-                        final Map<String, String> availableQualities = findAvailableVideoQualities(br);
+                        final Map<String, Object> video = jd.plugins.decrypter.VKontakteRu.findVideoMap(this.br, id);
+                        final Map<String, String> availableQualities = jd.plugins.decrypter.VKontakteRu.findAvailableVideoQualities(video);
                         if (availableQualities.isEmpty()) {
                             /* This should never happen */
                             logger.info("vk.com: Couldn't find any available qualities for videolink");
@@ -846,11 +849,6 @@ public class VKontakteRuHoster extends PluginForHost {
         ai.setStatus("Free Account");
         account.setType(AccountType.FREE);
         return ai;
-    }
-
-    /* Same function in hoster and decrypterplugin, sync it!! */
-    private Map<String, String> findAvailableVideoQualities(final Browser br) throws Exception {
-        return VKontakteRu.findAvailableVideoQualities(br);
     }
 
     private void generalErrorhandling() throws PluginException {

@@ -221,7 +221,7 @@ public class TwitterCom extends PornEmbedParser {
                 final String type = (String) media.get("type");
                 if (type.equals("video")) {
                     /* Find highest video quality */
-                    int highestQuality = -1;
+                    int highestBitrate = -1;
                     final List<Map<String, Object>> videoVariants = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(media, "video_info/variants");
                     String streamURL = null;
                     for (final Map<String, Object> videoVariant : videoVariants) {
@@ -231,8 +231,8 @@ public class TwitterCom extends PornEmbedParser {
                             continue;
                         }
                         final int bitrate = ((Number) videoVariant.get("bitrate")).intValue();
-                        if (bitrate > highestQuality) {
-                            highestQuality = bitrate;
+                        if (bitrate > highestBitrate) {
+                            highestBitrate = bitrate;
                             streamURL = (String) videoVariant.get("url");
                         }
                     }
@@ -240,6 +240,7 @@ public class TwitterCom extends PornEmbedParser {
                     dl.setForcedFileName(formattedDate + "_" + username + "_" + tweetID + ".mp4");
                     dl.setAvailable(true);
                     dl.setProperty(PROPERTY_USERNAME, username);
+                    dl.setProperty("bitrate", highestBitrate);
                     this.decryptedLinks.add(dl);
                 } else if (type.equals("photo")) {
                     final String url = (String) media.get("media_url"); /* Also available as "media_url_https" */
@@ -609,6 +610,7 @@ public class TwitterCom extends PornEmbedParser {
     }
 
     /* 2020-01-30: Mobile website will only show 1 tweet per page */
+    @Deprecated
     private void crawlUserViaMobileWebsite(final String parameter) throws IOException {
         logger.info("Crawling mobile website user");
         br.getPage(parameter);
