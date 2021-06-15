@@ -15,10 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -31,16 +30,18 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wistia.com" }, urls = { "https?://(?:www\\.)?ksmedia\\-gmbh\\.wistia\\.com/medias/[A-Za-z0-9]+|https?://fast\\.wistia\\.net/embed/iframe/[a-z0-9]+" })
 public class WistiaCom extends PluginForHost {
     public WistiaCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     // Tags:
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_Extension = ".mp4";
     /* Connection stuff */
@@ -66,11 +67,7 @@ public class WistiaCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        if (link.getPluginPatternMatcher() == null) {
-            return null;
-        } else {
-            return new Regex(link.getPluginPatternMatcher(), "([A-Za-z0-9]+)$").getMatch(0);
-        }
+        return new Regex(link.getPluginPatternMatcher(), "([A-Za-z0-9]+)$").getMatch(0);
     }
 
     @SuppressWarnings({ "unchecked" })
@@ -162,17 +159,18 @@ public class WistiaCom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
