@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -42,14 +43,43 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bs.to" }, urls = { "https?://(?:www\\.)?(?:bs\\.to|burningseries\\.co)/(serie/.*|out/\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class BsTo extends PluginForDecrypt {
     public BsTo(PluginWrapper wrapper) {
         super(wrapper);
         Browser.setRequestIntervalLimitGlobal("bs.to", 200);
     }
 
-    private static final String TYPE_SINGLE = "https?://(www\\.)?(?:bs\\.to|burningseries\\.co)/serie/[^/]+/\\d+/[^/]+/[^/]+/[^/]+";
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        /* Full list of their current domains see: https://burningseries.domains/ */
+        ret.add(new String[] { "bs.to", "burningseries.co", "burningseries.ac", "burningseries.vc", "burningseries.cx" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(serie/.*|out/\\d+)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    private static final String TYPE_SINGLE = "https?://[^/]+/serie/[^/]+/\\d+/[^/]+/[^/]+/[^/]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -88,7 +118,7 @@ public class BsTo extends PluginForDecrypt {
                     finallink = br.getRegex("\"(https?[^<>\"]*?)\" target=\"_blank\" class=\"hoster-player\">").getMatch(0);
                     if (finallink == null) {
                         // final failover?
-                        finallink = br.getRegex("https?://(\\w+\\.)?(?:bs\\.to|burningseries\\.co)/out/\\d+").getMatch(-1);
+                        finallink = br.getRegex("https?://(\\w+\\.)?[^/]+/out/\\d+").getMatch(-1);
                     }
                 }
             }
