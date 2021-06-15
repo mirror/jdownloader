@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -658,6 +659,9 @@ public class VKontakteRu extends PluginForDecrypt {
             dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE, param.getDownloadLink().getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE));
             dl.setProperty(VKontakteRuHoster.VIDEO_QUALITY_SELECTION_MODE, cfg.getIntegerProperty(VKontakteRuHoster.VIDEO_QUALITY_SELECTION_MODE, VKontakteRuHoster.default_VIDEO_QUALITY_SELECTION_MODE));
             dl.setProperty(VKontakteRuHoster.PREFERRED_VIDEO_QUALITY, cfg.getIntegerProperty(VKontakteRuHoster.PREFERRED_VIDEO_QUALITY, VKontakteRuHoster.default_PREFERRED_VIDEO_QUALITY));
+            if (param.getDownloadLink().hasProperty(VKontakteRuHoster.PROPERTY_GENERAL_UPLOADER)) {
+                dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_UPLOADER, param.getDownloadLink().getProperty(VKontakteRuHoster.PROPERTY_GENERAL_UPLOADER));
+            }
             dl.setProperty("nologin", true);
             if (listID != null) {
                 dl.setProperty(VKontakteRuHoster.PROPERTY_VIDEO_LIST_ID, listID);
@@ -668,45 +672,42 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         try {
             br.setFollowRedirects(false);
-            String embedHash = null;
-            String title = null;
-            {
-                // webui, youtube stuff within -raztoki20160817
-                VKontakteRuHoster.accessVideo(this.br, oid, id, listID, false);
-                handleVideoErrors(br);
-                String embeddedVideoURL = new Regex(PluginJSonUtils.unescape(br.toString()), "<iframe [^>]*src=('|\")(.*?)\\1").getMatch(1);
-                if (embeddedVideoURL != null) {
-                    if (embeddedVideoURL.startsWith("//")) {
-                        embeddedVideoURL = "https:" + embeddedVideoURL;
-                    }
-                    decryptedLinks.add(createDownloadlink(embeddedVideoURL));
-                    return;
+            // webui, youtube stuff within -raztoki20160817
+            VKontakteRuHoster.accessVideo(this.br, oid, id, listID, false);
+            handleVideoErrors(br);
+            String embeddedVideoURL = new Regex(PluginJSonUtils.unescape(br.toString()), "<iframe [^>]*src=('|\")(.*?)\\1").getMatch(1);
+            if (embeddedVideoURL != null) {
+                if (embeddedVideoURL.startsWith("//")) {
+                    embeddedVideoURL = "https:" + embeddedVideoURL;
                 }
+                decryptedLinks.add(createDownloadlink(embeddedVideoURL));
+                return;
             }
-            embedHash = PluginJSonUtils.getJsonValue(br, "hash");
+            final Map<String, Object> video = findVideoMap(this.br, id);
+            final String embedHash = (String) video.get("embed_hash");
             if (embedHash == null) {
                 logger.info("Video seems to be offline");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String author = PluginJSonUtils.getJsonValue(br, "md_author");
-            /* 2020-06-05: Do not use PluginJSonUtils here! */
-            // filename = PluginJSonUtils.getJsonValue(br, "md_title");
-            title = br.getRegex("\"md_title\":\"([^\"]+)\"").getMatch(0);
-            if (title == null) {
-                if (author != null) {
+            final String author = (String) video.get("md_author");
+            final long date = ((Number) video.get("date")).longValue();
+            final SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd");
+            final String dateFormatted = sd.format(date * 1000);
+            String title = (String) video.get("md_title");
+            if (!StringUtils.isEmpty(title)) {
+                if (!StringUtils.isEmpty(author)) {
                     title = author + "_" + oid_and_id;
                 } else {
                     title = oid_and_id;
                 }
             }
             /* Find needed information */
-            final Map<String, String> foundQualities = findAvailableVideoQualities(br);
+            final Map<String, String> foundQualities = findAvailableVideoQualities(video);
             if (foundQualities == null || foundQualities.isEmpty()) {
                 /* Assume that content is offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final FilePackage fp = FilePackage.getInstance();
-            title = Encoding.htmlDecode(title).trim();
             if (cfg.getBooleanProperty(VKontakteRuHoster.VKVIDEO_USEIDASPACKAGENAME, VKontakteRuHoster.default_VKVIDEO_USEIDASPACKAGENAME)) {
                 fp.setName("video" + oid + "_" + id);
             } else {
@@ -739,6 +740,10 @@ public class VKontakteRu extends PluginForDecrypt {
                 dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE, title);
                 dl.setProperty(VKontakteRuHoster.VIDEO_QUALITY_SELECTION_MODE, cfg.getIntegerProperty(VKontakteRuHoster.VIDEO_QUALITY_SELECTION_MODE, VKontakteRuHoster.default_VIDEO_QUALITY_SELECTION_MODE));
                 dl.setProperty(VKontakteRuHoster.PREFERRED_VIDEO_QUALITY, cfg.getIntegerProperty(VKontakteRuHoster.PREFERRED_VIDEO_QUALITY, VKontakteRuHoster.default_PREFERRED_VIDEO_QUALITY));
+                dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_DATE, dateFormatted);
+                if (!StringUtils.isEmpty(author)) {
+                    dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_UPLOADER, author);
+                }
                 if (fastLinkcheck) {
                     dl.setAvailable(true);
                 }
@@ -747,6 +752,43 @@ public class VKontakteRu extends PluginForDecrypt {
             }
         } catch (final DecrypterException de) {
             throw de;
+        }
+    }
+
+    public static Map<String, Object> findVideoMap(final Browser br, final String videoid) throws Exception {
+        final String json = br.getRegex("ajax\\.preload\\('al_video\\.php', \\{.*?\\}, (\\[.+)").getMatch(0);
+        return (Map<String, Object>) recursiveFindVideoMap(JavaScriptEngineFactory.jsonToJavaObject(json), videoid);
+    }
+
+    public static Object recursiveFindVideoMap(final Object o, final String videoid) {
+        if (o instanceof Map) {
+            final Map<String, Object> entrymap = (Map<String, Object>) o;
+            for (final Map.Entry<String, Object> cookieEntry : entrymap.entrySet()) {
+                final String key = cookieEntry.getKey();
+                final Object value = cookieEntry.getValue();
+                if (key.equals("vid") && ((Number) value).toString().equals(videoid) && entrymap.containsKey("hd")) {
+                    return o;
+                } else if (value instanceof List || value instanceof Map) {
+                    final Object pico = recursiveFindVideoMap(value, videoid);
+                    if (pico != null) {
+                        return pico;
+                    }
+                }
+            }
+            return null;
+        } else if (o instanceof List) {
+            final List<Object> array = (List) o;
+            for (final Object arrayo : array) {
+                if (arrayo instanceof List || arrayo instanceof Map) {
+                    final Object pico = recursiveFindVideoMap(arrayo, videoid);
+                    if (pico != null) {
+                        return pico;
+                    }
+                }
+            }
+            return null;
+        } else {
+            return null;
         }
     }
 
@@ -1082,48 +1124,32 @@ public class VKontakteRu extends PluginForDecrypt {
      *
      * @throws Exception
      */
-    public static Map<String, String> findAvailableVideoQualities(final Browser br) throws Exception {
-        /** Find needed information */
-        final String source = br.getRegex("ajax\\.preload\\(\\'al_video\\.php\\',\\s*\\{[^\\}]+\\},\\s*(\\[.*?\\])\\);\\s+").getMatch(0);
-        if (source == null) {
-            return null;
-        }
+    public static Map<String, String> findAvailableVideoQualities(final Map<String, Object> video) throws Exception {
         final Map<String, String> foundQualities = new LinkedHashMap<String, String>();
-        try {
-            /* 2017-08-02: New case: Only ONE hls- and ONE http URL available (e.g. only 1080p) */
-            final List<Object> ressourcelist = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(source);
-            Map<String, Object> entries = (Map<String, Object>) ressourcelist.get(ressourcelist.size() - 1);
-            entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "player/params/{0}");
-            final String http_url = (String) entries.get("postlive_mp4");
-            final String http_quality = http_url != null ? new Regex(http_url, "(\\d+)\\.mp4").getMatch(0) : null;
-            if (http_url != null && http_quality != null) {
-                foundQualities.put(http_quality + "p", http_url);
-            }
-        } catch (final Throwable e) {
+        final String http_url = (String) video.get("postlive_mp4");
+        final String http_quality = http_url != null ? new Regex(http_url, "(\\d+)\\.mp4").getMatch(0) : null;
+        if (http_url != null && http_quality != null) {
+            foundQualities.put(http_quality + "p", http_url);
         }
         if (foundQualities.isEmpty()) {
-            /* First try to do the same as in above json handling --> Fallback */
-            final String hls_master = PluginJSonUtils.getJson(source, "hls");
-            final String http_url = PluginJSonUtils.getJson(source, "postlive_mp4");
-            final String http_quality = http_url != null ? new Regex(http_url, "(\\d+)\\.mp4").getMatch(0) : null;
-            if (http_url != null && http_quality != null) {
-                foundQualities.put(http_quality + "p", http_url);
-            }
             /* Now try more fallbacks */
             /* Use cachexxx as workaround e.g. for special videos that need groups permission. */
             final String[][] qualities = { { "cache1080", "url1080", "1080p" }, { "cache720", "url720", "720p" }, { "cache480", "url480", "480p" }, { "cache360", "url360", "360p" }, { "cache240", "url240", "240p" }, { "cache144", "url144", "144p" } };
             for (final String[] qualityInfo : qualities) {
-                String finallink = PluginJSonUtils.getJsonValue(source, qualityInfo[0]);
+                String finallink = (String) video.get(qualityInfo[0]);
                 if (finallink == null) {
-                    finallink = PluginJSonUtils.getJsonValue(source, qualityInfo[1]);
+                    finallink = (String) video.get(qualityInfo[1]);
                 }
                 if (finallink != null) {
                     foundQualities.put(qualityInfo[2], finallink);
                 }
             }
             /* 2020-08-13: Last resort - only download HLS stream if nothing else is available! */
-            if (foundQualities.isEmpty() && hls_master != null) {
-                foundQualities.put("HLS", hls_master);
+            if (foundQualities.isEmpty()) {
+                final String hls_master = (String) video.get("hls");
+                if (!StringUtils.isEmpty(hls_master)) {
+                    foundQualities.put("HLS", hls_master);
+                }
             }
         }
         return foundQualities;
