@@ -26,12 +26,9 @@ import java.util.Map.Entry;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 
@@ -248,17 +245,13 @@ public class PornportalCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME                                        = false;
-    private static final int     FREE_MAXCHUNKS                                     = 1;
-    private static final int     FREE_MAXDOWNLOADS                                  = 1;
-    private static final boolean ACCOUNT_PREMIUM_RESUME                             = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS                          = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS                       = 20;
-    private String               dllink                                             = null;
-    private boolean              server_issues                                      = false;
-    public static final String   PROPERTY_directurl                                 = "directurl";
-    /* Account properties */
-    private static final String  PROPERTY_ACCOUNT_brazzers_special_notice_displayed = "brazzers_special_notice_displayed";
+    private static final int     FREE_MAXDOWNLOADS            = 1;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private String               dllink                       = null;
+    private boolean              server_issues                = false;
+    public static final String   PROPERTY_directurl           = "directurl";
 
     public static Browser prepBR(final Browser br) {
         br.setAllowedResponseCodes(new int[] { 400 });
@@ -721,47 +714,78 @@ public class PornportalCom extends PluginForHost {
         synchronized (account) {
             try {
                 login(this.br, account, this.getHost(), true);
-                if (account.getHoster().equals("brazzers.com") && !account.getBooleanProperty(PROPERTY_ACCOUNT_brazzers_special_notice_displayed, false)) {
-                    /* 2020-05-05: Special */
-                    showSpecialBrazzersLoginInformation();
-                    account.setProperty(PROPERTY_ACCOUNT_brazzers_special_notice_displayed, true);
-                }
                 final AccountInfo ai = new AccountInfo();
                 if (br.getURL() == null || !br.getURL().contains("/v1/self")) {
                     br.getPage(getAPIBase() + "/self");
                 }
                 final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final String joinDate = (String) map.get("joinDate");
+                if (!StringUtils.isEmpty(joinDate)) {
+                    ai.setCreateTime(TimeFormatter.getMilliSeconds(joinDate, "yyyy'-'MM'-'dd'T'HH':'mm':'ss", null));
+                }
+                if ((Boolean) map.get("isBanned")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account banned", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 final Boolean isExpired = (Boolean) map.get("isExpired");
                 final Boolean isTrial = (Boolean) map.get("isTrial");
-                final Boolean isCanceled = (Boolean) map.get("isCanceled");
+                boolean foundValidExpireDate = false;
                 if (Boolean.TRUE.equals(isExpired)) {
                     account.setType(AccountType.FREE);
                     /* Free accounts can be used to download trailers */
                     ai.setStatus("Free Account (expired premium)");
                 } else if (isTrial) {
+                    /* Free trial -> Free Account with premium capability */
+                    account.setType(AccountType.PREMIUM);
                     ai.setStatus("Free Account (Trial)");
                 } else {
-                    /* Premium accounts must not have any expire-date! */
+                    /**
+                     * Premium accounts must not have any expire-date! </br>
+                     * 2021-06-05: Only set expire-date if it is still valid. Premium accounts are premium as long as "isExpired" != true.
+                     */
+                    account.setType(AccountType.PREMIUM);
                     final String expiryDate = (String) map.get("expiryDate");
-                    if (expiryDate != null) {
+                    if (!StringUtils.isEmpty(expiryDate)) {
                         final long expireTimestamp = TimeFormatter.getMilliSeconds(expiryDate, "yyyy'-'MM'-'dd'T'HH':'mm':'ss", null);
-                        if (expireTimestamp > 0) {
+                        if (expireTimestamp > System.currentTimeMillis()) {
                             ai.setValidUntil(expireTimestamp, br);
+                            foundValidExpireDate = true;
                         }
                     }
-                    account.setType(AccountType.PREMIUM);
-                    if (isCanceled) {
+                    if ((Boolean) map.get("isCanceled")) {
                         ai.setStatus("Premium Account (subscription cancelled)");
                     } else {
                         ai.setStatus("Premium Account (subscription running)");
                     }
                 }
-                if (account.getHoster().contains("brazzers")) {
-                    /*
-                     * 2020-03-40: Special hint because brazzers.com has an old- and a new system running. Users can only add URLs copied
-                     * from their PornPortal system!!
+                if (!foundValidExpireDate && map.containsKey("addons")) {
+                    /**
+                     * Try to find alternative expire-date inside users' additional purchased "bundles". </br>
+                     * Each bundle can have different expire-dates and also separate pricing and so on.
                      */
-                    ai.setStatus(ai.getStatus() + " use site-ma.brazzers.com via browser");
+                    logger.info("Looking for alternative expiredate");
+                    long highestExpireTimestamp = -1;
+                    String titleOfBundleWithHighestExpireDate = null;
+                    final List<Map<String, Object>> bundles = (List<Map<String, Object>>) map.get("addons");
+                    for (final Map<String, Object> bundle : bundles) {
+                        if (!(Boolean) bundle.get("isActive")) {
+                            continue;
+                        }
+                        final String expireDateStrTmp = (String) bundle.get("expirationDate");
+                        final long expireTimestampTmp = TimeFormatter.getMilliSeconds(expireDateStrTmp, "yyyy'-'MM'-'dd'T'HH':'mm':'ss", null);
+                        if (expireTimestampTmp > highestExpireTimestamp) {
+                            highestExpireTimestamp = expireTimestampTmp;
+                            titleOfBundleWithHighestExpireDate = (String) bundle.get("title");
+                        }
+                    }
+                    if (highestExpireTimestamp > System.currentTimeMillis()) {
+                        logger.info("Successfully found alternative expiredate");
+                        ai.setValidUntil(highestExpireTimestamp, br);
+                        if (!StringUtils.isEmpty(titleOfBundleWithHighestExpireDate)) {
+                            ai.setStatus(ai.getStatus() + " [" + titleOfBundleWithHighestExpireDate + "]");
+                        }
+                    } else {
+                        logger.info("Failed to find alternative expiredate");
+                    }
                 }
                 account.setConcurrentUsePossible(true);
                 ai.setUnlimitedTraffic();
@@ -945,7 +969,7 @@ public class PornportalCom extends PluginForHost {
                     }
                 }
                 return ai;
-            } catch (PluginException e) {
+            } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
                 }
@@ -971,45 +995,6 @@ public class PornportalCom extends PluginForHost {
         return pornhubAccount;
     }
 
-    /**
-     * 2020-05-05: Tells users to login via 'site-ma.brazzers.com' in browser. If they login via e.g. 'ma.brazzers.com/access/login/'
-     * instead, they will be on an older version of the website which this plugin cannot handle!
-     */
-    private Thread showSpecialBrazzersLoginInformation() {
-        final Thread thread = new Thread() {
-            public void run() {
-                try {
-                    String message = "";
-                    final String title;
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        title = "Brazzers.com - Besondere Login Information vom 05.05.2020";
-                        message += "Hallo liebe(r) Brazzers NutzerIn\r\n";
-                        message += "Um deinen Brazzers Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
-                        message += "1. Trage deinen Account ganz normal in JDownloader ein\t\r\n";
-                        message += "2. Logge dich im Browser unter 'site-ma.brazzers.com' ein ansonsten landest du ggf. auf einer älteren Version der Webseite welche keine von JD unterstützten Links enthält!\r\n";
-                        message += "JDownloader akzeptiert Links im folgenden Format: brazzers.com/scene/1234567/test-filename\r\n";
-                    } else {
-                        title = "Brazzers.com - Special Login Information 2020-05-05";
-                        message += "Hello dear Brazzers user\r\n";
-                        message += "In order to use Brazzers with JDownloader, you need to follow these steps:\r\n";
-                        message += "1. Add your Brazzers.com account to JDownloader as always.\t\r\n";
-                        message += "2. Login in your browser via 'site-ma.brazzers.com' and NOT e.g. via any other URL otherwise you might get logged in into an older version of the Brazzers website which contains an URL format which JD cannot handle!\r\n";
-                        message += "JDownloader will now accept URLs in the following format: brazzers.com/scene/1234567/test-filename\r\n";
-                    }
-                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                    dialog.setTimeout(2 * 60 * 1000);
-                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
-                    ret.throwCloseExceptions();
-                } catch (final Throwable e) {
-                    getLogger().log(e);
-                }
-            };
-        };
-        thread.setDaemon(true);
-        thread.start();
-        return thread;
-    }
-
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, account, true);
@@ -1019,14 +1004,19 @@ public class PornportalCom extends PluginForHost {
             if (account == null) {
                 /* E.g. free trailer download and expired downloadurls */
                 throw new AccountRequiredException();
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to file");
         }
         dl.startDownload();
     }
