@@ -32,9 +32,8 @@ public class CaptchaException extends PluginException {
 
     @Override
     public String toString() {
-        final String s = getClass().getName();
         final StringBuilder sb = new StringBuilder();
-        sb.append(s);
+        sb.append(getClass().getName());
         if (skipRequest != null) {
             sb.append(":SkipRequest=").append(skipRequest.name());
         }
