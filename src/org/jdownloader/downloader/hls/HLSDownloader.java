@@ -1132,6 +1132,10 @@ public class HLSDownloader extends DownloadInterface {
                                 sb.append(m3u8.getTargetDuration());
                                 sb.append("\r\n");
                             }
+                            final M3U8Segment extXMap = m3u8.getExtXMap();
+                            if (extXMap != null) {
+                                sb.append("#EXT-X-MAP:URI=" + extXMap.getUrl() + "\r\n");
+                            }
                             for (int index = 0; index < m3u8.size(); index++) {
                                 final M3U8Segment segment = m3u8.getSegment(index);
                                 sb.append("#EXTINF:" + M3U8Segment.toExtInfDuration(segment.getDuration()));
@@ -1237,7 +1241,7 @@ public class HLSDownloader extends DownloadInterface {
                                         }
                                     }
                                     final byte[] readWriteBuffer = new byte[32 * 1024];
-                                    final long length;
+                                    long length;
                                     if (fileBytesMap.getFinalSize() > 0) {
                                         length = fileBytesMap.getFinalSize();
                                     } else if (byteRange != null) {
