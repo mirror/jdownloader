@@ -232,6 +232,7 @@ public class M3U8Playlist {
         long lastSegmentDuration = -1;
         long byteRange[] = null;
         int sequenceOffset = 0;
+        String extXMapURL = null;
         M3U8Segment.X_KEY_METHOD xKeyMethod = M3U8Segment.X_KEY_METHOD.NONE;
         String xKeyIV = null;
         String xKeyURI = null;
@@ -262,6 +263,7 @@ public class M3U8Playlist {
                         throw new IOException("Unsupported EXT-X-MAP:URI:" + line);
                     } else {
                         segmentURL = br.getURL(URI).toString();
+                        extXMapURL = segmentURL;
                     }
                 }
                 final M3U8Segment existing = current.getSegment(segmentURL);
@@ -330,6 +332,14 @@ public class M3U8Playlist {
             }
         }
         if (current != null && current.size() > 0) {
+            if (extXMapURL != null && false) {
+                // continue with old handling as normal M3U8Segment
+                final M3U8Segment extXMapSegment = current.getSegment(extXMapURL);
+                if (extXMapSegment != null) {
+                    current.extXMap = extXMapSegment;
+                    current.removeSegment(current.indexOf(extXMapSegment));
+                }
+            }
             ret.add(current);
         }
         return ret;
@@ -344,6 +354,11 @@ public class M3U8Playlist {
     private final HashMap<String, List<M3U8Segment>> map                 = new HashMap<String, List<M3U8Segment>>();
     protected int                                    mediaSequenceOffset = 0;
     protected long                                   averageBandwidth    = -1;
+    protected M3U8Segment                            extXMap             = null;
+
+    public M3U8Segment getExtXMap() {
+        return extXMap;
+    }
 
     public void setAverageBandwidth(long averageBandwidth) {
         this.averageBandwidth = averageBandwidth;
