@@ -1,6 +1,7 @@
 package org.jdownloader.extensions.extraction.gui.config;
 
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -11,14 +12,6 @@ import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.text.BadLocationException;
-
-import jd.controlling.TaskQueue;
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.ComboBox;
-import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
-import jd.gui.swing.jdgui.views.settings.components.Spinner;
-import jd.gui.swing.jdgui.views.settings.components.TextArea;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -41,6 +34,14 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.utils.JDFileUtils;
+
+import jd.controlling.TaskQueue;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.ComboBox;
+import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
+import jd.gui.swing.jdgui.views.settings.components.Spinner;
+import jd.gui.swing.jdgui.views.settings.components.TextArea;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
 
 public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtension> {
     private static final long                                serialVersionUID = 1L;
@@ -74,7 +75,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         toggleUseSubpath = this.addPair(T.T.settings_use_subpath(), null, new Checkbox());
         subPath = this.addPair(T.T.settings_subpath(), null, new TextInput() {
             @Override
-            public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
+            public JPopupMenu getPopupMenu(MouseEvent event, AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
                 JMenu sub = new JMenu(T.T.properties());
                 sub.add(new AppAction() {
