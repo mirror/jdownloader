@@ -1873,23 +1873,37 @@ public class YetiShareCore extends antiDDoSForHost {
                     }
                 }
                 if (generateAPIKeyForm != null) {
-                    if (!this.isAPICredential(key1) || !this.isAPICredential(key2)) {
+                    if (!this.isAPICredential(key1) || !this.isAPICredential(key2) || true) {
                         logger.info("Found apikey Form but without keys");
                         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                             /**
                              * 2021-05-04: TODO: Auto-generate API keys if user hasn't already done this (similar to how it's done in
                              * XFileSharingProBasic). </br>
                              */
+                            /* 2021-06-16: This doesn't work yet */
                             logger.info("Initially setting up API keys fror user...");
                             key1 = this.websiteGenerateRandomAPIKey();
                             key2 = this.websiteGenerateRandomAPIKey();
                             generateAPIKeyForm.put("key1", key1);
                             generateAPIKeyForm.put("key2", key2);
-                            // generateAPIKeyForm.put("languageId", "1");
-                            // generateAPIKeyForm.put("isPublic", "1");
-                            // generateAPIKeyForm.put("privateFileStatistics", "0");
-                            // generateAPIKeyForm.put("watermarkPosition", "top left");
-                            // generateAPIKeyForm.put("watermarkPadding", "10");
+                            // final InputField emailAddr = generateAPIKeyForm.getInputField("emailAddress");
+                            // if(emailAddr != null) {
+                            // final String value = emailAddr.getValue();
+                            // if(value != null && Encoding.isHtmlEntityCoded(value)) {
+                            // generateAPIKeyForm.put("emailAddress", Encoding.htmlDecode(value));
+                            // }
+                            // }
+                            generateAPIKeyForm.put("emailAddress", "psp@jdownloader.org");
+                            generateAPIKeyForm.put("title", "");
+                            generateAPIKeyForm.remove("avatar");
+                            generateAPIKeyForm.remove("watermark");
+                            // generateAPIKeyForm.put("avatar", "");
+                            // generateAPIKeyForm.put("watermark", "");
+                            generateAPIKeyForm.put("languageId", "1");
+                            generateAPIKeyForm.put("isPublic", "1");
+                            generateAPIKeyForm.put("privateFileStatistics", "0");
+                            generateAPIKeyForm.put("watermarkPosition", "top left");
+                            generateAPIKeyForm.put("watermarkPadding", "10");
                             this.submitForm(brc, generateAPIKeyForm);
                             /* Assume that this was successful */
                         }
