@@ -706,6 +706,6 @@ public class TwitterCom extends PornEmbedParser {
 
     public int getMaxConcurrentProcessingInstances() {
         /* 2020-01-30: We have to perform a lot of requests --> Set this to 1. */
-        return 2;
+        return 1;
     }
 }
