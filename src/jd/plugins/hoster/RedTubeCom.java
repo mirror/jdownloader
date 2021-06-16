@@ -1,11 +1,14 @@
 package jd.plugins.hoster;
 
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -20,7 +23,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.RedtubeConfig;
+import org.jdownloader.plugins.components.config.RedtubeConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redtube.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?(?:redtube\\.(?:cn\\.com|com|tv|com\\.br)/|embed\\.redtube\\.(?:cn\\.com|com|tv|com\\.br)/[^<>\"]*?\\?id=)(\\d{4,})" })
@@ -113,22 +121,72 @@ public class RedTubeCom extends PluginForHost {
         final String playervars = br.getRegex("playervars: (.+?\\}),\n").getMatch(0);
         if (playervars != null) {
             final Map<String, Object> values = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(playervars);
-            final List<Object> entries = (List<Object>) values.get("mediaDefinitions");
-            for (Object entry : entries) {
-                final Map<String, Object> e = (Map<String, Object>) entry;
-                String videoUrl = (String) e.get("videoUrl");
-                // maybe 1080p premium only. free is ""
-                if (StringUtils.isNotEmpty(videoUrl)) {
-                    dllink = videoUrl;
-                    long downloadSize = getDownloadSize();
-                    if (downloadSize != -1) {
-                        link.setDownloadSize(downloadSize);
-                    }
+            List<HashMap<String, Object>> list = (List<HashMap<String, Object>>) values.get("mediaDefinitions");
+            for (Map<String, Object> entry : list) {
+                final String videoUrl = (String) entry.get("videoUrl");
+                final String format = (String) entry.get("format");
+                if (StringUtils.isEmpty(videoUrl)) {
+                    continue;
+                } else if (StringUtils.equals("mp4", format)) {
+                    final Browser brc = br.cloneBrowser();
+                    brc.getPage(videoUrl);
+                    list = JSonStorage.restoreFromString(brc.toString(), TypeRef.LIST_HASHMAP);
                     break;
+                }
+            }
+            final String userPreferredQuality = getPreferredStreamQuality();
+            if (list != null) {
+                int qualityMax = 0;
+                for (Object entry : list) {
+                    Map<String, Object> video = (Map<String, Object>) entry;
+                    final String videoUrl = (String) video.get("videoUrl");
+                    final Object quality = video.get("quality");
+                    if (StringUtils.isEmpty(videoUrl)) {
+                        continue;
+                    } else if (quality == null) {
+                        continue;
+                    }
+                    final Number fileSize = (Number) video.get("videoSize");
+                    final String qualityTempStr = (String) quality;
+                    if (StringUtils.equals(qualityTempStr, userPreferredQuality)) {
+                        logger.info("Found user preferred quality: " + userPreferredQuality);
+                        if (fileSize != null) {
+                            link.setDownloadSize(fileSize.longValue());
+                        }
+                        dllink = videoUrl;
+                        break;
+                    }
+                    final int qualityTemp = Integer.parseInt(qualityTempStr);
+                    if (qualityTemp > qualityMax) {
+                        if (fileSize != null) {
+                            link.setDownloadSize(fileSize.longValue());
+                        }
+                        qualityMax = qualityTemp;
+                        dllink = videoUrl;
+                    }
+                }
+                if (dllink != null) {
+                    final Browser brc = br.cloneBrowser();
+                    URLConnectionAdapter con = null;
+                    try {
+                        con = brc.openHeadConnection(dllink);
+                        if (looksLikeDownloadableContent(con)) {
+                            if (con.getCompleteContentLength() > 0) {
+                                link.setDownloadSize(con.getCompleteContentLength());
+                            }
+                        } else {
+                            server_issues = true;
+                        }
+                    } finally {
+                        if (con != null) {
+                            con.disconnect();
+                        }
+                    }
                 }
             }
         }
         if (dllink == null) {
+            // old handling
             dllink = br.getRegex("source src=\"(http.*?)(\"|%3D%22)").getMatch(0);
             if (dllink != null && dllink.contains("&amp;")) {
                 dllink = dllink.replace("&amp;", "&");
@@ -184,23 +242,6 @@ public class RedTubeCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private long getDownloadSize() throws Exception {
-        long result = -1;
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                result = br.getHttpConnection().getLongContentLength();
-            }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
-        }
-        return result;
-    }
-
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
@@ -213,11 +254,42 @@ public class RedTubeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            dl.getConnection().disconnect();
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dl.startDownload();
+    }
+
+    private String getPreferredStreamQuality() {
+        final RedtubeConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
+        final PreferredStreamQuality quality = cfg.getPreferredStreamQuality();
+        switch (quality) {
+        case BEST:
+        default:
+            return null;
+        case Q2160P:
+            return "2160";
+        case Q1080P:
+            return "1080";
+        case Q720P:
+            return "720";
+        case Q480P:
+            return "480";
+        case Q360P:
+            return "360";
+        case Q240P:
+            return "240";
+        }
+    }
+
+    @Override
+    public Class<? extends RedtubeConfig> getConfigInterface() {
+        return RedtubeConfig.class;
     }
 
     @Override
