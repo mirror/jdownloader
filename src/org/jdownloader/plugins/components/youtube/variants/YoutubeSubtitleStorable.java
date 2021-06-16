@@ -1,6 +1,5 @@
 package org.jdownloader.plugins.components.youtube.variants;
 
-import java.io.UnsupportedEncodingException;
 import java.util.Locale;
 
 import org.appwork.storage.Storable;
@@ -12,7 +11,7 @@ import org.jdownloader.plugins.components.youtube.variants.generics.AbstractGene
 
 public class YoutubeSubtitleStorable extends AbstractGenericVariantInfo implements Storable {
     public static final TypeRef<YoutubeSubtitleStorable> TYPE = new TypeRef<YoutubeSubtitleStorable>(YoutubeSubtitleStorable.class) {
-                                                              };
+    };
 
     public YoutubeSubtitleStorable(/* Storable */) {
     }
@@ -124,11 +123,7 @@ public class YoutubeSubtitleStorable extends AbstractGenericVariantInfo implemen
     }
 
     private String encode(String kind2) {
-        try {
-            return URLEncode.encodeRFC2396(kind2);
-        } catch (UnsupportedEncodingException e) {
-            return kind2;
-        }
+        return URLEncode.encodeRFC2396(kind2);
     }
 
     public String getKind() {
