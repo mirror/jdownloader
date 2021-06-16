@@ -16,8 +16,13 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Locale;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
@@ -52,9 +57,6 @@ public class ZbigzCom extends antiDDoSForHost {
 
     private String dllink = null;
 
-    /**
-     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
-     */
     public boolean isProxyRotationEnabledForLinkChecker() {
         return false;
     }
@@ -117,22 +119,36 @@ public class ZbigzCom extends antiDDoSForHost {
                 br.setCookiesExclusive(true);
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
+                /* 2021-06-16: Added cookie login as alternative login because their website only allows 1 active session at a time. */
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
                 /* 2019-11-04: Always try to re-use cookies to avoid login captchas! */
                 if (cookies != null) {
-                    logger.info("Attempting cookie login");
-                    this.br.setCookies(this.getHost(), cookies);
-                    final PostFormDataRequest accountInfoReq = br.createPostFormDataRequest(WEBSITE_API_BASE + "/account/info");
-                    accountInfoReq.addFormData(new FormData("undefined", "undefined"));
-                    // br.clearCookies("zbigz.com");
-                    super.sendRequest(accountInfoReq);
-                    final String email = PluginJSonUtils.getJson(br, "email");
-                    if (!StringUtils.isEmpty(email)) {
-                        logger.info("Cookie login successful");
+                    if (!force) {
+                        /* Trust cookies without check */
+                        br.setCookies(cookies);
+                        return;
+                    } else if (this.checkCookieLogin(account, cookies)) {
                         return;
                     } else {
                         /* Full login required */
                         br.clearCookies(br.getHost());
-                        logger.info("Cookie login failed");
+                    }
+                } else if (userCookies != null) {
+                    if (!force) {
+                        /* Trust cookies without check */
+                        br.setCookies(cookies);
+                        return;
+                    } else if (this.checkCookieLogin(account, userCookies)) {
+                        /*
+                         * User could have entered anything in the username field -> Make sure that the username of this account is unique!
+                         */
+                        final String mail = PluginJSonUtils.getJson(br, "email");
+                        if (!StringUtils.isEmpty(mail)) {
+                            account.setUser(mail);
+                        }
+                        return;
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 logger.info("Performing full login");
@@ -186,29 +202,43 @@ public class ZbigzCom extends antiDDoSForHost {
         }
     }
 
+    private boolean checkCookieLogin(final Account account, final Cookies cookies) throws Exception {
+        logger.info("Attempting cookie login");
+        this.br.setCookies(this.getHost(), cookies);
+        final PostFormDataRequest accountInfoReq = br.createPostFormDataRequest(WEBSITE_API_BASE + "/account/info");
+        accountInfoReq.addFormData(new FormData("undefined", "undefined"));
+        // br.clearCookies("zbigz.com");
+        super.sendRequest(accountInfoReq);
+        final String email = PluginJSonUtils.getJson(br, "email");
+        if (!StringUtils.isEmpty(email)) {
+            logger.info("Cookie login successful");
+            account.saveCookies(this.br.getCookies(this.getHost()), "");
+            return true;
+        } else {
+            logger.info("Cookie login failed");
+            return false;
+        }
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            throw e;
-        }
+        final AccountInfo ai = new AccountInfo();
+        login(account, true);
         /* Browser: https://zbigz.com/account */
         if (br.getURL() == null || !br.getURL().contains("/account/info")) {
             final PostFormDataRequest accountInfoReq = br.createPostFormDataRequest(WEBSITE_API_BASE + "/account/info");
             accountInfoReq.addFormData(new FormData("undefined", "undefined"));
             super.sendRequest(accountInfoReq);
         }
-        final String premium_valid_date = PluginJSonUtils.getJson(br, "premium_valid_date");
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final String premium_valid_date = (String) entries.get("premium_valid_date");
         final String premium_days = PluginJSonUtils.getJson(br, "premium_days");
         if (!StringUtils.isEmpty(premium_valid_date) || "true".equalsIgnoreCase(premium_days)) {
             account.setType(AccountType.PREMIUM);
             ai.setUnlimitedTraffic();
-            /* TODO: Add proper code to display expire-date */
-            // ai.setValidUntil(TimeFormatter.getMilliSeconds(premium_valid_date, "dd MMM yyyy", Locale.ENGLISH));
-            // final String traffic = info.getMatch(1);
-            // ai.setTrafficLeft(SizeFormatter.getSize(traffic));
+            if (!StringUtils.isEmpty(premium_valid_date)) {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(premium_valid_date, "dd MMM yyyy", Locale.ENGLISH), this.br);
+            }
         } else {
             account.setType(AccountType.FREE);
             /*
