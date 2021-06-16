@@ -214,52 +214,58 @@ public class TwitterCom extends PornEmbedParser {
             final List<Map<String, Object>> medias = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "extended_entities/media");
             for (final Map<String, Object> media : medias) {
                 final String type = (String) media.get("type");
-                DownloadLink dl = null;
-                if (type.equals("video")) {
-                    /* Find highest video quality */
-                    int highestBitrate = -1;
-                    final List<Map<String, Object>> videoVariants = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(media, "video_info/variants");
-                    String streamURL = null;
-                    for (final Map<String, Object> videoVariant : videoVariants) {
-                        final String content_type = (String) videoVariant.get("content_type");
-                        if (!content_type.equalsIgnoreCase("video/mp4")) {
-                            /* Skip all except http videos (e.g. HLS --> application/x-mpegURL) */
-                            continue;
+                try {
+                    final DownloadLink dl;
+                    if (type.equals("video")) {
+                        /* Find highest video quality */
+                        int highestBitrate = -1;
+                        final List<Map<String, Object>> videoVariants = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(media, "video_info/variants");
+                        String streamURL = null;
+                        for (final Map<String, Object> videoVariant : videoVariants) {
+                            final String content_type = (String) videoVariant.get("content_type");
+                            if (!content_type.equalsIgnoreCase("video/mp4")) {
+                                /* Skip all except http videos (e.g. HLS --> application/x-mpegURL) */
+                                continue;
+                            }
+                            final int bitrate = ((Number) videoVariant.get("bitrate")).intValue();
+                            if (bitrate > highestBitrate) {
+                                highestBitrate = bitrate;
+                                streamURL = (String) videoVariant.get("url");
+                            }
                         }
-                        final int bitrate = ((Number) videoVariant.get("bitrate")).intValue();
-                        if (bitrate > highestBitrate) {
-                            highestBitrate = bitrate;
-                            streamURL = (String) videoVariant.get("url");
+                        if (streamURL == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                    }
-                    dl = this.createDownloadlink(streamURL);
-                    dl.setForcedFileName(formattedDate + "_" + username + "_" + tweetID + ".mp4");
-                    dl.setAvailable(true);
-                    dl.setProperty("bitrate", highestBitrate);
-                } else if (type.equals("photo")) {
-                    String fileName = tweetID;
-                    final String url = (String) media.get("media_url"); /* Also available as "media_url_https" */
-                    try {
+                        dl = this.createDownloadlink(streamURL);
+                        dl.setForcedFileName(formattedDate + "_" + username + "_" + tweetID + ".mp4");
+                        dl.setProperty("bitrate", highestBitrate);
+                    } else if (type.equals("photo")) {
+                        String fileName = tweetID;
+                        final String url = (String) media.get("media_url"); /* Also available as "media_url_https" */
+                        if (url == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                         final String fileNameFromURL = Plugin.getFileNameFromURL(new URL(url));
                         if (fileNameFromURL != null) {
                             fileName += "_" + fileNameFromURL;
                         }
-                    } catch (final Throwable e) {
-                        logger.log(e);
+                        dl = this.createDownloadlink(url);
+                        dl.setForcedFileName(formattedDate + "_" + username + "_" + fileName);
+                    } else {
+                        /* Unknown type -> This should never happen! */
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown type:" + type);
                     }
-                    dl = this.createDownloadlink(url);
-                    dl.setForcedFileName(formattedDate + "_" + username + "_" + fileName);
                     dl.setAvailable(true);
-                } else {
-                    /* Unknown type -> This should never happen! */
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    dl.setProperty(PROPERTY_USERNAME, username);
+                    dl.setProperty("date", formattedDate);
+                    if (fp != null) {
+                        fp.add(dl);
+                    }
+                    this.decryptedLinks.add(dl);
+                    distribute(dl);
+                } catch (PluginException e) {
+                    logger.log(e);
                 }
-                dl.setProperty(PROPERTY_USERNAME, username);
-                if (fp != null) {
-                    fp.add(dl);
-                }
-                this.decryptedLinks.add(dl);
-                distribute(dl);
             }
         } else {
             br.getPage("https://api.twitter.com/2/timeline/conversation/" + tweetID + ".json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweets=true&count=20&ext=mediaStats%2CcameraMoment");
@@ -381,6 +387,7 @@ public class TwitterCom extends PornEmbedParser {
                 }
             } catch (final Throwable e) {
                 logger.log(e);
+                return;
             }
             if (!url.contains("?name=")) {
                 url += "?name=orig";
