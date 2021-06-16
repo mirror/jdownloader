@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -33,9 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "archive.org" }, urls = { "https?://(?:www\\.)?archivedecrypted\\.org/download/[^/]+/[^/]+(/.+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "archive.org" }, urls = { "https?://(?:[\\w\\.]+)?archive\\.org/download/[^/]+/[^/]+(/.+)?" })
 public class ArchiveOrg extends PluginForHost {
     public ArchiveOrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,14 +45,6 @@ public class ArchiveOrg extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "https://archive.org/about/terms.php";
-    }
-
-    @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        final String oldURL = link.getPluginPatternMatcher();
-        final String newURL = oldURL.replace("archivedecrypted.org/", "archive.org/");
-        link.setContentUrl(newURL);
-        link.setPluginPatternMatcher(newURL);
     }
 
     /* Connection stuff */
@@ -170,9 +162,9 @@ public class ArchiveOrg extends PluginForHost {
                 if (cookies != null) {
                     logger.info("Attempting cookie login");
                     br.setCookies(account.getHoster(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
+                    if (!force) {
                         /* We trust these cookies --> Do not check them */
-                        logger.info("Trust login cookies as they're not yet that old");
+                        logger.info("Trust login cookies without check");
                         return;
                     }
                     br.getPage("https://archive.org/account/");
