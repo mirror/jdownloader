@@ -1893,7 +1893,6 @@ public class YetiShareCore extends antiDDoSForHost {
                             // generateAPIKeyForm.put("emailAddress", Encoding.htmlDecode(value));
                             // }
                             // }
-                            generateAPIKeyForm.put("emailAddress", "psp@jdownloader.org");
                             generateAPIKeyForm.put("title", "");
                             generateAPIKeyForm.remove("avatar");
                             generateAPIKeyForm.remove("watermark");
