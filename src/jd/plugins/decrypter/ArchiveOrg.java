@@ -15,11 +15,24 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.ArchiveOrgConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -39,18 +52,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.ArchiveOrgConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org", "subdomain.archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/(?:details|download|stream|embed)/(?!copyrightrecords)@?.+", "https?://[^/]+\\.archive\\.org/view_archive\\.php\\?archive=[^\\&]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org", "subdomain.archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/(?:details|download|stream|embed)/(?!copyrightrecords)@?.+", "https?://[^/]+\\.archive\\.org/view_archive\\.php\\?archive=[^\\&]+(?:\\&file=[^\\&]+)?" })
 public class ArchiveOrg extends PluginForDecrypt {
     public ArchiveOrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -61,13 +63,17 @@ public class ArchiveOrg extends PluginForDecrypt {
         return ArchiveOrgConfig.class;
     }
 
-    private boolean isArchiveURL(final String url) {
-        return url != null && url.contains("view_archive.php");
+    private boolean isArchiveURL(final String url) throws MalformedURLException {
+        if (url == null) {
+            return false;
+        } else {
+            final UrlQuery query = UrlQuery.parse(url);
+            return url.contains("view_archive.php") && query.get("file") == null;
+        }
     }
 
     private final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
     final Set<String>                     dups           = new HashSet<String>();
-    final String                          host_decrypted = "archivedecrypted.org";
     private PluginForHost                 hostPlugin     = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -79,9 +85,7 @@ public class ArchiveOrg extends PluginForDecrypt {
          */
         final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost("archive.org"));
         if (aa != null) {
-            final PluginForHost plg = JDUtilities.getPluginForHost("archive.org");
-            plg.setBrowser(this.br);
-            ((jd.plugins.hoster.ArchiveOrg) plg).login(aa, false);
+            ((jd.plugins.hoster.ArchiveOrg) hostPlugin).login(aa, false);
         }
         URLConnectionAdapter con = null;
         boolean isArchiveContent = isArchiveURL(parameter);
@@ -97,19 +101,20 @@ public class ArchiveOrg extends PluginForDecrypt {
                  * between a file or expected html.
                  */
                 final String host = Browser.getHost(con.getURL(), true);
-                if ((this.looksLikeDownloadableContent(con) || con.getLongContentLength() > br.getLoadLimit() || !host.equals("archive.org")) && !isArchiveContent) {
-                    final DownloadLink fina = this.createDownloadlink(parameter.replace("archive.org", host_decrypted));
+                if ((this.looksLikeDownloadableContent(con) || con.getLongContentLength() > br.getLoadLimit() || !host.equals("archive.org"))) {
+                    // final DownloadLink fina = this.createDownloadlink(parameter.replace("archive.org", host_decrypted));
+                    final DownloadLink dl = new DownloadLink(hostPlugin, null, "archive.org", parameter, true);
                     if (this.looksLikeDownloadableContent(con)) {
                         if (con.getCompleteContentLength() > 0) {
-                            fina.setVerifiedFileSize(con.getCompleteContentLength());
+                            dl.setVerifiedFileSize(con.getCompleteContentLength());
                         }
-                        fina.setFinalFileName(getFileNameFromHeader(con));
-                        fina.setAvailable(true);
+                        dl.setFinalFileName(getFileNameFromHeader(con));
+                        dl.setAvailable(true);
                     } else {
                         /* 2021-02-05: Either offline or account-only. Assume offline for now. */
-                        fina.setAvailable(false);
+                        dl.setAvailable(false);
                     }
-                    decryptedLinks.add(fina);
+                    decryptedLinks.add(dl);
                     return decryptedLinks;
                 } else {
                     br.followConnection();
@@ -281,7 +286,7 @@ public class ArchiveOrg extends PluginForDecrypt {
                     /* File */
                     filesize += "b";
                     final String filename = Encoding.urlDecode(name, false);
-                    final DownloadLink fina = createDownloadlink("https://" + host_decrypted + "/download/" + subfolderPath + "/" + name);
+                    final DownloadLink fina = createDownloadlink("https://archive.org/download/" + subfolderPath + "/" + name);
                     fina.setDownloadSize(SizeFormatter.getSize(filesize));
                     fina.setAvailable(true);
                     fina.setFinalFileName(filename);
@@ -337,7 +342,7 @@ public class ArchiveOrg extends PluginForDecrypt {
                 /* Will sometimes contain "&amp;" */
                 name = Encoding.htmlDecode(name);
             }
-            final String url = "https://" + host_decrypted + "/download/" + subfolderPath + "/" + URLEncode.encodeURIComponent(name);
+            final String url = "https://archive.org/download/" + subfolderPath + "/" + URLEncode.encodeURIComponent(name);
             if (dups.add(url)) {
                 final DownloadLink fina = createDownloadlink(url);
                 fina.setDownloadSize(SizeFormatter.getSize(filesizeStr));
