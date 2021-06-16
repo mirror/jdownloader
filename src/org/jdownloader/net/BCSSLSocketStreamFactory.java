@@ -416,7 +416,8 @@ public class BCSSLSocketStreamFactory implements SSLSocketStreamFactory {
 
     @Override
     public String retry(SSLSocketStreamOptions options, Exception e) {
-        if (StringUtils.containsIgnoreCase(e.getMessage(), "protocol_version")) {
+        final String eMessage = e != null ? e.getMessage() : null;
+        if (StringUtils.containsIgnoreCase(eMessage, "protocol_version")) {
             // https://www.bouncycastle.org/docs/tlsdocs1.5on/org/bouncycastle/tls/AlertDescription.html
             if (options.getCustomFactorySettings().add(TLS13_ENABLED)) {
                 // retry with TLS1.3 enabled
@@ -428,7 +429,7 @@ public class BCSSLSocketStreamFactory implements SSLSocketStreamFactory {
                 return options.addRetryReason("enable " + bcRetry + " for TLS1.3");
             }
         }
-        if (e instanceof SocketException && StringUtils.containsIgnoreCase(e.getMessage(), "reset")) {
+        if (e instanceof SocketException && StringUtils.containsIgnoreCase(eMessage, "reset")) {
             final String jsseRetry = options.enableNextDisabledCipher("GCM");
             if (jsseRetry != null) {
                 // retry with TLS1.2 GCM
