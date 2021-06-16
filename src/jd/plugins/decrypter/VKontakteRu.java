@@ -695,10 +695,10 @@ public class VKontakteRu extends PluginForDecrypt {
             final String dateFormatted = sd.format(date * 1000);
             String title = (String) video.get("md_title");
             if (!StringUtils.isEmpty(title)) {
-                if (!StringUtils.isEmpty(author)) {
-                    title = author + "_" + oid_and_id;
+                if (!StringUtils.isEmpty(author) && !author.equalsIgnoreCase("DELETED")) {
+                    title = author + "_" + title + "_" + oid_and_id;
                 } else {
-                    title = oid_and_id;
+                    title = title + "_" + oid_and_id;
                 }
             }
             /* Find needed information */
@@ -1066,7 +1066,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 final String videoAuthorHTML = (String) videoInfos.get(8);
                 if (videoAuthorHTML != null) {
                     final String uploader = new Regex(videoAuthorHTML, "<a href=[^>]*>(.*?)</a>").getMatch(0);
-                    if (uploader != null && !uploader.equals("DELETED")) {
+                    if (uploader != null && !uploader.equalsIgnoreCase("DELETED")) {
                         videoTitle = uploader + "_" + videoTitle;
                     }
                 }
