@@ -37,8 +37,8 @@ public class BlazingshareMe extends YetiShareCore {
      * DEV NOTES YetiShare<br />
      ****************************
      * mods: See overridden functions<br />
-     * limit-info:<br />
-     * captchatype-info: null solvemedia reCaptchaV2<br />
+     * limit-info: 2021-06-16: No limits at all <br />
+     * captchatype-info: 2021-06-16: null<br />
      * other: <br />
      */
     public static List<String[]> getPluginDomains() {
