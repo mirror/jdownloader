@@ -26,15 +26,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -55,7 +46,15 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(?:www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/status/\\d+|https?://(?:www\\.|mobile\\.)?twitter\\.com/(?!i/)[A-Za-z0-9_\\-]{2,}(?:/(?:media|likes))?|https://twitter\\.com/i/cards/tfw/v1/\\d+|https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" })
 public class TwitterCom extends PornEmbedParser {
@@ -215,6 +214,7 @@ public class TwitterCom extends PornEmbedParser {
             final List<Map<String, Object>> medias = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "extended_entities/media");
             for (final Map<String, Object> media : medias) {
                 final String type = (String) media.get("type");
+                DownloadLink dl = null;
                 if (type.equals("video")) {
                     /* Find highest video quality */
                     int highestBitrate = -1;
@@ -232,23 +232,34 @@ public class TwitterCom extends PornEmbedParser {
                             streamURL = (String) videoVariant.get("url");
                         }
                     }
-                    final DownloadLink dl = this.createDownloadlink(streamURL);
+                    dl = this.createDownloadlink(streamURL);
                     dl.setForcedFileName(formattedDate + "_" + username + "_" + tweetID + ".mp4");
                     dl.setAvailable(true);
-                    dl.setProperty(PROPERTY_USERNAME, username);
                     dl.setProperty("bitrate", highestBitrate);
-                    this.decryptedLinks.add(dl);
                 } else if (type.equals("photo")) {
+                    String fileName = tweetID;
                     final String url = (String) media.get("media_url"); /* Also available as "media_url_https" */
-                    final DownloadLink dl = this.createDownloadlink(url);
-                    dl.setForcedFileName(formattedDate + "_" + username + "_" + tweetID + Plugin.getFileNameExtensionFromString(url));
+                    try {
+                        final String fileNameFromURL = Plugin.getFileNameFromURL(new URL(url));
+                        if (fileNameFromURL != null) {
+                            fileName += "_" + fileNameFromURL;
+                        }
+                    } catch (final Throwable e) {
+                        logger.log(e);
+                    }
+                    dl = this.createDownloadlink(url);
+                    dl.setForcedFileName(formattedDate + "_" + username + "_" + fileName);
                     dl.setAvailable(true);
-                    dl.setProperty(PROPERTY_USERNAME, username);
-                    this.decryptedLinks.add(dl);
                 } else {
                     /* Unknown type -> This should never happen! */
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                dl.setProperty(PROPERTY_USERNAME, username);
+                if (fp != null) {
+                    fp.add(dl);
+                }
+                this.decryptedLinks.add(dl);
+                distribute(dl);
             }
         } else {
             br.getPage("https://api.twitter.com/2/timeline/conversation/" + tweetID + ".json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweets=true&count=20&ext=mediaStats%2CcameraMoment");
@@ -369,6 +380,7 @@ public class TwitterCom extends PornEmbedParser {
                     filename = tweetID + "_" + filename;
                 }
             } catch (final Throwable e) {
+                logger.log(e);
             }
             if (!url.contains("?name=")) {
                 url += "?name=orig";
@@ -382,6 +394,7 @@ public class TwitterCom extends PornEmbedParser {
             /* Set possible Packagizer properties */
             dl.setProperty("date", formattedDate);
             dl.setAvailable(true);
+            dl.setProperty(PROPERTY_USERNAME, username);
             if (fp != null) {
                 fp.add(dl);
             }
@@ -596,7 +609,7 @@ public class TwitterCom extends PornEmbedParser {
                     logger.info("Found wrong cursor object --> Plugin needs update");
                 }
             } catch (final Throwable e) {
-                e.printStackTrace();
+                logger.log(e);
                 logger.info("Failed to get nextCursor");
             }
             index++;
@@ -691,7 +704,7 @@ public class TwitterCom extends PornEmbedParser {
     /** Log in the account of the hostplugin */
     @SuppressWarnings({ "static-access" })
     private Account getUserLogin(final boolean force) throws Exception {
-        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("twitter.com");
+        final PluginForHost hostPlugin = getNewPluginForHostInstance("twitter.com");
         final Account aa = AccountController.getInstance().getValidAccount("twitter.com");
         if (aa == null) {
             return null;
@@ -700,6 +713,7 @@ public class TwitterCom extends PornEmbedParser {
             ((jd.plugins.hoster.TwitterCom) hostPlugin).login(br, aa, force);
             return aa;
         } catch (final PluginException e) {
+            logger.log(e);
             return null;
         }
     }
