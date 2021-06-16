@@ -201,8 +201,8 @@ public class YouPornCom extends PluginForHost {
         /* Find highest quality */
         int qualityMax = 0;
         /* 2020-07-02: Try to obey users' selected quality in this block only */
-        String filesize = null;
         final String mediaDefinition = br.getRegex("(?:video\\.)?mediaDefinition\\s*[=:]\\s*(\\[.*?\\]);").getMatch(0);
+        String fileSizeString = null;
         if (mediaDefinition != null) {
             ArrayList<HashMap<String, Object>> list = JSonStorage.restoreFromString(mediaDefinition, TypeRef.LIST_HASHMAP);
             for (Map<String, Object> entry : list) {
@@ -233,7 +233,8 @@ public class YouPornCom extends PluginForHost {
                     final String qualityTempStr = (String) quality;
                     if (StringUtils.equals(qualityTempStr, userPreferredQuality)) {
                         logger.info("Found user preferred quality: " + userPreferredQuality);
-                        if (filesize != null) {
+                        if (fileSize != null) {
+                            fileSizeString = fileSize.toString();
                             link.setDownloadSize(fileSize.longValue());
                         }
                         dllink = videoUrl;
@@ -241,7 +242,8 @@ public class YouPornCom extends PluginForHost {
                     }
                     final int qualityTemp = Integer.parseInt(qualityTempStr);
                     if (qualityTemp > qualityMax) {
-                        if (filesize != null) {
+                        if (fileSize != null) {
+                            fileSizeString = fileSize.toString();
                             link.setDownloadSize(fileSize.longValue());
                         }
                         qualityMax = qualityTemp;
@@ -265,7 +267,7 @@ public class YouPornCom extends PluginForHost {
                     this.dllink = new Regex(html, "(https?://[^'\"]+\\d+p[^'\"]+\\.mp4[^\\'\"\\|]+)").getMatch(0);
                     if (this.dllink != null) {
                         /* Only attempt to grab filesize if it corresponds to the current videoquality! */
-                        filesize = new Regex(html, "class=\\'downloadsize\\'>\\((\\d+[^<>\"]+)\\)").getMatch(0);
+                        fileSizeString = new Regex(html, "class=\\'downloadsize\\'>\\((\\d+[^<>\"]+)\\)").getMatch(0);
                     }
                 }
             }
@@ -294,8 +296,8 @@ public class YouPornCom extends PluginForHost {
             dllink = dllink.replace("&amp;", "&");
         }
         link.setFinalFileName(filename + defaultEXT);
-        if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (fileSizeString != null) {
+            link.setDownloadSize(SizeFormatter.getSize(fileSizeString));
         } else if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
