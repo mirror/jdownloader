@@ -134,11 +134,8 @@ public class ZbigzCom extends antiDDoSForHost {
                         br.clearCookies(br.getHost());
                     }
                 } else if (userCookies != null) {
-                    if (!force) {
-                        /* Trust cookies without check */
-                        br.setCookies(cookies);
-                        return;
-                    } else if (this.checkCookieLogin(account, userCookies)) {
+                    /* Always verify user cookies */
+                    if (this.checkCookieLogin(account, userCookies)) {
                         /*
                          * User could have entered anything in the username field -> Make sure that the username of this account is unique!
                          */
