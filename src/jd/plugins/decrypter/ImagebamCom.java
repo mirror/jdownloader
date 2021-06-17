@@ -1,0 +1,230 @@
+//jDownloader - Downloadmanager
+//Copyright (C) 2009  JD-Team support@jdownloader.org
+//
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
+//
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
+//
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
+package jd.plugins.decrypter;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+public class ImagebamCom extends PluginForDecrypt {
+    public ImagebamCom(PluginWrapper wrapper) {
+        super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "imagebam.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            String regex = "https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:image|gallery)/[a-z0-9]+";
+            regex += "|" + "https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/view/[A-Z0-9]+";
+            regex += "|" + "https?://thumbs\\d+\\." + buildHostsPatternPart(domains) + "/\\d+/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.[a-z]{3,5}";
+            regex += "|" + "https?://thumbs\\d+\\." + buildHostsPatternPart(domains) + "/\\d+/[a-z0-9]+/[a-z0-9]+/[A-Z0-9]+_t\\.[a-z]{3,5}";
+            ret.add(regex);
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    private static final String TYPE_THUMBNAIL     = "https?://thumbs\\d+\\.[^/]+/\\d+/[a-z0-9]+/[a-z0-9]+/([a-z0-9]+)\\.[a-z]{3,5}";
+    private static final String TYPE_THUMBNAIL_NEW = "https?://thumbs\\d+\\.[^/]+/\\d+/[a-z0-9]+/[a-z0-9]+/([A-Z0-9]+)_t\\.[a-z]{3,5}";
+    private static final String TYPE_IMAGE         = "https?://(?:www\\.)?[^/]+/image/([a-z0-9]+)";
+    private static final String TYPE_VIEW          = "https?://(?:www\\.)?[^/]+/view/([A-Z0-9]+)";
+    private static final String TYPE_GALLERY       = "https?://(?:www\\.)?[^/]+/gallery/([a-z0-9]+)";
+
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(true);
+        if (param.getCryptedUrl().matches(TYPE_THUMBNAIL)) {
+            /* Rewrite thumbnail to fullImage link */
+            final String id = new Regex(param.getCryptedUrl(), TYPE_THUMBNAIL).getMatch(0);
+            final String newURL = "https://www." + this.getHost() + "/image/" + id;
+            decryptedLinks.add(this.createDownloadlink(newURL));
+            return decryptedLinks;
+        } else if (param.getCryptedUrl().matches(TYPE_THUMBNAIL_NEW)) {
+            /* Rewrite thumbnail to fullImage link */
+            final String id = new Regex(param.getCryptedUrl(), TYPE_THUMBNAIL_NEW).getMatch(0);
+            final String newURL = "https://www." + this.getHost() + "/view/" + id;
+            decryptedLinks.add(this.createDownloadlink(newURL));
+            return decryptedLinks;
+        } else if (param.getCryptedUrl().matches(TYPE_GALLERY)) {
+            return crawlGallery(param);
+        } else if (param.getCryptedUrl().matches(TYPE_VIEW)) {
+            return crawlGalleryNew(param);
+        } else {
+            /* TYPE_IMAGE */
+            decryptedLinks.add(crawlSingleImage(param));
+            return decryptedLinks;
+        }
+    }
+
+    private ArrayList<DownloadLink> crawlGallery(final CryptedLink param) throws PluginException, IOException {
+        final String galleryID = new Regex(param.getCryptedUrl(), TYPE_GALLERY).getMatch(0);
+        if (galleryID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage(param.getCryptedUrl());
+        /* Error handling */
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)The gallery you are looking for")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        // note: you can still get dupes of images (filenames), but they have different download path.
+        // final HashSet<String> dupes = new HashSet<String>();
+        final String galleryTitle = br.getRegex("id=\"gallery-name\"[^>]*>([^<>\"]+)<").getMatch(0);
+        final FilePackage fp = FilePackage.getInstance();
+        if (galleryTitle != null) {
+            fp.setName(galleryTitle);
+        } else {
+            fp.setName(galleryID);
+        }
+        /* TODO: Check if pagination support is required */
+        final String links[] = br.getRegex("(https?://[\\w\\.]*[^/]+/image/[a-z0-9]+)").getColumn(0);
+        for (final String link : links) {
+            decryptedLinks.add(this.createDownloadlink(link));
+        }
+        fp.addLinks(decryptedLinks);
+        return decryptedLinks;
+    }
+
+    /** Handles new style "gallery" URLs which can either lead to a gallery or a single image. */
+    private ArrayList<DownloadLink> crawlGalleryNew(final CryptedLink param) throws PluginException, IOException {
+        final String galleryID = new Regex(param.getCryptedUrl(), TYPE_VIEW).getMatch(0);
+        if (galleryID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage(param.getCryptedUrl());
+        /* Errorhandling */
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        if (br.containsHTML("class=\"links gallery\"")) {
+            /* Gallery */
+            final String galleryTitle = br.getRegex("id=\"gallery-name\"[^>]*>([^<>\"]+)<").getMatch(0);
+            final FilePackage fp = FilePackage.getInstance();
+            if (galleryTitle != null) {
+                fp.setName(galleryTitle);
+            } else {
+                fp.setName(galleryID);
+            }
+            /* TODO: Check if pagination support is required */
+            final String links[] = br.getRegex(TYPE_VIEW).getColumn(-1);
+            for (final String link : links) {
+                final String imageID = new Regex(link, TYPE_VIEW).getMatch(0);
+                /* Don't re-add previously added URL! */
+                if (imageID.equals(galleryID)) {
+                    continue;
+                } else {
+                    decryptedLinks.add(this.createDownloadlink(link));
+                }
+            }
+            fp.addLinks(decryptedLinks);
+        } else {
+            /* Single image - very similar to "crawlSingleImage". */
+            final String finallink = br.getRegex("class=\"image-loader\">\\s*<img src=\"(https?://[^\"]+)\"").getMatch(0);
+            if (finallink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String originalFilename = br.getRegex(galleryID + "\\?full=1\"[^<>]*title=\"([^\"]+)\"").getMatch(0);
+            final DownloadLink direct = this.createDownloadlink(finallink);
+            final String filenameURL = Plugin.getFileNameFromURL(new URL(finallink));
+            if (originalFilename != null) {
+                direct.setFinalFileName(originalFilename);
+            } else if (filenameURL != null) {
+                direct.setFinalFileName(filenameURL);
+            }
+            direct.setAvailable(true);
+            decryptedLinks.add(direct);
+        }
+        return decryptedLinks;
+    }
+
+    private DownloadLink crawlSingleImage(final CryptedLink param) throws Exception {
+        final String imageID = new Regex(param.getCryptedUrl(), TYPE_IMAGE).getMatch(0);
+        if (imageID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage(param.getCryptedUrl());
+        /* Error handling */
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("Image not found|>Image violated our terms of service|>The requested image could not be located|>The image has been deleted")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML("(?i)>\\s*Continue to your image")) {
+            /* Reload page */
+            br.getPage(param.getCryptedUrl());
+        }
+        String finallink = br.getRegex("('|\")(https?://\\d+\\.imagebam\\.com/download/[^<>\\s]+)\\1").getMatch(1);
+        if (finallink == null) {
+            finallink = br.getRegex("('|\")(https?://images\\d+\\.imagebam\\.com/[^<>\\s]+\\.(jpe?g|png))\\1").getMatch(1);
+        }
+        if (finallink == null) {
+            throw new DecrypterException("Decrypter broken for link: " + br.getURL());
+        }
+        finallink = Encoding.htmlDecode(finallink);
+        final DownloadLink dl = createDownloadlink(finallink);
+        String originalFilename = br.getRegex(imageID + "\\?full=1\"[^<>]*title=\"([^\"]+)\"").getMatch(0);
+        String urlFilename = extractFileNameFromURL(finallink);
+        if (urlFilename != null) {
+            if (originalFilename != null && getFileNameExtensionFromString(originalFilename) != null) {
+                urlFilename = originalFilename;
+            }
+            urlFilename = Encoding.htmlDecode(urlFilename);
+            /* If has extension don't set, if hasn't extension set default one. */
+            urlFilename += getFileNameExtensionFromString(urlFilename) != null ? "" : ".jpg";
+            dl.setFinalFileName(urlFilename);
+        }
+        dl.setAvailable(true);
+        return dl;
+    }
+}
