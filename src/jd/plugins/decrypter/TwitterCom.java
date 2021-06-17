@@ -25,15 +25,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -56,21 +48,29 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(?:www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/status/\\d+|https?://(?:www\\.|mobile\\.)?twitter\\.com/(?!i/)[A-Za-z0-9_\\-]{2,}(?:/(?:media|likes))?|https://twitter\\.com/i/cards/tfw/v1/\\d+|https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" })
 public class TwitterCom extends PornEmbedParser {
     public TwitterCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String     TYPE_CARD         = "https?://[^/]+/i/cards/tfw/v1/(\\d+)";
-    private static final String     TYPE_USER_ALL     = "https?://[^/]+/[A-Za-z0-9_\\-]+(?:/(?:media|likes))?";
-    private static final String     TYPE_USER_POST    = "https?://(?:www\\.)?twitter\\.com.*?status/(\\d+).*?";
-    private static final String     TYPE_REDIRECT     = "https?://t\\.co/[a-zA-Z0-9]+";
-    private ArrayList<DownloadLink> decryptedLinks    = new ArrayList<DownloadLink>();
-    private static Object           LOCK              = new Object();
-    private static String           guest_token       = null;
-    private static final String     PROPERTY_USERNAME = "username";
-    private static final String     PROPERTY_DATE     = "date";
+    private static final String            TYPE_CARD         = "https?://[^/]+/i/cards/tfw/v1/(\\d+)";
+    private static final String            TYPE_USER_ALL     = "https?://[^/]+/[A-Za-z0-9_\\-]+(?:/(?:media|likes))?";
+    private static final String            TYPE_USER_POST    = "https?://(?:www\\.)?twitter\\.com.*?status/(\\d+).*?";
+    private static final String            TYPE_REDIRECT     = "https?://t\\.co/[a-zA-Z0-9]+";
+    private ArrayList<DownloadLink>        decryptedLinks    = new ArrayList<DownloadLink>();
+    private static AtomicReference<String> GUEST_TOKEN       = new AtomicReference<String>();
+    private static final String            PROPERTY_USERNAME = "username";
+    private static final String            PROPERTY_DATE     = "date";
 
     protected DownloadLink createDownloadlink(final String link, final String tweetid) {
         final DownloadLink ret = super.createDownloadlink(link);
@@ -297,32 +297,42 @@ public class TwitterCom extends PornEmbedParser {
         prepAPIHeaders(br);
         if (account == null) {
             /* Gues token is only needed for anonymous users */
-            getAndSetGuestToken(br);
+            getAndSetGuestToken(this, br);
         }
         return br;
     }
 
-    private void getAndSetGuestToken(final Browser br) throws DecrypterException, IOException {
-        synchronized (LOCK) {
+    public static boolean resetGuestToken() {
+        synchronized (GUEST_TOKEN) {
+            return GUEST_TOKEN.getAndSet(null) != null;
+        }
+    }
+
+    public static String getAndSetGuestToken(Plugin plugin, final Browser br) throws DecrypterException, IOException {
+        synchronized (GUEST_TOKEN) {
+            String guest_token = GUEST_TOKEN.get();
             if (guest_token == null) {
-                logger.info("Generating new guest_token");
+                plugin.getLogger().info("Generating new guest_token");
                 /** TODO: Save guest_token throughout session so we do not generate them so frequently */
                 guest_token = generateNewGuestToken(br);
                 if (StringUtils.isEmpty(guest_token)) {
-                    logger.warning("Failed to find guest_token");
+                    plugin.getLogger().warning("Failed to find guest_token");
                     throw new DecrypterException("Plugin broken");
                 }
+                GUEST_TOKEN.set(guest_token);
             } else {
-                logger.info("Re-using existing guest-token");
+                plugin.getLogger().info("Re-using existing guest-token");
             }
             br.getHeaders().put("x-guest-token", guest_token);
+            return guest_token;
         }
     }
 
     public static String generateNewGuestToken(final Browser br) throws IOException, DecrypterException {
-        br.postPage("https://api.twitter.com/1.1/guest/activate.json", "");
+        final Browser brc = br.cloneBrowser();
+        brc.postPage("https://api.twitter.com/1.1/guest/activate.json", "");
         /** TODO: Save guest_token throughout session so we do not generate them so frequently */
-        return PluginJSonUtils.getJson(br, "guest_token");
+        return PluginJSonUtils.getJson(brc, "guest_token");
     }
 
     /** Crawls single media objects obtained via API. */

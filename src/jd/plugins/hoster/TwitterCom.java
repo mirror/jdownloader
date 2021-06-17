@@ -17,21 +17,6 @@ package jd.plugins.hoster;
 
 import java.util.Map;
 
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -48,6 +33,21 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com" }, urls = { "https?://[a-z0-9]+\\.twimg\\.com/media/[^/]+|https?://amp\\.twimg\\.com/prod/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap|https?://amp\\.twimg\\.com/v/.+|https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+" })
 public class TwitterCom extends PluginForHost {
@@ -83,7 +83,6 @@ public class TwitterCom extends PluginForHost {
     private boolean            geo_blocked                  = false;
     private boolean            server_issues                = false;
     private String             tweetid                      = null;
-    private String             guest_token                  = null;
     public static final String COOKIE_KEY_LOGINED_CSRFTOKEN = "ct0";
 
     public static Browser prepBR(final Browser br) {
@@ -176,10 +175,7 @@ public class TwitterCom extends PluginForHost {
                 jd.plugins.decrypter.TwitterCom.prepAPIHeaders(br);
                 /* Set guest_token header if needed. */
                 if (account == null) {
-                    if (guest_token == null) {
-                        /** TODO: Save guest_token throughout session so we do not generate them so frequently */
-                        guest_token = jd.plugins.decrypter.TwitterCom.generateNewGuestToken(br);
-                    }
+                    final String guest_token = jd.plugins.decrypter.TwitterCom.getAndSetGuestToken(this, br);
                     if (guest_token != null) {
                         br.getHeaders().put("x-guest-token", guest_token);
                     } else {
@@ -221,11 +217,11 @@ public class TwitterCom extends PluginForHost {
                          * 2019-08-20: {"errors":[{"code":239,"message":"Bad guest token."}]}
                          */
                         logger.info("Possible token failure 239, retrying");
-                        guest_token = null;
+                        jd.plugins.decrypter.TwitterCom.resetGuestToken();
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 353", 3 * 60 * 1000l);
                     } else if (errorcode.equals("353")) {
                         logger.info("Possible token failure 353, retrying");
-                        guest_token = null;
+                        jd.plugins.decrypter.TwitterCom.resetGuestToken();
                         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 353", 2 * 60 * 1000l);
                     } else {
                         logger.warning("Unknown error");
