@@ -38,9 +38,8 @@ public class DailyMotionComDecrypterV2 extends DailyMotionComDecrypter {
     }
 
     @Override
-    protected void decryptSingleVideo(ArrayList<DownloadLink> decryptedLinks) throws Exception {
-        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        super.decryptSingleVideo(ret);
+    protected ArrayList<DownloadLink> crawlSingleVideo(final CryptedLink param) throws Exception {
+        ArrayList<DownloadLink> ret = super.crawlSingleVideo(param);
         ArrayList<DownloadLink> mp4s = new ArrayList<DownloadLink>();
         ArrayList<DailyMotionVariant> variantInfos = new ArrayList<DailyMotionVariant>();
         DownloadLink variantLink = null;
@@ -62,7 +61,7 @@ public class DailyMotionComDecrypterV2 extends DailyMotionComDecrypter {
             }
         }
         ret.removeAll(mp4s);
-        decryptedLinks.clear();
+        ret.clear();
         if (variantLink != null) {
             ret.add(variantLink);
             Collections.sort(variantInfos, new Comparator<DailyMotionVariant>() {
@@ -109,8 +108,7 @@ public class DailyMotionComDecrypterV2 extends DailyMotionComDecrypter {
                 ret.add(audio);
             }
         }
-        //
-        decryptedLinks.addAll(ret);
+        return ret;
     }
 
     @Override
