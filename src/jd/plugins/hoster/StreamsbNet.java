@@ -46,7 +46,7 @@ public class StreamsbNet extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "streamsb.com" }); /* 2021-06-17: This domain is offline */
+        ret.add(new String[] { "streamsb.com" });
         ret.add(new String[] { "streamsb.net", "sbembed1.com", "sbembed2.com" });
         return ret;
     }
