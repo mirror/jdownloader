@@ -292,7 +292,7 @@ public class TwitterCom extends PornEmbedParser {
         return br;
     }
 
-    private Browser prepareAPI(final Browser br, final Account account) throws DecrypterException, IOException {
+    private Browser prepareAPI(final Browser br, final Account account) throws PluginException, IOException {
         /* 2020-02-03: Static authtoken */
         prepAPIHeaders(br);
         if (account == null) {
@@ -308,7 +308,7 @@ public class TwitterCom extends PornEmbedParser {
         }
     }
 
-    public static String getAndSetGuestToken(Plugin plugin, final Browser br) throws DecrypterException, IOException {
+    public static String getAndSetGuestToken(Plugin plugin, final Browser br) throws PluginException, IOException {
         synchronized (GUEST_TOKEN) {
             String guest_token = GUEST_TOKEN.get();
             if (guest_token == null) {
@@ -317,18 +317,20 @@ public class TwitterCom extends PornEmbedParser {
                 guest_token = generateNewGuestToken(br);
                 if (StringUtils.isEmpty(guest_token)) {
                     plugin.getLogger().warning("Failed to find guest_token");
-                    throw new DecrypterException("Plugin broken");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    GUEST_TOKEN.set(guest_token);
+                    plugin.getLogger().warning("Found new guest_token:" + guest_token);
                 }
-                GUEST_TOKEN.set(guest_token);
             } else {
-                plugin.getLogger().info("Re-using existing guest-token");
+                plugin.getLogger().info("Re-using existing guest-token:" + guest_token);
             }
             br.getHeaders().put("x-guest-token", guest_token);
             return guest_token;
         }
     }
 
-    public static String generateNewGuestToken(final Browser br) throws IOException, DecrypterException {
+    public static String generateNewGuestToken(final Browser br) throws IOException {
         final Browser brc = br.cloneBrowser();
         brc.postPage("https://api.twitter.com/1.1/guest/activate.json", "");
         /** TODO: Save guest_token throughout session so we do not generate them so frequently */
