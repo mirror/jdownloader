@@ -219,17 +219,6 @@ public class BsTo extends PluginForDecrypt {
                     }
                 }
                 logger.info("Number of user allowed mirrors via priorized hosts handling: " + userAllowedMirrorURLs.size());
-                // for (final String userPriorizedHoster : userHosterPrioList) {
-                // for (final String singleLink : mirrorURLs) {
-                // logger.info("singleLink: " + singleLink);
-                // final String url = Request.getLocation("/" + singleLink, br.getRequest());
-                // if (url.toLowerCase(Locale.ENGLISH).endsWith(userPriorizedHoster)) {
-                // logger.info("Adding ONLY the following user priorized host: " + userPriorizedHoster);
-                // decryptedLinks.add(createDownloadlink(url));
-                // return decryptedLinks;
-                // }
-                // }
-                // }
                 for (final String singleLink : userAllowedMirrorURLs) {
                     final String url = Request.getLocation("/" + singleLink, br.getRequest());
                     decryptedLinks.add(createDownloadlink(url));

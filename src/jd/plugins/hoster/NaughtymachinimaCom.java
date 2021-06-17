@@ -20,11 +20,17 @@ import java.io.IOException;
 import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
-import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -32,14 +38,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "naughtymachinima.com" }, urls = { "https?://(?:www\\.)?naughtymachinima\\.com/video/(\\d+)(?:/[a-z0-9\\-_]+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "naughtymachinima.com" }, urls = { "https?://(?:www\\.)?naughtymachinima\\.com/video/(\\d+)(/([a-z0-9\\-_]+))?" })
 public class NaughtymachinimaCom extends PluginForHost {
     public NaughtymachinimaCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://www.naughtymachinima.com/signup");
     }
 
     /* DEV NOTES */
-    // Tags:
+    // Tags: porn plugin
     // protocol: no https
     // other:
     /* Connection stuff */
@@ -62,9 +69,9 @@ public class NaughtymachinimaCom extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String fid = getFID(link);
-        if (fid != null) {
-            return this.getHost() + "://" + fid;
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
         } else {
             return super.getLinkID(link);
         }
@@ -74,28 +81,38 @@ public class NaughtymachinimaCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return requestFileInformation(link, account, false);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         correctDownloadLink(link);
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        if (account != null) {
+            this.login(account, false);
+        }
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("/" + getFID(link))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        privatecontent = this.br.containsHTML(">This is a private video");
-        final String fid = new Regex(link.getDownloadURL(), "/video/(\\d+)/").getMatch(0);
-        final String url_name = new Regex(link.getDownloadURL(), "([a-z0-9\\-_]+)$").getMatch(0);
-        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]+) \\- Naughty Machinima</title>").getMatch(0);
+        privatecontent = this.br.containsHTML("(?i)>\\s*This is a private video");
+        final String urlName = new Regex(this.br.getURL(), this.getSupportedLinks()).getMatch(2);
+        String filename;
+        if (urlName != null) {
+            /* Prefer URL name over name Regexed in html as chances are higher to reliably get it there. */
+            filename = urlName.replace("-", " ");
+        } else {
+            filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>([^<>\"]+) \\- Naughty Machinima</title>").getMatch(0);
+            }
         }
-        if (filename == null) {
-            filename = url_name;
-        }
-        final String videos[] = br.getRegex("src\\s*=\\s*\"([^\"]+/media/videos/[^\"]+" + fid + "[^\"]*\\.mp4)").getColumn(0);
+        /* Find highest quality */
+        final String videos[] = br.getRegex("src\\s*=\\s*\"([^\"]+/media/videos/[^\"]+" + getFID(link) + "[^\"]*\\.mp4)").getColumn(0);
         if (videos != null) {
             int size = -1;
             for (final String video : videos) {
@@ -112,19 +129,14 @@ public class NaughtymachinimaCom extends PluginForHost {
                 }
             }
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
+        filename = Encoding.htmlDecode(filename).trim();
         final String ext = ".mp4";
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
         if (!StringUtils.isEmpty(dllink)) {
             link.setFinalFileName(filename);
-            if (!(Thread.currentThread() instanceof SingleDownloadController)) {
+            if (!isDownload) {
                 final Browser br2 = br.cloneBrowser();
                 // In case the link redirects to the finallink
                 br2.setFollowRedirects(true);
@@ -132,7 +144,6 @@ public class NaughtymachinimaCom extends PluginForHost {
                 try {
                     if (this.looksLikeDownloadableContent(con)) {
                         link.setDownloadSize(con.getCompleteContentLength());
-                        link.setProperty("directlink", dllink);
                     } else {
                         server_issues = true;
                     }
@@ -152,9 +163,17 @@ public class NaughtymachinimaCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        handleDownload(link, null);
+    }
+
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link, account, true);
         if (privatecontent) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Private video");
+            if (account != null) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Private video");
+            } else {
+                throw new AccountRequiredException();
+            }
         } else if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
@@ -179,6 +198,86 @@ public class NaughtymachinimaCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private boolean login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
+            try {
+                br.setFollowRedirects(true);
+                br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    logger.info("Attempting cookie login");
+                    this.br.setCookies(this.getHost(), cookies);
+                    if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l) {
+                        logger.info("Cookies are still fresh --> Trust cookies without login");
+                        return false;
+                    }
+                    br.getPage("https://" + this.getHost() + "/");
+                    if (this.isLoggedin(this.br)) {
+                        logger.info("Cookie login successful");
+                        /* Refresh cookie timestamp */
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return true;
+                    } else {
+                        logger.info("Cookie login failed");
+                    }
+                }
+                logger.info("Performing full login");
+                br.getPage("https://" + this.getHost() + "/login");
+                final Form loginform = br.getFormbyProperty("name", "login_form");
+                if (loginform == null) {
+                    logger.warning("Failed to find loginform");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("username", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                loginform.put("login_remember", "on");
+                loginform.put("submit_login", "");
+                br.submitForm(loginform);
+                if (!isLoggedin(this.br)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                return true;
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
+            }
+        }
+    }
+
+    private boolean isLoggedin(final Browser br) {
+        return br.containsHTML("/logout");
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        login(account, true);
+        /*
+         * 2021-06-17: They only got free accounts and the only benefit of those is that users can download private videos if the owner of
+         * those has added them to the friends list.
+         */
+        account.setType(AccountType.FREE);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        this.handleDownload(link, account);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public boolean hasCaptcha(final DownloadLink link, final Account acc) {
+        return false;
     }
 
     @Override
