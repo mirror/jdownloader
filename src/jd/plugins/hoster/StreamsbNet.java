@@ -18,13 +18,14 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class StreamsbNet extends XFileSharingProBasic {
@@ -32,6 +33,8 @@ public class StreamsbNet extends XFileSharingProBasic {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
+
+    private static final String TYPE_SPECIAL = "https://[^/]+/(?:d|e)/([a-z0-9]{12})";
 
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
@@ -43,8 +46,8 @@ public class StreamsbNet extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "streamsb.com" });
-        ret.add(new String[] { "streamsb.net" });
+        ret.add(new String[] { "streamsb.com" }); /* 2021-06-17: This domain is offline */
+        ret.add(new String[] { "streamsb.net", "sbembed1.com", "sbembed2.com" });
         return ret;
     }
 
@@ -64,7 +67,22 @@ public class StreamsbNet extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:d/[a-z0-9]{12}|e/[a-z0-9]{12}|(?:embed-)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public String getFUIDFromURL(final DownloadLink link) {
+        if (link == null || link.getPluginPatternMatcher() == null) {
+            return null;
+        } else if (link.getPluginPatternMatcher().matches(TYPE_SPECIAL)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_SPECIAL).getMatch(0);
+        } else {
+            return super.getFUIDFromURL(link);
+        }
     }
 
     @Override
@@ -110,5 +128,14 @@ public class StreamsbNet extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    protected boolean isVideohoster_enforce_video_filename() {
+        return true;
+    }
+
+    protected boolean isShortURL(final DownloadLink link) {
+        return false;
     }
 }
