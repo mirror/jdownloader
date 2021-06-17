@@ -426,6 +426,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
             // final String id = (String) JavaScriptEngineFactory.walkJson(pwResponse, "data/video/id");
+            /* Special videoID is created after entering correct password. */
             final String xid = (String) JavaScriptEngineFactory.walkJson(pwResponse, "data/video/xid");
             if (StringUtils.isEmpty(xid)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

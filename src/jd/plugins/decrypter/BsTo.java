@@ -16,10 +16,10 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
+import java.util.Map.Entry;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
@@ -165,37 +165,79 @@ public class BsTo extends PluginForDecrypt {
                 /* Crawl all episodes of a series --> All mirrors in that */
                 mirrorlist = br.getRegex("<table class=\"episodes\">.*?</table>").getMatch(-1);
             }
-            final String[] mirrors = new Regex(mirrorlist, "<a[^>]*href=\"(/?[^\"]+)\"").getColumn(0);
-            if (mirrors == null || mirrors.length == 0) {
+            final String[] mirrorURLs = new Regex(mirrorlist, "<a[^>]*href=\"(serie/[^/]+/\\d+/[^/]+/[a-z]{2}/[^/\"]+)\"").getColumn(0);
+            if (mirrorURLs == null || mirrorURLs.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            logger.info("Number of possible downloadlinks TOTAL: " + mirrorURLs.length);
             /* Add only user preferred host or all available hosts. */
             String userHosterPrioListStr = PluginJsonConfig.get(BsToConfig.class).getHosterPriorityString();
             if (userHosterPrioListStr != null && userHosterPrioListStr.contains(",")) {
-                logger.info("Trying to add only one user priorized host");
                 userHosterPrioListStr = userHosterPrioListStr.replace(" ", "").toLowerCase(Locale.ENGLISH);
-                final String[] userHosterPrioList = userHosterPrioListStr.split(",");
-                for (final String userPriorizedHoster : userHosterPrioList) {
-                    for (final String singleLink : mirrors) {
-                        logger.info("singleLink: " + singleLink);
-                        final String url = Request.getLocation("/" + singleLink, br.getRequest());
-                        if (url.toLowerCase(Locale.ENGLISH).endsWith(userPriorizedHoster)) {
-                            logger.info("Adding ONLY the following user priorized host: " + userPriorizedHoster);
-                            decryptedLinks.add(createDownloadlink(url));
-                            return decryptedLinks;
-                        }
+                final String[] hosterPrioList = userHosterPrioListStr.split(",");
+                logger.info("Trying to add only one user priorized host");
+                final HashMap<String, List<String>> packages = new HashMap<String, List<String>>();
+                for (final String mirrorURL : mirrorURLs) {
+                    final String uniqueID = mirrorURL.substring(0, mirrorURL.lastIndexOf("/"));
+                    if (packages.containsKey(uniqueID)) {
+                        packages.get(uniqueID).add(mirrorURL);
+                    } else {
+                        final List<String> newList = new ArrayList<String>();
+                        newList.add(mirrorURL);
+                        packages.put(uniqueID, newList);
                     }
                 }
-                logger.info("Failed to find user priorized host -> Crawling all");
+                logger.info("Number of packages found: " + packages.size());
+                final List<String> userAllowedMirrorURLs = new ArrayList<String>();
+                /* Now decide which mirrors we actually want to crawl based on a user setting. */
+                for (final Entry<String, List<String>> entry : packages.entrySet()) {
+                    final List<String> packageMirrorIDs = entry.getValue();
+                    if (packageMirrorIDs.size() == 1) {
+                        /* Only 1 host available -> Crawl that */
+                        userAllowedMirrorURLs.add(packageMirrorIDs.get(0));
+                    } else if (hosterPrioList != null) {
+                        /* Try to prefer user selected hosts/mirrors */
+                        boolean hasFoundPreferredHost = false;
+                        mirrorLoop: for (final String userPreferredHost : hosterPrioList) {
+                            for (final String mirrorURL : packageMirrorIDs) {
+                                final String hoster = new Regex(mirrorURL, "/([^/]+)$").getMatch(0);
+                                if (hoster.equalsIgnoreCase(userPreferredHost)) {
+                                    userAllowedMirrorURLs.add(mirrorURL);
+                                    hasFoundPreferredHost = true;
+                                    break mirrorLoop;
+                                }
+                            }
+                        }
+                        if (!hasFoundPreferredHost) {
+                            /* Fallback */
+                            userAllowedMirrorURLs.addAll(packageMirrorIDs);
+                        }
+                    } else {
+                        /* Crawl all mirrors */
+                        userAllowedMirrorURLs.addAll(packageMirrorIDs);
+                    }
+                }
+                logger.info("Number of user allowed mirrors via priorized hosts handling: " + userAllowedMirrorURLs.size());
+                // for (final String userPriorizedHoster : userHosterPrioList) {
+                // for (final String singleLink : mirrorURLs) {
+                // logger.info("singleLink: " + singleLink);
+                // final String url = Request.getLocation("/" + singleLink, br.getRequest());
+                // if (url.toLowerCase(Locale.ENGLISH).endsWith(userPriorizedHoster)) {
+                // logger.info("Adding ONLY the following user priorized host: " + userPriorizedHoster);
+                // decryptedLinks.add(createDownloadlink(url));
+                // return decryptedLinks;
+                // }
+                // }
+                // }
+                for (final String singleLink : userAllowedMirrorURLs) {
+                    final String url = Request.getLocation("/" + singleLink, br.getRequest());
+                    decryptedLinks.add(createDownloadlink(url));
+                }
             } else {
                 logger.info("User didn't define priorized hosts -> Crawling all");
-            }
-            final Set<String> duplicate = new HashSet<String>();
-            for (final String singleLink : mirrors) {
-                logger.info("singleLink: " + singleLink);
-                final String url = Request.getLocation("/" + singleLink, br.getRequest());
-                if (duplicate.add(url)) {
+                for (final String singleLink : mirrorURLs) {
+                    final String url = Request.getLocation("/" + singleLink, br.getRequest());
                     decryptedLinks.add(createDownloadlink(url));
                 }
             }
