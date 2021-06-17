@@ -42,8 +42,6 @@ public class NaughtymachinimaCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
