@@ -26,6 +26,15 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -47,15 +56,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(?:www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/status/\\d+|https?://(?:www\\.|mobile\\.)?twitter\\.com/(?!i/)[A-Za-z0-9_\\-]{2,}(?:/(?:media|likes))?|https://twitter\\.com/i/cards/tfw/v1/\\d+|https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" })
 public class TwitterCom extends PornEmbedParser {
     public TwitterCom(PluginWrapper wrapper) {
@@ -70,6 +70,7 @@ public class TwitterCom extends PornEmbedParser {
     private static Object           LOCK              = new Object();
     private static String           guest_token       = null;
     private static final String     PROPERTY_USERNAME = "username";
+    private static final String     PROPERTY_DATE     = "date";
 
     protected DownloadLink createDownloadlink(final String link, final String tweetid) {
         final DownloadLink ret = super.createDownloadlink(link);
@@ -257,6 +258,7 @@ public class TwitterCom extends PornEmbedParser {
                     }
                     dl.setAvailable(true);
                     dl.setProperty(PROPERTY_USERNAME, username);
+                    dl.setProperty(PROPERTY_DATE, formattedDate);
                     dl.setProperty("date", formattedDate);
                     if (fp != null) {
                         fp.add(dl);
@@ -398,10 +400,10 @@ public class TwitterCom extends PornEmbedParser {
                 /* 2020-06-08: Let it survive users' reset especially for items which are handled by directhttp plugin. */
                 dl.setForcedFileName(formattedDate + "_" + username + "_" + filename);
             }
-            /* Set possible Packagizer properties */
-            dl.setProperty("date", formattedDate);
             dl.setAvailable(true);
+            /* Set possible Packagizer properties */
             dl.setProperty(PROPERTY_USERNAME, username);
+            dl.setProperty(PROPERTY_DATE, formattedDate);
             if (fp != null) {
                 fp.add(dl);
             }
