@@ -16,23 +16,19 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pic5you.ru", "image2you.ru", "imagecurl.com", "twitpic.com", "pic4you.ru", "imagebam.com", "imagebam.com", "freeimagehosting.net", "girlswithmuscle.com" }, urls = { "http://pic5you\\.ru/\\d+/\\d+/", "http://(?:www\\.)?image2you\\.ru/\\d+/\\d+/", "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "http://(?:www\\.)?pic4you\\.ru/\\d+/\\d+/", "https?://[\\w\\.]*imagebam\\.com/(image|gallery)/[a-z0-9]+", "https?://thumbs\\d+\\.imagebam\\.com/\\d+/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "https?://(www.)?girlswithmuscle\\.com/\\d+/?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pic5you.ru", "image2you.ru", "imagecurl.com", "twitpic.com", "pic4you.ru", "freeimagehosting.net", "girlswithmuscle.com" }, urls = { "http://pic5you\\.ru/\\d+/\\d+/", "http://(?:www\\.)?image2you\\.ru/\\d+/\\d+/", "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "http://(?:www\\.)?pic4you\\.ru/\\d+/\\d+/", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "https?://(www.)?girlswithmuscle\\.com/\\d+/?" })
 public class ImageHosterDecrypter extends antiDDoSForDecrypt {
     public ImageHosterDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
@@ -45,85 +41,7 @@ public class ImageHosterDecrypter extends antiDDoSForDecrypt {
         br.setFollowRedirects(false);
         String finallink = null;
         String finalfilename = null;
-        if (parameter.contains("imagebam.com")) {
-            // redirects from https to http
-            br.setFollowRedirects(true);
-            if (parameter.matches(".*thumbs\\d+\\.imagebam\\.com.*")) {
-                // rewrite thumbnail to fullImage link
-                final String id = new Regex(parameter, "/([a-z0-9]+)$").getMatch(0);
-                final DownloadLink fullImage = createDownloadlink("http://www.imagebam.com/image/" + id);
-                decryptedLinks.add(fullImage);
-                return decryptedLinks;
-            }
-            br.getPage(parameter);
-            /* Error handling */
-            if (br.containsHTML("The gallery you are looking for")) {
-                logger.info("Link offline: " + parameter);
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
-            }
-            if (br.containsHTML("Image not found|>Image violated our terms of service|>The requested image could not be located|>The image has been deleted")) {
-                logger.info("Link offline: " + parameter);
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
-            }
-            if (parameter.contains("/gallery/")) {
-                // note: you can still get dupes of images (filenames), but they have different download path.
-                final HashSet<String> dupes = new HashSet<String>();
-                String name = new Regex(parameter, "/gallery/(.+)").getMatch(0);
-                if (name == null) {
-                    name = "ImageBamGallery";
-                } else {
-                    name = "ImageBamGallery_" + name;
-                }
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(name);
-                final String pages[] = br.getRegex("class=\"pagination_(current|link)\">(\\d+)<").getColumn(1);
-                if (pages != null && pages.length > 0) {
-                    for (final String page : pages) {
-                        br.getPage(parameter + "/" + page);
-                        if (br.containsHTML("The gallery you are looking for")) {
-                            continue;
-                        }
-                        final String links[] = br.getRegex("'(https?://[\\w\\.]*imagebam\\.com/image/[a-z0-9]+)'").getColumn(0);
-                        for (final String link : links) {
-                            if (dupes.add(link)) {
-                                final DownloadLink dl = handleImageBam(br, Encoding.htmlDecode(link), true);
-                                if (dl != null) {
-                                    decryptedLinks.add(dl);
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    final String links[] = br.getRegex("'(https?://[\\w\\.]*imagebam\\.com/image/[a-z0-9]+)'").getColumn(0);
-                    for (final String link : links) {
-                        if (dupes.add(link)) {
-                            final DownloadLink dl = handleImageBam(br, Encoding.htmlDecode(link), true);
-                            if (dl != null) {
-                                decryptedLinks.add(dl);
-                            }
-                        }
-                    }
-                }
-                if (decryptedLinks.size() > 0) {
-                    fp.addLinks(decryptedLinks);
-                    return decryptedLinks;
-                } else {
-                    return null;
-                }
-            }
-            final DownloadLink dl;
-            if (br.containsHTML("Continue to your image")) {
-                dl = handleImageBam(br, parameter, true);
-            } else {
-                dl = handleImageBam(br, null, false);
-            }
-            if (dl != null) {
-                decryptedLinks.add(dl);
-                return decryptedLinks;
-            }
-        } else if (parameter.contains("freeimagehosting.net")) {
+        if (parameter.contains("freeimagehosting.net")) {
             br.getPage(parameter);
             /* Error handling */
             if (!br.containsHTML("uploads/")) {
@@ -219,47 +137,6 @@ public class ImageHosterDecrypter extends antiDDoSForDecrypt {
         return decryptedLinks;
     }
 
-    private DownloadLink handleImageBam(Browser br, String url, boolean refresh) throws Exception {
-        final Browser brc;
-        if (refresh == true) {
-            brc = br.cloneBrowser();
-            brc.getPage(url);
-        } else {
-            brc = br;
-        }
-        if (brc.containsHTML("Continue to your image")) {
-            brc.getPage(url);
-        }
-        // note: long filenames wont have extensions! server header doesn't specify the file extension either!
-        String finallink = brc.getRegex("('|\")(https?://\\d+\\.imagebam\\.com/download/[^<>\\s]+)\\1").getMatch(1);
-        if (finallink == null) {
-            finallink = brc.getRegex("('|\")(https?://images\\d+\\.imagebam\\.com/[^<>\\s]+\\.(jpe?g|png))\\1").getMatch(1);
-        }
-        if (finallink == null) {
-            finallink = brc.getRegex("onclick=\"scale\\(this\\);\" src=\"(https?://.*?)\"").getMatch(0);
-            if (finallink == null) {
-                // no large image provided, we need to get the image on site
-                finallink = brc.getRegex("<div class=\"container-full\">\\s*<div class=\"image-container\">\\s*<img class=\"image\" id=\"\\w+\" src=\"(.*?)\"").getMatch(0);
-            }
-        }
-        if (finallink == null) {
-            throw new DecrypterException("Decrypter broken for link: " + br.getURL());
-        }
-        finallink = Encoding.htmlDecode(finallink);
-        final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
-        final String title = Encoding.htmlDecode(brc.getRegex("\"view-image\".*?title\\s*=\\s*\"(.*?)\"").getMatch(0));
-        String finalfilename = extractFileNameFromURL(finallink);
-        if (finalfilename != null) {
-            if (title != null && getFileNameExtensionFromString(title) != null) {
-                finalfilename = title;
-            }
-            // if has extension don't set, if hasn't extension set default one.
-            dl.setFinalFileName(Encoding.htmlDecode(finalfilename + (getFileNameExtensionFromString(finalfilename) != null ? "" : ".jpg")));
-        }
-        return dl;
-    }
-
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
