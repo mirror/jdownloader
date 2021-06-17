@@ -233,6 +233,10 @@ public class NaughtymachinimaCom extends PluginForHost {
                 loginform.put("username", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 loginform.put("login_remember", "on");
+                /*
+                 * Workaround for: possible bad Form handling/bug: Fields with "null" values won't be sent. See
+                 * https://svn.jdownloader.org/issues/89825
+                 */
                 loginform.put("submit_login", "");
                 br.submitForm(loginform);
                 if (!isLoggedin(this.br)) {
