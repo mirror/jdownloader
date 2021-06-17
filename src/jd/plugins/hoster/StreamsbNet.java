@@ -46,12 +46,16 @@ public class StreamsbNet extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        /**
+         * 2021-06-17: streamsb.com = only user interface/website. streamsb.net and all other domains: used for video hosting/downloadlinks.
+         * </br>
+         * streamsb.com is basically only a dummy entry here as no downloadlinks exist that can be used via this domain.
+         */
         ret.add(new String[] { "streamsb.com" });
         ret.add(new String[] { "streamsb.net", "sbembed1.com", "sbembed2.com" });
         return ret;
     }
 
-    /** 2021-03-15: Main domain has changed from streamsb.net to streamsb.com */
     @Override
     public String rewriteHost(final String host) {
         return this.rewriteHost(getPluginDomains(), host);
