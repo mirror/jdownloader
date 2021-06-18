@@ -29,6 +29,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
+import jd.http.requests.PostRequest;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -202,7 +203,15 @@ public class GfyCatCom extends PluginForHost {
                         logger.info("Creating new token because the old one has expired");
                     }
                     final Browser brc = br.cloneBrowser();
-                    brc.postPageRaw("https://weblogin.redgifs.com/oauth/webtoken", "{\"access_key\":\"" + key + "\"}");
+                    // brc.getHeaders().put("Accept", "*/*");
+                    // brc.getHeaders().put("Cache-Control", null);
+                    // brc.getHeaders().put("TE", "Trailers");
+                    // brc.getHeaders().put("Connection", "keep-alive");
+                    brc.getHeaders().put("Origin", "https://www.redgifs.com");
+                    brc.getHeaders().put("Referer", "https://www.redgifs.com/");
+                    PostRequest request = brc.createJSonPostRequest("https://api.redgifs.com/v1/oauth/webtoken", "{\"access_key\":\"" + key + "\"}");
+                    request.setContentType("application/json");// is important, default content-type with charset will fail in bad request
+                    brc.getPage(request);
                     final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
                     token = (String) entries.get("access_token");
                     if (StringUtils.isEmpty(token)) {
