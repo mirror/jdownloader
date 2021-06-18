@@ -31,6 +31,7 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -301,16 +302,15 @@ public class GoogleDrive extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
-        final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         /*
-         * 2020-11-17: Crawling doesn't work anymore when user is logged in at this stage AND crawling of private folders was broken
-         * anyways: https://svn.jdownloader.org/issues/88600
+         * 2020-11-17: Crawling doesn't work anymore when user is logged in at this stage AND crawling of private folders is broken anyways:
+         * https://svn.jdownloader.org/issues/88600
          */
-        /* TODO: Allow login if account is given and API login is active */
-        final boolean allowLogin = false;
         boolean loggedin = false;
-        if (aa != null && allowLogin) {
-            login(this.br, aa);
+        final boolean allowLogin = false;
+        if (account != null && allowLogin) {
+            login(this.br, account);
         } else {
             /* Respect users' plugin settings (e.g. custom User-Agent) */
             ((jd.plugins.hoster.GoogleDrive) hostPlugin).prepBrowser(this.br);
@@ -408,11 +408,17 @@ public class GoogleDrive extends PluginForDecrypt {
         }
         String nextPageToken = null;
         int page = 0;
+        final Browser brc = br.cloneBrowser();
+        brc.addAllowedResponseCodes(new int[] { 400 });
+        if (loggedin) {
+            /* TODO: This doesn't work! */
+            final String sapisid = br.getCookie(br.getHost(), "SAPISID");
+            final String auth = "SAPISIDHASH " + System.currentTimeMillis() * 1000 + "_" + JDHash.getSHA1(sapisid) + "_u";
+            brc.getHeaders().put("Authorization", auth);
+        }
         do {
             page++;
             logger.info("Crawling page: " + page);
-            final Browser brc = br.cloneBrowser();
-            brc.addAllowedResponseCodes(new int[] { 400 });
             sleep(500, param);
             /* Most common reason of failure: teamDriveID was not found thus the request is wrong! */
             brc.getPage("https://clients6.google.com/drive/v2beta/files?" + query.toString());
