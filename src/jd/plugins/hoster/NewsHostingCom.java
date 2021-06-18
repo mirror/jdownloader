@@ -141,7 +141,7 @@ public class NewsHostingCom extends UseNet {
                 account.saveCookies(br.getCookies(getHost()), "");
                 final String userName = br.getRegex(">\\s*Username\\s*</div>\\s*<div[^>]+>\\s*(.*?)\\s*<").getMatch(0);
                 final String customerID = br.getRegex("(?:Customer|User)\\s*ID\\s*:\\s*(?:</strong>)?\\s*(\\d+)").getMatch(0);
-                if (userName == null) {
+                if (StringUtils.isEmpty(userName)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
                     account.setProperty(USENET_USERNAME, userName.trim());

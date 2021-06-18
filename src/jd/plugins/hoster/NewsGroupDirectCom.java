@@ -90,8 +90,8 @@ public class NewsGroupDirectCom extends UseNet {
                     }
                 }
                 account.saveCookies(br.getCookies(getHost()), "");
-                final String username = br.getRegex("Username\\s*</th>\\s*<td>\\s*(.*?)\\s*<").getMatch(0);
-                if (username == null) {
+                final String username = br.getRegex("Username\\s*</th>\\s*<td>\\s*([^>]+)\\s*<").getMatch(0);
+                if (StringUtils.isEmpty(username)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
                     account.setProperty(USENET_USERNAME, username);

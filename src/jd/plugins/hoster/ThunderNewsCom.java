@@ -97,7 +97,7 @@ public class ThunderNewsCom extends UseNet {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account status: " + accountStatus, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             final String userName = br.getRegex(">\\s*User id\\s*:\\s*<span>\\s*(.*?)\\s*</span>").getMatch(0);
-            if (userName == null) {
+            if (StringUtils.isEmpty(userName)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 account.setProperty(USENET_USERNAME, userName);

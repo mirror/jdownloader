@@ -115,7 +115,7 @@ public class MaximumUsenetCom extends UseNet {
             }
             account.saveCookies(br.getCookies(getHost()), "");
             final String memberID = br.getRegex("Member Id:\\s*</span>\\s*<span\\s*class=\".*?\">(.*?)<").getMatch(0);
-            if (memberID == null) {
+            if (StringUtils.isEmpty(memberID)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 account.setProperty(USENET_USERNAME, memberID.trim());

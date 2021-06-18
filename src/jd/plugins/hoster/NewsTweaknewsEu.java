@@ -21,7 +21,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tweaknews.eu" }, urls = { "" }) public class NewsTweaknewsEu extends UseNet {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tweaknews.eu" }, urls = { "" })
+public class NewsTweaknewsEu extends UseNet {
     public NewsTweaknewsEu(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.tweaknews.eu/en/usenet-plans");
@@ -81,13 +82,14 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
             }
             account.saveCookies(br.getCookies(getHost()), "");
             final String userName = br.getRegex("Username:</td>.*?<td>(.*?)</td>").getMatch(0);
-            if (userName != null) {
+            if (StringUtils.isNotEmpty(userName)) {
                 account.setProperty(USENET_USERNAME, userName);
             } else {
                 if (br.containsHTML("ADD NEW SUBSRIPTION")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "No active/valid subscription", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final String packageType = br.getRegex("name\">Package:(.*?)</div>").getMatch(0);
             if (!StringUtils.contains(packageType, "Block Package")) {
