@@ -370,9 +370,6 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         }
     }
 
-    private String videoID = null;
-    private long   date    = 0;
-
     /**
      * 2019-01-18: psp: Issues with http URLs - seems like http urls are not valid anymore/at the moment. Via browser they work sometimes
      * but really slow/often run into timeouts --> I auto-reset settings, disabled http downloads by default and preferred HLS!
@@ -406,7 +403,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         }
         /** Decrypt external links END */
         /** Find videolinks START */
-        videoID = new Regex(parameter, "dailymotion\\.com/video/([a-z0-9]+)").getMatch(0);
+        final String videoID = new Regex(parameter, "dailymotion\\.com/video/([a-z0-9]+)").getMatch(0);
         String channelName = null;
         String title = null;
         String passCode = null;
@@ -441,6 +438,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             videoSource = getVideosource(this, this.br, videoID);
         }
         /* Collect more video metadata */
+        Long date = null;
         String dateFormatted = null;
         // channel might not be present above, but is within videoSource
         if (videoSource != null) {
@@ -525,8 +523,6 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                     dl.setProperty("plain_videoname", title);
                     dl.setProperty("plain_ext", ".srt");
                     dl.setProperty("plain_videoid", videoID);
-                    dl.setProperty("plain_channel", channelName);
-                    dl.setProperty("plain_date", Long.toString(date));
                     dl.setLinkID("dailymotioncom" + videoID + "_" + qualityname);
                     final String formattedFilename = jd.plugins.hoster.DailyMotionCom.getFormattedFilename(dl);
                     dl.setName(formattedFilename);
@@ -573,7 +569,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             }
         }
         for (final String selectedQuality : selectedQualities) {
-            final DownloadLink dl = setVideoDownloadlink(foundQualities, selectedQuality, channelName, title);
+            final DownloadLink dl = setVideoDownloadlink(foundQualities, videoID, selectedQuality, title);
             if (dl == null) {
                 continue;
             }
@@ -586,9 +582,14 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             logger.info("None of the selected qualities were found, decrypting done...");
             return decryptedLinks;
         }
-        for (final DownloadLink decrypted : decryptedLinks) {
+        /* Set some additional properties */
+        for (final DownloadLink dl : decryptedLinks) {
             if (passCode != null) {
-                decrypted.setDownloadPassword(passCode);
+                dl.setDownloadPassword(passCode);
+            }
+            dl.setProperty("plain_channel", channelName);
+            if (date != null) {
+                dl.setProperty("plain_date", Long.toString(date));
             }
         }
         return decryptedLinks;
@@ -736,7 +737,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         }
     }
 
-    private DownloadLink setVideoDownloadlink(final LinkedHashMap<String, String[]> foundqualities, final String qualityValue, final String channelName, final String title) throws ParseException {
+    private DownloadLink setVideoDownloadlink(final LinkedHashMap<String, String[]> foundqualities, final String videoID, final String qualityValue, final String title) throws ParseException {
         String directlinkinfo[] = foundqualities.get(qualityValue);
         if (directlinkinfo != null) {
             final String directlink = Encoding.htmlDecode(directlinkinfo[0]);
@@ -789,8 +790,6 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             dl.setProperty("plain_videoname", title);
             dl.setProperty("plain_ext", ".mp4");
             dl.setProperty("plain_videoid", videoID);
-            dl.setProperty("plain_channel", channelName);
-            dl.setProperty("plain_date", Long.toString(date));
             dl.setLinkID("dailymotioncom" + videoID + "_" + qualityName);
             final String formattedFilename = jd.plugins.hoster.DailyMotionCom.getFormattedFilename(dl);
             dl.setName(formattedFilename);
