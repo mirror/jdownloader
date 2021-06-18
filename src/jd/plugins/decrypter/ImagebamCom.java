@@ -22,6 +22,7 @@ import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -116,23 +117,7 @@ public class ImagebamCom extends PluginForDecrypt {
         } else if (br.containsHTML("(?i)The gallery you are looking for")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        // note: you can still get dupes of images (filenames), but they have different download path.
-        // final HashSet<String> dupes = new HashSet<String>();
-        final String galleryTitle = br.getRegex("id=\"gallery-name\"[^>]*>([^<>\"]+)<").getMatch(0);
-        final FilePackage fp = FilePackage.getInstance();
-        if (galleryTitle != null) {
-            fp.setName(galleryTitle);
-        } else {
-            fp.setName(galleryID);
-        }
-        /* TODO: Check if pagination support is required */
-        final String links[] = br.getRegex("(https?://[\\w\\.]*[^/]+/image/[a-z0-9]+)").getColumn(0);
-        for (final String link : links) {
-            decryptedLinks.add(this.createDownloadlink(link));
-        }
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        return crawlProcessGallery(param, this.br);
     }
 
     /** Handles new style "gallery" URLs which can either lead to a gallery or a single image. */
@@ -146,30 +131,11 @@ public class ImagebamCom extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (br.containsHTML("class=\"links gallery\"")) {
-            /* Gallery */
-            final String galleryTitle = br.getRegex("id=\"gallery-name\"[^>]*>([^<>\"]+)<").getMatch(0);
-            final FilePackage fp = FilePackage.getInstance();
-            if (galleryTitle != null) {
-                fp.setName(galleryTitle);
-            } else {
-                fp.setName(galleryID);
-            }
-            /* TODO: Check if pagination support is required */
-            final String links[] = br.getRegex(TYPE_VIEW).getColumn(-1);
-            for (final String link : links) {
-                final String imageID = new Regex(link, TYPE_VIEW).getMatch(0);
-                /* Don't re-add previously added URL! */
-                if (imageID.equals(galleryID)) {
-                    continue;
-                } else {
-                    decryptedLinks.add(this.createDownloadlink(link));
-                }
-            }
-            fp.addLinks(decryptedLinks);
+            return this.crawlProcessGallery(param, this.br);
         } else {
             /* Single image - very similar to "crawlSingleImage". */
+            final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             final String finallink = br.getRegex("class=\"image-loader\">\\s*<img src=\"(https?://[^\"]+)\"").getMatch(0);
             if (finallink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -184,7 +150,79 @@ public class ImagebamCom extends PluginForDecrypt {
             }
             direct.setAvailable(true);
             decryptedLinks.add(direct);
+            return decryptedLinks;
         }
+    }
+
+    private ArrayList<DownloadLink> crawlProcessGallery(final CryptedLink param, final Browser br) throws IOException {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final boolean isNewGallery;
+        String galleryID;
+        if (param.getCryptedUrl().matches(TYPE_GALLERY)) {
+            isNewGallery = false;
+            galleryID = new Regex(param.getCryptedUrl(), TYPE_GALLERY).getMatch(0);
+        } else {
+            isNewGallery = true;
+            galleryID = new Regex(param.getCryptedUrl(), TYPE_VIEW).getMatch(0);
+        }
+        final String galleryTitle = br.getRegex("id=\"gallery-name\"[^>]*>([^<>\"]+)<").getMatch(0);
+        final FilePackage fp = FilePackage.getInstance();
+        if (galleryTitle != null) {
+            fp.setName(galleryID + " - " + Encoding.htmlDecode(galleryTitle).trim());
+        } else {
+            fp.setName(galleryID);
+        }
+        int page = 1;
+        do {
+            logger.info("Crawling page: " + page);
+            boolean foundNewItems = false;
+            if (isNewGallery) {
+                final String links[] = br.getRegex(TYPE_VIEW).getColumn(-1);
+                for (final String link : links) {
+                    final String imageID = new Regex(link, TYPE_VIEW).getMatch(0);
+                    /* Don't re-add previously added URL! */
+                    if (imageID.equals(galleryID)) {
+                        continue;
+                    } else {
+                        final DownloadLink dl = this.createDownloadlink(link);
+                        dl._setFilePackage(fp);
+                        decryptedLinks.add(dl);
+                        distribute(dl);
+                        foundNewItems = true;
+                    }
+                }
+            } else {
+                final String links[] = br.getRegex(TYPE_IMAGE).getColumn(-1);
+                for (final String link : links) {
+                    final String imageID = new Regex(link, TYPE_IMAGE).getMatch(0);
+                    /* Don't re-add previously added URL! */
+                    if (imageID.equals(galleryID)) {
+                        continue;
+                    } else {
+                        final DownloadLink dl = this.createDownloadlink(link);
+                        dl._setFilePackage(fp);
+                        decryptedLinks.add(dl);
+                        distribute(dl);
+                        foundNewItems = true;
+                    }
+                }
+            }
+            final String nextPage = br.getRegex("(/[^\"]+\\?page=" + (page + 1) + ")\"").getMatch(0);
+            if (this.isAbort()) {
+                break;
+            } else if (!foundNewItems) {
+                logger.info("Stopping because: Failed to find new items on current page");
+                break;
+            } else if (nextPage == null) {
+                logger.info("Stopping because: No nextPage given");
+                break;
+            } else {
+                /* Next page available --> Continue crawl process */
+                page += 1;
+                br.getPage(nextPage);
+                continue;
+            }
+        } while (true);
         return decryptedLinks;
     }
 

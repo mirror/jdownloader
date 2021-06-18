@@ -695,8 +695,9 @@ public class VKontakteRu extends PluginForDecrypt {
             final String dateFormatted = sd.format(date * 1000);
             String title = (String) video.get("md_title");
             if (!StringUtils.isEmpty(title)) {
+                title = Encoding.htmlDecode(title).trim();
                 if (!StringUtils.isEmpty(author) && !author.equalsIgnoreCase("DELETED")) {
-                    title = author + "_" + title + "_" + oid_and_id;
+                    title = Encoding.htmlDecode(author).trim() + "_" + title + "_" + oid_and_id;
                 } else {
                     title = title + "_" + oid_and_id;
                 }
