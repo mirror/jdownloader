@@ -366,9 +366,6 @@ public class AboutDialog extends AbstractDialog<Integer> {
         String version = "4.65";
         try {
             version = ReflectionUtils.invoke("net.sf.sevenzipjbinding.SevenZip", "getSevenZipJBindingVersion", null, String.class, new Object[0]);
-        } catch (Throwable ignore) {
-        }
-        try {
             final String usedPlatform = ReflectionUtils.invoke("net.sf.sevenzipjbinding.SevenZip", "getUsedPlatform", null, String.class, new Object[0]);
             if (usedPlatform != null) {
                 return version + "/" + usedPlatform;
