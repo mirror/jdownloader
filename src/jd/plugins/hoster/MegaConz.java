@@ -1265,9 +1265,9 @@ public class MegaConz extends PluginForHost {
                             try {
                                 final Cipher cipher = Cipher.getInstance("AES/CTR/nopadding");
                                 cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
-                                final CipherOutputStream cos = new CipherOutputStream(new BufferedOutputStream(os, 1024 * 1024), cipher);
+                                final CipherOutputStream cos = new CipherOutputStream(new BufferedOutputStream(os, 4096 * 1024), cipher);
                                 int read = 0;
-                                final byte[] buffer = new byte[512 * 1024];
+                                final byte[] buffer = new byte[2048 * 1024];
                                 while ((read = is.read(buffer)) != -1) {
                                     if (read > 0) {
                                         progress.updateValues(progress.getCurrent() + read, total);
