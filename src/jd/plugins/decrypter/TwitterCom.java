@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -384,13 +385,12 @@ public class TwitterCom extends PornEmbedParser {
             /* Ignore invalid items */
             return;
         }
+        final DownloadLink dl;
         /* 2020-02-10: Recognize videos by this URL. If it is a thumbnail --< It is a video */
         if (url.contains("/tweet_video_thumb/") || url.contains("/amplify_video_thumb/") || url.contains("/ext_tw_video_thumb/") || StringUtils.contains(expanded_url, "/video/")) {
             /* Video --> Needs to go into crawler again */
-            final DownloadLink dl = this.createDownloadlink(this.createTwitterPostURL(username, tweetID));
+            dl = this.createDownloadlink(this.createTwitterPostURL(username, tweetID));
             dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
-            decryptedLinks.add(dl);
-            distribute(dl);
         } else {
             /* Photo */
             String filename = null;
@@ -406,22 +406,22 @@ public class TwitterCom extends PornEmbedParser {
             if (!url.contains("?name=")) {
                 url += "?name=orig";
             }
-            final DownloadLink dl = this.createDownloadlink(url);
+            dl = this.createDownloadlink(url);
+            dl.setAvailable(true);
             if (filename != null) {
                 // dl.setFinalFileName(filename);
                 /* 2020-06-08: Let it survive users' reset especially for items which are handled by directhttp plugin. */
                 dl.setForcedFileName(formattedDate + "_" + username + "_" + filename);
             }
-            dl.setAvailable(true);
-            /* Set possible Packagizer properties */
-            dl.setProperty(PROPERTY_USERNAME, username);
-            dl.setProperty(PROPERTY_DATE, formattedDate);
-            if (fp != null) {
-                fp.add(dl);
-            }
-            decryptedLinks.add(dl);
-            distribute(dl);
         }
+        /* Set possible Packagizer properties */
+        dl.setProperty(PROPERTY_USERNAME, username);
+        dl.setProperty(PROPERTY_DATE, formattedDate);
+        if (fp != null) {
+            dl._setFilePackage(fp);
+        }
+        decryptedLinks.add(dl);
+        distribute(dl);
     }
 
     @Deprecated
@@ -431,10 +431,10 @@ public class TwitterCom extends PornEmbedParser {
         if (br.containsHTML("/status/" + tweet_id + "/video/1")) {
             /* Video */
             final DownloadLink dl = createDownloadlink(createVideourl(tweet_id));
-            decryptedLinks.add(dl);
             if (fp != null) {
                 dl._setFilePackage(fp);
             }
+            decryptedLinks.add(dl);
             distribute(dl);
         } else if (br.containsHTML("/tweet_video_thumb/")) {
             /* TODO: Check what happens if there is a video/gif + pictures in one post. */
@@ -569,6 +569,8 @@ public class TwitterCom extends PornEmbedParser {
             max_countStr = "??";
         }
         final FilePackage fp = FilePackage.getInstance();
+        /* we want all links from this user to go into the same package */
+        fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
         fp.setName(fpname);
         query.append("userId", user_id, false);
         query.append("count", expected_items_per_page + "", false);
