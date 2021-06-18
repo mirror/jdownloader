@@ -429,6 +429,10 @@ public class UpstoRe extends antiDDoSForHost {
         if (expire != null && result == -1) {
             result = TimeFormatter.getMilliSeconds(expire, "MMMM dd','yyyy", Locale.ENGLISH);
         }
+        if (result > 0) {
+            // expire at the end of the day, not the beginning
+            result = result + (24 * 60 * 60 * 1000l);
+        }
         return result;
     }
 
