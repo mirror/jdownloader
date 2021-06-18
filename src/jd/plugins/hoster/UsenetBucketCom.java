@@ -93,7 +93,7 @@ public class UsenetBucketCom extends UseNet {
             account.saveCookies(br.getCookies(getHost()), "");
             final String userName = br.getRegex("<div>\\s*(?:Username|Gebruikersnaam)\\s*:\\s*(.*?)\\s*<").getMatch(0);
             final String passWord = br.getRegex("<div>\\s*(?:Password|Wachtwoord)\\s*:\\s*(.*?)\\s*<").getMatch(0);
-            if (userName == null || passWord == null) {
+            if (StringUtils.isEmpty(userName) || StringUtils.isEmpty(passWord)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 account.setProperty(USENET_USERNAME, userName);

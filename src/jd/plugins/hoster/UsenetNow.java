@@ -19,7 +19,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "usenetnow.net" }, urls = { "" }) public class UsenetNow extends UseNet {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "usenetnow.net" }, urls = { "" })
+public class UsenetNow extends UseNet {
     public UsenetNow(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://billing.usenetnow.net/signup");
@@ -88,7 +89,7 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
             }
             account.saveCookies(br.getCookies(getHost()), "");
             final String userName = br.getRegex("<div class=\"am-user-identity-block\">(.*?)<a").getMatch(0);
-            if (userName == null) {
+            if (StringUtils.isEmpty(userName)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 account.setProperty(USENET_USERNAME, userName.trim());

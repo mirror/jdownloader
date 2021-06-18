@@ -137,7 +137,7 @@ public class XSUseNetCom extends UseNet {
             final String autoRenewal = br.getRegex("Automatic renewal:\\s*(.*?)\\s*<").getMatch(0);
             final String username = br.getRegex("Username:\\s*(\\d+)\\s*<").getMatch(0);
             String password = br.getRegex("Password:\\s*(.*?)\\s*<").getMatch(0);
-            if (username == null) {
+            if (StringUtils.isEmpty(username)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 account.setProperty(USENET_USERNAME, username.trim());

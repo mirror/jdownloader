@@ -111,7 +111,7 @@ public class NewsAstraWebCom extends UseNet {
                             account.setProperty(jwtTokenProperty, jwtToken);
                         }
                         final String username = (String) JavaScriptEngineFactory.walkJson(response, "user/meta_data/username");
-                        if (username == null) {
+                        if (StringUtils.isEmpty(username)) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         } else {
                             account.setProperty(USENET_USERNAME, username.trim());

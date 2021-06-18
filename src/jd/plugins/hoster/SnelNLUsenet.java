@@ -21,7 +21,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "snelnl.com" }, urls = { "" }) public class SnelNLUsenet extends UseNet {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "snelnl.com" }, urls = { "" })
+public class SnelNLUsenet extends UseNet {
     public SnelNLUsenet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.snelnl.com/en/products");
@@ -95,7 +96,7 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
             }
             account.saveCookies(br.getCookies(getHost()), "");
             final String userName = br.getRegex("item-title\">Username:</div>.*?item-text\">(.*?)<").getMatch(0);
-            if (userName != null) {
+            if (StringUtils.isNotEmpty(userName)) {
                 account.setProperty(USENET_USERNAME, userName);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
