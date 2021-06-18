@@ -76,11 +76,11 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String DOMAIN                                                                      = "vk.com";
     private static final String TYPE_AUDIOLINK                                                              = "https?://vkontaktedecrypted\\.ru/audiolink/((?:\\-)?\\d+)_(\\d+)";
     /* TODO: Remove this */
-    private static final String TYPE_VIDEOLINK_LEGACY                                                       = "https?://vkontaktedecrypted\\.ru/videolink/.+";
-    private static final String TYPE_VIDEOLINK                                                              = "https?://[^/]+/video([\\d\\-]+)_([\\d\\-]+)(#quality=(\\d+p))?";
-    private static final String TYPE_DIRECT                                                                 = "https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:[A-Za-z0-9]{1,5})(?:.*)";
-    private static final String TYPE_PICTURELINK                                                            = "https?://vkontaktedecrypted\\.ru/picturelink/((?:\\-)?\\d+)_(\\d+)(\\?tag=[\\d\\-]+)?";
-    private static final String TYPE_DOCLINK                                                                = "https?://[^/]+/doc([\\d\\-]+)_([\\d\\-]+)(\\?hash=[a-z0-9]+(\\&dl=[a-f0-9]{18})?)?";
+    private static final String TYPE_VIDEOLINK_LEGACY                                                       = "(?i)https?://vkontaktedecrypted\\.ru/videolink/.+";
+    private static final String TYPE_VIDEOLINK                                                              = "(?i)https?://[^/]+/video([\\d\\-]+)_([\\d\\-]+)(#quality=(\\d+p|hls))?";
+    private static final String TYPE_DIRECT                                                                 = "(?i)https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:[A-Za-z0-9]{1,5})(?:.*)";
+    private static final String TYPE_PICTURELINK                                                            = "(?i)https?://vkontaktedecrypted\\.ru/picturelink/((?:\\-)?\\d+)_(\\d+)(\\?tag=[\\d\\-]+)?";
+    private static final String TYPE_DOCLINK                                                                = "(?i)https?://[^/]+/doc([\\d\\-]+)_([\\d\\-]+)(\\?hash=[a-z0-9]+(\\&dl=[a-f0-9]{18})?)?";
     public static final long    trust_cookie_age                                                            = 300000l;
     private static final String TEMPORARILYBLOCKED                                                          = jd.plugins.decrypter.VKontakteRu.TEMPORARILYBLOCKED;
     /* Settings stuff */
@@ -402,6 +402,11 @@ public class VKontakteRuHoster extends PluginForHost {
                 } else if (this.isTypeVideo(link.getPluginPatternMatcher())) {
                     br.setFollowRedirects(true);
                     finalUrl = link.getStringProperty("directlink", null);
+                    /* Don't lose filenames if e.g. user resets DownloadLink. */
+                    final String linkQuality = link.getStringProperty(VKontakteRuHoster.PROPERTY_VIDEO_SELECTED_QUALITY);
+                    if (linkQuality != null) {
+                        link.setFinalFileName(link.getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE) + "_" + linkQuality + ".mp4");
+                    }
                     /* Check if directlink is expired */
                     checkstatus = linkOk(link, isDownload);
                     if (checkstatus != 1) {
@@ -421,7 +426,6 @@ public class VKontakteRuHoster extends PluginForHost {
                             logger.info("vk.com: Couldn't find any available qualities for videolink");
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        final String linkQuality = link.getStringProperty(VKontakteRuHoster.PROPERTY_VIDEO_SELECTED_QUALITY);
                         if (StringUtils.isNotEmpty(linkQuality)) {
                             final Map<String, String> selectedQualities = VKontakteRu.getSelectedVideoQualities(availableQualities, QualitySelectionMode.ALL, null);
                             finalUrl = selectedQualities.get(linkQuality);
