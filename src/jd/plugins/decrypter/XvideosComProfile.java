@@ -18,8 +18,11 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import org.appwork.utils.DebugMode;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
@@ -61,6 +64,11 @@ public class XvideosComProfile extends PluginForDecrypt {
     @Override
     public String[] siteSupportedNames() {
         return buildSupportedNames(getPluginDomains());
+    }
+
+    @Override
+    public void init() {
+        Browser.setRequestIntervalLimitGlobal(getHost(), 100);
     }
 
     public static String[] getAnnotationUrls() {
@@ -163,18 +171,30 @@ public class XvideosComProfile extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpname);
         String nextpage = null;
+        final Set<String> dupeList = new HashSet<String>();
         do {
             final String[] urls = br.getRegex("\"(/video\\d+/[^<>\"]+)").getColumn(0);
+            int foundOnPage = 0;
             for (String url : urls) {
-                url = br.getURL(url).toString();
-                final String url_title = new Regex(url, "/video\\d+/([^/\\?]+)").getMatch(0);
-                final DownloadLink dl = this.createDownloadlink(url);
-                /* Save http requests */
-                dl.setAvailable(true);
-                dl.setName(url_title + ".mp4");
-                dl._setFilePackage(fp);
-                decryptedLinks.add(dl);
-                distribute(dl);
+                final String videoID = new Regex(url, "/video(.*?)/").getMatch(0);
+                if (dupeList.add(videoID)) {
+                    foundOnPage++;
+                    url = br.getURL(url).toString();
+                    final String url_title = new Regex(url, "/video\\d+/([^/\\?]+)").getMatch(0);
+                    final DownloadLink dl = this.createDownloadlink(url);
+                    /* Save http requests */
+                    dl.setAvailable(true);
+                    dl.setName(url_title + ".mp4");
+                    dl._setFilePackage(fp);
+                    decryptedLinks.add(dl);
+                    distribute(dl);
+                } else {
+                    // logger.info("Found dupe: " + videoID);
+                }
+            }
+            if (foundOnPage < 27) {
+                // normally we have 27 videos per page
+                logger.info("Found on page:" + foundOnPage + "|" + br.getURL());
             }
             nextpage = br.getRegex("href=\"(/favorite/\\d+/[^/]+/\\d+)\"[^>]*class=\"no-page next-page\"").getMatch(0);
             if (nextpage != null) {
@@ -184,6 +204,13 @@ public class XvideosComProfile extends PluginForDecrypt {
                 break;
             }
         } while (!this.isAbort());
+    }
+
+    @Override
+    public void distribute(DownloadLink... links) {
+        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            super.distribute(links);
+        }
     }
 
     /** Crawl favorites of account -> Account required */
@@ -200,18 +227,24 @@ public class XvideosComProfile extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpname);
         String nextpage = null;
+        final Set<String> dupeList = new HashSet<String>();
         do {
             final String[] urls = br.getRegex("(/video\\d+/[^<>\"\\']+)").getColumn(0);
             for (String url : urls) {
-                url = br.getURL(url).toString();
-                final String url_title = new Regex(url, "/video\\d+/([^/\\?]+)").getMatch(0);
-                final DownloadLink dl = this.createDownloadlink(url);
-                /* Save http requests */
-                dl.setAvailable(true);
-                dl.setName(url_title + ".mp4");
-                dl._setFilePackage(fp);
-                decryptedLinks.add(dl);
-                distribute(dl);
+                final String videoID = new Regex(url, "/video(.*?)/").getMatch(0);
+                if (dupeList.add(videoID)) {
+                    url = br.getURL(url).toString();
+                    final String url_title = new Regex(url, "/video\\d+/([^/\\?]+)").getMatch(0);
+                    final DownloadLink dl = this.createDownloadlink(url);
+                    /* Save http requests */
+                    dl.setAvailable(true);
+                    dl.setName(url_title + ".mp4");
+                    dl._setFilePackage(fp);
+                    decryptedLinks.add(dl);
+                    distribute(dl);
+                } else {
+                    // logger.info("Found dupe: " + videoID);
+                }
             }
             /* TODO: Check/add pagination */
             nextpage = null;
@@ -225,7 +258,7 @@ public class XvideosComProfile extends PluginForDecrypt {
     }
 
     private void crawlChannel(final String parameter, final ArrayList<DownloadLink> decryptedLinks) throws IOException, PluginException {
-        final ArrayList<String> dupeList = new ArrayList<String>();
+        final Set<String> dupeList = new HashSet<String>();
         final Regex urlinfo = new Regex(parameter, "https?://[^/]+/([^/]+)/([^/]+)");
         final String type = urlinfo.getMatch(0);
         final String username = urlinfo.getMatch(1);
