@@ -54,7 +54,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
             /** file-up.org domains */
             "file-up.org", "file-up.io", "file-up.cc", "file-up.com", "file-upload.org", "file-upload.io", "file-upload.cc", "file-upload.com", "tstorage.info", "fastfile.cc" };
     /* This list contains all hosts which need special Patterns (see below) - all other XFS hosts have the same folder patterns! */
-    private static final String[] specialDomains = { "usersfiles.com", "userscloud.com", "hotlink.cc", "ex-load.com", "imgbaron.com", "filespace.com", "spaceforfiles.com", "prefiles.com", "imagetwist.com", "file.al" };
+    private static final String[] specialDomains = { "usersfiles.com", "userscloud.com", "hotlink.cc", "ex-load.com", "imgbaron.com", "filespace.com", "spaceforfiles.com", "prefiles.com", "imagetwist.com", "file.al", "send.cm" };
 
     public static String[] getAnnotationNames() {
         return getAllDomains();
@@ -100,6 +100,8 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         ret.add("https?://(?:www\\.)?imagetwist\\.com/p/[^/]+/\\d+/[^/]+");
         /* file.al */
         ret.add("https?://(?:www\\.)?file\\.al/public/\\d+/.+");
+        /* send.cm */
+        ret.add("https?://(?:www\\.)?send\\.cm/s/.+");
         return ret.toArray(new String[0]);
     }
 
@@ -227,6 +229,9 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                 fpName = new Regex(url, "users/[a-z0-9_]+/[^/]+/(.+)").getMatch(0); // name
                 if (fpName == null) {
                     fpName = new Regex(url, "users/[a-z0-9_]+/(.+)").getMatch(0); // id
+                    if (fpName == null) {
+                        fpName = new Regex(url, "/s/[^/]+/([^/]+)").getMatch(0); // name, send.cm
+                    }
                 }
             }
         }
@@ -314,6 +319,9 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                 String filesizeStr = null;
                 if (html_snippet != null) {
                     html_filename = new Regex(html_snippet, "target=\"_blank\">\\s*([^<>\"]+)\\s*</(a|td)>").getMatch(0);
+                    if (html_filename == null) {
+                        html_filename = new Regex(html_snippet, Pattern.quote(linkid) + "(?:/.*\\.html)?[^>]*>\\s*([^<>\"]+)\\s*</(a|td)>").getMatch(0);
+                    }
                     filesizeStr = new Regex(html_snippet, "([\\d\\.]+ (?:KB|MB|GB))").getMatch(0);
                     if (filesizeStr == null) {
                         /* Only look for unit "bytes" as a fallback! */
