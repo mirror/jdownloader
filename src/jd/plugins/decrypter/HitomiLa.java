@@ -22,6 +22,10 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -35,10 +39,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.encoding.URLEncode;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  *
@@ -228,10 +228,10 @@ public class HitomiLa extends antiDDoSForDecrypt {
         }
         try {
             int g = Integer.parseInt(m.group(1), 16);
-            if (g < 0x80) {
+            if (g < 0x70) {
                 number_of_frontends = 2;
             }
-            if (g < 0x59) {
+            if (g < 0x49) {
                 g = 1;
             }
             retval = subdomain_from_galleryid(g, number_of_frontends) + retval;
