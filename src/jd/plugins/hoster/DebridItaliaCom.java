@@ -47,6 +47,11 @@ public class DebridItaliaCom extends antiDDoSForHost {
     public DebridItaliaCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.debriditalia.com/premium.php");
+        try {
+            /* 2021-06-21: 30 Requests per 1 Minute, block of 1 hour when exceeded */
+            Browser.setBurstRequestIntervalLimitGlobal("debriditalia.com", 2000, 30, 60000);
+        } catch (final Throwable ignore) {
+        }
     }
 
     @Override
