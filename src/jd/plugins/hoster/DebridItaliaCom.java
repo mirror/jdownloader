@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
@@ -32,6 +33,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -149,7 +151,16 @@ public class DebridItaliaCom extends antiDDoSForHost {
              * Known hosts for which they do definitely not accept https urls [ last updated 2015-10-05]: share-online.biz, inclouddrive.com
              */
             host_downloadlink = host_downloadlink.replaceFirst("^https", "http");
-            getPage(API_BASE + "?generate=on&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + encodePassword(account.getPass()) + "&link=" + Encoding.urlEncode(host_downloadlink));
+            final UrlQuery query = new UrlQuery();
+            query.add("generate", "on");
+            query.add("u", Encoding.urlEncode(account.getUser()));
+            query.add("p", encodePassword(account.getPass()));
+            query.add("link", Encoding.urlEncode(host_downloadlink));
+            if (link.getDownloadPassword() != null) {
+                query.add("pass", Encoding.urlEncode(link.getDownloadPassword()));
+            }
+            getPage(API_BASE + "?" + query.toString());
+            checkResponsecodeErrors(this.br);
             final String error = br.getRegex("(?i)^ERROR: (.+)$").getMatch(0);
             if (error != null) {
                 /* First known errors with immediate waittime, then generic */
@@ -271,10 +282,23 @@ public class DebridItaliaCom extends antiDDoSForHost {
 
     private boolean loginAPI(final Account account) throws Exception {
         getPage(API_BASE + "?check=on&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + encodePassword(account.getPass()));
-        if (!br.containsHTML("<status>valid</status>") || br.getHttpConnection().getResponseCode() == 401) {
+        checkResponsecodeErrors(br);
+        if (br.containsHTML("<status>valid</status>")) {
+            return true;
+        } else if (br.containsHTML("<status>invalid</status>")) {
             return false;
         } else {
-            return true;
+            /* This should never happen */
+            throw new AccountUnavailableException("Unknown login status", 3 * 60 * 1000l);
+        }
+    }
+
+    private void checkResponsecodeErrors(final Browser br) throws AccountUnavailableException {
+        if (br.getHttpConnection().getResponseCode() == 429) {
+            /*
+             * 429 too many requests via Cloudflare: <title>Access denied | debriditalia.com used Cloudflare to restrict access</title>
+             */
+            throw new AccountUnavailableException("Error 429 Too Many Requests", 1 * 60 * 1000l);
         }
     }
 
