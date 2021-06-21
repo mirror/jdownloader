@@ -18,6 +18,12 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigDropapk;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -26,10 +32,6 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DropapkCom extends XFileSharingProBasic {
@@ -161,6 +163,21 @@ public class DropapkCom extends XFileSharingProBasic {
     @Override
     protected boolean supportsMassLinkcheckOverWebsite() {
         /* 2021-05-20: Try to prevent their antiddos ddos-guard.net from kicking in: https://svn.jdownloader.org/issues/87111 */
-        return true;
+        return PluginJsonConfig.get(XFSConfigDropapk.class).isWebsiteAllowMassLinkcheck();
+    }
+
+    @Override
+    protected boolean supportsAPIMassLinkcheck() {
+        return isAPIKey(this.getAPIKey());
+    }
+
+    @Override
+    protected boolean supportsAPISingleLinkcheck() {
+        return isAPIKey(this.getAPIKey());
+    }
+
+    @Override
+    public Class<? extends XFSConfigDropapk> getConfigInterface() {
+        return XFSConfigDropapk.class;
     }
 }
