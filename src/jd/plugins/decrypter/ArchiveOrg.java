@@ -125,9 +125,17 @@ public class ArchiveOrg extends PluginForDecrypt {
                 }
             }
         }
-        if (br.containsHTML(">\\s*You must log in to view this content")) {
+        /*
+         * All "account required" issues usually come with http error 403. See also ArchiveOrg host plugin errorhandling in function
+         * "connectionErrorhandling".
+         */
+        if (br.containsHTML("(?i)>\\s*You must log in to view this content")) {
             /* 2021-02-24: <p class="theatre-title">You must log in to view this content</p> */
             throw new AccountRequiredException();
+        } else if (br.containsHTML("(?i)>\\s*Item not available|>\\s*The item is not available due to issues with the item's content")) {
+            throw new AccountRequiredException();
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /**
          * 2021-02-01: Disabled book crawling because it's not working as intended and "/details/" URLs can also contain embedded pages of
