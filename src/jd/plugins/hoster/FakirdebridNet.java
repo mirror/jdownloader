@@ -148,19 +148,21 @@ public class FakirdebridNet extends PluginForHost {
                 maxChunks = -maxChunks;
             }
             String dllink = null;
-            final boolean useNewHandling = false;
+            final boolean useNewHandling = true;
             if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && useNewHandling) {
                 /* 2021-06-21: Testing */
                 final String apilink = (String) entries.get("apilink");
                 br.getPage(apilink);
+                this.handleErrorsAPI(this.br, account);
                 entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 entries = (Map<String, Object>) entries.get("data");
                 final int files_done = ((Number) entries.get("files_done")).intValue();
                 if (files_done != 1) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File hasn't been transferred to fakirdebrid yet");
+                    final double percentageCompleted = Double.parseDouble(entries.get("completed").toString());
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is being transferred to fakirdebrid servers: " + percentageCompleted + "%", 5 * 1000l);
+                } else {
+                    dllink = (String) entries.get("link");
                 }
-                /* TODO: Add domain/mirror handling here similar to the old handling */
-                dllink = (String) entries.get("link");
             } else {
                 final List<String> urls = (List<String>) entries.get("links");
                 if (urls.isEmpty()) {
