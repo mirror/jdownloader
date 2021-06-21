@@ -30,6 +30,7 @@ import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
@@ -141,44 +142,60 @@ public class FakirdebridNet extends PluginForHost {
                 link.setDownloadPassword(passCode);
             }
             entries = (Map<String, Object>) entries.get("data");
-            final List<String> urls = (List<String>) entries.get("links");
-            if (urls.isEmpty()) {
-                mhm.handleErrorGeneric(account, link, "Failed to generate transloadURL", 10, 5 * 60 * 1000l);
-            }
-            String transloadURL = null;
-            /*
-             * Go through array of list containing the same URL with different domains as some are blocked. Typical domains include:
-             * turkleech.com, fakirdebrid.xyz, fakirdebrid.info
-             */
-            for (final String url : urls) {
-                try {
-                    /**
-                     * E.g. server2.turkleech.com/TransLoad/?id=bla </br>
-                     * Such URLs will also work fine without login cookies
-                     */
-                    br.getPage(url);
-                    transloadURL = url;
-                    break;
-                } catch (final IOException ignore) {
-                    logger.log(ignore);
-                }
-            }
-            if (StringUtils.isEmpty(transloadURL)) {
-                mhm.handleErrorGeneric(account, link, "Failed to find working transloadURL", 10, 5 * 60 * 1000l);
-            }
-            logger.info("Selected transloadURL/domain: " + transloadURL);
             final boolean resumable = ((Boolean) entries.get("resumable")).booleanValue();
             int maxChunks = ((Number) entries.get("maxchunks")).intValue();
             if (maxChunks > 1) {
                 maxChunks = -maxChunks;
             }
-            final String transloadID = UrlQuery.parse(transloadURL).get("id");
-            final String continueURL = br.getRegex("(\\?id=" + Regex.escape(transloadID) + "[^<>\"\\']+\\&action=download)").getMatch(0);
-            if (continueURL == null) {
-                mhm.handleErrorGeneric(account, link, "Failed to find continueURL", 10, 5 * 60 * 1000l);
+            String dllink = null;
+            final boolean useNewHandling = false;
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && useNewHandling) {
+                /* 2021-06-21: Testing */
+                final String apilink = (String) entries.get("apilink");
+                br.getPage(apilink);
+                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                entries = (Map<String, Object>) entries.get("data");
+                final int files_done = ((Number) entries.get("files_done")).intValue();
+                if (files_done != 1) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File hasn't been transferred to fakirdebrid yet");
+                }
+                /* TODO: Add domain/mirror handling here similar to the old handling */
+                dllink = (String) entries.get("link");
+            } else {
+                final List<String> urls = (List<String>) entries.get("links");
+                if (urls.isEmpty()) {
+                    mhm.handleErrorGeneric(account, link, "Failed to generate transloadURL", 10, 5 * 60 * 1000l);
+                }
+                String transloadURL = null;
+                /*
+                 * Go through array of list containing the same URL with different domains as some are blocked. Typical domains include:
+                 * turkleech.com, fakirdebrid.xyz, fakirdebrid.info
+                 */
+                for (final String url : urls) {
+                    try {
+                        /**
+                         * E.g. server2.turkleech.com/TransLoad/?id=bla </br>
+                         * Such URLs will also work fine without login cookies
+                         */
+                        br.getPage(url);
+                        transloadURL = url;
+                        break;
+                    } catch (final IOException ignore) {
+                        logger.log(ignore);
+                    }
+                }
+                if (StringUtils.isEmpty(transloadURL)) {
+                    mhm.handleErrorGeneric(account, link, "Failed to find working transloadURL", 10, 5 * 60 * 1000l);
+                }
+                logger.info("Selected transloadURL/domain: " + transloadURL);
+                final String transloadID = UrlQuery.parse(transloadURL).get("id");
+                final String continueURL = br.getRegex("(\\?id=" + Regex.escape(transloadID) + "[^<>\"\\']+\\&action=download)").getMatch(0);
+                if (continueURL == null) {
+                    mhm.handleErrorGeneric(account, link, "Failed to find continueURL", 10, 5 * 60 * 1000l);
+                }
+                br.getPage(continueURL);
+                dllink = br.getRegex("(files/[^\"\\']+)(?:\"|') class=.DOWNLOAD").getMatch(0);
             }
-            br.getPage(continueURL);
-            final String dllink = br.getRegex("(files/[^\"\\']+)(?:\"|') class=.DOWNLOAD").getMatch(0);
             if (dllink == null) {
                 mhm.handleErrorGeneric(account, link, "Failed to find final downloadurl", 10, 5 * 60 * 1000l);
             }
