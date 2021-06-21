@@ -18,12 +18,18 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigDropapkMixloads;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -38,7 +44,7 @@ public class MixloadsCom extends XFileSharingProBasic {
      * mods: See overridden functions<br />
      * limit-info: 2019-07-31: Premium untested, set FREE account limits <br />
      * captchatype-info: 2019-07-31: reCaptchaV2<br />
-     * other:<br />
+     * other: Sister site of dropapk.com (drop.download, dropapk.to) <br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -101,5 +107,56 @@ public class MixloadsCom extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 1;
+    }
+
+    /** 2021-06-21 Sync with DropapkCom! */
+    @Override
+    protected AvailableStatus massLinkcheckerParseFileInfo(final Browser br, final DownloadLink dl) {
+        final String fuid = this.getFUIDFromURL(dl);
+        /* 2021-05-17: Special */
+        final String html_for_fuid = br.getRegex("<li[^>]*>\\s*<span>[^>]*" + fuid + "[^>]*</span>.*?</li>").getMatch(-1);
+        if (html_for_fuid == null) {
+            return AvailableStatus.UNCHECKED;
+        }
+        if (html_for_fuid.contains("Not found")) {
+            dl.setAvailable(false);
+            return AvailableStatus.FALSE;
+        } else {
+            /* We know that the file is online - let's try to find the filesize ... */
+            dl.setAvailable(true);
+            try {
+                final String size = new Regex(html_for_fuid, "<strong class=\"ml-2\">\\s*(\\d+(\\.\\d+)? [^<]+)</strong>\\s*</li").getMatch(0);
+                if (size != null) {
+                    /*
+                     * Filesize should definitly be given - but at this stage we are quite sure that the file is online so let's not throw a
+                     * fatal error if the filesize cannot be found.
+                     */
+                    dl.setDownloadSize(SizeFormatter.getSize(size));
+                }
+            } catch (final Throwable e) {
+                logger.log(e);
+            }
+            return AvailableStatus.TRUE;
+        }
+    }
+
+    @Override
+    protected boolean supportsMassLinkcheckOverWebsite() {
+        return PluginJsonConfig.get(XFSConfigDropapkMixloads.class).isWebsiteAllowMassLinkcheck();
+    }
+
+    @Override
+    protected boolean supportsAPIMassLinkcheck() {
+        return isAPIKey(this.getAPIKey());
+    }
+
+    @Override
+    protected boolean supportsAPISingleLinkcheck() {
+        return isAPIKey(this.getAPIKey());
+    }
+
+    @Override
+    public Class<? extends XFSConfigDropapkMixloads> getConfigInterface() {
+        return XFSConfigDropapkMixloads.class;
     }
 }

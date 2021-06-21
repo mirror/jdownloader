@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.net.URL;
@@ -33,7 +32,6 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "webtoons.com" }, urls = { "https?://(?:www\\.)?webtoons\\.com/[a-z]{2}/[^/]+/[^/]+/(?:[^/]+/viewer\\?title_no=\\d+\\&episode_no=\\d+|list\\?title_no=\\d+)" })
 public class WebtoonsCom extends PluginForDecrypt {
-
     public WebtoonsCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -42,6 +40,8 @@ public class WebtoonsCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         this.br.setAllowedResponseCodes(400);
+        /* This cookie will allow us to access 18+ content */
+        br.setCookie(this.getHost(), "pagGDPR", "true");
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -60,7 +60,6 @@ public class WebtoonsCom extends PluginForDecrypt {
         } else {
             fp = null;
         }
-
         String[] links;
         if (episodenumber != null) {
             /* Decrypt single episode */
@@ -124,7 +123,6 @@ public class WebtoonsCom extends PluginForDecrypt {
                 return null;
             }
         }
-
         return decryptedLinks;
     }
 }
