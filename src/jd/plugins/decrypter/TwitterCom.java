@@ -33,7 +33,6 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -421,53 +420,6 @@ public class TwitterCom extends PornEmbedParser {
             /* Fallback */
             return created_at;
         }
-    }
-
-    /** Crawls single media objects obtained via API. */
-    private void crawlMediaObjectAPI(final FilePackage fp, final String username, final String tweetID, final String formattedDate, final Map<String, Object> entries) {
-        String url = (String) entries.get("media_url_https");
-        final String expanded_url = (String) entries.get("expanded_url");
-        if (StringUtils.isEmpty(url)) {
-            /* Ignore invalid items */
-            return;
-        }
-        final DownloadLink dl;
-        /* 2020-02-10: Recognize videos by this URL. If it is a thumbnail --< It is a video */
-        if (url.contains("/tweet_video_thumb/") || url.contains("/amplify_video_thumb/") || url.contains("/ext_tw_video_thumb/") || StringUtils.contains(expanded_url, "/video/")) {
-            /* Video --> Needs to go into crawler again */
-            dl = this.createDownloadlink(this.createTwitterPostURL(username, tweetID));
-            dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
-        } else {
-            /* Photo */
-            String filename = null;
-            try {
-                filename = Plugin.getFileNameFromURL(new URL(url));
-                if (filename != null) {
-                    filename = tweetID + "_" + filename;
-                }
-            } catch (final Throwable e) {
-                logger.log(e);
-                return;
-            }
-            if (!url.contains("?name=")) {
-                url += "?name=orig";
-            }
-            dl = this.createDownloadlink(url);
-            dl.setAvailable(true);
-            if (filename != null) {
-                // dl.setFinalFileName(filename);
-                /* 2020-06-08: Let it survive users' reset especially for items which are handled by directhttp plugin. */
-                dl.setForcedFileName(formattedDate + "_" + username + "_" + filename);
-            }
-        }
-        /* Set possible Packagizer properties */
-        dl.setProperty(PROPERTY_USERNAME, username);
-        dl.setProperty(PROPERTY_DATE, formattedDate);
-        if (fp != null) {
-            dl._setFilePackage(fp);
-        }
-        decryptedLinks.add(dl);
-        distribute(dl);
     }
 
     @Deprecated
