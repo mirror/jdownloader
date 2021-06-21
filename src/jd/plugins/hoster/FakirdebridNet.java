@@ -30,7 +30,6 @@ import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
@@ -148,8 +147,8 @@ public class FakirdebridNet extends PluginForHost {
                 maxChunks = -maxChunks;
             }
             String dllink = null;
-            final boolean useNewHandling = true;
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && useNewHandling) {
+            final boolean useNewHandling = true; /* 2021-06-21 */
+            if (useNewHandling) {
                 /* 2021-06-21: Testing */
                 final String apilink = (String) entries.get("apilink");
                 br.getPage(apilink);
