@@ -1721,28 +1721,23 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      *         No selection/Grab BEST available
      */
     protected String getPreferredDownloadQuality() {
-        try {
-            final Class<? extends XFSConfigVideo> cfgO = getVideoConfigInterface();
-            if (cfgO != null) {
-                final XFSConfigVideo cfg = PluginJsonConfig.get(cfgO);
-                final PreferredDownloadQuality quality = cfg.getPreferredDownloadQuality();
-                switch (quality) {
-                default:
-                    return null;
-                case BEST:
-                    return null;
-                case HIGH:
-                    return "h";
-                case NORMAL:
-                    return "n";
-                case LOW:
-                    return "l";
-                }
-            } else {
+        final Class<? extends XFSConfigVideo> cfgO = getVideoConfigInterface();
+        if (cfgO != null) {
+            final XFSConfigVideo cfg = PluginJsonConfig.get(cfgO);
+            final PreferredDownloadQuality quality = cfg.getPreferredDownloadQuality();
+            switch (quality) {
+            default:
                 return null;
+            case BEST:
+                return null;
+            case HIGH:
+                return "h";
+            case NORMAL:
+                return "n";
+            case LOW:
+                return "l";
             }
-        } catch (final ClassCastException e) {
-            logger.log(e);
+        } else {
             return null;
         }
     }
@@ -2401,32 +2396,27 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /** Returns user selected stream quality. -1 = BEST/no selection */
     private final int getPreferredStreamQuality() {
-        try {
-            final Class<? extends XFSConfigVideo> cfgO = getVideoConfigInterface();
-            if (cfgO != null) {
-                final XFSConfigVideo cfg = PluginJsonConfig.get(cfgO);
-                final PreferredStreamQuality quality = cfg.getPreferredStreamQuality();
-                switch (quality) {
-                default:
-                    return -1;
-                case BEST:
-                    return -1;
-                case Q2160P:
-                    return 2160;
-                case Q1080P:
-                    return 1080;
-                case Q720P:
-                    return 720;
-                case Q480P:
-                    return 480;
-                case Q360P:
-                    return 360;
-                }
-            } else {
+        final Class<? extends XFSConfigVideo> cfgO = getVideoConfigInterface();
+        if (cfgO != null) {
+            final XFSConfigVideo cfg = PluginJsonConfig.get(cfgO);
+            final PreferredStreamQuality quality = cfg.getPreferredStreamQuality();
+            switch (quality) {
+            default:
                 return -1;
+            case BEST:
+                return -1;
+            case Q2160P:
+                return 2160;
+            case Q1080P:
+                return 1080;
+            case Q720P:
+                return 720;
+            case Q480P:
+                return 480;
+            case Q360P:
+                return 360;
             }
-        } catch (final ClassCastException e) {
-            logger.log(e);
+        } else {
             return -1;
         }
     }
@@ -4490,21 +4480,16 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /** @return apikey but only if it is considered valid! */
     protected final String getAPIKeyFromConfig() {
-        try {
-            final Class<? extends XFSConfigVideo> cfgO = getVideoConfigInterface();
-            if (cfgO == null) {
-                return null;
-            } else {
-                final String apikey = PluginJsonConfig.get(cfgO).getApikey();
-                if (this.isAPIKey(apikey)) {
-                    return apikey;
-                } else {
-                    return null;
-                }
-            }
-        } catch (final ClassCastException e) {
-            logger.log(e);
+        final Class<? extends XFSConfigVideo> cfgO = getVideoConfigInterface();
+        if (cfgO == null) {
             return null;
+        } else {
+            final String apikey = PluginJsonConfig.get(cfgO).getApikey();
+            if (this.isAPIKey(apikey)) {
+                return apikey;
+            } else {
+                return null;
+            }
         }
     }
 
