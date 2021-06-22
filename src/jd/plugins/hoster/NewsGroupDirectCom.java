@@ -11,13 +11,20 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.uio.CloseReason;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.usenet.InvalidAuthException;
+import org.jdownloader.gui.dialog.AskDownloadPasswordDialogInterface;
+import org.jdownloader.gui.dialog.AskForDownloadLinkDialog;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
@@ -37,10 +44,16 @@ public class NewsGroupDirectCom extends UseNet {
     };
 
     private final String USENET_USERNAME = "USENET_USERNAME";
+    private final String USENET_PASSWORD = "USENET_PASSWORD";
 
     @Override
     protected String getUseNetUsername(Account account) {
         return account.getStringProperty(USENET_USERNAME, account.getUser());
+    }
+
+    @Override
+    protected String getUseNetPassword(Account account) {
+        return account.getStringProperty(USENET_PASSWORD, account.getPass());
     }
 
     @Override
@@ -152,10 +165,31 @@ public class NewsGroupDirectCom extends UseNet {
                 account.setMaxSimultanDownloads(50);
                 account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 5 * 60 * 60 * 1000l);
                 ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
-                return ai;
+                try {
+                    verifyUseNetLogins(account);
+                    return ai;
+                } catch (final InvalidAuthException e) {
+                    logger.log(e);
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account:" + getUseNetUsername(account), getHost(), "https://newsgroupdirect.com", true);
+                    final AskDownloadPasswordDialogInterface handle = UIOManager.I().show(AskDownloadPasswordDialogInterface.class, new AskForDownloadLinkDialog(_GUI.T.AskForPasswordDialog_AskForPasswordDialog_title_(), "Please enter your newsgroupdirect Usenet Password", dummyLink));
+                    if (handle.getCloseReason() == CloseReason.OK) {
+                        final String password = handle.getText();
+                        if (StringUtils.isNotEmpty(password)) {
+                            account.setProperty(USENET_PASSWORD, password);
+                            try {
+                                verifyUseNetLogins(account);
+                                return ai;
+                            } catch (InvalidAuthException e2) {
+                                logger.log(e2);
+                            }
+                        }
+                    }
+                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, null, PluginException.VALUE_ID_PREMIUM_DISABLE);
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
+                    account.removeProperty(USENET_PASSWORD);
                 }
                 throw e;
             }
