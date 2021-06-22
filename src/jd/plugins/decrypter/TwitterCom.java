@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
@@ -73,6 +74,7 @@ public class TwitterCom extends PornEmbedParser {
     private static final String            PROPERTY_USERNAME    = "username";
     private static final String            PROPERTY_DATE        = "date";
     private static final String            PROPERTY_MEDIA_INDEX = "mediaindex";
+    private static final String            PROPERTY_MEDIA_ID    = "mediaid";
     private boolean                        useServerFilename    = true;
 
     protected DownloadLink createDownloadlink(final String link, final String tweetid) {
@@ -164,6 +166,7 @@ public class TwitterCom extends PornEmbedParser {
         return decryptedLinks;
     }
 
+    @Deprecated
     private boolean switchtoMobile() throws IOException {
         /*
          * 2020-01-30: They're now using a json web-API for which we cannot easily get the auto parameters --> Try mobile website as
@@ -189,7 +192,10 @@ public class TwitterCom extends PornEmbedParser {
         final boolean useNewMethod = true; /* 2021-06-15 */
         if (useNewMethod) {
             br.getPage("https://api.twitter.com/1.1/statuses/show/" + tweetID + ".json?cards_platform=Web-12&include_reply_count=1&include_cards=1&include_user_entities=0&tweet_mode=extended");
-            if (br.getHttpConnection().getResponseCode() == 429) {
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                /* 2021-06-22: {"errors":[{"code":144,"message":"No status found with that ID."}]} */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.getHttpConnection().getResponseCode() == 429) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Rate-limit reached", 5 * 60 * 1000l);
             }
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
@@ -203,6 +209,9 @@ public class TwitterCom extends PornEmbedParser {
             }
             final boolean useOriginalFilenames = PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class).isUseOriginalFilenames();
             final List<Map<String, Object>> medias = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "extended_entities/media");
+            if (medias.size() > 1 && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                logger.info("Single tweet contains multiple media objects");
+            }
             int mediaIndex = 0;
             for (final Map<String, Object> media : medias) {
                 final String type = (String) media.get("type");
@@ -255,6 +264,7 @@ public class TwitterCom extends PornEmbedParser {
                     dl.setProperty(PROPERTY_USERNAME, username);
                     dl.setProperty(PROPERTY_DATE, formattedDate);
                     dl.setProperty(PROPERTY_MEDIA_INDEX, mediaIndex);
+                    dl.setProperty(PROPERTY_MEDIA_ID, media.get("id_str").toString());
                     dl.setProperty("date", formattedDate);
                     if (fp != null) {
                         fp.add(dl);
@@ -343,7 +353,7 @@ public class TwitterCom extends PornEmbedParser {
         final boolean useOriginalFilenames = PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class).isUseOriginalFilenames();
         final String tweetID = (String) entries.get("id_str");
         final String formattedDate = formatTwitterDate((String) entries.get("created_at"));
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "entities/media");
+        final ArrayList<Map<String, Object>> ressourcelist = (ArrayList<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "entities/media");
         if (ressourcelist == null) {
             logger.info("Current tweet does not contain any media objects");
             return;
@@ -353,10 +363,9 @@ public class TwitterCom extends PornEmbedParser {
         }
         logger.info(String.format("Found %d media objects", ressourcelist.size()));
         int mediaIndex = 0;
-        for (final Object mediaO : ressourcelist) {
-            entries = (Map<String, Object>) mediaO;
-            String url = (String) entries.get("media_url_https");
-            final String expanded_url = (String) entries.get("expanded_url");
+        for (final Map<String, Object> media : ressourcelist) {
+            String url = (String) media.get("media_url_https");
+            final String expanded_url = (String) media.get("expanded_url");
             if (StringUtils.isEmpty(url)) {
                 /* Ignore invalid items */
                 return;
@@ -393,6 +402,7 @@ public class TwitterCom extends PornEmbedParser {
                 dl.setProperty(PROPERTY_USERNAME, username);
                 dl.setProperty(PROPERTY_DATE, formattedDate);
                 dl.setProperty(PROPERTY_MEDIA_INDEX, mediaIndex);
+                dl.setProperty(PROPERTY_MEDIA_ID, media.get("id_str").toString());
             }
             if (fp != null) {
                 dl._setFilePackage(fp);
