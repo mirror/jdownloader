@@ -30,7 +30,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
@@ -210,9 +209,6 @@ public class TwitterCom extends PornEmbedParser {
             }
             final boolean useOriginalFilenames = PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class).isUseOriginalFilenames();
             final List<Map<String, Object>> medias = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "extended_entities/media");
-            if (medias.size() > 1 && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                logger.info("Single tweet contains multiple media objects");
-            }
             int mediaIndex = 0;
             for (final Map<String, Object> media : medias) {
                 final String type = (String) media.get("type");
