@@ -104,10 +104,11 @@ public class DuboxComFolder extends PluginForDecrypt {
     private static final String TYPE_SINGLE_VIDEO = "https?://[^/]+/web/share/videoPlay\\?surl=([A-Za-z0-9\\-_]+)\\&dir=([^\\&]+)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        return crawlFolder(param, null);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return crawlFolder(param, account, null);
     }
 
-    public ArrayList<DownloadLink> crawlFolder(final CryptedLink param, final String targetFileID) throws Exception {
+    public ArrayList<DownloadLink> crawlFolder(final CryptedLink param, final Account account, final String targetFileID) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final UrlQuery paramsOfAddedURL = UrlQuery.parse(param.getCryptedUrl());
         String surl;
@@ -140,7 +141,6 @@ public class DuboxComFolder extends PluginForDecrypt {
             surl = surl.substring(1, surl.length());
         }
         final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
-        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         /*
          * Login whenever possible. This way we will get direct downloadable URLs right away which we can store --> Saves a LOT of time- and
          * http requests later on!
