@@ -2015,9 +2015,12 @@ public class YoutubeHelper {
             ret = ret.replace("\\/", "/");
             return br.getURL(ret).toString();
         }
-        ret = br.getMatch("src\\s*=\\s*\"((https?:)?//[^\"<>]*?/base.js)\"[^<>]*name=\"player\\\\?/base");
+        ret = br.getMatch("\"movie_player\"\\s*,\\s*\"jsUrl\"\\s*:\\s*\"([^\"<>]*?/base.js)\"[^<>]*n");
         if (ret == null) {
-            ret = br.getMatch("src\\s*=\\s*\"([^\"<>]*?/base.js)\"[^<>]*n");
+            ret = br.getMatch("src\\s*=\\s*\"((https?:)?//[^\"<>]*?/base.js)\"[^<>]*name=\"player\\\\?/base");
+            if (ret == null) {
+                ret = br.getMatch("src\\s*=\\s*\"([^\"<>]*?/base.js)\"[^<>]*n");
+            }
         }
         if (ret != null) {
             return br.getURL(ret).toString();
@@ -3347,6 +3350,19 @@ public class YoutubeHelper {
         }
     }
 
+    private Map<String, Object> jsonToJavaMap(final String string, boolean throwException) throws Exception {
+        try {
+            return JavaScriptEngineFactory.jsonToJavaMap(string);
+        } catch (Exception e) {
+            if (throwException) {
+                throw e;
+            } else {
+                logger.log(e);
+                return null;
+            }
+        }
+    }
+
     // it's important to clean fields because YoutubeHelper might be shared instance
     public void parserJson() throws Exception {
         {
@@ -3361,7 +3377,7 @@ public class YoutubeHelper {
                 }
             }
             if (ytInitialData != null) {
-                this.ytInitialData = JavaScriptEngineFactory.jsonToJavaMap(ytInitialData);
+                this.ytInitialData = jsonToJavaMap(ytInitialData, true);
             } else {
                 this.ytInitialData = null;
             }
@@ -3381,7 +3397,7 @@ public class YoutubeHelper {
                 }
             }
             if (ytInitialPlayerResponse != null) {
-                this.ytInitialPlayerResponse = JavaScriptEngineFactory.jsonToJavaMap(ytInitialPlayerResponse);
+                this.ytInitialPlayerResponse = jsonToJavaMap(ytInitialPlayerResponse, true);
             } else {
                 this.ytInitialPlayerResponse = null;
             }
@@ -3395,11 +3411,14 @@ public class YoutubeHelper {
                 }
             }
             if (ytplayerConfig != null) {
-                this.ytPlayerConfig = JavaScriptEngineFactory.jsonToJavaMap(ytplayerConfig);
+                this.ytPlayerConfig = jsonToJavaMap(ytplayerConfig, false);
                 if (this.ytPlayerConfig != null) {
-                    final Object playerResponse = JavaScriptEngineFactory.walkJson(this.ytPlayerConfig, "args/player_response");
+                    Object playerResponse = JavaScriptEngineFactory.walkJson(this.ytPlayerConfig, "args/player_response");
+                    if (playerResponse == null) {
+                        playerResponse = JavaScriptEngineFactory.walkJson(this.ytPlayerConfig, "args/raw_player_response");
+                    }
                     if (playerResponse instanceof String) {
-                        final Map<String, Object> ytInitialPlayerResponse = JavaScriptEngineFactory.jsonToJavaMap(playerResponse.toString());
+                        final Map<String, Object> ytInitialPlayerResponse = jsonToJavaMap(playerResponse.toString(), true);
                         if (this.ytInitialPlayerResponse == null) {
                             this.ytInitialPlayerResponse = ytInitialPlayerResponse;
                         } else {
@@ -3419,13 +3438,9 @@ public class YoutubeHelper {
             if (ytcfgSet != null) {
                 final Map<String, Object> set = new HashMap<String, Object>();
                 for (final String ytcfg : ytcfgSet) {
-                    try {
-                        final Map<String, Object> map = JavaScriptEngineFactory.jsonToJavaMap(ytcfg);
-                        if (map != null) {
-                            set.putAll(map);
-                        }
-                    } catch (Exception e) {
-                        logger.log(e);
+                    final Map<String, Object> map = jsonToJavaMap(ytcfg, false);
+                    if (map != null) {
+                        set.putAll(map);
                     }
                 }
                 if (set.size() > 0) {
