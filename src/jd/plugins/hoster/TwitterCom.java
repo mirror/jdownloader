@@ -19,22 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -53,6 +37,22 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com" }, urls = { "https?://[a-z0-9]+\\.twimg\\.com/media/[^/]+|https?://amp\\.twimg\\.com/prod/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap|https?://amp\\.twimg\\.com/v/.+|https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+" })
 public class TwitterCom extends PluginForHost {
@@ -134,20 +134,20 @@ public class TwitterCom extends PluginForHost {
             }
             if (StringUtils.isEmpty(vmap_url)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            this.br.getPage(vmap_url);
-            this.dllink = regexVideoVmapHighestQualityURL(this.br);
-            if (StringUtils.isEmpty(dllink)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                this.br.getPage(vmap_url);
+                this.dllink = regexVideoVmapHighestQualityURL(this.br);
+                if (StringUtils.isEmpty(dllink)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         } else if (link.getPluginPatternMatcher().matches(TYPE_VIDEO_EMBED)) {
             tweetID = new Regex(link.getPluginPatternMatcher(), TYPE_VIDEO_EMBED).getMatch(0);
             final String username = link.getStringProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_USERNAME);
             final boolean useNewWay = true;
             if (useNewWay) {
-                if (link.hasProperty(PROPERTY_DIRECTURL)) {
-                    this.dllink = link.getStringProperty(PROPERTY_DIRECTURL);
-                } else {
+                this.dllink = link.getStringProperty(PROPERTY_DIRECTURL, null);
+                if (StringUtils.isEmpty(this.dllink)) {
                     logger.info("Obtaining new directurl via crawler");
                     final PluginForDecrypt decrypter = this.getNewPluginForDecryptInstance(this.getHost());
                     final String tweetURL = jd.plugins.decrypter.TwitterCom.createTwitterPostURL(username, tweetID);
@@ -155,12 +155,16 @@ public class TwitterCom extends PluginForHost {
                     final ArrayList<DownloadLink> results = decrypter.decryptIt(param, null);
                     if (results.size() != 1) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Single tweet video item crawler failure");
-                    }
-                    final DownloadLink result = results.get(0);
-                    link.setProperty(PROPERTY_DIRECTURL, result.getStringProperty(PROPERTY_DIRECTURL));
-                    this.dllink = result.getStringProperty(PROPERTY_DIRECTURL);
-                    if (result.getForcedFileName() != null) {
-                        link.setForcedFileName(result.getForcedFileName());
+                    } else {
+                        final DownloadLink result = results.get(0);
+                        this.dllink = result.getStringProperty(PROPERTY_DIRECTURL);
+                        if (StringUtils.isEmpty(dllink)) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        link.setProperty(PROPERTY_DIRECTURL, this.dllink);
+                        if (result.getForcedFileName() != null) {
+                            link.setForcedFileName(result.getForcedFileName());
+                        }
                     }
                 }
             } else {
