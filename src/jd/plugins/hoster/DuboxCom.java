@@ -340,7 +340,6 @@ public class DuboxCom extends PluginForHost {
         if (!attemptStoredDownloadurlDownload(link, PROPERTY_DIRECTURL, this.isResumeable(link, account), this.getMaxChunks(account))) {
             /* Avoid checking seemingly invalid stored directurl again in availablecheck! */
             link.removeProperty(PROPERTY_DIRECTURL);
-            // login(account, false);
             this.requestFileInformation(link, account);
             final String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
             if (dllink == null) {
