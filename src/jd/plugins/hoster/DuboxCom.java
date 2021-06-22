@@ -31,6 +31,7 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -122,19 +123,27 @@ public class DuboxCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        return requestFileInformation(link, null);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return requestFileInformation(link, account);
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws IOException, PluginException {
+        if (account == null) {
+            /* Without account we can't generate new directurls and can't check existing directurls! */
+            return AvailableStatus.UNCHECKABLE;
+        }
         if (link.hasProperty(PROPERTY_PASSWORD_COOKIE)) {
             DuboxComFolder.setPasswordCookie(this.br, this.getHost(), link.getStringProperty(PROPERTY_PASSWORD_COOKIE));
+        }
+        try {
+            this.login(account, false);
+        } catch (final Exception ignore) {
+            logger.log(ignore);
+            return AvailableStatus.UNCHECKABLE;
         }
         if (checkDirectLink(link, PROPERTY_DIRECTURL) != null) {
             logger.info("Availablecheck via directurl complete");
             return AvailableStatus.TRUE;
-        } else if (account == null) {
-            /* Without account we can't generate new directurls */
-            return AvailableStatus.UNCHECKABLE;
         } else {
             /*
              * Crawl the folder again to get a fresh directurl. There is no other way to do this. If the folder is big and the crawler has
@@ -148,7 +157,7 @@ public class DuboxCom extends PluginForHost {
             }
             try {
                 /* 2021-04-24: Handling has been changed so array should only contain the one element we need! */
-                final ArrayList<DownloadLink> items = ((jd.plugins.decrypter.DuboxComFolder) decrypter).crawlFolder(param, this.getFID(link));
+                final ArrayList<DownloadLink> items = ((jd.plugins.decrypter.DuboxComFolder) decrypter).crawlFolder(param, account, this.getFID(link));
                 DownloadLink target = null;
                 for (final DownloadLink tmp : items) {
                     if (StringUtils.equals(this.getFID(tmp), this.getFID(link))) {
@@ -198,7 +207,7 @@ public class DuboxCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
+        requestFileInformation(link, null);
         throw new AccountRequiredException();
     }
 
@@ -327,10 +336,11 @@ public class DuboxCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        login(account, false);
         if (!attemptStoredDownloadurlDownload(link, PROPERTY_DIRECTURL, this.isResumeable(link, account), this.getMaxChunks(account))) {
             /* Avoid checking seemingly invalid stored directurl again in availablecheck! */
             link.removeProperty(PROPERTY_DIRECTURL);
-            login(account, false);
+            // login(account, false);
             this.requestFileInformation(link, account);
             final String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
             if (dllink == null) {
