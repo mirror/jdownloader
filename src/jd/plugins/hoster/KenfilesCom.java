@@ -88,7 +88,7 @@ public class KenfilesCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_https() {
+    public boolean websiteSupportsHTTPS() {
         return true;
     }
 

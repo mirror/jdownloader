@@ -19,8 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideo;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
@@ -105,16 +103,5 @@ public class DownloadAniMe extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
-    }
-
-    @Override
-    protected boolean supports_https() {
-        final Class<? extends XFSConfigVideo> cfgO = this.getConfigInterface();
-        if (cfgO != null) {
-            return !PluginJsonConfig.get(cfgO).isPreferHTTP();
-        } else {
-            /* 2020-06-11: Special */
-            return false;
-        }
     }
 }

@@ -106,7 +106,7 @@ public class CutedriveCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean supports_https() {
+    protected boolean websiteSupportsHTTPS() {
         /* 2020-09-23: Special */
         return false;
     }

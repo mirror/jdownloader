@@ -42,7 +42,7 @@ public class CornfileCom extends XFileSharingProBasic {
     private static String[] domains = new String[] { "cornfile.com" };
 
     @Override
-    public boolean supports_https() {
+    public boolean websiteSupportsHTTPS() {
         return false;
     }
 

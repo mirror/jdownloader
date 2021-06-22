@@ -106,7 +106,7 @@ public class SharebitUploadCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean supports_https() {
+    protected boolean websiteSupportsHTTPS() {
         /* 2020-05-19: Special */
         return false;
     }

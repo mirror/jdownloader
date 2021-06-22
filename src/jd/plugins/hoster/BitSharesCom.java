@@ -108,7 +108,7 @@ public class BitSharesCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean supports_https() {
+    protected boolean websiteSupportsHTTPS() {
         /* 2020-05-07: Special */
         return false;
     }

@@ -105,7 +105,7 @@ public class DateiloadCom extends XFileSharingProBasic {
 
     /* 2019-10-28: Special */
     @Override
-    protected boolean supports_https() {
+    protected boolean websiteSupportsHTTPS() {
         return false;
     }
 }

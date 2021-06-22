@@ -90,7 +90,7 @@ public class FileddCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_https() {
+    public boolean websiteSupportsHTTPS() {
         /* 2019-04-15 */
         return false;
     }

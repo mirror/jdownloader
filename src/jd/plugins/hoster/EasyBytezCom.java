@@ -180,7 +180,7 @@ public class EasyBytezCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean supports_https() {
+    protected boolean websiteSupportsHTTPS() {
         /* 2019-08-06: Special */
         return false;
     }

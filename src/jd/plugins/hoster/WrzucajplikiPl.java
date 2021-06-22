@@ -108,7 +108,7 @@ public class WrzucajplikiPl extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean supports_https() {
+    protected boolean websiteSupportsHTTPS() {
         /* 2019-08-09: Special */
         return false;
     }

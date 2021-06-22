@@ -119,7 +119,7 @@ public class QtyFilesCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_https() {
+    public boolean websiteSupportsHTTPS() {
         /* 2019-06-13: Special */
         return false;
     }

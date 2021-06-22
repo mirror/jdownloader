@@ -104,7 +104,7 @@ public class TstorageInfo extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean supports_https() {
+    protected boolean websiteSupportsHTTPS() {
         /* 2020-04-08: Special */
         return false;
     }

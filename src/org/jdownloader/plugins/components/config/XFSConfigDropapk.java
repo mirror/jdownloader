@@ -8,7 +8,7 @@ import org.jdownloader.plugins.config.PluginHost;
 import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "drop.download", type = Type.HOSTER)
-public interface XFSConfigDropapk extends XFSConfigVideo {
+public interface XFSConfigDropapk extends XFSConfig {
     @AboutConfig
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("Allow website mass linkchecking? If enabled, filenames are sometimes invisible until download is started.")
