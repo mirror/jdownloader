@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -28,11 +31,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideo;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class YouWatchOrg extends XFileSharingProBasic {
@@ -126,13 +124,8 @@ public class YouWatchOrg extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean supports_https() {
-        final Class<? extends XFSConfigVideo> cfgO = this.getConfigInterface();
-        if (cfgO != null) {
-            return !PluginJsonConfig.get(cfgO).isPreferHTTP();
-        } else {
-            return false;
-        }
+    protected boolean websiteSupportsHTTPS() {
+        return false;
     }
 
     @Override

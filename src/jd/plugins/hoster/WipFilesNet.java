@@ -19,8 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideo;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
@@ -108,13 +106,8 @@ public class WipFilesNet extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean supports_https() {
-        final Class<? extends XFSConfigVideo> cfgO = this.getConfigInterface();
-        if (cfgO != null) {
-            return !PluginJsonConfig.get(cfgO).isPreferHTTP();
-        } else {
-            /* 2020-06-08: Special */
-            return false;
-        }
+    protected boolean websiteSupportsHTTPS() {
+        /* 2020-06-08: Special */
+        return false;
     }
 }

@@ -108,7 +108,7 @@ public class RareFileNet extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean supports_https() {
+    protected boolean websiteSupportsHTTPS() {
         /* 2020-02-17: Special */
         return false;
     }

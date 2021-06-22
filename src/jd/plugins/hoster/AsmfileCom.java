@@ -106,7 +106,7 @@ public class AsmfileCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean supports_https() {
+    protected boolean websiteSupportsHTTPS() {
         /* 2020-05-06: Special */
         return false;
     }

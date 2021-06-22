@@ -106,7 +106,7 @@ public class OrtoFilesCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean supports_https() {
+    protected boolean websiteSupportsHTTPS() {
         /* 2020-05-18: Special */
         return false;
     }

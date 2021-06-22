@@ -104,7 +104,7 @@ public class HallanBest extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean supports_https() {
+    protected boolean websiteSupportsHTTPS() {
         /* 2019-11-17: Special */
         return false;
     }

@@ -67,7 +67,7 @@ public class XimagesharingCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_https() {
+    public boolean websiteSupportsHTTPS() {
         return false;
     }
 

@@ -22,7 +22,7 @@ import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideoDdownloadCom;
+import org.jdownloader.plugins.components.config.XFSConfigDdownloadCom;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -116,7 +116,7 @@ public class DdownloadCom extends XFileSharingProBasic {
     public String buildExternalDownloadURL(final DownloadLink link, final PluginForHost buildForThisPlugin) {
         final String fid = getFUIDFromURL(link);
         if (fid != null) {
-            if (this.supports_https()) {
+            if (this.useHTTPS()) {
                 return "http://" + getHost() + "/" + fid;
             } else {
                 return "https://" + getHost() + "/" + fid;
@@ -141,8 +141,7 @@ public class DdownloadCom extends XFileSharingProBasic {
     }
 
     public int getMaxDownloadSelect() {
-        final XFSConfigVideoDdownloadCom cfg = PluginJsonConfig.get(this.getConfigInterface());
-        return cfg.getMaxSimultaneousFreeDownloads();
+        return PluginJsonConfig.get(this.getConfigInterface()).getMaxSimultaneousFreeDownloads();
     }
 
     @Override
@@ -446,7 +445,7 @@ public class DdownloadCom extends XFileSharingProBasic {
     // return filename;
     // }
     @Override
-    public Class<? extends XFSConfigVideoDdownloadCom> getConfigInterface() {
-        return XFSConfigVideoDdownloadCom.class;
+    public Class<? extends XFSConfigDdownloadCom> getConfigInterface() {
+        return XFSConfigDdownloadCom.class;
     }
 }

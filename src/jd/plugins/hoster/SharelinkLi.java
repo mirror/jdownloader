@@ -106,7 +106,7 @@ public class SharelinkLi extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean supports_https() {
+    protected boolean websiteSupportsHTTPS() {
         /* 2020-09-15: Special */
         return false;
     }

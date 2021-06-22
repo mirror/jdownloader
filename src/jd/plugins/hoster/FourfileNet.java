@@ -113,7 +113,7 @@ public class FourfileNet extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_https() {
+    public boolean websiteSupportsHTTPS() {
         /* 2019-02-21: Special */
         return false;
     }

@@ -131,7 +131,7 @@ public class GamovideoCom extends XFileSharingProBasic {
         return -1;
     }
 
-    protected boolean supports_https() {
+    protected boolean websiteSupportsHTTPS() {
         /* 2020-03-24: Special */
         return false;
     }

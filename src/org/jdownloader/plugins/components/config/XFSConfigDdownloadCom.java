@@ -10,7 +10,7 @@ import org.jdownloader.plugins.config.TakeValueFromSubconfig;
 import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "ddownload.com", type = Type.HOSTER)
-public interface XFSConfigVideoDdownloadCom extends XFSConfigVideo {
+public interface XFSConfigDdownloadCom extends XFSConfig {
     @AboutConfig
     @DefaultIntValue(1)
     @SpinnerValidator(min = 1, max = 10, step = 1)
