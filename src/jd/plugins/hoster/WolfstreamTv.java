@@ -21,7 +21,7 @@ import java.util.List;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 import org.jdownloader.plugins.components.config.XFSConfigVideo;
-import org.jdownloader.plugins.components.config.XFSConfigVideoAparatCom;
+import org.jdownloader.plugins.components.config.XFSConfigVideoWolfstreamTv;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -139,6 +139,6 @@ public class WolfstreamTv extends XFileSharingProBasic {
 
     @Override
     public Class<? extends XFSConfigVideo> getConfigInterface() {
-        return XFSConfigVideoAparatCom.class;
+        return XFSConfigVideoWolfstreamTv.class;
     }
 }
