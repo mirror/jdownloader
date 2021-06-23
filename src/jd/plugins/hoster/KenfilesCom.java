@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -27,6 +25,8 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KenfilesCom extends XFileSharingProBasic {
@@ -202,8 +202,9 @@ public class KenfilesCom extends XFileSharingProBasic {
         /* 2020-09-02: Special */
         /* Captcha START */
         if (captchaForm.containsHTML("g-recaptcha")) {
-            handleRecaptchaV2(link, captchaForm);
-            link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
+            if (handleRecaptchaV2(link, captchaForm)) {
+                link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
+            }
         } else {
             /* Run template code */
             super.handleCaptcha(link, captchaForm);

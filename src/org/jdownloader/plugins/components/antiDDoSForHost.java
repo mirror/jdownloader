@@ -47,7 +47,9 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.AbstractHCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.RequestHistory.TYPE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -524,15 +526,27 @@ public abstract class antiDDoSForHost extends PluginForHost {
     }
 
     protected boolean containsRecaptchaV2Class(Browser br) {
-        return br != null && containsRecaptchaV2Class(br.toString());
+        return br != null && AbstractRecaptchaV2.containsRecaptchaV2Class(br);
     }
 
     protected boolean containsRecaptchaV2Class(String string) {
-        return CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(string);
+        return AbstractRecaptchaV2.containsRecaptchaV2Class(string);
     }
 
     protected boolean containsRecaptchaV2Class(Form form) {
-        return form != null && containsRecaptchaV2Class(form.getHtmlCode());
+        return form != null && AbstractRecaptchaV2.containsRecaptchaV2Class(form);
+    }
+
+    protected boolean containsHCaptcha(Browser br) {
+        return br != null && AbstractHCaptcha.containsHCaptcha(br);
+    }
+
+    protected boolean containsHCaptcha(String string) {
+        return AbstractHCaptcha.containsHCaptcha(string);
+    }
+
+    protected boolean containsHCaptcha(Form form) {
+        return form != null && AbstractHCaptcha.containsHCaptcha(form);
     }
 
     private void processCloudflare(final Object lockObject, final Browser ibr, final Request request, final Cookies cookies) throws Exception {
