@@ -15,16 +15,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.blacklist.BlacklistEntry;
 import org.jdownloader.captcha.blacklist.BlockAllCrawlerCaptchasEntry;
 import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByHost;
 import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByPackage;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
+import org.jdownloader.captcha.v2.CaptchaCrawlerHelperInterface;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
-public class CaptchaHelperCrawlerPluginHCaptcha extends AbstractHCaptcha<PluginForDecrypt> {
+public class CaptchaHelperCrawlerPluginHCaptcha extends AbstractHCaptcha<PluginForDecrypt> implements CaptchaCrawlerHelperInterface {
     public CaptchaHelperCrawlerPluginHCaptcha(final PluginForDecrypt plugin, final Browser br, final String siteKey) {
         super(plugin, br, siteKey);
     }
@@ -35,6 +37,9 @@ public class CaptchaHelperCrawlerPluginHCaptcha extends AbstractHCaptcha<PluginF
 
     public String getToken() throws PluginException, InterruptedException, DecrypterException {
         logger.info("SiteDomain:" + getSiteDomain() + "|SiteKey:" + getSiteKey());
+        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unsupported captcha type 'hcaptcha'");
+        }
         runDdosPrevention();
         if (Thread.currentThread() instanceof SingleDownloadController) {
             logger.severe("PluginForDecrypt.getCaptchaCode inside SingleDownloadController!?");

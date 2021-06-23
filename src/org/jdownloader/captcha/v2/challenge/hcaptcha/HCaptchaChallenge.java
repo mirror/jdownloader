@@ -5,6 +5,9 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Locale;
 
+import jd.http.Browser;
+import jd.plugins.Plugin;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -24,9 +27,6 @@ import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.gui.translate._GUI;
 
-import jd.http.Browser;
-import jd.plugins.Plugin;
-
 public class HCaptchaChallenge extends AbstractBrowserChallenge {
     public static final String             RAWTOKEN = "rawtoken";
     public static final String             HCAPTCHA = "hcaptcha";
@@ -37,6 +37,10 @@ public class HCaptchaChallenge extends AbstractBrowserChallenge {
     public String getSiteKey() {
         return siteKey;
     }
+
+    public String getType() {
+        return AbstractHCaptcha.TYPE.NORMAL.name();
+    };
 
     @Override
     public AbstractResponse<String> parseAPIAnswer(String result, String resultFormat, ChallengeSolver<?> solver) {
@@ -128,6 +132,7 @@ public class HCaptchaChallenge extends AbstractBrowserChallenge {
             html = html.replace("%%%siteUrl%%%", StringUtils.valueOrEmpty(getSiteUrl()));
             html = html.replace("%%%siteDomain%%%", getSiteDomain());
             html = html.replace("%%%sitekey%%%", getSiteKey());
+            html = html.replace("%%%sitekeyType%%%", getType());
             html = html.replace("%%%unsupportedBrowser%%%", (isSafari || isEdge) ? "block" : "none");
             html = html.replace("%%%display%%%", "block");
             html = html.replace("%%%noExtensionHeader%%%", _GUI.T.extension_required_header());
@@ -188,8 +193,8 @@ public class HCaptchaChallenge extends AbstractBrowserChallenge {
         }
     }
 
-    public static boolean isValidResponseToken(String v) {
-        return v != null && v.matches("[\\w-_\\.]{150,}");
+    protected boolean isValidResponseToken(String v) {
+        return v != null && v.matches("^[\\w-_\\.]{150,}");
     }
 
     @Override

@@ -21,10 +21,11 @@ import org.jdownloader.captcha.blacklist.BlockAllCrawlerCaptchasEntry;
 import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByHost;
 import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByPackage;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
+import org.jdownloader.captcha.v2.CaptchaCrawlerHelperInterface;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
-public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractRecaptchaV2<PluginForDecrypt> {
+public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractRecaptchaV2<PluginForDecrypt> implements CaptchaCrawlerHelperInterface {
     public CaptchaHelperCrawlerPluginRecaptchaV2(final PluginForDecrypt plugin, final Browser br, final String siteKey, final String secureToken, boolean boundToDomain) {
         super(plugin, br, siteKey, secureToken, boundToDomain);
     }

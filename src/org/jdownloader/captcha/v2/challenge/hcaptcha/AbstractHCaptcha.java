@@ -20,6 +20,12 @@ import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.jdownloader.logging.LogController;
 
 public class AbstractHCaptcha<T extends Plugin> {
+    // https://docs.hcaptcha.com/invisible/
+    public static enum TYPE {
+        NORMAL,
+        INVISIBLE
+    }
+
     protected final T            plugin;
     protected final LogInterface logger;
     protected final Browser      br;
@@ -48,6 +54,30 @@ public class AbstractHCaptcha<T extends Plugin> {
 
     public String getSiteDomain() {
         return siteDomain;
+    }
+
+    public TYPE getType() {
+        return getType(br != null ? br.toString() : null);
+    }
+
+    protected TYPE getType(String source) {
+        if (source != null) {
+            final String[] divs = getDIVs(source);
+            if (divs != null) {
+                for (final String div : divs) {
+                    if (new Regex(div, "class\\s*=\\s*('|\")(?:.*?\\s+)?(g-recaptcha(-response)?|h-captcha)(\\1|\\s+)").matches()) {
+                        final String siteKey = new Regex(div, "data-sitekey\\s*=\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
+                        if (siteKey != null && StringUtils.equals(siteKey, getSiteKey())) {
+                            final boolean isInvisible = new Regex(div, "data-size\\s*=\\s*('|\")\\s*(invisible)\\s*\\1").matches();
+                            if (isInvisible) {
+                                return TYPE.INVISIBLE;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return TYPE.NORMAL;
     }
 
     protected String getSiteUrl() {
@@ -227,7 +257,7 @@ public class AbstractHCaptcha<T extends Plugin> {
             final String[] divs = getDIVs(source);
             if (divs != null) {
                 for (final String div : divs) {
-                    if (new Regex(div, "class\\s*=\\s*('|\")(?:.*?\\s+)?g-recaptcha(-response)?(\\1|\\s+)").matches() || new Regex(div, "class\\s*=\\s*('|\")(?:.*?\\s+)?recaptcha-submit(\\1|\\s+)").matches()) {
+                    if (new Regex(div, "class\\s*=\\s*('|\")(?:.*?\\s+)?(g-recaptcha(-response)?|h-captcha)(\\1|\\s+)").matches()) {
                         final String siteKey = new Regex(div, "data-sitekey\\s*=\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
                         if (siteKey != null) {
                             return siteKey;
@@ -249,35 +279,16 @@ public class AbstractHCaptcha<T extends Plugin> {
             }
         }
         {
-            // within iframe
-            final String[] iframes = new Regex(source, "<\\s*iframe\\s+(?:.*?<\\s*/\\s*iframe\\s*>|[^>]+\\s*/\\s*>)").getColumn(-1);
-            if (iframes != null) {
-                for (final String iframe : iframes) {
-                    final String siteKey = new Regex(iframe, "google\\.com/recaptcha/api/fallback\\?k=(" + apiKeyRegex + ")").getMatch(0);
-                    if (siteKey != null) {
-                        return siteKey;
-                    }
-                }
-            }
-        }
-        {
             // json values in script or json
-            // with container, grecaptcha.render(container,parameters), eg RecaptchaV2
-            String jsSource = new Regex(source, "recaptcha(?:\\.enterprise)?\\.render\\s*\\(.*?,\\s*\\{(.*?)\\s*\\}\\s*\\)\\s*;").getMatch(0);
+            // with container, hcaptcha.render(container,parameters)
+            String jsSource = new Regex(source, "hcaptcha\\.render\\s*\\(.*?,\\s*\\{(.*?)\\s*\\}\\s*\\)\\s*;").getMatch(0);
             String siteKey = new Regex(jsSource, "('|\"|)sitekey\\1\\s*:\\s*('|\"|)\\s*(" + apiKeyRegex + ")\\s*\\2").getMatch(2);
             if (siteKey != null) {
                 return siteKey;
             }
-            // without, grecaptcha.render(parameters), eg RecaptchaV3
-            jsSource = new Regex(source, "recaptcha(?:\\.enterprise)?\\.render\\s*\\(\\s*\\{(.*?)\\s*\\}\\s*\\)\\s*;").getMatch(0);
+            // without, hcaptcha.render(parameters)
+            jsSource = new Regex(source, "hcaptcha\\.render\\s*\\(\\s*\\{(.*?)\\s*\\}\\s*\\)\\s*;").getMatch(0);
             siteKey = new Regex(jsSource, "('|\"|)sitekey\\1\\s*:\\s*('|\"|)\\s*(" + apiKeyRegex + ")\\s*\\2").getMatch(2);
-            if (siteKey != null) {
-                return siteKey;
-            }
-        }
-        {
-            // RecaptchaV3, grecaptcha.execute(apiKey)
-            final String siteKey = new Regex(source, "grecaptcha(?:\\.enterprise)?\\.execute\\s*\\(\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
             if (siteKey != null) {
                 return siteKey;
             }
@@ -307,6 +318,16 @@ public class AbstractHCaptcha<T extends Plugin> {
             @Override
             public AbstractHCaptcha<T> getAbstractCaptchaHelperHCaptcha() {
                 return AbstractHCaptcha.this;
+            }
+
+            @Override
+            public String getType() {
+                final TYPE type = AbstractHCaptcha.this.getType();
+                if (type != null) {
+                    return type.name();
+                } else {
+                    return TYPE.NORMAL.name();
+                }
             }
 
             @Override
