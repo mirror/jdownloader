@@ -75,21 +75,22 @@ public class BatoTo extends PluginForDecrypt {
         }
         final String chapterID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final String batojs = br.getRegex("batojs = (.*?);").getMatch(0);
-        String batojsEvaluated = null;
-        final String serverCrypted = br.getRegex("const server = \"([^\"]+)").getMatch(0);
+        String secret = null;
+        final String cipherText = br.getRegex("const server = \"([^\"]+)").getMatch(0);
         final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         final StringBuilder sb = new StringBuilder();
         sb.append("var batojs = " + batojs + ";");
-        sb.append("var server = \"" + serverCrypted + "\";");
+        sb.append("var server = \"" + cipherText + "\";");
         /* TODO: Use Java decrypt function. */
         // sb.append("var res = JSON.parse(CryptoJS.AES.decrypt(server, batojs).toString(CryptoJS.enc.Utf8))");
         try {
             engine.eval(sb.toString());
-            batojsEvaluated = engine.get("batojs").toString();
+            secret = engine.get("batojs").toString();
         } catch (final Exception e) {
             e.printStackTrace();
         }
+        final String server = aesDecrypt(secret, cipherText);
         final String titleSeries = br.getRegex("<a href=\"/series/\\d+\">([^<]+)</a>").getMatch(0);
         final Regex chapterInfo = br.getRegex("property=\"og:title\"[^>]*content=\"([^>]*) - Chapter (\\d+)\"/>");
         final String titleChapter = chapterInfo.getMatch(0);
@@ -109,7 +110,7 @@ public class BatoTo extends PluginForDecrypt {
         final DecimalFormat df = new DecimalFormat("00");
         for (final String url : imgs) {
             final String pageNumberFormatted = df.format(index);
-            final DownloadLink link = createDownloadlink("" + url);
+            final DownloadLink link = createDownloadlink(server + url);
             final String fname_without_ext = fp.getName() + " - Page " + pageNumberFormatted;
             link.setProperty("fname_without_ext", fname_without_ext);
             link.setName(fname_without_ext);
@@ -122,6 +123,11 @@ public class BatoTo extends PluginForDecrypt {
             index++;
         }
         return decryptedLinks;
+    }
+
+    private String aesDecrypt(final String secret, final String cipherText) {
+        /* TODO */
+        return null;
     }
 
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
