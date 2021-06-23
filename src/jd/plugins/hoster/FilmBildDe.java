@@ -15,6 +15,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -26,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "film.bild.de" }, urls = { "http://(www\\.)?bild\\.de/video/[^<>\"]+\\.bild\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "film.bild.de" }, urls = { "https?://(www\\.)?bild\\.de/video/[^<>\"]+\\.bild\\.html" })
 public class FilmBildDe extends PluginForHost {
     public FilmBildDe(final PluginWrapper wrapper) {
         super(wrapper);
@@ -52,14 +54,14 @@ public class FilmBildDe extends PluginForHost {
             /* Fail safe as the input RegEx is more open than this. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        br.getPage("http://www.bild.de/video/" + linkpart + ",view=xml.bild.xml");
+        br.getPage(downloadLink.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (!br.containsHTML("<video src=")) {
+        } else if (!br.containsHTML("window._videoJSON")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String title = br.getRegex("ueberschrift=\"([^<>\"]*?)\"").getMatch(0);
-        final String subtitle = br.getRegex("title=\"([^<>\"]*?)\"").getMatch(0);
+        final String title = br.getRegex("\"title\"\\s*:\\s*\"([^<>\"]*?)\"").getMatch(0);
+        final String subtitle = br.getRegex("\"headline\"\\s*:\\s*\"([^<>\"]*?)\"").getMatch(0);
         if (title == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -76,24 +78,18 @@ public class FilmBildDe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("<video src=\"(http[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("\"src\"\\s*:\\s*\"(https?://[^\"]*.mp4)\"\\s*,\\s*\"type\"\\s*:\\s*\"video/mp4\"").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         URLConnectionAdapter con = null;
         try {
-            try {
-                /* @since JD2 */
-                con = br.openHeadConnection(dllink);
-            } catch (final Throwable t) {
-                /* Not supported in old 0.9.581 Stable */
-                con = br.openGetConnection(dllink);
-            }
-            if (con.getContentType().contains("html")) {
+            con = br.openHeadConnection(dllink);
+            if (!looksLikeDownloadableContent(con)) {
                 br.followConnection();
-                dllink = br.getRegex("http\\-equiv=\"refresh\" content=\"\\d+;URL=(http[^<>\"]*?)\"").getMatch(0);
-                if (dllink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                if (con.getCompleteContentLength() > 0) {
+                    downloadLink.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             }
         } finally {
@@ -103,8 +99,12 @@ public class FilmBildDe extends PluginForHost {
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
