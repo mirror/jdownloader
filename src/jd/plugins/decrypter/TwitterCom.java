@@ -237,9 +237,9 @@ public class TwitterCom extends PornEmbedParser {
                         }
                         dl = this.createDownloadlink(createVideourl(tweetID));
                         if (useOriginalFilenames) {
-                            dl.setForcedFileName(tweetID + "_" + Plugin.getFileNameFromURL(new URL(streamURL)));
+                            dl.setFinalFileName(tweetID + "_" + Plugin.getFileNameFromURL(new URL(streamURL)));
                         } else {
-                            dl.setForcedFileName(formattedDate + "_" + username + "_" + tweetID + "_" + mediaIndex + ".mp4");
+                            dl.setFinalFileName(formattedDate + "_" + username + "_" + tweetID + "_" + mediaIndex + ".mp4");
                         }
                         dl.setProperty(PROPERTY_BITRATE, highestBitrate);
                         dl.setProperty(jd.plugins.hoster.TwitterCom.PROPERTY_DIRECTURL, streamURL);
@@ -250,10 +250,10 @@ public class TwitterCom extends PornEmbedParser {
                         }
                         dl = this.createDownloadlink(url);
                         if (useOriginalFilenames) {
-                            dl.setForcedFileName(tweetID + "_" + Plugin.getFileNameFromURL(new URL(url)));
+                            dl.setFinalFileName(tweetID + "_" + Plugin.getFileNameFromURL(new URL(url)));
                         } else {
                             final String filename = formattedDate + "_" + username + "_" + tweetID + "_" + mediaIndex + "." + Plugin.getFileNameExtensionFromURL(url);
-                            dl.setForcedFileName(filename);
+                            dl.setFinalFileName(filename);
                         }
                     } else {
                         /* Unknown type -> This should never happen! */
@@ -392,9 +392,9 @@ public class TwitterCom extends PornEmbedParser {
                 dl = this.createDownloadlink(url);
                 /* 2020-06-08: Let it survive users' reset especially for items which are handled by directhttp plugin. */
                 if (useOriginalFilenames) {
-                    dl.setForcedFileName(tweetID + "_" + Plugin.getFileNameFromURL(new URL(url)));
+                    dl.setFinalFileName(tweetID + "_" + Plugin.getFileNameFromURL(new URL(url)));
                 } else {
-                    dl.setForcedFileName(formattedDate + "_" + username + "_" + tweetID + "_" + mediaIndex + "." + Plugin.getFileNameExtensionFromURL(url));
+                    dl.setFinalFileName(formattedDate + "_" + username + "_" + tweetID + "_" + mediaIndex + "." + Plugin.getFileNameExtensionFromURL(url));
                 }
             }
             dl.setAvailable(true);

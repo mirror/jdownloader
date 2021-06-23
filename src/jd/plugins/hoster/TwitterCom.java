@@ -19,6 +19,22 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -37,22 +53,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com" }, urls = { "https?://[a-z0-9]+\\.twimg\\.com/media/[^/]+|https?://amp\\.twimg\\.com/prod/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap|https?://amp\\.twimg\\.com/v/.+|https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+" })
 public class TwitterCom extends PluginForHost {
@@ -74,7 +74,7 @@ public class TwitterCom extends PluginForHost {
     }
 
     private final String       TYPE_DIRECT                  = "https?://[a-z0-9]+\\.twimg\\.com/.+";
-    private final String       TYPE_VIDEO                   = "https?://amp\\.twimg\\.com/v/.+";
+    private final String       TYPE_VIDEO_DIRECT            = "https?://amp\\.twimg\\.com/v/.+";
     private final String       TYPE_VIDEO_VMAP              = "https?://amp\\.twimg\\.com/prod/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap";
     public static final String TYPE_VIDEO_EMBED             = "https?://[^/]+/i/videos/tweet/(\\d+)";
     /* Connection stuff - don't allow chunks as we only download small pictures */
@@ -117,7 +117,8 @@ public class TwitterCom extends PluginForHost {
         String tweetID = link.getStringProperty("tweetid");
         String vmap_url = null;
         boolean possibly_geo_blocked = false;
-        if (link.getPluginPatternMatcher().matches(TYPE_VIDEO) || link.getPluginPatternMatcher().matches(TYPE_VIDEO_VMAP)) {
+        if (link.getPluginPatternMatcher().matches(TYPE_VIDEO_DIRECT) || link.getPluginPatternMatcher().matches(TYPE_VIDEO_VMAP)) {
+            /* DEPRECATED! */
             this.br.getPage(link.getPluginPatternMatcher());
             if (this.br.getHttpConnection().getResponseCode() == 403) {
                 account_required = true;
@@ -154,6 +155,10 @@ public class TwitterCom extends PluginForHost {
                     final CryptedLink param = new CryptedLink(tweetURL, link);
                     final ArrayList<DownloadLink> results = decrypter.decryptIt(param, null);
                     if (results.size() != 1) {
+                        /*
+                         * We expect exactly one element - for twitter posts containing videos, only one single video item is allowed per
+                         * twitter post!
+                         */
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Single tweet video item crawler failure");
                     } else {
                         final DownloadLink result = results.get(0);
@@ -162,8 +167,10 @@ public class TwitterCom extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         link.setProperty(PROPERTY_DIRECTURL, this.dllink);
-                        if (result.getForcedFileName() != null) {
-                            link.setForcedFileName(result.getForcedFileName());
+                        if (result.getFinalFileName() != null) {
+                            link.setFinalFileName(result.getFinalFileName());
+                        } else if (result.getForcedFileName() != null) { /* Old handling */
+                            link.setFinalFileName(result.getForcedFileName());
                         }
                     }
                 }
