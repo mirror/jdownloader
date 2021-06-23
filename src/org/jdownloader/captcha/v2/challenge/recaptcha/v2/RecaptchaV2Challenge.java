@@ -10,10 +10,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Plugin;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -43,6 +39,10 @@ import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.gui.translate._GUI;
+
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Plugin;
 
 public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     public static final String             RAWTOKEN    = "rawtoken";
@@ -646,6 +646,7 @@ public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             final boolean isEdge = userAgent != null && userAgent.toLowerCase(Locale.ENGLISH).matches(".*edge\\/.*");
             final URL url = RecaptchaV2Challenge.class.getResource("recaptcha.html");
             String html = IO.readURLToString(url);
+            html = html.replace("%%%provider%%%", getCaptchaNameSpace());
             html = html.replace("%%%headTitle%%%", _GUI.T.recaptchav2_head_title());
             html = html.replace("%%%headDescription%%%", _GUI.T.recaptchav2_head_description());
             html = html.replace("%%%captchaHeader%%%", _GUI.T.recaptchav2_header());

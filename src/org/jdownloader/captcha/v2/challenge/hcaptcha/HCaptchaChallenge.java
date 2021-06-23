@@ -5,22 +5,27 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Locale;
 
-import jd.http.Browser;
-import jd.plugins.Plugin;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
+import org.appwork.remoteapi.exceptions.RemoteAPIException;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.net.httpserver.requests.GetRequest;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
+import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.ChallengeSolver;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
+import org.jdownloader.captcha.v2.solver.browser.BrowserReference;
 import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.gui.translate._GUI;
+
+import jd.http.Browser;
+import jd.plugins.Plugin;
 
 public class HCaptchaChallenge extends AbstractBrowserChallenge {
     public static final String             RAWTOKEN = "rawtoken";
@@ -85,6 +90,22 @@ public class HCaptchaChallenge extends AbstractBrowserChallenge {
     }
 
     @Override
+    public boolean onGetRequest(final BrowserReference brRef, final GetRequest request, final HttpResponse response) throws IOException, RemoteAPIException {
+        synchronized (this) {
+            String pDo = request.getParameterbyKey("do");
+            if ("solve".equals(pDo)) {
+                String responsetoken = request.getParameterbyKey("response");
+                brRef.onResponse(responsetoken);
+                response.setResponseCode(ResponseCode.SUCCESS_OK);
+                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/html; charset=utf-8"));
+                response.getOutputStream(true).write("Please Close the Browser now".getBytes("UTF-8"));
+                return true;
+            }
+            return false;
+        }
+    }
+
+    @Override
     public String getHTML(HttpRequest request, String id) {
         try {
             final String userAgent = request.getRequestHeaders().getValue(HTTPConstants.HEADER_REQUEST_USER_AGENT);
@@ -92,6 +113,7 @@ public class HCaptchaChallenge extends AbstractBrowserChallenge {
             final boolean isEdge = userAgent != null && userAgent.toLowerCase(Locale.ENGLISH).matches(".*edge\\/.*");
             final URL url = HCaptchaChallenge.class.getResource("hcaptcha.html");
             String html = IO.readURLToString(url);
+            html = html.replace("%%%provider%%%", getCaptchaNameSpace());
             html = html.replace("%%%headTitle%%%", _GUI.T.recaptchav2_head_title());
             html = html.replace("%%%headDescription%%%", _GUI.T.recaptchav2_head_description());
             html = html.replace("%%%captchaHeader%%%", _GUI.T.recaptchav2_header());
@@ -159,7 +181,7 @@ public class HCaptchaChallenge extends AbstractBrowserChallenge {
      */
     protected final boolean isCaptchaResponseValid() {
         final String v = getResult().getValue();
-        if (isSolved() && RecaptchaV2Challenge.isValidResponseToken(v)) {
+        if (isSolved() && isValidResponseToken(v)) {
             return true;
         } else {
             return false;
@@ -167,7 +189,7 @@ public class HCaptchaChallenge extends AbstractBrowserChallenge {
     }
 
     public static boolean isValidResponseToken(String v) {
-        return v != null && v.matches("[\\w-_]{150,}");
+        return v != null && v.matches("[\\w-_\\.]{150,}");
     }
 
     @Override
