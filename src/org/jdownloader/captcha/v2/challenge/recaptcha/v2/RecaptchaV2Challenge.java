@@ -237,8 +237,8 @@ public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         this.secureToken = secureToken;
         this.siteKey = siteKey;
         this.siteDomain = siteDomain;
-        if (siteKey == null || !siteKey.matches("^[\\w-]+$")) {
-            throw new WTFException("Bad SiteKey");
+        if (!AbstractRecaptchaV2.isValidSiteKey(siteKey)) {
+            throw new WTFException("Bad SiteKey:" + siteKey);
         }
     }
 
@@ -742,20 +742,20 @@ public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
      */
     protected final boolean isCaptchaResponseValid() {
         final String v = getResult().getValue();
-        if (isSolved() && RecaptchaV2Challenge.isValidToken(v)) {
+        if (isSolved() && RecaptchaV2Challenge.isValidResponseToken(v)) {
             return true;
         } else {
             return false;
         }
     }
 
-    public static boolean isValidToken(String v) {
-        return v != null && v.matches("[\\w-]{30,}");
+    public static boolean isValidResponseToken(String v) {
+        return v != null && v.matches("[\\w-_]{30,}");
     }
 
     @Override
     public boolean validateResponse(AbstractResponse<String> response) {
-        return super.validateResponse(response) && isValidToken(response.getValue());
+        return super.validateResponse(response) && isValidResponseToken(response.getValue());
     }
 
     @Override

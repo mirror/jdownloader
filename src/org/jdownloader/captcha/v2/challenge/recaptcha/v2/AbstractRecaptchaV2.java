@@ -258,6 +258,10 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
 
     private final static String apiKeyRegex = "[\\w-_]{6,}";
 
+    public final static boolean isValidSiteKey(final String siteKey) {
+        return siteKey != null && siteKey.matches("(?i)^" + apiKeyRegex + "$");
+    }
+
     protected String[] getDIVs(String source) {
         return new Regex(source, "<\\s*(div|button)(?:[^>]*>.*?</\\1>|[^>]*\\s*/\\s*>)").getColumn(-1);
     }
