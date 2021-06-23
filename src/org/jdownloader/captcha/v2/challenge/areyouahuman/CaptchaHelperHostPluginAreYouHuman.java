@@ -21,6 +21,7 @@ import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByHost;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByLink;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByPackage;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
+import org.jdownloader.captcha.v2.CaptchaHosterHelperInterface;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
@@ -31,7 +32,7 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.CaptchaStepProgress;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-public class CaptchaHelperHostPluginAreYouHuman extends AbstractCaptchaHelperAreYouHuman<PluginForHost> {
+public class CaptchaHelperHostPluginAreYouHuman extends AbstractCaptchaHelperAreYouHuman<PluginForHost> implements CaptchaHosterHelperInterface {
     public CaptchaHelperHostPluginAreYouHuman(PluginForHost plugin, Browser br, String siteKey) {
         super(plugin, br, siteKey);
     }

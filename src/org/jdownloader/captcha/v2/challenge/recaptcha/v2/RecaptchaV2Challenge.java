@@ -10,6 +10,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Plugin;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -39,10 +43,6 @@ import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.gui.translate._GUI;
-
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Plugin;
 
 public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     public static final String             RAWTOKEN    = "rawtoken";
@@ -743,15 +743,15 @@ public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
      */
     protected final boolean isCaptchaResponseValid() {
         final String v = getResult().getValue();
-        if (isSolved() && RecaptchaV2Challenge.isValidResponseToken(v)) {
+        if (isSolved() && isValidResponseToken(v)) {
             return true;
         } else {
             return false;
         }
     }
 
-    public static boolean isValidResponseToken(String v) {
-        return v != null && v.matches("[\\w-_]{30,}");
+    protected boolean isValidResponseToken(String v) {
+        return v != null && v.matches("^[\\w-_]{30,}");
     }
 
     @Override

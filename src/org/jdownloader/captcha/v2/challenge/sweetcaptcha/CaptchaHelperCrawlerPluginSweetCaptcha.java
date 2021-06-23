@@ -22,11 +22,12 @@ import org.jdownloader.captcha.blacklist.BlockAllCrawlerCaptchasEntry;
 import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByHost;
 import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByPackage;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
+import org.jdownloader.captcha.v2.CaptchaCrawlerHelperInterface;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 
-public class CaptchaHelperCrawlerPluginSweetCaptcha extends AbstractCaptchaHelperSweetCaptcha<PluginForDecrypt> {
+public class CaptchaHelperCrawlerPluginSweetCaptcha extends AbstractCaptchaHelperSweetCaptcha<PluginForDecrypt> implements CaptchaCrawlerHelperInterface {
     public CaptchaHelperCrawlerPluginSweetCaptcha(final PluginForDecrypt plugin, final Browser br, final String siteKey, final String apiKey) {
         super(plugin, br, siteKey, apiKey);
     }

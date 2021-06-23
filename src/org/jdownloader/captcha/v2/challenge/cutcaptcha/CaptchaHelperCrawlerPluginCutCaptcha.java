@@ -19,9 +19,10 @@ import org.jdownloader.captcha.blacklist.BlockAllCrawlerCaptchasEntry;
 import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByHost;
 import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByPackage;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
+import org.jdownloader.captcha.v2.CaptchaCrawlerHelperInterface;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 
-public class CaptchaHelperCrawlerPluginCutCaptcha extends AbstractCaptchaHelperCutCaptcha<PluginForDecrypt> {
+public class CaptchaHelperCrawlerPluginCutCaptcha extends AbstractCaptchaHelperCutCaptcha<PluginForDecrypt> implements CaptchaCrawlerHelperInterface {
     public CaptchaHelperCrawlerPluginCutCaptcha(PluginForDecrypt plugin, Browser br, String siteKey) {
         super(plugin, br, siteKey);
     }

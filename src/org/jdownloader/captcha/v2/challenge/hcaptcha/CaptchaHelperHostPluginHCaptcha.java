@@ -13,6 +13,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.captcha.blacklist.BlacklistEntry;
@@ -21,6 +22,7 @@ import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByHost;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByLink;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByPackage;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
+import org.jdownloader.captcha.v2.CaptchaHosterHelperInterface;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.IconKey;
@@ -30,7 +32,7 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.CaptchaStepProgress;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-public class CaptchaHelperHostPluginHCaptcha extends AbstractHCaptcha<PluginForHost> {
+public class CaptchaHelperHostPluginHCaptcha extends AbstractHCaptcha<PluginForHost> implements CaptchaHosterHelperInterface {
     public CaptchaHelperHostPluginHCaptcha(final PluginForHost plugin, final Browser br, final String siteKey) {
         super(plugin, br, siteKey);
     }
@@ -41,6 +43,9 @@ public class CaptchaHelperHostPluginHCaptcha extends AbstractHCaptcha<PluginForH
 
     public String getToken() throws PluginException, InterruptedException {
         logger.info("SiteDomain:" + getSiteDomain() + "|SiteKey:" + getSiteKey());
+        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unsupported captcha type 'hcaptcha'");
+        }
         runDdosPrevention();
         if (Thread.currentThread() instanceof LinkCrawlerThread) {
             logger.severe("PluginForHost.getCaptchaCode inside LinkCrawlerThread!?");
