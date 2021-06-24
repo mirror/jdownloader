@@ -7,10 +7,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
-import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
-import jd.plugins.DownloadLink;
-
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
@@ -26,13 +22,16 @@ import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.JobRunnable;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaCategoryChallenge;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaPuzzleChallenge;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.HCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.oauth.AccountLoginOAuthChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+
+import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
+import jd.plugins.DownloadLink;
 
 public class CaptchaAPISolver extends ChallengeSolver<Object> implements CaptchaAPI, ChallengeResponseListener {
     private static final CaptchaAPISolver INSTANCE = new CaptchaAPISolver();
@@ -51,7 +50,8 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
 
     @Override
     protected boolean isChallengeSupported(Challenge<?> c) {
-        return c instanceof KeyCaptchaPuzzleChallenge || c instanceof KeyCaptchaCategoryChallenge || c instanceof RecaptchaV2Challenge || c instanceof AccountLoginOAuthChallenge || c instanceof ImageCaptchaChallenge;
+        // c instanceof KeyCaptchaPuzzleChallenge || c instanceof KeyCaptchaCategoryChallenge, unsupported?
+        return c instanceof HCaptchaChallenge || c instanceof RecaptchaV2Challenge || c instanceof AccountLoginOAuthChallenge || c instanceof ImageCaptchaChallenge;
     }
 
     @Override
@@ -106,7 +106,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
             for (final SolverJob<?> entry : listJobs()) {
                 if (!entry.isDone()) {
                     final Challenge<?> challenge = entry.getChallenge();
-                    if (challenge instanceof RecaptchaV2Challenge || challenge instanceof ImageCaptchaChallenge || challenge instanceof AccountLoginOAuthChallenge) {
+                    if (isChallengeSupported(challenge)) {
                         final CaptchaJob captchaJob = getCaptchaJob(challenge.getId().getID());
                         if (captchaJob != null) {
                             ret.add(captchaJob);
@@ -234,7 +234,12 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
             Class<?> cls = challenge.getClass();
             while (cls != null && StringUtils.isEmpty(ret.getType())) {
                 ret.setType(cls.getSimpleName());
+                ret.setChallengeType(cls.getSimpleName());
                 cls = cls.getSuperclass();
+            }
+            if (challenge instanceof HCaptchaChallenge) {
+                // TODO: webinterface workaround
+                ret.setType("RecaptchaV2Challenge");
             }
             ret.setID(challenge.getId().getID());
             ret.setHoster(challenge.getHost());
