@@ -90,6 +90,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String FASTLINKCHECK_AUDIO                                                         = "FASTLINKCHECK_AUDIO";
     public static final String  VIDEO_QUALITY_SELECTION_MODE                                                = "VIDEO_QUALITY_SELECTION_MODE";
     public static final String  PREFERRED_VIDEO_QUALITY                                                     = "PREFERRED_VIDEO_QUALITY";
+    public static final String  VIDEO_ADD_NAME_OF_UPLOADER_TO_FILENAME                                      = "VIDEO_ADD_NAME_OF_UPLOADER_TO_FILENAME";
     private static final String VKWALL_GRAB_ALBUMS                                                          = "VKWALL_GRAB_ALBUMS";
     private static final String VKWALL_GRAB_PHOTOS                                                          = "VKWALL_GRAB_PHOTOS";
     private static final String VKWALL_GRAB_AUDIO                                                           = "VKWALL_GRAB_AUDIO";
@@ -127,6 +128,7 @@ public class VKontakteRuHoster extends PluginForHost {
     public static final String  PROPERTY_GENERAL_owner_id                                                   = "owner_id";
     public static final String  PROPERTY_GENERAL_content_id                                                 = "content_id";
     public static String        PROPERTY_GENERAL_TITLE                                                      = "title";
+    public static String        PROPERTY_GENERAL_TITLE_PLAIN                                                = "title_plain";
     public static String        PROPERTY_GENERAL_DATE                                                       = "date";
     public static String        PROPERTY_GENERAL_UPLOADER                                                   = "uploader";
     /* For single photos */
@@ -1695,6 +1697,7 @@ public class VKontakteRuHoster extends PluginForHost {
     public static final int      default_VIDEO_QUALITY_SELECTION_MODE                                                = 0;
     public static final int      default_PREFERRED_VIDEO_QUALITY                                                     = 0;
     public static final boolean  default_ALLOW_BEST                                                                  = false;
+    public static final boolean  default_VIDEO_ADD_NAME_OF_UPLOADER_TO_FILENAME                                      = true;
     public static final boolean  default_ALLOW_BEST_OF_SELECTION                                                     = false;
     private static final boolean default_WALL_ALLOW_albums                                                           = true;
     private static final boolean default_WALL_ALLOW_photo                                                            = true;
@@ -1837,19 +1840,19 @@ public class VKontakteRuHoster extends PluginForHost {
     public void setConfigElements() {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Linkcheck settings:"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTLINKCHECK_VIDEO, JDL.L("plugins.hoster.vkontakteruhoster.fastLinkcheck", "Fast linkcheck for video links (filesize won't be shown in linkgrabber)?")).setDefaultValue(default_fastlinkcheck_FASTLINKCHECK_VIDEO));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTLINKCHECK_VIDEO, "Fast linkcheck for video links (filesize won't be shown in linkgrabber)?").setDefaultValue(default_fastlinkcheck_FASTLINKCHECK_VIDEO));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTCRAWL_VIDEO, "Enable fast video album crawling? Filenames may change before download and filesize won't be visible until download is started.").setDefaultValue(default_FASTCRAWL_VIDEO));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTLINKCHECK_PICTURES, JDL.L("plugins.hoster.vkontakteruhoster.fastPictureLinkcheck", "Fast linkcheck for all picture links (when true or false filename & filesize wont be shown until download starts, when false only task performed is to check if picture has been deleted!)?")).setDefaultValue(default_fastlinkcheck_FASTPICTURELINKCHECK));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTLINKCHECK_AUDIO, JDL.L("plugins.hoster.vkontakteruhoster.fastAudioLinkcheck", "Fast linkcheck for audio links (filesize won't be shown in linkgrabber)?")).setDefaultValue(default_fastlinkcheck_FASTAUDIOLINKCHECK));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTLINKCHECK_PICTURES, "Fast linkcheck for all picture links (when true or false filename & filesize wont be shown until download starts, when false only task performed is to check if picture has been deleted!)?").setDefaultValue(default_fastlinkcheck_FASTPICTURELINKCHECK));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTLINKCHECK_AUDIO, "Fast linkcheck for audio links (filesize won't be shown in linkgrabber)?").setDefaultValue(default_fastlinkcheck_FASTAUDIOLINKCHECK));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Video settings: (for vk.com/video-XXX_XXX)"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), VIDEO_QUALITY_SELECTION_MODE, getVideoQualitySelectionModeStrings(), "Video quality selection mode").setDefaultValue(default_VIDEO_QUALITY_SELECTION_MODE));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), PREFERRED_VIDEO_QUALITY, getVideoQualityStrings(), "Preferred video quality").setDefaultValue(default_PREFERRED_VIDEO_QUALITY));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKVIDEO_USEIDASPACKAGENAME, "Use video-ID as packagename ('videoXXXX_XXXX' or 'video-XXXX_XXXX')?").setDefaultValue(default_VKVIDEO_USEIDASPACKAGENAME));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VIDEO_ADD_NAME_OF_UPLOADER_TO_FILENAME, "Append the uploaders' name to the beginning of filenames?").setDefaultValue(default_VIDEO_ADD_NAME_OF_UPLOADER_TO_FILENAME));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Wall settings (for 'vk.com/wall-123...' and 'vk.com/wall-123..._123...' links):"));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_ALBUMS, JDL.L("plugins.hoster.vkontakteruhoster.wallcheckalbums", "Grab album links ('vk.com/album')?")).setDefaultValue(default_WALL_ALLOW_albums));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_ALBUMS, "Grab album links ('vk.com/album')?").setDefaultValue(default_WALL_ALLOW_albums));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_PHOTOS, JDL.L("plugins.hoster.vkontakteruhoster.wallcheckphotos", "Grab photo links ('vk.com/photo')?")).setDefaultValue(default_WALL_ALLOW_photo));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_AUDIO, JDL.L("plugins.hoster.vkontakteruhoster.wallcheckaudio", "Grab audio links (.mp3 directlinks)?")).setDefaultValue(default_WALL_ALLOW_audio));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_VIDEO, JDL.L("plugins.hoster.vkontakteruhoster.wallcheckvideo", "Grab video links ('vk.com/video')?")).setDefaultValue(default_WALL_ALLOW_video));
@@ -1886,7 +1889,7 @@ public class VKontakteRuHoster extends PluginForHost {
         /* 2019-08-06: Disabled API setting for now as API requires authorization which we do not (yet) support! */
         // this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(),
         // VKontakteRuHoster.VKWALL_USE_API, "For 'vk.com/wall' links: Use API?").setDefaultValue(default_VKWALL_USE_API));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), VKADVANCED_USER_AGENT, JDL.L("plugins.hoster.vkontakteruhoster.customUserAgent", "User-Agent: ")).setDefaultValue(default_user_agent));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), VKADVANCED_USER_AGENT, "User-Agent: ").setDefaultValue(default_user_agent));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), VKontakteRuHoster.SLEEP_PAGINATION_GENERAL, JDL.L("plugins.hoster.vkontakteruhoster.sleep.paginationGeneral", "Define sleep time for general pagination"), 1000, 15000, 500).setDefaultValue(defaultSLEEP_PAGINATION_GENERAL));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), VKontakteRuHoster.SLEEP_TOO_MANY_REQUESTS, JDL.L("plugins.hoster.vkontakteruhoster.sleep.tooManyRequests", "Define sleep time for 'Temp Blocked' event"), (int) defaultSLEEP_TOO_MANY_REQUESTS, 15000, 500).setDefaultValue(defaultSLEEP_TOO_MANY_REQUESTS));
     }
