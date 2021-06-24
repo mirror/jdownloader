@@ -65,7 +65,7 @@ public class AbstractHCaptcha<T extends Plugin> {
             final String[] divs = getDIVs(source);
             if (divs != null) {
                 for (final String div : divs) {
-                    if (new Regex(div, "class\\s*=\\s*('|\")(?:.*?\\s+)?(g-recaptcha(-response)?|h-captcha)(\\1|\\s+)").matches()) {
+                    if (new Regex(div, "class\\s*=\\s*('|\")(?:.*?\\s+)?(g|h)-recaptcha(-response)?(\\1|\\s+)").matches()) {
                         final String siteKey = new Regex(div, "data-sitekey\\s*=\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
                         if (siteKey != null && StringUtils.equals(siteKey, getSiteKey())) {
                             final boolean isInvisible = new Regex(div, "data-size\\s*=\\s*('|\")\\s*(invisible)\\s*\\1").matches();
@@ -257,7 +257,7 @@ public class AbstractHCaptcha<T extends Plugin> {
             final String[] divs = getDIVs(source);
             if (divs != null) {
                 for (final String div : divs) {
-                    if (new Regex(div, "class\\s*=\\s*('|\")(?:.*?\\s+)?(g-recaptcha(-response)?|h-captcha)(\\1|\\s+)").matches()) {
+                    if (new Regex(div, "class\\s*=\\s*('|\")(?:.*?\\s+)?(g|h)-recaptcha(-response)?(\\1|\\s+)").matches()) {
                         final String siteKey = new Regex(div, "data-sitekey\\s*=\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
                         if (siteKey != null) {
                             return siteKey;

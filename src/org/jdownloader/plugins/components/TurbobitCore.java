@@ -9,17 +9,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -42,6 +31,18 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.JDHexUtils;
+
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TurbobitCore extends antiDDoSForHost {
@@ -101,9 +102,9 @@ public class TurbobitCore extends antiDDoSForHost {
         }
         /**
          * Enabled = Do not check for filesize via single-linkcheck on first time linkcheck - only on the 2nd linkcheck and when the
-         * filesize is not known already. This will speedup the linkcheck! </br>
-         * Disabled = Check for filesize via single-linkcheck even first time links get added as long as no filesize is given. This will
-         * slow down the linkcheck and cause more http requests in a short amount of time!
+         * filesize is not known already. This will speedup the linkcheck! </br> Disabled = Check for filesize via single-linkcheck even
+         * first time links get added as long as no filesize is given. This will slow down the linkcheck and cause more http requests in a
+         * short amount of time!
          */
         final boolean fastLinkcheck = isFastLinkcheckEnabled();
         final ArrayList<DownloadLink> deepChecks = new ArrayList<DownloadLink>();
@@ -320,8 +321,9 @@ public class TurbobitCore extends antiDDoSForHost {
         } catch (final PluginException e) {
             if (br.containsHTML("Our service is currently unavailable in your country\\.")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nWebsite is currently unavailable in your country!\r\nDiese webseite ist in deinem Land momentan nicht verfügbar!", PluginException.VALUE_ID_PREMIUM_DISABLE, e);
+            } else {
+                throw e;
             }
-            throw e;
         }
         ai.setUnlimitedTraffic();
         // >Turbo access till 27.09.2015</span>
@@ -503,10 +505,27 @@ public class TurbobitCore extends antiDDoSForHost {
         }
     }
 
-    private final void partTwo(final DownloadLink link, Account account, final boolean allowRetry) throws Exception {
-        if (br.containsHTML("hcaptcha\\.com")) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unsupported captcha type hcaptcha", 3 * 60 * 60 * 1000l);
+    protected boolean processCaptchaForm(final DownloadLink link, final Account account, final Form captchaform, final Browser br, final boolean optionalCaptcha) throws PluginException, InterruptedException {
+        if (containsHCaptcha(br)) {
+            final String response = new CaptchaHelperHostPluginHCaptcha(this, br).getToken();
+            captchaform.put("g-recaptcha-response", Encoding.urlEncode(response));
+            captchaform.put("h-recaptcha-response", Encoding.urlEncode(response));
+            return true;
+        } else if (containsRecaptchaV2Class(br)) {
+            /* ReCaptchaV2 */
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+            captchaform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            return true;
+        } else if (!optionalCaptcha) {
+            /* This should not happen - see old captcha handling in TurboBitNet class revision 40594 */
+            logger.warning("Captcha-handling failed");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            return false;
         }
+    }
+
+    private final void partTwo(final DownloadLink link, Account account, final boolean allowRetry) throws Exception {
         Form captchaform = null;
         final Form[] allForms = br.getForms();
         if (allForms != null && allForms.length != 0) {
@@ -561,16 +580,8 @@ public class TurbobitCore extends antiDDoSForHost {
             /* E.g. hitfile.net */
             captchaform.put("captcha_subtype", "");
         }
-        if (containsRecaptchaV2Class(br)) {
-            /* ReCaptchaV2 */
-            String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-            captchaform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-            submitForm(captchaform);
-        } else {
-            /* This should not happen - see old captcha handling in TurboBitNet class revision 40594 */
-            logger.warning("Captcha-handling failed");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        processCaptchaForm(link, account, captchaform, br, false);
+        submitForm(captchaform);
         if (br.getHttpConnection().getResponseCode() == 302) {
             /* Solving took too long? */
             invalidateLastChallengeResponse();
@@ -750,9 +761,7 @@ public class TurbobitCore extends antiDDoSForHost {
         if (premiumCaptchaForm != null) {
             /* 2021-03-30: Captchas can sometimes happen in premium mode (wtf but confirmed!) */
             logger.info("Detected premium download-captcha");
-            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-            premiumCaptchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-            this.submitForm(premiumCaptchaForm);
+            processCaptchaForm(link, account, premiumCaptchaForm, br, false);
         }
     }
 
@@ -1046,14 +1055,14 @@ public class TurbobitCore extends antiDDoSForHost {
                 boolean requiredLoginCaptcha = false;
                 if (findLoginForm(br, account) != null) {
                     /* Check for stupid login captcha */
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), getMainpage(), true);
                     loginform = findAndPrepareLoginForm(br, account);
-                    if (containsRecaptchaV2Class(br)) {
-                        requiredLoginCaptcha = true;
-                        this.setDownloadLink(dummyLink);
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                        loginform.put("g-recaptcha-response", recaptchaV2Response);
-                    } else if (loginform.containsHTML("class=\"reloadCaptcha\"")) {
+                    DownloadLink link = getDownloadLink();
+                    if (link == null) {
+                        link = new DownloadLink(this, "Account", account.getHoster(), getMainpage(), true);
+                        this.setDownloadLink(link);
+                    }
+                    processCaptchaForm(link, account, loginform, br, true);
+                    if (loginform.containsHTML("class=\"reloadCaptcha\"")) {
                         /* Old captcha - e.g. wayupload.com */
                         requiredLoginCaptcha = true;
                         final String captchaurl = br.getRegex("(https?://[^/]+/captcha/securimg[^\"<>]+)").getMatch(0);
@@ -1061,7 +1070,7 @@ public class TurbobitCore extends antiDDoSForHost {
                             logger.warning("Failed to find captchaURL");
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        final String code = this.getCaptchaCode(captchaurl, dummyLink);
+                        final String code = this.getCaptchaCode(captchaurl, link);
                         loginform.put("user%5Bcaptcha_response%5D", Encoding.urlEncode(code));
                         loginform.put("user%5Bcaptcha_type%5D", "securimg");
                         loginform.put("user%5Bcaptcha_subtype%5D", "9");
