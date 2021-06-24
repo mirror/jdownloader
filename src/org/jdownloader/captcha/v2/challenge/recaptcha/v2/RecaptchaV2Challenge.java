@@ -10,6 +10,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Plugin;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -39,10 +43,6 @@ import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.gui.translate._GUI;
-
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Plugin;
 
 public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     public static final String             RAWTOKEN    = "rawtoken";
@@ -130,14 +130,14 @@ public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             this.siteUrl = siteUrl;
         }
 
-        public boolean isSameOrigin() {
+        public boolean isSameOrigin() {// required for webinterface checking on this field
             return true;
         }
 
         public void setSameOrigin(boolean sameOrigin) {
         }
 
-        public boolean isBoundToDomain() {
+        public boolean isBoundToDomain() {// required for webinterface checking on this field
             return true;
         }
 
@@ -251,14 +251,6 @@ public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     public String getType() {
         return AbstractRecaptchaV2.TYPE.NORMAL.name();
     };
-
-    public boolean isBoundToDomain() {
-        return true;
-    }
-
-    public boolean isSameOrigin() {
-        return true;
-    }
 
     public String getSiteUrl() {
         return null;
@@ -679,7 +671,7 @@ public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
                 html = html.replace("%%%v3action%%%", JSonStorage.toString(v3Action));
             }
             html = html.replace("%%%unsupportedBrowser%%%", (isSafari || isEdge) ? "block" : "none");
-            if (isBoundToDomain()) {
+            if (true) {
                 html = html.replace("%%%display%%%", "none");
                 html = html.replace("%%%noExtensionHeader%%%", _GUI.T.extension_required_header());
                 html = html.replace("%%%noExtensionDescription%%%", _GUI.T.extension_required_description());
@@ -708,8 +700,8 @@ public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             html = html.replace("%%%session%%%", id);
             html = html.replace("%%%challengeId%%%", Long.toString(getId().getID()));
             html = html.replace("%%%namespace%%%", getHttpPath());
-            html = html.replace("%%%boundToDomain%%%", String.valueOf(isBoundToDomain()));
-            html = html.replace("%%%sameOrigin%%%", String.valueOf(isSameOrigin()));
+            html = html.replace("%%%boundToDomain%%%", String.valueOf(true));
+            html = html.replace("%%%sameOrigin%%%", String.valueOf(true));
             final String stoken = getSecureToken();
             if (StringUtils.isNotEmpty(stoken)) {
                 html = html.replace("%%%sToken%%%", stoken);
