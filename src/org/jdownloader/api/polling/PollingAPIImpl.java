@@ -10,6 +10,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.remoteapi.APIQuery;
+import org.appwork.remoteapi.RemoteAPIRequest;
 import org.jdownloader.api.captcha.CaptchaAPI;
 import org.jdownloader.api.captcha.CaptchaAPISolver;
 import org.jdownloader.api.jd.AggregatedNumbersAPIStorable;
@@ -22,7 +23,7 @@ public class PollingAPIImpl implements PollingAPI {
     private final LinkCollector      lc  = LinkCollector.getInstance();
 
     @Override
-    public List<PollingResultAPIStorable> poll(APIQuery queryParams) {
+    public List<PollingResultAPIStorable> poll(RemoteAPIRequest request, APIQuery queryParams) {
         final List<PollingResultAPIStorable> result = new ArrayList<PollingResultAPIStorable>();
         if (queryParams.containsKey("downloadProgress")) {
             result.add(getDownloadProgress(queryParams));
@@ -34,7 +35,7 @@ public class PollingAPIImpl implements PollingAPI {
             result.add(getLinkGrabberState());
         }
         if (queryParams.containsKey("captchasWaiting")) {
-            result.add(getCaptchasWaiting());
+            result.add(getCaptchasWaiting(request));
         }
         if (queryParams.containsKey("aggregatedNumbers")) {
             result.add(getAggregatedNumbers());
@@ -124,11 +125,11 @@ public class PollingAPIImpl implements PollingAPI {
 
     private CaptchaAPI captchaAPI = CaptchaAPISolver.getInstance();
 
-    private PollingResultAPIStorable getCaptchasWaiting() {
+    private PollingResultAPIStorable getCaptchasWaiting(RemoteAPIRequest request) {
         PollingResultAPIStorable prs = new PollingResultAPIStorable();
         prs.setEventName("captchasWaiting");
         org.jdownloader.myjdownloader.client.json.JsonMap eventData = new org.jdownloader.myjdownloader.client.json.JsonMap();
-        eventData.put("data", captchaAPI.list());
+        eventData.put("data", captchaAPI.list(request));
         prs.setEventData(eventData);
         return prs;
     }
