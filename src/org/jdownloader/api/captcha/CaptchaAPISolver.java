@@ -46,9 +46,9 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         return 120000;
     }
 
-    private CaptchaAPIEventPublisher                 eventPublisher;
-    private CaptchaMyJDownloaderRemoteSolverSettings config;
-    private CaptchaAPISolverEventSender              eventSender;
+    private final CaptchaAPIEventPublisher                 eventPublisher;
+    private final CaptchaMyJDownloaderRemoteSolverSettings config;
+    private final CaptchaAPISolverEventSender              eventSender;
 
     @Override
     protected boolean isChallengeSupported(Challenge<?> c) {
