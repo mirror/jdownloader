@@ -7,6 +7,10 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
+import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
+import jd.plugins.DownloadLink;
+
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
@@ -15,6 +19,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.api.myjdownloader.MyJDownloaderController;
+import org.jdownloader.api.myjdownloader.MyJDownloaderHttpConnection;
 import org.jdownloader.api.myjdownloader.MyJDownloaderRequestInterface;
 import org.jdownloader.captcha.event.ChallengeResponseListener;
 import org.jdownloader.captcha.v2.AbstractResponse;
@@ -28,10 +33,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
-
-import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
-import jd.plugins.DownloadLink;
+import org.jdownloader.myjdownloader.client.json.SessionInfoResponse;
 
 public class CaptchaAPISolver extends ChallengeSolver<Object> implements CaptchaAPI, ChallengeResponseListener {
     private static final CaptchaAPISolver INSTANCE = new CaptchaAPISolver();
@@ -100,14 +102,14 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         return eventPublisher;
     }
 
-    public List<CaptchaJob> list() {
+    public List<CaptchaJob> list(RemoteAPIRequest request) {
         final List<CaptchaJob> ret = new ArrayList<CaptchaJob>();
         if (isEnabled()) {
             for (final SolverJob<?> entry : listJobs()) {
                 if (!entry.isDone()) {
                     final Challenge<?> challenge = entry.getChallenge();
                     if (isChallengeSupported(challenge)) {
-                        final CaptchaJob captchaJob = getCaptchaJob(challenge.getId().getID());
+                        final CaptchaJob captchaJob = getCaptchaJob(request, challenge.getId().getID());
                         if (captchaJob != null) {
                             ret.add(captchaJob);
                         }
@@ -226,7 +228,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
     }
 
     @Override
-    public CaptchaJob getCaptchaJob(long id) {
+    public CaptchaJob getCaptchaJob(RemoteAPIRequest request, long id) {
         final SolverJob<?> entry = getJobByChallengeId(id);
         if (entry != null) {
             final CaptchaJob ret = new CaptchaJob();
@@ -238,8 +240,12 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
                 cls = cls.getSuperclass();
             }
             if (challenge instanceof HCaptchaChallenge) {
-                // TODO: webinterface workaround
-                ret.setType("RecaptchaV2Challenge");
+                final MyJDownloaderHttpConnection con = MyJDownloaderHttpConnection.getMyJDownloaderHttpConnection(request);
+                final SessionInfoResponse sessionInfo = con != null ? con.getSessionInfo() : null;
+                if (sessionInfo != null && StringUtils.startsWithCaseInsensitive(sessionInfo.getAppKey(), "myjd_webinterface")) {
+                    // workaround, required for Webinterface to show captcha popup
+                    ret.setType("RecaptchaV2Challenge");
+                }
             }
             ret.setID(challenge.getId().getID());
             ret.setHoster(challenge.getHost());

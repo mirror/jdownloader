@@ -4,11 +4,16 @@ import java.awt.Rectangle;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Locale;
+import java.util.Map;
+
+import jd.http.Browser;
+import jd.plugins.Plugin;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.exceptions.RemoteAPIException;
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
@@ -26,12 +31,8 @@ import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.gui.translate._GUI;
 
-import jd.http.Browser;
-import jd.plugins.Plugin;
-
 public class HCaptchaChallenge extends AbstractBrowserChallenge {
     public static final String             RAWTOKEN = "rawtoken";
-    public static final String             HCAPTCHA = "hcaptcha";
     private final String                   siteKey;
     private volatile BasicCaptchaChallenge basicChallenge;
     private final String                   siteDomain;
@@ -90,21 +91,21 @@ public class HCaptchaChallenge extends AbstractBrowserChallenge {
             this.siteUrl = siteUrl;
         }
 
-        public String getStoken() {
+        public String getStoken() { // required for webinterface checking on this field
             return null;
         }
 
         public void setStoken(String stoken) {
         }
 
-        public boolean isSameOrigin() {
+        public boolean isSameOrigin() { // required for webinterface checking on this field
             return true;
         }
 
         public void setSameOrigin(boolean sameOrigin) {
         }
 
-        public boolean isBoundToDomain() {
+        public boolean isBoundToDomain() { // required for webinterface checking on this field
             return true;
         }
 
@@ -163,7 +164,7 @@ public class HCaptchaChallenge extends AbstractBrowserChallenge {
     }
 
     public HCaptchaChallenge(final String siteKey, Plugin pluginForHost, Browser br, String siteDomain) {
-        super(HCAPTCHA, pluginForHost, br);
+        super(getChallengeType(), pluginForHost, br);
         this.siteKey = siteKey;
         this.siteDomain = siteDomain;
         if (!AbstractHCaptcha.isValidSiteKey(siteKey)) {
@@ -199,9 +200,9 @@ public class HCaptchaChallenge extends AbstractBrowserChallenge {
         }
     }
 
-    protected String getChallengeType() {
+    public static String getChallengeType() {
         String ret = null;
-        Class<?> cls = getClass();
+        Class<?> cls = HCaptchaChallenge.class;
         while (cls != null && StringUtils.isEmpty(ret)) {
             ret = cls.getSimpleName();
             cls = cls.getSuperclass();
@@ -234,11 +235,25 @@ public class HCaptchaChallenge extends AbstractBrowserChallenge {
             html = html.replace("%%%siteDomain%%%", getSiteDomain());
             html = html.replace("%%%sitekey%%%", getSiteKey());
             html = html.replace("%%%sitekeyType%%%", getType());
+            html = html.replace("%%%enterprise%%%", String.valueOf(false));
+            final Map<String, Object> v3Action = null;
+            if (v3Action == null) {
+                html = html.replace("%%%v3action%%%", "");
+            } else {
+                html = html.replace("%%%v3action%%%", JSonStorage.toString(v3Action));
+            }
             html = html.replace("%%%unsupportedBrowser%%%", (isSafari || isEdge) ? "block" : "none");
-            html = html.replace("%%%display%%%", "block");
-            html = html.replace("%%%noExtensionHeader%%%", _GUI.T.extension_required_header());
-            html = html.replace("%%%noExtensionDescription%%%", _GUI.T.extension_required_description());
-            html = html.replace("%%%noExtensionLinkTitle%%%", _GUI.T.extension_required_link_title());
+            if (true) {
+                html = html.replace("%%%display%%%", "none");
+                html = html.replace("%%%noExtensionHeader%%%", _GUI.T.extension_required_header());
+                html = html.replace("%%%noExtensionDescription%%%", _GUI.T.extension_required_description());
+                html = html.replace("%%%noExtensionLinkTitle%%%", _GUI.T.extension_required_link_title());
+            } else {
+                html = html.replace("%%%display%%%", "block");
+                html = html.replace("%%%noExtensionHeader%%%", _GUI.T.extension_required_header());
+                html = html.replace("%%%noExtensionDescription%%%", _GUI.T.extension_required_description());
+                html = html.replace("%%%noExtensionLinkTitle%%%", _GUI.T.extension_required_link_title());
+            }
             html = html.replace("%%%installExtensionHeader%%%", _GUI.T.install_extension_header());
             html = html.replace("%%%installExtensionDone%%%", _GUI.T.install_extension_done());
             html = html.replace("%%%installExtensionUsingOtherBrowser%%%", _GUI.T.install_extension_using_other_browser());
@@ -257,6 +272,17 @@ public class HCaptchaChallenge extends AbstractBrowserChallenge {
             html = html.replace("%%%session%%%", id);
             html = html.replace("%%%challengeId%%%", Long.toString(getId().getID()));
             html = html.replace("%%%namespace%%%", getHttpPath());
+            html = html.replace("%%%boundToDomain%%%", String.valueOf(true));// keep, might break older extension version
+            html = html.replace("%%%sameOrigin%%%", String.valueOf(true)); // keep, might break older extension version
+            // keep, might break older extension version
+            final String stoken = null;
+            if (StringUtils.isNotEmpty(stoken)) {
+                html = html.replace("%%%sToken%%%", stoken);
+                html = html.replace("%%%optionals%%%", "data-stoken=\"" + stoken + "\"");
+            } else {
+                html = html.replace("%%%sToken%%%", "");
+                html = html.replace("%%%optionals%%%", "");
+            }
             return html;
         } catch (IOException e) {
             throw new WTFException(e);

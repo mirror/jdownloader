@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.zip.GZIPOutputStream;
 
@@ -28,6 +30,7 @@ import org.appwork.remoteapi.SessionRemoteAPIRequest;
 import org.appwork.remoteapi.exceptions.ApiInterfaceNotAvailable;
 import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
 import org.appwork.remoteapi.exceptions.InternalApiException;
+import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -47,10 +50,13 @@ import org.appwork.utils.net.httpserver.requests.OptionsRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.jdownloader.api.RemoteAPIController;
+import org.jdownloader.api.myjdownloader.MyJDownloaderConnectThread.SessionInfoWrapper;
 import org.jdownloader.api.myjdownloader.api.MyJDownloaderAPI;
 import org.jdownloader.myjdownloader.RequestLineParser;
 import org.jdownloader.myjdownloader.client.SessionInfo;
 import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderException;
+import org.jdownloader.myjdownloader.client.exceptions.TokenException;
+import org.jdownloader.myjdownloader.client.json.SessionInfoResponse;
 
 public class MyJDownloaderHttpConnection extends HttpConnection {
     protected final static ArrayList<HttpRequestHandler>                    requestHandler = new ArrayList<HttpRequestHandler>();
@@ -90,6 +96,50 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         synchronized (CONNECTIONS) {
             return CONNECTIONS.get(connectToken);
         }
+    }
+
+    protected SessionInfoResponse getSessionInfo(final String queryToken) {
+        if (api != null && StringUtils.isNotEmpty(queryToken)) {
+            SessionInfoWrapper session = null;
+            try {
+                session = (SessionInfoWrapper) api.getSessionInfo();
+                if (SessionInfoWrapper.STATE.VALID.equals(session.getState())) {
+                    final SessionInfoResponse ret = api.getSessionInfo(queryToken);
+                    // TODO: keepAlive direct connection session to prevent session timeout
+                    // add new keepAlive method to server to keep alive specified session, keepAlive(final String keepAliveSession)
+                    return ret; // && ret.isAlive();
+                }
+            } catch (final TokenException e) {
+                getLogger().log(e);
+                if (session != null) {
+                    session.compareAndSetState(SessionInfoWrapper.STATE.VALID, SessionInfoWrapper.STATE.RECONNECT);
+                }
+            } catch (final MyJDownloaderException e) {
+                getLogger().log(e);
+            }
+        }
+        return null;
+    }
+
+    protected static final WeakHashMap<SessionInfoResponse, MinTimeWeakReference<SessionInfoResponse>> sessionInfos = new WeakHashMap<SessionInfoResponse, MinTimeWeakReference<SessionInfoResponse>>();
+
+    public SessionInfoResponse getSessionInfo() {
+        synchronized (sessionInfos) {
+            for (Entry<SessionInfoResponse, MinTimeWeakReference<SessionInfoResponse>> entry : sessionInfos.entrySet()) {
+                final SessionInfoResponse session = entry.getKey();
+                final MinTimeWeakReference<SessionInfoResponse> ref = entry.getValue();
+                if (StringUtils.equals(session.getSessionToken(), getRequestConnectToken()) && ref.get() == session) {
+                    return ref.get();
+                }
+            }
+        }
+        final SessionInfoResponse sessionInfo = getSessionInfo(getRequestConnectToken());
+        if (sessionInfo != null) {
+            synchronized (sessionInfos) {
+                sessionInfos.put(sessionInfo, new MinTimeWeakReference<SessionInfoResponse>(sessionInfo, 15 * 60 * 1000l, "SessionInfo:" + getRequestConnectToken()));
+            }
+        }
+        return sessionInfo;
     }
 
     public static MyJDownloaderHttpConnection getMyJDownloaderHttpConnection(RemoteAPIRequest request) {

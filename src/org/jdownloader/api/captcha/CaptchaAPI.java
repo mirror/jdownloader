@@ -2,6 +2,8 @@ package org.jdownloader.api.captcha;
 
 import java.util.List;
 
+import jd.controlling.captcha.SkipRequest;
+
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.RemoteAPIRequest;
@@ -11,8 +13,6 @@ import org.appwork.remoteapi.annotations.ApiDoc;
 import org.appwork.remoteapi.annotations.ApiNamespace;
 import org.appwork.remoteapi.exceptions.APIError;
 import org.appwork.remoteapi.exceptions.InternalApiException;
-
-import jd.controlling.captcha.SkipRequest;
 
 @ApiNamespace("captcha")
 public interface CaptchaAPI extends RemoteAPIInterface {
@@ -38,7 +38,8 @@ public interface CaptchaAPI extends RemoteAPIInterface {
     }
 
     @ApiDoc("returns a list of all available captcha jobs")
-    public List<CaptchaJob> list();
+    @APIParameterNames({ "request" })
+    public List<CaptchaJob> list(RemoteAPIRequest request);
 
     @ApiDoc("Returns Captcha Image as Base64 encoded data url")
     @APIParameterNames({ "request", "response", "id" })
@@ -49,8 +50,8 @@ public interface CaptchaAPI extends RemoteAPIInterface {
     public void get(RemoteAPIRequest request, final RemoteAPIResponse response, final long id, String format) throws InternalApiException, InvalidCaptchaIDException;
 
     @ApiDoc("Returns CaptchaJob Object for the given id")
-    @APIParameterNames({ "id" })
-    public CaptchaJob getCaptchaJob(final long id) throws InvalidCaptchaIDException;
+    @APIParameterNames({ "request", "id" })
+    public CaptchaJob getCaptchaJob(RemoteAPIRequest request, final long id) throws InvalidCaptchaIDException;
 
     @APIParameterNames({ "id" })
     public long keepAlive(final long id);
