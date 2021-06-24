@@ -5,13 +5,11 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Locale;
 
-import jd.http.Browser;
-import jd.plugins.Plugin;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.exceptions.RemoteAPIException;
+import org.appwork.storage.Storable;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.HTTPHeader;
@@ -21,11 +19,15 @@ import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
+import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
 import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
 import org.jdownloader.captcha.v2.solver.browser.BrowserReference;
 import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.gui.translate._GUI;
+
+import jd.http.Browser;
+import jd.plugins.Plugin;
 
 public class HCaptchaChallenge extends AbstractBrowserChallenge {
     public static final String             RAWTOKEN = "rawtoken";
@@ -42,24 +44,112 @@ public class HCaptchaChallenge extends AbstractBrowserChallenge {
         return AbstractHCaptcha.TYPE.NORMAL.name();
     };
 
-    @Override
-    public AbstractResponse<String> parseAPIAnswer(String result, String resultFormat, ChallengeSolver<?> solver) {
-        if (hasBasicCaptchaChallenge()) {
-            final BasicCaptchaChallenge basic = createBasicCaptchaChallenge(false);
-            if (basic != null) {
-                return basic.parseAPIAnswer(result, resultFormat, solver);
+    public static class HCaptchaAPIStorable implements Storable {
+        public HCaptchaAPIStorable() {
+        }
+
+        private String type;
+
+        public String getType() {
+            if (type == null) {
+                return AbstractHCaptcha.TYPE.NORMAL.name();
+            } else {
+                return type;
             }
         }
-        return super.parseAPIAnswer(result, resultFormat, solver);
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public String getSiteKey() {
+            return siteKey;
+        }
+
+        public void setSiteKey(String siteKey) {
+            this.siteKey = siteKey;
+        }
+
+        public String getContextUrl() {
+            return contextUrl;
+        }
+
+        public void setContextUrl(String contextUrl) {
+            this.contextUrl = contextUrl;
+        }
+
+        private String siteKey;
+        private String contextUrl;
+        private String siteUrl;
+
+        public String getSiteUrl() {
+            return siteUrl;
+        }
+
+        public void setSiteUrl(String siteUrl) {
+            this.siteUrl = siteUrl;
+        }
+
+        public String getStoken() {
+            return null;
+        }
+
+        public void setStoken(String stoken) {
+        }
+
+        public boolean isSameOrigin() {
+            return true;
+        }
+
+        public void setSameOrigin(boolean sameOrigin) {
+        }
+
+        public boolean isBoundToDomain() {
+            return true;
+        }
+
+        public void setBoundToDomain(boolean boundToDomain) {
+        }
+    }
+
+    @Override
+    public AbstractResponse<String> parseAPIAnswer(String result, String resultFormat, ChallengeSolver<?> solver) {
+        if (RAWTOKEN.equals(resultFormat) || "extension".equals(resultFormat)) {
+            return new CaptchaResponse(this, solver, result, 100);
+        } else {
+            if (hasBasicCaptchaChallenge()) {
+                final BasicCaptchaChallenge basic = createBasicCaptchaChallenge(false);
+                if (basic != null) {
+                    return basic.parseAPIAnswer(result, resultFormat, solver);
+                }
+            }
+            return super.parseAPIAnswer(result, resultFormat, solver);
+        }
     }
 
     @Override
     public Object getAPIStorable(String format) throws Exception {
-        final BasicCaptchaChallenge basic = createBasicCaptchaChallenge(true);
-        if (basic != null) {
-            return basic.getAPIStorable(format);
+        if (RAWTOKEN.equals(format)) {
+            final HCaptchaAPIStorable ret = new HCaptchaAPIStorable();
+            ret.setSiteKey(getSiteKey());
+            final String siteUrl = getSiteUrl();
+            final String protocol;
+            if (StringUtils.startsWithCaseInsensitive("https://", siteUrl)) {
+                protocol = "https://";
+            } else {
+                protocol = "http://";
+            }
+            ret.setContextUrl(protocol + getSiteDomain());
+            ret.setSiteUrl(siteUrl);
+            ret.setType(getType());
+            return ret;
         } else {
-            return super.getAPIStorable(format);
+            final BasicCaptchaChallenge basic = createBasicCaptchaChallenge(true);
+            if (basic != null) {
+                return basic.getAPIStorable(format);
+            } else {
+                return super.getAPIStorable(format);
+            }
         }
     }
 
@@ -76,8 +166,8 @@ public class HCaptchaChallenge extends AbstractBrowserChallenge {
         super(HCAPTCHA, pluginForHost, br);
         this.siteKey = siteKey;
         this.siteDomain = siteDomain;
-        if (siteKey == null || !siteKey.matches("^[\\w-]+$")) {
-            throw new WTFException("Bad SiteKey");
+        if (!AbstractHCaptcha.isValidSiteKey(siteKey)) {
+            throw new WTFException("Bad SiteKey:" + siteKey);
         }
     }
 
@@ -109,6 +199,17 @@ public class HCaptchaChallenge extends AbstractBrowserChallenge {
         }
     }
 
+    protected String getChallengeType() {
+        String ret = null;
+        Class<?> cls = getClass();
+        while (cls != null && StringUtils.isEmpty(ret)) {
+            ret = cls.getSimpleName();
+            cls = cls.getSuperclass();
+        }
+        // must return HCaptchaChallenge
+        return ret;
+    }
+
     @Override
     public String getHTML(HttpRequest request, String id) {
         try {
@@ -117,7 +218,7 @@ public class HCaptchaChallenge extends AbstractBrowserChallenge {
             final boolean isEdge = userAgent != null && userAgent.toLowerCase(Locale.ENGLISH).matches(".*edge\\/.*");
             final URL url = HCaptchaChallenge.class.getResource("hcaptcha.html");
             String html = IO.readURLToString(url);
-            html = html.replace("%%%provider%%%", getCaptchaNameSpace());
+            html = html.replace("%%%challengeType%%%", getChallengeType());
             html = html.replace("%%%headTitle%%%", _GUI.T.recaptchav2_head_title());
             html = html.replace("%%%headDescription%%%", _GUI.T.recaptchav2_head_description());
             html = html.replace("%%%captchaHeader%%%", _GUI.T.recaptchav2_header());

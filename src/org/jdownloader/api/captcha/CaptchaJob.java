@@ -7,6 +7,16 @@ public class CaptchaJob implements Storable {
     private String hosterID;
     private long   linkID;
     private String type;
+    private String challengeType;
+
+    public String getChallengeType() {
+        return challengeType;
+    }
+
+    public void setChallengeType(String challengeType) {
+        this.challengeType = challengeType;
+    }
+
     private String captchaCategory;
     private String explain;
     private int    timeout   = -1;

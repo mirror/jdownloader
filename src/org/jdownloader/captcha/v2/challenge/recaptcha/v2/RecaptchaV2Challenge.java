@@ -10,10 +10,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Plugin;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -43,6 +39,10 @@ import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.gui.translate._GUI;
+
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Plugin;
 
 public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     public static final String             RAWTOKEN    = "rawtoken";
@@ -176,8 +176,6 @@ public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             ret.setContextUrl(protocol + getSiteDomain());
             ret.setSiteUrl(siteUrl);
             ret.setStoken(getSecureToken());
-            ret.setBoundToDomain(isBoundToDomain());
-            ret.setSameOrigin(isSameOrigin());
             final Map<String, Object> v3Action = getV3Action();
             if (v3Action != null) {
                 ret.setV3Action(JSonStorage.toString(v3Action));
@@ -638,6 +636,17 @@ public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         return js;
     }
 
+    protected String getChallengeType() {
+        String ret = null;
+        Class<?> cls = getClass();
+        while (cls != null && StringUtils.isEmpty(ret)) {
+            ret = cls.getSimpleName();
+            cls = cls.getSuperclass();
+        }
+        // must return RecaptchaV2Challenge
+        return ret;
+    }
+
     @Override
     public String getHTML(HttpRequest request, String id) {
         try {
@@ -646,7 +655,7 @@ public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             final boolean isEdge = userAgent != null && userAgent.toLowerCase(Locale.ENGLISH).matches(".*edge\\/.*");
             final URL url = RecaptchaV2Challenge.class.getResource("recaptcha.html");
             String html = IO.readURLToString(url);
-            html = html.replace("%%%provider%%%", getCaptchaNameSpace());
+            html = html.replace("%%%challengeType%%%", getChallengeType());
             html = html.replace("%%%headTitle%%%", _GUI.T.recaptchav2_head_title());
             html = html.replace("%%%headDescription%%%", _GUI.T.recaptchav2_head_description());
             html = html.replace("%%%captchaHeader%%%", _GUI.T.recaptchav2_header());
