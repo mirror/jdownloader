@@ -689,17 +689,22 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.info("Video seems to be offline");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String author = (String) video.get("md_author");
+            String author = (String) video.get("md_author");
+            if (!StringUtils.isEmpty(author)) {
+                author = Encoding.htmlDecode(author).trim();
+            }
             final long date = ((Number) video.get("date")).longValue();
             final SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd");
             final String dateFormatted = sd.format(date * 1000);
-            String title = (String) video.get("md_title");
-            if (!StringUtils.isEmpty(title)) {
-                title = Encoding.htmlDecode(title).trim();
-                if (!StringUtils.isEmpty(author) && !author.equalsIgnoreCase("DELETED")) {
-                    title = Encoding.htmlDecode(author).trim() + "_" + title + "_" + oid_and_id;
+            String titleToUse = null;
+            String titlePlain = (String) video.get("md_title");
+            if (!StringUtils.isEmpty(titlePlain)) {
+                titlePlain = Encoding.htmlDecode(titlePlain).trim();
+                titleToUse = titlePlain;
+                if (!StringUtils.isEmpty(author) && !author.equalsIgnoreCase("DELETED") && this.cfg.getBooleanProperty(VKontakteRuHoster.VIDEO_ADD_NAME_OF_UPLOADER_TO_FILENAME, VKontakteRuHoster.default_VIDEO_ADD_NAME_OF_UPLOADER_TO_FILENAME)) {
+                    titleToUse = author + "_" + titleToUse + "_" + oid_and_id;
                 } else {
-                    title = title + "_" + oid_and_id;
+                    titleToUse = titleToUse + "_" + oid_and_id;
                 }
             }
             /* Find needed information */
@@ -712,7 +717,7 @@ public class VKontakteRu extends PluginForDecrypt {
             if (cfg.getBooleanProperty(VKontakteRuHoster.VKVIDEO_USEIDASPACKAGENAME, VKontakteRuHoster.default_VKVIDEO_USEIDASPACKAGENAME)) {
                 fp.setName("video" + oid + "_" + id);
             } else {
-                fp.setName(title);
+                fp.setName(titleToUse);
             }
             final Map<String, String> selectedQualities = getSelectedVideoQualities(foundQualities, qualitySelectionMode, VKontakteRuHoster.getPreferredQualityString());
             if (selectedQualities.isEmpty()) {
@@ -730,7 +735,7 @@ public class VKontakteRu extends PluginForDecrypt {
                  * same URL pattern
                  */
                 final DownloadLink dl = new DownloadLink(plugin, null, this.getHost(), contentURL, true);
-                final String finalfilename = title + "_" + thisQuality + ".mp4";
+                final String finalfilename = titleToUse + "_" + thisQuality + ".mp4";
                 dl.setFinalFileName(finalfilename);
                 dl.setProperty("directlink", finallink);
                 dl.setProperty(VKontakteRuHoster.PROPERTY_VIDEO_SELECTED_QUALITY, thisQuality);
@@ -738,7 +743,8 @@ public class VKontakteRu extends PluginForDecrypt {
                 if (listID != null) {
                     dl.setProperty(VKontakteRuHoster.PROPERTY_VIDEO_LIST_ID, listID);
                 }
-                dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE, title);
+                dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE, titleToUse);
+                dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN, titlePlain);
                 dl.setProperty(VKontakteRuHoster.VIDEO_QUALITY_SELECTION_MODE, cfg.getIntegerProperty(VKontakteRuHoster.VIDEO_QUALITY_SELECTION_MODE, VKontakteRuHoster.default_VIDEO_QUALITY_SELECTION_MODE));
                 dl.setProperty(VKontakteRuHoster.PREFERRED_VIDEO_QUALITY, cfg.getIntegerProperty(VKontakteRuHoster.PREFERRED_VIDEO_QUALITY, VKontakteRuHoster.default_PREFERRED_VIDEO_QUALITY));
                 dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_DATE, dateFormatted);
@@ -757,7 +763,11 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     public static Map<String, Object> findVideoMap(final Browser br, final String videoid) throws Exception {
-        final String json = br.getRegex("ajax\\.preload\\('al_video\\.php', \\{.*?\\}, (\\[.+)").getMatch(0);
+        String json = br.getRegex("ajax\\.preload\\('al_video\\.php', \\{.*?\\}, (\\[.+)").getMatch(0);
+        if (json == null) {
+            /* E.g. information has been loaded via ajax request e.g. as part of a wall post/playlist */
+            json = br.getRegex("^<\\!--(\\{.+\\})$").getMatch(0);
+        }
         return (Map<String, Object>) recursiveFindVideoMap(JavaScriptEngineFactory.jsonToJavaObject(json), videoid);
     }
 

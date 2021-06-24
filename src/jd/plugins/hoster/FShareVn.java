@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +24,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -48,13 +53,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/file/([0-9A-Z]+)" })
 public class FShareVn extends PluginForHost {
@@ -87,8 +85,8 @@ public class FShareVn extends PluginForHost {
         this.enablePremium("https://www.fshare.vn/payment/package/?type=vip");
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("mega.1280.com", "fshare.vn").replace("http://", "https://"));
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("mega.1280.com/", "fshare.vn/").replace("http://", "https://"));
         if (link.getSetLinkID() == null) {
             final String uid = getUID(link);
             if (uid != null) {
@@ -166,7 +164,7 @@ public class FShareVn extends PluginForHost {
         }
         String filesize = br.getRegex("<i class=\"fa fa-hdd-o\"></i>\\s*(.*?)\\s*</div>").getMatch(0);
         if (filesize == null) {
-            filesize = br.getRegex(">\\s*([\\d\\.]+ [K|M|G]B)\\s*<").getMatch(0);
+            filesize = br.getRegex("(?:>|\\|)\\s*([\\d\\.]+ [K|M|G]B)\\s*<").getMatch(0);
         }
         if (filename != null) {
             /* Server sometimes sends bad filenames */
@@ -281,17 +279,6 @@ public class FShareVn extends PluginForHost {
                     logger.info("Next download: " + nextDl);
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
                 }
-                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                    final Recaptcha rc = new Recaptcha(br, this);
-                    rc.parse();
-                    rc.load();
-                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                    rc.setCode(c);
-                    if (br.containsHTML("frm_download")) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
-                }
                 if (dllink == null) {
                     dllink = br.getRegex("window\\.location='(.*?)'").getMatch(0);
                     if (dllink == null) {
@@ -383,9 +370,9 @@ public class FShareVn extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, null);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, null);
     }
 
     @SuppressWarnings("deprecation")
@@ -912,16 +899,7 @@ public class FShareVn extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (acc.getType() == AccountType.FREE) {
-            /* free accounts also have captchas */
-            return true;
-        }
+    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
         return false;
     }
 
@@ -988,8 +966,8 @@ public class FShareVn extends PluginForHost {
         }
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        final String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        final String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
@@ -1001,7 +979,7 @@ public class FShareVn extends PluginForHost {
                     return dllink;
                 }
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
+                link.setProperty(property, Property.NULL);
                 return null;
             } finally {
                 try {

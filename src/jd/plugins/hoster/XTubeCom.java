@@ -16,6 +16,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -35,9 +41,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xtube.com" }, urls = { "https?://(?:www\\.)?xtube\\.com/(?:video-watch/(?:embedded/)?|(?:watch|play_re)\\.php\\?v=)([A-Za-z0-9_\\-]+)" })
 public class XTubeCom extends PluginForHost {
@@ -88,7 +91,7 @@ public class XTubeCom extends PluginForHost {
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         /* Offline links should also have nice filenames */
-        link.setName(new Regex(link.getPluginPatternMatcher(), "([A-Za-z0-9_\\-]+)$").getMatch(0));
+        link.setName(new Regex(link.getPluginPatternMatcher(), "([A-Za-z0-9_\\-]+)$").getMatch(0) + ".mp4");
         // this.setBrowserExclusive();
         /*
          * 2020-08-10: Not always needed. They're showing an "Adult warning" based on GEO location. E.g. French users will always see this
@@ -97,7 +100,9 @@ public class XTubeCom extends PluginForHost {
         br.setCookie(this.getHost(), "AGEGATEPASSED", "1");
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getURL().contains("msg=Invalid+Video+ID") || br.containsHTML(">Video not available<|img/removed_video|>This video has been removed from XTube") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getURL().contains("msg=Invalid+Video+ID") || br.containsHTML(">Video not available<|img/removed_video|>This video has been removed from XTube")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /*
@@ -128,21 +133,31 @@ public class XTubeCom extends PluginForHost {
         if (ownerName == null) {
             ownerName = "undefined";
         }
-        /* Find highest quality available! */
-        for (int i = 2000; i >= 100; i--) {
-            dllink = this.br.getRegex("\"?" + i + "\"?:\\s*\"(http[^<>\"]+)\"").getMatch(0);
-            if (dllink != null) {
-                dllink = dllink.replace("\\", "");
-                logger.info("Successfully found quality: " + i + "p");
-                break;
+        final String json = br.getRegex("playerConf\\s*=\\s*(\\{.*?\\}),playerWrapper=").getMatch(0);
+        try {
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
+            int maxQuality = -1;
+            final List<Map<String, Object>> qualities = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "mainRoll/mediaDefinition");
+            for (final Map<String, Object> quality : qualities) {
+                final String format = (String) quality.get("format");
+                if (!format.equalsIgnoreCase("mp4")) {
+                    /* Skip e.g. hls */
+                    continue;
+                }
+                final Object qualityO = quality.get("quality");
+                final int thisQuality;
+                if (qualityO instanceof String) {
+                    thisQuality = Integer.parseInt(qualityO.toString());
+                } else {
+                    thisQuality = ((Number) qualityO).intValue();
+                }
+                if (thisQuality > maxQuality) {
+                    maxQuality = thisQuality;
+                    this.dllink = (String) quality.get("videoUrl");
+                }
             }
-        }
-        String fileID = getFID(link);
-        if (fileID == null) {
-            fileID = br.getRegex("contentId\" value=\"([^\"]+)\"").getMatch(0);
-        }
-        if (fileID != null) {
-            link.setLinkID(this.getHost() + "://" + fileID);
+        } catch (final Throwable e) {
+            logger.log(e);
         }
         if (dllink == null) {
             /* Fallback: Try the old way. */
@@ -152,24 +167,27 @@ public class XTubeCom extends PluginForHost {
                     ownerName = contentOwnerId;
                 }
             }
+            /* This ID can differ from the ID of the URL the user has added! We need this internal ID!! */
+            final String fileID = br.getRegex("contentId\" value=\"([^\"]+)\"").getMatch(0);
             if (fileID == null) {
                 logger.warning("fileID is null");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final Browser brc = br.cloneBrowser();
+            /*
+             * Compared to the other handling, this will only return one quality which does not even necessarily have to be the highest
+             * possible so only use this as a fallback!
+             */
             brc.postPage("https://www.xtube.com/find_video.php", "user%5Fid=" + Encoding.urlEncode(ownerName) + "&clip%5Fid=&video%5Fid=" + Encoding.urlEncode(fileID));
             dllink = brc.getRegex("\\&filename=(http.*?)($|\r|\n| )").getMatch(0);
             if (dllink == null) {
                 dllink = brc.getRegex("\\&filename=(%2Fvideos.*?hash.+)").getMatch(0);
             }
         }
-        if (filename == null) {
-            /* This should never happen */
-            logger.warning("filename is null");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename).trim();
+            link.setFinalFileName(filename + ".mp4");
         }
-        filename = Encoding.htmlDecode(filename).trim();
-        link.setFinalFileName(filename + ".mp4");
         if (!StringUtils.isEmpty(dllink) && this.dllink.startsWith("http") && !isDownload) {
             try {
                 dllink = Encoding.htmlDecode(dllink);

@@ -96,15 +96,16 @@ public class SoundcloudCom extends PluginForHost {
     private final static String  SETS_ADD_POSITION_TO_FILENAME               = "SETS_ADD_POSITION_TO_FILENAME";
     private String               dllink                                      = null;
     private boolean              serverissue                                 = false;
-    private boolean              is_officially_downloadable                  = false;
-    private boolean              is_geo_blocked                              = false;
-    private boolean              is_only_preview_downloadable                = false;
+    private boolean              isOfficiallyDownloadable                    = false;
+    private boolean              isGeoBlocked                                = false;
+    private boolean              isOnlyOreviewDownloadable                   = false;
     /* DownloadLink Filename / Packagizer properties */
     public static final String   PROPERTY_setsposition                       = "setsposition";
     public static final String   PROPERTY_secret_token                       = "secret_token";
     public static final String   PROPERTY_playlist_id                        = "playlist_id";
     public static final String   PROPERTY_track_id                           = "track_id";
-    public static final String   PROPERTY_directurl                          = "";
+    public static final String   PROPERTY_url_username                       = "url_username";
+    public static final String   PROPERTY_directurl                          = "directurl";
     /* Account properties */
     private static final String  PROPERTY_ACCOUNT_oauthtoken                 = "oauthtoken";
     /* API base URLs */
@@ -216,35 +217,37 @@ public class SoundcloudCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, false);
+        final Account account = AccountController.getInstance().getValidAccount(this);
+        return requestFileInformation(link, account, false);
     }
 
-    @SuppressWarnings({ "deprecation", "unused" })
-    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+    @SuppressWarnings({ "unused" })
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         dllink = null;
         serverissue = false;
-        is_geo_blocked = false;
-        String secret_token = link.getStringProperty(PROPERTY_secret_token, null);
+        isGeoBlocked = false;
+        String secret_token = link.getStringProperty(PROPERTY_secret_token);
         prepBR(br);
-        final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa != null) {
-            login(br, aa, false);
+        if (account != null) {
+            login(br, account, false);
         }
-        String songid = link.getStringProperty(PROPERTY_track_id, null);
-        Map<String, Object> response = null;
+        final String songid = link.getStringProperty(PROPERTY_track_id);
         if (songid == null) {
-            /* This should never happen! */
-            br.getPage(link.getPluginPatternMatcher());
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            // this is poor way to determine the track id.
-            songid = br.getRegex("soundcloud://sounds:(\\d+)").getMatch(0);
-            if (songid == null) {
-                /* 99,99% chance that the current url is not a song --> Offline */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            /* 2021-06-24: TODO: Remove this old code */
+            // /* This should never happen! */
+            // br.getPage(link.getPluginPatternMatcher());
+            // if (br.getHttpConnection().getResponseCode() == 404) {
+            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // }
+            // // this is poor way to determine the track id.
+            // songid = br.getRegex("soundcloud://sounds:(\\d+)").getMatch(0);
+            // if (songid == null) {
+            // /* 99,99% chance that the current url is not a song --> Offline */
+            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // }
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        Map<String, Object> response = null;
         if (secret_token == null) {
             br.getPage(API_BASEv2 + "/tracks?urns=soundcloud%3Atracks%3A" + songid + "&client_id=" + getClientId(br) + "&app_version=" + SoundcloudCom.getAppVersion(br));
             if (br.getHttpConnection().getResponseCode() == 404) {
@@ -256,17 +259,23 @@ public class SoundcloudCom extends PluginForHost {
             }
             final List<Object> ressourcelist = JSonStorage.restoreFromString(br.toString(), TypeRef.LIST);
             response = (Map<String, Object>) ressourcelist.get(0);
-            final AvailableStatus status = checkStatusJson(this, link, response, true);
+            final AvailableStatus status = checkStatusJson(link, response);
             if (status.equals(AvailableStatus.FALSE)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            final int duration = ((Number) response.get("duration")).intValue();
+            final int durationFull = ((Number) response.get("full_duration")).intValue();
+            if (durationFull > duration) {
+                /* Typically previous will have a duration of 30000 --> 30 seconds */
+                this.isOnlyOreviewDownloadable = true;
+            }
             /* !is_geo_blocked = policy equals "ALLOW" (the usual case). */
-            is_geo_blocked = response.get("policy").equals("BLOCK");
+            isGeoBlocked = response.get("policy").equals("BLOCK");
         }
-        if (!is_geo_blocked && isDownload) {
+        if (!isGeoBlocked && isDownload) {
             /*
-             * Only do/try linkcheck if we know that the track is NOT geo-blocked. Attempting to get a downloadurl for GEO-blocked content
-             * will result in response 400.
+             * Only do/try linkcheck if we know that the track is NOT geo-blocked and if we're about to start downloading. Attempting to get
+             * a downloadurl for GEO-blocked content will result in response 400.
              */
             /* TODO: Remove all APIv1 requests */
             // Other handling for private links
@@ -289,7 +298,7 @@ public class SoundcloudCom extends PluginForHost {
                             querytracks.add("playlistSecretToken", secret_token);
                         }
                         br.getPage(API_BASEv2 + "/tracks?" + querytracks.toString());
-                        final List<Object> ressourcelist = JSonStorage.restoreFromString(br.toString(), TypeRef.LIST);
+                        final List<Object> ressourcelist = JSonStorage.restoreFromString(this.br.toString(), TypeRef.LIST);
                         dllink = getDirectlink(this, link, this.br, (Map<String, Object>) ressourcelist.get(0));
                     } else {
                         /* 2020-11-27: New: Song needs secret_token */
@@ -316,11 +325,11 @@ public class SoundcloudCom extends PluginForHost {
                 if (StringUtils.isEmpty(dllink)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                is_officially_downloadable = isREALYDownloadable(response);
+                isOfficiallyDownloadable = isREALYDownloadable(response);
             }
             if (!dllink.contains("/playlist.m3u8")) {
                 /* Only check filesize of http URLs */
-                checkDirectLink(link);
+                checkDirectLink(link, this.dllink);
             }
         }
         return AvailableStatus.TRUE;
@@ -338,22 +347,21 @@ public class SoundcloudCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        doFree(link);
+        handleDownload(link, null);
     }
 
-    private void doFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link, true);
-        if (is_geo_blocked) {
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link, null, true);
+        if (isGeoBlocked) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This content is GEO-blocked");
-        } else if ((is_only_preview_downloadable && !this.getPluginConfig().getBooleanProperty(ALLOW_PREVIEW_DOWNLOAD, defaultALLOW_PREVIEW_DOWNLOAD)) || (is_only_preview_downloadable && dllink == null)) {
+        } else if ((isOnlyOreviewDownloadable && !this.getPluginConfig().getBooleanProperty(ALLOW_PREVIEW_DOWNLOAD, defaultALLOW_PREVIEW_DOWNLOAD)) || (isOnlyOreviewDownloadable && dllink == null)) {
             /* Song is a pay-only song plus user does not want to download the (30 second) preview [and/or no downloadlink is available]. */
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This is paid content which only has a 30 second preview available!");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This is paid content which only has a 30 second preview available and you've disabled preview downloading!");
         } else if (serverissue) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server issue", 10 * 60 * 1000l);
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (!is_officially_downloadable && this.getPluginConfig().getBooleanProperty(ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES, defaultONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES)) {
+        } else if (!isOfficiallyDownloadable && this.getPluginConfig().getBooleanProperty(ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES, defaultONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, getPhrase("ERROR_NOT_DOWNLOADABLE"));
         }
         if (dllink.contains("/playlist.m3u8")) {
@@ -382,113 +390,83 @@ public class SoundcloudCom extends PluginForHost {
             } else if (dl.getConnection().getLongContentLength() == 0) {
                 // start of file extension correction.
                 // required because original-format implies the uploaded format might not be what the end user downloads.
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Not downloadable");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Not downloadable (zero length file)");
             }
-            String oldName = link.getFinalFileName();
-            if (oldName == null) {
-                oldName = link.getName();
-            }
-            String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
-            String newExtension = null;
-            if (serverFilename == null) {
-                logger.info("Server filename is null, keeping filename: " + oldName);
-            } else {
-                if (serverFilename.contains(".")) {
-                    newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
-                } else {
-                    logger.info("HTTP headers don't contain filename.extension information");
-                }
-            }
-            if (newExtension != null && !oldName.endsWith(newExtension)) {
-                String oldExtension = null;
-                if (oldName.contains(".")) {
-                    oldExtension = oldName.substring(oldName.lastIndexOf("."));
-                }
-                if (oldExtension != null && oldExtension.length() <= 5) {
-                    link.setFinalFileName(oldName.replace(oldExtension, newExtension));
-                } else {
-                    link.setFinalFileName(oldName + newExtension);
+            final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
+            if (link.getFinalFileName() != null && serverFilename != null) {
+                final String newExtension = Plugin.getFileNameExtensionFromString(serverFilename);
+                if (newExtension != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(link.getFinalFileName(), newExtension));
                 }
             }
             dl.startDownload();
         }
     }
 
-    public static AvailableStatus checkStatusJson(final Plugin plugin, DownloadLink parameter, Map<String, Object> source, boolean fromHostplugin) throws Exception {
-        if (source == null) {
+    public static AvailableStatus checkStatusJson(final DownloadLink link, final Map<String, Object> track) throws Exception {
+        if (track == null) {
             return AvailableStatus.FALSE;
         }
-        String filename = toString(source.get("title"));
+        final Map<String, Object> user = (Map<String, Object>) track.get("user");
+        final String user_permalink = (String) user.get("permalink");
+        final String username = (String) user.get("username");
+        final String filename = (String) track.get("title");
         if (StringUtils.isEmpty(filename)) {
-            if (fromHostplugin) {
-                parameter.getLinkStatus().setStatusText("The host plugin is broken!");
-            }
             return AvailableStatus.FALSE;
         }
-        filename = filename.trim();
-        filename = plugin.encodeUnicode(filename);
-        final String stream_url = toString(source.get("stream_url"));
+        final String stream_url = (String) track.get("stream_url");
         String secret_token = stream_url != null ? new Regex(stream_url, "secret_token=([A-Za-z0-9\\-_]+)").getMatch(0) : null;
         /* 2020-11-27: Do not yet do this in stable!! */
         if (secret_token == null) {
-            secret_token = (String) source.get("secret_token");
+            secret_token = (String) track.get("secret_token");
         }
-        final String id = toString(source.get("id"));
-        /* Only availavle in APIV1, at least for playlist-requests */
-        final String filesize = toString(source.get("original_content_size"));
+        final String id = track.get("id").toString();
         try {
-            final String description = toString(source.get("description"));
+            final String description = (String) track.get("description");
             if (!StringUtils.isEmpty(description)) {
-                parameter.setComment(description);
+                link.setComment(description);
             }
-        } catch (Throwable e) {
+        } catch (final Throwable ignore) {
         }
-        final String date = toString(source.get("created_at"));
-        String username = (String) JavaScriptEngineFactory.walkJson(source, "user/username");
-        String type = toString(source.get("original_format"));
-        if (StringUtils.isEmpty(type) || type.equals("raw")) {
-            type = "mp3";
-        }
-        final String url = toString(source.get("download_url"));
-        final boolean is_downloadable = isREALYDownloadable(source);
-        if (!StringUtils.isEmpty(url) && is_downloadable) {
-            /* we have original file downloadable */
-            if (!StringUtils.isEmpty(filesize)) {
-                parameter.setDownloadSize(Long.parseLong(filesize));
-            }
-            if (fromHostplugin) {
-                parameter.getLinkStatus().setStatusText("Original file is downloadable");
-            }
+        final String date = (String) track.get("created_at");
+        String type;
+        final String url = (String) track.get("download_url");
+        final boolean isDownloadable = isREALYDownloadable(track);
+        if (isDownloadable) {
+            /* We have original file downloadable */
+            /* 2021-06-24: Filetype could be either mp3 or wav (maybe even more?) */
+            type = null;
         } else {
-            type = "mp3";
-            if (fromHostplugin) {
-                parameter.getLinkStatus().setStatusText("Preview (Stream) is downloadable");
+            /* Streams = Always mp3 but let's check anyways */
+            type = (String) track.get("original_format");
+            if (type == null) {
+                type = "mp3";
+            }
+            /* Set estimated filesize as we know their average bitrate. */
+            final Number duration = (Number) track.get("duration");
+            if (duration != null && duration.longValue() > 0) {
+                link.setDownloadSize(128 / 8 * 1024 * duration.longValue() / 1000);
             }
         }
         if (!StringUtils.isEmpty(url)) {
-            parameter.setProperty(PROPERTY_directurl, url + "?client_id=" + getClientId(null));
+            link.setProperty(PROPERTY_directurl, url + "?client_id=" + getClientId(null));
         }
         if (!StringUtils.isEmpty(username)) {
-            username = Encoding.htmlDecode(username.trim());
-            parameter.setProperty("channel", username);
+            link.setProperty("channel", username);
         }
-        parameter.setProperty("plainfilename", filename);
-        parameter.setProperty("originaldate", date);
-        parameter.setProperty(PROPERTY_track_id, id);
-        parameter.setProperty("type", type);
-        if (!StringUtils.isEmpty(secret_token) && !fromHostplugin) {
-            parameter.setProperty(PROPERTY_secret_token, secret_token);
+        link.setProperty("plainfilename", filename);
+        link.setProperty("originaldate", date);
+        link.setProperty(PROPERTY_track_id, id);
+        if (type != null) {
+            link.setProperty("type", type);
         }
-        final String formattedfilename = getFormattedFilename(parameter);
-        parameter.setFinalFileName(formattedfilename);
+        if (!StringUtils.isEmpty(secret_token)) {
+            link.setProperty(PROPERTY_secret_token, secret_token);
+        }
+        link.setProperty(PROPERTY_url_username, user_permalink);
+        final String formattedfilename = getFormattedFilename(link);
+        link.setFinalFileName(formattedfilename);
         return AvailableStatus.TRUE;
-    }
-
-    private static String toString(Object object) {
-        if (object == null) {
-            return null;
-        }
-        return object.toString();
     }
 
     @Override
@@ -501,9 +479,9 @@ public class SoundcloudCom extends PluginForHost {
     public static final String TYPE_API_DOWNLOAD = "https?://api\\.soundcloud\\.com/tracks/\\d+/download";
     public static final String TYPE_API_TOKEN    = "https?://api\\.soundcloud\\.com/tracks/\\d+/stream\\?secret_token=[A-Za-z0-9\\-_]+";
 
-    public static boolean isREALYDownloadable(final Map<String, Object> json) {
-        final boolean downloadable = ((Boolean) json.get("downloadable")).booleanValue();
-        final Object has_downloads_left_o = json.get("has_downloads_left");
+    public static boolean isREALYDownloadable(final Map<String, Object> track) {
+        final boolean downloadable = ((Boolean) track.get("downloadable")).booleanValue();
+        final Object has_downloads_left_o = track.get("has_downloads_left");
         final boolean is_definitly_downloadable;
         if (has_downloads_left_o != null && has_downloads_left_o instanceof Boolean) {
             /* 2016-12-14: 'has_downloads_left' Object is not always given */
@@ -525,7 +503,7 @@ public class SoundcloudCom extends PluginForHost {
             // if (json == null) {
             // json = JSonStorage.restoreFromString(browser.toString(), TypeRef.HASHMAP);
             // }
-            final boolean is_downloadable = isREALYDownloadable(json);
+            final boolean isDownloadable = isREALYDownloadable(json);
             String track_id = link.getStringProperty(SoundcloudCom.PROPERTY_track_id);
             if (track_id == null) {
                 track_id = (String) json.get("id");
@@ -540,7 +518,7 @@ public class SoundcloudCom extends PluginForHost {
                 /* Untested for video downloads */
                 basicQuery.append("secret_token", secret_token, true);
             }
-            if (is_downloadable) {
+            if (isDownloadable) {
                 /* Track is officially downloadable (download version = highest quality) */
                 /* Do not use this anymore --> It will return the same we're doing here but as a v1 request URL! */
                 // finallink = toString(json.get("download_url"));
@@ -585,11 +563,11 @@ public class SoundcloudCom extends PluginForHost {
         return null;
     }
 
-    private void checkDirectLink(final DownloadLink link) throws Exception {
+    private void checkDirectLink(final DownloadLink link, final String directurl) throws Exception {
         URLConnectionAdapter con = null;
         try {
             final Browser br2 = br.cloneBrowser();
-            con = br2.openGetConnection(dllink);
+            con = br2.openGetConnection(directurl);
             if (con.getResponseCode() == 401) {
                 link.setProperty(PROPERTY_directurl, Property.NULL);
                 serverissue = true;
@@ -600,8 +578,10 @@ public class SoundcloudCom extends PluginForHost {
                 serverissue = true;
                 return;
             }
-            link.setDownloadSize(con.getCompleteContentLength());
-            link.setProperty(PROPERTY_directurl, dllink);
+            if (con.getCompleteContentLength() > 0) {
+                link.setDownloadSize(con.getCompleteContentLength());
+            }
+            link.setProperty(PROPERTY_directurl, directurl);
         } finally {
             try {
                 con.disconnect();
@@ -821,13 +801,12 @@ public class SoundcloudCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        login(br, account, false);
-        doFree(link);
+        handleDownload(link, account);
     }
 
-    public static String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
-        final String url_username = downloadLink.getStringProperty("plain_url_username", null);
-        String songTitle = downloadLink.getStringProperty("plainfilename", null);
+    public static String getFormattedFilename(final DownloadLink link) throws ParseException {
+        final String url_username = link.getStringProperty(PROPERTY_url_username);
+        String songTitle = link.getStringProperty("plainfilename");
         final SubConfiguration cfg = SubConfiguration.getConfig("soundcloud.com");
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_2, defaultCustomFilename);
         if (formattedFilename == null || formattedFilename.equals("")) {
@@ -836,15 +815,15 @@ public class SoundcloudCom extends PluginForHost {
         if (!formattedFilename.contains("*songtitle*") || !formattedFilename.contains("*ext*")) {
             formattedFilename = defaultCustomFilename;
         }
-        String ext = downloadLink.getStringProperty("type", null);
+        String ext = link.getStringProperty("type", null);
         if (ext != null) {
             ext = "." + ext;
         } else {
             ext = ".mp3";
         }
-        String date = downloadLink.getStringProperty("originaldate", null);
-        final String channelName = downloadLink.getStringProperty("channel", null);
-        final String track_id = downloadLink.getStringProperty(PROPERTY_track_id, null);
+        String date = link.getStringProperty("originaldate", null);
+        final String channelName = link.getStringProperty("channel", null);
+        final String track_id = link.getStringProperty(PROPERTY_track_id, null);
         String formattedDate = null;
         if (date != null && formattedFilename.contains("*date*")) {
             // 2011-08-10T22:50:49Z
@@ -890,7 +869,7 @@ public class SoundcloudCom extends PluginForHost {
         formattedFilename = formattedFilename.replace("*ext*", ext);
         // Insert filename at the end to prevent errors with tags
         formattedFilename = formattedFilename.replace("*songtitle*", songTitle);
-        final String setsposition = downloadLink.getStringProperty(PROPERTY_setsposition, null);
+        final String setsposition = link.getStringProperty(PROPERTY_setsposition, null);
         if (cfg.getBooleanProperty(SETS_ADD_POSITION_TO_FILENAME, false) && setsposition != null) {
             formattedFilename = setsposition + formattedFilename;
         }
@@ -1021,11 +1000,10 @@ public class SoundcloudCom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        /* 2020-04-01: Captchas are never required */
+    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
         return false;
     }
 }
