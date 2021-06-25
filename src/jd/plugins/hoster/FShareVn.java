@@ -408,6 +408,12 @@ public class FShareVn extends PluginForHost {
                 }
                 if (br.containsHTML(SERVERERROR)) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+                } else if (br.containsHTML(">\\s*Quý khách đã vượt quá số lượt tải trong ngày")) {
+                    /*
+                     * Reached daily downloadlimit: <p class="content">Quý khách đã vượt quá số lượt tải trong ngày. Vui lòng đăng ký hoặc
+                     * đăng nhập để nhận thêm lượt tải và nhiều ưu đãi khác </p>
+                     */
+                    throw new AccountUnavailableException("Daily downloadlimit reached", 5 * 60 * 1000l);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
