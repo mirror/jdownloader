@@ -4,6 +4,7 @@ import java.awt.Rectangle;
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
@@ -236,15 +237,34 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
 
     protected String lastRequestString = null;
 
+    public static int getHighestBrowserExtensionVersion() {
+        return HIGHEST_BROWSER_EXTENSION_VERSION.get();
+    }
+
+    private final static AtomicInteger HIGHEST_BROWSER_EXTENSION_VERSION = new AtomicInteger(-1);
+
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.appwork.utils.net.httpserver.handler.HttpRequestHandler#onGetRequest(org.appwork.utils.net.httpserver.requests.GetRequest,
      * org.appwork.utils.net.httpserver.responses.HttpResponse)
      */
     @Override
     public boolean onGetRequest(GetRequest request, HttpResponse response) throws BasicRemoteAPIException {
         try {
+            final String XMyjdAppkey = request.getRequestHeaders().getValue("X-Myjd-Appkey");
+            if (XMyjdAppkey != null) {
+                final String version[] = new Regex(XMyjdAppkey, "(\\d+)(\\.|$)").getColumn(0);
+                if (version != null && version.length == 3) {
+                    int ver = Integer.parseInt(version[0]) * 10000;
+                    ver += Integer.parseInt(version[1]) * 100;
+                    ver += Integer.parseInt(version[2]);
+                    int highest = HIGHEST_BROWSER_EXTENSION_VERSION.get();
+                    if (ver > highest) {
+                        HIGHEST_BROWSER_EXTENSION_VERSION.compareAndSet(highest, ver);
+                    }
+                }
+            }
             synchronized (BrowserReference.this) {
                 final String requestString = request.getRemoteAddress() + "\r\n" + request.getRequestedURL() + "\r\n" + request.getRequestHeaders();
                 if (!StringUtils.equals(lastRequestString, requestString)) {

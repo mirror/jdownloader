@@ -24,6 +24,7 @@ import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByPackage;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
 import org.jdownloader.captcha.v2.CaptchaHosterHelperInterface;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
+import org.jdownloader.captcha.v2.solver.browser.BrowserReference;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
@@ -44,7 +45,14 @@ public class CaptchaHelperHostPluginHCaptcha extends AbstractHCaptcha<PluginForH
     public String getToken() throws PluginException, InterruptedException {
         logger.info("SiteDomain:" + getSiteDomain() + "|SiteKey:" + getSiteKey());
         if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unsupported captcha type 'hcaptcha'");
+            final int browserExtension = BrowserReference.getHighestBrowserExtensionVersion();
+            if (browserExtension > 0) {
+                if (browserExtension < 30320) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unsupported captcha type 'hcaptcha'! Outdated BrowserExtension:" + browserExtension);
+                }
+            } else {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unsupported captcha type 'hcaptcha'!");
+            }
         }
         runDdosPrevention();
         if (Thread.currentThread() instanceof LinkCrawlerThread) {
