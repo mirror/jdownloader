@@ -17,6 +17,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -28,10 +31,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect-mylinks.com" }, urls = { "https?://(?:www\\.)?protect\\-mylinks\\.com/(?:decrypt|f)\\?i=[a-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect-mylinks.com" }, urls = { "https?://(?:www\\.)?protect\\-mylinks\\.com/(?:decrypt(?:\\.php)|f)\\?i=[a-z0-9]+" })
 public class ProtectMylinksCom extends antiDDoSForDecrypt {
     public ProtectMylinksCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,7 +43,7 @@ public class ProtectMylinksCom extends antiDDoSForDecrypt {
         br.setFollowRedirects(true);
         String fpName = null;
         getPage(parameter);
-        if (parameter.matches(".+/decrypt\\?i=.+")) {
+        if (parameter.matches("https?://[^/]+/decrypt.+")) {
             /* Multiple links + captcha */
             if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("alert alert-danger text-center")) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
@@ -57,10 +57,10 @@ public class ProtectMylinksCom extends antiDDoSForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            int index = 0;
             for (final String singleLink : links) {
-                if (this.isAbort()) {
-                    return decryptedLinks;
-                }
+                index += 1;
+                logger.info("Working on item " + index + "/" + links.length);
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(false);
                 getPage(br2, singleLink);
@@ -68,7 +68,12 @@ public class ProtectMylinksCom extends antiDDoSForDecrypt {
                 if (finallink == null || finallink.contains(this.getHost() + "/")) {
                     continue;
                 }
-                decryptedLinks.add(createDownloadlink(finallink));
+                final DownloadLink dl = createDownloadlink(finallink);
+                decryptedLinks.add(dl);
+                distribute(dl);
+                if (this.isAbort()) {
+                    break;
+                }
             }
         } else {
             /* Single link */
