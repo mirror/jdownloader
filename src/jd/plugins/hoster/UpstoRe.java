@@ -27,6 +27,12 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -46,11 +52,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upstore.net", "upsto.re" }, urls = { "https?://(www\\.)?(upsto\\.re|upstore\\.net)/[A-Za-z0-9]+", "ejnz905rj5o0jt69pgj50ujz0zhDELETE_MEew7th59vcgzh59prnrjhzj0" })
 public class UpstoRe extends antiDDoSForHost {
@@ -185,19 +186,15 @@ public class UpstoRe extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
                 }
             }
-            // USE FORMS !!!!
             // captcha form
-            final Form captcha = br.getFormBySubmitvalue("Get+download+link");
+            final Form captchaForm = br.getFormBySubmitvalue("Get+download+link");
             // Waittime can be skipped
             final long timeBefore = System.currentTimeMillis();
+            final String waittimeStr = br.getRegex("var sec = (\\d+)").getMatch(0);
+            int wait = Integer.parseInt(waittimeStr);
             if (br.containsHTML("<div id=\"(\\w+)\".+grecaptcha\\.render\\(\\s*'\\1',")) {
                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                int wait = 60;
-                String waittime = br.getRegex("var sec = (\\d+)").getMatch(0);
-                if (waittime != null) {
-                    wait = Integer.parseInt(waittime);
-                }
-                int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+                final int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
                 wait -= passedTime;
                 if (wait > 0) {
                     sleep(wait * 1000l, link);
@@ -205,14 +202,28 @@ public class UpstoRe extends antiDDoSForHost {
                 // final String kpw = br.getRegex("\\(\\{'type':'hidden','name':'(\\w+)'\\}\\).val\\(window\\.antispam").getMatch(0);
                 // some javascript crapola
                 // final String antispam = Encoding.urlEncode(getSoup());
-                captcha.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                captcha.put("antispam", "spam");
-                captcha.put("kpw", "spam");
-                submitForm(captcha);
-                if (br.containsHTML("limit for today|several files recently")) {
-                    setDownloadStarted(link, 0);
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
+                captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                captchaForm.put("antispam", "spam");
+                captchaForm.put("kpw", "spam");
+                submitForm(captchaForm);
+            } else if (containsHCaptcha(this.br)) {
+                /* 2021-06-25 */
+                final CaptchaHelperHostPluginHCaptcha hCaptcha = new CaptchaHelperHostPluginHCaptcha(this, br);
+                final String captchaResponse = hCaptcha.getToken();
+                final int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+                wait -= passedTime;
+                if (wait > 0) {
+                    sleep(wait * 1000l, link);
                 }
+                captchaForm.put("g-recaptcha-response", Encoding.urlEncode(captchaResponse));
+                captchaForm.put("h-captcha-response", Encoding.urlEncode(captchaResponse));
+                submitForm(captchaForm);
+            } else {
+                logger.warning("No captchaForm present at all");
+            }
+            if (br.containsHTML("limit for today|several files recently")) {
+                setDownloadStarted(link, 0);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
             }
             dllink = br.getRegex("<div style=\"margin: 10px auto 20px\" class=\"center\">\\s*<a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
@@ -283,10 +294,6 @@ public class UpstoRe extends antiDDoSForHost {
         // Same server error (displayed differently) also exists for premium users
         if (br.containsHTML(">Server with file not found<")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Server with file not found'", 60 * 60 * 1000l);
-        }
-        /* 2021-01-06 */
-        if (br.containsHTML("hcaptcha\\.com")) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unsupported captcha type hcaptcha", 3 * 60 * 60 * 1000l);
         }
     }
 
