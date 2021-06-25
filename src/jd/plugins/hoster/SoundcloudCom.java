@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -78,38 +79,34 @@ public class SoundcloudCom extends PluginForHost {
      * Last clientids (old to new): 2t9loNQH90kzJcsFCODdigxfp325aq4z, b45b1aa10f1ac2941910a7f0d10f8e28 fDoItMDbsbZz8dY16ZzARCZmzgHBPotA
      * 3904229f42df3999df223f6ebf39a8fe
      */
-    public final static String   CLIENTID_8TRACKS                            = "3904229f42df3999df223f6ebf39a8fe";
+    public final static String   CLIENTID_8TRACKS              = "3904229f42df3999df223f6ebf39a8fe";
     /* Another way to get final links: http://api.soundcloud.com/tracks/11111xxx_test_track_ID1111111/streams?format=json&consumer_key= */
     // public final static String CONSUMER_KEY_MYCLOUDPLAYERS_COM = "PtMyqifCQMKLqwP0A6YQ";
     /* json: media/encodings */
-    public static final String[] stream_qualities                            = { "stream_url", "http_mp3_128_url", "hls_mp3_128_url" };
+    public static final String[] stream_qualities              = { "stream_url", "http_mp3_128_url", "hls_mp3_128_url" };
     // public static final String[] streamtypes = { "download", "stream", "streams" };
-    private final boolean        ENABLE_TYPE_PRIVATE                         = false;
-    private static final String  ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES = "ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES";
-    private static final String  ALLOW_PREVIEW_DOWNLOAD                      = "ALLOW_PREVIEW_DOWNLOAD";
-    private final static String  CUSTOM_DATE                                 = "CUSTOM_DATE";
-    private final static String  CUSTOM_FILENAME_2                           = "CUSTOM_FILENAME_2";
-    private static final String  GRAB_PURCHASE_URL                           = "GRAB_PURCHASE_URL";
-    private final String         GRAB500THUMB                                = "GRAB500THUMB";
-    private final String         GRABORIGINALTHUMB                           = "GRABORIGINALTHUMB";
-    private final String         CUSTOM_PACKAGENAME                          = "CUSTOM_PACKAGENAME";
-    private final static String  SETS_ADD_POSITION_TO_FILENAME               = "SETS_ADD_POSITION_TO_FILENAME";
-    private String               dllink                                      = null;
-    private boolean              serverissue                                 = false;
-    private boolean              isOfficiallyDownloadable                    = false;
-    private boolean              isGeoBlocked                                = false;
-    private boolean              isOnlyOreviewDownloadable                   = false;
+    private final boolean        ENABLE_TYPE_PRIVATE           = false;
+    private static final String  AUDIO_QUALITY_SELECTION_MODE  = "ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES";
+    private static final String  ALLOW_PREVIEW_DOWNLOAD        = "ALLOW_PREVIEW_DOWNLOAD";
+    private final static String  CUSTOM_DATE                   = "CUSTOM_DATE";
+    private final static String  CUSTOM_FILENAME_2             = "CUSTOM_FILENAME_2";
+    private static final String  GRAB_PURCHASE_URL             = "GRAB_PURCHASE_URL";
+    private final String         GRAB500THUMB                  = "GRAB500THUMB";
+    private final String         GRABORIGINALTHUMB             = "GRABORIGINALTHUMB";
+    private final String         CUSTOM_PACKAGENAME            = "CUSTOM_PACKAGENAME";
+    private final static String  SETS_ADD_POSITION_TO_FILENAME = "SETS_ADD_POSITION_TO_FILENAME";
+    private String               dllink                        = null;
     /* DownloadLink Filename / Packagizer properties */
-    public static final String   PROPERTY_setsposition                       = "setsposition";
-    public static final String   PROPERTY_secret_token                       = "secret_token";
-    public static final String   PROPERTY_playlist_id                        = "playlist_id";
-    public static final String   PROPERTY_track_id                           = "track_id";
-    public static final String   PROPERTY_url_username                       = "url_username";
-    public static final String   PROPERTY_directurl                          = "directurl";
+    public static final String   PROPERTY_setsposition         = "setsposition";
+    public static final String   PROPERTY_secret_token         = "secret_token";
+    public static final String   PROPERTY_playlist_id          = "playlist_id";
+    public static final String   PROPERTY_track_id             = "track_id";
+    public static final String   PROPERTY_url_username         = "url_username";
+    public static final String   PROPERTY_directurl            = "directurl";
     /* Account properties */
-    private static final String  PROPERTY_ACCOUNT_oauthtoken                 = "oauthtoken";
+    private static final String  PROPERTY_ACCOUNT_oauthtoken   = "oauthtoken";
     /* API base URLs */
-    public static final String   API_BASEv2                                  = "https://api-v2.soundcloud.com";
+    public static final String   API_BASEv2                    = "https://api-v2.soundcloud.com";
 
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("soundclouddecrypted", "soundcloud"));
@@ -224,8 +221,6 @@ public class SoundcloudCom extends PluginForHost {
     @SuppressWarnings({ "unused" })
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         dllink = null;
-        serverissue = false;
-        isGeoBlocked = false;
         String secret_token = link.getStringProperty(PROPERTY_secret_token);
         prepBR(br);
         if (account != null) {
@@ -247,6 +242,8 @@ public class SoundcloudCom extends PluginForHost {
             // }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        boolean isOnlyOreviewDownloadable = false;
+        boolean isOfficiallyDownloadable = false;
         Map<String, Object> response = null;
         if (secret_token == null) {
             br.getPage(API_BASEv2 + "/tracks?urns=soundcloud%3Atracks%3A" + songid + "&client_id=" + getClientId(br) + "&app_version=" + SoundcloudCom.getAppVersion(br));
@@ -254,6 +251,7 @@ public class SoundcloudCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.getHttpConnection().getResponseCode() == 401) {
                 // keys are incorrect
+                logger.warning("Error 401 --> Incorrect keys??");
                 resetThis();
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
@@ -267,12 +265,15 @@ public class SoundcloudCom extends PluginForHost {
             final int durationFull = ((Number) response.get("full_duration")).intValue();
             if (durationFull > duration) {
                 /* Typically previous will have a duration of 30000 --> 30 seconds */
-                this.isOnlyOreviewDownloadable = true;
+                isOnlyOreviewDownloadable = true;
             }
-            /* !is_geo_blocked = policy equals "ALLOW" (the usual case). */
-            isGeoBlocked = response.get("policy").equals("BLOCK");
+            /* "ALLOW" = all good */
+            if (response.get("policy").equals("BLOCK")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This content is GEO-blocked");
+            }
         }
-        if (!isGeoBlocked && isDownload) {
+        if (isDownload) {
+            /* TODO: Tidy up this part */
             /*
              * Only do/try linkcheck if we know that the track is NOT geo-blocked and if we're about to start downloading. Attempting to get
              * a downloadurl for GEO-blocked content will result in response 400.
@@ -308,13 +309,6 @@ public class SoundcloudCom extends PluginForHost {
                         // "&client_id=" + getClientId(br) + "&app_version=" + SoundcloudCom.getAppVersion(br));
                         dllink = getDirectlink(this, link, this.br, JSonStorage.restoreFromString(this.br.toString(), TypeRef.HASHMAP));
                     }
-                } else {
-                    /* 2020-03-17: TODO: Check if we still need this */
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    // br.getPage("https://api.soundcloud.com/i1/tracks/" + songid + "/streams?client_id=" + getClientId(br) +
-                    // "&app_version=" + SoundcloudCom.getAppVersion(br));
-                    // final List<Object> ressourcelist = JSonStorage.restoreFromString(br.toString(), TypeRef.LIST);
-                    // dllink = getDirectlink(this, link, this.br, (Map<String, Object>) ressourcelist.get(0));
                 }
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -329,7 +323,19 @@ public class SoundcloudCom extends PluginForHost {
             }
             if (!dllink.contains("/playlist.m3u8")) {
                 /* Only check filesize of http URLs */
-                checkDirectLink(link, this.dllink);
+                if (!checkDirectLink(link, this.dllink)) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server issue", 10 * 60 * 1000l);
+                }
+            }
+            final AudioQualitySelectionMode mode = getAudioQualitySelectionMode();
+            if ((isOnlyOreviewDownloadable && !this.getPluginConfig().getBooleanProperty(ALLOW_PREVIEW_DOWNLOAD, defaultALLOW_PREVIEW_DOWNLOAD)) || (isOnlyOreviewDownloadable && dllink == null)) {
+                /*
+                 * Song is a pay-only song plus user does not want to download the (30 second) preview [and/or no downloadlink is
+                 * available].
+                 */
+                throw new PluginException(LinkStatus.ERROR_FATAL, this.getPhrase("ERROR_PREVIEW_DOWNLOAD_DISABLED"));
+            } else if (!isOfficiallyDownloadable && mode == AudioQualitySelectionMode.ONLY_OFFICIAL_DOWNLOADS) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, getPhrase("ERROR_NOT_OFFICIALLY_DOWNLOADABLE"));
             }
         }
         return AvailableStatus.TRUE;
@@ -352,18 +358,6 @@ public class SoundcloudCom extends PluginForHost {
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, null, true);
-        if (isGeoBlocked) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This content is GEO-blocked");
-        } else if ((isOnlyOreviewDownloadable && !this.getPluginConfig().getBooleanProperty(ALLOW_PREVIEW_DOWNLOAD, defaultALLOW_PREVIEW_DOWNLOAD)) || (isOnlyOreviewDownloadable && dllink == null)) {
-            /* Song is a pay-only song plus user does not want to download the (30 second) preview [and/or no downloadlink is available]. */
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This is paid content which only has a 30 second preview available and you've disabled preview downloading!");
-        } else if (serverissue) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server issue", 10 * 60 * 1000l);
-        } else if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if (!isOfficiallyDownloadable && this.getPluginConfig().getBooleanProperty(ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES, defaultONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES)) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, getPhrase("ERROR_NOT_DOWNLOADABLE"));
-        }
         if (dllink.contains("/playlist.m3u8")) {
             checkFFmpeg(link, "Download a HLS Stream");
             dl = new HLSDownloader(link, br, dllink);
@@ -432,8 +426,8 @@ public class SoundcloudCom extends PluginForHost {
         String type;
         final String url = (String) track.get("download_url");
         final boolean isDownloadable = isREALYDownloadable(track);
-        if (isDownloadable) {
-            /* We have original file downloadable */
+        if (isDownloadable && userPrefersOfficialDownload()) {
+            /* Original file is downloadable and user wants to download original */
             /* 2021-06-24: Filetype could be either mp3 or wav (maybe even more?) */
             type = null;
         } else {
@@ -506,7 +500,7 @@ public class SoundcloudCom extends PluginForHost {
             final boolean isDownloadable = isREALYDownloadable(json);
             String track_id = link.getStringProperty(SoundcloudCom.PROPERTY_track_id);
             if (track_id == null) {
-                track_id = (String) json.get("id");
+                track_id = json.get("id").toString();
             }
             /* TODO: Add secret_token to this if available */
             String secret_token = (String) json.get("secret_token");
@@ -518,7 +512,7 @@ public class SoundcloudCom extends PluginForHost {
                 /* Untested for video downloads */
                 basicQuery.append("secret_token", secret_token, true);
             }
-            if (isDownloadable) {
+            if (isDownloadable && userPrefersOfficialDownload()) {
                 /* Track is officially downloadable (download version = highest quality) */
                 /* Do not use this anymore --> It will return the same we're doing here but as a v1 request URL! */
                 // finallink = toString(json.get("download_url"));
@@ -563,25 +557,23 @@ public class SoundcloudCom extends PluginForHost {
         return null;
     }
 
-    private void checkDirectLink(final DownloadLink link, final String directurl) throws Exception {
+    private boolean checkDirectLink(final DownloadLink link, final String directurl) throws Exception {
         URLConnectionAdapter con = null;
         try {
             final Browser br2 = br.cloneBrowser();
             con = br2.openGetConnection(directurl);
-            if (con.getResponseCode() == 401) {
-                link.setProperty(PROPERTY_directurl, Property.NULL);
-                serverissue = true;
-                return;
-            }
             if (!this.looksLikeDownloadableContent(con)) {
                 link.setProperty(PROPERTY_directurl, Property.NULL);
-                serverissue = true;
-                return;
+                return false;
+            } else if (con.getResponseCode() == 401) {
+                link.setProperty(PROPERTY_directurl, Property.NULL);
+                return false;
             }
             if (con.getCompleteContentLength() > 0) {
                 link.setDownloadSize(con.getCompleteContentLength());
             }
             link.setProperty(PROPERTY_directurl, directurl);
+            return true;
         } finally {
             try {
                 con.disconnect();
@@ -887,54 +879,60 @@ public class SoundcloudCom extends PluginForHost {
         return "JDownloader's soundcloud.com plugin helps downloading audiofiles. JDownloader provides settings for custom filenames.";
     }
 
-    private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("SETTING_GRAB_PURCHASE_URL", "Grab purchase URL?\r\n<html><b>The purchase-URL sometimes lead to external downloadlinks e.g. mediafire.com.</b></html>");
-                                                      put("SETTING_ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES", "Only download files which have a download button/are officially downloadable?\r\n<html><p style=\"color:#F62817\"><b>Warning: If you enable this, all soundcloud downloads without an official download possibility will get a red error state and will NOT be downloaded!</b></p></html>");
-                                                      put("SETTING_ALLOW_PREVIEW_DOWNLOAD", "Download 30 second preview if a track is pay-only? [Not recommended]");
-                                                      put("SETTING_GRAB500THUMB", "Grab 500x500 thumbnail (.jpg)?");
-                                                      put("SETTING_GRABORIGINALTHUMB", "Grab original thumbnail (.jpg)?");
-                                                      put("SETTING_CUSTOM_DATE", "Define custom date:");
-                                                      put("SETTING_CUSTOM_FILENAME_2", "Define custom filename:");
-                                                      put("SETTING_CUSTOM_PACKAGENAME", "Define custom packagename:");
-                                                      put("SETTING_LABEL_crawler", "Crawler settings:");
-                                                      put("SETTING_LABEL_hoster", "Host plugin settings:");
-                                                      put("SETTING_SETS_ADD_POSITION_TO_FILENAME", "Sets: Add position to the beginning of the filename e.g. 1.trackname.mp3?");
-                                                      put("SETTING_LABEL_fnames_top", "Customize filenames/packagenames:");
-                                                      put("SETTING_LABEL_customizefnames", "Customize the filenames:");
-                                                      put("SETTING_LABEL_customizefnames_2", "Customize the filename! Example: '*channelname*_*date*_*songtitle**ext*'");
-                                                      put("SETTING_LABEL_customizepackagenames", "Customize the packagename for playlists and 'soundcloud.com/user' links! Example: '*channelname* - *playlistname*':");
-                                                      put("SETTING_LABEL_tags_filename", "Explanation of the available tags:\r\n*url_username* = Username located in the soundcloud url which was added to jd\r\n*channelname* = name of the channel/uploader\r\n*date* = date when the link was posted - appears in the user-defined format above\r\n*songtitle* = name of the song without extension\r\n*linkid* = unique ID of the link - can be used to avoid duplicate filename for different links\r\n*ext* = the extension of the file, in this case usually '.mp3'");
-                                                      put("SETTING_LABEL_tags_packagename", "Explanation of the available tags:\r\n*url_username* = Username located in the soundcloud url which was added to jd\r\n*channelname* = name of the channel/uploader\r\n*playlistname* = name of the playlist (= username for 'soundcloud.com/user' links)\r\n*date* = date when the linklist was created - appears in the user-defined format above\r\n");
-                                                      put("SETTING_LABEL_advanced_settings", "Advanced settings (only change them if you know what you're doing)");
-                                                      put("ERROR_NOT_DOWNLOADABLE", "You disabled stream-downloads! This link is not officially downloadable!");
-                                                      put("SETS_USE_APIv1", "Sets: Prefer usage of APIv1?\r\nWarning: GEO-blocked items will not appear in the linkgrabber anymore!");
-                                                  }
-                                              };
-    private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-                                                  {
-                                                      put("SETTING_GRAB_PURCHASE_URL", "Kauflink einfügen?\r\n<html><b>Der Kauflink führt manchmal zu externen Downloadmöglichkeiten z.B. mediafire.com.</b></html>");
-                                                      put("SETTING_ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES", "Lade nur Links mit offizieller downloadmöglichkeit/Downloadbutton herunter??\r\n<html><p style=\"color:#F62817\"><b>Warnung: Falls du das aktivierst werden alle Soundcloud Links ohne offizielle Downloadmöglichkeit einen roten Fehlerstatus bekommen und NICHT heruntergeladen!</b></p></html>");
-                                                      put("SETTING_ALLOW_PREVIEW_DOWNLOAD", "Für Bezahltitel: Lade 30 Sekunden Ausschnitt herunter ?[Nicht ampfohlen!]");
-                                                      put("SETTING_GRAB500THUMB", "500x500 Thumbnail einfügen (.jpg)?");
-                                                      put("SETTING_GRABORIGINALTHUMB", "Thumbnail in Originalgröße einfügen (.jpg)?");
-                                                      put("SETTING_CUSTOM_DATE", "Lege das Datumsformat fest:");
-                                                      put("SETTING_CUSTOM_FILENAME_2", "Lege das Muster für deine eigenen Dateinamen fest:");
-                                                      put("SETTING_CUSTOM_PACKAGENAME", "Lege das Muster für Paketnamen fest:");
-                                                      put("SETTING_SETS_ADD_POSITION_TO_FILENAME", "Sets: Zeige Position am Anfang des Dateinames Beispiel z.B. 1.trackname.mp3?");
-                                                      put("SETTING_LABEL_crawler", "Crawler Einstellungen:");
-                                                      put("SETTING_LABEL_hoster", "Hoster Plugin Einstellungen:");
-                                                      put("SETTING_LABEL_fnames_top", "Lege eigene Datei-/Paketnamen fest:");
-                                                      put("SETTING_LABEL_customizefnames", "Lege eigene Dateinamen fest:");
-                                                      put("SETTING_LABEL_customizefnames_2", "Passe die Dateinamen an! Beispiel: '*channelname*_*date*_*songtitle**ext*'");
-                                                      put("SETTING_LABEL_customizepackagenames", "Lege das Muster für Paketnamen fest für Playlists und 'soundcloud.com/user' Links! Beispiel: '*channelname* - *playlistname*':");
-                                                      put("SETTING_LABEL_tags_filename", "Erklärung verfügbarer Tags:\r\n*url_username* = Benutzername, der in der hinzugefügten URL steht\r\n*channelname* = Name des Channels/Uploaders\r\n*date* = Datum an dem die Datei hochgeladen wurde - erscheint im benutzerdefinierten Format\r\n*songtitle* = Name des Songs ohne Endung\r\n*linkid* = Soundcloud-ID des links - Kann benutzt werden um Duplikate zu vermeiden\r\n*ext* = Dateiendung - normalerweise '.mp3'");
-                                                      put("SETTING_LABEL_tags_packagename", "Erklärung verfügbarer Tags:\r\n*url_username* = Benutzername, der in der hinzugefügten URL steht\r\n*channelname* = Name des Channels/Uploaders\r\n*playlistname* = Name der Playliste (= Benutzername bei 'soundcloud.com/user' Links)\r\n*date* = Datum an dem die Playliste hochgeladen wurde - erscheint im benutzerdefinierten Format\r\n");
-                                                      put("SETTING_LABEL_advanced_settings", "Erweiterte Einstellungen (verändere diese nur, wenn du weißt was du tust)");
-                                                      put("ERROR_NOT_DOWNLOADABLE", "Du hast stream-downloads deaktiviert! Dieser link ist nicht offiziell herunterladbar!");
-                                                      put("SETS_USE_APIv1", "Sets: Verwende APIv1?\r\nBedenke, GEO-gesperrte Einträge fehlen dann im Linksammler!");
-                                                  }
-                                              };
+    private static HashMap<String, String> phrasesEN = new HashMap<String, String>() {
+                                                         {
+                                                             put("SETTING_GRAB_PURCHASE_URL", "Grab purchase URL?\r\n<html><b>The purchase-URL sometimes lead to external downloadlinks e.g. mediafire.com.</b></html>");
+                                                             put("SETTING_AUDIO_QUALITY_SELECTION_MODE", "Audio quality selection mode");
+                                                             put("SETTING_AUDIO_QUALITY_SELECTION_MODE_BEST", "Best quality (prefer items with downloadbutton)");
+                                                             put("SETTING_AUDIO_QUALITY_SELECTION_MODE_STREAM", "Stream");
+                                                             put("SETTING_AUDIO_QUALITY_SELECTION_MODE_ONLY_OFFICIAL_DOWNLOADABLE", "Only official downloads (items with downloadbutton)");
+                                                             put("SETTING_ALLOW_PREVIEW_DOWNLOAD", "Download 30 second preview if a track is pay-only?");
+                                                             put("SETTING_GRAB500THUMB", "Grab 500x500 thumbnail (.jpg)?");
+                                                             put("SETTING_GRABORIGINALTHUMB", "Grab original thumbnail (.jpg)?");
+                                                             put("SETTING_CUSTOM_DATE", "Define custom date:");
+                                                             put("SETTING_CUSTOM_FILENAME_2", "Define custom filename:");
+                                                             put("SETTING_CUSTOM_PACKAGENAME", "Define custom packagename:");
+                                                             put("SETTING_LABEL_crawler", "Crawler settings:");
+                                                             put("SETTING_LABEL_hoster", "Host plugin settings:");
+                                                             put("SETTING_SETS_ADD_POSITION_TO_FILENAME", "Sets: Add position to the beginning of the filename e.g. 1.trackname.mp3?");
+                                                             put("SETTING_LABEL_fnames_top", "Customize filenames/packagenames:");
+                                                             put("SETTING_LABEL_customizefnames", "Customize the filenames:");
+                                                             put("SETTING_LABEL_customizefnames_2", "Customize the filename! Example: '*channelname*_*date*_*songtitle**ext*'");
+                                                             put("SETTING_LABEL_customizepackagenames", "Customize the packagename for playlists and 'soundcloud.com/user' links! Example: '*channelname* - *playlistname*':");
+                                                             put("SETTING_LABEL_tags_filename", "Explanation of the available tags:\r\n*url_username* = Username located in the soundcloud url which was added to jd\r\n*channelname* = name of the channel/uploader\r\n*date* = date when the link was posted - appears in the user-defined format above\r\n*songtitle* = name of the song without extension\r\n*linkid* = unique ID of the link - can be used to avoid duplicate filename for different links\r\n*ext* = the extension of the file, in this case usually '.mp3'");
+                                                             put("SETTING_LABEL_tags_packagename", "Explanation of the available tags:\r\n*url_username* = Username located in the soundcloud url which was added to jd\r\n*channelname* = name of the channel/uploader\r\n*playlistname* = name of the playlist (= username for 'soundcloud.com/user' links)\r\n*date* = date when the linklist was created - appears in the user-defined format above\r\n");
+                                                             put("SETTING_LABEL_advanced_settings", "Advanced settings (only change them if you know what you're doing)");
+                                                             put("ERROR_NOT_OFFICIALLY_DOWNLOADABLE", "You want to download only officially downloadable items! This link is not officially downloadable!");
+                                                             put("ERROR_PREVIEW_DOWNLOAD_DISABLED", "This is paid content which only has a 30 second preview available and download of previews is disabled in plugin settings!");
+                                                         }
+                                                     };
+    private static HashMap<String, String> phrasesDE = new HashMap<String, String>() {
+                                                         {
+                                                             put("SETTING_GRAB_PURCHASE_URL", "Kauflink einfügen?\r\n<html><b>Der Kauflink führt manchmal zu externen Downloadmöglichkeiten z.B. mediafire.com.</b></html>");
+                                                             put("SETTING_AUDIO_QUALITY_SELECTION_MODE", "Audioquailität Downloadmodus");
+                                                             put("SETTING_AUDIO_QUALITY_SELECTION_MODE_BEST", "Beste Qualität");
+                                                             put("SETTING_AUDIO_QUALITY_SELECTION_MODE_STREAM", "Stream");
+                                                             put("SETTING_AUDIO_QUALITY_SELECTION_MODE_ONLY_OFFICIAL_DOWNLOADABLE", "Nur offiziell herunterladbare Elemente");
+                                                             put("SETTING_ALLOW_PREVIEW_DOWNLOAD", "Für Bezahltitel: Lade 30 Sekunden Ausschnitt herunter?");
+                                                             put("SETTING_GRAB500THUMB", "500x500 Thumbnail einfügen (.jpg)?");
+                                                             put("SETTING_GRABORIGINALTHUMB", "Thumbnail in Originalgröße einfügen (.jpg)?");
+                                                             put("SETTING_CUSTOM_DATE", "Lege das Datumsformat fest:");
+                                                             put("SETTING_CUSTOM_FILENAME_2", "Lege das Muster für deine eigenen Dateinamen fest:");
+                                                             put("SETTING_CUSTOM_PACKAGENAME", "Lege das Muster für Paketnamen fest:");
+                                                             put("SETTING_SETS_ADD_POSITION_TO_FILENAME", "Sets: Zeige Position am Anfang des Dateinames Beispiel z.B. 1.trackname.mp3?");
+                                                             put("SETTING_LABEL_crawler", "Crawler Einstellungen:");
+                                                             put("SETTING_LABEL_hoster", "Hoster Plugin Einstellungen:");
+                                                             put("SETTING_LABEL_fnames_top", "Lege eigene Datei-/Paketnamen fest:");
+                                                             put("SETTING_LABEL_customizefnames", "Lege eigene Dateinamen fest:");
+                                                             put("SETTING_LABEL_customizefnames_2", "Passe die Dateinamen an! Beispiel: '*channelname*_*date*_*songtitle**ext*'");
+                                                             put("SETTING_LABEL_customizepackagenames", "Lege das Muster für Paketnamen fest für Playlists und 'soundcloud.com/user' Links! Beispiel: '*channelname* - *playlistname*':");
+                                                             put("SETTING_LABEL_tags_filename", "Erklärung verfügbarer Tags:\r\n*url_username* = Benutzername, der in der hinzugefügten URL steht\r\n*channelname* = Name des Channels/Uploaders\r\n*date* = Datum an dem die Datei hochgeladen wurde - erscheint im benutzerdefinierten Format\r\n*songtitle* = Name des Songs ohne Endung\r\n*linkid* = Soundcloud-ID des links - Kann benutzt werden um Duplikate zu vermeiden\r\n*ext* = Dateiendung - normalerweise '.mp3'");
+                                                             put("SETTING_LABEL_tags_packagename", "Erklärung verfügbarer Tags:\r\n*url_username* = Benutzername, der in der hinzugefügten URL steht\r\n*channelname* = Name des Channels/Uploaders\r\n*playlistname* = Name der Playliste (= Benutzername bei 'soundcloud.com/user' Links)\r\n*date* = Datum an dem die Playliste hochgeladen wurde - erscheint im benutzerdefinierten Format\r\n");
+                                                             put("SETTING_LABEL_advanced_settings", "Erweiterte Einstellungen (verändere diese nur, wenn du weißt was du tust)");
+                                                             put("ERROR_NOT_OFFICIALLY_DOWNLOADABLE", "Du hast eingestellt, dass nur Elemente mit Downloadbutton heruntergeladen werden sollen! Dieser link ist nicht offiziell herunterladbar!");
+                                                             put("ERROR_PREVIEW_DOWNLOAD_DISABLED", "Dieses Element ist nur als Vorschau verfügbar bzw. kaufbar und der Download solcher ist in den Plugineinstellungen deaktiviert!");
+                                                         }
+                                                     };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
@@ -943,24 +941,63 @@ public class SoundcloudCom extends PluginForHost {
      * @param key
      * @return
      */
-    private String getPhrase(String key) {
+    private static String getPhrase(String key) {
         if ("de".equals(System.getProperty("user.language")) && phrasesDE.containsKey(key)) {
             return phrasesDE.get(key);
         } else if (phrasesEN.containsKey(key)) {
             return phrasesEN.get(key);
+        } else {
+            return "Translation not found!";
         }
-        return "Translation not found!";
     }
 
-    private static final boolean defaultONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES = false;
-    private static final boolean defaultALLOW_PREVIEW_DOWNLOAD                      = false;
-    public static final boolean  defaultGRAB_PURCHASE_URL                           = false;
-    public static final boolean  defaultGRAB500THUMB                                = false;
-    public static final boolean  defaultGRABORIGINALTHUMB                           = false;
-    public static final boolean  defaultSETS_USE_APIv1                              = false;
-    private final static String  defaultCustomDate                                  = "dd.MM.yyyy";
-    private final static String  defaultCustomFilename                              = "*songtitle*_*linkid* - *channelname**ext*";
-    private final static String  defaultCustomPackagename                           = "*channelname* - *playlistname*";
+    public static enum AudioQualitySelectionMode implements LabelInterface {
+        BEST {
+            @Override
+            public String getLabel() {
+                return getPhrase("SETTING_AUDIO_QUALITY_SELECTION_MODE_BEST");
+            }
+        },
+        PREFER_STREAM {
+            @Override
+            public String getLabel() {
+                return getPhrase("SETTING_AUDIO_QUALITY_SELECTION_MODE_STREAM");
+            }
+        },
+        ONLY_OFFICIAL_DOWNLOADS {
+            @Override
+            public String getLabel() {
+                return getPhrase("SETTING_AUDIO_QUALITY_SELECTION_MODE_ONLY_OFFICIAL_DOWNLOADABLE");
+            }
+        };
+    }
+
+    private String[] getAudioQualitySelectionModeStrings() {
+        final AudioQualitySelectionMode[] qualitySelectionModes = AudioQualitySelectionMode.values();
+        final String[] ret = new String[qualitySelectionModes.length];
+        for (int i = 0; i < qualitySelectionModes.length; i++) {
+            ret[i] = qualitySelectionModes[i].getLabel();
+        }
+        return ret;
+    }
+
+    public static AudioQualitySelectionMode getAudioQualitySelectionMode() {
+        return AudioQualitySelectionMode.values()[SubConfiguration.getConfig("soundcloud.com").getIntegerProperty(AUDIO_QUALITY_SELECTION_MODE, defaultAUDIO_QUALITY_SELECTION_MODE)];
+    }
+
+    public static boolean userPrefersOfficialDownload() {
+        final AudioQualitySelectionMode mode = getAudioQualitySelectionMode();
+        return mode == AudioQualitySelectionMode.BEST || mode == AudioQualitySelectionMode.ONLY_OFFICIAL_DOWNLOADS;
+    }
+
+    private static final int     defaultAUDIO_QUALITY_SELECTION_MODE = 0;
+    private static final boolean defaultALLOW_PREVIEW_DOWNLOAD       = false;
+    public static final boolean  defaultGRAB_PURCHASE_URL            = false;
+    public static final boolean  defaultGRAB500THUMB                 = false;
+    public static final boolean  defaultGRABORIGINALTHUMB            = false;
+    private final static String  defaultCustomDate                   = "dd.MM.yyyy";
+    private final static String  defaultCustomFilename               = "*songtitle*_*linkid* - *channelname**ext*";
+    private final static String  defaultCustomPackagename            = "*channelname* - *playlistname*";
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPhrase("SETTING_LABEL_crawler")));
@@ -969,8 +1006,8 @@ public class SoundcloudCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRABORIGINALTHUMB, getPhrase("SETTING_GRABORIGINALTHUMB")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPhrase("SETTING_LABEL_hoster")));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES, getPhrase("SETTING_ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES")).setDefaultValue(defaultONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_PREVIEW_DOWNLOAD, getPhrase("SETTING_ALLOW_PREVIEW_DOWNLOAD")).setDefaultValue(defaultONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), AUDIO_QUALITY_SELECTION_MODE, getAudioQualitySelectionModeStrings(), getPhrase("SETTING_AUDIO_QUALITY_SELECTION_MODE")).setDefaultValue(defaultAUDIO_QUALITY_SELECTION_MODE));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_PREVIEW_DOWNLOAD, getPhrase("SETTING_ALLOW_PREVIEW_DOWNLOAD")).setDefaultValue(defaultALLOW_PREVIEW_DOWNLOAD));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPhrase("SETTING_LABEL_fnames_top")));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, getPhrase("SETTING_CUSTOM_DATE")).setDefaultValue(defaultCustomDate));
