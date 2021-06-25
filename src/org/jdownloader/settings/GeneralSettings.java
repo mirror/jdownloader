@@ -3,6 +3,8 @@ package org.jdownloader.settings;
 import java.io.File;
 import java.util.ArrayList;
 
+import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector;
+
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.AbstractCustomValueGetter;
@@ -22,24 +24,46 @@ import org.appwork.storage.config.defaults.AbstractDefaultFactory;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.os.hardware.HardwareType;
+import org.appwork.utils.os.hardware.HardwareTypeInterface;
 import org.jdownloader.controlling.domainrules.DomainRule;
 import org.jdownloader.gui.translate._GUI;
-
-import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector;
 
 public interface GeneralSettings extends ConfigInterface {
     class DefaultDownloadFolder extends AbstractDefaultFactory<String> {
         @Override
         public String getDefaultValue(KeyHandler<String> keyHandler) {
             if (CrossSystem.isLinux()) {
-                if (new File("/volume1/@appstore").exists()) {
-                    // synology
-                    final String defaultFolders[] = new String[] { "/volume1/@download", "/volume1/public" };
-                    for (String defaultFolder : defaultFolders) {
-                        if (new File(defaultFolder).isDirectory()) {
-                            return defaultFolder;
+                try {
+                    final HardwareTypeInterface hardwareType = HardwareType.getHardware();
+                    if (hardwareType != null && HardwareTypeInterface.ID.SYNOLOGY.equals(hardwareType.getHardwareType())) {
+                        for (int volume = 1; volume <= 4; volume++) {
+                            File root = new File("/volume" + volume);
+                            if (root.isDirectory()) {
+                                final String defaultFolders[] = new String[] { "@download", "public" };
+                                for (String defaultFolder : defaultFolders) {
+                                    final File folder = new File(root, defaultFolder);
+                                    if (folder.isDirectory()) {
+                                        return defaultFolder.toString();
+                                    }
+                                }
+                            }
+                        }
+                        for (int volume = 1; volume <= 4; volume++) {
+                            File root = new File("/volumeUSB" + volume);
+                            if (root.isDirectory()) {
+                                final String defaultFolders[] = new String[] { "@download", "public" };
+                                for (String defaultFolder : defaultFolders) {
+                                    final File folder = new File(root, defaultFolder);
+                                    if (folder.isDirectory()) {
+                                        return defaultFolder.toString();
+                                    }
+                                }
+                            }
                         }
                     }
+                } catch (Throwable e) {
+                    e.printStackTrace();
                 }
             }
             return CrossSystem.getDefaultDownloadDirectory();

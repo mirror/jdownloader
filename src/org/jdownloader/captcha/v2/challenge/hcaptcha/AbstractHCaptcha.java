@@ -37,7 +37,7 @@ public class AbstractHCaptcha<T extends Plugin> {
     }
 
     public static boolean containsHCaptcha(String string) {
-        return string != null && (new Regex(string, "https?://(\\w+\\.)?hcaptcha\\.com/1/api.js").matches() || new Regex(string, "class=\"h-captcha\"").matches());
+        return string != null && (new Regex(string, "https?://(\\w+\\.)?hcaptcha\\.com/1/api.js").matches() || new Regex(string, "class\\s*=\\s*('|\")h-recaptcha(-response)?(\\1|\\s+)").matches());
     }
 
     public static boolean containsHCaptcha(Form form) {
