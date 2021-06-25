@@ -52,7 +52,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/file/([0-9A-Z]+)" })
 public class FShareVn extends PluginForHost {
@@ -208,19 +207,19 @@ public class FShareVn extends PluginForHost {
     private void handleAPIResponseCodes() throws Exception {
         if (br.getHttpConnection().getResponseCode() == 201) {
             logger.info("session_id cookie invalid");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "session_id cookie invalid", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            throw new AccountUnavailableException("session_id cookie invalid", 5 * 60 * 1000l);
         } else if (br.getHttpConnection().getResponseCode() == 400) {
             logger.info("Seems like stored logintoken expired");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login token invalid", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            throw new AccountUnavailableException("Login token invalid", 5 * 60 * 1000l);
         } else if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 
-    public void doFree(final DownloadLink downloadLink, final Account acc) throws Exception {
+    public void doFree(final DownloadLink link, final Account acc) throws Exception {
         if (dllink != null) {
             /* these are effectively premium links? */
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
             if (looksLikeDownloadableContent(dl.getConnection())) {
                 dl.startDownload();
             }
@@ -239,7 +238,7 @@ public class FShareVn extends PluginForHost {
         } else {
             directlinkproperty = "directlink";
         }
-        dllink = this.checkDirectLink(downloadLink, directlinkproperty);
+        dllink = this.checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
             simulateBrowser();
             if (dllink == null) {
@@ -262,7 +261,7 @@ public class FShareVn extends PluginForHost {
                         break;
                     }
                     if (ajax.containsHTML("Too many download sessions") || ajax.containsHTML("Quá nhiều phiên tải")) {
-                        sleep(10 * 1001l, downloadLink);
+                        sleep(10 * 1001l, link);
                     }
                 }
                 if (ajax.containsHTML("Too many download sessions") || ajax.containsHTML("Quá nhiều phiên tải")) {
@@ -308,10 +307,10 @@ public class FShareVn extends PluginForHost {
                 if (wait == null || dllink == null || !dllink.contains("fshare.vn")) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                sleep(Long.parseLong(wait) * 1001l, downloadLink);
+                sleep(Long.parseLong(wait) * 1001l, link);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
@@ -319,12 +318,12 @@ public class FShareVn extends PluginForHost {
                 logger.log(e);
             }
             if (br.containsHTML(SERVERERROR)) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.fsharevn.Servererror", "Servererror!"), 60 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
+        link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 
@@ -408,7 +407,7 @@ public class FShareVn extends PluginForHost {
                     logger.log(e);
                 }
                 if (br.containsHTML(SERVERERROR)) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.fsharevn.Servererror", "Servererror!"), 60 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -454,7 +453,7 @@ public class FShareVn extends PluginForHost {
         final String token = getAPITokenAndSetCookies(account);
         if (StringUtils.isEmpty(token)) {
             /* Login failure? This should never happen! */
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login token missing", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            throw new AccountUnavailableException("Login token missing", 5 * 60 * 1000l);
         }
         /*
          * 2019-08-29: Seems like other User-Agends are allowed for all other requests but if we do not use this one for this request, we
@@ -488,9 +487,8 @@ public class FShareVn extends PluginForHost {
                 logger.info("Failed to find direct-URL --> Either user has disabled direct downloads in account or we have an error");
                 br.followConnection();
                 if (br.containsHTML("Your account is being used from another device")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account is being used from another device", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                }
-                if (br.containsHTML(">\\s*Fshare suspect this account has been stolen or is being used by other people\\.|Please press “confirm” to get a verification code, it’s sent to your email address\\.<")) {
+                    throw new AccountUnavailableException("Your account is being used from another device", 5 * 60 * 1000l);
+                } else if (br.containsHTML(">\\s*Fshare suspect this account has been stolen or is being used by other people\\.|Please press “confirm” to get a verification code, it’s sent to your email address\\.<")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account determined as stolen or shared...", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 dllink = br.getRegex("\"(https?://[a-z0-9]+\\.fshare\\.vn/(vip|dl)/[^<>\"]*?)\"").getMatch(0);
@@ -617,7 +615,7 @@ public class FShareVn extends PluginForHost {
                 if (br.containsHTML("Tài khoản của quý khách hiện đang đăng nhập trên nhiều thiết")) {
                     // Tài khoản của quý khách hiện đang đăng nhập trên nhiều thiết bị và trình duyệt.Quý khách vui lòng đăng xuất trên các
                     // thiết bị hoặc trình duyệt trước đó và tiến hành đăng nhập lại.
-                    throw new AccountUnavailableException("Your account is currently logged on multiple devices and browsers. Please log out on the device or browser beforehand and proceed to log in again.", 30 * 60 * 1000l);
+                    throw new AccountUnavailableException("Your account is currently logged on multiple devices and browsers. Please log out on the device or browser beforehand and proceed to log in again.", 5 * 60 * 1000l);
                 }
                 loginform = br.getFormbyProperty("id", "form-signup");
                 if (loginform != null && loginform.hasInputFieldByName("LoginForm%5BverifyCode%5D")) {
