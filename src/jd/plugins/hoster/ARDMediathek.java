@@ -24,6 +24,11 @@ import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Scanner;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.MediathekProperties;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -36,11 +41,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.config.MediathekProperties;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de", "mediathek.daserste.de", "mediathek.rbb-online.de", "sandmann.de", "wdr.de", "sportschau.de", "one.ard.de", "wdrmaus.de", "sr-mediathek.sr-online.de", "ndr.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "checkeins.de" }, urls = { "ardmediathek\\.dedecrypted://.+", "(?:mediathek\\.)?daserste\\.dedecrypted://.+", "(?:mediathek\\.)?rbb\\-online\\.dedecrypted://.+", "sandmann\\.dedecrypted://.+", "wdr.dedecrypted://.+", "sportschau\\.dedecrypted://.+", "(?:one\\.)?ard\\.dedecrypted://.+", "wdrmaus\\.dedecrypted://.+", "(?:sr\\-mediathek\\.)?sr\\-online\\.dedecrypted://.+", "ndr\\.dedecrypted://.+", "kika\\.dedecrypted://.+", "eurovision\\.dedecrypted://.+", "sputnik\\.dedecrypted://.+", "mdr\\.dedecrypted://.+", "checkeins\\.dedecrypted://.+" })
 public class ARDMediathek extends PluginForHost {
@@ -97,16 +97,20 @@ public class ARDMediathek extends PluginForHost {
         return new Regex(directurl, "/([^/]+\\.(?:mp3|mp4)(?:.+\\.m3u8)?)").getMatch(0);
     }
 
+    public static boolean isVideoContent(final URLConnectionAdapter con) {
+        return con.getResponseCode() == 200 && !StringUtils.containsIgnoreCase(con.getContentType(), "video") && con.getCompleteContentLength() > 512 * 1024l;
+    }
+
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        dllink = downloadLink.getDownloadURL();
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        dllink = link.getDownloadURL();
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(true);
         if (dllink.contains(".m3u8")) {
-            checkFFProbe(downloadLink, "Download a HLS Stream");
-            final HLSDownloader downloader = new HLSDownloader(downloadLink, br, dllink);
+            checkFFProbe(link, "Download a HLS Stream");
+            final HLSDownloader downloader = new HLSDownloader(link, br, dllink);
             final StreamInfo streamInfo = downloader.getProbe();
             if (streamInfo == null) {
                 // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -114,18 +118,31 @@ public class ARDMediathek extends PluginForHost {
             } else {
                 final long estimatedSize = downloader.getEstimatedSize();
                 if (estimatedSize > 0) {
-                    downloadLink.setDownloadSize(estimatedSize);
+                    link.setDownloadSize(estimatedSize);
+                }
+            }
+        } else if (isSubtitle(link)) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser brc = br.cloneBrowser();
+                brc.getHeaders().put("Accept-Encoding", "identity");
+                con = brc.openHeadConnection(dllink);
+                if (con.getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
                 }
             }
         } else {
             URLConnectionAdapter con = null;
             try {
                 final Browser brc = br.cloneBrowser();
-                brc.getHeaders().put("Accept-Encoding", "identity");
                 con = brc.openHeadConnection(dllink);
-                /* 2018-03-01: Download everything which is not 404. */
-                if (con.getResponseCode() != 200 || !StringUtils.containsIgnoreCase(con.getContentType(), "video") || con.getCompleteContentLength() < 512 * 1024l) {
-                    downloadLink.setDownloadSize(con.getCompleteContentLength());
+                if (isVideoContent(con)) {
+                    link.setDownloadSize(con.getCompleteContentLength());
                 } else {
                     /* Content should definitly be offline in this case! */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -141,34 +158,34 @@ public class ARDMediathek extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        download(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        download(link);
     }
 
-    private void download(final DownloadLink downloadLink) throws Exception {
+    private void download(final DownloadLink link) throws Exception {
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (dllink.contains(".m3u8")) {
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, dllink);
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, dllink);
             dl.startDownload();
         } else {
             br.setFollowRedirects(true);
             // Workaround to avoid DOWNLOAD INCOMPLETE errors
             boolean resume = true;
             int maxChunks = 0;
-            final boolean isSubtitle = isSubtitle(downloadLink);
+            final boolean isSubtitle = isSubtitle(link);
             if (isSubtitle) {
                 br.getHeaders().put("Accept-Encoding", "identity");
-                downloadLink.setDownloadSize(0);
+                link.setDownloadSize(0);
                 resume = false;
                 maxChunks = 1;
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxChunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
             if (dl.getConnection().getResponseCode() == 403 || dl.getConnection().getResponseCode() == 404) {
                 try {
                     br.followConnection(true);
@@ -187,17 +204,17 @@ public class ARDMediathek extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
             if (this.dl.startDownload()) {
-                this.postprocess(downloadLink);
+                this.postprocess(link);
             }
         }
     }
 
-    private void postprocess(final DownloadLink downloadLink) {
-        if (isSubtitle(downloadLink)) {
-            if (!convertSubtitle(downloadLink)) {
+    private void postprocess(final DownloadLink link) {
+        if (isSubtitle(link)) {
+            if (!convertSubtitle(link)) {
                 logger.severe("Subtitle conversion failed!");
             } else {
-                downloadLink.setFinalFileName(downloadLink.getFinalFileName().replace(".xml", ".srt"));
+                link.setFinalFileName(link.getFinalFileName().replace(".xml", ".srt"));
             }
         }
     }
