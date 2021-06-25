@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Scanner;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
@@ -36,6 +37,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.config.MediathekProperties;
@@ -98,6 +100,9 @@ public class ARDMediathek extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         dllink = downloadLink.getDownloadURL();
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.setFollowRedirects(true);
         if (dllink.contains(".m3u8")) {
             checkFFProbe(downloadLink, "Download a HLS Stream");
@@ -115,14 +120,15 @@ public class ARDMediathek extends PluginForHost {
         } else {
             URLConnectionAdapter con = null;
             try {
-                br.getHeaders().put("Accept-Encoding", "identity");
-                con = br.openHeadConnection(dllink);
+                final Browser brc = br.cloneBrowser();
+                brc.getHeaders().put("Accept-Encoding", "identity");
+                con = brc.openHeadConnection(dllink);
                 /* 2018-03-01: Download everything which is not 404. */
-                if (con.getResponseCode() == 404) {
+                if (con.getResponseCode() != 200 || !StringUtils.containsIgnoreCase(con.getContentType(), "video") || con.getCompleteContentLength() < 512 * 1024l) {
+                    downloadLink.setDownloadSize(con.getCompleteContentLength());
+                } else {
                     /* Content should definitly be offline in this case! */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
                 }
             } finally {
                 try {
@@ -165,8 +171,7 @@ public class ARDMediathek extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxChunks);
             if (dl.getConnection().getResponseCode() == 403 || dl.getConnection().getResponseCode() == 404) {
                 try {
-                    dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
-                    br.followConnection();
+                    br.followConnection(true);
                 } catch (IOException e) {
                     logger.log(e);
                 }
@@ -175,8 +180,7 @@ public class ARDMediathek extends PluginForHost {
             /* 2018-03-06: Only investigate by content type if it is supposed to be a video file! */
             if (dl.getConnection().getContentType().contains("html") && !isSubtitle) {
                 try {
-                    dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
-                    br.followConnection();
+                    br.followConnection(true);
                 } catch (IOException e) {
                     logger.log(e);
                 }
