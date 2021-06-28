@@ -308,6 +308,12 @@ public class DoodstreamCom extends XFileSharingProBasic {
         return AvailableStatus.TRUE;
     }
 
+    protected void checkSSLInspection(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+        if (br.containsHTML(">\\s*SSL Inspection\\s*<") || br.containsHTML(">\\s*Would you like to proceed with this session\\?\\s*<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+    }
+
     @Override
     public void doFree(final DownloadLink link, final Account account) throws Exception, PluginException {
         /* First bring up saved final links */
@@ -322,6 +328,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
                 /* Basically the same as the other type but hides that via iFrame. */
                 final String embedURL = br.getRegex("<iframe[^>]*src=\"(/e/[a-z0-9]+)\"").getMatch(0);
                 if (embedURL == null) {
+                    checkSSLInspection(br, link, account);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 this.getPage(embedURL);
