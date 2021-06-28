@@ -26,6 +26,12 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -36,6 +42,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -43,11 +50,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mountfile.net" }, urls = { "https?://(www\\.)?mountfile\\.net/(?!d/)[A-Za-z0-9]+" })
 public class MountFileNet extends antiDDoSForHost {
@@ -82,12 +84,12 @@ public class MountFileNet extends antiDDoSForHost {
         if (acc == null) {
             /* no account, yes we can expect captcha */
             return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        } else if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
             /* free accounts also have captchas */
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     @SuppressWarnings("deprecation")
@@ -115,8 +117,8 @@ public class MountFileNet extends antiDDoSForHost {
 
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        final String fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         currentIP.set(this.getIP());
         final boolean useExperimentalHandling = this.getPluginConfig().getBooleanProperty(this.EXPERIMENTALHANDLING, false);
         long lastdownload = 0;
@@ -140,17 +142,29 @@ public class MountFileNet extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT_GENERAL - passedTimeSinceLastDl);
             }
         }
-        requestFileInformation(downloadLink);
-        if (br.containsHTML("Unfortunately, it can be downloaded only with premium")) {
+        requestFileInformation(link);
+        if (br.containsHTML("(?i)Unfortunately, it can be downloaded only with premium")) {
             // <span class="error">File size is larger than 1 GB. Unfortunately, it can be downloaded only with premium</span>
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            throw new AccountRequiredException();
         }
         postPage(br.getURL(), "free=Slow+download&hash=" + fid);
         final long timeBefore = System.currentTimeMillis();
+        final boolean captchaRequired;
         if (br.containsHTML("<div id=\"(\\w+)\".+grecaptcha\\.render\\(\\s*'\\1',")) {
+            captchaRequired = true;
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-            waitTime(timeBefore, downloadLink);
+            waitTime(timeBefore, link);
             postPage(br.getURL(), "free=Get+download+link&hash=" + fid + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
+        } else if (containsHCaptcha(this.br)) {
+            /* 2021-06-28 */
+            captchaRequired = true;
+            final String hcaptchaResponse = new CaptchaHelperHostPluginHCaptcha(this, br).getToken();
+            waitTime(timeBefore, link);
+            postPage(br.getURL(), "free=Get+download+link&hash=" + fid + "&g-recaptcha-response=" + Encoding.urlEncode(hcaptchaResponse) + "&h-captcha-response=" + Encoding.urlEncode(hcaptchaResponse));
+        } else {
+            captchaRequired = false;
+        }
+        if (captchaRequired) {
             String reconnectWait = br.getRegex("You should wait (\\d+) minutes before downloading next file").getMatch(0);
             if (reconnectWait == null) {
                 reconnectWait = br.getRegex("Please wait (\\d+) minutes before downloading next file or").getMatch(0);
@@ -169,7 +183,7 @@ public class MountFileNet extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, false, 1);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, false, 1);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
@@ -185,7 +199,7 @@ public class MountFileNet extends antiDDoSForHost {
         blockedIPsMap.put(currentIP.get(), System.currentTimeMillis());
         getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, blockedIPsMap);
         try {
-            this.setIP(currentIP.get(), downloadLink);
+            this.setIP(currentIP.get(), link);
         } catch (final Throwable e) {
         }
         dl.startDownload();
@@ -196,7 +210,7 @@ public class MountFileNet extends antiDDoSForHost {
         return 1;
     }
 
-    private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
+    private void waitTime(long timeBefore, final DownloadLink link) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
         int wait = 60;
@@ -206,7 +220,7 @@ public class MountFileNet extends antiDDoSForHost {
         }
         wait -= passedTime;
         if (wait > 0) {
-            sleep(wait * 1000l, downloadLink);
+            sleep(wait * 1000l, link);
         }
     }
 
