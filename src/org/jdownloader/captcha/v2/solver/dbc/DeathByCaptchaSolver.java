@@ -28,6 +28,7 @@ import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.SolverStatus;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.HCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
@@ -71,7 +72,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
 
     @Override
     protected boolean isChallengeSupported(Challenge<?> c) {
-        return c instanceof RecaptchaV2Challenge || c instanceof BasicCaptchaChallenge;
+        return c instanceof HCaptchaChallenge || c instanceof RecaptchaV2Challenge || c instanceof BasicCaptchaChallenge;
     }
 
     @Override
@@ -95,7 +96,15 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
                 r.addFormData(new FormData("password", password));
             }
             final String type;
-            if (challenge instanceof RecaptchaV2Challenge) {
+            if (challenge instanceof HCaptchaChallenge) {
+                type = "HCaptcha";
+                final HCaptchaChallenge hc = (HCaptchaChallenge) challenge;
+                r.addFormData(new FormData("type", "7"));
+                final HashMap<String, Object> hcaptcha_params = new HashMap<String, Object>();
+                hcaptcha_params.put("pageurl", hc.getSiteUrl());
+                hcaptcha_params.put("sitekey", hc.getSiteKey());
+                r.addFormData(new FormData("hcaptcha_params", JSonStorage.toString(hcaptcha_params)));
+            } else if (challenge instanceof RecaptchaV2Challenge) {
                 final RecaptchaV2Challenge rc = (RecaptchaV2Challenge) challenge;
                 final HashMap<String, Object> token_param = new HashMap<String, Object>();
                 token_param.put("googlekey", rc.getSiteKey());
