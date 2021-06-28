@@ -737,9 +737,18 @@ public class RemoteAPIController {
         int count = 0;
         for (int i = 0; i < parameters.length; i++) {
             if (RemoteAPIRequest.class.isAssignableFrom(method.getParameterTypes()[i])) {
-                throw new BasicRemoteAPIException("Not Found", ResponseCode.ERROR_NOT_FOUND);
+                if (true) {
+                    final RemoteAPIRequest dummyRequest = new RemoteAPIRequest(iface, methodName, stringParams.toArray(new String[0]), null, null);
+                    parameters[i] = dummyRequest;
+                } else {
+                    throw new BasicRemoteAPIException("Not Found", ResponseCode.ERROR_NOT_FOUND);
+                }
             } else if (RemoteAPIResponse.class.isAssignableFrom(method.getParameterTypes()[i])) {
-                throw new BasicRemoteAPIException("Not Found", ResponseCode.ERROR_NOT_FOUND);
+                if (false) {
+                    parameters[i] = null;
+                } else {
+                    throw new BasicRemoteAPIException("Not Found", ResponseCode.ERROR_NOT_FOUND);
+                }
             } else {
                 try {
                     parameters[i] = RemoteAPI.convert(stringParams.get(count), method.getGenericParameterTypes()[i]);

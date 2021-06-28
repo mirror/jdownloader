@@ -4,12 +4,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.jdownloader.logging.LogController;
-
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.http.Request;
@@ -18,6 +12,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.jdownloader.logging.LogController;
 
 public class AbstractHCaptcha<T extends Plugin> {
     // https://docs.hcaptcha.com/invisible/
@@ -37,7 +37,7 @@ public class AbstractHCaptcha<T extends Plugin> {
     }
 
     public static boolean containsHCaptcha(String string) {
-        return string != null && (new Regex(string, "https?://(\\w+\\.)?hcaptcha\\.com/1/api.js").matches() || new Regex(string, "class\\s*=\\s*('|\")h-recaptcha(-response)?(\\1|\\s+)").matches());
+        return string != null && (new Regex(string, "https?://(\\w+\\.)?hcaptcha\\.com/1/api.js").matches() || new Regex(string, "class\\s*=\\s*('|\")h-captcha(-response)?(\\1|\\s+)").matches());
     }
 
     public static boolean containsHCaptcha(Form form) {
@@ -66,7 +66,7 @@ public class AbstractHCaptcha<T extends Plugin> {
             final String[] divs = getDIVs(source);
             if (divs != null) {
                 for (final String div : divs) {
-                    if (new Regex(div, "class\\s*=\\s*('|\")(?:.*?\\s+)?(g|h)-recaptcha(-response)?(\\1|\\s+)").matches()) {
+                    if (new Regex(div, "class\\s*=\\s*('|\")(?:.*?\\s+)?(g-re|h-)captcha(-response)?(\\1|\\s+)").matches()) {
                         final String siteKey = new Regex(div, "data-sitekey\\s*=\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
                         if (siteKey != null && StringUtils.equals(siteKey, getSiteKey())) {
                             final boolean isInvisible = new Regex(div, "data-size\\s*=\\s*('|\")\\s*(invisible)\\s*\\1").matches();
@@ -258,7 +258,7 @@ public class AbstractHCaptcha<T extends Plugin> {
             final String[] divs = getDIVs(source);
             if (divs != null) {
                 for (final String div : divs) {
-                    if (new Regex(div, "class\\s*=\\s*('|\")(?:.*?\\s+)?(g|h)-recaptcha(-response)?(\\1|\\s+)").matches()) {
+                    if (new Regex(div, "class\\s*=\\s*('|\")(?:.*?\\s+)?(g-re|h-)captcha(-response)?(\\1|\\s+)").matches()) {
                         final String siteKey = new Regex(div, "data-sitekey\\s*=\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
                         if (siteKey != null) {
                             return siteKey;
