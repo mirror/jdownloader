@@ -20,10 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Random;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -36,16 +32,20 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 /**
  *
  * @version raz_Template
  * @author raztoki, psp
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dl-protecte.com" }, urls = { "https?://(?:www(|[0-9])\\.)?(?:dl-protecte\\.(?:com|org)|protect-lien\\.com|protect-zt\\.com|zt-protect\\.com|protecte-link\\.com|liens-telechargement\\.com|dl-protect1\\.com?|dl-protect\\.top|dl\\-protect\\.net|dl-protect\\.best|(zone-warez|zone-telechargement|tirexo)\\.(?:.*)/link)(-|/)\\S+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dl-protecte.com" }, urls = { "https?://(?:www(|[0-9])\\.)?(?:dl-protecte\\.(?:com|org)|protect-lien\\.com|protect-zt\\.com|zt-protect\\.com|protecte-link\\.com|liens-telechargement\\.com|dl-protect1\\.com?|dl-protect\\.top|dl\\-protect\\.net|dl-protect\\.best|dl-protect\\.info|(zone-warez|zone-telechargement|tirexo)\\.(?:.*)/link)(-|/)\\S+" })
 public class DlPrteCom extends antiDDoSForDecrypt {
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "dl-protect.top", "dl-protecte.com", "dl-protecte.org", "protect-lien.com", "protect-zt.com", "zt-protect.com", "protecte-link.com", "liens-telechargement.com", "dl-protect1.com", "dl-protect1.co", "dl-protect.net", "zone-warez.com", "dl-protect.best" };
+        return new String[] { "dl-protect.top", "dl-protecte.com", "dl-protecte.org", "protect-lien.com", "protect-zt.com", "zt-protect.com", "protecte-link.com", "liens-telechargement.com", "dl-protect1.com", "dl-protect1.co", "dl-protect.net", "zone-warez.com", "dl-protect.best", "dl-protect-info" };
     }
 
     public DlPrteCom(PluginWrapper wrapper) {
