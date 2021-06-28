@@ -744,19 +744,21 @@ public class YoutubeHelper {
 
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
-                // playlistnumber
-                if (StringUtils.isEmpty(mod)) {
-                    mod = "0000";
+                final int playlistNumber = link.getIntegerProperty(YoutubeHelper.YT_PLAYLIST_INT, -1);
+                if (playlistNumber >= 0) {
+                    // playlistnumber
+                    DecimalFormat df = new DecimalFormat("0000");
+                    try {
+                        if (StringUtils.isNotEmpty(mod)) {
+                            df = new DecimalFormat(mod);
+                        }
+                    } catch (Throwable e) {
+                        helper.logger.log(e);
+                    }
+                    return df.format(playlistNumber);
+                } else {
+                    return "";
                 }
-                DecimalFormat df;
-                try {
-                    df = new DecimalFormat(mod);
-                } catch (Throwable e) {
-                    helper.logger.log(e);
-                    df = new DecimalFormat("0000");
-                }
-                int playlistNumber = link.getIntegerProperty(YoutubeHelper.YT_PLAYLIST_INT, -1);
-                return playlistNumber >= 0 ? df.format(playlistNumber) : "";
             }
         });
         REPLACER.add(new YoutubeReplacer("VIEWS") {

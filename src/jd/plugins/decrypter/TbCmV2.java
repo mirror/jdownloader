@@ -30,6 +30,30 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNodeVisitor;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
+import jd.parser.Regex;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.components.UserAgents;
+import jd.plugins.components.UserAgents.BrowserName;
+import jd.utils.locale.JDL;
+
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -70,31 +94,7 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNodeVisitor;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.nutils.encoding.Encoding;
-import jd.nutils.encoding.HTMLEntities;
-import jd.parser.Regex;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.components.UserAgents;
-import jd.plugins.components.UserAgents.BrowserName;
-import jd.utils.locale.JDL;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com", "youtube.com", "youtube.com" }, urls = { "https?://([a-z]+\\.)?yt\\.not\\.allowed/.+", "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|c/|course\\?list=)[%A-Za-z0-9\\-_]+(.*?page=\\d+)?(.*?list=[A-Za-z0-9\\-_]+)?(\\#variant=\\S++)?|watch_videos\\?.*?video_ids=.+", "https?://youtube\\.googleapis\\.com/(v/|user/|channel/|c/)[%A-Za-z0-9\\-_]+(\\#variant=\\S+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com", "youtube.com", "youtube.com" }, urls = { "https?://([a-z]+\\.)?yt\\.not\\.allowed/.+", "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|c/|course\\?list=)[%A-Za-z0-9\\-_]+(.*?index=\\d+)?(.*?page=\\d+)?(.*?list=[%A-Za-z0-9\\-_]+)?(\\#variant=\\S++)?|watch_videos\\?.*?video_ids=.+", "https?://youtube\\.googleapis\\.com/(v/|user/|channel/|c/)[%A-Za-z0-9\\-_]+(\\#variant=\\S+)?" })
 public class TbCmV2 extends PluginForDecrypt {
     private static final int DDOS_WAIT_MAX        = Application.isJared(null) ? 1000 : 10;
     private static final int DDOS_INCREASE_FACTOR = 15;
@@ -104,7 +104,7 @@ public class TbCmV2 extends PluginForDecrypt {
     };
 
     /**
-     * Returns host from provided String.
+     * Returns host from provided String.f
      */
     static String getBase() {
         return "https://www.youtube.com";
@@ -122,15 +122,16 @@ public class TbCmV2 extends PluginForDecrypt {
         // if (list == null) list = new Regex(originUrl, "/user/([A-Za-z0-9\\-_]+)").getMatch(0);
         // play && course
         // http://www.youtube.com/playlist?list=PL375B54C39ED612FC
-        return new Regex(originUrl, "list=([A-Za-z0-9\\-_]+)").getMatch(0);
+        return new Regex(originUrl, "list=([%A-Za-z0-9\\-_]+)").getMatch(0);
     }
 
     private String getVideoIDByUrl(String URL) {
-        String vuid = new Regex(URL, "v=([A-Za-z0-9\\-_]+)").getMatch(0);
+        final String videoIDPattern = "([A-Za-z0-9\\-_]+)";
+        String vuid = new Regex(URL, "v=" + videoIDPattern).getMatch(0);
         if (vuid == null) {
-            vuid = new Regex(URL, "v/([A-Za-z0-9\\-_]+)").getMatch(0);
+            vuid = new Regex(URL, "v/" + videoIDPattern).getMatch(0);
             if (vuid == null) {
-                vuid = new Regex(URL, "embed/(?!videoseries\\?)([A-Za-z0-9\\-_]+)").getMatch(0);
+                vuid = new Regex(URL, "embed/(?!videoseries\\?)" + videoIDPattern).getMatch(0);
             }
         }
         return vuid;
@@ -455,7 +456,14 @@ public class TbCmV2 extends PluginForDecrypt {
                         throw e;
                     }
                 }
-                vid.playlistEntryNumber = reversePlaylistNumber ? (videoIdsToAdd.size() - old.playlistEntryNumber + 1) : old.playlistEntryNumber;
+                if (vid.playlistEntryNumber == -1 && old.playlistEntryNumber > 0) {
+                    vid.playlistEntryNumber = reversePlaylistNumber ? (videoIdsToAdd.size() - old.playlistEntryNumber + 1) : old.playlistEntryNumber;
+                } else if (vid.playlistEntryNumber == -1 && StringUtils.equals(videoID, vid.videoID)) {
+                    final String index = new Regex(cleanedurl, "index=(\\d+)").getMatch(0);
+                    if (index != null) {
+                        vid.playlistEntryNumber = Integer.parseInt(index);
+                    }
+                }
             } catch (Exception e) {
                 logger.log(e);
                 String emsg = null;

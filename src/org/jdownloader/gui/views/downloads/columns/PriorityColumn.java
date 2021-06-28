@@ -39,7 +39,6 @@ import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.images.NewTheme;
 
 public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
-
     /**
      *
      */
@@ -51,7 +50,6 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
     private final Icon        imgPriority1;
     private final Icon        imgPriority2;
     private final Icon        imgPriority3;
-
     private final Icon        imgPriority0__3;
     private final Icon        imgPriority0__2;
     private final Icon        imgPriority0__1;
@@ -61,9 +59,7 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
     private final Icon        imgPriority0_3;
 
     public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
-
         final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
-
             private static final long serialVersionUID = 2051980596953422289L;
 
             @Override
@@ -74,16 +70,12 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
                 setText(null);
                 return this;
             }
-
         };
-
         return ret;
     }
 
     public JPopupMenu createHeaderPopup() {
-
         return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
-
     }
 
     public PriorityColumn() {
@@ -95,7 +87,6 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
         imgPriority1 = NewTheme.I().getIcon(IconKey.ICON_PRIO_1, 16);
         imgPriority2 = NewTheme.I().getIcon(IconKey.ICON_PRIO_2, 16);
         imgPriority3 = NewTheme.I().getIcon(IconKey.ICON_PRIO_3, 16);
-
         imgPriority0__3 = new BadgeIcon(imgPriority0, IconIO.getScaledInstance(imgPriority_3, 12, 12), 4, 2);
         imgPriority0__2 = new BadgeIcon(imgPriority0, IconIO.getScaledInstance(imgPriority_2, 12, 12), 4, 2);
         imgPriority0__1 = new BadgeIcon(imgPriority0, IconIO.getScaledInstance(imgPriority_1, 12, 12), 4, 2);
@@ -103,7 +94,6 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
         imgPriority0_1 = new BadgeIcon(imgPriority0, IconIO.getScaledInstance(imgPriority1, 12, 12), 4, 2);
         imgPriority0_2 = new BadgeIcon(imgPriority0, IconIO.getScaledInstance(imgPriority2, 12, 12), 4, 2);
         imgPriority0_3 = new BadgeIcon(imgPriority0, IconIO.getScaledInstance(imgPriority3, 12, 12), 4, 2);
-
         rendererField.setHorizontalTextPosition(SwingConstants.RIGHT);
         this.setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
             /**
@@ -122,7 +112,6 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
                     return p1 < p2 ? -1 : 1;
                 }
             }
-
         });
     }
 
@@ -144,26 +133,20 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
     protected AbstractButton getPopupElement(final Priority o, final boolean selected, final AbstractNode value) {
         return new JMenuItem(new BasicAction(o.toString()) {
             {
-
                 setName(modelItemToString(o, value));
                 Icon ico = getIconByPriority(o);
-
                 if (selected) {
                     CheckBoxIcon checkBox = CheckBoxIcon.TRUE;
                     BufferedImage back = ImageProvider.merge(ico, checkBox, 5, 0, 0, ico.getIconHeight() - checkBox.getIconHeight() + 5);
-
                     setSmallIcon(new ImageIcon(back));
                 } else {
                     setSmallIcon(ico);
                 }
-
             }
 
             @Override
             public void actionPerformed(final ActionEvent e) {
-
             }
-
         });
     }
 
@@ -262,8 +245,9 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
             return getIconByPriority(((FilePackage) value).getPriorityEnum());
         } else if (value instanceof CrawledPackage) {
             return getIconByPriority(((CrawledPackage) value).getPriorityEnum());
+        } else {
+            return imgPriority0;
         }
-        return imgPriority0;
     }
 
     private Priority getPriority(AbstractNode value) {
@@ -271,7 +255,7 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
             final DownloadLink link = ((DownloadLink) value);
             final Priority ret = link.getPriorityEnum();
             if (Priority.DEFAULT.equals(ret)) {
-                FilePackage parent = link.getFilePackage();
+                final FilePackage parent = link.getFilePackage();
                 if (parent != null) {
                     return parent.getPriorityEnum();
                 }
@@ -291,8 +275,9 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
             return ((FilePackage) value).getPriorityEnum();
         } else if (value instanceof CrawledPackage) {
             return ((CrawledPackage) value).getPriorityEnum();
+        } else {
+            return Priority.DEFAULT;
         }
-        return Priority.DEFAULT;
     }
 
     protected String getTooltipText(AbstractNode value) {
@@ -308,11 +293,11 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
     public boolean isEnabled(AbstractNode obj) {
         if (obj instanceof CrawledPackage) {
             return ((CrawledPackage) obj).getView().isEnabled();
-        }
-        if (obj instanceof FilePackage) {
+        } else if (obj instanceof FilePackage) {
             return ((FilePackage) obj).getView().isEnabled();
+        } else {
+            return obj.isEnabled();
         }
-        return obj.isEnabled();
     }
 
     @Override
@@ -323,7 +308,6 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
     @Override
     protected void setSelectedItem(final AbstractNode object, final Priority value) {
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
             @Override
             protected Void run() throws RuntimeException {
                 if (object instanceof DownloadLink) {
@@ -337,8 +321,6 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
                 }
                 return null;
             }
-
         });
-
     }
 }
