@@ -60,6 +60,9 @@ public class MediathekHelper {
         if (videoResolution != null) {
             filename += "_" + videoResolution;
         }
+        if (data.getAudioDescription()) {
+            filename += "_AD";
+        }
         String ext = data.getFileExtension();
         if (ext == null) {
             /* We need an extension - try to guess the right one! */
@@ -71,32 +74,7 @@ public class MediathekHelper {
         }
         ext = "." + ext;
         filename += ext;
-        filename = encodeUnicode(filename);
         return filename;
-    }
-
-    /**
-     * 2018-07-19: Replaces chars not ment to be in filenames (at least under Windows) with similar chars. TODO: move this function
-     * somewhere else. Function inside "Plugin" class is not static.
-     */
-    public static String encodeUnicode(final String input) {
-        if (input != null) {
-            String output = input;
-            output = output.replace(":", ";");
-            output = output.replace("|", "¦");
-            output = output.replace("<", "[");
-            output = output.replace(">", "]");
-            output = output.replace("/", "⁄");
-            output = output.replace("\\", "∖");
-            output = output.replace("*", "#");
-            output = output.replace("?", "¿");
-            // not illegal
-            // output = output.replace("!", "¡");
-            output = output.replace("!", "¡");
-            output = output.replace("\"", "'");
-            return output;
-        }
-        return null;
     }
 
     public static final int getPadLength(final int size) {
