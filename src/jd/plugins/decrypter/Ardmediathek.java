@@ -938,7 +938,7 @@ public class Ardmediathek extends PluginForDecrypt {
                                     }
                                 }
                             }
-                            final DownloadLink download = addQuality(url, null, 0, widthInt, heightInt, foundQualitiesMap);
+                            final DownloadLink download = addQuality(foundQualitiesMap, url, null, 0, widthInt, heightInt, false);
                             if (download != null) {
                                 httpStreamsQualityIdentifiers.add(getQualityIdentifier(url, 0, widthInt, heightInt));
                                 if (cfg.isGrabBESTEnabled()) {
@@ -1009,7 +1009,7 @@ public class Ardmediathek extends PluginForDecrypt {
                         final String qualityIdentifier = getQualityIdentifier(final_url, 0, widthInt, heightInt);
                         if (!httpStreamsQualityIdentifiers_2_over_hls_master.contains(qualityIdentifier)) {
                             logger.info("Found (additional) http quality via HLS Master: " + qualityIdentifier);
-                            addQuality(final_url, null, 0, widthInt, heightInt, foundQualitiesMap_http_urls_via_HLS_master);
+                            addQuality(foundQualitiesMap_http_urls_via_HLS_master, final_url, null, 0, widthInt, heightInt, false);
                             httpStreamsQualityIdentifiers_2_over_hls_master.add(qualityIdentifier);
                         }
                     }
@@ -1033,14 +1033,14 @@ public class Ardmediathek extends PluginForDecrypt {
             }
         }
         if (hls_master != null) {
-            addHLS(br, hls_master);
+            addHLS(br, hls_master, false);
         }
         if (http_url_audio != null) {
             if (http_url_audio.startsWith("//")) {
                 /* 2019-04-11: Workaround for missing protocol */
                 http_url_audio = "https:" + http_url_audio;
             }
-            addQuality(http_url_audio, null, 0, 0, 0, foundQualitiesMap);
+            addQuality(foundQualitiesMap, http_url_audio, null, 0, 0, 0, false);
         }
     }
 
@@ -1070,7 +1070,19 @@ public class Ardmediathek extends PluginForDecrypt {
         this.subtitleLink = getXMLSubtitleURL(this.br);
         this.title = getDasersteTitle(this.br);
         final ArrayList<String> hls_master_dupelist = new ArrayList<String>();
-        final String[] mediaStreamArray = br.getRegex("(<asset.*?</asset>)").getColumn(0);
+        final String assetsAudiodescription = br.getRegex("<assets type=\"audiodesc\">(.*?)</assets>").getMatch(0);
+        final String assetsNormal = br.getRegex("<assets>(.*?)</assets>").getMatch(0);
+        final boolean isAudioDescription;
+        final String[] mediaStreamArray;
+        if (this.cfg.isPreferAudioDescription() && assetsAudiodescription != null) {
+            logger.info("Crawling asset-type audiodescription");
+            isAudioDescription = true;
+            mediaStreamArray = new Regex(assetsAudiodescription, "(<asset.*?</asset>)").getColumn(0);
+        } else {
+            logger.info("Crawling asset-type normal");
+            isAudioDescription = false;
+            mediaStreamArray = new Regex(assetsNormal, "(<asset.*?</asset>)").getColumn(0);
+        }
         if (mediaStreamArray.length == 0) {
             /* 2021-05-10: Only check for this if no downloadurls are available! */
             final String fskRating = this.br.getRegex("<fskRating>fsk(\\d+)</fskRating>").getMatch(0);
@@ -1131,7 +1143,7 @@ public class Ardmediathek extends PluginForDecrypt {
             /* HLS master url may exist in every XML item --> We only have to add all HLS qualities once! */
             if (!StringUtils.isEmpty(hls_master) && !hls_master_dupelist.contains(hls_master)) {
                 /* HLS */
-                addHLS(this.br, hls_master);
+                addHLS(this.br, hls_master, isAudioDescription);
                 hls_master_dupelist.add(hls_master);
             }
             if (!StringUtils.isEmpty(http_url)) {
@@ -1148,13 +1160,13 @@ public class Ardmediathek extends PluginForDecrypt {
                 } else {
                     bitrate = 0;
                 }
-                addQualityDasersteVideo(http_url, filesize, bitrate, width, height);
+                addQualityDasersteVideo(http_url, filesize, bitrate, width, height, isAudioDescription);
             }
         }
         return;
     }
 
-    private void addHLS(final Browser br, final String hls_master) throws Exception {
+    private void addHLS(final Browser br, final String hlsMaster, final boolean isAudioDescription) throws Exception {
         if (!this.grabHLS) {
             /* Avoid this http request if user hasn't selected any hls qualities */
             return;
@@ -1166,7 +1178,7 @@ public class Ardmediathek extends PluginForDecrypt {
         } else {
             /* Access (hls) master. */
             hlsBR = br.cloneBrowser();
-            hlsBR.getPage(hls_master);
+            hlsBR.getPage(hlsMaster);
         }
         final List<HlsContainer> allHlsContainers = HlsContainer.getHlsQualities(hlsBR);
         for (final HlsContainer hlscontainer : allHlsContainers) {
@@ -1175,12 +1187,12 @@ public class Ardmediathek extends PluginForDecrypt {
                 continue;
             }
             final String final_download_url = hlscontainer.getDownloadurl();
-            addQuality(final_download_url, null, hlscontainer.getBandwidth(), hlscontainer.getWidth(), hlscontainer.getHeight(), foundQualitiesMap);
+            addQuality(foundQualitiesMap, final_download_url, null, hlscontainer.getBandwidth(), hlscontainer.getWidth(), hlscontainer.getHeight(), isAudioDescription);
         }
     }
 
     /* Especially for video.daserste.de */
-    private void addQualityDasersteVideo(final String directurl, final String filesize_str, long bitrate, int width, int height) {
+    private void addQualityDasersteVideo(final String directurl, final String filesize_str, long bitrate, int width, int height, final boolean isAudioDescription) {
         /* Try to get/Fix correct width/height values. */
         /* Type 1 */
         String width_URL = new Regex(directurl, "(hi|hq|ln|lo|mn)\\.mp4$").getMatch(0);
@@ -1198,7 +1210,7 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         width = getWidth(width_URL, width);
         height = getHeight(width_URL, width, height);
-        addQuality(directurl, filesize_str, bitrate, width, height, foundQualitiesMap);
+        addQuality(foundQualitiesMap, directurl, filesize_str, bitrate, width, height, isAudioDescription);
     }
 
     /* Returns quality identifier String, compatible with quality selection values. Format: protocol_bitrateCorrected_heightCorrected */
@@ -1221,7 +1233,7 @@ public class Ardmediathek extends PluginForDecrypt {
         return qualityStringForQualitySelection;
     }
 
-    private DownloadLink addQuality(final String directurl, final String filesize_str, long bitrate, int width, int height, final HashMap<String, DownloadLink> qualitiesMap) {
+    private DownloadLink addQuality(final HashMap<String, DownloadLink> qualitiesMap, final String directurl, final String filesize_str, long bitrate, int width, int height, final boolean isAudioDescription) {
         /* Errorhandling */
         final String ext;
         if (directurl == null) {
@@ -1278,6 +1290,7 @@ public class Ardmediathek extends PluginForDecrypt {
         data.setBitrateTotal(bitrate);
         data.setProtocol(protocol);
         data.setFileExtension(ext);
+        data.setAudioDescription(isAudioDescription);
         if (this.date_timestamp > 0) {
             data.setReleaseDate(this.date_timestamp);
         }

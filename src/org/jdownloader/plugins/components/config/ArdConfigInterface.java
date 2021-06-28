@@ -23,6 +23,10 @@ public interface ArdConfigInterface extends PluginConfigInterface {
             return _JDT.T.lit_add_audio();
         }
 
+        public String getPreferAudioDescription_label() {
+            return "Prefer audiodescription";
+        }
+
         public String getGrabBESTEnabled_label() {
             return _JDT.T.lit_add_only_the_best_video_quality();
         }
@@ -65,6 +69,12 @@ public interface ArdConfigInterface extends PluginConfigInterface {
     void setGrabAudio(boolean b);
 
     @DefaultBooleanValue(false)
+    @Order(12)
+    boolean isPreferAudioDescription();
+
+    void setPreferAudioDescription(boolean b);
+
+    @DefaultBooleanValue(false)
     @Order(20)
     boolean isGrabBESTEnabled();
 
@@ -78,7 +88,7 @@ public interface ArdConfigInterface extends PluginConfigInterface {
     void setOnlyBestVideoQualityOfSelectedQualitiesEnabled(boolean b);
 
     @DefaultBooleanValue(true)
-    @Order(21)
+    @Order(22)
     boolean isAddUnknownQualitiesEnabled();
 
     void setAddUnknownQualitiesEnabled(boolean b);
