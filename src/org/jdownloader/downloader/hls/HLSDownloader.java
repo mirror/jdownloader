@@ -1218,12 +1218,15 @@ public class HLSDownloader extends DownloadInterface {
                                         getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=" + byteRange[1] + "-" + (byteRange[1] + byteRange[0] - 1));
                                     }
                                     URLConnectionAdapter connection = null;
+                                    boolean closeConnection = true;
                                     boolean updateTimestamp = true;
                                     try {
                                         ffmpeg.updateLastUpdateTimestamp(getRequest.getConnectTimeout() + getRequest.getReadTimeout() + timeoutBuffer);
                                         connection = br.openRequestConnection(getRequest);
                                         if (connection.getResponseCode() != 200 && connection.getResponseCode() != 206) {
                                             throw new IOException("ResponseCode(" + connection.getResponseCode() + ") must be 200 or 206!");
+                                        } else {
+                                            closeConnection = false;
                                         }
                                     } catch (IOException e) {
                                         if (Exceptions.containsInstanceOf(e, SocketTimeoutException.class)) {
@@ -1236,6 +1239,9 @@ public class HLSDownloader extends DownloadInterface {
                                             return false;
                                         }
                                     } finally {
+                                        if (closeConnection && connection != null) {
+                                            connection.disconnect();
+                                        }
                                         if (updateTimestamp) {
                                             ffmpeg.updateLastUpdateTimestamp();
                                         }
