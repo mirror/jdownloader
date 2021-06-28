@@ -21,6 +21,8 @@ import java.util.Map;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -129,106 +131,145 @@ public class XTubeCom extends PluginForHost {
                 filename = br.getRegex("id=\"videoDetails\">[\t\n\r ]+<p class=\"title\">([^<>\"]*?)</p>").getMatch(0);
             }
         }
-        String ownerName = br.getRegex("\\?field_subscribe_user_id=([^<>\"]*?)\"").getMatch(0);
-        if (ownerName == null) {
-            ownerName = "undefined";
-        }
-        final String json = br.getRegex("playerConf\\s*=\\s*(\\{.*?\\}),playerWrapper=").getMatch(0);
-        try {
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
-            int maxQuality = -1;
-            final List<Map<String, Object>> qualities = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "mainRoll/mediaDefinition");
-            for (final Map<String, Object> quality : qualities) {
-                final String format = (String) quality.get("format");
-                if (!format.equalsIgnoreCase("mp4")) {
-                    /* Skip e.g. hls */
-                    continue;
-                }
-                final Object qualityO = quality.get("quality");
-                final int thisQuality;
-                if (qualityO instanceof String) {
-                    thisQuality = Integer.parseInt(qualityO.toString());
-                } else {
-                    thisQuality = ((Number) qualityO).intValue();
-                }
-                if (thisQuality > maxQuality) {
-                    maxQuality = thisQuality;
-                    this.dllink = (String) quality.get("videoUrl");
-                }
-            }
-        } catch (final Throwable e) {
-            logger.log(e);
-        }
-        if (dllink == null) {
-            /* Fallback: Try the old way. */
-            if ("undefined".equals(ownerName)) {
-                final String contentOwnerId = br.getRegex("contentOwnerId\" value=\"([^\"]+)\"").getMatch(0);
-                if (contentOwnerId != null) {
-                    ownerName = contentOwnerId;
-                }
-            }
-            /* This ID can differ from the ID of the URL the user has added! We need this internal ID!! */
-            final String fileID = br.getRegex("contentId\" value=\"([^\"]+)\"").getMatch(0);
-            if (fileID == null) {
-                logger.warning("fileID is null");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final Browser brc = br.cloneBrowser();
-            /*
-             * Compared to the other handling, this will only return one quality which does not even necessarily have to be the highest
-             * possible so only use this as a fallback!
-             */
-            brc.postPage("https://www.xtube.com/find_video.php", "user%5Fid=" + Encoding.urlEncode(ownerName) + "&clip%5Fid=&video%5Fid=" + Encoding.urlEncode(fileID));
-            dllink = brc.getRegex("\\&filename=(http.*?)($|\r|\n| )").getMatch(0);
-            if (dllink == null) {
-                dllink = brc.getRegex("\\&filename=(%2Fvideos.*?hash.+)").getMatch(0);
-            }
-        }
         if (filename != null) {
             filename = Encoding.htmlDecode(filename).trim();
             link.setFinalFileName(filename + ".mp4");
         }
-        if (!StringUtils.isEmpty(dllink) && this.dllink.startsWith("http") && !isDownload) {
+        if (isDownload) {
+            String ownerName = br.getRegex("\\?field_subscribe_user_id=([^<>\"]*?)\"").getMatch(0);
+            if (ownerName == null) {
+                ownerName = "undefined";
+            }
+            final String json = br.getRegex("playerConf\\s*=\\s*(\\{.*?\\}),playerWrapper=").getMatch(0);
             try {
-                dllink = Encoding.htmlDecode(dllink);
-                if (dllink.contains("/notfound")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                URLConnectionAdapter con = null;
-                final Browser br2 = br.cloneBrowser();
-                try {
-                    br2.setFollowRedirects(true);
-                    con = br2.openHeadConnection(this.dllink);
-                    if (this.looksLikeDownloadableContent(con)) {
-                        if (con.getCompleteContentLength() > 0) {
-                            link.setDownloadSize(con.getCompleteContentLength());
-                        }
-                    } else if (con.getResponseCode() == 403) {
-                        accountRequired = true;
+                final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
+                String hlsMaster = null;
+                int maxQuality = -1;
+                final List<Map<String, Object>> qualities = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "mainRoll/mediaDefinition");
+                for (final Map<String, Object> quality : qualities) {
+                    final String format = (String) quality.get("format");
+                    final String url = quality.get("videoUrl").toString();
+                    if (format.equalsIgnoreCase("hls")) {
+                        hlsMaster = url;
+                        continue;
+                    } else if (!format.equalsIgnoreCase("mp4")) {
+                        /* Skip e.g. hls */
+                        continue;
+                    }
+                    final Object qualityO = quality.get("quality");
+                    final int thisQuality;
+                    if (qualityO instanceof String) {
+                        thisQuality = Integer.parseInt(qualityO.toString());
                     } else {
-                        server_issues = true;
+                        thisQuality = ((Number) qualityO).intValue();
                     }
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (final Throwable e) {
+                    /* 2021-06-28: Check directurls as some could be broken. Sometimes 720p is broken in HTTP streaming mode. */
+                    if (thisQuality > maxQuality && checkDirectLink(link, url)) {
+                        maxQuality = thisQuality;
+                        this.dllink = url;
                     }
                 }
-            } catch (final PluginException e) {
+                logger.info("Found max HTTP quality: " + maxQuality);
+                if (maxQuality <= 240 && !StringUtils.isEmpty(hlsMaster)) {
+                    logger.info("Prefer HLS over http as there might be higher qualities available");
+                    this.dllink = hlsMaster;
+                }
+            } catch (final Throwable e) {
+                logger.log(e);
+            }
+            if (dllink == null) {
+                /* Fallback: Try the old way. */
+                if ("undefined".equals(ownerName)) {
+                    final String contentOwnerId = br.getRegex("contentOwnerId\" value=\"([^\"]+)\"").getMatch(0);
+                    if (contentOwnerId != null) {
+                        ownerName = contentOwnerId;
+                    }
+                }
+                /* This ID can differ from the ID of the URL the user has added! We need this internal ID!! */
+                final String fileID = br.getRegex("contentId\" value=\"([^\"]+)\"").getMatch(0);
+                if (fileID == null) {
+                    logger.warning("fileID is null");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final Browser brc = br.cloneBrowser();
                 /*
-                 * Some videos that may require an account can sometimes still be watched for free --> If not, they're still online but an
-                 * account is required.
+                 * Compared to the other handling, this will only return one quality which does not even necessarily have to be the highest
+                 * possible so only use this as a fallback!
                  */
-                if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && maybePremiumonly) {
-                    this.accountRequired = true;
-                } else {
-                    throw e;
+                brc.postPage("https://www.xtube.com/find_video.php", "user%5Fid=" + Encoding.urlEncode(ownerName) + "&clip%5Fid=&video%5Fid=" + Encoding.urlEncode(fileID));
+                dllink = brc.getRegex("\\&filename=(http.*?)($|\r|\n| )").getMatch(0);
+                if (dllink == null) {
+                    dllink = brc.getRegex("\\&filename=(%2Fvideos.*?hash.+)").getMatch(0);
+                }
+                dllink = Encoding.htmlDecode(dllink);
+                try {
+                    if (dllink.contains("/notfound")) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    URLConnectionAdapter con = null;
+                    final Browser br2 = br.cloneBrowser();
+                    try {
+                        br2.setFollowRedirects(true);
+                        con = br2.openHeadConnection(this.dllink);
+                        if (this.looksLikeDownloadableContent(con)) {
+                            if (con.getCompleteContentLength() > 0) {
+                                link.setVerifiedFileSize(con.getCompleteContentLength());
+                            }
+                        } else if (con.getResponseCode() == 403) {
+                            accountRequired = true;
+                        } else {
+                            server_issues = true;
+                        }
+                    } finally {
+                        try {
+                            con.disconnect();
+                        } catch (final Throwable e) {
+                        }
+                    }
+                } catch (final PluginException e) {
+                    /*
+                     * Some videos that may require an account can sometimes still be watched for free --> If not, they're still online but
+                     * an account is required.
+                     */
+                    if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && maybePremiumonly) {
+                        this.accountRequired = true;
+                    } else {
+                        throw e;
+                    }
                 }
             }
         } else {
             this.accountRequired = maybePremiumonly;
         }
         return AvailableStatus.TRUE;
+    }
+
+    private boolean checkDirectLink(final DownloadLink link, final String dllink) {
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        /* Do not set verified filesize here as we may decide to prefer HLS. */
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    }
+                    return true;
+                } else {
+                    throw new IOException();
+                }
+            } catch (final Exception e) {
+                logger.log(e);
+                return false;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
+            }
+        }
+        return false;
     }
 
     @Override
@@ -245,16 +286,25 @@ public class XTubeCom extends PluginForHost {
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
+        if (this.dllink.contains(".m3u8")) {
+            br.getPage(this.dllink);
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+            final String url_hls = hlsbest.getStreamURL();
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, url_hls);
+            dl.startDownload();
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     private void login(final Account account, final boolean force) throws Exception {

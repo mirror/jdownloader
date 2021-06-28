@@ -26,6 +26,14 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.requests.GetRequest;
@@ -38,14 +46,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ServusCom extends PluginForHost {
@@ -203,8 +203,12 @@ public class ServusCom extends PluginForHost {
                      * 2020-10-21: WTF this almost always contains multiple items but with the same dates --> Let's just grab the first one
                      */
                     final ArrayList<Object> dateList = JSonStorage.restoreFromString(source_list_schedule_data, TypeRef.LIST);
-                    final Map<String, Object> dateInfo = (Map<String, Object>) dateList.get(0);
-                    date = (String) dateInfo.get("startTimestamp");
+                    if (dateList.isEmpty()) {
+                        logger.info("source_list_schedule_data is empty");
+                    } else {
+                        final Map<String, Object> dateInfo = (Map<String, Object>) dateList.get(0);
+                        date = (String) dateInfo.get("startTimestamp");
+                    }
                 } catch (final Throwable e) {
                     logger.log(e);
                     logger.info("Failed to grab releasedate via API");
@@ -212,6 +216,7 @@ public class ServusCom extends PluginForHost {
             }
             /* 2020-10-21: Fallback in case release-date is not given via API. */
             if (StringUtils.isEmpty(dateFormatted) && !link.getBooleanProperty(PROPERTY_HAS_TRIED_TO_CRAWL_RELEASE_DATE, false)) {
+                logger.info("Trying to find release-date via alternative way");
                 try {
                     br.getPage(link.getPluginPatternMatcher());
                     /*
