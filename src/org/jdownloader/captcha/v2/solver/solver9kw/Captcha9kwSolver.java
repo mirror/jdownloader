@@ -9,6 +9,7 @@ import org.appwork.utils.IO;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.HCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
@@ -34,12 +35,18 @@ public class Captcha9kwSolver extends AbstractCaptcha9kwSolver<String> {
 
     @Override
     protected boolean isChallengeSupported(Challenge<?> c) {
-        return c instanceof RecaptchaV2Challenge || c instanceof BasicCaptchaChallenge;
+        return c instanceof HCaptchaChallenge || c instanceof RecaptchaV2Challenge || c instanceof BasicCaptchaChallenge;
     }
 
     @Override
     public boolean canHandle(Challenge<?> c) {
-        if (c instanceof RecaptchaV2Challenge) {
+        if (c instanceof HCaptchaChallenge) {
+            try {
+                checkForEnoughCredits();
+            } catch (SolverException e) {
+                return false;
+            }
+        } else if (c instanceof RecaptchaV2Challenge) {
             try {
                 checkForEnoughCredits();
             } catch (SolverException e) {
@@ -57,11 +64,44 @@ public class Captcha9kwSolver extends AbstractCaptcha9kwSolver<String> {
 
     @Override
     protected void solveCES(CESSolverJob<String> solverJob) throws InterruptedException, SolverException {
-        Challenge<String> captchaChallenge = getChallenge(solverJob);
-        if (captchaChallenge instanceof RecaptchaV2Challenge) {
+        final Challenge<String> captchaChallenge = getChallenge(solverJob);
+        if (captchaChallenge instanceof HCaptchaChallenge) {
+            handleHCaptcha(solverJob);
+        } else if (captchaChallenge instanceof RecaptchaV2Challenge) {
             handleRecaptchaV2(solverJob);
-            return;
+        } else {
+            handleImageCaptcha(solverJob);
         }
+    }
+
+    private void handleImageCaptcha(CESSolverJob<String> solverJob) throws InterruptedException, SolverException {
+        checkInterruption();
+        final RequestOptions options = prepare(solverJob);
+        if (options.getMoreoptions().containsKey("userconfirm")) {
+            options.getMoreoptions().remove("userconfirm");
+        } else {
+            options.setConfirm(config.isconfirm());
+        }
+        try {
+            final Challenge<String> captchaChallenge = getChallenge(solverJob);
+            final byte[] data = IO.readFile(((ImageCaptchaChallenge) captchaChallenge).getImageFile());
+            final UrlQuery qi = createQueryForUpload(solverJob, options, data);
+            final UrlQuery queryPoll = createQueryForPolling();
+            final Browser br = new Browser();
+            br.setAllowedResponseCodes(new int[] { 500 });
+            final String captchaID = upload(br, solverJob, qi);
+            poll(br, options, solverJob, captchaID, queryPoll);
+        } catch (IOException e) {
+            solverJob.getChallenge().sendStatsError(this, e);
+            setdebug(solverJob, "Interrupted: " + e);
+            counterInterrupted.incrementAndGet();
+            solverJob.getLogger().log(e);
+        } finally {
+            System.out.println(1);
+        }
+    }
+
+    private void handleHCaptcha(CESSolverJob<String> solverJob) throws InterruptedException, SolverException {
         checkInterruption();
         RequestOptions options = prepare(solverJob);
         if (options.getMoreoptions().containsKey("userconfirm")) {
@@ -70,12 +110,31 @@ public class Captcha9kwSolver extends AbstractCaptcha9kwSolver<String> {
             options.setConfirm(config.isconfirm());
         }
         try {
-            final byte[] data = IO.readFile(((ImageCaptchaChallenge) captchaChallenge).getImageFile());
-            UrlQuery qi = createQueryForUpload(solverJob, options, data);
-            UrlQuery queryPoll = createQueryForPolling();
-            Browser br = new Browser();
+            final HCaptchaChallenge hCaptcha = (HCaptchaChallenge) getChallenge(solverJob);
+            final UrlQuery qi = new UrlQuery();
+            qi.appendEncoded("action", "usercaptchaupload");
+            qi.appendEncoded("jd", "2");
+            qi.appendEncoded("source", "jd2");
+            qi.appendEncoded("captchaperhour", options.getCph() + "");
+            qi.appendEncoded("captchapermin", options.getCpm() + "");
+            qi.appendEncoded("prio", options.getPriothing() + "");
+            qi.appendEncoded("selfsolve", options.isSelfsolve() + "");
+            qi.appendEncoded("proxy", options.getproxyhostport() + "");
+            qi.appendEncoded("proxytype", options.getproxytype() + "");
+            qi.appendEncoded("confirm", "false");
+            qi.appendEncoded("maxtimeout", options.getTimeoutthing() + "");
+            qi.addAll(options.getMoreoptions().list());
+            qi.appendEncoded("apikey", config.getApiKey() + "");
+            qi.appendEncoded("captchaSource", "jdPlugin");
+            qi.appendEncoded("version", "1.2");
+            qi.appendEncoded("data-sitekey", hCaptcha.getSiteKey());
+            qi.appendEncoded("pageurl", hCaptcha.getSiteUrl());
+            qi.appendEncoded("captchachoice", "hcaptcha");
+            qi.appendEncoded("interactive", "1");
+            final UrlQuery queryPoll = createQueryForPolling();
+            final Browser br = new Browser();
             br.setAllowedResponseCodes(new int[] { 500 });
-            String captchaID = upload(br, solverJob, qi);
+            final String captchaID = upload(br, solverJob, qi);
             poll(br, options, solverJob, captchaID, queryPoll);
         } catch (IOException e) {
             solverJob.getChallenge().sendStatsError(this, e);
@@ -89,15 +148,15 @@ public class Captcha9kwSolver extends AbstractCaptcha9kwSolver<String> {
 
     private void handleRecaptchaV2(CESSolverJob<String> solverJob) throws InterruptedException, SolverException {
         checkInterruption();
-        RequestOptions options = prepare(solverJob);
+        final RequestOptions options = prepare(solverJob);
         if (options.getMoreoptions().containsKey("userconfirm")) {
             options.getMoreoptions().remove("userconfirm");
         } else {
             options.setConfirm(config.isconfirm());
         }
         try {
-            RecaptchaV2Challenge rcChallenge = (RecaptchaV2Challenge) getChallenge(solverJob);
-            UrlQuery qi = new UrlQuery();
+            final RecaptchaV2Challenge rcChallenge = (RecaptchaV2Challenge) getChallenge(solverJob);
+            final UrlQuery qi = new UrlQuery();
             qi.appendEncoded("action", "usercaptchaupload");
             qi.appendEncoded("jd", "2");
             qi.appendEncoded("source", "jd2");
@@ -132,10 +191,10 @@ public class Captcha9kwSolver extends AbstractCaptcha9kwSolver<String> {
             }
             qi.appendEncoded("securetoken", rcChallenge.getSecureToken());
             qi.appendEncoded("interactive", 1 + "");
-            UrlQuery queryPoll = createQueryForPolling();
-            Browser br = new Browser();
+            final UrlQuery queryPoll = createQueryForPolling();
+            final Browser br = new Browser();
             br.setAllowedResponseCodes(new int[] { 500 });
-            String captchaID = upload(br, solverJob, qi);
+            final String captchaID = upload(br, solverJob, qi);
             poll(br, options, solverJob, captchaID, queryPoll);
         } catch (IOException e) {
             solverJob.getChallenge().sendStatsError(this, e);
@@ -149,7 +208,7 @@ public class Captcha9kwSolver extends AbstractCaptcha9kwSolver<String> {
 
     @Override
     protected void parseResponse(CESSolverJob<String> solverJob, Challenge<String> captchaChallenge, String captchaID, String ret) {
-        final AbstractResponse<String> answer = captchaChallenge.parseAPIAnswer(ret, captchaChallenge instanceof RecaptchaV2Challenge ? "rawtoken" : null, this);
+        final AbstractResponse<String> answer = captchaChallenge.parseAPIAnswer(ret, (captchaChallenge instanceof RecaptchaV2Challenge || captchaChallenge instanceof HCaptchaChallenge) ? "rawtoken" : null, this);
         solverJob.setAnswer(new Captcha9kwResponse(captchaChallenge, this, answer.getValue(), answer.getPriority(), captchaID));
     }
 }

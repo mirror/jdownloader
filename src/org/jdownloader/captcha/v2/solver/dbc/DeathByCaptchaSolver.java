@@ -157,12 +157,15 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
                 if (status != null && status.isSolved()) {
                     job.getLogger().info("CAPTCHA(" + type + ")uploaded: " + status.getCaptcha() + "|solved: " + status.getText());
                     final DeathByCaptchaResponse response;
-                    if (challenge instanceof RecaptchaV2Challenge) {
+                    if (challenge instanceof HCaptchaChallenge) {
+                        final HCaptchaChallenge hc = (HCaptchaChallenge) challenge;
+                        response = new DeathByCaptchaResponse(hc, this, status, status.getText(), 100);
+                    } else if (challenge instanceof RecaptchaV2Challenge) {
                         final RecaptchaV2Challenge rv2c = (RecaptchaV2Challenge) challenge;
                         response = new DeathByCaptchaResponse(rv2c, this, status, status.getText(), 100);
                     } else {
                         final BasicCaptchaChallenge bcc = (BasicCaptchaChallenge) challenge;
-                        AbstractResponse<String> answer = bcc.parseAPIAnswer(status.getText().replace("[", "").replace("]", ""), null, this);
+                        final AbstractResponse<String> answer = bcc.parseAPIAnswer(status.getText().replace("[", "").replace("]", ""), null, this);
                         response = new DeathByCaptchaResponse(bcc, this, status, answer.getValue(), answer.getPriority());
                     }
                     job.setAnswer(response);

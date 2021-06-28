@@ -4,7 +4,7 @@ import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
 
 public class AntiCaptchaComResponse extends CaptchaResponse {
-    private int taskId;
+    private final int taskId;
 
     public int getTaskId() {
         return taskId;
