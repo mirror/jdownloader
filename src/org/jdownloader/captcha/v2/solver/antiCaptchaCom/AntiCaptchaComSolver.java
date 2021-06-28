@@ -14,6 +14,7 @@ import org.appwork.utils.encoding.Base64;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.SolverStatus;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.HCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
@@ -48,7 +49,7 @@ public class AntiCaptchaComSolver extends AbstractAntiCaptchaComSolver<String> {
 
     @Override
     protected boolean isChallengeSupported(Challenge<?> c) {
-        return c instanceof RecaptchaV2Challenge || c instanceof BasicCaptchaChallenge;
+        return c instanceof HCaptchaChallenge || c instanceof RecaptchaV2Challenge || c instanceof BasicCaptchaChallenge;
     }
 
     private void errorHandling(AntiCaptchaComAccount account, Map<String, Object> response) throws Exception {
@@ -77,60 +78,124 @@ public class AntiCaptchaComSolver extends AbstractAntiCaptchaComSolver<String> {
 
     @Override
     protected void solveCES(CESSolverJob<String> job) throws InterruptedException, SolverException {
-        Challenge<String> challenge = job.getChallenge();
-        if (challenge instanceof RecaptchaV2Challenge) {
+        final Challenge<String> challenge = job.getChallenge();
+        if (challenge instanceof HCaptchaChallenge) {
+            handleHCaptcha(job);
+        } else if (challenge instanceof RecaptchaV2Challenge) {
             handleRecaptchaV2(job);
-            return;
         } else if (challenge instanceof ImageCaptchaChallenge) {
-            job.showBubble(this);
-            checkInterruption();
-            try {
-                job.getChallenge().sendStatsSolving(this);
-                Browser br = new Browser();
-                br.setReadTimeout(5 * 60000);
-                // Put your CAPTCHA image file, file object, input stream,
-                // or vector of bytes here:
-                job.setStatus(SolverStatus.SOLVING);
-                long startTime = System.currentTimeMillis();
-                HashMap<String, Object> dataMap = new HashMap<String, Object>();
+            handleImageCaptcha(job);
+        }
+    }
+
+    /**
+     * https://anti-captcha.com/de/apidoc/task-types/ImageToTextTask
+     *
+     * @param job
+     * @throws InterruptedException
+     */
+    private void handleImageCaptcha(CESSolverJob<String> job) throws InterruptedException {
+        final Challenge<String> challenge = job.getChallenge();
+        job.showBubble(this);
+        checkInterruption();
+        try {
+            job.getChallenge().sendStatsSolving(this);
+            Browser br = new Browser();
+            br.setReadTimeout(5 * 60000);
+            // Put your CAPTCHA image file, file object, input stream,
+            // or vector of bytes here:
+            job.setStatus(SolverStatus.SOLVING);
+            final HashMap<String, Object> task = new HashMap<String, Object>();
+            task.put("type", "ImageToTextTask");
+            task.put("body", Base64.encodeToString(IO.readFile(((ImageCaptchaChallenge) challenge).getImageFile()), false));
+            task.put("phrase", false);
+            task.put("case", true);
+            task.put("numeric", false);
+            task.put("math", false);
+            task.put("minLength", 0);
+            task.put("maxLength", 0);
+            HashMap<String, Object> dataMap = new HashMap<String, Object>();
+            dataMap.put("clientKey", config.getApiKey());
+            dataMap.put("task", task);
+            dataMap.put("softId", 832);
+            String json = br.postPageRaw("https://api.anti-captcha.com/createTask", JSonStorage.serializeToJson(dataMap));
+            HashMap<String, Object> response = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            errorHandling(null, response);
+            final int taskID = ((Number) response.get("taskId")).intValue();
+            job.setStatus(new SolverStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 20)));
+            while (true) {
+                dataMap = new HashMap<String, Object>();
                 dataMap.put("clientKey", config.getApiKey());
-                HashMap<String, Object> task = new HashMap<String, Object>();
-                task.put("type", "ImageToTextTask");
-                task.put("body", Base64.encodeToString(IO.readFile(((ImageCaptchaChallenge) challenge).getImageFile()), false));
-                task.put("phrase", false);
-                task.put("case", true);
-                task.put("numeric", false);
-                task.put("math", false);
-                task.put("minLength", 0);
-                task.put("maxLength", 0);
-                dataMap.put("task", task);
-                dataMap.put("softId", 832);
-                String json = br.postPageRaw("https://api.anti-captcha.com/createTask", JSonStorage.serializeToJson(dataMap));
-                HashMap<String, Object> response = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                dataMap.put("taskId", taskID);
+                json = br.postPageRaw("https://api.anti-captcha.com/getTaskResult", JSonStorage.serializeToJson(dataMap));
+                response = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
                 errorHandling(null, response);
-                int taskID = ((Number) response.get("taskId")).intValue();
-                job.setStatus(new SolverStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 20)));
-                while (true) {
-                    dataMap = new HashMap<String, Object>();
-                    dataMap.put("clientKey", config.getApiKey());
-                    dataMap.put("taskId", taskID);
-                    json = br.postPageRaw("https://api.anti-captcha.com/getTaskResult", JSonStorage.serializeToJson(dataMap));
-                    response = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-                    errorHandling(null, response);
-                    logger.info(json);
-                    if ("ready".equals(response.get("status"))) {
-                        Map<String, Object> solution = ((Map<String, Object>) response.get("solution"));
-                        job.setAnswer(new AntiCaptchaComResponse(challenge, this, taskID, String.valueOf(solution.get("text"))));
-                    } else {
-                        Thread.sleep(1000);
-                        continue;
-                    }
-                    return;
+                logger.info(json);
+                if ("ready".equals(response.get("status"))) {
+                    final Map<String, Object> solution = ((Map<String, Object>) response.get("solution"));
+                    job.setAnswer(new AntiCaptchaComResponse(challenge, this, taskID, String.valueOf(solution.get("text"))));
+                } else {
+                    Thread.sleep(1000);
+                    continue;
                 }
-            } catch (Exception e) {
-                job.getChallenge().sendStatsError(this, e);
-                job.getLogger().log(e);
+                return;
             }
+        } catch (Exception e) {
+            job.getChallenge().sendStatsError(this, e);
+            job.getLogger().log(e);
+        }
+    }
+
+    /**
+     * https://anti-captcha.com/de/apidoc/task-types/HCaptchaTaskProxyless
+     *
+     * @param job
+     * @throws InterruptedException
+     */
+    private void handleHCaptcha(CESSolverJob<String> job) throws InterruptedException {
+        final HCaptchaChallenge challenge = (HCaptchaChallenge) job.getChallenge();
+        job.showBubble(this);
+        checkInterruption();
+        try {
+            job.getChallenge().sendStatsSolving(this);
+            Browser br = new Browser();
+            br.setReadTimeout(5 * 60000);
+            // Put your CAPTCHA image file, file object, input stream,
+            // or vector of bytes here:
+            job.setStatus(SolverStatus.SOLVING);
+            final HashMap<String, Object> task = new HashMap<String, Object>();
+            task.put("type", "HCaptchaTaskProxyless");
+            task.put("websiteURL", challenge.getSiteUrl());
+            task.put("websiteKey", challenge.getSiteKey());
+            HashMap<String, Object> dataMap = new HashMap<String, Object>();
+            dataMap.put("clientKey", config.getApiKey());
+            dataMap.put("task", task);
+            dataMap.put("softId", 832);
+            String json = br.postPageRaw("https://api.anti-captcha.com/createTask", JSonStorage.serializeToJson(dataMap));
+            HashMap<String, Object> response = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            errorHandling(null, response);
+            final int taskID = ((Number) response.get("taskId")).intValue();
+            job.setStatus(new SolverStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 20)));
+            while (true) {
+                dataMap = new HashMap<String, Object>();
+                dataMap.put("clientKey", config.getApiKey());
+                dataMap.put("taskId", taskID);
+                json = br.postPageRaw("https://api.anti-captcha.com/getTaskResult ", JSonStorage.serializeToJson(dataMap));
+                response = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                errorHandling(null, response);
+                logger.info(json);
+                if ("ready".equals(response.get("status"))) {
+                    final Map<String, Object> solution = ((Map<String, Object>) response.get("solution"));
+                    job.setAnswer(new AntiCaptchaComResponse(challenge, this, taskID, String.valueOf(solution.get("gRecaptchaResponse"))));
+                } else {
+                    Thread.sleep(1000);
+                    continue;
+                }
+                return;
+            }
+        } catch (Exception e) {
+            job.getChallenge().sendStatsError(this, e);
+            job.getLogger().log(e);
         }
     }
 
@@ -145,23 +210,42 @@ public class AntiCaptchaComSolver extends AbstractAntiCaptchaComSolver<String> {
             // Put your CAPTCHA image file, file object, input stream,
             // or vector of bytes here:
             job.setStatus(SolverStatus.SOLVING);
-            long startTime = System.currentTimeMillis();
-            HashMap<String, Object> dataMap = new HashMap<String, Object>();
-            dataMap.put("clientKey", config.getApiKey());
             HashMap<String, Object> task = new HashMap<String, Object>();
-            task.put("type", "NoCaptchaTaskProxyless");
-            task.put("websiteURL", "http://" + challenge.getSiteDomain());
+            task.put("websiteURL", challenge.getSiteUrl());
             task.put("websiteKey", challenge.getSiteKey());
+            if (challenge.getV3Action() != null) {
+                // v3
+                task.put("type", "RecaptchaV3TaskProxyless");
+                if (challenge.isEnterprise()) {
+                    task.put("isEnterprise", Boolean.TRUE);
+                }
+                final String action = (String) challenge.getV3Action().get("action");
+                if (action != null) {
+                    task.put("pageAction", action);
+                }
+                task.put("minScore", 0.3d);
+            } else {
+                // v2
+                if (challenge.isEnterprise()) {
+                    task.put("type", "RecaptchaV2EnterpriseTaskProxyless");
+                } else {
+                    task.put("type", "RecaptchaV2TaskProxyless");
+                }
+                if (challenge.isInvisible()) {
+                    task.put("isInvisible", Boolean.TRUE);
+                }
+            }
             if (StringUtils.isNotEmpty(challenge.getSecureToken())) {
                 task.put("websiteSToken", challenge.getSecureToken());
             }
-            task.put("type", "NoCaptchaTaskProxyless");
+            HashMap<String, Object> dataMap = new HashMap<String, Object>();
+            dataMap.put("clientKey", config.getApiKey());
             dataMap.put("task", task);
             dataMap.put("softId", 832);
             String json = br.postPageRaw("https://api.anti-captcha.com/createTask", JSonStorage.serializeToJson(dataMap));
             HashMap<String, Object> response = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
             errorHandling(null, response);
-            int taskID = ((Number) response.get("taskId")).intValue();
+            final int taskID = ((Number) response.get("taskId")).intValue();
             job.setStatus(new SolverStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 20)));
             while (true) {
                 dataMap = new HashMap<String, Object>();
@@ -189,11 +273,11 @@ public class AntiCaptchaComSolver extends AbstractAntiCaptchaComSolver<String> {
     protected boolean validateLogins() {
         if (!CFG_ANTICAPTCHA_COM.ENABLED.isEnabled()) {
             return false;
-        }
-        if (StringUtils.isEmpty(CFG_ANTICAPTCHA_COM.API_KEY.getValue())) {
+        } else if (StringUtils.isEmpty(CFG_ANTICAPTCHA_COM.API_KEY.getValue())) {
             return false;
+        } else {
+            return true;
         }
-        return true;
     }
 
     @Override
