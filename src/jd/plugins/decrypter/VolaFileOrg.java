@@ -2,9 +2,19 @@ package jd.plugins.decrypter;
 
 import java.net.URL;
 import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.websocket.ReadWebSocketFrame;
+import org.appwork.utils.net.websocket.WebSocketFrameHeader;
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -18,14 +28,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.websocket.WebSocketClient;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.websocket.ReadWebSocketFrame;
-import org.appwork.utils.net.websocket.WebSocketFrameHeader;
-import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "volafile.org" }, urls = { "https?://(?:www\\.)?volafile\\.(?:org|io)/r/[A-Za-z0-9\\-_]+" })
 public class VolaFileOrg extends PluginForDecrypt {
@@ -100,6 +102,12 @@ public class VolaFileOrg extends PluginForDecrypt {
                             if (passCode != null) {
                                 link.setDownloadPassword(passCode);
                             }
+                            /* Set this as Packagizer/EventScripter property so user can see when the file will get deleted. */
+                            final long expireTimestamp = ((Number) fileInfo.get(4)).longValue();
+                            final SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                            final String dateFormatted = sd.format(new Date(expireTimestamp));
+                            link.setComment("Expires: " + dateFormatted);
+                            link.setProperty("expireTimestamp", expireTimestamp);
                             ret.add(link);
                         }
                         return ret;
