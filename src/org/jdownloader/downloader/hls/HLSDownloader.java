@@ -1247,15 +1247,15 @@ public class HLSDownloader extends DownloadInterface {
                                         }
                                     }
                                     final byte[] readWriteBuffer = new byte[32 * 1024];
-                                    long length;
-                                    if (fileBytesMap.getFinalSize() > 0) {
-                                        length = fileBytesMap.getFinalSize();
-                                    } else if (byteRange != null) {
-                                        length = connection.getContentLength();
-                                    } else {
-                                        length = connection.getCompleteContentLength();
-                                    }
+                                    long length = -1;
                                     try {
+                                        if (fileBytesMap.getFinalSize() > 0) {
+                                            length = fileBytesMap.getFinalSize();
+                                        } else if (byteRange != null) {
+                                            length = connection.getContentLength();
+                                        } else {
+                                            length = connection.getCompleteContentLength();
+                                        }
                                         if (requestOutputStream == null) {
                                             // final String acceptRanges =
                                             // connection.getHeaderField(HTTPConstants.HEADER_RESPONSE_ACCEPT_RANGES);
