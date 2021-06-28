@@ -112,7 +112,11 @@ public class FileBoomMe extends K2SApi {
 
     @Override
     protected String getReCaptchaV2WebsiteKey() {
-        return "6LevsdIaAAAAAIQkoV594FJum58kto6BBLrITlJk";
+        if (isRecaptchaEnterprise()) {
+            return "6LfRvVIbAAAAANY5eQrg63sn9TRB3QTYfxGv9Fhm";
+        } else {
+            return "6LevsdIaAAAAAIQkoV594FJum58kto6BBLrITlJk";
+        }
     }
 
     @Override

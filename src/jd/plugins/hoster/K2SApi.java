@@ -857,7 +857,12 @@ public abstract class K2SApi extends PluginForHost {
                 final String msg = PluginJSonUtils.getJson(br, "message");
                 if ("Captcha validation error".equalsIgnoreCase(msg)) {
                     /* Captcha + waittime required */
-                    final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br, this.getReCaptchaV2WebsiteKey());
+                    final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br, this.getReCaptchaV2WebsiteKey()) {
+                        @Override
+                        protected boolean isEnterprise(String source) {
+                            return K2SApi.this.isRecaptchaEnterprise() || super.isEnterprise(source);
+                        };
+                    };
                     final String recaptchaV2Response = rc2.getToken();
                     getPage("/v1/files/" + fuid + "/download?captchaType=recaptcha&captchaValue=" + Encoding.urlEncode(recaptchaV2Response) + "&referer=" + Encoding.urlEncode(custom_referer));
                     final String waitStr = PluginJSonUtils.getJson(br, "timeRemain");
@@ -1094,7 +1099,12 @@ public abstract class K2SApi extends PluginForHost {
                             if (dummyLink) {
                                 setDownloadLink(new DownloadLink(null, "Account", getInternalAPIDomain(), cbr.getURL(), true));
                             }
-                            final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, cbr, getReCaptchaV2WebsiteKey());
+                            final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, cbr, getReCaptchaV2WebsiteKey()) {
+                                @Override
+                                protected boolean isEnterprise(String source) {
+                                    return K2SApi.this.isRecaptchaEnterprise() || super.isEnterprise(source);
+                                };
+                            };
                             final String recaptchaV2Response = rc2.getToken();
                             if (recaptchaV2Response == null) {
                                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -2449,6 +2459,10 @@ public abstract class K2SApi extends PluginForHost {
             }
         }
         return null;
+    }
+
+    protected boolean isRecaptchaEnterprise() {
+        return false;
     }
 
     /**
