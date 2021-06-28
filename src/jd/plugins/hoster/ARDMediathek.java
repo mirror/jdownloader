@@ -98,7 +98,7 @@ public class ARDMediathek extends PluginForHost {
     }
 
     public static boolean isVideoContent(final URLConnectionAdapter con) {
-        return con != null && con.getResponseCode() == 200 && !StringUtils.containsIgnoreCase(con.getContentType(), "video") && con.getCompleteContentLength() > 512 * 1024l;
+        return con != null && con.getResponseCode() == 200 && StringUtils.containsIgnoreCase(con.getContentType(), "video") && con.getCompleteContentLength() > 512 * 1024l;
     }
 
     @Override
