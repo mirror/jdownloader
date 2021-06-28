@@ -17,9 +17,12 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -49,6 +52,9 @@ public class PrrpLinkIn extends PluginForDecrypt {
             final Browser brc = this.br.cloneBrowser();
             brc.postPage("/qaptcha/php/Qaptcha.jquery.php", "action=qaptcha");
             br.postPage(this.br.getURL(), "iQapTcha=");
+        } else if (CaptchaHelperCrawlerPluginHCaptcha.containsHCaptcha(this.br)) {
+            final String hcaptchaResponse = new CaptchaHelperCrawlerPluginHCaptcha(this, br).getToken();
+            br.postPage(br.getURL(), "h-captcha-response=" + Encoding.urlEncode(hcaptchaResponse));
         }
         String urlText = br.getRegex("<article.*?>(.*?)</article").getMatch(0);
         if (urlText == null) {

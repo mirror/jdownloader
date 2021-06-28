@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.controlling.PasswordUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
@@ -119,6 +120,13 @@ public class SpasteCom extends antiDDoSForDecrypt {
                 form.put("adcopy_challenge", Encoding.urlEncode(chid));
                 form.put("pasteUrlForm%5Bsubmit%5D", "submit");
                 submitForm(form);
+                break;
+            } else if (this.containsHCaptcha(form)) {
+                final String hcaptchaResponse = new CaptchaHelperCrawlerPluginHCaptcha(this, br).getToken();
+                form.put("g-recaptcha-response", Encoding.urlEncode(hcaptchaResponse));
+                form.put("h-captcha-response", Encoding.urlEncode(hcaptchaResponse));
+                submitForm(form);
+                break;
             } else if (captchaScript != null) {
                 // hello!
                 final String hash = getJS(captchaScript, "myCaptchaHash");
