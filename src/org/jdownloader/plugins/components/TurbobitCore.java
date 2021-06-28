@@ -509,7 +509,7 @@ public class TurbobitCore extends antiDDoSForHost {
         if (containsHCaptcha(br)) {
             final String response = new CaptchaHelperHostPluginHCaptcha(this, br).getToken();
             captchaform.put("g-recaptcha-response", Encoding.urlEncode(response));
-            captchaform.put("h-recaptcha-response", Encoding.urlEncode(response));
+            captchaform.put("h-captcha-response", Encoding.urlEncode(response));
             return true;
         } else if (containsRecaptchaV2Class(br)) {
             /* ReCaptchaV2 */
@@ -582,7 +582,7 @@ public class TurbobitCore extends antiDDoSForHost {
         }
         processCaptchaForm(link, account, captchaform, br, false);
         submitForm(captchaform);
-        if (br.getHttpConnection().getResponseCode() == 302) {
+        if (br.getHttpConnection().getResponseCode() == 302 || br.containsHTML("<div\\s*class\\s*=\\s*\"captcha-error\"\\s*>\\s*Incorrect")) {
             /* Solving took too long? */
             invalidateLastChallengeResponse();
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
