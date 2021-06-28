@@ -66,7 +66,7 @@ public class TwitterCom extends PornEmbedParser {
 
     private static final String            TYPE_CARD            = "https?://[^/]+/i/cards/tfw/v1/(\\d+)";
     private static final String            TYPE_USER_ALL        = "https?://[^/]+/[A-Za-z0-9_\\-]+(?:/(?:media|likes))?";
-    private static final String            TYPE_USER_POST       = "https?://(?:www\\.)?twitter\\.com.*?status/(\\d+).*?";
+    private static final String            TYPE_USER_POST       = "https?://[^/]+/([^/]+)/status/(\\d+).*?";
     private static final String            TYPE_REDIRECT        = "https?://t\\.co/[a-zA-Z0-9]+";
     private ArrayList<DownloadLink>        decryptedLinks       = new ArrayList<DownloadLink>();
     private static AtomicReference<String> GUEST_TOKEN          = new AtomicReference<String>();
@@ -154,7 +154,7 @@ public class TwitterCom extends PornEmbedParser {
                 }
                 /* Fallback to API/normal website */
             }
-            final String tweetID = new Regex(param.getCryptedUrl(), TYPE_USER_POST).getMatch(0);
+            final String tweetID = new Regex(param.getCryptedUrl(), TYPE_USER_POST).getMatch(1);
             crawlAPITweet(param, tweetID, account);
         } else {
             crawlUserViaAPI(param, account);
