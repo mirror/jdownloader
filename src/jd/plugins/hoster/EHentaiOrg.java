@@ -605,7 +605,7 @@ public class EHentaiOrg extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else if (br.containsHTML("¿You have exceeded your image viewing limits\\. Note that you can reset these limits by going")) {
+            } else if (br.containsHTML("﻿(?i)You have exceeded your image viewing limits")) {
                 limitReached(account);
             } else if (br.getURL().contains("bounce_login.php")) {
                 /* Account required / re-login required */
