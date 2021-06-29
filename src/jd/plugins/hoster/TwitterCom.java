@@ -16,9 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Locale;
 import java.util.Map;
 
 import org.appwork.storage.config.annotations.AboutConfig;
@@ -51,7 +49,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -113,7 +110,6 @@ public class TwitterCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         setconstants(link);
         prepBR(this.br);
-        URLConnectionAdapter con = null;
         String title = null;
         /* Most times twitter-image/videolinks will come from the decrypter. */
         String filename = link.getStringProperty("decryptedfilename", null);
@@ -304,84 +300,64 @@ public class TwitterCom extends PluginForHost {
                 }
             }
         } else { // TYPE_DIRECT - jpg/png/mp4
-            dllink = link.getDownloadURL();
-            if (dllink.contains("jpg") || dllink.contains("png")) {
-                try {
-                    final String dllink_temp;
-                    if (dllink.contains(":large")) {
-                        dllink_temp = dllink.replace(":large", "") + ":orig";
-                    } else if (dllink.matches("(?i).+\\.(jpg|jpeg|png)$")) {
-                        /* Append this to get the highest quality possible */
-                        dllink_temp = dllink + ":orig";
-                    } else {
-                        dllink_temp = dllink;
-                    }
-                    con = br.openHeadConnection(dllink_temp);
-                    if (this.looksLikeDownloadableContent(con)) {
-                        dllink = dllink_temp;
-                        link.setUrlDownload(dllink);
-                        if (con.getCompleteContentLength() > 0) {
-                            link.setVerifiedFileSize(con.getCompleteContentLength());
-                        }
-                        String urlName = Plugin.getFileNameFromURL(new URL(link.getDownloadURL().replace(":orig", "")));
-                        if (urlName != null && link.getFinalFileName() == null) {
-                            final String ext = getExtensionFromMimeType(con.getContentType());
-                            if (ext != null && !urlName.toLowerCase(Locale.ENGLISH).endsWith(ext.toLowerCase(Locale.ENGLISH))) {
-                                urlName += "." + ext;
-                            }
-                            link.setFinalFileName(urlName);
-                        }
-                    }
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (final Throwable ignore) {
-                    }
+            if (link.getDownloadURL().contains("jpg") || link.getDownloadURL().contains("png")) {
+                final String dllink_temp;
+                if (dllink.contains(":large")) {
+                    dllink_temp = dllink.replace(":large", "") + ":orig";
+                } else if (dllink.matches("(?i).+\\.(jpg|jpeg|png)$")) {
+                    /* Append this to get the highest quality possible */
+                    dllink_temp = dllink + ":orig";
+                } else {
+                    dllink_temp = dllink;
                 }
+                dllink = dllink_temp;
+            } else {
+                dllink = link.getDownloadURL();
             }
         }
         if (!StringUtils.isEmpty(dllink)) {
-            try {
-                if (dllink.contains(".m3u8")) {
-                    link.setFinalFileName(filename);
-                    checkFFProbe(link, "Download a HLS Stream");
-                    br.setAllowedResponseCodes(new int[] { 403 });
-                    try {
-                        br.getPage(dllink);
-                    } catch (final Exception e) {
-                        logger.info("Fatal failure");
+            if (dllink.contains(".m3u8")) {
+                link.setFinalFileName(filename);
+                checkFFProbe(link, "Download a HLS Stream");
+                br.setAllowedResponseCodes(new int[] { 403 });
+                try {
+                    br.getPage(dllink);
+                } catch (final Exception e) {
+                    logger.info("Fatal failure");
+                }
+                if (this.br.getHttpConnection().getResponseCode() == 403) {
+                    /* 2017-06-01: Unsure because browser shows the thumbnail and video 'wants to play' but doesn't. */
+                    // throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked or offline content");
+                    if (possibly_geo_blocked) {
+                        /* We already had the info before that this content is probably GEO-blocked - now we know it for sure! */
+                        geo_blocked = true;
+                    } else {
+                        account_required = true;
                     }
-                    if (this.br.getHttpConnection().getResponseCode() == 403) {
-                        /* 2017-06-01: Unsure because browser shows the thumbnail and video 'wants to play' but doesn't. */
-                        // throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked or offline content");
-                        if (possibly_geo_blocked) {
-                            /* We already had the info before that this content is probably GEO-blocked - now we know it for sure! */
-                            geo_blocked = true;
-                        } else {
-                            account_required = true;
-                        }
-                        return AvailableStatus.TRUE;
-                    } else if (br.getHttpConnection().getResponseCode() == 404) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    return AvailableStatus.TRUE;
+                } else if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                final HlsContainer hlsBest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+                this.dllink = hlsBest.getDownloadurl();
+                final HLSDownloader downloader = new HLSDownloader(link, br, dllink);
+                final StreamInfo streamInfo = downloader.getProbe();
+                if (streamInfo == null) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "HLS failure");
+                }
+                final int hlsBandwidth = hlsBest.getBandwidth();
+                if (hlsBandwidth > 0) {
+                    for (M3U8Playlist playList : downloader.getPlayLists()) {
+                        playList.setAverageBandwidth(hlsBandwidth);
                     }
-                    final HlsContainer hlsBest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-                    this.dllink = hlsBest.getDownloadurl();
-                    final HLSDownloader downloader = new HLSDownloader(link, br, dllink);
-                    final StreamInfo streamInfo = downloader.getProbe();
-                    if (streamInfo == null) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "HLS failure");
-                    }
-                    final int hlsBandwidth = hlsBest.getBandwidth();
-                    if (hlsBandwidth > 0) {
-                        for (M3U8Playlist playList : downloader.getPlayLists()) {
-                            playList.setAverageBandwidth(hlsBandwidth);
-                        }
-                    }
-                    final long estimatedSize = downloader.getEstimatedSize();
-                    if (estimatedSize > 0) {
-                        link.setDownloadSize(estimatedSize);
-                    }
-                } else {
+                }
+                final long estimatedSize = downloader.getEstimatedSize();
+                if (estimatedSize > 0) {
+                    link.setDownloadSize(estimatedSize);
+                }
+            } else {
+                URLConnectionAdapter con = null;
+                try {
                     con = br.openHeadConnection(dllink);
                     if (con.getResponseCode() == 404) {
                         /* Definitly offline */
@@ -404,16 +380,22 @@ public class TwitterCom extends PluginForHost {
                         if (filename == null) {
                             filename = Encoding.htmlDecode(getFileNameFromHeader(con)).replace(":orig", "");
                         }
-                        if (tweetID != null && !filename.contains(tweetID)) {
-                            filename = tweetID + "_" + filename;
+                        if (filename != null) {
+                            if (tweetID != null && !filename.contains(tweetID)) {
+                                filename = tweetID + "_" + filename;
+                            }
+                            final String ext = getExtensionFromMimeType(con.getContentType());
+                            if (ext != null) {
+                                filename = applyFilenameExtension(filename, "." + ext);
+                            }
+                            link.setFinalFileName(filename);
                         }
-                        link.setFinalFileName(filename);
                     }
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
             }
         }
