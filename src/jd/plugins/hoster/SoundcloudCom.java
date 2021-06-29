@@ -363,7 +363,7 @@ public class SoundcloudCom extends PluginForHost {
             dl = new HLSDownloader(link, br, dllink);
             dl.startDownload();
         } else {
-            if (dllink == null) {
+            if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
@@ -995,7 +995,7 @@ public class SoundcloudCom extends PluginForHost {
     public static final boolean  defaultGRAB_PURCHASE_URL            = false;
     public static final boolean  defaultGRAB500THUMB                 = false;
     public static final boolean  defaultGRABORIGINALTHUMB            = false;
-    private final static String  defaultCustomDate                   = "dd.MM.yyyy";
+    private final static String  defaultCustomDate                   = "yyyy-MM-dd";
     private final static String  defaultCustomFilename               = "*songtitle*_*linkid* - *channelname**ext*";
     private final static String  defaultCustomPackagename            = "*channelname* - *playlistname*";
 
