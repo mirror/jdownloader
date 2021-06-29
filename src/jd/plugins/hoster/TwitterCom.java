@@ -16,7 +16,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Map;
 
 import org.appwork.storage.config.annotations.AboutConfig;
@@ -49,6 +51,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -307,7 +310,7 @@ public class TwitterCom extends PluginForHost {
                     final String dllink_temp;
                     if (dllink.contains(":large")) {
                         dllink_temp = dllink.replace(":large", "") + ":orig";
-                    } else if (dllink.lastIndexOf(":") < 8 && dllink.matches(".+\\.(jpg|jpeg|png)$")) {
+                    } else if (dllink.matches("(?i).+\\.(jpg|jpeg|png)$")) {
                         /* Append this to get the highest quality possible */
                         dllink_temp = dllink + ":orig";
                     } else {
@@ -317,9 +320,23 @@ public class TwitterCom extends PluginForHost {
                     if (this.looksLikeDownloadableContent(con)) {
                         dllink = dllink_temp;
                         link.setUrlDownload(dllink);
+                        if (con.getCompleteContentLength() > 0) {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
+                        String urlName = Plugin.getFileNameFromURL(new URL(link.getDownloadURL().replace(":orig", "")));
+                        if (urlName != null && link.getFinalFileName() == null) {
+                            final String ext = getExtensionFromMimeType(con.getContentType());
+                            if (ext != null && !urlName.toLowerCase(Locale.ENGLISH).endsWith(ext.toLowerCase(Locale.ENGLISH))) {
+                                urlName += "." + ext;
+                            }
+                            link.setFinalFileName(urlName);
+                        }
                     }
                 } finally {
-                    con.disconnect();
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable ignore) {
+                    }
                 }
             }
         }
