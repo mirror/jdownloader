@@ -154,24 +154,38 @@ public class TwitterCom extends PluginForHost {
                     final String tweetURL = jd.plugins.decrypter.TwitterCom.createTwitterPostURL(username, tweetID);
                     final CryptedLink param = new CryptedLink(tweetURL, link);
                     final ArrayList<DownloadLink> results = decrypter.decryptIt(param, null);
-                    if (results.size() != 1) {
+                    if (results.isEmpty()) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Single tweet video item crawler failure");
+                    }
+                    final DownloadLink result;
+                    if (results.size() == 1) {
+                        result = results.get(0);
+                    } else {
                         /*
                          * We expect exactly one element - for twitter posts containing videos, only one single video item is allowed per
-                         * twitter post!
+                         * twitter post BUT there are edge cases e.g. when the user has edited/replaced a video inside a post. In this case
+                         * the API may return 2 items whereas via browser you can only watch one video which is usually the first item in
+                         * the array returned by the API.
                          */
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Single tweet video item crawler failure");
-                    } else {
-                        final DownloadLink result = results.get(0);
-                        this.dllink = result.getStringProperty(PROPERTY_DIRECTURL);
-                        if (StringUtils.isEmpty(dllink)) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        link.setProperty(PROPERTY_DIRECTURL, this.dllink);
-                        if (result.getFinalFileName() != null) {
-                            link.setFinalFileName(result.getFinalFileName());
-                        } else if (result.getForcedFileName() != null) { /* Old handling */
-                            link.setFinalFileName(result.getForcedFileName());
-                        }
+                        logger.info("Edge case: Video ttweet contains multiple elements: " + results.size());
+                        result = results.get(link.getIntegerProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_MEDIA_INDEX, 0));
+                    }
+                    if (!result.hasProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_BITRATE)) {
+                        /*
+                         * This should never happen but it can if the user e.g. for some reason adds a non-video single tweet URL as URL
+                         * matching this video embed pattern.
+                         */
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Single tweet video item type mismatch");
+                    }
+                    this.dllink = result.getStringProperty(PROPERTY_DIRECTURL);
+                    if (StringUtils.isEmpty(dllink)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    link.setProperty(PROPERTY_DIRECTURL, this.dllink);
+                    if (result.getFinalFileName() != null) {
+                        link.setFinalFileName(result.getFinalFileName());
+                    } else if (result.getForcedFileName() != null) { /* Old handling */
+                        link.setFinalFileName(result.getForcedFileName());
                     }
                 }
             } else {
@@ -300,7 +314,7 @@ public class TwitterCom extends PluginForHost {
                         dllink_temp = dllink;
                     }
                     con = br.openHeadConnection(dllink_temp);
-                    if (!con.getContentType().contains("html")) {
+                    if (this.looksLikeDownloadableContent(con)) {
                         dllink = dllink_temp;
                         link.setUrlDownload(dllink);
                     }

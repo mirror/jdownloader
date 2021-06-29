@@ -65,16 +65,16 @@ public class TwitterCom extends PornEmbedParser {
     }
 
     private static final String            TYPE_CARD            = "https?://[^/]+/i/cards/tfw/v1/(\\d+)";
-    private static final String            TYPE_USER_ALL        = "https?://[^/]+/[A-Za-z0-9_\\-]+(?:/(?:media|likes))?";
+    private static final String            TYPE_USER_ALL        = "https?://[^/]+/([A-Za-z0-9_\\-]+)(?:/(?:media|likes))?";
     private static final String            TYPE_USER_POST       = "https?://[^/]+/([^/]+)/status/(\\d+).*?";
     private static final String            TYPE_REDIRECT        = "https?://t\\.co/[a-zA-Z0-9]+";
     private ArrayList<DownloadLink>        decryptedLinks       = new ArrayList<DownloadLink>();
     private static AtomicReference<String> GUEST_TOKEN          = new AtomicReference<String>();
     public static final String             PROPERTY_USERNAME    = "username";
     private static final String            PROPERTY_DATE        = "date";
-    private static final String            PROPERTY_MEDIA_INDEX = "mediaindex";
+    public static final String             PROPERTY_MEDIA_INDEX = "mediaindex";
     public static final String             PROPERTY_MEDIA_ID    = "mediaid";
-    private static final String            PROPERTY_BITRATE     = "bitrate";
+    public static final String             PROPERTY_BITRATE     = "bitrate";
 
     protected DownloadLink createDownloadlink(final String link, final String tweetid) {
         final DownloadLink ret = super.createDownloadlink(link);
@@ -353,13 +353,9 @@ public class TwitterCom extends PornEmbedParser {
         final String formattedDate = formatTwitterDate((String) entries.get("created_at"));
         final ArrayList<Map<String, Object>> ressourcelist = (ArrayList<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "entities/media");
         if (ressourcelist == null) {
-            logger.info("Current tweet does not contain any media objects");
-            return;
-        } else if (StringUtils.isEmpty(tweetID)) {
-            logger.warning("Failed to find tweet_id");
+            logger.info("This tweet does not contain any media objects: " + tweetID);
             return;
         }
-        logger.info(String.format("Found %d media objects", ressourcelist.size()));
         int mediaIndex = 0;
         for (final Map<String, Object> media : ressourcelist) {
             String url = (String) media.get("media_url_https");
@@ -491,7 +487,7 @@ public class TwitterCom extends PornEmbedParser {
 
     private void crawlUserViaAPI(final CryptedLink param, final Account account) throws Exception {
         logger.info("Crawling API user");
-        final String username = new Regex(param.getCryptedUrl(), "https?://[^/]+/([^/]+)").getMatch(0);
+        final String username = new Regex(param.getCryptedUrl(), TYPE_USER_ALL).getMatch(0);
         this.prepareAPI(br, account);
         final boolean use_old_api_to_get_userid = true;
         Map<String, Object> entries;
@@ -524,7 +520,6 @@ public class TwitterCom extends PornEmbedParser {
         String max_countStr;
         int index = 0;
         final int expected_items_per_page = 20;
-        int numberof_items_on_current_page = 0;
         String nextCursor = null;
         final UrlQuery query = new UrlQuery();
         query.append("include_profile_interstitial_type", "1", false);
@@ -585,7 +580,6 @@ public class TwitterCom extends PornEmbedParser {
         int crawled_tweet_count = 0;
         do {
             logger.info("Crawling page " + (index + 1));
-            numberof_items_on_current_page = 0;
             final UrlQuery thisquery = query;
             if (!StringUtils.isEmpty(nextCursor)) {
                 thisquery.append("cursor", nextCursor, true);
@@ -605,20 +599,21 @@ public class TwitterCom extends PornEmbedParser {
             }
             final ArrayList<Object> pagination_info = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "timeline/instructions/{0}/addEntries/entries");
             final Map<String, Object> tweetMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "globalObjects/tweets");
-            final Iterator<Entry<String, Object>> iterator = tweetMap.entrySet().iterator();
-            while (iterator.hasNext()) {
-                final Entry<String, Object> entry = iterator.next();
-                entries = (Map<String, Object>) entry.getValue();
-                crawlTweetMediaObjectsAPI(fp, username, entries);
-                numberof_items_on_current_page++;
-                crawled_tweet_count++;
-            }
-            logger.info(String.format("Numberof tweets on current page: %d of expected max %d", numberof_items_on_current_page, expected_items_per_page));
-            logger.info(String.format("Numberof total tweets crawled: %d of expected total %s", crawled_tweet_count, max_countStr));
-            if (numberof_items_on_current_page == 0) {
+            if (tweetMap == null || tweetMap.isEmpty()) {
                 logger.info("Found 0 tweets on current page --> Stopping");
                 break;
-            } else if (numberof_items_on_current_page < expected_items_per_page) {
+            }
+            final Iterator<Entry<String, Object>> iterator = tweetMap.entrySet().iterator();
+            String lastCreatedAtDate = null;
+            while (iterator.hasNext()) {
+                final Map<String, Object> tweet = (Map<String, Object>) iterator.next().getValue();
+                crawlTweetMediaObjectsAPI(fp, username, tweet);
+                crawled_tweet_count++;
+                lastCreatedAtDate = (String) tweet.get("created_at");
+            }
+            logger.info(String.format("Tweets current page: %d|Tweets crawled so far: %d of expected total %s", tweetMap.size(), crawled_tweet_count, max_countStr));
+            logger.info("Last created_at date of current page: " + lastCreatedAtDate);
+            if (tweetMap.size() < expected_items_per_page) {
                 logger.info(String.format("Warning: Page contains less than %d objects --> Reached the end?", expected_items_per_page));
             }
             /* Done - now try to find string required to access next page */
@@ -626,25 +621,32 @@ public class TwitterCom extends PornEmbedParser {
                 Map<String, Object> pagination_info_entries = (Map<String, Object>) pagination_info.get(pagination_info.size() - 1);
                 final String entryId = (String) pagination_info_entries.get("entryId");
                 if (entryId.contains("cursor-bottom")) {
-                    logger.info("Found correct cursor object --> Trying to get cursor String");
+                    logger.info("Expecting next page to be available...");
                     final String nextCursorTmp = (String) JavaScriptEngineFactory.walkJson(pagination_info_entries, "content/operation/cursor/value");
+                    if (StringUtils.isEmpty(nextCursorTmp)) {
+                        logger.info("Stopping because: Failed to find nextCursor");
+                        break;
+                    }
                     logger.info("nextCursor = " + nextCursor);
                     if (nextCursor != null && nextCursor.equals(nextCursorTmp)) {
                         /* Extra fallback - this should never be required */
-                        logger.info("New nextCursor is the same as last nextCursor --> Reached the end?!");
+                        logger.info("Stopping because: New nextCursor is the same as last nextCursor --> Reached the end?!");
                         break;
+                    } else {
+                        nextCursor = nextCursorTmp;
                     }
-                    nextCursor = nextCursorTmp;
                 } else {
-                    logger.info("Found wrong cursor object --> Plugin needs update");
+                    logger.info("Stopping because: Found wrong cursor object --> Plugin needs update");
+                    break;
                 }
             } catch (final Throwable e) {
                 logger.log(e);
-                logger.info("Failed to get nextCursor");
+                logger.info("Stopping because: Failed to get nextCursor (Exception occured)");
+                break;
             }
             index++;
             this.sleep(3000l, param);
-        } while (!StringUtils.isEmpty(nextCursor) && !this.isAbort());
+        } while (!this.isAbort());
         logger.info(String.format("Done after %d pages", index));
     }
 

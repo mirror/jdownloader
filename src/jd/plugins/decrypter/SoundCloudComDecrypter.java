@@ -78,7 +78,6 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     private final String            CUSTOM_DATE                   = "CUSTOM_DATE";
     private SubConfiguration        cfg                           = null;
     private ArrayList<DownloadLink> decryptedLinks                = null;
-    private String                  url_username                  = null;
     private boolean                 decryptPurchaseURL            = false;
     private boolean                 decrypt500Thumb               = false;
     private boolean                 decryptOriginalThumb          = false;
@@ -126,7 +125,6 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         }
         /* Correct added links */
         correctInputLinks(param);
-        url_username = new Regex(param.getCryptedUrl(), "soundcloud\\.com/([^<>\"/]+)/?").getMatch(0);
         br.setFollowRedirects(true);
         final boolean decryptList = isList(param.getCryptedUrl());
         if (decryptList) {
@@ -144,13 +142,13 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         } else {
             /* Single track */
             resolve(this.br, param.getCryptedUrl());
-            /* Add soundcloud link */
+            final String usernameURL = new Regex(param.getCryptedUrl(), TYPE_SINGLE_TRACK).getMatch(0);
             final DownloadLink dl = createDownloadlink(param.getCryptedUrl().replace("soundcloud", "soundclouddecrypted"));
             final Map<String, Object> track = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final Map<String, Object> user = (Map<String, Object>) track.get("user");
             final String username = (String) user.get("username");
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(getFormattedPackagename(username, null, track.get("created_at").toString()));
+            fp.setName(getFormattedPackagename(usernameURL, username, null, track.get("created_at").toString()));
             fp.setProperty(LinkCrawler.PACKAGE_IGNORE_VARIOUS, true);
             setDlDataJson(dl, track);
             dl._setFilePackage(fp);
@@ -242,13 +240,12 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final Map<String, Object> user = (Map<String, Object>) entries.get("user");
         final String playlistname = (String) entries.get("title");
-        final String username = (String) user.get("username");
         /* Old: https://api.soundcloud.com/playlists/<playlist_id> */
         final String permalink_url = (String) entries.get("permalink_url");
         final String playlist_uri = (String) entries.get("uri");
         final String playlistID = entries.get("id").toString();
         final String created_at = (String) entries.get("created_at");
-        if (StringUtils.isEmpty(playlist_uri) || StringUtils.isEmpty(playlistID) || StringUtils.isEmpty(username) || StringUtils.isEmpty(created_at)) {
+        if (StringUtils.isEmpty(playlist_uri) || StringUtils.isEmpty(playlistID) || StringUtils.isEmpty(created_at)) {
             return;
         }
         /** Use APIv2 */
@@ -274,7 +271,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             }
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(this.getFormattedPackagename(username, playlistname, created_at));
+        fp.setName(this.getFormattedPackagename(user.get("permalink").toString(), user.get("username").toString(), playlistname, created_at));
         fp.setProperty(LinkCrawler.PACKAGE_IGNORE_VARIOUS, true);
         final ArrayList<Object> trackItemsFound = new ArrayList<Object>();
         /*
@@ -404,16 +401,15 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
      */
     private void crawlUserSets(final CryptedLink param) throws Exception {
         final int max_entries_per_request = 5;
-        final String username = new Regex(param.getCryptedUrl(), TYPE_USER_SETS).getMatch(0);
         resolve(this.br, param.getCryptedUrl());
-        Map<String, Object> data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final String userID = data.get("id").toString();
+        Map<String, Object> user = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final String userID = user.get("id").toString();
         if (StringUtils.isEmpty(userID)) {
             logger.info("Failed to find userID");
             return;
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(getFormattedPackagename(username, "sets", null));
+        fp.setName(getFormattedPackagename(user.get("permalink").toString(), user.get("username").toString(), "sets", null));
         fp.setProperty(LinkCrawler.PACKAGE_IGNORE_VARIOUS, true);
         int page = 1;
         int offset = 0;
@@ -442,18 +438,17 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
      * @throws Exception
      */
     private void crawlUserInPlaylists(final CryptedLink param) throws Exception {
-        final String username = new Regex(param.getCryptedUrl(), TYPE_USER_IN_PLAYLIST).getMatch(0);
         final int max_entries_per_request = 5;
         resolve(this.br, param.getCryptedUrl());
-        Map<String, Object> data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final String userID = data.get("id").toString();
+        Map<String, Object> user = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final String userID = user.get("id").toString();
         if (StringUtils.isEmpty(userID)) {
             return;
         }
         int page = 1;
         int offset = 0;
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(getFormattedPackagename(username, "playlists", null));
+        fp.setName(getFormattedPackagename(user.get("permalink").toString(), user.get("username").toString(), "playlists", null));
         fp.setProperty(LinkCrawler.PACKAGE_IGNORE_VARIOUS, true);
         do {
             String next_page_url = "https://api.soundcloud.com/tracks/" + userID + "/playlists?limit=" + max_entries_per_request + "&linked_partitioning=1&offset=" + offset + "&order=favorited_at&page_number=" + page + "&page_size=" + max_entries_per_request + "&client_id=" + SoundcloudCom.getClientId(br);
@@ -474,8 +469,8 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     }
 
     private void crawlGroups(final CryptedLink param) throws Exception {
-        final String username = new Regex(param.getCryptedUrl(), TYPE_GROUPS).getMatch(0);
-        if (username == null) {
+        final String usernameURL = new Regex(param.getCryptedUrl(), TYPE_GROUPS).getMatch(0);
+        if (usernameURL == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         resolve(this.br, param.getCryptedUrl());
@@ -490,7 +485,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         int current_page = 1;
         int offset = 0;
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(getFormattedPackagename(username, "groups", null));
+        fp.setName(getFormattedPackagename(usernameURL, null, "groups", null));
         fp.setProperty(LinkCrawler.PACKAGE_IGNORE_VARIOUS, true);
         do {
             logger.info("Decrypting page " + current_page + " of probably " + pages);
@@ -548,11 +543,14 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             }
             if (type != null && type.equals("playlist")) {
                 if (track_count != null && track_count instanceof Number && ((Number) track_count).intValue() == 0) {
+                    /* This should never happen */
                     continue;
                 }
-                dl = createDownloadlink("https://soundcloud.com/" + url_username + "/sets/" + url);
+                final Map<String, Object> user = (Map<String, Object>) entry.get("user");
+                dl = createDownloadlink("https://soundcloud.com/" + user.get("permalink") + "/sets/" + url);
             } else if (type != null && type.equals("playlist-repost")) {
                 if (track_count != null && track_count instanceof Number && ((Number) track_count).intValue() == 0) {
+                    /* This should never happen */
                     continue;
                 }
                 dl = createDownloadlink(permalinkURL);
@@ -577,9 +575,8 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         resolve(this.br, param.getCryptedUrl());
         /* Decrypt all tracks of a user */
         Map<String, Object> user = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final String username = (String) user.get("username");
         final String userID = user.get("id").toString();
-        if (StringUtils.isEmpty(userID) || StringUtils.isEmpty(username)) {
+        if (StringUtils.isEmpty(userID)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String url_base;
@@ -605,7 +602,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         // still valid far as I can see raztoki20160208
         int maxPerCall = 200;
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(getFormattedPackagename(username, playlistname, user.get("created_at").toString()));
+        fp.setName(getFormattedPackagename(user.get("permalink").toString(), user.get("username").toString(), playlistname, user.get("created_at").toString()));
         fp.setProperty(LinkCrawler.PACKAGE_IGNORE_VARIOUS, true);
         final UrlQuery query = new UrlQuery();
         query.append("client_id", SoundcloudCom.getClientId(br), true);
@@ -651,7 +648,8 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         if (decrypt500Thumb) {
             try {
                 String artworkurl = (String) source.get("artwork_url");
-                if (artworkurl != null) {
+                if (!StringUtils.isEmpty(artworkurl)) {
+                    final Map<String, Object> user = (Map<String, Object>) source.get("user");
                     artworkurl = artworkurl.replace("-large.jpg", "-t500x500.jpg");
                     thumb = createDownloadlink("directhttp://" + artworkurl);
                     thumb.setProperty("originaldate", audiolink.getStringProperty("originaldate"));
@@ -659,7 +657,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                     thumb.setProperty("linkid", audiolink.getStringProperty("linkid"));
                     thumb.setProperty("channel", audiolink.getStringProperty("channel"));
                     thumb.setProperty("type", "jpg");
-                    thumb.setProperty("plain_url_username", url_username);
+                    thumb.setProperty("plain_url_username", user.get("permalink").toString());
                     final String formattedFilename = SoundcloudCom.getFormattedFilename(thumb);
                     thumb.setFinalFileName(formattedFilename);
                     thumb.setAvailable(true);
@@ -680,7 +678,8 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         if (decryptOriginalThumb) {
             try {
                 String artworkurl = (String) source.get("artwork_url");
-                if (artworkurl != null) {
+                if (!StringUtils.isEmpty(artworkurl)) {
+                    final Map<String, Object> user = (Map<String, Object>) source.get("user");
                     artworkurl = artworkurl.replace("-large.jpg", "-original.jpg");
                     thumb = createDownloadlink("directhttp://" + artworkurl);
                     thumb.setProperty("originaldate", audiolink.getStringProperty("originaldate"));
@@ -688,7 +687,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                     thumb.setProperty("linkid", audiolink.getStringProperty("linkid"));
                     thumb.setProperty("channel", audiolink.getStringProperty("channel"));
                     thumb.setProperty("type", "jpg");
-                    thumb.setProperty("plain_url_username", url_username);
+                    thumb.setProperty("plain_url_username", user.get("permalink").toString());
                     final String formattedFilename = SoundcloudCom.getFormattedFilename(thumb);
                     thumb.setFinalFileName(formattedFilename);
                     thumb.setAvailable(true);
@@ -731,9 +730,9 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
 
     private final static String defaultCustomPackagename = "*channelname* - *playlistname*";
 
-    private String getFormattedPackagename(final String username, String playlistname, final String date) throws ParseException {
+    private String getFormattedPackagename(final String usernameURL, final String usernameFull, String playlistname, final String date) throws ParseException {
         String formattedpackagename = cfg.getStringProperty(CUSTOM_PACKAGENAME, defaultCustomPackagename);
-        if (formattedpackagename == null || formattedpackagename.equals("")) {
+        if (StringUtils.isEmpty(formattedpackagename)) {
             formattedpackagename = defaultCustomPackagename;
         }
         /* Check for missing data */
@@ -774,10 +773,10 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             }
         }
         if (formattedpackagename.contains("*url_username*")) {
-            formattedpackagename = formattedpackagename.replace("*url_username*", url_username);
+            formattedpackagename = formattedpackagename.replace("*url_username*", usernameURL);
         }
         if (formattedpackagename.contains("*channelname*")) {
-            formattedpackagename = formattedpackagename.replace("*channelname*", username);
+            formattedpackagename = formattedpackagename.replace("*channelname*", usernameFull);
         }
         // Insert playlistname at the end to prevent errors with tags
         formattedpackagename = formattedpackagename.replace("*playlistname*", playlistname);
