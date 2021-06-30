@@ -95,6 +95,12 @@ public class TwitterCom extends PluginForHost {
         return br;
     }
 
+    @Override
+    public void init() {
+        super.init();
+        Browser.setRequestIntervalLimitGlobal("twimg.com", 250);
+    }
+
     private void setconstants(final DownloadLink link) {
         dllink = null;
         account_required = false;
