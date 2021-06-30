@@ -129,6 +129,7 @@ public class Captcha9kwSolver extends AbstractCaptcha9kwSolver<String> {
             qi.appendEncoded("version", "1.2");
             qi.appendEncoded("data-sitekey", hCaptcha.getSiteKey());
             qi.appendEncoded("pageurl", hCaptcha.getSiteUrl());
+            qi.appendEncoded("oldsource", "hcaptcha");
             qi.appendEncoded("captchachoice", "hcaptcha");
             qi.appendEncoded("interactive", "1");
             final UrlQuery queryPoll = createQueryForPolling();
