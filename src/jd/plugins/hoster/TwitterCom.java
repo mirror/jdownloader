@@ -301,16 +301,14 @@ public class TwitterCom extends PluginForHost {
             }
         } else { // TYPE_DIRECT - jpg/png/mp4
             if (link.getDownloadURL().contains("jpg") || link.getDownloadURL().contains("png")) {
-                final String dllink_temp;
-                if (dllink.contains(":large")) {
-                    dllink_temp = dllink.replace(":large", "") + ":orig";
-                } else if (dllink.matches("(?i).+\\.(jpg|jpeg|png)$")) {
+                if (link.getDownloadURL().contains(":large")) {
+                    dllink = dllink.replace(":large", "") + ":orig";
+                } else if (link.getDownloadURL().matches("(?i).+\\.(jpg|jpeg|png)$")) {
                     /* Append this to get the highest quality possible */
-                    dllink_temp = dllink + ":orig";
+                    dllink = link.getDownloadURL() + ":orig";
                 } else {
-                    dllink_temp = dllink;
+                    dllink = link.getDownloadURL();
                 }
-                dllink = dllink_temp;
             } else {
                 dllink = link.getDownloadURL();
             }
