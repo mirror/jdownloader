@@ -1845,7 +1845,7 @@ public class VKontakteRuHoster extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTLINKCHECK_PICTURES, "Fast linkcheck for all picture links (when true or false filename & filesize wont be shown until download starts, when false only task performed is to check if picture has been deleted!)?").setDefaultValue(default_fastlinkcheck_FASTPICTURELINKCHECK));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTLINKCHECK_AUDIO, "Fast linkcheck for audio links (filesize won't be shown in linkgrabber)?").setDefaultValue(default_fastlinkcheck_FASTAUDIOLINKCHECK));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Video settings: (for vk.com/video-XXX_XXX)"));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Video settings: (for vk.com/video-XXX_XXX and vk.com/clip-XXX_XXX)"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), VIDEO_QUALITY_SELECTION_MODE, getVideoQualitySelectionModeStrings(), "Video quality selection mode").setDefaultValue(default_VIDEO_QUALITY_SELECTION_MODE));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), PREFERRED_VIDEO_QUALITY, getVideoQualityStrings(), "Preferred video quality").setDefaultValue(default_PREFERRED_VIDEO_QUALITY));
