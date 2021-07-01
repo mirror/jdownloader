@@ -98,7 +98,7 @@ public class TwitterCom extends PluginForHost {
     @Override
     public void init() {
         super.init();
-        Browser.setRequestIntervalLimitGlobal("twimg.com", 250);
+        Browser.setRequestIntervalLimitGlobal("twimg.com", true, 250);
     }
 
     private void setconstants(final DownloadLink link) {
@@ -364,14 +364,21 @@ public class TwitterCom extends PluginForHost {
                 try {
                     final Browser brc = br.cloneBrowser();
                     con = brc.openHeadConnection(dllink);
-                    if (con.getResponseCode() == 404) {
-                        /* Definitly offline */
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    } else if (con.getResponseCode() == 503) {
-                        /* 2021-06-24: Possible rate-limit */
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 60 * 1000l);
-                    } else if (!this.looksLikeDownloadableContent(con)) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+                    if (!this.looksLikeDownloadableContent(con)) {
+                        try {
+                            brc.followConnection(true);
+                        } catch (IOException e) {
+                            logger.log(e);
+                        }
+                        if (con.getResponseCode() == 404) {
+                            /* Definitly offline */
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        } else if (con.getResponseCode() == 503) {
+                            /* 2021-06-24: Possible rate-limit */
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 60 * 1000l);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error " + con.getResponseCode(), 5 * 60 * 1000l);
+                        }
                     }
                     if (con.getCompleteContentLength() <= 0) {
                         /* 2017-07-18: E.g. abused video OR temporarily unavailable picture */
