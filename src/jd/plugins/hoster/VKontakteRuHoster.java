@@ -131,6 +131,8 @@ public class VKontakteRuHoster extends PluginForHost {
     public static String        PROPERTY_GENERAL_TITLE_PLAIN                                                = "title_plain";
     public static String        PROPERTY_GENERAL_DATE                                                       = "date";
     public static String        PROPERTY_GENERAL_UPLOADER                                                   = "uploader";
+    /* Can be given for any content if it is part of a wall post */
+    public static String        PROPERTY_GENERAL_wall_post_id                                               = "wall_post_id";
     /* For single photos */
     public static final String  PROPERTY_PHOTOS_picturedirectlink                                           = "picturedirectlink";
     public static final String  PROPERTY_PHOTOS_directurls_fallback                                         = "directurls_fallback";
@@ -825,10 +827,10 @@ public class VKontakteRuHoster extends PluginForHost {
              * https://new.vk.com/dev/video.get
              */
             br.getPage(getProtocol() + "vk.com/video.php?act=a_flash_vars&vid=" + videoids_together);
-        } else if (listID == null) {
-            br.getPage(getProtocol() + "vk.com/video" + videoids_together);
-        } else {
+        } else if (listID != null) {
             br.postPage(getProtocol() + "vk.com/al_video.php", "act=show_inline&al=1&list=" + listID + "&module=public&video=" + videoids_together);
+        } else {
+            br.getPage(getProtocol() + "vk.com/video" + videoids_together);
         }
     }
 
