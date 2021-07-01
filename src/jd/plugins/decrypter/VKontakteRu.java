@@ -642,28 +642,23 @@ public class VKontakteRu extends PluginForDecrypt {
         final String id = ids[1];
         final String oid_and_id = oid + "_" + id;
         String listID;
-        if (this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_Z)) {
-            listID = new Regex(this.CRYPTEDLINK_ORIGINAL, "z=video" + oid + "_" + id + "(?:%2F|/)([a-z0-9]+)(?:%2F|/)").getMatch(0);
+        if (param.getCryptedUrl().matches(PATTERN_VIDEO_SINGLE_Z)) {
+            listID = new Regex(param.getCryptedUrl(), "z=video-?\\d+_\\d+(?:%2F|/)([a-z0-9]+)(?:%2F|/)").getMatch(0);
         } else {
             listID = UrlQuery.parse(param.getCryptedUrl()).get("listid");
+            if (listID == null && param.getDownloadLink() != null) {
+                listID = param.getDownloadLink().getStringProperty(VKontakteRuHoster.PROPERTY_VIDEO_LIST_ID);
+            }
         }
         /* Check if fast-crawl is allowed */
         final QualitySelectionMode qualitySelectionMode = VKontakteRuHoster.getSelectedVideoQualitySelectionMode();
         final boolean userWantsMultipleQualities = qualitySelectionMode == QualitySelectionMode.ALL;
         final boolean linkCanBeFastCrawled = param.getDownloadLink() != null && !param.getDownloadLink().hasProperty(VIDEO_PROHIBIT_FASTCRAWL) && param.getDownloadLink().hasProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE);
         if (this.cfg.getBooleanProperty(VKontakteRuHoster.FASTCRAWL_VIDEO, VKontakteRuHoster.default_FASTCRAWL_VIDEO) && !userWantsMultipleQualities && linkCanBeFastCrawled) {
-            final DownloadLink dl = this.createDownloadlink(this.getProtocol() + this.getHost() + "/video" + oid_and_id);
+            final DownloadLink dl = this.createDownloadlink(param.getDownloadLink().getPluginPatternMatcher());
+            /* Inherit all previously set properties */
+            dl.setProperties(param.getDownloadLink().getProperties());
             dl.setFinalFileName(param.getDownloadLink().getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE) + "_fastcrawl.mp4");
-            dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE, param.getDownloadLink().getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE));
-            dl.setProperty(VKontakteRuHoster.VIDEO_QUALITY_SELECTION_MODE, cfg.getIntegerProperty(VKontakteRuHoster.VIDEO_QUALITY_SELECTION_MODE, VKontakteRuHoster.default_VIDEO_QUALITY_SELECTION_MODE));
-            dl.setProperty(VKontakteRuHoster.PREFERRED_VIDEO_QUALITY, cfg.getIntegerProperty(VKontakteRuHoster.PREFERRED_VIDEO_QUALITY, VKontakteRuHoster.default_PREFERRED_VIDEO_QUALITY));
-            if (param.getDownloadLink().hasProperty(VKontakteRuHoster.PROPERTY_GENERAL_UPLOADER)) {
-                dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_UPLOADER, param.getDownloadLink().getProperty(VKontakteRuHoster.PROPERTY_GENERAL_UPLOADER));
-            }
-            dl.setProperty("nologin", true);
-            if (listID != null) {
-                dl.setProperty(VKontakteRuHoster.PROPERTY_VIDEO_LIST_ID, listID);
-            }
             dl.setAvailable(true);
             this.decryptedLinks.add(dl);
             return;
@@ -733,6 +728,10 @@ public class VKontakteRu extends PluginForDecrypt {
                  * same URL pattern
                  */
                 final DownloadLink dl = new DownloadLink(plugin, null, this.getHost(), contentURL, true);
+                if (param.getDownloadLink() != null) {
+                    /* Inherit all properties from previous DownloadLink */
+                    dl.setProperties(param.getDownloadLink().getProperties());
+                }
                 final String finalfilename = titleToUse + "_" + thisQuality + ".mp4";
                 dl.setFinalFileName(finalfilename);
                 dl.setProperty("directlink", finallink);
@@ -2111,10 +2110,23 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.info("Skipping dupe: ");
                 continue;
             }
+            final String listID = new Regex(videoHTML, videoContentStr + ", ([a-f0-9]+)").getMatch(0);
+            final String postID = new Regex(videoHTML, "post_id:((-)?\\d+_\\d+)").getMatch(0);
             foundNewItems = true;
             final DownloadLink dl = this.createDownloadlink(this.getProtocol() + this.getHost() + "/video" + videoContentStr);
             if (fp != null) {
                 dl._setFilePackage(fp);
+            }
+            if (listID != null) {
+                dl.setProperty(VKontakteRuHoster.PROPERTY_VIDEO_LIST_ID, listID);
+            }
+            if (postID != null) {
+                dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_wall_post_id, postID);
+            }
+            /* Try to set meaningful ContentURL */
+            if (postID != null && listID != null) {
+                /* ContentURL for user != PluginPatternMatcher */
+                dl.setContentUrl(this.getProtocol() + this.getHost() + "/wall" + postID + "?z=video" + videoContentStr + "%2F" + listID);
             }
             decryptedLinks.add(dl);
         }
