@@ -3,6 +3,7 @@ package jd.controlling.downloadcontroller;
 import java.util.ArrayList;
 import java.util.Map;
 
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.PackageControllerComparator;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkStorable;
@@ -55,7 +56,7 @@ public class FilePackageStorable implements Storable {
     }
 
     public String getSorterId() {
-        final PackageControllerComparator<DownloadLink> lSorter = filePackage.getCurrentSorter();
+        final PackageControllerComparator<AbstractNode> lSorter = filePackage.getCurrentSorter();
         if (lSorter == null) {
             return null;
         } else {
@@ -69,7 +70,7 @@ public class FilePackageStorable implements Storable {
             if (id == null) {
                 filePackage.setCurrentSorter(null);
             } else {
-                filePackage.setCurrentSorter(PackageControllerComparator.getDownloadLinkComparator(id));
+                filePackage.setCurrentSorter(PackageControllerComparator.getComparator(id));
             }
         } catch (Throwable t) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(t);

@@ -19,7 +19,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 
 import jd.config.Property;
@@ -29,7 +28,6 @@ import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.PackageController;
 import jd.controlling.packagecontroller.PackageControllerComparator;
-import jd.nutils.NaturalOrderComparator;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.ModifyLock;
@@ -48,51 +46,11 @@ import org.jdownloader.translate._JDT;
  * @author JD-Team
  */
 public class FilePackage extends Property implements Serializable, AbstractPackageNode<DownloadLink, FilePackage> {
-    private static final GeneralSettings                          GENERALSETTINGS  = JsonConfig.create(GeneralSettings.class);
-    public static final PackageControllerComparator<DownloadLink> SORTER_ASC       = new PackageControllerComparator<DownloadLink>() {
-                                                                                       private final Comparator<String> comp = new NaturalOrderComparator();
-
-                                                                                       public int compare(DownloadLink o1, DownloadLink o2) {
-                                                                                           String o1s = o1.getName();
-                                                                                           String o2s = o2.getName();
-                                                                                           if (o1s == null) {
-                                                                                               o1s = "";
-                                                                                           }
-                                                                                           if (o2s == null) {
-                                                                                               o2s = "";
-                                                                                           }
-                                                                                           return comp.compare(o1s, o2s);
-                                                                                       }
-
-                                                                                       @Override
-                                                                                       public String getID() {
-                                                                                           return "jd.plugins.FilePackage";
-                                                                                       }
-
-                                                                                       @Override
-                                                                                       public boolean isAsc() {
-                                                                                           return true;
-                                                                                       }
-                                                                                   };
-    public static final PackageControllerComparator<DownloadLink> SORTER_DESC      = new PackageControllerComparator<DownloadLink>() {
-                                                                                       public int compare(DownloadLink o1, DownloadLink o2) {
-                                                                                           return SORTER_ASC.compare(o2, o1);
-                                                                                       }
-
-                                                                                       @Override
-                                                                                       public String getID() {
-                                                                                           return SORTER_ASC.getID();
-                                                                                       }
-
-                                                                                       @Override
-                                                                                       public boolean isAsc() {
-                                                                                           return false;
-                                                                                       }
-                                                                                   };
-    private static final long                                     serialVersionUID = -8859842964299890820L;
-    private String                                                downloadDirectory;
-    private ArrayList<DownloadLink>                               downloadLinkList;
-    private static FilePackage                                    FP               = null;
+    private static final GeneralSettings GENERALSETTINGS  = JsonConfig.create(GeneralSettings.class);
+    private static final long            serialVersionUID = -8859842964299890820L;
+    private String                       downloadDirectory;
+    private ArrayList<DownloadLink>      downloadLinkList;
+    private static FilePackage           FP               = null;
     static {
         FP = new FilePackage() {
             final private FilePackageView view             = new FilePackageView(this) {
@@ -290,7 +248,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     }
 
     private FilePackageView                           fpInfo = null;
-    private PackageControllerComparator<DownloadLink> sorter;
+    private PackageControllerComparator<AbstractNode> sorter;
 
     /*
      * (non-Javadoc)
@@ -342,7 +300,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         this.downloadLinkList = new ArrayList<DownloadLink>();
         setName(null);
         if (GENERALSETTINGS.isAutoSortChildrenEnabled()) {
-            sorter = SORTER_ASC;
+            sorter = PackageControllerComparator.SORTER_ASC;
         }
     }
 
@@ -417,7 +375,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     }
 
     @Override
-    public void setCurrentSorter(PackageControllerComparator<DownloadLink> comparator) {
+    public void setCurrentSorter(PackageControllerComparator<AbstractNode> comparator) {
         sorter = comparator;
     }
 
@@ -679,7 +637,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     }
 
     @Override
-    public PackageControllerComparator<DownloadLink> getCurrentSorter() {
+    public PackageControllerComparator<AbstractNode> getCurrentSorter() {
         return sorter;
     }
 
