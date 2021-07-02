@@ -1747,7 +1747,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     protected void setCaptchaResponse(final Browser br, CaptchaHosterHelperInterface captchaHosterHelper, final Form form, final String response) {
         if (captchaHosterHelper instanceof CaptchaHelperHostPluginHCaptcha) {
             form.put("h-captcha-response", Encoding.urlEncode(response));
-            if (br.containsHTML("g-recaptcha-response")) {
+            if (br.containsHTML("g-recaptcha-response") || br.containsHTML("g-recaptcha")) {
                 /*
                  * E.g. novafile.com, filefox.cc - some use this as legacy handling, some will even send both, h-captcha-response AND
                  * g-recaptcha-response
