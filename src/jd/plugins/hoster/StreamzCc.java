@@ -15,22 +15,25 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -42,7 +45,7 @@ import jd.plugins.PluginException;
 public class StreamzCc extends antiDDoSForHost {
     public StreamzCc(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("");
+        this.enablePremium("https://streamzz.to/signup.dll");
     }
 
     @Override
@@ -86,19 +89,22 @@ public class StreamzCc extends antiDDoSForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = false;
-    private static final int     FREE_MAXCHUNKS    = 1;
-    private static final int     FREE_MAXDOWNLOADS = 1;
+    private static final boolean FREE_RESUME       = true;
+    private static final int     FREE_MAXCHUNKS    = -10;
+    private static final int     FREE_MAXDOWNLOADS = -1;
 
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    //
-    // /* don't touch the following! */
-    // private static AtomicInteger maxPrem = new AtomicInteger(1);
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        /* link cleanup, but respect users protocol choosing or forced protocol */
+        if (link != null && link.getPluginPatternMatcher() != null) {
+            final Regex embedURL = new Regex(link.getPluginPatternMatcher(), "(https?://[^/]+)/i([A-Z]+[A-Za-z0-9]+)");
+            if (embedURL.matches()) {
+                /* Change to "file" URL */
+                link.setPluginPatternMatcher(embedURL.getMatch(0) + "/f" + embedURL.getMatch(1));
+            }
+        }
+    }
+
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
@@ -119,8 +125,9 @@ public class StreamzCc extends antiDDoSForHost {
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, int recursed) throws Exception {
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
-        this.setBrowserExclusive();
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link) + ".mp4");
+        }
         br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
         // final String shareLink = br.getRegex("Please share this link to your friends:\\s*(https?://streamz.cc/[a-z0-9==]+)").getMatch(0);
@@ -132,91 +139,109 @@ public class StreamzCc extends antiDDoSForHost {
         }
         if (br.containsHTML("The link in your browser URL is only valid for")) {
             if (recursed >= 5) {
+                logger.warning("Too many failed attempts");
                 return AvailableStatus.FALSE;
             }
-            final String redirectLink = link.getStringProperty("redirect_link");
-            if (StringUtils.isEmpty(redirectLink)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "page expired and no redirect_link found");
-            }
-            br.setFollowRedirects(false);
-            br.getPage(redirectLink);
-            if (br.getRedirectLocation() != null) {
-                link.setPluginPatternMatcher(br.getRedirectLocation());
-                return requestFileInformation(link, recursed + 1);
+            final Regex realLinkRegex = br.getRegex("(?i)Please share this link to your friends:\\s*(https?://[^/]+/(f[A-Za-z0-9]{10,}))<br>");
+            if (realLinkRegex.matches()) {
+                final String realFUIDNew = realLinkRegex.getMatch(1);
+                final String realFUIDPart = realFUIDNew.substring(0, realFUIDNew.length() - 4);
+                if (link.getPluginPatternMatcher().contains(realFUIDPart)) {
+                    /* All ok */
+                } else {
+                    /* TODO */
+                    return AvailableStatus.FALSE;
+                }
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                final String redirectLink = link.getStringProperty("redirect_link");
+                if (StringUtils.isEmpty(redirectLink)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "page expired and no redirect_link found");
+                }
+                br.setFollowRedirects(false);
+                br.getPage(redirectLink);
+                if (br.getRedirectLocation() != null) {
+                    link.setPluginPatternMatcher(br.getRedirectLocation());
+                    return requestFileInformation(link, recursed + 1);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
-        String fallbackFilename = link.getStringProperty("fallback_filename");
-        boolean fallbackFilenameEmpty = StringUtils.isEmpty(fallbackFilename);
-        String filename = br.getRegex("<title>streamZ\\.cc ([^<>\"]+)</title>").getMatch(0);
-        if (StringUtils.isEmpty(filename) || (new Regex(filename, "^(?:[a-z0-9]+|file title unknown)$").matches() && !fallbackFilenameEmpty)) {
+        final String fallbackFilename = link.getStringProperty("fallback_filename");
+        String filename = br.getRegex("(?i)<title>stream[a-z]+\\.[a-z]+ ([^<>\"]+)</title>").getMatch(0);
+        if (StringUtils.isEmpty(filename) || (new Regex(filename, "^(?:[a-z0-9]+|file title unknown)$").matches() && !StringUtils.isEmpty(fallbackFilename))) {
             filename = br.getRegex("<h5>([^<>\"]+)</h5>").getMatch(0);
         }
-        if (StringUtils.isNotEmpty(filename) && (!new Regex(filename, "^(?:[a-z0-9]+|file title unknown)$").matches() || fallbackFilenameEmpty)) {
+        if (StringUtils.isNotEmpty(filename) && (!new Regex(filename, "^(?:[a-z0-9]+|file title unknown)$").matches() || StringUtils.isEmpty(fallbackFilename))) {
             filename = Encoding.htmlDecode(filename).trim();
             if (!filename.endsWith(".mp4")) {
                 filename += ".mp4";
             }
             link.setFinalFileName(filename);
-        } else if (!fallbackFilenameEmpty) {
+        } else if (!StringUtils.isEmpty(fallbackFilename)) {
             link.setName(fallbackFilename);
-        } else {
-            /* Fallback */
-            link.setName(this.getFID(link) + ".mp4");
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, null, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final Account account, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
-            /* 2019-11-04: This is the official download. Consider adding stream download --> Maybe lower quality but no captcha */
-            final String url_continue = br.getRegex("(/download[a-z0-9]+)").getMatch(0);
-            if (url_continue == null) {
-                logger.warning("Failed to find url_continue");
+            requestFileInformation(link);
+            final Regex downloadInfo = br.getRegex("(/download([a-z0-9]+))");
+            if (!downloadInfo.matches()) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getPage(url_continue);
-            if (br.containsHTML(">Too many downloads? in the last few minutes")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many download in the last few minutes", 5 * 60 * 1000l);
-            } else if (br.containsHTML("color=\"red\">\\s*Please|before you try to download this movie")) {
-                /* 2020-09-16: (Nearly) all URLs are premium-only */
-                throw new AccountRequiredException();
+            final boolean downloadStream = account == null || true;
+            if (downloadStream) {
+                /* Stream download */
+                dllink = "/getlink-" + downloadInfo.getMatch(1) + ".dll";
+            } else {
+                /* Official download */
+                final String urlContinue = downloadInfo.getMatch(0);
+                if (urlContinue == null) {
+                    logger.warning("Failed to find url_continue");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.getPage(urlContinue);
+                if (br.containsHTML("(?i)>\\s*Too many downloads? in the last few minutes")) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many download in the last few minutes", 5 * 60 * 1000l);
+                } else if (br.containsHTML("(?i)color=\"red\">\\s*Please|before you try to download this movie") && account == null) {
+                    throw new AccountRequiredException();
+                }
+                final Form continueForm = br.getFormbyActionRegex(".*dodownload\\.dll");
+                if (continueForm == null) {
+                    logger.warning("Failed to find continueForm");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String hcaptchaResponse = new CaptchaHelperHostPluginHCaptcha(this, br).getToken();
+                continueForm.put("h-captcha-response", Encoding.urlEncode(hcaptchaResponse));
+                // this.sleep(10000, link);
+                this.submitForm(continueForm);
+                dllink = br.getRegex("(/getlink-[a-z0-9]+\\.dll)").getMatch(0);
+                if (StringUtils.isEmpty(dllink)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                // this.sleep(30000, link);
             }
-            final Form continueForm = br.getFormbyActionRegex(".*dodownload\\.dll");
-            if (continueForm == null) {
-                logger.warning("Failed to find continueForm");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            try {
-                /* 2020-03-16: Not required anymore (at least now always) */
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                continueForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-            } catch (final Throwable e) {
-            }
-            // this.sleep(10000, link);
-            this.submitForm(continueForm);
-            dllink = br.getRegex("(/getlink-[a-z0-9]+\\.dll)").getMatch(0);
-            if (StringUtils.isEmpty(dllink)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            this.sleep(30000, link);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (dl.getConnection().getLongContentLength() == 839075) {
             /* 2020-03-16: Cat & mouse - they're sending an "Turn adblock off" video. */
@@ -226,42 +251,116 @@ public class StreamzCc extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    return dllink;
+                } else {
+                    throw new IOException();
                 }
             } catch (final Exception e) {
                 logger.log(e);
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                return null;
             } finally {
                 if (con != null) {
                     con.disconnect();
                 }
             }
         }
-        return dllink;
+        return null;
+    }
+
+    private boolean login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
+            try {
+                br.setFollowRedirects(true);
+                br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    logger.info("Attempting cookie login");
+                    this.br.setCookies(cookies);
+                    if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l) {
+                        logger.info("Cookies are still fresh --> Trust cookies without login");
+                        return false;
+                    }
+                    br.getPage("https://" + this.getHost() + "/account.dll");
+                    if (this.isLoggedin()) {
+                        logger.info("Cookie login successful");
+                        /* Refresh cookie timestamp */
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return true;
+                    } else {
+                        logger.info("Cookie login failed");
+                    }
+                }
+                logger.info("Performing full login");
+                br.getPage("https://" + this.getHost() + "/login.dll");
+                final Form loginform = br.getFormbyActionRegex("(?i).*dologin.*");
+                if (loginform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("username", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                br.submitForm(loginform);
+                if (!isLoggedin()) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                /* 2021-07-02: We're not (yet) making use of that apikey */
+                // final String apikey = br.getRegex("/api\\.dll\"[^^>]*>([a-f0-9]{32})").getMatch(0);
+                // if (apikey != null) {
+                // account.setProperty("apikey", apikey);
+                // }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                return true;
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
+            }
+        }
+    }
+
+    private boolean isLoggedin() {
+        return br.containsHTML("/logout\\.dll");
     }
 
     @Override
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (acc.getType() == AccountType.FREE) {
-            /* Free accounts can have captchas */
-            return true;
-        }
-        /* Premium accounts do not have captchas */
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        login(account, true);
+        ai.setUnlimitedTraffic();
+        account.setType(AccountType.FREE);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        this.handleDownload(link, account, FREE_RESUME, FREE_MAXCHUNKS, "account_directurl");
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
+        /*
+         * 2021-07-02: Captcha is required for official downloads. Captcha is not required for watching/downloading streams but we do not
+         * support that due to js/crypto.
+         */
         return false;
     }
 
@@ -275,6 +374,10 @@ public class StreamzCc extends antiDDoSForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            link.removeProperty("free_directlink");
+            link.removeProperty("account_directurl");
+        }
     }
 }
