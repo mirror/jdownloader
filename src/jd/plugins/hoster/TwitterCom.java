@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -98,7 +99,7 @@ public class TwitterCom extends PluginForHost {
     @Override
     public void init() {
         super.init();
-        Browser.setRequestIntervalLimitGlobal("twimg.com", true, 250);
+        Browser.setRequestIntervalLimitGlobal("twimg.com", true, 350);
     }
 
     private void setconstants(final DownloadLink link) {
@@ -359,7 +360,7 @@ public class TwitterCom extends PluginForHost {
                 if (estimatedSize > 0) {
                     link.setDownloadSize(estimatedSize);
                 }
-            } else {
+            } else if (!(Thread.currentThread() instanceof SingleDownloadController) || link.getFinalFileName() == null) {
                 URLConnectionAdapter con = null;
                 try {
                     final Browser brc = br.cloneBrowser();

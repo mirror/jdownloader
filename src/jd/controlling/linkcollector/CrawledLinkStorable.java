@@ -9,13 +9,15 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkStorable;
 
 import org.appwork.storage.Storable;
+import org.appwork.storage.TypeRef;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 
 public class CrawledLinkStorable implements Storable {
-
-    private CrawledLink link;
-    private String      id  = null;
-    private long        UID = -1;
+    public static final TypeRef<CrawledLinkStorable> TYPEREF = new TypeRef<CrawledLinkStorable>() {
+                                                             };
+    private CrawledLink                              link;
+    private String                                   id      = null;
+    private long                                     UID     = -1;
 
     public String getID() {
         return id;
@@ -54,7 +56,7 @@ public class CrawledLinkStorable implements Storable {
         if (urls != null) {
             final ArrayList<String> deDuplicatedURLs = new ArrayList<String>();
             for (final String url : urls) {
-                final String deDuplicatedURL = DownloadLink.deDuplicateString(LinkCrawler.cleanURL(url));
+                final String deDuplicatedURL = DownloadLink.dedupeString(LinkCrawler.cleanURL(url));
                 if (deDuplicatedURL != null) {
                     deDuplicatedURLs.add(deDuplicatedURL);
                 }
@@ -117,11 +119,12 @@ public class CrawledLinkStorable implements Storable {
     }
 
     public long getUID() {
-        DownloadLink dll = link.getDownloadLink();
+        final DownloadLink dll = _getDownloadLink();
         if (dll != null) {
             return dll.getUniqueID().getID();
+        } else {
+            return link.getUniqueID().getID();
         }
-        return link.getUniqueID().getID();
     }
 
     public void setUID(long id) {
@@ -129,11 +132,15 @@ public class CrawledLinkStorable implements Storable {
     }
 
     public DownloadLinkStorable getDownloadLink() {
-        return new DownloadLinkStorable(link.getDownloadLink());
+        return new DownloadLinkStorable(_getDownloadLink());
     }
 
     public void setDownloadLink(DownloadLinkStorable link) {
         this.link.setDownloadLink(link._getDownloadLink());
+    }
+
+    public DownloadLink _getDownloadLink() {
+        return link.getDownloadLink();
     }
 
     /**
@@ -152,7 +159,7 @@ public class CrawledLinkStorable implements Storable {
     }
 
     public CrawledLink _getCrawledLink() {
-        DownloadLink dll = link.getDownloadLink();
+        final DownloadLink dll = _getDownloadLink();
         if (dll != null) {
             if (UID != -1) {
                 dll.getUniqueID().setID(UID);
@@ -167,8 +174,9 @@ public class CrawledLinkStorable implements Storable {
     public ArchiveInfoStorable getArchiveInfo() {
         if (link.hasArchiveInfo()) {
             return new ArchiveInfoStorable(link.getArchiveInfo());
+        } else {
+            return null;
         }
-        return null;
     }
 
     public void setArchiveInfo(ArchiveInfoStorable info) {
@@ -182,5 +190,4 @@ public class CrawledLinkStorable implements Storable {
             }
         }
     }
-
 }

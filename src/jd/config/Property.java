@@ -40,7 +40,7 @@ import org.appwork.storage.TypeRef;
 public class Property implements Serializable {
     private final static WeakHashMap<String, WeakReference<String>> DEDUPEMAP = new WeakHashMap<String, WeakReference<String>>();
 
-    protected static String dedupeString(String string) {
+    public static String dedupeString(String string) {
         if (string != null) {
             synchronized (DEDUPEMAP) {
                 String ret = null;

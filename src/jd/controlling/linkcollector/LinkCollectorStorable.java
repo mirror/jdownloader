@@ -1,10 +1,13 @@
 package jd.controlling.linkcollector;
 
 import org.appwork.storage.Storable;
+import org.appwork.storage.TypeRef;
 
 public class LinkCollectorStorable implements Storable {
-    private String rootPath  = null;
-    private long   timeStamp = -1;
+    public static final TypeRef<LinkCollectorStorable> TYPEREF   = new TypeRef<LinkCollectorStorable>() {
+    };
+    private String                                     rootPath  = null;
+    private long                                       timeStamp = -1;
 
     public String getRootPath() {
         return rootPath;

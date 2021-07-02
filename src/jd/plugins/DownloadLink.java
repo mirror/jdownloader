@@ -47,7 +47,6 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -721,15 +720,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public void setHost(String newHost) {
         if (newHost == null) {
             return;
+        } else {
+            host = dedupeString(newHost.toLowerCase(Locale.ENGLISH));
         }
-        host = deDuplicateString(newHost.toLowerCase(Locale.ENGLISH));
-    }
-
-    public static String deDuplicateString(String string) {
-        if (string != null && Application.getJavaVersion() >= Application.JAVA17) {
-            return string.intern();
-        }
-        return string;
     }
 
     public LinkStatus getLinkStatus() {
@@ -968,7 +961,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /*
      * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
      * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
-     *
+     * 
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityStatusChecked() {

@@ -34,6 +34,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import jd.config.Property;
 import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadSession;
@@ -366,13 +367,13 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
             this.id = id;
             this.packageName = packageName;
-            this.downloadFolderRaw = CrawledPackage.dedupeString(downloadFolderRaw);
+            this.downloadFolderRaw = Property.dedupeString(downloadFolderRaw);
             if (CrossSystem.isWindows() && downloadFolderRaw != null) {
                 /**
                  * windows has case insensitive filesystem
                  */
                 final String downloadFolder = downloadFolderRaw.toLowerCase(Locale.ENGLISH);
-                this.downloadFolder = CrawledPackage.dedupeString(downloadFolder);
+                this.downloadFolder = Property.dedupeString(downloadFolder);
             } else {
                 this.downloadFolder = this.downloadFolderRaw;
             }

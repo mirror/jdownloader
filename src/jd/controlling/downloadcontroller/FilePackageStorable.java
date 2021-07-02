@@ -3,11 +3,13 @@ package jd.controlling.downloadcontroller;
 import java.util.ArrayList;
 import java.util.Map;
 
+import jd.controlling.packagecontroller.PackageControllerComparator;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkStorable;
 import jd.plugins.FilePackage;
 
 import org.appwork.storage.Storable;
+import org.appwork.swing.exttable.ExtColumn;
 
 public class FilePackageStorable implements Storable {
     private FilePackage                          filePackage;
@@ -50,6 +52,28 @@ public class FilePackageStorable implements Storable {
 
     public String getName() {
         return filePackage.getName();
+    }
+
+    public String getSorterId() {
+        final PackageControllerComparator<DownloadLink> lSorter = filePackage.getCurrentSorter();
+        if (lSorter == null) {
+            return null;
+        } else {
+            final boolean asc = lSorter.isAsc();
+            return ((asc ? ExtColumn.SORT_ASC : ExtColumn.SORT_DESC) + "." + lSorter.getID());
+        }
+    }
+
+    public void setSorterId(String id) {
+        try {
+            if (id == null) {
+                filePackage.setCurrentSorter(null);
+            } else {
+                filePackage.setCurrentSorter(PackageControllerComparator.getDownloadLinkComparator(id));
+            }
+        } catch (Throwable t) {
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(t);
+        }
     }
 
     public void setName(String name) {
