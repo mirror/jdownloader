@@ -5,6 +5,7 @@ import java.util.List;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.PackageControllerComparator;
 import jd.plugins.DownloadLink;
 
@@ -66,7 +67,7 @@ public class CrawledPackageStorable implements Storable {
     }
 
     public String getSorterId() {
-        final PackageControllerComparator<CrawledLink> lSorter = pkg.getCurrentSorter();
+        final PackageControllerComparator<AbstractNode> lSorter = pkg.getCurrentSorter();
         if (lSorter == null) {
             return null;
         } else {
@@ -79,7 +80,7 @@ public class CrawledPackageStorable implements Storable {
         if (id == null) {
             pkg.setCurrentSorter(null);
         } else {
-            pkg.setCurrentSorter(PackageControllerComparator.getCrawledLinkComparator(id));
+            pkg.setCurrentSorter(PackageControllerComparator.getComparator(id));
         }
     }
 

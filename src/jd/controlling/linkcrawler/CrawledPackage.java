@@ -1,7 +1,6 @@
 package jd.controlling.linkcrawler;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 
@@ -12,7 +11,6 @@ import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.PackageController;
 import jd.controlling.packagecontroller.PackageControllerComparator;
-import jd.nutils.NaturalOrderComparator;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.ModifyLock;
@@ -27,47 +25,6 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR;
 
 public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledPackage> {
-    public static final PackageControllerComparator<CrawledLink> SORTER_ASC  = new PackageControllerComparator<CrawledLink>() {
-        private final Comparator<String> comp = new NaturalOrderComparator();
-
-        public int compare(CrawledLink o1, CrawledLink o2) {
-            String o1s = o1.getName();
-            String o2s = o2.getName();
-            if (o1s == null) {
-                o1s = "";
-            }
-            if (o2s == null) {
-                o2s = "";
-            }
-            return comp.compare(o1s, o2s);
-        }
-
-        @Override
-        public String getID() {
-            return "jd.controlling.linkcrawler.CrawledPackage";
-        }
-
-        @Override
-        public boolean isAsc() {
-            return true;
-        }
-    };
-    public static final PackageControllerComparator<CrawledLink> SORTER_DESC = new PackageControllerComparator<CrawledLink>() {
-        public int compare(CrawledLink o1, CrawledLink o2) {
-            return SORTER_ASC.compare(o2, o1);
-        }
-
-        @Override
-        public String getID() {
-            return SORTER_ASC.getID();
-        }
-
-        @Override
-        public boolean isAsc() {
-            return false;
-        }
-    };
-
     public static enum TYPE {
         NORMAL,
         OFFLINE,
@@ -101,7 +58,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     protected CrawledPackageView                           view;
     private String                                         compiledDownloadFolder     = null;
     private ModifyLock                                     lock                       = null;
-    private PackageControllerComparator<CrawledLink>       sorter;
+    private PackageControllerComparator<AbstractNode>      sorter;
     private Priority                                       priority                   = Priority.DEFAULT;
 
     public UniqueAlltimeID getUniqueID() {
@@ -118,7 +75,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     public CrawledPackage() {
         children = new ArrayList<CrawledLink>();
         if (GENERALSETTINGS.isAutoSortChildrenEnabled()) {
-            sorter = SORTER_ASC;
+            sorter = PackageControllerComparator.SORTER_ASC;
         }
         setDownloadFolder(null);
     }
@@ -139,7 +96,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     /**
      * @return the comment
      */
-     public String getComment() {
+    public String getComment() {
         return comment;
     }
 
@@ -346,12 +303,12 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     @Override
-    public PackageControllerComparator<CrawledLink> getCurrentSorter() {
+    public PackageControllerComparator<AbstractNode> getCurrentSorter() {
         return sorter;
     }
 
     @Override
-    public void setCurrentSorter(PackageControllerComparator<CrawledLink> comparator) {
+    public void setCurrentSorter(PackageControllerComparator<AbstractNode> comparator) {
         sorter = comparator;
     }
 

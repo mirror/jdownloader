@@ -95,14 +95,14 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     protected final Queue QUEUE = new Queue(getClass().getName()) {
-        @Override
-        public void killQueue() {
-            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(new Throwable("YOU CANNOT KILL ME!"));
-            /*
-             * this queue can't be killed
-             */
-        }
-    };
+                                    @Override
+                                    public void killQueue() {
+                                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(new Throwable("YOU CANNOT KILL ME!"));
+                                        /*
+                                         * this queue can't be killed
+                                         */
+                                    }
+                                };
 
     /**
      * add a Package at given position position in this PackageController. in case the Package is already controlled by this
@@ -164,7 +164,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         return ret;
     }
 
-    protected boolean _sortPackageChildren(final PackageType pkg, final PackageControllerComparator<ChildType> comparator) {
+    protected boolean _sortPackageChildren(final PackageType pkg, final PackageControllerComparator<AbstractNode> comparator) {
         final boolean sort = pkg.size() > 1 && comparator != null && !comparator.equals(pkg.getCurrentSorter());
         if (sort) {
             final ArrayList<ChildType> children = getChildrenCopy(pkg);
@@ -202,7 +202,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         }
     }
 
-    public void sortPackageChildren(final PackageType pkg, final PackageControllerComparator<ChildType> comparator) {
+    public void sortPackageChildren(final PackageType pkg, final PackageControllerComparator<AbstractNode> comparator) {
         if (pkg != null && comparator != null) {
             QUEUE.add(new QueueAction<Void, RuntimeException>() {
                 @Override
@@ -604,7 +604,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                  * @param sorter
                  * @return
                  */
-                protected final int search(List<ChildType> pkgchildren, ChildType elementToMove, PackageControllerComparator<ChildType> sorter) {
+                protected final int search(List<ChildType> pkgchildren, ChildType elementToMove, PackageControllerComparator<AbstractNode> sorter) {
                     int min = 0;
                     int max = pkgchildren.size() - 1;
                     int mid = 0;
@@ -651,7 +651,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         try {
                             newChildren = true;
                             pkg.getModifyLock().writeLock();
-                            final PackageControllerComparator<ChildType> sorter = pkg.getCurrentSorter();
+                            final PackageControllerComparator<AbstractNode> sorter = pkg.getCurrentSorter();
                             final List<ChildType> pkgChildren = pkg.getChildren();
                             final int maxIndex = moveChildren.size();
                             if (sorter != null) {
@@ -727,7 +727,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         /* remove all */
                         /*
                          * TODO: speed optimization, we have to correct the index to match changes in children structure
-                         *
+                         * 
                          * TODO: optimize this loop. only process existing links in this package
                          */
                         for (final ChildType child : elementsToMove) {
@@ -742,7 +742,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         /* add at wanted position */
                         if (destIndex < 0 || destIndex > children.size()) {
                             /* add at the end */
-                            final PackageControllerComparator<ChildType> sorter = pkg.getCurrentSorter();
+                            final PackageControllerComparator<AbstractNode> sorter = pkg.getCurrentSorter();
                             if (sorter != null) {
                                 for (final ChildType c : elementsToMove) {
                                     children.add(search(children, c, sorter), c);
@@ -1059,9 +1059,9 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     }
                     boolean sortChildrenChanged = sortChildren;
                     if (sortChildren) {
-                        final PackageControllerComparator<ChildType> sorter = new PackageControllerComparator<ChildType>() {
+                        final PackageControllerComparator<AbstractNode> sorter = new PackageControllerComparator<AbstractNode>() {
                             @Override
-                            public int compare(ChildType o1, ChildType o2) {
+                            public int compare(AbstractNode o1, AbstractNode o2) {
                                 return comparator.compare(o1, o2);
                             }
 

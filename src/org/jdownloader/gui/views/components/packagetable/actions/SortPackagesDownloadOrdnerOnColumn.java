@@ -1,24 +1,22 @@
 package org.jdownloader.gui.views.components.packagetable.actions;
 
 import java.awt.event.ActionEvent;
-import java.util.concurrent.atomic.AtomicBoolean;
+
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.PackageController;
+import jd.controlling.packagecontroller.PackageControllerComparator;
 
 import org.appwork.swing.exttable.ExtColumn;
-import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
-
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.PackageController;
-import jd.controlling.packagecontroller.PackageControllerComparator;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class SortPackagesDownloadOrdnerOnColumn extends AppAction {
-
-    private ExtColumn<?> column;
+    private final ExtColumn<?> column;
 
     public SortPackagesDownloadOrdnerOnColumn(ExtColumn<?> column) {
         setName(_GUI.T.SortPackagesDownloadOrdnerOnColumn(column.getName()));
@@ -29,47 +27,30 @@ public class SortPackagesDownloadOrdnerOnColumn extends AppAction {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (column.isSortable(null)) {
-            ExtTableModel<?> model = column.getModel();
-            PackageController modelController = ((PackageControllerTableModel) model).getController();
-
-            final ExtDefaultRowSorter<AbstractNode> sorter = (ExtDefaultRowSorter<AbstractNode>) column.getRowSorter();
-
-            PackageControllerComparator currentComparator = modelController.getSorter();
-            final String newID = column.getModel().getModelID() + ".Column." + column.getID();
-
-            final AtomicBoolean asc = new AtomicBoolean(true);
-            if (currentComparator != null && newID.equals(currentComparator.getID())) {
-                asc.set(!currentComparator.isAsc());
-            }
-            final boolean sortPackages;
-            if (!CrossSystem.isMac() && ((e.getModifiers() & ActionEvent.SHIFT_MASK) == ActionEvent.SHIFT_MASK)) {
-                sortPackages = false;
+            final ExtTableModel<?> model = column.getModel();
+            final PackageController modelController = ((PackageControllerTableModel) model).getController();
+            String currentID = column.getModel().getModelID() + ".Column." + column.getID();
+            final PackageControllerComparator currentSorter = modelController.getSorter();
+            final boolean asc;
+            if (currentSorter == null || !currentSorter.getID().equals(currentID)) {
+                if (CFG_GUI.CFG.isPrimaryTableSorterDesc()) {
+                    asc = true;
+                } else {
+                    asc = false;
+                }
             } else {
-                sortPackages = true;
+                asc = !currentSorter.isAsc();
             }
-            modelController.sort(new PackageControllerComparator<AbstractNode>() {
-
-                @Override
-                public int compare(AbstractNode o1, AbstractNode o2) {
-                    if (isAsc()) {
-                        return sorter.compare(o1, o2);
-                    } else {
-                        return sorter.compare(o2, o1);
-                    }
-                }
-
-                @Override
-                public String getID() {
-                    return newID;
-                }
-
-                @Override
-                public boolean isAsc() {
-                    return asc.get();
-                }
-            }, sortPackages);
-
+            currentID = (asc ? ExtColumn.SORT_ASC : ExtColumn.SORT_DESC) + "." + currentID;
+            final PackageControllerComparator<? extends AbstractNode> comparator;
+            comparator = PackageControllerComparator.getComparator(currentID);
+            final boolean sortChildren;
+            if (!CrossSystem.isMac() && ((e.getModifiers() & ActionEvent.SHIFT_MASK) == ActionEvent.SHIFT_MASK)) {
+                sortChildren = false;
+            } else {
+                sortChildren = true;
+            }
+            modelController.sort(comparator, sortChildren);
         }
     }
-
 }

@@ -20,7 +20,6 @@ import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
-import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -78,7 +77,7 @@ public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, Pa
                             if (comparator == null) {
                                 String currentID = column.getModel().getModelID() + ".Column." + column.getID();
                                 final PackageControllerComparator currentSorter = node.getPackage().getCurrentSorter();
-                                boolean asc = true;
+                                final boolean asc;
                                 if (currentSorter == null || !currentSorter.getID().equals(currentID)) {
                                     if (CFG_GUI.CFG.isPrimaryTableSorterDesc()) {
                                         asc = true;
@@ -89,11 +88,7 @@ public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, Pa
                                     asc = !currentSorter.isAsc();
                                 }
                                 currentID = (asc ? ExtColumn.SORT_ASC : ExtColumn.SORT_DESC) + "." + currentID;
-                                if (model instanceof DownloadsTableModel) {
-                                    comparator = PackageControllerComparator.getDownloadLinkComparator(currentID);
-                                } else {
-                                    comparator = PackageControllerComparator.getCrawledLinkComparator(currentID);
-                                }
+                                comparator = PackageControllerComparator.getComparator(currentID);
                             }
                             model.sortPackageChildren(node.getPackage(), comparator);
                         }
