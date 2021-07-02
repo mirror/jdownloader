@@ -18,29 +18,24 @@ public class CFG_DBC {
     public static final StorageHandler<DeathByCaptchaSettings> SH                        = (StorageHandler<DeathByCaptchaSettings>) CFG._getStorageHandler();
     // let's do this mapping here. If we map all methods to static handlers, access is faster, and we get an error on init if mappings are
     // wrong.
-
     /**
      * Max. Captchas Parallel
      **/
     public static final IntegerKeyHandler                      THREADPOOL_SIZE           = SH.getKeyHandler("ThreadpoolSize", IntegerKeyHandler.class);
-
     /**
-     * Active the deathbycaptcha.eu service
+     * Active the deathbycaptcha.com service
      **/
     public static final BooleanKeyHandler                      ENABLED                   = SH.getKeyHandler("Enabled", BooleanKeyHandler.class);
-
     /**
      * Activate the Captcha Feedback
      **/
     public static final BooleanKeyHandler                      FEED_BACK_SENDING_ENABLED = SH.getKeyHandler("FeedBackSendingEnabled", BooleanKeyHandler.class);
-
     /**
-     * Your deathbycaptcha.eu Username
+     * Your deathbycaptcha.com Username
      **/
     public static final StringKeyHandler                       USER_NAME                 = SH.getKeyHandler("UserName", StringKeyHandler.class);
-
     /**
-     * Your deathbycaptcha.eu Password
+     * Your deathbycaptcha.com Password
      **/
     public static final StringKeyHandler                       PASSWORD                  = SH.getKeyHandler("Password", StringKeyHandler.class);
 }

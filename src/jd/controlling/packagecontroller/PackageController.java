@@ -164,36 +164,53 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         return ret;
     }
 
+    protected boolean _sortPackageChildren(final PackageType pkg, final PackageControllerComparator<ChildType> comparator) {
+        final boolean sort = pkg.size() > 1 && comparator != null && !comparator.equals(pkg.getCurrentSorter());
+        if (sort) {
+            final ArrayList<ChildType> children = getChildrenCopy(pkg);
+            try {
+                Collections.sort(children, comparator);
+            } catch (final Throwable e) {
+                LogController.CL(true).log(e);
+            }
+            pkg.getModifyLock().writeLock();
+            try {
+                pkg.setCurrentSorter(comparator);
+                for (final ChildType child : children) {
+                    /* this resets getPreviousParentNodeID */
+                    child.setParentNode(pkg);
+                }
+                pkg.getChildren().clear();
+                pkg.getChildren().addAll(children);
+            } finally {
+                pkg.getModifyLock().writeUnlock();
+                pkg.nodeUpdated(pkg, NOTIFY.STRUCTURE_CHANCE, null);
+            }
+            return true;
+        } else {
+            pkg.getModifyLock().writeLock();
+            try {
+                pkg.setCurrentSorter(comparator);
+                for (final ChildType child : pkg.getChildren()) {
+                    /* this resets getPreviousParentNodeID */
+                    child.setParentNode(pkg);
+                }
+            } finally {
+                pkg.getModifyLock().writeUnlock();
+            }
+            return false;
+        }
+    }
+
     public void sortPackageChildren(final PackageType pkg, final PackageControllerComparator<ChildType> comparator) {
         if (pkg != null && comparator != null) {
             QUEUE.add(new QueueAction<Void, RuntimeException>() {
                 @Override
                 protected Void run() throws RuntimeException {
-                    final ArrayList<ChildType> children = getChildrenCopy(pkg);
-                    try {
-                        try {
-                            Collections.sort(children, comparator);
-                        } catch (final Throwable e) {
-                            LogController.CL(true).log(e);
-                        }
-                        try {
-                            pkg.getModifyLock().writeLock();
-                            pkg.setCurrentSorter(comparator);
-                            for (ChildType child : children) {
-                                /* this resets getPreviousParentNodeID */
-                                child.setParentNode(pkg);
-                            }
-                            pkg.getChildren().clear();
-                            pkg.getChildren().addAll(children);
-                        } finally {
-                            pkg.getModifyLock().writeUnlock();
-                            pkg.nodeUpdated(pkg, NOTIFY.STRUCTURE_CHANCE, null);
-                        }
-                    } catch (final Throwable e) {
-                        LogController.CL(true).log(e);
+                    if (_sortPackageChildren(pkg, comparator)) {
+                        structureChanged.set(backendChanged.incrementAndGet());
+                        _controllerPackageNodeStructureChanged(pkg, this.getQueuePrio());
                     }
-                    structureChanged.set(backendChanged.incrementAndGet());
-                    _controllerPackageNodeStructureChanged(pkg, this.getQueuePrio());
                     return null;
                 }
             });
@@ -1028,7 +1045,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         }
     }
 
-    public void sort(final PackageControllerComparator<AbstractNode> comparator, final boolean sortPackages) {
+    public void sort(final PackageControllerComparator<AbstractNode> comparator, final boolean sortChildren) {
         this.sorter = comparator;
         if (comparator != null) {
             QUEUE.add(new QueueAction<Void, RuntimeException>() {
@@ -1040,7 +1057,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     } catch (final Throwable e) {
                         LogController.CL(true).log(e);
                     }
-                    if (sortPackages) {
+                    boolean sortChildrenChanged = sortChildren;
+                    if (sortChildren) {
                         final PackageControllerComparator<ChildType> sorter = new PackageControllerComparator<ChildType>() {
                             @Override
                             public int compare(ChildType o1, ChildType o2) {
@@ -1057,30 +1075,15 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                                 return comparator.isAsc();
                             }
                         };
+                        sortChildrenChanged = false;
                         try {
                             for (final PackageType pkg : lpackages) {
-                                final ArrayList<ChildType> children = getChildrenCopy(pkg);
-                                try {
-                                    Collections.sort(children, comparator);
-                                } catch (final Throwable e) {
-                                    LogController.CL(true).log(e);
-                                }
-                                pkg.getModifyLock().writeLock();
-                                try {
-                                    pkg.setCurrentSorter(sorter);
-                                    for (ChildType child : children) {
-                                        /* this resets getPreviousParentNodeID */
-                                        child.setParentNode(pkg);
-                                    }
-                                    pkg.getChildren().clear();
-                                    pkg.getChildren().addAll(children);
-                                } finally {
-                                    pkg.getModifyLock().writeUnlock();
-                                    pkg.nodeUpdated(pkg, NOTIFY.STRUCTURE_CHANCE, null);
-                                }
+                                sortChildrenChanged |= _sortPackageChildren(pkg, sorter);
                             }
                         } finally {
-                            structureChanged.set(backendChanged.incrementAndGet());
+                            if (sortChildren) {
+                                structureChanged.set(backendChanged.incrementAndGet());
+                            }
                         }
                     }
                     writeLock();
@@ -1091,7 +1094,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         writeUnlock();
                     }
                     structureChanged.set(backendChanged.incrementAndGet());
-                    if (sortPackages) {
+                    if (sortChildrenChanged) {
                         for (final PackageType pkg : lpackages) {
                             _controllerPackageNodeStructureChanged(pkg, this.getQueuePrio());
                         }

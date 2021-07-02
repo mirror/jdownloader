@@ -16,12 +16,11 @@
 package jd.plugins;
 
 import java.io.Serializable;
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
-import java.util.WeakHashMap;
 
 import jd.config.Property;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -30,7 +29,9 @@ import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.PackageController;
 import jd.controlling.packagecontroller.PackageControllerComparator;
+import jd.nutils.NaturalOrderComparator;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.ModifyLock;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
@@ -47,29 +48,51 @@ import org.jdownloader.translate._JDT;
  * @author JD-Team
  */
 public class FilePackage extends Property implements Serializable, AbstractPackageNode<DownloadLink, FilePackage> {
-    private final static WeakHashMap<String, WeakReference<String>> DEDUPEMAP = new WeakHashMap<String, WeakReference<String>>();
+    private static final GeneralSettings                          GENERALSETTINGS  = JsonConfig.create(GeneralSettings.class);
+    public static final PackageControllerComparator<DownloadLink> SORTER_ASC       = new PackageControllerComparator<DownloadLink>() {
+                                                                                       private final Comparator<String> comp = new NaturalOrderComparator();
 
-    public static String dedupeString(String string) {
-        if (string != null) {
-            synchronized (DEDUPEMAP) {
-                String ret = null;
-                WeakReference<String> ref = DEDUPEMAP.get(string);
-                if (ref != null && (ret = ref.get()) != null) {
-                    return ret;
-                }
-                ref = new WeakReference<String>(string);
-                DEDUPEMAP.put(string, ref);
-                return string;
-            }
-        } else {
-            return null;
-        }
-    }
+                                                                                       public int compare(DownloadLink o1, DownloadLink o2) {
+                                                                                           String o1s = o1.getName();
+                                                                                           String o2s = o2.getName();
+                                                                                           if (o1s == null) {
+                                                                                               o1s = "";
+                                                                                           }
+                                                                                           if (o2s == null) {
+                                                                                               o2s = "";
+                                                                                           }
+                                                                                           return comp.compare(o1s, o2s);
+                                                                                       }
 
-    private static final long       serialVersionUID = -8859842964299890820L;
-    private String                  downloadDirectory;
-    private ArrayList<DownloadLink> downloadLinkList;
-    private static FilePackage      FP               = null;
+                                                                                       @Override
+                                                                                       public String getID() {
+                                                                                           return "jd.plugins.FilePackage";
+                                                                                       }
+
+                                                                                       @Override
+                                                                                       public boolean isAsc() {
+                                                                                           return true;
+                                                                                       }
+                                                                                   };
+    public static final PackageControllerComparator<DownloadLink> SORTER_DESC      = new PackageControllerComparator<DownloadLink>() {
+                                                                                       public int compare(DownloadLink o1, DownloadLink o2) {
+                                                                                           return SORTER_ASC.compare(o2, o1);
+                                                                                       }
+
+                                                                                       @Override
+                                                                                       public String getID() {
+                                                                                           return SORTER_ASC.getID();
+                                                                                       }
+
+                                                                                       @Override
+                                                                                       public boolean isAsc() {
+                                                                                           return false;
+                                                                                       }
+                                                                                   };
+    private static final long                                     serialVersionUID = -8859842964299890820L;
+    private String                                                downloadDirectory;
+    private ArrayList<DownloadLink>                               downloadLinkList;
+    private static FilePackage                                    FP               = null;
     static {
         FP = new FilePackage() {
             final private FilePackageView view             = new FilePackageView(this) {
@@ -245,8 +268,8 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     private long                                         modified             = -1l;
     private Boolean                                      isExpanded           = null;
     private PackageController<FilePackage, DownloadLink> controlledby         = null;
-    private volatile UniqueAlltimeID                     uniqueID             = null;
-    private volatile ModifyLock                          lock                 = null;
+    private UniqueAlltimeID                              uniqueID             = null;
+    private ModifyLock                                   lock                 = null;
     public static final String                           PROPERTY_EXPANDED    = "EXPANDED";
     private static final String                          PROPERTY_COMMENT     = "COMMENT";
     private static final String                          PROPERTY_PRIORITY    = "PRIORITY";
@@ -256,19 +279,17 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      * @return the uniqueID
      */
     public UniqueAlltimeID getUniqueID() {
-        if (uniqueID != null) {
-            return uniqueID;
-        }
-        synchronized (this) {
-            if (uniqueID != null) {
-                return uniqueID;
+        if (uniqueID == null) {
+            synchronized (this) {
+                if (uniqueID == null) {
+                    uniqueID = new UniqueAlltimeID();
+                }
             }
-            uniqueID = new UniqueAlltimeID();
         }
         return uniqueID;
     }
 
-    private volatile FilePackageView                  fpInfo = null;
+    private FilePackageView                           fpInfo = null;
     private PackageControllerComparator<DownloadLink> sorter;
 
     /*
@@ -290,14 +311,15 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     public boolean equals(Object obj) {
         if (obj == null) {
             return false;
-        }
-        if (obj == this) {
+        } else if (obj == this) {
             return true;
-        }
-        if (!(obj instanceof FilePackage)) {
+        } else if (!(obj instanceof FilePackage)) {
+            return false;
+        } else if (this.uniqueID != null) {
+            return ((FilePackage) obj).uniqueID == this.uniqueID;
+        } else {
             return false;
         }
-        return ((FilePackage) obj).uniqueID == this.uniqueID;
     }
 
     /**
@@ -313,12 +335,15 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      * private constructor for FilePackage, sets created timestamp and downloadDirectory
      */
     private FilePackage() {
-        downloadDirectory = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
+        downloadDirectory = GENERALSETTINGS.getDefaultDownloadFolder();
         created = System.currentTimeMillis();
         modified = created;
         /* till refactoring is complete */
         this.downloadLinkList = new ArrayList<DownloadLink>();
         setName(null);
+        if (GENERALSETTINGS.isAutoSortChildrenEnabled()) {
+            sorter = SORTER_ASC;
+        }
     }
 
     /**
@@ -629,13 +654,12 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
 
     @Override
     public FilePackageView getView() {
-        if (fpInfo != null) {
-            return fpInfo;
-        }
-        synchronized (this) {
-            if (fpInfo == null) {
-                final FilePackageView lfpInfo = new FilePackageView(this);
-                fpInfo = lfpInfo;
+        if (fpInfo == null) {
+            synchronized (this) {
+                if (fpInfo == null) {
+                    final FilePackageView lfpInfo = new FilePackageView(this);
+                    fpInfo = lfpInfo;
+                }
             }
         }
         return fpInfo;
@@ -687,22 +711,17 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     @Override
     public boolean hasNotificationListener() {
         final PackageController<FilePackage, DownloadLink> n = getControlledBy();
-        if (n != null && n.hasNotificationListener()) {
-            return true;
-        }
-        return false;
+        return n != null && n.hasNotificationListener();
     }
 
     @Override
     public ModifyLock getModifyLock() {
-        if (lock != null) {
-            return lock;
-        }
-        synchronized (this) {
-            if (lock != null) {
-                return lock;
+        if (lock == null) {
+            synchronized (this) {
+                if (lock == null) {
+                    lock = new ModifyLock();
+                }
             }
-            lock = new ModifyLock();
         }
         return lock;
     }

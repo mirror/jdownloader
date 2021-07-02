@@ -5,7 +5,6 @@ import java.util.List;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.PackageControllerComparator;
 import jd.plugins.DownloadLink;
 
@@ -13,11 +12,10 @@ import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.exttable.ExtColumn;
 import org.jdownloader.controlling.Priority;
-import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 
 public class CrawledPackageStorable implements Storable {
     public static final TypeRef<CrawledPackageStorable> TYPEREF = new TypeRef<CrawledPackageStorable>() {
-    };
+                                                                };
 
     public static enum TYPE {
         NORMAL,
@@ -71,69 +69,17 @@ public class CrawledPackageStorable implements Storable {
         final PackageControllerComparator<CrawledLink> lSorter = pkg.getCurrentSorter();
         if (lSorter == null) {
             return null;
+        } else {
+            final boolean asc = lSorter.isAsc();
+            return ((asc ? ExtColumn.SORT_ASC : ExtColumn.SORT_DESC) + "." + lSorter.getID());
         }
-        final boolean asc = lSorter.isAsc();
-        return ((asc ? "ASC" : "DSC") + "." + lSorter.getID());
     }
 
     public void setSorterId(String id) {
-        try {
-            /*
-             * Ugly Restoremethod for the current package sorter
-             */
-            if (id == null) {
-                pkg.setCurrentSorter(null);
-                return;
-            }
-            boolean asc = id.startsWith("ASC.");
-            int index = id.indexOf("Column.");
-            if (id.endsWith("jd.controlling.linkcrawler.CrawledPackage")) {
-                // default sorter
-                pkg.setCurrentSorter(asc ? CrawledPackage.SORTER_ASC : CrawledPackage.SORTER_DESC);
-                return;
-            }
-            // Column Sorter
-            String colID = id.substring(index + 7);
-            for (final ExtColumn<AbstractNode> c : LinkGrabberTableModel.getInstance().getColumns()) {
-                if (colID.equals(c.getID())) {
-                    if (asc) {
-                        pkg.setCurrentSorter(new PackageControllerComparator<CrawledLink>() {
-                            public int compare(CrawledLink o1, CrawledLink o2) {
-                                return c.getRowSorter().compare(o1, o2);
-                            }
-
-                            @Override
-                            public String getID() {
-                                return c.getModel().getModelID() + ".Column." + c.getID();
-                            }
-
-                            @Override
-                            public boolean isAsc() {
-                                return true;
-                            }
-                        });
-                    } else {
-                        pkg.setCurrentSorter(new PackageControllerComparator<CrawledLink>() {
-                            public int compare(CrawledLink o1, CrawledLink o2) {
-                                return c.getRowSorter().compare(o2, o1);
-                            }
-
-                            @Override
-                            public String getID() {
-                                return c.getModel().getModelID() + ".Column." + c.getID();
-                            }
-
-                            @Override
-                            public boolean isAsc() {
-                                return false;
-                            }
-                        });
-                    }
-                    break;
-                }
-            }
-        } catch (Throwable t) {
-            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(t);
+        if (id == null) {
+            pkg.setCurrentSorter(null);
+        } else {
+            pkg.setCurrentSorter(PackageControllerComparator.getCrawledLinkComparator(id));
         }
     }
 
