@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -25,8 +27,6 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XubsterCom extends XFileSharingProBasic {
@@ -115,7 +115,7 @@ public class XubsterCom extends XFileSharingProBasic {
 
     @Override
     public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
-        if (br.getURL().contains("/login") && captchaForm.hasInputFieldByName("g-recaptcha-response")) {
+        if (br.getURL().contains("/login") && captchaForm.hasInputFieldByName("g-recaptcha-response") && captchaForm.containsHTML("recaptcha\\.com")) {
             /* 2020-11-13: Special - login reCaptchaV2 required */
             if (handleRecaptchaV2(link, captchaForm)) {
                 link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
@@ -124,9 +124,12 @@ public class XubsterCom extends XFileSharingProBasic {
             super.handleCaptcha(link, captchaForm);
         }
     }
-
-    @Override
-    protected boolean requiresCookieLogin() {
-        return true;
-    }
+    /**
+     * 2021-07-02: This was because of hcaptcha when we did not yet support it --> They're not using hcaptcha anymore --> Normal login is
+     * possible again!
+     */
+    // @Override
+    // protected boolean requiresCookieLogin() {
+    // return true;
+    // }
 }

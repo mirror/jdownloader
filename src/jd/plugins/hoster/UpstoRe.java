@@ -236,8 +236,15 @@ public class UpstoRe extends antiDDoSForHost {
                     setDownloadStarted(link, waitmillis);
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitmillis + FREE_RECONNECTWAIT_ADDITIONAL);
                 }
-                if (br.containsHTML("<div id=\"(\\w+)\".+grecaptcha\\.render\\(\\s*'\\1',")) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                final String error = br.getRegex("<span class=\"error\"[^>]*>([^<]+)</span>").getMatch(0);
+                if (error != null) {
+                    if (error.matches("(?i)No slots for free users in your area at the moment, try again later")) {
+                        /* 2021-07-02 */
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, error, 10 * 60 * 1000l);
+                    } else {
+                        /* Unknown error */
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 5 * 60 * 1000l);
+                    }
                 }
                 handleErrorsJson();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
