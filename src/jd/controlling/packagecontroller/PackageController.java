@@ -1058,30 +1058,14 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         LogController.CL(true).log(e);
                     }
                     boolean sortChildrenChanged = sortChildren;
-                    if (sortChildren) {
-                        final PackageControllerComparator<AbstractNode> sorter = new PackageControllerComparator<AbstractNode>() {
-                            @Override
-                            public int compare(AbstractNode o1, AbstractNode o2) {
-                                return comparator.compare(o1, o2);
-                            }
-
-                            @Override
-                            public String getID() {
-                                return comparator.getID();
-                            }
-
-                            @Override
-                            public boolean isAsc() {
-                                return comparator.isAsc();
-                            }
-                        };
+                    if (sortChildrenChanged) {
                         sortChildrenChanged = false;
                         try {
                             for (final PackageType pkg : lpackages) {
-                                sortChildrenChanged |= _sortPackageChildren(pkg, sorter);
+                                sortChildrenChanged |= _sortPackageChildren(pkg, comparator);
                             }
                         } finally {
-                            if (sortChildren) {
+                            if (sortChildrenChanged) {
                                 structureChanged.set(backendChanged.incrementAndGet());
                             }
                         }
