@@ -20,16 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.BiqleRuConfig;
-import org.jdownloader.plugins.components.config.BiqleRuConfig.Quality;
-import org.jdownloader.plugins.components.config.BiqleRuConfig.QualitySelectionMode;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -43,6 +33,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.BiqleRuConfig;
+import org.jdownloader.plugins.components.config.BiqleRuConfig.Quality;
+import org.jdownloader.plugins.components.config.BiqleRuConfig.QualitySelectionMode;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "biqle.ru", "daxab.com", "divxcim.com", "daftsex.com", "artsporn.com" }, urls = { "https?://(?:www\\.)?biqle\\.(com|ru|org)/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?(daxab\\.com|dxb\\.to)/embed/(?:\\-)?\\d+_\\d+", "https?://(?:www\\.)?divxcim\\.com/video_ext\\.php\\?oid=(?:\\-)?\\d+\\&id=\\d+", "https?://(?:www\\.)?daftsex\\.com/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?artsporn\\.com/watch/(?:-)?\\d+_\\d+" })
 public class BiqleRu extends PluginForDecrypt {
@@ -187,25 +187,26 @@ public class BiqleRu extends PluginForDecrypt {
                 if (qualityMap.isEmpty() && best == null) {
                     /* This should never happen */
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final QualitySelectionMode mode = PluginJsonConfig.get(BiqleRuConfig.class).getQualitySelectionMode();
-                if (mode == QualitySelectionMode.BEST) {
-                    ret.add(best);
-                } else if (mode == QualitySelectionMode.SELECTED_ONLY) {
-                    if (qualityMap.containsKey(userPreferredQuality)) {
-                        logger.info("Adding user preferred quality: " + userPreferredQuality);
-                        ret.add(qualityMap.get(userPreferredQuality));
-                    } else {
-                        logger.info("Adding best quality because user selected was not found");
-                        ret.add(best);
-                    }
                 } else {
-                    /* Add ALL existant qualities */
-                    for (final Entry<String, DownloadLink> entry : qualityMap.entrySet()) {
-                        ret.add(entry.getValue());
+                    final QualitySelectionMode mode = PluginJsonConfig.get(BiqleRuConfig.class).getQualitySelectionMode();
+                    if (mode == QualitySelectionMode.BEST) {
+                        ret.add(best);
+                    } else if (mode == QualitySelectionMode.SELECTED_ONLY) {
+                        if (qualityMap.containsKey(userPreferredQuality)) {
+                            logger.info("Adding user preferred quality: " + userPreferredQuality);
+                            ret.add(qualityMap.get(userPreferredQuality));
+                        } else {
+                            logger.info("Adding best quality because user selected was not found");
+                            ret.add(best);
+                        }
+                    } else {
+                        /* Add ALL existant qualities */
+                        for (final Entry<String, DownloadLink> entry : qualityMap.entrySet()) {
+                            ret.add(entry.getValue());
+                        }
                     }
+                    return ret;
                 }
-                return ret;
             } else {
                 // vk mode
                 final String daxabExt = br.getRegex("((?:https?:)?//(?:daxab\\.com|dxb\\.to)/ext\\.php\\?oid=[0-9\\-]+&id=\\d+&hash=[a-zA-Z0-9]+)\"").getMatch(0);
