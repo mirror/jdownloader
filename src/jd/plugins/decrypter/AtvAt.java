@@ -25,6 +25,15 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.controlling.ffmpeg.json.Stream;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -34,15 +43,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.controlling.ffmpeg.json.Stream;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "atv.at" }, urls = { "https?://(?:www\\.)?atv\\.at/[a-z0-9\\-_]+/[a-z0-9\\-_]+/(?:d|v)\\d+/|https?://(?:www\\.)?atvsmart\\.(tv|at)/[^/]+/[^/]+" })
 public class AtvAt extends PluginForDecrypt {
@@ -106,7 +106,7 @@ public class AtvAt extends PluginForDecrypt {
             }
             parts = (List<Object>) entries.get("videoUrl");
         } else {
-            final Regex linkinfo = new Regex(parameter, "atv\\.(?:at|tv)/([a-z0-9\\-_]+)/([a-z0-9\\-_]+)/((?:d|v)\\d+)/$");
+            final Regex linkinfo = new Regex(parameter, "(?i)atv\\.(?:at|tv)/([a-z0-9\\-_]+)/([a-z0-9\\-_]+)/((?:d|v)\\d+)/$");
             url_seriesname = linkinfo.getMatch(0);
             url_episodename = linkinfo.getMatch(1);
             fid = linkinfo.getMatch(2);
@@ -200,7 +200,13 @@ public class AtvAt extends PluginForDecrypt {
         int partCounter = 1;
         /* First check for HD HLS URLs */
         final String playlist = br.getRegex("(var\\s*playlist\\s*=\\s*\\[\\s*\\{.*?\\}\\s*\\];\\s*)").getMatch(0);
-        final String[] hdHLSParts = new Regex(playlist, "(https://[^/]+/\\d{4}/\\d{2}/HD/\\d+/index\\.m3u8)").getColumn(0);
+        final String playlist2 = br.getRegex("(var contentResource\\s*=\\s*\\[.*?\\]);\\s+").getMatch(0);
+        final String hdHLSRegEx = "(https://[^/]+/\\d{4}/\\d{2}/HD/\\d+/index\\.m3u8)";
+        String[] hdHLSParts = new Regex(playlist, hdHLSRegEx).getColumn(0);
+        if (hdHLSParts.length == 0 && playlist2 != null) {
+            /* 2021-07-05 */
+            hdHLSParts = new Regex(playlist2, hdHLSRegEx).getColumn(0);
+        }
         if (hdHLSParts != null && hdHLSParts.length > 0) {
             logger.info("Found HD HLS URLs");
             /* Assume that this is our best quality --> Add best of these for each part */
