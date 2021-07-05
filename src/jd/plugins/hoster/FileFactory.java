@@ -1066,11 +1066,7 @@ public class FileFactory extends PluginForHost {
     }
 
     private String getApiBase() {
-        if (Application.getJavaVersion() < Application.JAVA17) {
-            return "http://api.filefactory.com/v1";
-        } else {
-            return "https://api.filefactory.com/v1";
-        }
+        return "https://api.filefactory.com/v1";
     }
 
     private boolean checkLinks_API(final DownloadLink[] urls, Account account, String apiKey) {
@@ -1358,6 +1354,7 @@ public class FileFactory extends PluginForHost {
             if (!StringUtils.isEmpty(apikey)) {
                 logger.info("Trying to re-use previous apikey");
                 this.br.getPage(getApiBase() + "/getMemberInfo?key=" + apikey);
+                br.followRedirect();
                 loggedIN = !sessionKeyInvalid(account, this.br, apikey);
                 if (loggedIN) {
                     logger.info("Successfully loggedin via previous apikey");
@@ -1372,6 +1369,7 @@ public class FileFactory extends PluginForHost {
                  * It will be renewed to 15 minutes every time it gets used!
                  */
                 this.br.getPage(getApiBase() + "/getSessionKey?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&authkey=cfbc9099994d3bafd5a5f13c38c542f0");
+                br.followRedirect();
                 apikey = PluginJSonUtils.getJsonValue(this.br, "key");
                 if (StringUtils.isNotEmpty(apikey)) {
                     account.setProperty(PROPERTY_APIKEY, apikey);
@@ -1416,9 +1414,11 @@ public class FileFactory extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 ibr.getPage(url + (url.matches("(" + getApiBase() + ")?/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "key=" + apiKey);
+                ibr.followRedirect();
             }
         } else {
             ibr.getPage(url);
+            ibr.followRedirect();
         }
         this.checkErrorsAPI(ibr, downloadLink, account, apiKey);
     }
