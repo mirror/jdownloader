@@ -11,13 +11,34 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "biqle.ru", type = Type.CRAWLER)
 public interface BiqleRuConfig extends PluginConfigInterface {
-    public static enum Quality implements LabelInterface {
+    public static enum QualitySelectionMode implements LabelInterface {
         BEST {
             @Override
             public String getLabel() {
-                return "Best";
+                return "Best quality";
             }
         },
+        // BEST_OF_SELECTED {
+        // @Override
+        // public String getLabel() {
+        // return "Best quality (use selected as highest)";
+        // }
+        // },
+        SELECTED_ONLY {
+            @Override
+            public String getLabel() {
+                return "Selected quality only (fallback = best)";
+            }
+        },
+        ALL {
+            @Override
+            public String getLabel() {
+                return "All available qualities";
+            }
+        };
+    }
+
+    public static enum Quality implements LabelInterface {
         Q1080 {
             @Override
             public String getLabel() {
@@ -52,7 +73,15 @@ public interface BiqleRuConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultEnumValue("BEST")
+    @DescriptionForConfigEntry("Define how this plugin should pick your desired qualities?")
     @Order(10)
+    QualitySelectionMode getQualitySelectionMode();
+
+    void setQualitySelectionMode(QualitySelectionMode mode);
+
+    @AboutConfig
+    @DefaultEnumValue("BEST")
+    @Order(20)
     @DescriptionForConfigEntry("Best will be used if selected preferred quality does not exist")
     BiqleRuConfig.Quality getPreferredQuality();
 
