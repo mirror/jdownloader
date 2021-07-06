@@ -23,6 +23,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -49,12 +55,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "instagrammdecrypted://[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)?" })
 public class InstaGramCom extends PluginForHost {
@@ -115,6 +115,9 @@ public class InstaGramCom extends PluginForHost {
     public static final String  PROPERTY_is_part_of_story                         = "is_part_of_story";
     public static final String  PROPERTY_DIRECTURL                                = "directurl";
     public static final String  PROPERTY_private_url                              = "private_url";
+    public static final String  PROPERTY_postid                                   = "postid";
+    public static final String  PROPERTY_orderid                                  = "orderid";
+    public static final String  PROPERTY_orderid_raw                              = "orderid_raw";
 
     public void correctDownloadLink(final DownloadLink link) {
         String newurl = link.getPluginPatternMatcher().replace("instagrammdecrypted://", "https://www.instagram.com/p/");
@@ -127,10 +130,11 @@ public class InstaGramCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, null, false);
+        final Account account = AccountController.getInstance().getValidAccount(this);
+        return requestFileInformation(link, account, false);
     }
 
-    private AvailableStatus requestFileInformation(final DownloadLink link, Account account, final boolean isDownload) throws Exception {
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         this.correctDownloadLink(link);
         dllink = null;
         this.setBrowserExclusive();
@@ -140,10 +144,6 @@ public class InstaGramCom extends PluginForHost {
          */
         prepBRWebsite(this.br);
         boolean isLoggedIN = false;
-        if (account == null) {
-            /* No specific account given -> Grab any account available */
-            account = AccountController.getInstance().getValidAccount(this);
-        }
         if (this.userWantsToDownloadOriginalQuality() && canGrabOriginalQualityDownloadurlViaAltAPI(link) && !hasTriedToCrawlOriginalQuality(link) && account != null) {
             login(account, false);
             isLoggedIN = true;
@@ -159,14 +159,6 @@ public class InstaGramCom extends PluginForHost {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh directurl");
             }
-            // /* Set releasedate as property */
-            // String date = PluginJSonUtils.getJson(this.br, "date");
-            // if (date == null || !date.matches("\\d+")) {
-            // date = PluginJSonUtils.getJson(this.br, "taken_at_timestamp");
-            // }
-            // if (date != null && date.matches("\\d+")) {
-            // setReleaseDate(link, Long.parseLong(date));
-            // }
             String ext = null;
             if (ext == null) {
                 ext = getFileNameExtensionFromString(dllink, ".jpg");
@@ -203,7 +195,7 @@ public class InstaGramCom extends PluginForHost {
          */
         /* 2020-10-07: Doesn't work anymore, see new method (old iPhone API endpoint) */
         // String drlink = dllink.replace(resolution_inside_url, "/");
-        final String imageid = link.getStringProperty("postid");
+        final String imageid = link.getStringProperty(PROPERTY_postid);
         /* Avoids doing an extra http request for video files as they're never available in "original" quality (?) */
         return !isVideo(link) && imageid != null;
     }
@@ -240,7 +232,7 @@ public class InstaGramCom extends PluginForHost {
          * Source of this idea:
          * https://github.com/instaloader/instaloader/blob/f4ecfea64cc11efba44cda2b44c8cfe41adbd28a/instaloader/instaloadercontext.py# L462
          */
-        final String imageid = link.getStringProperty("postid");
+        final String imageid = link.getStringProperty(PROPERTY_postid);
         if (imageid == null) {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -353,12 +345,12 @@ public class InstaGramCom extends PluginForHost {
                 if (items.size() == 1) {
                     foundLink = items.get(0);
                 } else {
-                    String orderID = link.getStringProperty("orderid");
+                    String orderID = link.getStringProperty(InstaGramCom.PROPERTY_orderid);
                     if (orderID == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     for (final DownloadLink linkTmp : items) {
-                        final String orderidTmp = linkTmp.getStringProperty("orderid");
+                        final String orderidTmp = linkTmp.getStringProperty(InstaGramCom.PROPERTY_orderid);
                         if (orderID.equals(orderidTmp)) {
                             foundLink = linkTmp;
                             break;
@@ -461,6 +453,11 @@ public class InstaGramCom extends PluginForHost {
         if (link.getFinalFileName() != null && link.getFinalFileName().contains(".mp4") || link.getName() != null && link.getName().contains(".mp4")) {
             maxchunks = MAXCHUNKS_videos;
         }
+        /*
+         * Other User-Agents get throtteled downloadspeed (block by Instagram). For linkchecking we can continue to use the other
+         * User-Agents.
+         */
+        br.getHeaders().put("User-Agent", "curl/7.64.1");
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, this.dllink, RESUME, maxchunks);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
