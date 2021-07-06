@@ -20,6 +20,21 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashMap;
 
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.EvilangelComConfig;
+import org.jdownloader.plugins.components.config.EvilangelComConfig.Quality;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -37,21 +52,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.EvilangelComConfig;
-import org.jdownloader.plugins.components.config.EvilangelComConfig.Quality;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "evilangel.com", "evilangelnetwork.com" }, urls = { "https?://members\\.evilangel.com/(?:[a-z]{2}/)?[A-Za-z0-9\\-_]+/(?:download/\\d+/\\d+p/mp4|film/\\d+)|https?://(?:www\\.|members\\.)?evilangel\\.com/[a-z]{2}/video/[A-Za-z0-9\\-]+/[A-Za-z0-9\\-]+/\\d+", "https?://members\\.evilangelnetwork\\.com/[a-z]{2}/video/[A-Za-z0-9\\-_]+/\\d+" })
 public class EvilAngelCom extends antiDDoSForHost {
@@ -388,7 +388,7 @@ public class EvilAngelCom extends antiDDoSForHost {
                 final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
                 if (cookieLoginOnly && userCookies == null) {
                     showCookieLoginInformation();
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 if (host_account.equals("evilangelnetwork.com")) {
                     getpage = "https://www.evilangelnetwork.com/en/login";
@@ -397,13 +397,13 @@ public class EvilAngelCom extends antiDDoSForHost {
                 } else {
                     /* getpage must have already been set via parameter */
                 }
-                boolean loggedIN = false;
                 if (cookies != null) {
                     br.setCookies(host_account, cookies);
                     getPage(br, getpage);
                     if (this.isLoggedIn(html_loggedin)) {
                         /* Cookie login successful */
-                        loggedIN = true;
+                        logger.info("Cookie login successful");
+                        return;
                     } else {
                         br.clearAll();
                     }
@@ -412,81 +412,80 @@ public class EvilAngelCom extends antiDDoSForHost {
                     getPage(br, getpage);
                     if (this.isLoggedIn(html_loggedin)) {
                         /* Cookie login successful */
-                        loggedIN = true;
+                        logger.info("User cookie login successful");
+                        return;
                     } else {
                         br.clearAll();
                         showCookieLoginInformation();
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (!loggedIN) {
-                    if (userCookies != null) {
-                        /* No login password given */
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (userCookies != null) {
+                    /* No login password given */
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                br.setFollowRedirects(true);
+                getPage(br, getpage);
+                if (br.containsHTML(">We are experiencing some problems\\!<")) {
+                    final AccountInfo ai = new AccountInfo();
+                    ai.setStatus("Your IP is banned. Please re-connect to get a new IP to be able to log-in!");
+                    account.setAccountInfo(ai);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                final Form login = br.getFormbyProperty("id", "loginForm");
+                if (login == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final boolean fillTimeFalues = true;
+                {
+                    if (fillTimeFalues) {
+                        final Date d = new Date();
+                        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd");
+                        final String date = sd.format(d);
+                        sd = new SimpleDateFormat("k:mm");
+                        final String time = sd.format(d);
+                        final String timedatestring = date + " " + time;
+                        br.setCookie(url_main, "mDateTime", Encoding.urlEncode(timedatestring));
+                        br.setCookie(url_main, "mOffset", "2");
+                        br.setCookie(url_main, "origin", "promo");
+                        br.setCookie(url_main, "timestamp", Long.toString(System.currentTimeMillis()));
+                    } else {
                     }
-                    br.setFollowRedirects(true);
-                    getPage(br, getpage);
-                    if (br.containsHTML(">We are experiencing some problems\\!<")) {
-                        final AccountInfo ai = new AccountInfo();
-                        ai.setStatus("Your IP is banned. Please re-connect to get a new IP to be able to log-in!");
-                        account.setAccountInfo(ai);
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                // login.setAction("/en/login");
+                login.put("username", Encoding.urlEncode(account.getUser()));
+                login.put("password", Encoding.urlEncode(account.getPass()));
+                if (login.containsHTML("g-recaptcha")) {
+                    // recaptchav2
+                    final DownloadLink orig = this.getDownloadLink();
+                    try {
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account Login!", getHost(), getHost(), true);
+                        this.setDownloadLink(dummyLink);
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br) {
+                            @Override
+                            public String getSiteKey() {
+                                return getSiteKey(login.getHtmlCode());
+                            }
+                        }.getToken();
+                        login.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    } finally {
+                        this.setDownloadLink(orig);
                     }
-                    final Form login = br.getFormbyProperty("id", "loginForm");
-                    if (login == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final boolean fillTimeFalues = true;
-                    {
-                        if (fillTimeFalues) {
-                            final Date d = new Date();
-                            SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd");
-                            final String date = sd.format(d);
-                            sd = new SimpleDateFormat("k:mm");
-                            final String time = sd.format(d);
-                            final String timedatestring = date + " " + time;
-                            br.setCookie(url_main, "mDateTime", Encoding.urlEncode(timedatestring));
-                            br.setCookie(url_main, "mOffset", "2");
-                            br.setCookie(url_main, "origin", "promo");
-                            br.setCookie(url_main, "timestamp", Long.toString(System.currentTimeMillis()));
-                        } else {
-                        }
-                    }
-                    // login.setAction("/en/login");
-                    login.put("username", Encoding.urlEncode(account.getUser()));
-                    login.put("password", Encoding.urlEncode(account.getPass()));
-                    if (login.containsHTML("g-recaptcha")) {
-                        // recaptchav2
-                        final DownloadLink orig = this.getDownloadLink();
-                        try {
-                            final DownloadLink dummyLink = new DownloadLink(this, "Account Login!", getHost(), getHost(), true);
-                            this.setDownloadLink(dummyLink);
-                            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br) {
-                                @Override
-                                public String getSiteKey() {
-                                    return getSiteKey(login.getHtmlCode());
-                                }
-                            }.getToken();
-                            login.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                        } finally {
-                            this.setDownloadLink(orig);
-                        }
-                    }
-                    login.remove("submit");
-                    login.remove("rememberme");
-                    login.put("rememberme", "1");
-                    submitForm(login);
-                    if (br.containsHTML(">Your account is deactivated for abuse")) {
-                        final AccountInfo ai = new AccountInfo();
-                        ai.setStatus("Your account is deactivated for abuse. Please re-activate it to use it in JDownloader.");
-                        account.setAccountInfo(ai);
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account is deactivated for abuse. Please re-activate it to use it in JDownloader.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                    if (br.getURL().contains("/reactivate")) {
-                    }
-                    if (!isLoggedIn(html_loggedin)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                }
+                login.remove("submit");
+                login.remove("rememberme");
+                login.put("rememberme", "1");
+                submitForm(login);
+                if (br.containsHTML(">Your account is deactivated for abuse")) {
+                    final AccountInfo ai = new AccountInfo();
+                    ai.setStatus("Your account is deactivated for abuse. Please re-activate it to use it in JDownloader.");
+                    account.setAccountInfo(ai);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account is deactivated for abuse. Please re-activate it to use it in JDownloader.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                if (br.getURL().contains("/reactivate")) {
+                }
+                if (!isLoggedIn(html_loggedin)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(host_account), "");
             } catch (final PluginException e) {
@@ -505,7 +504,7 @@ public class EvilAngelCom extends antiDDoSForHost {
                     final String title;
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         title = "Cookie Login";
-                        message += "Hallo liebe(r) Twitter NutzerIn\r\n";
+                        message += "Hallo liebe(r) Evilangel NutzerIn\r\n";
                         message += "Um einen Account dieses Anbieters in JDownloader verwenden zu können, beachte bitte die folgenden Schritte:\r\n";
                         message += help_article_url;
                     } else {
