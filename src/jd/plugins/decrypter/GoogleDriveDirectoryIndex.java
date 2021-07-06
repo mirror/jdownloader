@@ -99,6 +99,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
             final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
             ((jd.plugins.hoster.GoogleDriveDirectoryIndex) plg).login(acc, false);
         }
+        // TODO: add support for logins within URL
         boolean useOldPostRequest;
         /* Check if we maybe already know which request type is the right one */
         if (param.getDownloadLink() != null && param.getDownloadLink().hasProperty(PROPERTY_FOLDER_USE_OLD_POST_REQUEST)) {
@@ -187,15 +188,15 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
                  * Set correct (root) folder structure e.g. https://subdomain.example.site/0:/subfolder1/subfolder2 --> Path:
                  * /subfolder1/subfolder2 /subfolder1/subfolder2
                  */
-                subFolder = typicalUrlStructure.getMatch(0);
+                subFolder = Encoding.urlDecode(typicalUrlStructure.getMatch(0), false);
             } else {
                 final String[] split = param.getCryptedUrl().split("/");
                 subFolder = Encoding.urlDecode(split[split.length - (isParameterFile ? 2 : 1)], false);
             }
-            fp.setName(subFolder);
+            fp.setName(subFolder.replaceAll("(^/)|(/$)", ""));
         } else {
             final String fpName = subFolder.substring(subFolder.lastIndexOf("/") + 1);
-            fp.setName(fpName);
+            fp.setName(fpName.replaceAll("(^/)|(/$)", ""));
         }
         final String baseUrl;
         // urls can already be encoded which breaks stuff, only encode non-encoded content

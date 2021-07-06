@@ -1747,7 +1747,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     protected void setCaptchaResponse(final Browser br, CaptchaHosterHelperInterface captchaHosterHelper, final Form form, final String response) {
         if (captchaHosterHelper instanceof CaptchaHelperHostPluginHCaptcha) {
             form.put("h-captcha-response", Encoding.urlEncode(response));
-            if (br.containsHTML("g-recaptcha-response") || br.containsHTML("g-recaptcha")) {
+            if (containsRecaptchaV2Class(br)) {
                 /*
                  * E.g. novafile.com, filefox.cc - some use this as legacy handling, some will even send both, h-captcha-response AND
                  * g-recaptcha-response
@@ -1818,7 +1818,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /** Handles all kinds of captchas, also login-captcha - fills the given captchaForm. */
     public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
         /* Captcha START */
-        if (new Regex(getCorrectBR(br), Pattern.compile("\\$\\.post\\(\\s*\"/ddl\"", Pattern.CASE_INSENSITIVE)).matches()) {
+        if (new Regex(getCorrectBR(br), "(geetest_challenge|geetest_validate|geetest_seccode)").matches()) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unsupported captcha type geetest", 3 * 60 * 60 * 1000l);
+        } else if (new Regex(getCorrectBR(br), Pattern.compile("\\$\\.post\\(\\s*\"/ddl\"", Pattern.CASE_INSENSITIVE)).matches()) {
             /* 2019-06-06: Rare case */
             final String captchaResponse;
             final CaptchaHosterHelperInterface captchaHelper;

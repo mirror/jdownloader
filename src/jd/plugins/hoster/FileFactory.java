@@ -1414,12 +1414,11 @@ public class FileFactory extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 ibr.getPage(url + (url.matches("(" + getApiBase() + ")?/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "key=" + apiKey);
-                ibr.followRedirect();
             }
         } else {
             ibr.getPage(url);
-            ibr.followRedirect();
         }
+        ibr.followRedirect();
         this.checkErrorsAPI(ibr, downloadLink, account, apiKey);
     }
 

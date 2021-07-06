@@ -260,6 +260,7 @@ public class SegmentDownloader extends DownloadInterface {
                 downloadable.addPluginProgress(downloadPluginProgress);
                 downloadable.setAvailable(AvailableStatus.TRUE);
                 run();
+                return onDownloadReady();
             } finally {
                 try {
                     downloadable.free(reservation);
@@ -275,11 +276,6 @@ public class SegmentDownloader extends DownloadInterface {
                 }
                 downloadable.removePluginProgress(downloadPluginProgress);
             }
-            onDownloadReady();
-            return handleErrors();
-            // } catch (Throwable e) {
-            // e.printStackTrace();
-            // return false;
         } finally {
             downloadable.unlockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
             cleanupDownladInterface();
@@ -300,15 +296,18 @@ public class SegmentDownloader extends DownloadInterface {
         terminate();
     }
 
-    protected void onDownloadReady() throws Exception {
+    protected boolean onDownloadReady() throws Exception {
         cleanupDownladInterface();
-        if (!handleErrors()) {
-            return;
-        }
-        // link.setVerifiedFileSize(bytesWritten);
-        final boolean renameOkay = downloadable.rename(outputPartFile, outputCompleteFile);
-        if (!renameOkay) {
-            error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR));
+        if (handleErrors(outputPartFile) == false) {
+            return false;
+        } else {
+            final boolean renameOkay = downloadable.rename(outputPartFile, outputCompleteFile);
+            if (!renameOkay) {
+                error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR));
+                return false;
+            } else {
+                return true;
+            }
         }
     }
 
@@ -327,19 +326,24 @@ public class SegmentDownloader extends DownloadInterface {
         }
     }
 
-    protected boolean handleErrors() throws PluginException {
+    protected boolean handleErrors(final File file) throws PluginException {
         if (externalDownloadStop()) {
             return false;
-        }
-        if (caughtPluginException == null) {
-            final long fileSize = outputPartFile.length();
-            checkComplete(segments, fileSize);
-            downloadable.setDownloadBytesLoaded(fileSize);
-            downloadable.setVerifiedFileSize(fileSize);
-            downloadable.setLinkStatus(LinkStatus.FINISHED);
-            return true;
         } else {
-            throw caughtPluginException;
+            if (caughtPluginException == null) {
+                if (!file.isFile()) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    final long fileSize = file.length();
+                    checkComplete(segments, fileSize);
+                    downloadable.setDownloadBytesLoaded(fileSize);
+                    downloadable.setVerifiedFileSize(fileSize);
+                    downloadable.setLinkStatus(LinkStatus.FINISHED);
+                    return true;
+                }
+            } else {
+                throw caughtPluginException;
+            }
         }
     }
 
