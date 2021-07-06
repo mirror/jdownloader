@@ -450,9 +450,9 @@ public abstract class PluginForDecrypt extends Plugin {
                         throw new DecrypterRetryException(RetryReason.HOST, null, null, e);
                     } else if (processCaptchaException(e)) {
                         if (e instanceof CaptchaException) {
-                            throw new DecrypterRetryException(RetryReason.CAPTCHA, ((CaptchaException) e).getSkipRequest().name(), null, e);
+                            throw new DecrypterRetryException(RetryReason.CAPTCHA, ((CaptchaException) e).getSkipRequest().name(), e.getMessage(), e);
                         } else {
-                            throw new DecrypterRetryException(RetryReason.CAPTCHA, null, null, e);
+                            throw new DecrypterRetryException(RetryReason.CAPTCHA, null, e.getMessage(), e);
                         }
                     } else if (DecrypterException.PASSWORD.equals(e.getMessage())) {
                         throw new DecrypterRetryException(RetryReason.PASSWORD, null, null, e);
