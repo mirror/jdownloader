@@ -334,7 +334,7 @@ public class FShareVn extends PluginForHost {
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
-        br.getHeaders().put("Accept-Encoding", "gzip, deflate");
+        br.getHeaders().put("Accept-Encoding", "gzip, deflate, br");
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
         br.getPage("https://www.fshare.vn/site/location?lang=vi"); // en - English version is having problems in version 3
