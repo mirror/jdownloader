@@ -266,7 +266,7 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
         return new Regex(source, "<\\s*(div|button)(?:[^>]*>.*?</\\1>|[^>]*\\s*/\\s*>)").getColumn(-1);
     }
 
-    protected static final HashSet<String> INVALID_SITE_KEYS = new HashSet<String>();
+    protected static final HashMap<String, Set<String>> INVALID_SITE_KEYS = new HashMap<String, Set<String>>();
 
     /**
      * will auto find api key, based on google default &lt;div&gt;, @Override to make customised finder.
@@ -294,7 +294,10 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
             }
             synchronized (INVALID_SITE_KEYS) {
                 logger.info("Auto siteKeys unfiltered:" + siteKeys);
-                siteKeys.removeAll(INVALID_SITE_KEYS);
+                final Set<String> invalidSiteKeys = INVALID_SITE_KEYS.get(getPlugin().getHost());
+                if (invalidSiteKeys != null) {
+                    siteKeys.removeAll(invalidSiteKeys);
+                }
                 logger.info("Auto siteKeys filtered:" + siteKeys);
             }
             siteKey = findCorretSiteKeys(source, br, siteKeys);
@@ -327,7 +330,12 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
                         brc.getPage("https://www.google.com/recaptcha/api2/anchor?k=" + siteKey + "&co=" + co);
                         if (brc.containsHTML("Invalid site key")) {
                             synchronized (INVALID_SITE_KEYS) {
-                                INVALID_SITE_KEYS.add(siteKey);
+                                Set<String> invalidSiteKeys = INVALID_SITE_KEYS.get(getPlugin().getHost());
+                                if (invalidSiteKeys == null) {
+                                    invalidSiteKeys = new HashSet<String>();
+                                    INVALID_SITE_KEYS.put(getPlugin().getHost(), invalidSiteKeys);
+                                }
+                                invalidSiteKeys.add(siteKey);
                             }
                             logger.info("SiteKey:" + siteKey + " seems to be invalid!");
                             it.remove();

@@ -16,12 +16,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitnews.com" }, urls = { "" }) public class HitNewsCom extends UseNet {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitnews.com" }, urls = { "" })
+public class HitNewsCom extends UseNet {
     public HitNewsCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://member.hitnews.com/signup.php");
@@ -75,47 +77,59 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
                 }
             }
             account.saveCookies(br.getCookies(getHost()), "");
-            final String packageInfos[] = br.getRegex(">Your payment history<.*?<tr>.*?</tr>\\s*<tr.*?>\\s*<td>\\s*(.*?)\\s*</td>\\s*<td.*?>\\s*(\\d+/\\d+/\\d+)\\s*</td>\\s*<td.*?>\\s*(\\d+/\\d+/\\d+)\\s*</td>").getRow(0);
-            if (packageInfos == null) {
+            final String paymentHistory = br.getRegex(">\\s*Your payment history\\s*<.*<table.*?>(.*?)</table>").getMatch(0);
+            final String packageInfos[][] = new Regex(paymentHistory, "<tr[^>]*>\\s*<td>\\s*(.*?)\\s*</td>\\s*<td[^>]*>\\s*(\\d+/\\d+/\\d+)\\s*</td>\\s*<td[^>]*>\\s*(\\d+/\\d+/\\d+)\\s*</td>").getMatches();
+            if (packageInfos == null || packageInfos.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String product = packageInfos[0];
-            ai.setStatus(product);
-            final String expireDate = packageInfos[2];
-            if (StringUtils.containsIgnoreCase(product, "free")) {
-                account.setMaxSimultanDownloads(30);
-                account.setType(AccountType.FREE);
-                ai.setStatus("Premium: " + product);
-            } else {
-                account.setType(AccountType.PREMIUM);
-                if (StringUtils.contains(product, "500")) {
+            for (String packageInfo[] : packageInfos) {
+                final String product = packageInfo[0];
+                ai.setStatus(product);
+                final String expireDate = packageInfo[2];
+                if (StringUtils.containsIgnoreCase(product, "free")) {
                     account.setMaxSimultanDownloads(30);
-                } else if (StringUtils.contains(product, "200")) {
-                    account.setMaxSimultanDownloads(30);
-                } else if (StringUtils.contains(product, "120")) {
-                    account.setMaxSimultanDownloads(30);
-                } else if (StringUtils.contains(product, "80")) {
-                    account.setMaxSimultanDownloads(30);
-                } else if (StringUtils.contains(product, "50")) {
-                    account.setMaxSimultanDownloads(20);
-                } else if (StringUtils.contains(product, "25")) {
-                    account.setMaxSimultanDownloads(8);
-                } else if (StringUtils.contains(product, "10")) {
-                    account.setMaxSimultanDownloads(8);
-                } else if (StringUtils.contains(product, "2,5")) {
-                    account.setMaxSimultanDownloads(2);
-                } else if (StringUtils.contains(product, "5")) {
-                    account.setMaxSimultanDownloads(4);
-                } else if (StringUtils.containsIgnoreCase(product, "night")) {
-                    account.setMaxSimultanDownloads(30);
-                } else if (StringUtils.containsIgnoreCase(product, "high")) {
-                    account.setMaxSimultanDownloads(30);
+                    account.setType(AccountType.FREE);
+                    ai.setStatus("Premium: " + product);
                 } else {
-                    // unknown
-                    account.setMaxSimultanDownloads(2);
+                    account.setType(AccountType.PREMIUM);
+                    if (StringUtils.contains(product, "1000 mbit")) {
+                        account.setMaxSimultanDownloads(30);
+                    } else if (StringUtils.contains(product, "120 mbit")) {
+                        account.setMaxSimultanDownloads(20);
+                    } else if (StringUtils.contains(product, "10 mbit")) {
+                        account.setMaxSimultanDownloads(8);
+                    } else if (StringUtils.contains(product, "500")) {
+                        account.setMaxSimultanDownloads(30);
+                    } else if (StringUtils.contains(product, "200")) {
+                        account.setMaxSimultanDownloads(30);
+                    } else if (StringUtils.contains(product, "120")) {
+                        account.setMaxSimultanDownloads(30);
+                    } else if (StringUtils.contains(product, "80")) {
+                        account.setMaxSimultanDownloads(30);
+                    } else if (StringUtils.contains(product, "50")) {
+                        account.setMaxSimultanDownloads(20);
+                    } else if (StringUtils.contains(product, "25")) {
+                        account.setMaxSimultanDownloads(8);
+                    } else if (StringUtils.contains(product, "10")) {
+                        account.setMaxSimultanDownloads(8);
+                    } else if (StringUtils.contains(product, "2,5")) {
+                        account.setMaxSimultanDownloads(2);
+                    } else if (StringUtils.contains(product, "5")) {
+                        account.setMaxSimultanDownloads(4);
+                    } else if (StringUtils.containsIgnoreCase(product, "night")) {
+                        account.setMaxSimultanDownloads(30);
+                    } else if (StringUtils.containsIgnoreCase(product, "high")) {
+                        account.setMaxSimultanDownloads(30);
+                    } else {
+                        // unknown
+                        account.setMaxSimultanDownloads(2);
+                    }
+                }
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "dd'/'MM'/'yyyy", Locale.ENGLISH) + (24 * 60 * 60 * 1000l));
+                if (!ai.isExpired()) {
+                    break;
                 }
             }
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "dd'/'MM'/'yyyy", Locale.ENGLISH) + (24 * 60 * 60 * 1000l));
         } catch (final PluginException e) {
             if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                 account.clearCookies("");
