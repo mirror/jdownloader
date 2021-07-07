@@ -16,10 +16,19 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -36,14 +45,9 @@ import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
@@ -69,14 +73,14 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:[a-z0-9\\-\\.]+\\.)?" + buildHostsPatternPart(domains) + "/.+");
+            ret.add("https?://[\\w\\d:#@%/;$()~_?\\+-=\\\\\\.&]*" + buildHostsPatternPart(domains) + "/.+");
         }
         return ret.toArray(new String[0]);
     }
 
     /**
-     * Crawler plugin that can handle instances of this project: https://github.com/ParveenBhadooOfficial/Google-Drive-Index </br> Be sure
-     * to add all domains to host plugin GoogleDriveDirectoryIndex.java too!
+     * Crawler plugin that can handle instances of this project: https://github.com/ParveenBhadooOfficial/Google-Drive-Index </br>
+     * Be sure to add all domains to host plugin GoogleDriveDirectoryIndex.java too!
      */
     public GoogleDriveDirectoryIndex(PluginWrapper wrapper) {
         super(wrapper);
@@ -121,6 +125,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
                     } catch (IOException e) {
                         logger.log(e);
                     }
+                    logger.info("Error 500 -> Trying again via old POST request method");
                     con = openAntiDDoSRequestConnection(br, br.createPostRequest(param.getCryptedUrl(), this.getPaginationPostDataQuery(0, "")));
                     useOldPostRequest = true;
                 }
@@ -145,7 +150,22 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
             }
             if (looksLikeDownloadableContent(con)) {
                 con.disconnect();
-                final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(br.getRequest(), con);
+                final DownloadLink direct = this.createDownloadlink(con.getURL().toString());
+                final DispositionHeader dispositionHeader = Plugin.parseDispositionHeader(con);
+                if (dispositionHeader != null && StringUtils.isNotEmpty(dispositionHeader.getFilename())) {
+                    direct.setFinalFileName(dispositionHeader.getFilename());
+                    if (dispositionHeader.getEncoding() == null) {
+                        try {
+                            direct.setFinalFileName(URLEncode.decodeURIComponent(dispositionHeader.getFilename(), "UTF-8", true));
+                        } catch (final IllegalArgumentException ignore) {
+                        } catch (final UnsupportedEncodingException ignore) {
+                        }
+                    }
+                }
+                if (con.getCompleteContentLength() > 0) {
+                    direct.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                direct.setLinkID(getLinkidFromURL(direct.getPluginPatternMatcher()));
                 decryptedLinks.add(direct);
                 return decryptedLinks;
             } else {
@@ -259,6 +279,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
                     if (StringUtils.isNotEmpty(subFolder)) {
                         dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
                     }
+                    dl.setLinkID(getLinkidFromURL(dl.getPluginPatternMatcher()));
                 }
                 dl._setFilePackage(fp);
                 decryptedLinks.add(dl);
@@ -286,6 +307,11 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
         if (decryptedLinks.isEmpty()) {
             decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER " + subFolder, "EMPTY_FOLDER " + subFolder));
         }
+    }
+
+    /** Returns String that can be used an unique ID based on given URL. */
+    private String getLinkidFromURL(final String url) {
+        return this.getHost() + new Regex(url, "(?i)https?://[^/]+/(.+)").getMatch(0);
     }
 
     private UrlQuery getPaginationPostDataQuery(final int index, final String pageToken) {

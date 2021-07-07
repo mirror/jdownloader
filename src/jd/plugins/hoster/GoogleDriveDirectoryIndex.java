@@ -67,7 +67,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://[a-z0-9\\-\\.]+\\." + buildHostsPatternPart(domains) + "/.+");
+            ret.add("https?://[\\w\\d:#@%/;$()~_?\\+-=\\\\\\.&]+" + buildHostsPatternPart(domains) + "/.+");
         }
         return ret.toArray(new String[0]);
     }
@@ -147,7 +147,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
                 logger.log(e);
             }
             if (dl.getConnection().getResponseCode() == 401) {
-                /* Account required or existant account is missing rights to access that content! */
+                /* Account required or existent account is missing rights to access that content! */
                 throw new AccountRequiredException();
             } else if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
