@@ -72,7 +72,7 @@ public class LbryTv extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(@[A-Za-z0-9\\-]+):[a-z0-9]+/([^/:]+:[a-z0-9\\-]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/((@[A-Za-z0-9\\-]+):[a-z0-9]+/([^/:]+:[a-z0-9\\-]+)|[^/:]+:[a-z0-9\\-]+|\\$/embed/[^/]+/[a-z0-9\\-]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -99,22 +99,31 @@ public class LbryTv extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/(.+)").getMatch(0);
+        String fid = new Regex(link.getPluginPatternMatcher(), "embed/([^/]+/[a-z0-9\\-]+)").getMatch(0);
+        if (fid != null) {
+            return fid.replace("/", "#");
+        }
+        fid = new Regex(link.getPluginPatternMatcher(), "/([^/:]+:[a-z0-9\\-]+)").getMatch(0);
+        if (fid != null) {
+            return fid.replace(":", "#");
+        }
+        fid = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/(.+)").getMatch(0);
+        return fid;
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        String urlpart = this.getFID(link);
         if (!link.isNameSet()) {
-            link.setName(this.getFID(link) + ".mp4");
+            link.setName(urlpart + ".mp4");
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("Content-Type", "application/json-rpc");
-        String urlpart = this.getFID(link);
         if (Encoding.isUrlCoded(urlpart)) {
             urlpart = Encoding.htmlDecode(urlpart);
         }
-        final String resolveString = "lbry://" + urlpart.replace(":", "#");
+        String resolveString = "lbry://" + urlpart.replace(":", "#");
         br.postPageRaw("https://api.lbry.tv/api/v1/proxy?m=resolve", "{\"jsonrpc\":\"2.0\",\"method\":\"resolve\",\"params\":{\"urls\":[\"" + resolveString + "\"],\"include_purchase_receipt\":true,\"include_is_my_output\":true}}");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -129,12 +138,13 @@ public class LbryTv extends PluginForHost {
         final String claimID = (String) entries.get("claim_id");
         final String slug = (String) entries.get("name");
         // final Map<String, Object> channel = (Map<String, Object>) entries.get("signing_channel");
-        final String username = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        final String username = slug;// new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
         final Map<String, Object> videoInfo = (Map<String, Object>) entries.get("value");
         String filename = (String) videoInfo.get("title");
+        final String stream_type = (String) videoInfo.get("stream_type");
         if (!StringUtils.isEmpty(username) && !StringUtils.isEmpty(filename)) {
             final String dateFormatted = new SimpleDateFormat("yyyy-MM-dd").format(new Date(uploadTimestamp * 1000l));
-            link.setFinalFileName(dateFormatted + "_" + username + " - " + filename + ".mp4");
+            link.setFinalFileName(dateFormatted + "_" + username + " - " + filename + ("image".equals(stream_type) ? ".jpg" : ".mp4"));
         }
         final String description = (String) videoInfo.get("description");
         if (!StringUtils.isEmpty(description)) {
@@ -197,8 +207,9 @@ public class LbryTv extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
                     } else if (dl.getConnection().getResponseCode() == 404) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
         }
