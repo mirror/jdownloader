@@ -1,6 +1,5 @@
 package org.jdownloader.gui.jdtrayicon;
 
-import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.EnumKeyHandler;
@@ -8,10 +7,10 @@ import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.utils.Application;
 
 public class CFG_TRAY_CONFIG {
-    public static void main(String[] args) {
-        ConfigUtils.printStaticMappings(TrayConfig.class, "Application.getResource(\"cfg/\" + " + TrayExtension.class.getSimpleName() + ".class.getName())");
-    }
-
+    // public static void main(String[] args) {
+    // ConfigUtils.printStaticMappings(TrayConfig.class, "Application.getResource(\"cfg/\" + " + TrayExtension.class.getSimpleName() +
+    // ".class.getName())");
+    // }
     // Static Mappings for interface org.jdownloader.gui.jdtrayicon.TrayConfig
     public static final TrayConfig                 CFG                                            = JsonConfig.create(Application.getResource("cfg/" + TrayExtension.class.getName()), TrayConfig.class);
     public static final StorageHandler<TrayConfig> SH                                             = (StorageHandler<TrayConfig>) CFG._getStorageHandler();

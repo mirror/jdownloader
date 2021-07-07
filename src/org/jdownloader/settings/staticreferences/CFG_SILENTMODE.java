@@ -1,6 +1,5 @@
 package org.jdownloader.settings.staticreferences;
 
-import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.EnumKeyHandler;
@@ -9,17 +8,15 @@ import org.appwork.storage.config.handler.StorageHandler;
 import org.jdownloader.settings.SilentModeSettings;
 
 public class CFG_SILENTMODE {
-    public static void main(String[] args) {
-        ConfigUtils.printStaticMappings(SilentModeSettings.class);
-    }
-
+    // public static void main(String[] args) {
+    // ConfigUtils.printStaticMappings(SilentModeSettings.class);
+    // }
     // Static Mappings for interface org.jdownloader.settings.SilentModeSettings
     public static final SilentModeSettings                 CFG                                         = JsonConfig.create(SilentModeSettings.class);
     public static final StorageHandler<SilentModeSettings> SH                                          = (StorageHandler<SilentModeSettings>) CFG._getStorageHandler();
     // let's do this mapping here. If we map all methods to static handlers, access is faster, and we get an error on init if mappings are
     // wrong.
     // false
-
     /**
      * Activate the Silent Mode
      **/

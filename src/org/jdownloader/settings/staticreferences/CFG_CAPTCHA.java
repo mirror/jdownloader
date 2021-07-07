@@ -2,7 +2,6 @@ package org.jdownloader.settings.staticreferences;
 
 import jd.controlling.captcha.CaptchaSettings;
 
-import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.EnumKeyHandler;
@@ -10,10 +9,9 @@ import org.appwork.storage.config.handler.IntegerKeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 
 public class CFG_CAPTCHA {
-    public static void main(String[] args) {
-        ConfigUtils.printStaticMappings(CaptchaSettings.class);
-    }
-
+    // public static void main(String[] args) {
+    // ConfigUtils.printStaticMappings(CaptchaSettings.class);
+    // }
     // Static Mappings for interface jd.controlling.captcha.CaptchaSettings
     public static final CaptchaSettings                 CFG                                            = JsonConfig.create(CaptchaSettings.class);
     public static final StorageHandler<CaptchaSettings> SH                                             = (StorageHandler<CaptchaSettings>) CFG._getStorageHandler();

@@ -18,12 +18,15 @@ package jd.gui.swing.jdgui.views.settings.panels;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.regex.Pattern;
 
 import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JTextArea;
 import javax.swing.Timer;
+import javax.swing.text.DefaultHighlighter;
+import javax.swing.text.Highlighter.HighlightPainter;
 
 import jd.controlling.TaskQueue;
 import jd.gui.swing.jdgui.JDGui;
@@ -39,6 +42,7 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
+import org.appwork.swing.components.ExtTextHighlighter;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
@@ -108,8 +112,22 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
             protected void setKeyHandlerValue(String text) {
                 super.setKeyHandlerValue(text != null ? text.trim() : null);
             }
+
+            {
+                final HighlightPainter painter = new DefaultHighlighter.DefaultHighlightPainter(Color.yellow);
+                addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("^(\\s+)")));
+                addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("(\\s+)$")));
+                applyTextHighlighter(null);
+            }
         };
-        passWord = new PasswordInput(CFG_MYJD.PASSWORD);
+        passWord = new PasswordInput(CFG_MYJD.PASSWORD) {
+            {
+                final HighlightPainter painter = new DefaultHighlighter.DefaultHighlightPainter(Color.yellow);
+                addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("^(\\s+)")));
+                addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("(\\s+)$")));
+                applyTextHighlighter(null);
+            }
+        };
         GenericConfigEventListener<String> loginsChangeListener = new GenericConfigEventListener<String>() {
             @Override
             public void onConfigValidatorError(KeyHandler<String> keyHandler, String invalidValue, ValidationException validateException) {

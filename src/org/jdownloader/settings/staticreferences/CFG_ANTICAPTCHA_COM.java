@@ -1,6 +1,5 @@
 package org.jdownloader.settings.staticreferences;
 
-import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
@@ -10,10 +9,9 @@ import org.appwork.storage.config.handler.StringKeyHandler;
 import org.jdownloader.captcha.v2.solver.antiCaptchaCom.AntiCaptchaComConfigInterface;
 
 public class CFG_ANTICAPTCHA_COM {
-    public static void main(String[] args) {
-        ConfigUtils.printStaticMappings(AntiCaptchaComConfigInterface.class);
-    }
-
+    // public static void main(String[] args) {
+    // ConfigUtils.printStaticMappings(AntiCaptchaComConfigInterface.class);
+    // }
     // Static Mappings for interface org.jdownloader.captcha.v2.solver.antiCaptchaCom.AntiCaptchaComConfigInterface
     public static final AntiCaptchaComConfigInterface                 CFG                         = JsonConfig.create(AntiCaptchaComConfigInterface.class);
     public static final StorageHandler<AntiCaptchaComConfigInterface> SH                          = (StorageHandler<AntiCaptchaComConfigInterface>) CFG._getStorageHandler();

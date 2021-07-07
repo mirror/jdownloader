@@ -8,7 +8,6 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 
 import org.appwork.exceptions.WTFException;
-import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
@@ -102,10 +101,9 @@ public class LAFOptions {
         return hex(c.getAlpha()) + hex(c.getRed()) + hex(c.getGreen()) + hex(c.getBlue());
     }
 
-    public static void main(String[] args) {
-        ConfigUtils.printStaticMappings(LAFSettings.class);
-    }
-
+    // public static void main(String[] args) {
+    // ConfigUtils.printStaticMappings(LAFSettings.class);
+    // }
     public static Color createColor(String str) {
         // no synch required. in worth case we create the color twice
         synchronized (CACHE) {

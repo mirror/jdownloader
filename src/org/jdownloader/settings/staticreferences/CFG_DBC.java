@@ -1,6 +1,5 @@
 package org.jdownloader.settings.staticreferences;
 
-import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
@@ -9,10 +8,9 @@ import org.appwork.storage.config.handler.StringKeyHandler;
 import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSettings;
 
 public class CFG_DBC {
-    public static void main(String[] args) {
-        ConfigUtils.printStaticMappings(DeathByCaptchaSettings.class);
-    }
-
+    // public static void main(String[] args) {
+    // ConfigUtils.printStaticMappings(DeathByCaptchaSettings.class);
+    // }
     // Static Mappings for interface org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSettings
     public static final DeathByCaptchaSettings                 CFG                       = JsonConfig.create(DeathByCaptchaSettings.class);
     public static final StorageHandler<DeathByCaptchaSettings> SH                        = (StorageHandler<DeathByCaptchaSettings>) CFG._getStorageHandler();

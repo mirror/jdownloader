@@ -1,6 +1,5 @@
 package org.jdownloader.settings.staticreferences;
 
-import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.ObjectKeyHandler;
@@ -8,10 +7,9 @@ import org.appwork.storage.config.handler.StorageHandler;
 import org.jdownloader.api.RemoteAPIConfig;
 
 public class CFG_API {
-    public static void main(String[] args) {
-        ConfigUtils.printStaticMappings(RemoteAPIConfig.class);
-    }
-
+    // public static void main(String[] args) {
+    // ConfigUtils.printStaticMappings(RemoteAPIConfig.class);
+    // }
     // Static Mappings for interface org.jdownloader.api.RemoteAPIConfig
     public static final RemoteAPIConfig                 CFG                      = JsonConfig.create(RemoteAPIConfig.class);
     public static final StorageHandler<RemoteAPIConfig> SH                       = (StorageHandler<RemoteAPIConfig>) CFG._getStorageHandler();

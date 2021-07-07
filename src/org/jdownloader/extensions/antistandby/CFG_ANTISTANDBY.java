@@ -1,6 +1,5 @@
 package org.jdownloader.extensions.antistandby;
 
-import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.EnumKeyHandler;
@@ -8,10 +7,9 @@ import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.utils.Application;
 
 public class CFG_ANTISTANDBY {
-    public static void main(String[] args) {
-        ConfigUtils.printStaticMappings(AntiStandbyConfig.class);
-    }
-
+    // public static void main(String[] args) {
+    // ConfigUtils.printStaticMappings(AntiStandbyConfig.class);
+    // }
     // Static Mappings for interface
     // org.jdownloader.extensions.shutdown.AntiStandbyConfig
     public static final AntiStandbyConfig                 CFG              = JsonConfig.create(Application.getResource("cfg/" + AntiStandbyExtension.class.getName()), AntiStandbyConfig.class);
@@ -26,5 +24,4 @@ public class CFG_ANTISTANDBY {
     public static final EnumKeyHandler                    MODE             = SH.getKeyHandler("Mode", EnumKeyHandler.class);
     // DisplayRequired
     public static final BooleanKeyHandler                 DISPLAY_REQUIRED = SH.getKeyHandler("DisplayRequired", BooleanKeyHandler.class);
-
 }

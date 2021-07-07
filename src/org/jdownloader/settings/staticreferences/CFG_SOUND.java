@@ -1,6 +1,5 @@
 package org.jdownloader.settings.staticreferences;
 
-import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
@@ -8,10 +7,9 @@ import org.appwork.storage.config.handler.StorageHandler;
 import org.jdownloader.settings.SoundSettings;
 
 public class CFG_SOUND {
-    public static void main(String[] args) {
-        ConfigUtils.printStaticMappings(SoundSettings.class);
-    }
-
+    // public static void main(String[] args) {
+    // ConfigUtils.printStaticMappings(SoundSettings.class);
+    // }
     // Static Mappings for interface org.jdownloader.settings.SoundSettings
     public static final SoundSettings                 CFG                   = JsonConfig.create(SoundSettings.class);
     public static final StorageHandler<SoundSettings> SH                    = (StorageHandler<SoundSettings>) CFG._getStorageHandler();

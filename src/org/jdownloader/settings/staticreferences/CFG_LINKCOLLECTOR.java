@@ -2,16 +2,14 @@ package org.jdownloader.settings.staticreferences;
 
 import jd.controlling.linkcollector.LinkCollectorConfig;
 
-import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 
 public class CFG_LINKCOLLECTOR {
-    public static void main(String[] args) {
-        ConfigUtils.printStaticMappings(LinkCollectorConfig.class);
-    }
-
+    // public static void main(String[] args) {
+    // ConfigUtils.printStaticMappings(LinkCollectorConfig.class);
+    // }
     // Static Mappings for interface
     // jd.controlling.linkcollector.LinkCollectorConfig
     public static final LinkCollectorConfig                 CFG                 = JsonConfig.create(LinkCollectorConfig.class);

@@ -1,6 +1,5 @@
 package jd.controlling.reconnect.pluginsinc.liveheader;
 
-import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.ObjectKeyHandler;
@@ -8,10 +7,9 @@ import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
 
 public class CFG_LIVEHEADER {
-    public static void main(String[] args) {
-        ConfigUtils.printStaticMappings(LiveHeaderReconnectSettings.class);
-    }
-
+    // public static void main(String[] args) {
+    // ConfigUtils.printStaticMappings(LiveHeaderReconnectSettings.class);
+    // }
     // Static Mappings for interface jd.controlling.reconnect.pluginsinc.liveheader.LiveHeaderReconnectSettings
     public static final LiveHeaderReconnectSettings                 CFG                                   = JsonConfig.create(LiveHeaderReconnectSettings.class);
     public static final StorageHandler<LiveHeaderReconnectSettings> SH                                    = (StorageHandler<LiveHeaderReconnectSettings>) CFG._getStorageHandler();

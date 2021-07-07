@@ -1,6 +1,5 @@
 package org.jdownloader.extensions.translator;
 
-import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
@@ -9,10 +8,10 @@ import org.appwork.storage.config.handler.StringKeyHandler;
 import org.appwork.utils.Application;
 
 public class CFG_TRANSLATOR {
-    public static void main(String[] args) {
-        ConfigUtils.printStaticMappings(TranslatorConfig.class, "Application.getResource(\"cfg/\" + " + TranslatorExtension.class.getSimpleName() + ".class.getName())");
-    }
-
+    // public static void main(String[] args) {
+    // ConfigUtils.printStaticMappings(TranslatorConfig.class, "Application.getResource(\"cfg/\" + " +
+    // TranslatorExtension.class.getSimpleName() + ".class.getName())");
+    // }
     // Static Mappings for interface org.jdownloader.extensions.translator.TranslatorConfig
     public static final TranslatorConfig                 CFG                     = JsonConfig.create(Application.getResource("cfg/" + TranslatorExtension.class.getName()), TranslatorConfig.class);
     public static final StorageHandler<TranslatorConfig> SH                      = (StorageHandler<TranslatorConfig>) CFG._getStorageHandler();

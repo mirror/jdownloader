@@ -1,6 +1,5 @@
 package org.jdownloader.settings.staticreferences;
 
-import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.ObjectKeyHandler;
@@ -8,10 +7,9 @@ import org.appwork.storage.config.handler.StorageHandler;
 import org.jdownloader.controlling.packagizer.PackagizerSettings;
 
 public class CFG_PACKAGIZER {
-    public static void main(String[] args) {
-        ConfigUtils.printStaticMappings(PackagizerSettings.class);
-    }
-
+    // public static void main(String[] args) {
+    // ConfigUtils.printStaticMappings(PackagizerSettings.class);
+    // }
     // Static Mappings for interface
     // org.jdownloader.controlling.packagizer.PackagizerSettings
     public static final PackagizerSettings                 CFG                = JsonConfig.create(PackagizerSettings.class);
