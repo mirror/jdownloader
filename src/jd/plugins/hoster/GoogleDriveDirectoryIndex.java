@@ -73,7 +73,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
     }
 
     /**
-     * Host plugin that can handle instances of this project: https://github.com/ParveenBhadooOfficial/Google-Drive-Index </br>
+     * Host plugin that can handle instances of this project: https://github.com/sawankumar/Google-Drive-Index </br>
      * Be sure to add all domains to crawler plugin GoogleDriveDirectoryIndex.java too!
      */
     /* Connection stuff */

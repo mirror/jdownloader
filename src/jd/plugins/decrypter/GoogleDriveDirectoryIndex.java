@@ -38,15 +38,14 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountError;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DecrypterRetryException;
 import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -79,7 +78,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
     }
 
     /**
-     * Crawler plugin that can handle instances of this project: https://github.com/ParveenBhadooOfficial/Google-Drive-Index </br>
+     * Crawler plugin that can handle instances of this project: https://github.com/sawankumar/Google-Drive-Index </br>
      * Be sure to add all domains to host plugin GoogleDriveDirectoryIndex.java too!
      */
     public GoogleDriveDirectoryIndex(PluginWrapper wrapper) {
@@ -103,9 +102,8 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
             final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
             ((jd.plugins.hoster.GoogleDriveDirectoryIndex) plg).login(acc, false);
         }
-        // TODO: add support for logins within URL
         boolean useOldPostRequest;
-        /* Check if we maybe already know which request type is the right one */
+        /* Check if we maybe already know which request type is the right one so we need less http requests. */
         if (param.getDownloadLink() != null && param.getDownloadLink().hasProperty(PROPERTY_FOLDER_USE_OLD_POST_REQUEST)) {
             useOldPostRequest = true;
         } else {
@@ -139,15 +137,16 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
                 }
                 con = openAntiDDoSRequestConnection(br, br.createGetRequest(param.getCryptedUrl()));
             }
-            if (con.getResponseCode() == 405) {
-                /* Fallback? 2021-05-19: Is this still required? */
-                try {
-                    br.followConnection(true);
-                } catch (IOException e) {
-                    logger.log(e);
-                }
-                con = openAntiDDoSRequestConnection(br, br.createGetRequest(param.getCryptedUrl()));
-            }
+            /* 2021-07-07: Removed the following lines of code in order to find out if they are still needed. */
+            // if (con.getResponseCode() == 405) {
+            // /* Fallback? 2021-05-19: Is this still required? */
+            // try {
+            // br.followConnection(true);
+            // } catch (IOException e) {
+            // logger.log(e);
+            // }
+            // con = openAntiDDoSRequestConnection(br, br.createGetRequest(param.getCryptedUrl()));
+            // }
             if (looksLikeDownloadableContent(con)) {
                 con.disconnect();
                 final DownloadLink direct = this.createDownloadlink(con.getURL().toString());
@@ -181,8 +180,9 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
                 /* We cannot check accounts so the only way we can find issues is by just trying with the login credentials here ... */
                 logger.info("Existing account is invalid (?)");
                 acc.setError(AccountError.INVALID, 5 * 60, null);
+            } else {
+                throw new AccountRequiredException();
             }
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } else if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
             return decryptedLinks;
@@ -198,8 +198,8 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
         final boolean isParameterFile = !param.getCryptedUrl().endsWith("/");
         String subFolder = getAdoptedCloudFolderStructure();
         /*
-         * ok if the user imports a link just by itself should it also be placed into the correct packagename? We can determine this via url
-         * structure, else base folder with files wont be packaged together just on filename....
+         * If the user imports a link just by itself should it also be placed into the correct package. We can determine this via url
+         * structure, else base folder with files wont be packaged together just based on filename....
          */
         if (subFolder == null) {
             final Regex typicalUrlStructure = new Regex(param.getCryptedUrl(), "https?://[^/]+/0:(/.*)");
@@ -219,7 +219,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
             fp.setName(fpName.replaceAll("(^/)|(/$)", ""));
         }
         final String baseUrl;
-        // urls can already be encoded which breaks stuff, only encode non-encoded content
+        /* urls can already be encoded which breaks stuff, only encode non-encoded content */
         if (!new Regex(param.getCryptedUrl(), "%[a-z0-9]{2}").matches()) {
             baseUrl = Encoding.urlEncode_light(param.getCryptedUrl());
         } else {

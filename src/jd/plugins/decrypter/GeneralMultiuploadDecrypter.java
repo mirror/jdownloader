@@ -30,7 +30,6 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Request;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -41,8 +40,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mirrorcop.com", "multiupfile.com", "multfile.com", "maxmirror.com", "exoshare.com", "go4up.com", "uploadonall.com", "qooy.com", "uploader.ro", "megaupper.com", "calabox.com" }, urls = { "http://(www\\.)?mirrorcop\\.com/downloads/[A-Z0-9]+", "http://(www\\.)?multiupfile\\.com/f/[a-f0-9]+", "http://(www\\.)?multfile\\.com/files/[0-9A-Za-z]{1,15}", "http://(www\\.)?maxmirror\\.com/download/[0-9A-Z]{8}", "http://(www\\.)?(exoshare\\.com|multi\\.la)/(download\\.php\\?uid=|s/)[A-Z0-9]{8}", "https?://(\\w+\\.)?go4up\\.com/{1,}(dl/|link\\.php\\?id=)\\w{1,15}", "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}", "http://(www\\.)?qooy\\.com/files/[0-9A-Z]{8,10}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}",
-        "http://[\\w\\.]*?(?:shrta|calabox)\\.com/files/[0-9A-Z]{8}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadonall.com" }, urls = { "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}" })
 public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
     public GeneralMultiuploadDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -76,22 +74,8 @@ public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final LinkedHashSet<String> dupeList = new LinkedHashSet<String>();
         Browser brc;
-        String parameter = param.toString();
-        if (parameter.contains("go4up.com")) {
-            parameter = parameter.replace("link.php?id=", "dl/").replace("http://", "https://");
-        } else if (parameter.matches("http://(www\\.)?(exoshare\\.com|multi\\.la)/(download\\.php\\?uid=|s/)[A-Z0-9]{8}")) {
-            parameter = "http://exoshare.com/download.php?uid=" + new Regex(parameter, "([A-Z0-9]{8})$").getMatch(0);
-        } else {
-            parameter = parameter.replaceAll("(/dl/|/mirror/|/download/)", "/files/");
-        }
-        // Links need a "/" at the end to be valid
-        if (!param.getCryptedUrl().matches(".+exoshare\\.com/.+") && !param.getCryptedUrl().endsWith("/")) {
-            param.setCryptedUrl(param.getCryptedUrl().toString() + "/");
-        }
+        final String parameter = param.toString().replaceAll("(/dl/|/mirror/|/download/)", "/files/");
         String id = new Regex(parameter, "https?://.+/(\\?go=|download\\.php\\?uid=)?([0-9A-Za-z]{8,18})").getMatch(1);
-        if (id == null && parameter.matches("(?i).+multiupfile\\.com/.+")) {
-            id = new Regex(parameter, "([A-Za-z0-9]+)/?$").getMatch(0);
-        }
         // This should never happen but in case a dev changes the plugin without
         // much testing he'll see the error later!
         if (id == null) {
@@ -99,51 +83,8 @@ public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
             return null;
         }
         String customFileName = null;
-        if (parameter.contains("go4up.com/")) {
-            getPage(br, parameter);
-            if (br.containsHTML(">File not Found<")) {
-                decryptedLinks.add(createOfflinelink(parameter));
-                return decryptedLinks;
-            }
-            // we apparently need a filename
-            customFileName = br.getRegex("<title>Download (.*?)</title>").getMatch(0);
-            // if (br.containsHTML("golink")) br.postPage(br.getURL(), "golink=Access+Links");
-            brc = br.cloneBrowser();
-            // this is required!
-            // br.setCookie(this.getHost(), "__unam", determineHash());
-            getPage(brc, "/download/gethosts/" + id + "/" + customFileName);
-            final String urls[] = brc.getRegex("\"link\":\"(.*?)\",\"button\"").getColumn(0);
-            final String urls_broken[] = brc.getRegex("\"link\":\"(File currently in queue\\.|Error occured)\"").getColumn(0);
-            if (urls.length == urls_broken.length || brc.containsHTML(">A PHP Error was encountered<")) {
-                final DownloadLink link;
-                /* None of these mirrors was successfully uploaded --> Link offline! */
-                decryptedLinks.add(link = createOfflinelink(parameter));
-                link.setName(customFileName);
-                return decryptedLinks;
-            }
-        } else if (parameter.matches("(?i).+multiupfile\\.com/.+")) {
-            // use standard page, status.php doesn't exist
-            // br.getHeaders().put("Accept-Encoding", "identity");
-            getPage(br, parameter);
-            if (br.containsHTML(">File not found<")) {
-                decryptedLinks.add(createOfflinelink(parameter));
-                return decryptedLinks;
-            }
-            final String token = br.getRegex("value=\"([a-z0-9]+)\" name=\"YII_CSRF_TOKEN\"").getMatch(0);
-            if (token == null) {
-                logger.warning("Decrypter broken for link: " + param.toString());
-                return null;
-            }
-            String pssd = br.getRegex("name=\"pssd\" type=\"hidden\" value=\"([a-z0-9]+)\"").getMatch(0);
-            if (pssd == null) {
-                pssd = id;
-            }
-            brc = br.cloneBrowser();
-            postPage(brc, br.getURL(), "YII_CSRF_TOKEN=" + token + "&pssd=" + pssd);
-        } else {
-            brc = br.cloneBrowser();
-            getPage(brc, Request.getLocation("/status.php?uid=" + id, br.createGetRequest(parameter)));
-        }
+        brc = br.cloneBrowser();
+        getPage(brc, Request.getLocation("/status.php?uid=" + id, br.createGetRequest(parameter)));
         /* Error handling */
         if (!br.containsHTML("<img src=") && !br.containsHTML("<td class=\"host\">")) {
             logger.info("The following link should be offline: " + param.toString());
@@ -160,25 +101,10 @@ public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
                 decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            // exoshare have just advertising crapola for dead/offline links
-            if ("exoshare.com".equals(getHost())) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
-            }
             throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
         logger.info("Found " + redirectLinks.size() + " " + " links to decrypt...");
-        String fileName = null;
-        if (parameter.contains("mirrorcop")) {
-            brc = br.cloneBrowser();
-            getPage(brc, parameter);
-            fileName = brc.getRegex("h3 style=\"color:.*?\">Name :(.*?)</h3").getMatch(0);
-            if (fileName != null) {
-                fileName = fileName.trim();
-            }
-        } else {
-            fileName = customFileName;
-        }
+        String fileName = customFileName;
         for (String singleLink : redirectLinks) {
             if (!dupeList.add(singleLink)) {
                 continue;
@@ -300,36 +226,9 @@ public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
     }
 
     private String decryptLink(Browser brc, final String parameter) throws Exception {
-        String dllink = null;
-        if (parameter.contains("go4up.com/")) {
-            dllink = brc.getRedirectLocation();
-            if (dllink == null) {
-                dllink = brc.getRegex("window\\.location = (\"|')(http.*?)\\1").getMatch(1);
-                if (dllink == null) {
-                    dllink = brc.getRegex("<b><a href=\"([^\"]+)").getMatch(0);
-                    if (dllink == null) {
-                        final String temp = Encoding.urlDecode(brc.getRegex("\\(unescape\\(\"(.*?)\"").getMatch(0), false);
-                        if (temp != null) {
-                            dllink = new Regex(temp, "<b><a href=\"([^\"]+)").getMatch(0);
-                        }
-                    }
-                }
-            }
-        } else if (parameter.contains("maxmirror.com/")) {
-            dllink = brc.getRegex("\"(http[^<>\"]*?)\"><img border=\"0\" src=\"http://(www\\.)?maxmirror\\.com/").getMatch(0);
-        } else if (parameter.matches(".+(qooy\\.com|multfile\\.com|mirrorcop\\.com)/.+")) {
-            dllink = brc.getRegex("<a style=\"text-decoration:\\s*none;\\s*border:\\s*none;\\s*\"\\s*href=(\"|')(https?://.*?)\\1").getMatch(1);
-        } else if (parameter.contains("exzip.net/")) {
-            dllink = brc.getRegex("\"(/down/[A-Z0-9]{8}/\\d+)\"").getMatch(0);
-            if (dllink != null) {
-                getPage(brc, dllink);
-                dllink = brc.getRegex(DEFAULTREGEX).getMatch(0);
-            }
-        } else {
-            dllink = brc.getRedirectLocation();
-            if (dllink == null) {
-                dllink = brc.getRegex(DEFAULTREGEX).getMatch(0);
-            }
+        String dllink = brc.getRedirectLocation();
+        if (dllink == null) {
+            dllink = brc.getRegex(DEFAULTREGEX).getMatch(0);
         }
         return dllink;
     }
@@ -388,18 +287,6 @@ public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
         return;
     }
 
-    private String determineHash() throws Exception {
-        try {
-            final String d = JDHash.getCRC32("" + Math.round(Math.random() * 2147483647));
-            final String g = JDHash.getCRC32("" + System.currentTimeMillis());
-            final String f = "c22e7e7";
-            return f.concat("-").concat(d).concat("-").concat(g).concat("-2");
-        } catch (Exception e) {
-            throw e;
-        }
-    }
-
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
