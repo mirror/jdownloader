@@ -1,6 +1,5 @@
 package org.jdownloader.settings.staticreferences;
 
-import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.EnumKeyHandler;
@@ -14,10 +13,9 @@ import org.appwork.storage.config.handler.StringListHandler;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class CFG_GUI {
-    public static void main(String[] args) {
-        ConfigUtils.printStaticMappings(GraphicalUserInterfaceSettings.class);
-    }
-
+    // public static void main(String[] args) {
+    // ConfigUtils.printStaticMappings(GraphicalUserInterfaceSettings.class);
+    // }
     // Static Mappings for interface org.jdownloader.settings.GraphicalUserInterfaceSettings
     public static final GraphicalUserInterfaceSettings                 CFG                                                     = JsonConfig.create(GraphicalUserInterfaceSettings.class);
     public static final StorageHandler<GraphicalUserInterfaceSettings> SH                                                      = (StorageHandler<GraphicalUserInterfaceSettings>) CFG._getStorageHandler();

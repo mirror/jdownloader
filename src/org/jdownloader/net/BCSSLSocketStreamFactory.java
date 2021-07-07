@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Vector;
 
+import javax.net.ssl.SSLHandshakeException;
+
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamFactory;
@@ -427,6 +429,12 @@ public class BCSSLSocketStreamFactory implements SSLSocketStreamFactory {
             if (bcRetry != null) {
                 // retry with TLS1.3 and GCM
                 return options.addRetryReason("enable " + bcRetry + " for TLS1.3");
+            }
+        }
+        if (e instanceof SSLHandshakeException || StringUtils.containsIgnoreCase(e.getMessage(), "Remote host terminated the handshake")) {
+            if (options.getCustomFactorySettings().add(TLS10_11_DISABLED)) {
+                // disable old TLS1.0 and TLS1.1 and retry with TLS1.2
+                return options.addRetryReason("disable TLS1.0/TLS1.1");
             }
         }
         if (e instanceof SocketException && StringUtils.containsIgnoreCase(eMessage, "reset")) {

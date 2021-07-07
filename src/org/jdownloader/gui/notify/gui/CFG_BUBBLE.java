@@ -1,6 +1,5 @@
 package org.jdownloader.gui.notify.gui;
 
-import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.EnumKeyHandler;
@@ -10,10 +9,9 @@ import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
 
 public class CFG_BUBBLE {
-    public static void main(String[] args) {
-        ConfigUtils.printStaticMappings(BubbleNotifyConfig.class);
-    }
-
+    // public static void main(String[] args) {
+    // ConfigUtils.printStaticMappings(BubbleNotifyConfig.class);
+    // }
     // Static Mappings for interface org.jdownloader.gui.notify.gui.BubbleNotifyConfig
     public static final BubbleNotifyConfig                 CFG                                                     = JsonConfig.create(BubbleNotifyConfig.class);
     public static final StorageHandler<BubbleNotifyConfig> SH                                                      = (StorageHandler<BubbleNotifyConfig>) CFG._getStorageHandler();

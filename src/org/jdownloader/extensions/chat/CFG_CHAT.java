@@ -1,6 +1,5 @@
 package org.jdownloader.extensions.chat;
 
-import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
@@ -9,10 +8,10 @@ import org.appwork.storage.config.handler.StringKeyHandler;
 import org.appwork.utils.Application;
 
 public class CFG_CHAT {
-    public static void main(String[] args) {
-        ConfigUtils.printStaticMappings(ChatConfig.class, "Application.getResource(\"cfg/\" + " + ChatExtension.class.getSimpleName() + ".class.getName())");
-    }
-
+    // public static void main(String[] args) {
+    // ConfigUtils.printStaticMappings(ChatConfig.class, "Application.getResource(\"cfg/\" + " + ChatExtension.class.getSimpleName() +
+    // ".class.getName())");
+    // }
     // Static Mappings for interface org.jdownloader.extensions.chat.ChatConfig
     public static final ChatConfig                 CFG                       = JsonConfig.create(Application.getResource("cfg/" + ChatExtension.class.getName()), ChatConfig.class);
     public static final StorageHandler<ChatConfig> SH                        = (StorageHandler<ChatConfig>) CFG._getStorageHandler();

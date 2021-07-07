@@ -1,6 +1,5 @@
 package org.jdownloader.extensions.extraction;
 
-import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.EnumKeyHandler;
@@ -12,10 +11,10 @@ import org.appwork.storage.config.handler.StringListHandler;
 import org.appwork.utils.Application;
 
 public class CFG_EXTRACTION {
-    public static void main(String[] args) {
-        ConfigUtils.printStaticMappings(ExtractionConfig.class, "Application.getResource(\"cfg/\" + " + ExtractionExtension.class.getSimpleName() + ".class.getName())");
-    }
-
+    // public static void main(String[] args) {
+    // ConfigUtils.printStaticMappings(ExtractionConfig.class, "Application.getResource(\"cfg/\" + " +
+    // ExtractionExtension.class.getSimpleName() + ".class.getName())");
+    // }
     // Static Mappings for interface org.jdownloader.extensions.extraction.ExtractionConfig
     public static final ExtractionConfig                 CFG                                                              = JsonConfig.create(Application.getResource("cfg/" + ExtractionExtension.class.getName()), ExtractionConfig.class);
     public static final StorageHandler<ExtractionConfig> SH                                                               = (StorageHandler<ExtractionConfig>) CFG._getStorageHandler();

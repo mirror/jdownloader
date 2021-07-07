@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
@@ -2266,32 +2267,30 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          * like it is a thumbnail although it is not. If we find several URLs and all are the same we may still just take one of them
          * although it could be a thumbnail.
          */
-        String dllink = null;
-        String lastDllink = null;
-        boolean allResultsAreTheSame = true;
-        final ArrayList<String> possibleDllinks = new ArrayList<String>();
+        final Map<String, Integer> possibleDllinks = new HashMap<String, Integer>();
         for (final Pattern regex : getImageDownloadurlRegexes()) {
             final String[] dllinksTmp = new Regex(src, regex).getColumn(0);
             for (final String url : dllinksTmp) {
-                possibleDllinks.add(url);
+                Integer count = possibleDllinks.get(url);
+                if (count == null) {
+                    count = 1;
+                } else {
+                    count++;
+                }
+                possibleDllinks.put(url, count);
             }
         }
-        for (final String possibleDllink : possibleDllinks) {
-            if (possibleDllinks.size() > 1 && lastDllink != null && !possibleDllink.equalsIgnoreCase(lastDllink)) {
-                allResultsAreTheSame = false;
-            }
+        Entry<String, Integer> best = null;
+        for (Entry<String, Integer> entry : possibleDllinks.entrySet()) {
             /* Avoid downloading thumbnails */
             /* 2019-07-24: Improve recognization of thumbnails e.g. https://img67.imagetwist.com/th/123456/[a-z0-9]{12}.jpg */
-            if (possibleDllink != null && !possibleDllink.matches(".+_t\\.[A-Za-z]{3,4}$")) {
-                dllink = possibleDllink;
-                break;
+            if (best == null || best.getKey().matches(".+_t\\.[A-Za-z]{3,4}$")) {
+                best = entry;
+            } else if (entry.getValue() > best.getValue()) {
+                best = entry;
             }
-            lastDllink = possibleDllink;
         }
-        if (dllink == null && possibleDllinks.size() > 1 && allResultsAreTheSame) {
-            logger.info("image download-candidates were all identified as thumbnails --> Using first result anyways as it is likely that it is not a thumbnail!");
-            dllink = possibleDllinks.get(0);
-        }
+        final String dllink = best.getKey();
         return dllink;
     }
 

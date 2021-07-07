@@ -1,6 +1,5 @@
 package org.jdownloader.settings.staticreferences;
 
-import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
@@ -10,10 +9,9 @@ import org.appwork.storage.config.handler.StringKeyHandler;
 import org.jdownloader.captcha.v2.solver.twocaptcha.TwoCaptchaConfigInterface;
 
 public class CFG_TWO_CAPTCHA {
-    public static void main(String[] args) {
-        ConfigUtils.printStaticMappings(TwoCaptchaConfigInterface.class);
-    }
-
+    // public static void main(String[] args) {
+    // ConfigUtils.printStaticMappings(TwoCaptchaConfigInterface.class);
+    // }
     // Static Mappings for interface org.jdownloader.captcha.v2.solver.twocaptcha.TwoCaptchaConfigInterface
     public static final TwoCaptchaConfigInterface                 CFG                         = JsonConfig.create(TwoCaptchaConfigInterface.class);
     public static final StorageHandler<TwoCaptchaConfigInterface> SH                          = (StorageHandler<TwoCaptchaConfigInterface>) CFG._getStorageHandler();

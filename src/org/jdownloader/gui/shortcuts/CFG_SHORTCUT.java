@@ -1,22 +1,14 @@
 package org.jdownloader.gui.shortcuts;
 
-import java.awt.event.KeyEvent;
-
-import javax.swing.KeyStroke;
-
-import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
 
 public class CFG_SHORTCUT {
-    public static void main(String[] args) {
-        System.out.println(KeyStroke.getKeyStroke(KeyEvent.VK_C, 0));
-
-        ConfigUtils.printStaticMappings(ShortcutSettings.class);
-
-    }
-
+    // public static void main(String[] args) {
+    // System.out.println(KeyStroke.getKeyStroke(KeyEvent.VK_C, 0));
+    // ConfigUtils.printStaticMappings(ShortcutSettings.class);
+    // }
     // Static Mappings for interface org.jdownloader.gui.shortcuts.ShortcutSettings
     public static final ShortcutSettings                 CFG               = JsonConfig.create(ShortcutSettings.class);
     public static final StorageHandler<ShortcutSettings> SH                = (StorageHandler<ShortcutSettings>) CFG._getStorageHandler();
