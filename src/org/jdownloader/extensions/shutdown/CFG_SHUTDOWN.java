@@ -1,6 +1,5 @@
 package org.jdownloader.extensions.shutdown;
 
-import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.EnumKeyHandler;
@@ -9,10 +8,10 @@ import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.utils.Application;
 
 public class CFG_SHUTDOWN {
-    public static void main(String[] args) {
-        ConfigUtils.printStaticMappings(ShutdownConfig.class, "Application.getResource(\"cfg/\" + " + ShutdownExtension.class.getSimpleName() + ".class.getName())");
-    }
-
+    // public static void main(String[] args) {
+    // ConfigUtils.printStaticMappings(ShutdownConfig.class, "Application.getResource(\"cfg/\" + " + ShutdownExtension.class.getSimpleName()
+    // + ".class.getName())");
+    // }
     // Static Mappings for interface org.jdownloader.extensions.shutdown.ShutdownConfig
     public static final ShutdownConfig                 CFG                                = JsonConfig.create(Application.getResource("cfg/" + ShutdownExtension.class.getName()), ShutdownConfig.class);
     public static final StorageHandler<ShutdownConfig> SH                                 = (StorageHandler<ShutdownConfig>) CFG._getStorageHandler();
