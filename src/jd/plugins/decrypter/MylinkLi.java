@@ -24,9 +24,8 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.parser.Regex;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
-import jd.parser.html.Form.MethodType;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -39,41 +38,45 @@ public class MylinkLi extends antiDDoSForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        /* 2021-03-11: Website produces "myl.li" URLs which are broken -> Use mylink.how to fix these! */
-        final String url = param.toString().replaceFirst("(?i)" + Browser.getHost(param.getCryptedUrl()), "mylink.how");
-        param.setCryptedUrl(url);
-        final String linkID = new Regex(url, "/([A-Za-z0-9]+)$").getMatch(0);
-        br = new Browser();
+        // final String linkID = new Regex(param.getCryptedUrl(), "/([A-Za-z0-9]+)$").getMatch(0);
         br.setFollowRedirects(true);
         if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             logger.warning("This crawler does not yet work!");
             return null;
         }
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
         getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(url));
+            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
             return decryptedLinks;
         }
-        br.setFollowRedirects(false);
+        final String httpRedirect = br.getRegex("<meta http-equiv=\"refresh\"[^>]*url=(https://[^\"]+)\"[^>]*>").getMatch(0);
+        if (httpRedirect != null) {
+            this.getPage(httpRedirect);
+        }
         final Form captchaForm = br.getFormbyProperty("id", "captcha");
         if (captchaForm == null) {
             logger.warning("Failed to find captchaForm");
             return null;
         }
-        String debug_hash = null;
-        if (captchaForm.hasInputFieldByName("hash")) {
-            debug_hash = captchaForm.getInputFieldByName("hash").getValue();
-        }
+        // final String phpsessid = br.getCookie(br.getHost(), "PHPSESSID", Cookies.NOTDELETEDPATTERN);
         final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-        captchaForm.put("g-recaptcha-response", recaptchaV2Response);
+        captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
         captchaForm.remove("submit");
+        br.getHeaders().put("Origin", "https://mylink.vc");
+        getAndSetSpecialCookie(this.br);
         submitForm(captchaForm);
+        /*
+         * Contains pretty much the same stuff as the first form and again our captcha result. This time, parameter "hash" is not empty.
+         * "hash" usually equals our Cookie "PHPSESSID".
+         */
         Form captchaFollowupForm = br.getFormbyProperty("id", "reCaptchaForm");
         if (captchaFollowupForm == null) {
             logger.warning("Failed to find captchaFollowupForm");
             return null;
         }
         captchaFollowupForm.put("g-recaptcha-response", recaptchaV2Response);
+        getAndSetSpecialCookie(this.br);
         // {
         // /* Debug test */
         // captchaFollowupForm = new Form();
@@ -89,53 +92,47 @@ public class MylinkLi extends antiDDoSForDecrypt {
         // decryptedLinks.add(this.createOfflinelink(parameter));
         // return decryptedLinks;
         // }
-        Form shareForm = br.getFormbyProperty("id", "share");
-        {
-            /* Debug test */
-            if (shareForm == null) {
-                shareForm = new Form();
-                shareForm.setMethod(MethodType.POST);
-                shareForm.put("share", "myl.li/" + linkID);
-                shareForm.put("uri", linkID);
-                if (captchaFollowupForm.hasInputFieldByName("hash")) {
-                    debug_hash = captchaFollowupForm.getInputFieldByName("hash").getValue();
-                    shareForm.put("hash", debug_hash);
-                }
-            }
-        }
-        if (shareForm == null) {
-            logger.warning("Failed to find finalForm");
-            return null;
-        }
-        submitForm(shareForm);
+        final Form nextForm = br.getFormbyKey("share");
+        this.submitForm(nextForm);
+        // Form shareForm = br.getFormbyProperty("id", "share");
+        // {
+        // /* Debug test */
+        // if (shareForm == null) {
+        // shareForm = new Form();
+        // shareForm.setMethod(MethodType.POST);
+        // shareForm.put("share", "myl.li/" + linkID);
+        // shareForm.put("uri", linkID);
+        // }
+        // }
+        // if (shareForm == null) {
+        // logger.warning("Failed to find finalForm");
+        // return null;
+        // }
+        // submitForm(shareForm);
         /* A lot of Forms may appear here - all to force the user to share the link, bookmark their page and so on ... */
+        br.setFollowRedirects(false);
         Form goForm = null;
         for (int i = 0; i <= 10; i++) {
             logger.info("Loop: " + i);
-            goForm = br.getFormbyProperty("id", "go");
-            final Form continueForm = br.getForm(0);
-            if (continueForm == null || goForm != null) {
+            goForm = br.getFormbyKey("hash");
+            if (goForm == null) {
                 break;
+            } else {
+                submitForm(goForm);
             }
-            {
-                /* Debug test - this should not happen, we should be 'behind' that 2nd captcha Form already! */
-                if (continueForm.containsHTML("reCaptchaForm")) {
-                    continueForm.put("g-recaptcha-response", recaptchaV2Response);
-                }
-            }
-            submitForm(continueForm);
         }
-        if (goForm == null) {
-            logger.warning("Failed to find goForm");
-            return null;
-        }
-        submitForm(goForm);
         final String finallink = br.getRedirectLocation();
         if (finallink == null) {
-            logger.warning("Decrypter broken for link: " + param.getCryptedUrl());
             return null;
         }
         decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
+    }
+
+    private void getAndSetSpecialCookie(final Browser br) {
+        final String specialCookie = br.getRegex("\"/hkz\"\\);setCookie\\(\"([a-z0-9]+)\",1,").getMatch(0);
+        if (specialCookie != null) {
+            br.setCookie(br.getHost(), specialCookie, "1");
+        }
     }
 }
