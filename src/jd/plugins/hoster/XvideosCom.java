@@ -230,6 +230,7 @@ public class XvideosCom extends PluginForHost {
         }
         br.setFollowRedirects(false);
         br.getHeaders().put("Accept-Encoding", "gzip");
+        /* 2021-07-07: They seem to ignore this header and set language randomly or by IP or by user-choice! */
         br.getHeaders().put("Accept-Language", "en-gb");
         if (account != null) {
             this.login(this, account, false);
@@ -240,18 +241,37 @@ public class XvideosCom extends PluginForHost {
                 this.login(this, account, false);
             }
         }
-        br.getPage(link.getPluginPatternMatcher());
+        final boolean useLanguageSwitcherHandling = false;
+        if (useLanguageSwitcherHandling) {
+            /**
+             * Use this to prefer English language. </br>
+             * 2021-07-07: Not yet required - only in crawler plugin: Seems like they set the language for the main website/video overview
+             * based on IP and for single videos, default is English(?)
+             */
+            br.getHeaders().put("Referer", link.getPluginPatternMatcher());
+            br.getPage("https://www." + Browser.getHost(link.getPluginPatternMatcher()) + "/change-language/en");
+        } else {
+            br.getPage(link.getPluginPatternMatcher());
+        }
+        int counter = 0;
         while (br.getRedirectLocation() != null) {
             final String redirect = br.getRedirectLocation();
-            logger.info("Setting new downloadlink: " + redirect);
             /*
              * 2019-09-30: Only set new URL if it is valid. E.g. when using xvideos2.com (= for india) in germany, it will only redirect us
              * to their mainpage!
              */
             if (this.canHandle(redirect)) {
+                logger.info("Setting new downloadlink: " + redirect);
                 link.setPluginPatternMatcher(br.getRedirectLocation());
+            } else {
+                logger.info("Progressing to redirect: " + redirect);
+            }
+            if (counter >= 10) {
+                /* This should never happen */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many redirects");
             }
             br.getPage(redirect);
+            counter += 1;
         }
         if (br.containsHTML("(This video has been deleted|Page not found|>Sorry, this video is not available\\.|>We received a request to have this video deleted|class=\"inlineError\")")) {
             logger.info("Content offline by html code");

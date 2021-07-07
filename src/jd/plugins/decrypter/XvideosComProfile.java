@@ -100,16 +100,15 @@ public class XvideosComProfile extends PluginForDecrypt {
         return Browser.getHost(param.getCryptedUrl()).equals("xvideos.red");
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
         /*
          * 2020-10-12: In general, we use the user-added domain but some are dead but the content might still be alive --> Use main plugin
          * domain for such cases
          */
         for (final String deadDomain : XvideosCom.deadDomains) {
-            if (parameter.contains(deadDomain)) {
-                parameter = parameter.replace(deadDomain + "/", this.getHost() + "/");
+            if (param.getCryptedUrl().contains(deadDomain)) {
+                param.setCryptedUrl(param.getCryptedUrl().replaceFirst(org.appwork.utils.Regex.escape(deadDomain) + "/", this.getHost() + "/"));
                 break;
             }
         }
@@ -120,13 +119,7 @@ public class XvideosComProfile extends PluginForDecrypt {
         Account account = AccountController.getInstance().getValidAccount(getHost());
         final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
         if (account != null) {
-            try {
-                ((jd.plugins.hoster.XvideosCom) plg).login(this, account, false);
-            } catch (PluginException e) {
-                logger.info("Login failure");
-                handleAccountException(account, e);
-                account = null;
-            }
+            ((jd.plugins.hoster.XvideosCom) plg).login(this, account, false);
         }
         if (accountRequired && account == null) {
             /* Account required! */
@@ -135,32 +128,39 @@ public class XvideosComProfile extends PluginForDecrypt {
             logger.info("Account available but free account and premium is required to crawl current URL");
             throw new AccountRequiredException();
         }
-        br.getPage(parameter);
+        br.getHeaders().put("Referer", param.getCryptedUrl());
+        /**
+         * Prefer English language as this website will auto translate video titles to selected language and most of all original titles are
+         * in English. </br>
+         * This will redirect to previously set Referer header.
+         */
+        br.getPage("https://www." + Browser.getHost(param.getCryptedUrl()) + "/change-language/en");
+        // br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 403) {
             /* E.g. no permission to access private favorites list of another user. */
             throw new AccountRequiredException();
         } else if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
+            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
             return decryptedLinks;
         }
         /* E.g. xvideos.com can redirect to xvideos.red when account is active. */
         final boolean premiumAccountActive = this.br.getHost().equals("xvideos.red");
-        if (parameter.matches(TYPE_FAVOURITES)) {
-            this.crawlFavourites(parameter, decryptedLinks);
-        } else if (parameter.matches(TYPE_FAVOURITES_ACCOUNT)) {
+        if (param.getCryptedUrl().matches(TYPE_FAVOURITES)) {
+            this.crawlFavourites(param.getCryptedUrl(), decryptedLinks);
+        } else if (param.getCryptedUrl().matches(TYPE_FAVOURITES_ACCOUNT)) {
             if (account == null) {
                 throw new AccountRequiredException();
             }
             crawlFavouritesAccount(param, decryptedLinks);
-        } else if (parameter.matches(".+/photos/.+")) {
-            crawlPhotos(parameter, decryptedLinks);
-        } else if ((parameter.matches(TYPE_USER) && premiumAccountActive) || param.getCryptedUrl().matches(TYPE_USER_PREMIUM)) {
+        } else if (param.getCryptedUrl().matches(".+/photos/.+")) {
+            crawlPhotos(param.getCryptedUrl(), decryptedLinks);
+        } else if ((param.getCryptedUrl().matches(TYPE_USER) && premiumAccountActive) || param.getCryptedUrl().matches(TYPE_USER_PREMIUM)) {
             crawlChannelPremium(param, decryptedLinks);
         } else {
-            crawlChannel(parameter, decryptedLinks);
+            crawlChannel(param.getCryptedUrl(), decryptedLinks);
         }
         if (decryptedLinks.size() == 0) {
-            logger.warning("Failed to find and content for: " + parameter);
+            logger.warning("Failed to find and content for: " + param.getCryptedUrl());
             return decryptedLinks;
         }
         return decryptedLinks;
@@ -180,11 +180,11 @@ public class XvideosComProfile extends PluginForDecrypt {
                 if (dupeList.add(videoID)) {
                     foundOnPage++;
                     url = br.getURL(url).toString();
-                    final String url_title = new Regex(url, "/video\\d+/([^/\\?]+)").getMatch(0);
+                    final String urlTitle = new Regex(url, "/video\\d+/([^/\\?]+)").getMatch(0);
                     final DownloadLink dl = this.createDownloadlink(url);
                     /* Save http requests */
                     dl.setAvailable(true);
-                    dl.setName(url_title + ".mp4");
+                    dl.setName(cleanUrlTitle(urlTitle) + ".mp4");
                     dl._setFilePackage(fp);
                     decryptedLinks.add(dl);
                     distribute(dl);
@@ -234,11 +234,11 @@ public class XvideosComProfile extends PluginForDecrypt {
                 final String videoID = new Regex(url, "/video(.*?)/").getMatch(0);
                 if (dupeList.add(videoID)) {
                     url = br.getURL(url).toString();
-                    final String url_title = new Regex(url, "/video\\d+/([^/\\?]+)").getMatch(0);
+                    final String urlTitle = new Regex(url, "/video\\d+/([^/\\?]+)").getMatch(0);
                     final DownloadLink dl = this.createDownloadlink(url);
-                    /* Save http requests */
+                    /* Save http requests by pre-setting online status */
                     dl.setAvailable(true);
-                    dl.setName(url_title + ".mp4");
+                    dl.setName(cleanUrlTitle(urlTitle) + ".mp4");
                     dl._setFilePackage(fp);
                     decryptedLinks.add(dl);
                     distribute(dl);
@@ -302,22 +302,18 @@ public class XvideosComProfile extends PluginForDecrypt {
                 /* Only add new URLs */
                 if (!dupeList.contains(videoID)) {
                     singleLink = "https://www." + this.br.getHost() + singleLink;
-                    final String url_name = new Regex(singleLink, "/\\d+/(?:THUMBNUM/)?(.+)").getMatch(0);
-                    final String name_temp;
+                    final String urlTitle = new Regex(singleLink, "/\\d+/(?:THUMBNUM/)?(.+)").getMatch(0);
+                    final String nameTemp;
                     final DownloadLink dl = createDownloadlink(singleLink);
                     /* Usually we will crawl a lot of URLs at this stage --> Set onlinestatus right away! */
                     dl.setAvailable(true);
                     fp.add(dl);
-                    if (url_name != null) {
-                        String clean = url_name.replaceAll("(watch_)?(free_)?(live_)?camgirls_at_(www(_|\\.))?teenhdcams(_|\\.)com$", "");
-                        clean = clean.replaceAll("(watch_)?free_at_(www(_|\\.))?teenhdcams(_|\\.)com$", "");
-                        clean = clean.replaceAll("(watch_)?full_video_at_(www(_|\\.))?teenhdcams(_|\\.)com$", "");
-                        clean = clean.replaceAll("\\.*_*$", "");
-                        name_temp = videoID + "_" + clean;
+                    if (urlTitle != null) {
+                        nameTemp = videoID + "_" + cleanUrlTitle(urlTitle);
                     } else {
-                        name_temp = videoID;
+                        nameTemp = videoID;
                     }
-                    dl.setName(name_temp + ".mp4");
+                    dl.setName(nameTemp + ".mp4");
                     /* Packagizer properties */
                     dl.setProperty("username", username);
                     decryptedLinks.add(dl);
@@ -332,13 +328,26 @@ public class XvideosComProfile extends PluginForDecrypt {
             if (!br.containsHTML("class=\"no-page next-page\"")) {
                 logger.info("Stopping because reached the end");
                 break;
+            } else {
+                pageNum++;
             }
-            pageNum++;
         } while (!this.isAbort());
         if (decryptedLinks.size() == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+    }
+
+    private String cleanUrlTitle(final String urlTitle) {
+        if (urlTitle == null) {
+            return null;
+        }
+        String clean = urlTitle.replaceAll("(watch_)?(free_)?(live_)?camgirls_at_(www(_|\\.))?teenhdcams(_|\\.)com$", "");
+        clean = clean.replaceAll("(watch_)?free_at_(www(_|\\.))?teenhdcams(_|\\.)com$", "");
+        clean = clean.replaceAll("(watch_)?full_video_at_(www(_|\\.))?teenhdcams(_|\\.)com$", "");
+        clean = clean.replaceAll("\\.*_*$", "");
+        clean = clean.replace("_", " ");
+        return clean;
     }
 
     /**
@@ -381,18 +390,18 @@ public class XvideosComProfile extends PluginForDecrypt {
                 /* Only add new URLs */
                 if (!dupeList.contains(videoID)) {
                     singleLink = "https://www." + this.br.getHost() + singleLink;
-                    final String url_name = urlRegex.getMatch(1);
-                    final String name_temp;
+                    final String urlTitle = urlRegex.getMatch(1);
+                    final String nameTemp;
                     final DownloadLink dl = createDownloadlink(singleLink);
                     /* Usually we will crawl a lot of URLs at this stage --> Set onlinestatus right away! */
                     dl.setAvailable(true);
                     fp.add(dl);
-                    if (url_name != null) {
-                        name_temp = videoID + "_" + url_name.replace("-", "");
+                    if (urlTitle != null) {
+                        nameTemp = videoID + "_" + cleanUrlTitle(urlTitle);
                     } else {
-                        name_temp = videoID;
+                        nameTemp = videoID;
                     }
-                    dl.setName(name_temp + ".mp4");
+                    dl.setName(nameTemp + ".mp4");
                     /* Packagizer properties */
                     dl.setProperty("username", username);
                     decryptedLinks.add(dl);
