@@ -283,20 +283,14 @@ public class XvideosCom extends PluginForHost {
             /* 2020-12-15: E.g. redirect to mainpage */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        /* Original title (independant from selected language) */
         String filename = br.getRegex("\"video_title_ori\"\\s*:\\s*\"(.*?)\"").getMatch(0);
         if (filename == null) {
+            /* Can be translated titles */
             filename = br.getRegex("\"video_title\"\\s*:\\s*\"(.*?)\"").getMatch(0);
-        }
-        if (filename != null) {
-            filename = Encoding.unicodeDecode(filename);
-            filename = Encoding.htmlDecode(filename);
-        }
-        if (filename == null) {
-            filename = br.getRegex("<h2>([^<>\"]*?)<span class").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<title>([^<>\"]*?)\\- XVIDEOS\\.COM</title>").getMatch(0);
             }
-            filename = Encoding.htmlDecode(filename);
         }
         {
             /* Set packagizer property */
@@ -310,8 +304,12 @@ public class XvideosCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (filename != null) {
+            filename = Encoding.unicodeDecode(filename);
+            filename = Encoding.htmlDecode(filename);
             filename = videoID + "_" + filename.trim();
             link.setFinalFileName(filename + ".mp4");
+        } else {
+            logger.warning("Failed to find nice final filename");
         }
         String videoURL = null;
         if (isDownload || !PluginJsonConfig.get(XvideosComConfig.class).isEnableFastLinkcheckForHostPlugin()) {
