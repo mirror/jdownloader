@@ -22,13 +22,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -40,6 +33,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class LbryTv extends PluginForHost {
@@ -101,10 +101,17 @@ public class LbryTv extends PluginForHost {
     private String getFID(final DownloadLink link) {
         String fid = new Regex(link.getPluginPatternMatcher(), "embed/([^/]+/[a-z0-9\\-]+)").getMatch(0);
         if (fid != null) {
+            // https://odysee.com/$/embed/xxxxx-xxxxxx/id
             return fid.replace("/", "#");
+        }
+        fid = new Regex(link.getPluginPatternMatcher(), "/(@[^:]+:[^/]+/[^/:]+:[a-z0-9\\-]+)").getMatch(0);
+        if (fid != null) {
+            // https://odysee.com/@xxxx:yyyy/xxx-xxxx:z
+            return fid.replace(":", "#");
         }
         fid = new Regex(link.getPluginPatternMatcher(), "/([^/:]+:[a-z0-9\\-]+)").getMatch(0);
         if (fid != null) {
+            // https://odysee.com/xxxxx-xxxxxx/id
             return fid.replace(":", "#");
         }
         fid = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/(.+)").getMatch(0);
@@ -113,17 +120,17 @@ public class LbryTv extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        String urlpart = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/(.+)").getMatch(0);
-        if (Encoding.isUrlCoded(urlpart)) {
-            urlpart = Encoding.htmlDecode(urlpart);
-        }
+        String urlpart = this.getFID(link);
         if (!link.isNameSet()) {
             link.setName(urlpart + ".mp4");
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("Content-Type", "application/json-rpc");
-        final String resolveString = "lbry://" + urlpart.replace(":", "#");
+        if (Encoding.isUrlCoded(urlpart)) {
+            urlpart = Encoding.htmlDecode(urlpart);
+        }
+        String resolveString = "lbry://" + urlpart.replace(":", "#");
         br.postPageRaw("https://api.lbry.tv/api/v1/proxy?m=resolve", "{\"jsonrpc\":\"2.0\",\"method\":\"resolve\",\"params\":{\"urls\":[\"" + resolveString + "\"],\"include_purchase_receipt\":true,\"include_is_my_output\":true}}");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -142,6 +149,9 @@ public class LbryTv extends PluginForHost {
         final Map<String, Object> videoInfo = (Map<String, Object>) entries.get("value");
         String filename = (String) videoInfo.get("title");
         final String stream_type = (String) videoInfo.get("stream_type");
+        if (stream_type == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (!StringUtils.isEmpty(username) && !StringUtils.isEmpty(filename)) {
             final String dateFormatted = new SimpleDateFormat("yyyy-MM-dd").format(new Date(uploadTimestamp * 1000l));
             link.setFinalFileName(dateFormatted + "_" + username + " - " + filename + ("image".equals(stream_type) ? ".jpg" : ".mp4"));
