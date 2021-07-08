@@ -22,6 +22,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -33,13 +40,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class LbryTv extends PluginForHost {
@@ -113,17 +113,17 @@ public class LbryTv extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        String urlpart = this.getFID(link);
+        String urlpart = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/(.+)").getMatch(0);
+        if (Encoding.isUrlCoded(urlpart)) {
+            urlpart = Encoding.htmlDecode(urlpart);
+        }
         if (!link.isNameSet()) {
             link.setName(urlpart + ".mp4");
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("Content-Type", "application/json-rpc");
-        if (Encoding.isUrlCoded(urlpart)) {
-            urlpart = Encoding.htmlDecode(urlpart);
-        }
-        String resolveString = "lbry://" + urlpart.replace(":", "#");
+        final String resolveString = "lbry://" + urlpart.replace(":", "#");
         br.postPageRaw("https://api.lbry.tv/api/v1/proxy?m=resolve", "{\"jsonrpc\":\"2.0\",\"method\":\"resolve\",\"params\":{\"urls\":[\"" + resolveString + "\"],\"include_purchase_receipt\":true,\"include_is_my_output\":true}}");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
