@@ -19,17 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.config.XvideosComConfig;
-import org.jdownloader.plugins.components.config.XvideosComConfig.PreferredHLSQuality;
-import org.jdownloader.plugins.components.config.XvideosComConfig.PreferredHTTPQuality;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -50,6 +39,17 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.config.XvideosComConfig;
+import org.jdownloader.plugins.components.config.XvideosComConfig.PreferredHLSQuality;
+import org.jdownloader.plugins.components.config.XvideosComConfig.PreferredHTTPQuality;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 //xvideos.com by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -223,6 +223,16 @@ public class XvideosCom extends PluginForHost {
         return requestFileInformation(link, null, false);
     }
 
+    public static void disableAutoTranslation(Plugin plugin, final String host, Browser br) throws IOException {
+        br.getHeaders().put("Accept-Language", "en-gb");
+        final Browser brc = br.cloneBrowser();
+        if (brc.getRequest() == null) {
+            brc.getPage("https://www." + host);
+        }
+        brc.getPage("https://www." + host + "/change-language/en");
+        brc.postPage("https://www.xvideos.com/account/feature-disabled", "featureid=at");
+    }
+
     private AvailableStatus requestFileInformation(final DownloadLink link, Account account, final boolean isDownload) throws Exception {
         final String urlTitle = getURLTitle(link);
         if (!link.isNameSet() && urlTitle != null) {
@@ -241,18 +251,15 @@ public class XvideosCom extends PluginForHost {
                 this.login(this, account, false);
             }
         }
-        final boolean useLanguageSwitcherHandling = false;
+        final boolean useLanguageSwitcherHandling = true;
         if (useLanguageSwitcherHandling) {
             /**
-             * Use this to prefer English language. </br>
-             * 2021-07-07: Not yet required - only in crawler plugin: Seems like they set the language for the main website/video overview
-             * based on IP and for single videos, default is English(?)
+             * Use this to prefer English language. </br> 2021-07-07: Not yet required - only in crawler plugin: Seems like they set the
+             * language for the main website/video overview based on IP and for single videos, default is English(?)
              */
-            br.getHeaders().put("Referer", link.getPluginPatternMatcher());
-            br.getPage("https://www." + Browser.getHost(link.getPluginPatternMatcher()) + "/change-language/en");
-        } else {
-            br.getPage(link.getPluginPatternMatcher());
+            disableAutoTranslation(this, Browser.getHost(link.getPluginPatternMatcher()), br);
         }
+        br.getPage(link.getPluginPatternMatcher());
         int counter = 0;
         while (br.getRedirectLocation() != null) {
             final String redirect = br.getRedirectLocation();
@@ -316,8 +323,7 @@ public class XvideosCom extends PluginForHost {
             final String hlsURL = getVideoHLSMaster();
             /**
              * 2021-01-27: This website can "shadow ban" users who download "too much". They will then deliver all videos in 240p only. This
-             * is an attempt to detect this.</br>
-             * See also: https://board.jdownloader.org/showthread.php?t=86587
+             * is an attempt to detect this.</br> See also: https://board.jdownloader.org/showthread.php?t=86587
              */
             if (PluginJsonConfig.get(XvideosComConfig.class).isTryToRecognizeLimit() && isDownload && StringUtils.isEmpty(hlsURL)) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Low quality block active", 60 * 60 * 1000l);
@@ -555,6 +561,7 @@ public class XvideosCom extends PluginForHost {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
+                br.getHeaders().put("Accept-Language", "en-gb");
                 final Cookies cookiesUser = Cookies.parseCookiesFromJsonString(account.getPass());
                 final Cookies cookiesFree = account.loadCookies("");
                 final Cookies cookiesPremium = account.loadCookies("premium");
@@ -701,8 +708,8 @@ public class XvideosCom extends PluginForHost {
     }
 
     /**
-     * Only use this when on this page: https://www.xvideos.red/account/premium </br>
-     * 2021-03-08: Free users cannot even view the account panel so checking for any elements in there is good enough as premium indicator!
+     * Only use this when on this page: https://www.xvideos.red/account/premium </br> 2021-03-08: Free users cannot even view the account
+     * panel so checking for any elements in there is good enough as premium indicator!
      */
     private static boolean isPremium(final Browser br) {
         /*
