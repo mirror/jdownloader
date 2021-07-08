@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import org.appwork.utils.DebugMode;
+import org.appwork.utils.Time;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
@@ -70,12 +71,20 @@ public class MylinkLi extends antiDDoSForDecrypt {
          * Contains pretty much the same stuff as the first form and again our captcha result. This time, parameter "hash" is not empty.
          * "hash" usually equals our Cookie "PHPSESSID".
          */
-        Form captchaFollowupForm = br.getFormbyProperty("id", "reCaptchaForm");
-        if (captchaFollowupForm == null) {
+        Form captchaForm2 = br.getFormbyProperty("id", "reCaptchaForm");
+        if (captchaForm2 == null) {
             logger.warning("Failed to find captchaFollowupForm");
             return null;
         }
-        captchaFollowupForm.put("g-recaptcha-response", recaptchaV2Response);
+        /* 2nd captcha - this time, invisible reCaptchaV2 */
+        final long timeBefore = Time.systemIndependentCurrentJVMTimeMillis();
+        final String recaptchaV2Response_2 = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br) {
+            @Override
+            public TYPE getType() {
+                return TYPE.INVISIBLE;
+            }
+        }.getToken();
+        captchaForm2.put("g-recaptcha-response", recaptchaV2Response_2);
         getAndSetSpecialCookie(this.br);
         // {
         // /* Debug test */
@@ -85,14 +94,21 @@ public class MylinkLi extends antiDDoSForDecrypt {
         // // captchaFollowupForm.put("hash", "");
         // captchaFollowupForm.put("g-recaptcha-response", recaptchaV2Response);
         // }
-        this.sleep(5001l, param);
-        submitForm(captchaFollowupForm);
+        /* If the user needs more than 5 seconds to solve that captcha we don't have to wait :) */
+        final long timeWait = 5100;
+        final long waitLeft = timeWait - (Time.systemIndependentCurrentJVMTimeMillis() - timeBefore);
+        if (waitLeft > 0) {
+            this.sleep(waitLeft, param);
+        }
+        // this.sleep(5001l, param);
+        submitForm(captchaForm2);
         // if (br.toString().length() < 100) {
         // /* 2019-08-14: Empty page: Offline or website broken?? Same happens via browser! */
         // decryptedLinks.add(this.createOfflinelink(parameter));
         // return decryptedLinks;
         // }
         final Form nextForm = br.getFormbyKey("share");
+        getAndSetSpecialCookie(br);
         this.submitForm(nextForm);
         // Form shareForm = br.getFormbyProperty("id", "share");
         // {
@@ -118,6 +134,8 @@ public class MylinkLi extends antiDDoSForDecrypt {
             if (goForm == null) {
                 break;
             } else {
+                getAndSetSpecialCookie(br);
+                goForm.remove("Continue");
                 submitForm(goForm);
             }
         }
@@ -132,7 +150,10 @@ public class MylinkLi extends antiDDoSForDecrypt {
     private void getAndSetSpecialCookie(final Browser br) {
         final String specialCookie = br.getRegex("\"/hkz\"\\);setCookie\\(\"([a-z0-9]+)\",1,").getMatch(0);
         if (specialCookie != null) {
+            logger.info("Found new specialCookie: " + specialCookie);
             br.setCookie(br.getHost(), specialCookie, "1");
+        } else {
+            logger.info("Failed to find new specialCookie");
         }
     }
 }
