@@ -22,9 +22,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.appwork.utils.DebugMode;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -43,6 +40,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.XvideosCom;
+
+import org.appwork.utils.DebugMode;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XvideosComProfile extends PluginForDecrypt {
@@ -128,14 +128,8 @@ public class XvideosComProfile extends PluginForDecrypt {
             logger.info("Account available but free account and premium is required to crawl current URL");
             throw new AccountRequiredException();
         }
-        br.getHeaders().put("Referer", param.getCryptedUrl());
-        /**
-         * Prefer English language as this website will auto translate video titles to selected language and most of all original titles are
-         * in English. </br>
-         * This will redirect to previously set Referer header.
-         */
-        br.getPage("https://www." + Browser.getHost(param.getCryptedUrl()) + "/change-language/en");
-        // br.getPage(param.getCryptedUrl());
+        XvideosCom.disableAutoTranslation(this, Browser.getHost(param.getCryptedUrl()), br);
+        br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 403) {
             /* E.g. no permission to access private favorites list of another user. */
             throw new AccountRequiredException();
