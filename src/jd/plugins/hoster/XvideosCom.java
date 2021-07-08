@@ -226,11 +226,12 @@ public class XvideosCom extends PluginForHost {
     public static void disableAutoTranslation(Plugin plugin, final String host, Browser br) throws IOException {
         br.getHeaders().put("Accept-Language", "en-gb");
         final Browser brc = br.cloneBrowser();
+        brc.setFollowRedirects(true);
         if (brc.getRequest() == null) {
             brc.getPage("https://www." + host);
         }
-        brc.getPage("https://www." + host + "/change-language/en");
-        brc.postPage("https://www.xvideos.com/account/feature-disabled", "featureid=at");
+        brc.getPage("/change-language/en");
+        brc.postPage("/feature-disabled", "featureid=at");
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, Account account, final boolean isDownload) throws Exception {
