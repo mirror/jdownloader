@@ -92,12 +92,11 @@ public class MylinkLi extends antiDDoSForDecrypt {
         if (waitLeft > 0) {
             this.sleep(waitLeft, param);
         }
-        // this.sleep(5001l, param);
         submitForm(captchaForm2);
         final Form shareForm = br.getFormbyKey("share");
         getAndSetSpecialCookie(br);
         this.submitForm(shareForm);
-        /* A lot of Forms may appear here - all to force the user to share the link, bookmark their page and so on ... */
+        /* A lot of Forms may appear here - all to force the user to share the link, bookmark their page, click on ads and so on ... */
         br.setFollowRedirects(false);
         Form goForm = null;
         for (int i = 0; i <= 10; i++) {
