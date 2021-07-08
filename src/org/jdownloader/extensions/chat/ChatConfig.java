@@ -1,12 +1,12 @@
 package org.jdownloader.extensions.chat;
 
+import jd.plugins.ExtensionConfigInterface;
+
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.SpinnerValidator;
-
-import jd.plugins.ExtensionConfigInterface;
 
 public interface ChatConfig extends ExtensionConfigInterface {
     @DefaultStringValue("#jDownloader")
@@ -24,11 +24,11 @@ public interface ChatConfig extends ExtensionConfigInterface {
 
     void setIrcPort(int port);
 
-    @DefaultStringValue("irc.freenode.net")
+    @DefaultStringValue("irc.libera.chat")
     @AboutConfig
-    String getIrcServer();
+    String getIrcServer2021();
 
-    void setIrcServer(String server);
+    void setIrcServer2021(String server);
 
     @AboutConfig
     String getNick();

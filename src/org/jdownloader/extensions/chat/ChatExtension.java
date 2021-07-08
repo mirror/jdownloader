@@ -599,7 +599,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
     void initIRC() {
         this.NAMES.clear();
         for (int i = 0; i < 20; i++) {
-            final String host = getSettings().getIrcServer();
+            final String host = getSettings().getIrcServer2021();
             final int port = getSettings().getIrcPort();
             final String pass = null;
             final String nick = this.getNickname();
