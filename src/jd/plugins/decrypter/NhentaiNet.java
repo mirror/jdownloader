@@ -42,7 +42,7 @@ import jd.plugins.components.PluginJSonUtils;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nhentai.net" }, urls = { "https?://(?:www\\.)?nhentai\\.net/g/(\\d+)/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nhentai.net" }, urls = { "https?://(?:www\\.)?nhentai\\.(?:net|to)/g/(\\d+)/" })
 public class NhentaiNet extends antiDDoSForDecrypt {
     public NhentaiNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -57,6 +57,7 @@ public class NhentaiNet extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String galleryID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        br.setFollowRedirects(true);
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

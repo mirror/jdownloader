@@ -85,46 +85,18 @@ public class MylinkLi extends antiDDoSForDecrypt {
             }
         }.getToken();
         captchaForm2.put("g-recaptcha-response", recaptchaV2Response_2);
-        getAndSetSpecialCookie(this.br);
-        // {
-        // /* Debug test */
-        // captchaFollowupForm = new Form();
-        // captchaFollowupForm.setMethod(MethodType.POST);
-        // captchaFollowupForm.put("uri", linkID);
-        // // captchaFollowupForm.put("hash", "");
-        // captchaFollowupForm.put("g-recaptcha-response", recaptchaV2Response);
-        // }
+        // getAndSetSpecialCookie(this.br);
         /* If the user needs more than 5 seconds to solve that captcha we don't have to wait :) */
-        final long timeWait = 5100;
+        final long timeWait = 6100;
         final long waitLeft = timeWait - (Time.systemIndependentCurrentJVMTimeMillis() - timeBefore);
         if (waitLeft > 0) {
             this.sleep(waitLeft, param);
         }
         // this.sleep(5001l, param);
         submitForm(captchaForm2);
-        // if (br.toString().length() < 100) {
-        // /* 2019-08-14: Empty page: Offline or website broken?? Same happens via browser! */
-        // decryptedLinks.add(this.createOfflinelink(parameter));
-        // return decryptedLinks;
-        // }
-        final Form nextForm = br.getFormbyKey("share");
+        final Form shareForm = br.getFormbyKey("share");
         getAndSetSpecialCookie(br);
-        this.submitForm(nextForm);
-        // Form shareForm = br.getFormbyProperty("id", "share");
-        // {
-        // /* Debug test */
-        // if (shareForm == null) {
-        // shareForm = new Form();
-        // shareForm.setMethod(MethodType.POST);
-        // shareForm.put("share", "myl.li/" + linkID);
-        // shareForm.put("uri", linkID);
-        // }
-        // }
-        // if (shareForm == null) {
-        // logger.warning("Failed to find finalForm");
-        // return null;
-        // }
-        // submitForm(shareForm);
+        this.submitForm(shareForm);
         /* A lot of Forms may appear here - all to force the user to share the link, bookmark their page and so on ... */
         br.setFollowRedirects(false);
         Form goForm = null;
@@ -135,8 +107,14 @@ public class MylinkLi extends antiDDoSForDecrypt {
                 break;
             } else {
                 getAndSetSpecialCookie(br);
-                goForm.remove("Continue");
+                // goForm.remove("Continue");
                 submitForm(goForm);
+                /* 2021-07-08: Attempt to avoid strange error/adblock detection stuff hmm unsure about that... but it works! */
+                if (br.containsHTML("<title>404</title>")) {
+                    /* This should only happen once */
+                    logger.info("Trying 404 avoidance...");
+                    submitForm(goForm);
+                }
             }
         }
         final String finallink = br.getRedirectLocation();
