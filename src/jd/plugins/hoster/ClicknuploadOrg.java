@@ -18,14 +18,14 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.DebugMode;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.appwork.utils.DebugMode;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ClicknuploadOrg extends XFileSharingProBasic {
@@ -44,7 +44,7 @@ public class ClicknuploadOrg extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "clicknupload.co", "clicknupload.org", "clicknupload.com", "clicknupload.me", "clicknupload.link" });
+        ret.add(new String[] { "clicknupload.cc", "clicknupload.co", "clicknupload.org", "clicknupload.com", "clicknupload.me", "clicknupload.link" });
         return ret;
     }
 
