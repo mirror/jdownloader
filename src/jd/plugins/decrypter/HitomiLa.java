@@ -17,14 +17,14 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.encoding.URLEncode;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -39,6 +39,11 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  *
@@ -123,6 +128,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
             numberOfPages = ressourcelist.size();
             final DecimalFormat df = numberOfPages > 999 ? new DecimalFormat("0000") : numberOfPages > 99 ? new DecimalFormat("000") : new DecimalFormat("00");
             // boolean checked = false;
+            final Map<String, Integer> dupCheck = new HashMap<String, Integer>();
             for (final Object picO : ressourcelist) {
                 ++i;
                 final Map<String, String> picInfo = (Map<String, String>) picO;
@@ -149,28 +155,12 @@ public class HitomiLa extends antiDDoSForDecrypt {
                     final String last_char = hash.substring(hash.length() - 1);
                     url = String.format("https://%s.hitomi.la/%s/%s/%s/%s.%s", imghost, type, last_char, last_char_two, hash, ext);
                 }
-                // if (!checked) {
-                // HeadRequest head = br.createHeadRequest(url);
-                // URLConnectionAdapter con = br.cloneBrowser().openRequestConnection(head);
-                // try {
-                // if (con.isOK() && StringUtils.containsIgnoreCase(con.getContentType(), "image")) {
-                // checked = true;
-                // } else {
-                // con.disconnect();
-                // head = br.createHeadRequest("https://0a.hitomi.la/galleries" + singleLink);
-                // con = br.cloneBrowser().openRequestConnection(head);
-                // if (con.isOK() && StringUtils.containsIgnoreCase(con.getContentType(), "image")) {
-                // checked = true;
-                // imghost = "0a";
-                // } else {
-                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                // }
-                // }
-                // } finally {
-                // con.disconnect();
-                // }
-                // }
+                final Integer existing = dupCheck.put(url, i);
+                if (existing != null) {
+                    logger.info("Dupe URL:" + url + "|" + existing + "," + i);
+                }
                 final DownloadLink dl = createDownloadlink("directhttp://" + url);
+                dl.setLinkID("hitomi.la://" + gallery_id + "/" + i);
                 dl.setProperty("Referer", br.getURL());
                 dl.setProperty("requestType", "GET");
                 dl.setAvailable(true);
@@ -216,31 +206,65 @@ public class HitomiLa extends antiDDoSForDecrypt {
         return String.valueOf((char) (97 + o));
     }
 
-    private String subdomain_from_url(String url, String base) {
-        String retval = "b";
-        if (base != null) {
-            retval = base;
-        }
-        int number_of_frontends = 3;
-        final Matcher m = SUBDOMAIN_FROM_URL_PATTERN.matcher(url);
-        if (!m.find()) {
-            return "a";
-        }
-        try {
-            int g = Integer.parseInt(m.group(1), 16);
-            if (g < 0x70) {
-                number_of_frontends = 2;
+    private ScriptEngine engine = null;
+
+    private String subdomain_from_url(String url, String base) throws Exception {
+        if (true) {
+            if (engine == null) {
+                Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(true);
+                brc.getPage("https://ltn.hitomi.la/common.js");
+                final String js = brc.getRegex("(function.*?)function\\s*show_loading").getMatch(0);
+                if (StringUtils.isEmpty(js)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
+                engine = manager.getEngineByName("javascript");
+                try {
+                    engine.eval(js);
+                } catch (final Exception e) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
+                }
             }
-            if (g < 0x49) {
-                g = 1;
+            try {
+                if (base != null) {
+                    engine.eval("var result=subdomain_from_url('" + url + "','" + base + "');");
+                } else {
+                    engine.eval("var result=subdomain_from_url('" + url + "');");
+                }
+                final String result = engine.get("result").toString();
+                return result;
+            } catch (final Exception e) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
             }
-            retval = subdomain_from_galleryid(g, number_of_frontends) + retval;
-        } catch (NumberFormatException ignore) {
+        } else {
+            String retval = "b";
+            if (base != null) {
+                retval = base;
+            }
+            int number_of_frontends = 3;
+            final Matcher m = SUBDOMAIN_FROM_URL_PATTERN.matcher(url);
+            if (!m.find()) {
+                return "a";
+            }
+            try {
+                int g = Integer.parseInt(m.group(1), 16);
+                int o = 0;
+                if (g < 0x80) {
+                    o = 1;
+                }
+                if (g < 0x40) {
+                    o = 2;
+                }
+                // retval = subdomain_from_galleryid(g, number_of_frontends) + retval;
+                retval = String.valueOf((char) (97 + o)) + retval;
+            } catch (NumberFormatException ignore) {
+            }
+            return retval;
         }
-        return retval;
     }
 
-    private String url_from_url(String url, String base) {
+    private String url_from_url(String url, String base) throws Exception {
         return URL_FROM_URL_PATTERN.matcher(url).replaceAll("//" + subdomain_from_url(url, base) + ".hitomi.la/");
     }
 
@@ -256,13 +280,13 @@ public class HitomiLa extends antiDDoSForDecrypt {
         return array[array.length - 1];
     }
 
-    private String url_from_hash(String galleryid, Map<String, String> image, String dir, String ext) {
+    private String url_from_hash(String galleryid, Map<String, String> image, String dir, String ext) throws Exception {
         ext = isNotBlank(ext) ? ext : (isNotBlank(dir) ? dir : last(image.get("name").split("\\.")));
         dir = isNotBlank(dir) ? dir : "images";
         return "https://a.hitomi.la/" + dir + '/' + full_path_from_hash(image.get("hash")) + '.' + ext;
     }
 
-    private String url_from_url_from_hash(String galleryid, Map<String, String> image, String dir, String ext, String base) {
+    private String url_from_url_from_hash(String galleryid, Map<String, String> image, String dir, String ext, String base) throws Exception {
         return url_from_url(url_from_hash(galleryid, image, dir, ext), base);
     }
 
