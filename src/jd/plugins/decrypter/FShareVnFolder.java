@@ -64,7 +64,7 @@ public class FShareVnFolder extends PluginForDecrypt {
             if (StringUtils.isEmpty(fpName)) {
                 fpName = folderid;
             }
-            FilePackage fp = FilePackage.getInstance();
+            final FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
             for (final Object linkO : ressourcelist) {
                 final Map<String, Object> linkInfo = (Map<String, Object>) linkO;
@@ -73,6 +73,7 @@ public class FShareVnFolder extends PluginForDecrypt {
                 if (dupe.add(linkcode)) {
                     final String mimetype = (String) linkInfo.get("mimetype");
                     final String filename = (String) linkInfo.get("name");
+                    final String description = (String) linkInfo.get("descrption");
                     String currentFolderPath = (String) linkInfo.get("path");
                     final long size = JavaScriptEngineFactory.toLong(linkInfo.get("size"), 0);
                     if (StringUtils.isEmpty(linkcode)) {
@@ -90,8 +91,13 @@ public class FShareVnFolder extends PluginForDecrypt {
                     } else {
                         /* File */
                         dl = this.createDownloadlink("https://www." + this.getHost() + "/file/" + linkcode);
-                        dl.setDownloadSize(size);
-                        dl.setName(filename);
+                        if (size > 0) {
+                            dl.setVerifiedFileSize(size);
+                        }
+                        if (!StringUtils.isEmpty(description)) {
+                            dl.setComment(description);
+                        }
+                        dl.setFinalFileName(filename);
                         dl.setAvailable(true);
                         dl._setFilePackage(fp);
                     }
