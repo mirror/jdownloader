@@ -25,15 +25,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -57,6 +48,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/file/([0-9A-Z]+)" })
 public class FShareVn extends PluginForHost {
@@ -379,7 +380,7 @@ public class FShareVn extends PluginForHost {
         br.setReadTimeout(120 * 1000);
         br.setAllowedResponseCodes(new int[] { 201, 400, 405, 406, 410, 424, 500 });
         /* Important! According to their API docs, API key ("App Key") is bound to User-Agent! */
-        br.setHeader("User-Agent", "TODO");
+        br.setHeader("User-Agent", "JDownloader-D0OCY1");
     }
 
     @Override
@@ -784,7 +785,7 @@ public class FShareVn extends PluginForHost {
                 map.put("user_email", account.getUser());
                 map.put("password", account.getPass());
                 // map.put("app_key", "L2S7R6ZMagggC5wWkQhX2+aDi467PPuftWUMRFSn"); --> Their old App API key
-                map.put("app_key", "TODO");
+                map.put("app_key", new String(HexFormatter.hexToByteArray("644D6E714D4D5A4D556E4E355970764B454E614568645151356A784471646474")));
                 /*
                  * Important! Use separate Browser instance! Otherwise e.g. remaining Referer will cause error response 400 on next request!
                  */
@@ -1025,6 +1026,7 @@ public class FShareVn extends PluginForHost {
                     return dllink;
                 }
             } catch (final Exception e) {
+                logger.log(e);
                 link.setProperty(property, Property.NULL);
                 return null;
             } finally {
