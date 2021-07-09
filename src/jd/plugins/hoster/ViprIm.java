@@ -18,13 +18,14 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ViprIm extends XFileSharingProBasic {
@@ -47,6 +48,15 @@ public class ViprIm extends XFileSharingProBasic {
         return ret;
     }
 
+    @Override
+    public String getFUIDFromURL(DownloadLink dl) {
+        String ret = super.getFUIDFromURL(dl);
+        if (ret == null) {
+            ret = new Regex(dl.getPluginPatternMatcher(), "/(?:th|i)/\\d+/([a-z0-9]{12})").getMatch(0);
+        }
+        return ret;
+    }
+
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
     }
@@ -57,7 +67,15 @@ public class ViprIm extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            // todo: add optional plugin settings support for the direct images /i/ (see getFUIDFromURL) , optional because ppl might want
+            // to avoid the plugin and
+            // use directhttp
+            // instead
+            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "(" + XFileSharingProBasic.getDefaultAnnotationPatternPart() + "|/(?:th|i)/\\d+/[a-z0-9]{12})");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
