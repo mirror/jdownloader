@@ -47,7 +47,7 @@ public class FShareVnFolder extends PluginForDecrypt {
         /* Important or we'll get XML ;) */
         br.getHeaders().put("Accept", "application/json, text/plain, */*");
         br.getPage("https://www." + getHost() + "/api/v3/files/folder?linkcode=" + folderid + "&sort=type,name");
-        while (!isAbort()) {
+        do {
             final Map<String, Object> map = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final List<Object> ressourcelist = (List<Object>) map.get("items");
             if (br.getHttpConnection().getResponseCode() == 404) {
@@ -117,11 +117,10 @@ public class FShareVnFolder extends PluginForDecrypt {
                 }
             }
             break;
-        }
+        } while (!this.isAbort());
         return decryptedLinks;
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
