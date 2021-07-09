@@ -15,7 +15,7 @@ import org.jdownloader.plugins.config.Type;
 public interface FileCryptConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultIntValue(0)
-    @SpinnerValidator(min = 0, max = 10, step = 1)
+    @SpinnerValidator(min = 0, max = 6, step = 1)
     @Order(10)
     @DescriptionForConfigEntry("Define max number of retries to avoid cutcaptcha")
     int getMaxCutCaptchaAvoidanceRetries();

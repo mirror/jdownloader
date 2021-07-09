@@ -24,6 +24,21 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.cutcaptcha.CaptchaHelperCrawlerPluginCutCaptcha;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.FileCryptConfig;
+import org.jdownloader.plugins.components.config.FileCryptConfig.CrawlMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -47,21 +62,6 @@ import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.JDUtilities;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.captcha.v2.challenge.cutcaptcha.CaptchaHelperCrawlerPluginCutCaptcha;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.FileCryptConfig;
-import org.jdownloader.plugins.components.config.FileCryptConfig.CrawlMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecrypt.cc" }, urls = { "https?://(?:www\\.)?filecrypt\\.(?:cc|co)/Container/([A-Z0-9]{10,16})(\\.html\\?mirror=\\d+)?" })
 public class FileCryptCc extends PluginForDecrypt {
     @Override
@@ -73,62 +73,69 @@ public class FileCryptCc extends PluginForDecrypt {
         super(wrapper);
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        br = new Browser();
-        br.setLoadLimit(br.getLoadLimit() * 2);
-        final String agent = UserAgents.stringUserAgent(BrowserName.Chrome);
-        br.getHeaders().put("User-Agent", agent);
-        br.getHeaders().put("Accept-Encoding", "gzip, deflate, sdch");
-        br.getHeaders().put("Accept-Language", "en");
-        br.setFollowRedirects(true);
-        FilePackage fp = null;
-        br.addAllowedResponseCodes(500);// submit captcha responds with 500 code
-        // not all captcha types are skipable (recaptchav2 isn't). I tried with new response value - raztoki
-        final String mirrorIdFromURL = UrlQuery.parse(parameter).get("mirror");
-        if (mirrorIdFromURL != null) {
-            getPage(parameter);
-        } else {
-            getPage(parameter + "/.html");
+        /*
+         * Not all captcha types change when re-loading page without cookies (recaptchav2 isn't). I tried with new response value - raztoki
+         */
+        final String mirrorIdFromURL = UrlQuery.parse(param.getCryptedUrl()).get("mirror");
+        if (mirrorIdFromURL == null) {
+            param.setCryptedUrl(param.getCryptedUrl() + ".html");
         }
-        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().matches("https?://[^/]+/404\\.html.*")) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
-        }
-        // Separate password and captcha. this is easier for count reasons!
-        int counter = -1;
-        final int retry = 10;
-        final List<String> passwords = getPreSetPasswords();
-        final HashSet<String> avoidRetry = new HashSet<String>();
-        final String lastUsedPassword = this.getPluginConfig().getStringProperty("last_used_password", null);
-        if (StringUtils.isNotEmpty(lastUsedPassword)) {
-            passwords.add(0, lastUsedPassword);
-        }
-        String usedPassword = null;
-        while (counter++ < retry && containsPassword()) {
-            Form passwordForm = null;
-            final Form[] allForms = br.getForms();
-            if (allForms != null && allForms.length != 0) {
-                for (final Form aForm : allForms) {
-                    if (aForm.containsHTML("password")) {
-                        passwordForm = aForm;
-                        break;
+        int cutCaptchaRetryIndex = -1;
+        final int cutCaptchaAvoidanceMaxRetries = PluginJsonConfig.get(this.getConfigInterface()).getMaxCutCaptchaAvoidanceRetries();
+        cutcaptchaAvoidanceLoop: while (cutCaptchaRetryIndex++ <= cutCaptchaAvoidanceMaxRetries && !this.isAbort()) {
+            logger.info("cutcaptchaAvoidanceLoop " + (cutCaptchaRetryIndex + 1) + " / " + (cutCaptchaAvoidanceMaxRetries + 1));
+            br.setLoadLimit(br.getLoadLimit() * 2);
+            br.getHeaders().put("Accept-Encoding", "gzip, deflate, sdch");
+            /* Website has no language selection as it auto-chooses based on IP and/or URL but we can force English language. */
+            br.setCookie(Browser.getHost(param.getCryptedUrl()), "lang", "en");
+            br.setFollowRedirects(true);
+            br.addAllowedResponseCodes(500);// submit captcha responds with 500 code
+            /* Use new User-Agent for each attempt */
+            br.getHeaders().put("User-Agent", UserAgents.stringUserAgent(BrowserName.Chrome));
+            this.getPage(param.getCryptedUrl());
+            if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().matches("(?i)https?://[^/]+/404\\.html.*")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            /* Separate password and captcha. this is easier for count reasons! */
+            int passwordCounter = 0;
+            final int maxPasswordRetries = 3;
+            final List<String> passwords = getPreSetPasswords();
+            final HashSet<String> avoidRetry = new HashSet<String>();
+            final String lastUsedPassword = this.getPluginConfig().getStringProperty("last_used_password");
+            if (StringUtils.isNotEmpty(lastUsedPassword)) {
+                passwords.add(0, lastUsedPassword);
+            }
+            int generalLoopCounter = 0;
+            String usedPassword = null;
+            /* Password of which we know that it is correct */
+            passwordLoop: while (passwordCounter++ < maxPasswordRetries && containsPassword()) {
+                logger.info("Password attempt: " + passwordCounter + " / " + maxPasswordRetries);
+                Form passwordForm = null;
+                final Form[] allForms = br.getForms();
+                if (allForms != null && allForms.length != 0) {
+                    for (final Form aForm : allForms) {
+                        if (aForm.containsHTML("password")) {
+                            passwordForm = aForm;
+                            break;
+                        }
                     }
                 }
-            }
-            /* If there is captcha + password, password comes first, then captcha! */
-            if (passwordForm != null) {
+                /* If there is captcha + password, password comes first, then captcha! */
+                if (passwordForm == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Could not find pasword form");
+                }
                 final String passCode;
                 if (passwords.size() > 0) {
                     passCode = passwords.remove(0);
                     if (!avoidRetry.add(passCode)) {
-                        counter--;
+                        passwordCounter--;
+                        logger.info("Checking stored password: " + passCode);
                         continue;
                     }
                 } else {
@@ -146,145 +153,156 @@ public class FileCryptCc extends PluginForDecrypt {
                 usedPassword = passCode;
                 passwordForm.put("password", Encoding.urlEncode(passCode));
                 submitForm(passwordForm);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Could not find pasword form");
-            }
-        }
-        if (usedPassword != null) {
-            this.getPluginConfig().setProperty("last_used_password", usedPassword);
-        }
-        if (counter == retry && containsPassword()) {
-            throw new DecrypterException(DecrypterException.PASSWORD);
-        }
-        // captcha time!
-        counter = -1;
-        int cutCaptchaTries = 0;
-        final int cutCaptchaAvoidanceMaxRetries = PluginJsonConfig.get(this.getConfigInterface()).getMaxCutCaptchaAvoidanceRetries();
-        while (counter++ < retry && containsCaptcha()) {
-            Form captchaForm = null;
-            final Form[] allForms = br.getForms();
-            if (allForms != null && allForms.length != 0) {
-                for (final Form aForm : allForms) {
-                    if (aForm.containsHTML("captcha")) {
-                        captchaForm = aForm;
-                        break;
-                    }
+                if (generalLoopCounter > 0) {
+                    /* Additional fail-safe */
+                    logger.info("Stepping out of password loop because the password we got is supposed to be the correct one: " + usedPassword);
+                    break;
+                } else if (this.isAbort()) {
+                    return decryptedLinks;
                 }
             }
-            final String captcha = captchaForm != null ? captchaForm.getRegex("((https?://[^<>\"']*?)?/captcha/[^<>\"']*?)\"").getMatch(0) : null;
-            if (captcha != null && captcha.contains("circle.php")) {
-                final File file = this.getLocalCaptchaFile();
-                getCaptchaBrowser(br).getDownload(file, captcha);
-                final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, null, "Click on the open circle");
-                if (cp == null) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-                captchaForm.put("button.x", String.valueOf(cp.getX()));
-                captchaForm.put("button.y", String.valueOf(cp.getY()));
-                captchaForm.remove("button");
-                submitForm(captchaForm);
-            } else if (captchaForm != null && captchaForm.containsHTML("=\"g-recaptcha\"")) {
-                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-                captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                submitForm(captchaForm);
-            } else if (captchaForm != null && captchaForm.containsHTML("solvemedia\\.com/papi/")) {
-                final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-                File cf = null;
-                try {
-                    cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                } catch (final Exception e) {
-                    if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
-                        throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+            if (passwordCounter == maxPasswordRetries && containsPassword()) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            } else if (usedPassword != null) {
+                logger.info("Saving correct password for future usage: " + usedPassword);
+                this.getPluginConfig().setProperty("last_used_password", usedPassword);
+            }
+            /* Process captcha */
+            int captchaCounter = -1;
+            final int maxCaptchaRetries = 10;
+            captchaLoop: while (captchaCounter++ < maxCaptchaRetries && containsCaptcha() && !this.isAbort()) {
+                logger.info("Captcha loop: " + captchaCounter + " / " + maxCaptchaRetries);
+                Form captchaForm = null;
+                final Form[] allForms = br.getForms();
+                if (allForms != null && allForms.length != 0) {
+                    for (final Form aForm : allForms) {
+                        if (aForm.containsHTML("captcha")) {
+                            captchaForm = aForm;
+                            break;
+                        }
                     }
-                    throw e;
                 }
-                final String code = getCaptchaCode("solvemedia", cf, param);
-                if (StringUtils.isEmpty(code)) {
-                    if (counter + 1 < retry) {
-                        continue;
-                    } else {
+                final String captcha = captchaForm != null ? captchaForm.getRegex("((https?://[^<>\"']*?)?/captcha/[^<>\"']*?)\"").getMatch(0) : null;
+                if (captcha != null && captcha.contains("circle.php")) {
+                    final File file = this.getLocalCaptchaFile();
+                    getCaptchaBrowser(br).getDownload(file, captcha);
+                    final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, null, "Click on the open circle");
+                    if (cp == null) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
-                }
-                final String chid = sm.getChallenge(code);
-                captchaForm.put("adcopy_response", Encoding.urlEncode(code));
-                captchaForm.put("adcopy_challenge", chid);
-                submitForm(captchaForm);
-            } else if (captchaForm != null && captchaForm.containsHTML("capcode")) {
-                Challenge<String> challenge = new KeyCaptcha(this, br, createDownloadlink(parameter)).createChallenge(this);
-                try {
-                    final String result = handleCaptchaChallenge(challenge);
-                    if (challenge.isRefreshTrigger(result)) {
-                        continue;
+                    captchaForm.put("button.x", String.valueOf(cp.getX()));
+                    captchaForm.put("button.y", String.valueOf(cp.getY()));
+                    captchaForm.remove("button");
+                    submitForm(captchaForm);
+                } else if (captchaForm != null && captchaForm.containsHTML("=\"g-recaptcha\"")) {
+                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                    captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    submitForm(captchaForm);
+                } else if (captchaForm != null && captchaForm.containsHTML("solvemedia\\.com/papi/")) {
+                    final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
+                    File cf = null;
+                    try {
+                        cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                    } catch (final Exception e) {
+                        if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                            throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                        }
+                        throw e;
                     }
-                    if (StringUtils.isEmpty(result)) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
-                    if ("CANCEL".equals(result)) {
-                        throw new PluginException(LinkStatus.ERROR_FATAL);
-                    }
-                    captchaForm.put("capcode", Encoding.urlEncode(result));
-                } catch (CaptchaException e) {
-                    e.throwMeIfNoRefresh();
-                    continue;
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                    continue;
-                }
-                submitForm(captchaForm);
-            } else if (StringUtils.containsIgnoreCase(captcha, "cutcaptcha")) {
-                if (!Application.isHeadless() && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                    // current implementation via localhost no longer working
-                    final String cutcaptcha = new CaptchaHelperCrawlerPluginCutCaptcha(this, br, "SAs61IAI").getToken();
-                    if (StringUtils.isEmpty(cutcaptcha)) {
-                        if (counter + 1 < retry) {
+                    final String code = getCaptchaCode("solvemedia", cf, param);
+                    if (StringUtils.isEmpty(code)) {
+                        if (captchaCounter + 1 < maxCaptchaRetries) {
                             continue;
                         } else {
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         }
                     }
-                    captchaForm.put("cap_token", cutcaptcha);
+                    final String chid = sm.getChallenge(code);
+                    captchaForm.put("adcopy_response", Encoding.urlEncode(code));
+                    captchaForm.put("adcopy_challenge", chid);
+                    submitForm(captchaForm);
+                } else if (captchaForm != null && captchaForm.containsHTML("capcode")) {
+                    Challenge<String> challenge = new KeyCaptcha(this, br, createDownloadlink(param.getCryptedUrl())).createChallenge(this);
+                    try {
+                        final String result = handleCaptchaChallenge(challenge);
+                        if (challenge.isRefreshTrigger(result)) {
+                            continue;
+                        }
+                        if (StringUtils.isEmpty(result)) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
+                        if ("CANCEL".equals(result)) {
+                            throw new PluginException(LinkStatus.ERROR_FATAL);
+                        }
+                        captchaForm.put("capcode", Encoding.urlEncode(result));
+                    } catch (CaptchaException e) {
+                        e.throwMeIfNoRefresh();
+                        continue;
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                        continue;
+                    }
+                    submitForm(captchaForm);
+                } else if (StringUtils.containsIgnoreCase(captcha, "cutcaptcha")) {
+                    final boolean tryCutCaptchaInDevMode = false;
+                    if (!Application.isHeadless() && DebugMode.TRUE_IN_IDE_ELSE_FALSE && tryCutCaptchaInDevMode) {
+                        // current implementation via localhost no longer working
+                        final String cutcaptcha = new CaptchaHelperCrawlerPluginCutCaptcha(this, br, "SAs61IAI").getToken();
+                        if (StringUtils.isEmpty(cutcaptcha)) {
+                            if (captchaCounter + 1 < maxCaptchaRetries) {
+                                continue;
+                            } else {
+                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                            }
+                        }
+                        captchaForm.put("cap_token", cutcaptcha);
+                        submitForm(captchaForm);
+                    } else if (cutCaptchaRetryIndex >= cutCaptchaAvoidanceMaxRetries) {
+                        /* Fallback to rc2 no longer working or not desired by user. */
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA, "Unsupported captcha type cutcaptcha");
+                        // throw new DecrypterRetryException(RetryReason.CAPTCHA, "Unsupported captcha type cutcaptcha", null, null);
+                    } else {
+                        logger.info("Trying to avoid cutcaptcha");
+                        /* Clear cookies to increase the chances of getting a different captcha type than cutcaptcha. */
+                        br.clearAll();
+                        sleep(1000, param);
+                        /*
+                         * Continue from the beginning. If a password was required, we already know the correct password and won't have to
+                         * ask the user again :)
+                         */
+                        continue cutcaptchaAvoidanceLoop;
+                    }
+                } else if (captcha != null) {
+                    /* Normal image captcha */
+                    final String code = getCaptchaCode(captcha, param);
+                    if (StringUtils.isEmpty(code)) {
+                        if (captchaCounter + 1 < maxCaptchaRetries) {
+                            continue;
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
+                    }
+                    captchaForm.put("recaptcha_response_field", Encoding.urlEncode(code));
                     submitForm(captchaForm);
                 } else {
-                    logger.info("cutcaptcha captcha is not yet/anymore supported:retries so far:" + cutCaptchaTries);
-                    if (usedPassword != null) {
-                        /*
-                         * 2020-12-07: We need new cookies for a higher chance of getting another captcha type - sure we could also re-enter
-                         * the password now that we know the correct one but we won't do this for now (I was too lazy - sorry).
-                         */
-                        logger.info("Cannot retry and hope for different captcha type if password was required");
-                        // throw new DecrypterRetryException(RetryReason.CAPTCHA, "Unsupported captcha type cutcaptcha", null, null);
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA, "Unsupported captcha type cutcaptcha");
-                    } else if (cutCaptchaTries++ >= cutCaptchaAvoidanceMaxRetries || true) {
-                        // fallback to rc2 no longer working
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA, "Unsupported captcha type cutcaptcha");
-                        // throw new DecrypterRetryException(RetryReason.CAPTCHA, "Unsupported captcha type cutcaptcha", null, null);
-                    } else {
-                        counter--;
-                        /* Clear cookies to increase the chances of getting another captcha than cutcaptcha */
-                        br.clearAll();
-                        br.getPage(br.getURL());
-                        sleep(1000, param);
-                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Could not find captcha form");
                 }
-            } else if (captcha != null) {
-                final String code = getCaptchaCode(captcha, param);
-                if (StringUtils.isEmpty(code)) {
-                    if (counter + 1 < retry) {
-                        continue;
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
-                }
-                captchaForm.put("recaptcha_response_field", Encoding.urlEncode(code));
-                submitForm(captchaForm);
+            }
+            if (captchaCounter >= maxCaptchaRetries && containsCaptcha()) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Could not find captcha form");
+                logger.info("Stepping out of cutCaptchaAvoidanceLoop");
+                break;
             }
         }
-        if (counter == retry && containsCaptcha()) {
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (this.isAbort()) {
+            /* Decryption aborted by user */
+            return decryptedLinks;
+        } else if (cutCaptchaRetryIndex >= cutCaptchaAvoidanceMaxRetries && containsCaptcha()) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA, "Unsupported captcha type cutcaptcha");
+            // throw new DecrypterRetryException(RetryReason.CAPTCHA, "Unsupported captcha type cutcaptcha", null, null);
         }
+        FilePackage fp = null;
         final String fpName = br.getRegex("<h2>([^<>\"]*?)<").getMatch(0);
         // mirrors - note: containers no longer have uid within path! -raztoki20160117
         // mirrors - note: containers can contain uid within path... -raztoki20161204
@@ -293,9 +311,9 @@ public class FileCryptCc extends PluginForDecrypt {
             /* Fallback -> Only 1 mirror available */
             availableMirrors = new String[1];
             if (mirrorIdFromURL != null) {
-                availableMirrors[0] = parameter;
+                availableMirrors[0] = param.getCryptedUrl();
             } else {
-                availableMirrors[0] = parameter + "?mirror=0";
+                availableMirrors[0] = param.getCryptedUrl() + "?mirror=0";
             }
         }
         final List<String> mirrors = new ArrayList<String>();
@@ -308,12 +326,13 @@ public class FileCryptCc extends PluginForDecrypt {
                 }
             }
             if (mirrors.size() == 0) {
-                logger.info("Crawl mirror not found:" + mirrorIdFromURL);
+                logger.info("User preferred mirrorID inside URL does not exist in list of really existant mirrors:" + mirrorIdFromURL);
             }
         }
         if (mirrors.size() > 0) {
             logger.info("Crawl mirror according to mirrorID from URL:" + mirrors);
         } else {
+            /* User preferred mirrorID not found or no preferred mirror given --> Crawl all */
             mirrors.addAll(Arrays.asList(availableMirrors));
             logger.info("Crawling all existing mirrors:" + mirrors);
         }
@@ -323,7 +342,7 @@ public class FileCryptCc extends PluginForDecrypt {
             br.getPage(mirrorURL);
             final ArrayList<DownloadLink> tdl = new ArrayList<DownloadLink>();
             // Use clicknload first as it doesn't rely on JD service.jdownloader.org, which can go down!
-            handleCnl2(tdl, parameter);
+            handleCnl2(tdl, param.getCryptedUrl());
             if (!tdl.isEmpty()) {
                 decryptedLinks.addAll(tdl);
                 if (fpName != null) {
@@ -348,7 +367,7 @@ public class FileCryptCc extends PluginForDecrypt {
                 }
             }
             if (this.isAbort()) {
-                break;
+                return decryptedLinks;
             }
         }
         if (!decryptedLinks.isEmpty()) {
@@ -362,7 +381,6 @@ public class FileCryptCc extends PluginForDecrypt {
             if (br.containsHTML("Der Inhaber dieses Ordners hat leider alle Hoster in diesem Container in seinen Einstellungen deaktiviert\\.")) {
                 return decryptedLinks;
             }
-            logger.warning("Decrypter broken for link: " + parameter);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(false);
@@ -399,7 +417,7 @@ public class FileCryptCc extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private String handleLink(Browser br, CryptedLink param, String singleLink) throws Exception {
+    private String handleLink(final Browser br, final CryptedLink param, final String singleLink) throws Exception {
         final Browser br2 = br.cloneBrowser();
         if (StringUtils.startsWithCaseInsensitive(singleLink, "http://") || StringUtils.startsWithCaseInsensitive(singleLink, "https://")) {
             br2.getPage(singleLink);
