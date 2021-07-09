@@ -25,6 +25,16 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -49,16 +59,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/file/([0-9A-Z]+)" })
 public class FShareVn extends PluginForHost {
     private final String         SERVERERROR                           = "Tài nguyên bạn yêu cầu không tìm thấy";
@@ -74,7 +74,8 @@ public class FShareVn extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME                = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS             = -3;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS          = -1;
-    private static AtomicBoolean USE_API                               = new AtomicBoolean(false);
+    /* 2021-07-09: Website account mode is broken && Deprecated! */
+    private static AtomicBoolean USE_API_IN_ACCOUNT_MODE               = new AtomicBoolean(true);
     private static final boolean use_api_for_premium_account_downloads = true;
     private static final boolean use_api_for_free_account_downloads    = true;
     private static final boolean use_api_for_login_fetch_account_info  = true;
@@ -408,7 +409,7 @@ public class FShareVn extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         if (account.getType() == AccountType.FREE) {
-            if (USE_API.get() && use_api_for_free_account_downloads) {
+            if (USE_API_IN_ACCOUNT_MODE.get() && use_api_for_free_account_downloads) {
                 logger.info("Free account API download");
                 dllink = this.getDllinkAPI(link, account);
             } else {
@@ -485,7 +486,7 @@ public class FShareVn extends PluginForHost {
     public String getDllinkPremium(final DownloadLink link, final Account account) throws Exception {
         // we get page again, because we do not take directlink from requestfileinfo.
         final String dllink;
-        if (USE_API.get() && use_api_for_premium_account_downloads) {
+        if (USE_API_IN_ACCOUNT_MODE.get() && use_api_for_premium_account_downloads) {
             dllink = getDllinkAPI(link, account);
             if (StringUtils.isEmpty(dllink)) {
                 /* This should never happen! */
@@ -818,7 +819,7 @@ public class FShareVn extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        if (USE_API.get() && use_api_for_login_fetch_account_info) {
+        if (USE_API_IN_ACCOUNT_MODE.get() && use_api_for_login_fetch_account_info) {
             return fetchAccountInfoAPI(account);
         } else {
             return fetchAccountInfoWebsite(account);
