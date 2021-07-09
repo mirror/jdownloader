@@ -25,7 +25,7 @@ public class CFG_CHAT {
     public static final BooleanKeyHandler          USER_COLOR_ENABLED        = SH.getKeyHandler("UserColorEnabled", BooleanKeyHandler.class);
     // 6667
     public static final IntegerKeyHandler          IRC_PORT                  = SH.getKeyHandler("IrcPort", IntegerKeyHandler.class);
-    // irc.freenode.net
+    // irc.libera.chat
     public static final StringKeyHandler           IRC_SERVER                = SH.getKeyHandler("IrcServer2021", StringKeyHandler.class);
     // null
     public static final StringKeyHandler           PERFORM_ON_LOGIN_COMMANDS = SH.getKeyHandler("PerformOnLoginCommands", StringKeyHandler.class);
