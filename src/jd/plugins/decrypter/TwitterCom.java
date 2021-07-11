@@ -26,7 +26,17 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -50,14 +60,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(?:www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/status/\\d+|https?://(?:www\\.|mobile\\.)?twitter\\.com/(?!i/)[A-Za-z0-9_\\-]{2,}(?:/(?:media|likes))?|https://twitter\\.com/i/cards/tfw/v1/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" })
 public class TwitterCom extends PornEmbedParser {
     public TwitterCom(PluginWrapper wrapper) {
@@ -70,6 +72,7 @@ public class TwitterCom extends PornEmbedParser {
     private static final String            TYPE_REDIRECT        = "https?://t\\.co/[a-zA-Z0-9]+";
     private ArrayList<DownloadLink>        decryptedLinks       = new ArrayList<DownloadLink>();
     private static AtomicReference<String> GUEST_TOKEN          = new AtomicReference<String>();
+    private static AtomicLong              GUEST_TOKEN_TS       = new AtomicLong(-1);
     public static final String             PROPERTY_USERNAME    = "username";
     private static final String            PROPERTY_DATE        = "date";
     public static final String             PROPERTY_MEDIA_INDEX = "mediaindex";
@@ -316,26 +319,31 @@ public class TwitterCom extends PornEmbedParser {
 
     public static boolean resetGuestToken() {
         synchronized (GUEST_TOKEN) {
-            return GUEST_TOKEN.getAndSet(null) != null;
+            final boolean ret = GUEST_TOKEN.getAndSet(null) != null;
+            if (ret) {
+                GUEST_TOKEN_TS.set(-1);
+            }
+            return ret;
         }
     }
 
     public static String getAndSetGuestToken(Plugin plugin, final Browser br) throws PluginException, IOException {
         synchronized (GUEST_TOKEN) {
             String guest_token = GUEST_TOKEN.get();
-            if (guest_token == null) {
-                plugin.getLogger().info("Generating new guest_token");
-                /** TODO: Save guest_token throughout session so we do not generate them so frequently */
+            final long age = Time.systemIndependentCurrentJVMTimeMillis() - GUEST_TOKEN_TS.get();
+            if (guest_token == null || age > (30 * 60 * 1000l)) {
+                plugin.getLogger().info("Generating new guest_token:age:" + age);
                 guest_token = generateNewGuestToken(br);
                 if (StringUtils.isEmpty(guest_token)) {
                     plugin.getLogger().warning("Failed to find guest_token");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
                     GUEST_TOKEN.set(guest_token);
+                    GUEST_TOKEN_TS.set(Time.systemIndependentCurrentJVMTimeMillis());
                     plugin.getLogger().warning("Found new guest_token:" + guest_token);
                 }
             } else {
-                plugin.getLogger().info("Re-using existing guest-token:" + guest_token);
+                plugin.getLogger().info("Re-using existing guest-token:" + guest_token + "|age:" + age);
             }
             br.getHeaders().put("x-guest-token", guest_token);
             return guest_token;
