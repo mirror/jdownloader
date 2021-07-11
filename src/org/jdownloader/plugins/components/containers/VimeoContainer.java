@@ -12,7 +12,7 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
  */
 public class VimeoContainer extends VideoContainer {
     public static final TypeRef<VimeoContainer> TYPE_REF = new TypeRef<VimeoContainer>() {
-    };
+                                                         };
     private Quality                             quality;
     private String                              rawQuality;
 
@@ -53,7 +53,8 @@ public class VimeoContainer extends VideoContainer {
     public enum Quality {
         MOBILE,
         SD,
-        HD,
+        HD, // 720
+        FHD, // 1080
         UHD,
         UHD_4K,
         ORIGINAL,
@@ -135,6 +136,8 @@ public class VimeoContainer extends VideoContainer {
                 return Quality.UHD_4K;
             } else if (height >= 1440) {
                 return Quality.UHD;
+            } else if (height >= 1080) {
+                return Quality.FHD;
             } else if (height >= 720) {
                 return Quality.HD;
             } else {

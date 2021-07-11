@@ -26,6 +26,22 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.containers.VimeoContainer;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -53,22 +69,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.containers.VimeoContainer;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin://.+" })
 public class VimeoCom extends PluginForHost {
@@ -305,7 +305,13 @@ public class VimeoCom extends PluginForHost {
                 final VimeoContainer vvc = getVimeoVideoContainer(link, true);
                 if (vvc != null) {
                     for (VimeoContainer quality : qualities) {
-                        if (quality.getHeight() == vvc.getHeight() && quality.getWidth() == vvc.getWidth() && quality.getQuality() == vvc.getQuality() && quality.getSource() == vvc.getSource()) {
+                        final boolean sameHeight = quality.getHeight() == vvc.getHeight();
+                        final boolean sameWidth = quality.getWidth() == vvc.getWidth();
+                        final boolean sameSource = quality.getSource() == vvc.getSource();
+                        final boolean sameQuality = quality.getQuality() == vvc.getQuality();
+                        // we split HD/720,1080 into HD/720 and FHD/1080
+                        final boolean sameCompatibleQuality = VimeoContainer.Quality.FHD.equals(quality.getQuality()) && VimeoContainer.Quality.HD.equals(vvc.getQuality());
+                        if (sameHeight && sameWidth && sameSource && (sameQuality || sameCompatibleQuality)) {
                             container = quality;
                             break;
                         }
@@ -1204,8 +1210,8 @@ public class VimeoCom extends PluginForHost {
                         continue;
                     }
                     final Object profile = item.get("profile");
-                    if (profile != null && !String.valueOf(profile).matches("^\\d+$")) {
-                        // can be String and Integer
+                    if (profile != null && !String.valueOf(profile).matches("^(live-)?\\d+p?$")) {
+                        // can be String and Integer and live-XXXp
                         // vimeo-transcode-storage-prod-> may fail in >cdn@vimeo.com does not have storage.objects.get access to the Google
                         // Cloud Storage object.
                         plugin.getLogger().info("Ignore:" + JSonStorage.toString(item));
@@ -1252,7 +1258,9 @@ public class VimeoCom extends PluginForHost {
                         rawQuality = (String) item.get("quality");// config
                     }
                     vvc.setRawQuality(rawQuality);
-                    if (StringUtils.contains(rawQuality, "720") || StringUtils.contains(rawQuality, "1080")) {
+                    if (StringUtils.contains(rawQuality, "1080")) {
+                        vvc.setQuality(Quality.FHD);
+                    } else if (StringUtils.contains(rawQuality, "720")) {
                         vvc.setQuality(Quality.HD);
                     } else if (StringUtils.contains(rawQuality, "1440")) {
                         vvc.setQuality(Quality.UHD);
