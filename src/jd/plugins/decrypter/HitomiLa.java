@@ -26,6 +26,11 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -39,11 +44,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  *
@@ -101,7 +101,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
             if (extra_redirect != null) {
                 this.getPage(extra_redirect);
             }
-            fpName = br.getRegex("<title>([^<>\"]*?) \\| Hitomi\\.la</title>").getMatch(0);
+            fpName = br.getRegex("<title>([^<>\"]*?)\\s*-\\s*Read\\s*Online.*?\\| Hitomi\\.la</title>").getMatch(0);
             if (fpName == null) {
                 /* Fallback */
                 fpName = URLEncode.decodeURIComponent(url_name);
