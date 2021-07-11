@@ -1210,7 +1210,7 @@ public class VimeoCom extends PluginForHost {
                         continue;
                     }
                     final Object profile = item.get("profile");
-                    if (profile != null && !String.valueOf(profile).matches("^(live-)?\\d+p?$")) {
+                    if (profile != null && (!String.valueOf(profile).matches("^\\d+$")) && !String.valueOf(profile).matches("^live-\\d+p$")) {
                         // can be String and Integer and live-XXXp
                         // vimeo-transcode-storage-prod-> may fail in >cdn@vimeo.com does not have storage.objects.get access to the Google
                         // Cloud Storage object.
