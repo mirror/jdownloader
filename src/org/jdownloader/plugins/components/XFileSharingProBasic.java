@@ -776,7 +776,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
             /* Find filesize */
             if (this.internal_supports_availablecheck_alt()) {
-                getFilesizeViaAvailablecheckAlt(altbr, link);
+                getFilesizeViaAvailablecheckAlt(fileInfo, altbr, link);
             }
         } else {
             /* Normal handling */
@@ -799,9 +799,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             /* Filesize fallback */
             if (StringUtils.isEmpty(fileInfo[1]) && this.internal_supports_availablecheck_alt()) {
                 /* Failed to find filesize? Try alternative way! */
-                getFilesizeViaAvailablecheckAlt(altbr, link);
+                getFilesizeViaAvailablecheckAlt(fileInfo, altbr, link);
             }
         }
+        processFileInfo(fileInfo, altbr, link);
         if (!StringUtils.isEmpty(fileInfo[0])) {
             /* Correct- and set filename */
             if (Encoding.isHtmlEntityCoded(fileInfo[0])) {
@@ -832,6 +833,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             link.setMD5Hash(fileInfo[2].trim());
         }
         return AvailableStatus.TRUE;
+    }
+
+    protected void processFileInfo(String[] fileInfo, Browser altbr, DownloadLink link) {
     }
 
     protected boolean isShortURL(final DownloadLink link) {
@@ -1345,7 +1349,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * @return isOnline
      * @throws IOException
      */
-    protected final boolean getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink link) throws PluginException, IOException {
+    protected boolean getFilesizeViaAvailablecheckAlt(final String[] fileInfo, final Browser br, final DownloadLink link) throws PluginException, IOException {
         logger.info("Trying getFilesizeViaAvailablecheckAlt");
         requestFileInformationWebsiteMassLinkcheckerSingle(link);
         final boolean isChecked = link.isAvailabilityStatusChecked();
@@ -4767,7 +4771,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return (supported_by_hardcoded_setting || supported_by_indicating_html_code) && allowed_by_auto_handling;
     }
 
-    private final boolean internal_supports_availablecheck_alt() {
+    protected boolean internal_supports_availablecheck_alt() {
         boolean allowed_by_auto_handling = true;
         final long last_failure = this.getPluginConfig().getLongProperty("ALT_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP", 0);
         if (last_failure > 0) {
@@ -4785,7 +4789,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Defines the time to wait until a failed linkcheck method will be tried again. This should be set to > 24 hours as its purpose is to
      * minimize unnecessary http requests.
      */
-    protected final long internal_waittime_on_alternative_availablecheck_failures() {
+    protected long internal_waittime_on_alternative_availablecheck_failures() {
         return 7 * 24 * 60 * 60 * 1000;
     }
 
