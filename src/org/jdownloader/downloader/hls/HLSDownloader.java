@@ -541,15 +541,14 @@ public class HLSDownloader extends DownloadInterface {
                     // some systems have problems with special chars to find the in or out file.
                     if (FFMpegException.ERROR.PATH_LENGTH.equals(e.getError())) {
                         final File tmpOut = new File(outputCompleteFile.getParent(), "ffmpeg_out" + UniqueAlltimeID.create());
+                        logger.info("Try workaround:" + e.getError() + "|Tmp:" + tmpOut + "|Dest:" + outputCompleteFile);
                         boolean deleteTmp = true;
                         try {
                             outputFile.set(tmpOut);
                             ffmpeg.runCommand(null, buildConcatCommandLine(concatFormat, ffmpeg, tmpOut.getAbsolutePath()));
+                            ffmpeg.moveFile(tmpOut, outputCompleteFile);
                             deleteTmp = false;
-                            outputCompleteFile.delete();
-                            if (tmpOut.renameTo(outputCompleteFile)) {
-                                deleteOutput = false;
-                            }
+                            deleteOutput = false;
                         } finally {
                             if (deleteTmp && !tmpOut.delete() && tmpOut.exists()) {
                                 tmpOut.deleteOnExit();
@@ -706,13 +705,13 @@ public class HLSDownloader extends DownloadInterface {
                     // some systems have problems with special chars to find the in or out file.
                     if (FFMpegException.ERROR.PATH_LENGTH.equals(e.getError())) {
                         final File tmpOut = new File(destination.getParent(), "ffmpeg_out" + UniqueAlltimeID.create());
+                        logger.info("Try workaround:" + e.getError() + "|Tmp:" + tmpOut + "|Dest:" + destination);
                         boolean deleteTmp = true;
                         try {
                             ffmpeg.runCommand(null, buildDownloadCommandLine(downloadFormat, ffmpeg, tmpOut.getAbsolutePath()));
-                            deleteTmp = false;
+                            ffmpeg.moveFile(destination, tmpOut);
                             partFile.flag.set(true);
-                            destination.delete();
-                            tmpOut.renameTo(destination);
+                            deleteTmp = false;
                         } finally {
                             if (deleteTmp && !tmpOut.delete() && tmpOut.exists()) {
                                 tmpOut.deleteOnExit();
