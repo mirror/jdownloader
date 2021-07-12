@@ -16,6 +16,7 @@ import jd.http.Browser;
 import jd.plugins.DownloadLink;
 
 import org.appwork.uio.CloseReason;
+import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
@@ -33,6 +34,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class DLCFactory extends D {
     public String encryptDLC(String xml) {
@@ -199,7 +201,9 @@ public class DLCFactory extends D {
                         return "createDLC";
                     };
                 }.show().getCloseReason() == CloseReason.OK) {
-                    CrossSystem.showInExplorer(file);
+                    if (!Application.isHeadless() && CFG_GUI.CFG.isContainerExportOpenExplorer()) {
+                        CrossSystem.showInExplorer(file);
+                    }
                 }
                 return true;
             }
