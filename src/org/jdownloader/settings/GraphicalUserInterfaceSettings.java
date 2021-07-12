@@ -1477,4 +1477,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isMainWindowAlwaysOnTop();
 
     void setMainWindowAlwaysOnTop(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("If Enabled, JDownloader will open the explorer window after container(eg DLC) export")
+    boolean isContainerExportOpenExplorer();
+
+    void setContainerExportOpenExplorer(boolean b);
 }
