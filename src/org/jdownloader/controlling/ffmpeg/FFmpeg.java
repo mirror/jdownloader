@@ -1,6 +1,7 @@
 package org.jdownloader.controlling.ffmpeg;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,6 +41,16 @@ public abstract class FFmpeg extends AbstractFFmpegBinary {
             }
         }
         return super.isCompatible();
+    }
+
+    public void moveFile(final File dest, final File source) throws IOException {
+        if (!source.isFile()) {
+            throw new FileNotFoundException("source:" + source.getAbsolutePath());
+        } else if (!dest.delete() && dest.exists()) {
+            throw new IOException("cannot delete dest:" + dest.getAbsolutePath());
+        } else {
+            IO.copyFile(source, dest);
+        }
     }
 
     public boolean muxToMkv(FFMpegProgress progress, String out, String videoIn, String audioIn) throws InterruptedException, IOException, FFMpegException {
@@ -105,13 +116,8 @@ public abstract class FFmpeg extends AbstractFFmpegBinary {
                     try {
                         IO.copyFile(new File(audioIn), tmpAudioIn);
                         stdOut = runCommand(progress, fillCommand(tmpOut.getAbsolutePath(), null, tmpAudioIn.getAbsolutePath(), null, demuxCommand));
-                        outFile.delete();
-                        okayFlag = tmpOut.renameTo(outFile);
-                        if (!okayFlag) {
-                            outFile.delete();
-                            IO.copyFile(tmpOut, outFile);
-                            okayFlag = true;
-                        }
+                        moveFile(tmpOut, outFile);
+                        okayFlag = true;
                     } finally {
                         deleteFile(tmpAudioIn);
                         if (!okayFlag) {
@@ -166,22 +172,17 @@ public abstract class FFmpeg extends AbstractFFmpegBinary {
                     logger.info("Replace In:'" + audioIn + "' with '" + tmpAudioIn + "'");
                     logger.info("Replace In:'" + videoIn + "' with '" + tmpVideoIn + "'");
                     logger.info("Replace Out'" + out + "' with '" + tmpOut + "'");
-                    boolean okay = false;
+                    boolean okayFlag = false;
                     try {
                         IO.copyFile(new File(videoIn), tmpVideoIn);
                         IO.copyFile(new File(audioIn), tmpAudioIn);
                         stdOut = runCommand(progress, fillCommand(tmpOut.getAbsolutePath(), tmpVideoIn.getAbsolutePath(), tmpAudioIn.getAbsolutePath(), null, muxCommand));
-                        outFile.delete();
-                        okay = tmpOut.renameTo(outFile);
-                        if (!okay) {
-                            outFile.delete();
-                            IO.copyFile(tmpOut, outFile);
-                            okay = true;
-                        }
+                        moveFile(tmpOut, outFile);
+                        okayFlag = true;
                     } finally {
                         deleteFile(tmpAudioIn);
                         deleteFile(tmpVideoIn);
-                        if (!okay) {
+                        if (!okayFlag) {
                             deleteFile(tmpOut);
                         }
                     }
@@ -243,13 +244,8 @@ public abstract class FFmpeg extends AbstractFFmpegBinary {
                             try {
                                 IO.copyFile(new File(audioIn), tmpAudioIn);
                                 command = runCommand(progress, fillCommand(tmpOut.getAbsolutePath(), null, tmpAudioIn.getAbsolutePath(), map, config.getDemuxGenericCommand()));
-                                outFile.delete();
-                                okayFlag = tmpOut.renameTo(outFile);
-                                if (!okayFlag) {
-                                    outFile.delete();
-                                    IO.copyFile(tmpOut, outFile);
-                                    okayFlag = true;
-                                }
+                                moveFile(tmpOut, outFile);
+                                okayFlag = true;
                             } finally {
                                 deleteFile(tmpAudioIn);
                                 if (!okayFlag) {

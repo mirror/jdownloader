@@ -1885,7 +1885,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
             }
         } else {
-            if (StringUtils.containsIgnoreCase(getCorrectBR(br), ";background:#ccc;text-align")) {
+            if (containsPlainTextCaptcha(getCorrectBR(br))) {
                 logger.info("Detected captcha method \"plaintext captchas\" for this host");
                 /* Captcha method by ManiacMansion */
                 String[][] letters = new Regex(br, "<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(&#\\d+;)</span>").getMatches();
@@ -1973,6 +1973,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
             /* Captcha END */
         }
+    }
+
+    protected boolean containsPlainTextCaptcha(String correctBR) {
+        return correctBR != null && StringUtils.containsIgnoreCase(correctBR, ";background:#ccc;text-align");
     }
 
     /** Tries to find 1st download Form for free(and Free-Account) download. */
@@ -2160,7 +2164,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     protected String replaceCorrectBR(Browser br, String pattern, String target) {
         /* Do not e.g. remove captcha forms from html! */
-        if (StringUtils.containsIgnoreCase(pattern, "none") && (containsHCaptcha(target) || containsRecaptchaV2Class(target))) {
+        if (StringUtils.containsIgnoreCase(pattern, "none") && (containsHCaptcha(target) || containsRecaptchaV2Class(target) || containsPlainTextCaptcha(target))) {
             return null;
         } else {
             return "";
