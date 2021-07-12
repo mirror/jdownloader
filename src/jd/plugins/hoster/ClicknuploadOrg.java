@@ -19,12 +19,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -100,6 +103,27 @@ public class ClicknuploadOrg extends XFileSharingProBasic {
         } else {
             /* Free(anonymous) and unknown account type */
             return -2;
+        }
+    }
+
+    @Override
+    protected void processFileInfo(String[] fileInfo, Browser altbr, DownloadLink link) {
+        try {
+            // ?op=check_files is broken, file size from free download page
+            final Form download1 = findFormDownload1Free(br);
+            if (download1 != null && (link.getKnownDownloadSize() == -1 && StringUtils.isEmpty(fileInfo[1]))) {
+                final Browser brc = br.cloneBrowser();
+                logger.info("Found download1 Form");
+                final String correctedBR = this.correctedBR;
+                try {
+                    submitForm(brc, download1, true);
+                    scanInfo(fileInfo);
+                } finally {
+                    this.correctedBR = correctedBR;
+                }
+            }
+        } catch (Exception e) {
+            logger.log(e);
         }
     }
 
