@@ -79,6 +79,7 @@ public class FShareVn extends PluginForHost {
     private static final boolean use_api_for_premium_account_downloads = true;
     private static final boolean use_api_for_free_account_downloads    = true;
     private static final boolean use_api_for_login_fetch_account_info  = true;
+    private static final String  PROPERTY_ACCOUNT_TOKEN                = "token";
 
     public FShareVn(PluginWrapper wrapper) {
         super(wrapper);
@@ -225,12 +226,9 @@ public class FShareVn extends PluginForHost {
                 errorMsg = entries.get("msg").toString();
             }
             if (br.getHttpConnection().getResponseCode() == 201) {
-                /*
-                 * TODO: Make use of their refresh-token:
-                 * https://www.fshare.vn/api-doc#/Login%20-%20Logout%20-%20User%20info/refresh-token-v2
-                 */
+                /* This should never happen at this stage! */
                 logger.info("session_id cookie invalid");
-                throw new AccountUnavailableException("Session expired", 1 * 60 * 1000l);
+                throw new AccountUnavailableException("Session expired", 30 * 1000l);
             } else if (br.getHttpConnection().getResponseCode() == 400) {
                 logger.info("Seems like stored logintoken expired");
                 throw new AccountUnavailableException("Login token invalid", 5 * 60 * 1000l);
@@ -606,7 +604,7 @@ public class FShareVn extends PluginForHost {
     }
 
     private String getAPIToken(final Account account) {
-        return account.getStringProperty("token");
+        return account.getStringProperty(PROPERTY_ACCOUNT_TOKEN);
     }
 
     @Override
@@ -620,7 +618,6 @@ public class FShareVn extends PluginForHost {
 
     @Deprecated
     private boolean isLoggedinWebsite() {
-        /* 2020-03-18: TODO: Check if this is still working */
         return br.containsHTML("class =\"user__profile\"") && br.getCookie(br.getHost(), "fshare-app", Cookies.NOTDELETEDPATTERN) != null;
     }
 
@@ -760,6 +757,7 @@ public class FShareVn extends PluginForHost {
                 prepBrowserAPI(this.br);
                 String token = getAPIToken(account);
                 final Cookies cookies = account.loadCookies("apicookies");
+                final String app_key = new String(HexFormatter.hexToByteArray("644D6E714D4D5A4D556E4E355970764B454E614568645151356A784471646474"));
                 if (token != null && cookies != null) {
                     logger.info("Logging in via cookies");
                     br.setCookies(getAPIHost(), cookies);
@@ -771,12 +769,37 @@ public class FShareVn extends PluginForHost {
                         /* 2019-08-29: New */
                         br.getPage("https://" + getAPIHost() + "/api/user/get");
                         /* 2019-08-29: E.g. failure: {"code":201,"msg":"Not logged in yet!"} */
-                        /* TODO: Properly implement their token refresh API method */
-                        if (br.getHttpConnection().isOK() && br.getHttpConnection().getResponseCode() != 201) {
+                        if (br.getHttpConnection().getResponseCode() == 201) {
+                            /* https://www.fshare.vn/api-doc#/Login%20-%20Logout%20-%20User%20info/refresh-token-v2 */
+                            logger.info("Session expired --> Attempting refresh");
+                            final Map<String, Object> map = new HashMap<String, Object>();
+                            map.put("token", token);
+                            map.put("app_key", app_key);
+                            /*
+                             * Important! Use separate Browser instance! Otherwise e.g. remaining Referer will cause error response 400 on
+                             * next request!
+                             */
+                            final Browser refreshLoginBR = br.cloneBrowser();
+                            final PostRequest refreshLoginReq = br.createJSonPostRequest("https://" + getAPIHost() + "/api/user/refreshToken", JSonStorage.toString(map));
+                            refreshLoginBR.getPage(refreshLoginReq);
+                            final Map<String, Object> entries = JSonStorage.restoreFromString(refreshLoginBR.toString(), TypeRef.HASHMAP);
+                            if (entries.containsKey("token")) {
+                                logger.info("Successfully refreshed token");
+                                token = entries.get("token").toString();
+                                br.setCookie(getAPIHost(), "session_id", entries.get("session_id").toString());
+                                account.setProperty(PROPERTY_ACCOUNT_TOKEN, token);
+                                account.saveCookies(br.getCookies(getAPIHost()), "apicookies");
+                                return token;
+                            } else {
+                                /*
+                                 * This should never happen and would indicate that the user e.g. has changed his password but let's try
+                                 * full login anyways as a last resort fallback.
+                                 */
+                                logger.info("Token refresh failed");
+                            }
+                        } else {
                             logger.info("Cookie login successful");
                             return token;
-                        } else {
-                            logger.info("Cookie login failed");
                         }
                     }
                 }
@@ -786,7 +809,7 @@ public class FShareVn extends PluginForHost {
                 map.put("user_email", account.getUser());
                 map.put("password", account.getPass());
                 // map.put("app_key", "L2S7R6ZMagggC5wWkQhX2+aDi467PPuftWUMRFSn"); --> Their old App API key
-                map.put("app_key", new String(HexFormatter.hexToByteArray("644D6E714D4D5A4D556E4E355970764B454E614568645151356A784471646474")));
+                map.put("app_key", app_key);
                 /*
                  * Important! Use separate Browser instance! Otherwise e.g. remaining Referer will cause error response 400 on next request!
                  */
@@ -795,22 +818,26 @@ public class FShareVn extends PluginForHost {
                 loginbr.getPage(loginReq);
                 checkErrorsAPI(loginbr);
                 final Map<String, Object> entries = JSonStorage.restoreFromString(loginbr.toString(), TypeRef.HASHMAP);
-                token = (String) entries.get("token");
+                token = (String) entries.get(PROPERTY_ACCOUNT_TOKEN);
+                /*
+                 * session_id is valid for 6 hours after last usage which means as long as the users' JD is always running, every default
+                 * accountcheck will reset that expire-timer.
+                 */
                 final String sessionID = (String) entries.get("session_id");
                 if (StringUtils.isEmpty(token) || StringUtils.isEmpty(sessionID)) {
                     /* This should never happen as the above errorhandling should cover all errors already */
                     throw new AccountUnavailableException("Unknown login failure", 5 * 60 * 1000l);
                 }
-                /* Same key as in browser (website-version) but not usable for website-sessions! */
+                /* Same cookie key as in browser (website-version) but not usable for website-sessions! */
                 br.setCookie(getAPIHost(), "session_id", sessionID);
-                account.setProperty("token", token);
+                account.setProperty(PROPERTY_ACCOUNT_TOKEN, token);
                 account.saveCookies(br.getCookies(getAPIHost()), "apicookies");
                 return token;
             } catch (final PluginException e) {
                 /* Dump cookies on login failure */
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("apicookies");
-                    account.removeProperty("token");
+                    account.removeProperty(PROPERTY_ACCOUNT_TOKEN);
                 }
                 throw e;
             }
