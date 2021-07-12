@@ -50,7 +50,12 @@ public class CamwhoresTv extends PornEmbedParser {
         }
         br.followRedirect();
         final String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        decryptedLinks.addAll(findEmbedUrls(filename));
+        final String fid = new Regex(param.getCryptedUrl(), "https?://[^/]+/videos/(\\d+)").getMatch(0);
+        /* Avoid crawling embed URL of current item as this website doesn't allow embedding their own selfhosted content. */
+        final boolean isSelfhostedContent = fid != null && br.containsHTML("/embed/" + fid);
+        if (!isSelfhostedContent) {
+            decryptedLinks.addAll(findEmbedUrls(filename));
+        }
         if (decryptedLinks.size() == 0) {
             String id = new Regex(parameter, "/videos/(\\d+)").getMatch(0);
             if (id == null) {
