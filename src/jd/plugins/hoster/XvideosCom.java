@@ -595,7 +595,8 @@ public class XvideosCom extends PluginForHost {
                     }
                 }
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.getPage("https://www.xvideos.com/account/signinform/create");
+                br.getPage("https://www.xvideos.com/");
+                br.postPage("/account/signinform", "");
                 final String html = PluginJSonUtils.getJson(br, "form");
                 if (!StringUtils.isEmpty(html)) {
                     br.getRequest().setHtmlCode(html);
