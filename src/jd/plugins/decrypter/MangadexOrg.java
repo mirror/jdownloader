@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
@@ -20,20 +21,25 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangadex.org" }, urls = { "https?://(?:www\\.)?mangadex\\.(?:org|cc)/title/\\d+/[a-z0-9\\-]+/covers/?|https?://(www\\.)?mangadex\\.(?:cc|org)/(title|chapter)/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangadex.org" }, urls = { "https?://(?:www\\.)?mangadex\\.org/title/\\d+/[a-z0-9\\-]+/covers/?|https?://(?:www\\.)?mangadex\\.org/chapter/[a-f0-9\\-]+" })
 public class MangadexOrg extends antiDDoSForDecrypt {
     public MangadexOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String TYPE_CHAPTER = "https?://(?:www\\.)?mangadex\\.org/chapter/([a-f0-9\\-]+)";
+
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.setFollowRedirects(true);
-        getPage(parameter.getCryptedUrl().replace("mangadex.cc", "mangadex.org"));
-        final String apiBase = "https://api.mangadex.org/v2";
-        String urlTitle = new Regex(parameter.getCryptedUrl(), "/title/\\d+/([^/]+)").getMatch(0);
+        getPage(param.getCryptedUrl().replace("mangadex.cc", "mangadex.org"));
+        final String apiBase = "https://api.mangadex.org/";
+        String urlTitle = new Regex(param.getCryptedUrl(), "/title/\\d+/([^/]+)").getMatch(0);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        if (StringUtils.containsIgnoreCase(parameter.getCryptedUrl(), "/covers")) {
+        if (StringUtils.containsIgnoreCase(param.getCryptedUrl(), "/covers")) {
             String[] covers = br.getRegex("<a[^>]+href\\s*=\\s*[\"']([^\"']*/covers/[^\"'/]*)").getColumn(0);
             if (covers != null && covers.length > 0) {
                 for (String cover : covers) {
@@ -51,7 +57,7 @@ public class MangadexOrg extends antiDDoSForDecrypt {
                     fp.addLinks(ret);
                 }
             }
-        } else if (StringUtils.containsIgnoreCase(parameter.getCryptedUrl(), "/title/")) {
+        } else if (StringUtils.containsIgnoreCase(param.getCryptedUrl(), "/title/")) {
             String[] chapters = br.getRegex("<a[^>]+href\\s*=\\s*[\"']([^\"']*/chapter/[^\"'/]*)").getColumn(0);
             if (chapters != null && chapters.length > 0) {
                 for (String chapter : chapters) {
@@ -62,23 +68,22 @@ public class MangadexOrg extends antiDDoSForDecrypt {
                     ret.add(createDownloadlink(chapter));
                 }
             }
-        } else if (StringUtils.containsIgnoreCase(parameter.getCryptedUrl(), "/chapter/")) {
-            final String chapterID = new Regex(parameter, "/chapter/(\\d+)").getMatch(0);
-            getPage(apiBase + "/chapter/" + chapterID + "?saver=0&include=manga");
+        } else if (param.getCryptedUrl().matches(TYPE_CHAPTER)) {
+            final String chapterID = new Regex(param.getCryptedUrl(), TYPE_CHAPTER).getMatch(0);
+            getPage(apiBase + "chapter/" + chapterID + "?includes[]=scanlation_group&includes[]=manga&includes[]=user");
             if (br.getHttpConnection().getResponseCode() == 404) {
-                ret.add(this.createOfflinelink(parameter.getCryptedUrl()));
+                ret.add(this.createOfflinelink(param.getCryptedUrl()));
                 return ret;
             }
             Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             map = (Map<String, Object>) map.get("data");
-            map = (Map<String, Object>) map.get("chapter");
+            map = (Map<String, Object>) map.get("attributes");
             final String hash = (String) map.get("hash");
-            final String server = (String) map.get("server");
+            /* 2021-07-12: Hardcoded */
+            final String server = "https://uploads.mangadex.org/data/";
             final String status = (String) map.get("status");
             if ("unavailable".equals(status)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (StringUtils.isEmpty(server)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if (StringUtils.isEmpty(hash)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -122,24 +127,24 @@ public class MangadexOrg extends antiDDoSForDecrypt {
             } else {
                 titleForFilename = mangaTitle;
             }
-            final List<Object> page_array = (List<Object>) map.get("pages");
-            if (page_array == null) {
+            final List<String> pages = (List<String>) map.get("data");
+            if (pages == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             int pageIndex = 0;
-            for (Object page : page_array) {
+            for (final String page : pages) {
                 pageIndex++;
                 if (page == null) {
                     continue;
                 } else if (page instanceof String) {
                     final String url = br.getURL(server + hash + "/" + page).toString();
                     final DownloadLink link = createDownloadlink("directhttp://" + url);
-                    link.setProperty("refURL", parameter.getCryptedUrl());
+                    link.setProperty("refURL", param.getCryptedUrl());
                     link.setAvailable(true);
                     if (titleForFilename != null) {
                         link.setFinalFileName(titleForFilename + "-Page_" + pageIndex + Plugin.getFileNameExtensionFromURL(url));
                     }
-                    link.setContentUrl(parameter.getCryptedUrl() + "/" + pageIndex);
+                    link.setContentUrl(param.getCryptedUrl() + "/" + pageIndex);
                     link.setLinkID(getHost() + "://" + chapterID + "/" + page);
                     fp.add(link);
                     distribute(link);

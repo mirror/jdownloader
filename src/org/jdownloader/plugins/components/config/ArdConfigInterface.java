@@ -63,12 +63,6 @@ public interface ArdConfigInterface extends PluginConfigInterface {
     void setGrabSubtitleEnabled(boolean b);
 
     @DefaultBooleanValue(false)
-    @Order(11)
-    boolean isGrabAudio();
-
-    void setGrabAudio(boolean b);
-
-    @DefaultBooleanValue(false)
     @Order(12)
     boolean isPreferAudioDescription();
 
