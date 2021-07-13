@@ -2292,14 +2292,23 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         for (Entry<String, Integer> entry : possibleDllinks.entrySet()) {
             /* Avoid downloading thumbnails */
             /* 2019-07-24: Improve recognization of thumbnails e.g. https://img67.imagetwist.com/th/123456/[a-z0-9]{12}.jpg */
-            if (best == null || best.getKey().matches(".+_t\\.[A-Za-z]{3,4}$")) {
+            if (entry.getKey().matches(".+_t\\.[A-Za-z]{3,4}$") || entry.getKey().matches(".+/th/\\d+.*$")) {
+                continue;
+            } else if (best == null) {
                 best = entry;
             } else if (entry.getValue() > best.getValue()) {
                 best = entry;
             }
         }
-        final String dllink = best.getKey();
-        return dllink;
+        if (best == null && possibleDllinks.size() > 0) {
+            best = possibleDllinks.entrySet().iterator().next();
+        }
+        if (best != null) {
+            final String dllink = best.getKey();
+            return dllink;
+        } else {
+            return null;
+        }
     }
 
     /** Tries to find stream-URL for videohosts. */
