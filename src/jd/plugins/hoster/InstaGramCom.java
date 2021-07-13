@@ -45,9 +45,11 @@ import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.CryptedLink;
@@ -564,47 +566,94 @@ public class InstaGramCom extends PluginForHost {
                 final String enc_password = "#PWD_INSTAGRAM_BROWSER:0:" + System.currentTimeMillis() + ":" + account.getPass();
                 post.setPostDataString("username=" + Encoding.urlEncode(account.getUser()) + "&enc_password=" + Encoding.urlEncode(enc_password) + "&queryParams=%7B%7D");
                 br.getPage(post);
-                if ("fail".equals(PluginJSonUtils.getJsonValue(br, "status"))) {
-                    /* 2021-07-13: 2 factor login required --> Not implemented so far */
-                    logger.info("Entering 2FA handling");
-                    /* 2021-07-13 */
-                    final boolean twoFAUnsupported = true;
-                    if (twoFAUnsupported) {
+                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                if (entries.get("status").toString().equals("fail")) {
+                    /* 2021-07-13: 2FA login required --> Not implemented so far */
+                    final Boolean two_factor_required = (Boolean) entries.get("two_factor_required");
+                    if (two_factor_required == null || !two_factor_required) {
+                        /* Invalid login credentials */
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                        /*
+                         * 2021-07-13: 2FA login not (yet) finished --> Throw error if it is required within login process of a user using
+                         * JD outside of IDE.
+                         */
                         showCookieLogin2FAWorkaroundInformation();
                         throw new AccountUnavailableException("2-factor-authentication required: Try cookie login method", 30 * 60 * 1000l);
-                    } else if (!"checkpoint_required".equals(PluginJSonUtils.getJsonValue(br, "message"))) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    final String page = PluginJSonUtils.getJsonValue(br, "checkpoint_url");
-                    br.getPage(page);
-                    handleLoginChallenge(this.br);
-                    final boolean tryOldChallengeHandling = false;
-                    if (tryOldChallengeHandling) {
-                        // verify by email.
-                        Form f = br.getFormBySubmitvalue("Verify+by+Email");
-                        if (f == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        br.submitForm(f);
-                        f = br.getFormBySubmitvalue("Verify+Account");
-                        if (f == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        // dialog here to ask for 2factor verification 6 digit code.
-                        final DownloadLink dummyLink = new DownloadLink(null, "Account 2 Factor Auth", MAINPAGE, br.getURL(), true);
-                        final String code = getUserInput("2 Factor Authenication\r\nPlease enter in the 6 digit code within your Instagram linked email account", dummyLink);
-                        if (code == null) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2 Factor response", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                        f.put("response_code", Encoding.urlEncode(code));
-                        // correct or incorrect?
-                        if (br.containsHTML(">Please check the code we sent you and try again\\.<")) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2 Factor response", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                        // now 2factor most likely wont have the authenticated json if statement below....
-                        // TODO: confirm what's next.
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unfinished code, please report issue with logs to Development Team.");
+                    final Map<String, Object> two_factor_info = (Map<String, Object>) entries.get("two_factor_info");
+                    if (!(Boolean) two_factor_info.get("sms_two_factor_on")) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unsupported 2FA login method (only 2FA SMS is supported)", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
+                    final DownloadLink dl_dummy;
+                    if (this.getDownloadLink() != null) {
+                        dl_dummy = this.getDownloadLink();
+                    } else {
+                        dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                    }
+                    String twoFACode = getUserInput("Enter 2-Factor Authentication code for phone number " + two_factor_info.get("obfuscated_phone_number"), dl_dummy);
+                    if (twoFACode != null) {
+                        twoFACode = twoFACode.trim();
+                    }
+                    if (twoFACode == null || !twoFACode.matches("\\d+")) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiges Format der 2-faktor-Authentifizierung!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2-factor-authentication code format!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    }
+                    final Form login2 = new Form();
+                    login2.setMethod(MethodType.POST);
+                    login2.setAction("/accounts/login/ajax/two_factor/");
+                    login2.put("identifier", Encoding.urlEncode(two_factor_info.get("two_factor_identifier").toString()));
+                    login2.put("trust_signal", "false");
+                    login2.put("username", two_factor_info.get("username").toString());
+                    login2.put("verificationCode", twoFACode);
+                    login2.put("verification_method", "1");
+                    // login2.put("queryParams", Encoding.urlEncode("TODO"));
+                    br.submitForm(login2);
+                    final Map<String, Object> login2Response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    if (!login2Response.get("status").equals("success")) {
+                        throw new AccountInvalidException("2-factor-authentication failed");
+                    }
+                    /*
+                     * Old login challenge handling (also unfinished). This is similar to 2FA but more a security measure which Instagram
+                     * can trigger at any time. 2FA will only be required if enabled by the user.
+                     */
+                    // final String page = PluginJSonUtils.getJsonValue(br, "checkpoint_url");
+                    // br.getPage(page);
+                    // handleLoginChallenge(this.br);
+                    // final boolean tryOldChallengeHandling = false;
+                    // if (tryOldChallengeHandling) {
+                    // // verify by email.
+                    // Form f = br.getFormBySubmitvalue("Verify+by+Email");
+                    // if (f == null) {
+                    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    // }
+                    // br.submitForm(f);
+                    // f = br.getFormBySubmitvalue("Verify+Account");
+                    // if (f == null) {
+                    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    // }
+                    // // dialog here to ask for 2factor verification 6 digit code.
+                    // final DownloadLink dummyLink = new DownloadLink(null, "Account 2 Factor Auth", MAINPAGE, br.getURL(), true);
+                    // final String code = getUserInput("2 Factor Authenication\r\nPlease enter in the 6 digit code within your Instagram
+                    // linked email account", dummyLink);
+                    // if (code == null) {
+                    // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2 Factor response",
+                    // PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    // }
+                    // f.put("response_code", Encoding.urlEncode(code));
+                    // // correct or incorrect?
+                    // if (br.containsHTML(">Please check the code we sent you and try again\\.<")) {
+                    // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2 Factor response",
+                    // PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    // }
+                    // // now 2factor most likely wont have the authenticated json if statement below....
+                    // // TODO: confirm what's next.
+                    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unfinished code, please report issue with logs to
+                    // Development Team.");
+                    // }
                 }
                 if (!br.containsHTML("\"authenticated\"\\s*:\\s*true\\s*")) {
                     if (br.containsHTML("\"user\"\\s*:\\s*true\\s*")) {
@@ -624,6 +673,7 @@ public class InstaGramCom extends PluginForHost {
         }
     }
 
+    @Deprecated
     public static void handleLoginChallenge(final Browser br) throws AccountUnavailableException {
         final String json = br.getRegex("window._sharedData = (\\{.*?\\})</script>").getMatch(0);
         if (json != null) {
