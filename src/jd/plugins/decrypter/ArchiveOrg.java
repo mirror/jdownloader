@@ -137,12 +137,13 @@ public class ArchiveOrg extends PluginForDecrypt {
         } else if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /**
-         * 2021-02-01: Disabled book crawling because it's not working as intended and "/details/" URLs can also contain embedded pages of
-         * books while at the same time, the original files are downloadable! E.g. https://board.jdownloader.org/showthread.php?t=86605
+        /*
+         * Preview (= images of book pages) of books may be available along official download --> Only crawl book preview if no official
+         * download is possible.
          */
-        final boolean allowBookCrawling = false;
-        if (allowBookCrawling && br.containsHTML("schema\\.org/Book")) {
+        final boolean isOfficiallyDownloadable = br.containsHTML("class=\"download-button\"") && !br.containsHTML("class=\"download-lending-message\"");
+        final boolean isBookPreviewAvailable = br.containsHTML("schema\\.org/Book");
+        if (isBookPreviewAvailable && !isOfficiallyDownloadable) {
             /* Crawl all pages of a book */
             final String bookAjaxURL = br.getRegex("\\'([^\\'\"]+BookReaderJSIA\\.php\\?[^\\'\"]+)\\'").getMatch(0);
             if (bookAjaxURL == null) {
@@ -155,6 +156,7 @@ public class ArchiveOrg extends PluginForDecrypt {
             }
             Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/brOptions");
+            final String bookId = entries.get("bookId").toString();
             final String title = (String) entries.get("bookTitle");
             final ArrayList<Object> imagesO = (ArrayList<Object>) entries.get("data");
             final FilePackage fp = FilePackage.getInstance();
@@ -174,11 +176,15 @@ public class ArchiveOrg extends PluginForDecrypt {
                         /* Skip invalid items */
                         continue;
                     }
-                    final DownloadLink dl = this.createDownloadlink("directhttp://" + url);
+                    // final DownloadLink dl = this.createDownloadlink("directhttp://" + url);
+                    final DownloadLink dl = new DownloadLink(hostPlugin, null, "archive.org", url, true);
                     dl.setName(pageNum + "_ " + title + ".jpg");
                     /* Assume all are online & downloadable */
                     dl.setAvailable(true);
                     dl._setFilePackage(fp);
+                    dl.setProperty(jd.plugins.hoster.ArchiveOrg.PROPERTY_IS_BOOK_PREVIEW, true);
+                    /* Important! These URLs are not static! Make sure user cannot add the same pages multiple times! */
+                    dl.setLinkID(this.getHost() + "://" + bookId + pageNum);
                     decryptedLinks.add(dl);
                 }
             }
