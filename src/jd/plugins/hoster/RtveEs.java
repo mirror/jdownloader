@@ -47,14 +47,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtve.es" }, urls = { "https?://(?:www\\.)?rtve\\.es/(?:alacarta/(?!audios/)videos/[\\w\\-]+/[\\w\\-]+/\\d+/?(\\?modl=COMTS)?|infantil/serie/[^/]+/video/[^/]+/\\d+/)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtve.es" }, urls = { "https?://(?:www\\.)?rtve\\.es/(?:(?:alacarta|play)/(?!audios/)videos/[\\w\\-]+/[\\w\\-]+/\\d+/?(\\?modl=COMTS)?|infantil/serie/[^/]+/video/[^/]+/\\d+/)" })
 public class RtveEs extends PluginForHost {
     /*
      * 2020-03-23: Attention: Do not accept 'audios' URLs in host plugin anymore as they may lead to 'overview' pages with a lot of content
      * (direct URLs) e.g.:
      * https://www.rtve.es/alacarta/audios/documentos-rne/documentos-rne-antoine-saint-exupery-conquista-del-cielo-20-03-20/4822098/
      */
-    private static final String TYPE_NORMAL         = "https?://[^/]+/alacarta/(?:audios|videos)/[\\w\\-]+/[\\w\\-]+/(\\d+)/?(?:\\?modl=COMTS)?";
+    private static final String TYPE_NORMAL         = "https?://[^/]+/(?:alacarta|play)/(?:audios|videos)/[\\w\\-]+/[\\w\\-]+/(\\d+)/?(?:\\?modl=COMTS)?";
     private static final String TYPE_SERIES         = "https?://[^/]+/infantil/serie/[^/]+/video/[^/]+/(\\d+)/";
     private String              dllink              = null;
     private String              BLOWFISHKEY         = "eWVMJmRhRDM=";
@@ -151,7 +151,7 @@ public class RtveEs extends PluginForHost {
             }
             final long publicationDateTimestamp = JavaScriptEngineFactory.toLong(entries.get("publicationDateTimestamp"), 0);
             // final String publicationDate = (String) entries.get("publicationDate");
-            filename = (String) entries.get("longTitle");
+            filename = entries.get("longTitle").toString().trim();
             if (StringUtils.isEmpty(filename)) {
                 /* Fallback */
                 filename = fid;
@@ -227,10 +227,20 @@ public class RtveEs extends PluginForHost {
             if (use_api_for_availablecheck) {
                 br.getPage(link.getPluginPatternMatcher());
             }
+            /* 2021-07-13: Required as assetIDs are not in current html anymore. */
+            final boolean useWorkaroundForAssetID = true;
+            if (useWorkaroundForAssetID) {
+                final String alternativeContentURL = br.getRegex("(https://secure\\.rtve\\.es/drmn/embed/video/\\d+[^<>\"\\']+)").getMatch(0);
+                if (alternativeContentURL == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.getPage(alternativeContentURL);
+            }
             String[] flashVars = br.getRegex("assetID\\s*=\\s*(?:\"|')?(\\d+)_([a-z]{2,3})_(audios|videos)(\\&location=alacarta)?").getRow(0);
             if (flashVars == null || flashVars.length != 4) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            /* Either "audios" or "videos" */
             final String mediaType = "audios".equals(flashVars[2]) ? "audio" : "video";
             String getEncData = org.appwork.utils.encoding.Base64.encodeToString(getBlowfish(JDHexUtils.getByteArray(JDHexUtils.getHexString(flashVars[0] + "_default_" + mediaType + "_" + flashVars[1])), false), false);
             getEncData = getEncData.replaceAll("/", "_");

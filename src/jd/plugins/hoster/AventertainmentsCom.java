@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
@@ -49,12 +50,12 @@ public class AventertainmentsCom extends PluginForHost {
     // Tags:
     // protocol: no https
     /* TODO: 2020-10-21: Check if this linktype still exists */
-    private final String       TYPE_IMAGE        = "https?://imgs\\.aventertainments\\.com/.+";
+    private final String       TYPE_IMAGE        = "(?i)https?://imgs\\.aventertainments\\.com/.+";
     /* TODO: 2020-10-21: Check if this linktype still exists */
-    private final String       TYPE_VIDEO_HTTP   = "https?://(?:www\\.)?aventertainments\\.com/newdlsample\\.aspx.*?\\.mp4";
+    private final String       TYPE_VIDEO_HTTP   = "(?i)https?://(?:www\\.)?aventertainments\\.com/newdlsample\\.aspx.*?\\.mp4";
     /* TODO: 2020-10-21: Check if this linktype still exists */
-    private final String       TYPE_VIDEO_HLS    = "https?://ppvclips\\d+\\.aventertainments\\.com/.+\\.m3u8";
-    private final String       TYPE_NEW_2020     = "https?://(?:www\\.)?aventertainments\\.com/ppv/new_detail\\.aspx\\?ProID=\\d+.*?";
+    private final String       TYPE_VIDEO_HLS    = "(?i)https?://ppvclips\\d+\\.aventertainments\\.com/.+\\.m3u8";
+    private final String       TYPE_NEW_2020     = "(?i)https?://(?:www\\.)?aventertainments\\.com/ppv/new_detail\\.aspx\\?ProID=\\d+.*?";
     public static final String html_loggedin     = "aventertainments.com/logout\\.aspx";
     /* Connection stuff */
     private final boolean      free_resume       = true;
@@ -81,16 +82,23 @@ public class AventertainmentsCom extends PluginForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        String url_filename = new Regex(link.getDownloadURL(), "/([^/]+)$").getMatch(0);
+        String urlTitle = new Regex(link.getDownloadURL(), "/([^/]+)$").getMatch(0);
         String filename = link.getFinalFileName();
         if (link.getPluginPatternMatcher().matches(TYPE_NEW_2020)) {
-            url_filename = UrlQuery.parse(link.getPluginPatternMatcher().toLowerCase()).get("proid");
+            urlTitle = UrlQuery.parse(link.getPluginPatternMatcher().toLowerCase()).get("proid");
+            /* Set fallback-filename */
+            if (!link.isNameSet()) {
+                link.setName(urlTitle + ".mp4");
+            }
             br.getPage(link.getPluginPatternMatcher());
-            if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(url_filename)) {
+            if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(urlTitle)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = br.getRegex("data-cast-title=\"([^\"]+)\"").getMatch(0);
             this.dllink = br.getRegex("source src=\"(https?://[^\"]+)\" type=\"application/x-mpegurl\" />").getMatch(0);
+            if (filename != null) {
+                link.setFinalFileName(Encoding.htmlDecode(filename).trim() + ".mp4");
+            }
         } else if (link.getDownloadURL().matches(TYPE_VIDEO_HLS)) {
             dllink = link.getDownloadURL();
         } else {
@@ -139,10 +147,6 @@ public class AventertainmentsCom extends PluginForHost {
                 }
             }
         }
-        if (filename == null) {
-            /* Fallback */
-            filename = url_filename;
-        }
         return AvailableStatus.TRUE;
     }
 
@@ -154,7 +158,7 @@ public class AventertainmentsCom extends PluginForHost {
 
     public void doFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (dllink == null) {
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (dllink.matches(TYPE_VIDEO_HLS)) {
@@ -241,7 +245,6 @@ public class AventertainmentsCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -249,8 +252,6 @@ public class AventertainmentsCom extends PluginForHost {
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setMaxSimultanDownloads(free_maxdownloads);
-        ai.setStatus("Registered (free) user");
-        account.setValid(true);
         return ai;
     }
 
