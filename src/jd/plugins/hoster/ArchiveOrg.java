@@ -58,6 +58,7 @@ public class ArchiveOrg extends PluginForHost {
     // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     // private final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     private static final String PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN = "download_serverside_broken";
+    public static final String  PROPERTY_IS_BOOK_PREVIEW            = "is_book_preview";
     private boolean             registered_only                     = false;
 
     @Override
@@ -84,10 +85,8 @@ public class ArchiveOrg extends PluginForHost {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                     return AvailableStatus.TRUE;
-                } else if (con.getResponseCode() == 200) { // txt/xml, size not available
-                    link.setFinalFileName(getFileNameFromHeader(con));
-                    return AvailableStatus.TRUE;
                 } else {
+                    /* Most likely file is offline */
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } finally {
@@ -97,6 +96,10 @@ public class ArchiveOrg extends PluginForHost {
             }
         }
         return AvailableStatus.UNCHECKABLE;
+    }
+
+    private boolean isBookPreview(final DownloadLink link) {
+        return link.hasProperty(PROPERTY_IS_BOOK_PREVIEW);
     }
 
     private void connectionErrorhandling(final URLConnectionAdapter con, final DownloadLink link, final Account account) throws PluginException, IOException {
@@ -123,6 +126,10 @@ public class ArchiveOrg extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (con.getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (isBookPreview(link) && con.getURL().toString().contains("preview-unavailable.png")) {
+            // https://archive.org/bookreader/static/preview-unavailable.png
+            /* Page of a book which is only available when book is borrowed by user (paid content). */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Book preview unavailables");
         }
     }
 
@@ -141,8 +148,8 @@ public class ArchiveOrg extends PluginForHost {
 
     private void doDownload(final Account account, final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), resumable, maxchunks);
+        connectionErrorhandling(br.getHttpConnection(), link, account);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            connectionErrorhandling(br.getHttpConnection(), link, account);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
         dl.startDownload();
