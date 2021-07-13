@@ -25,8 +25,13 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -560,9 +565,14 @@ public class InstaGramCom extends PluginForHost {
                 post.setPostDataString("username=" + Encoding.urlEncode(account.getUser()) + "&enc_password=" + Encoding.urlEncode(enc_password) + "&queryParams=%7B%7D");
                 br.getPage(post);
                 if ("fail".equals(PluginJSonUtils.getJsonValue(br, "status"))) {
-                    // 2 factor (Coded semi blind).
+                    /* 2021-07-13: 2 factor login required --> Not implemented so far */
                     logger.info("Entering 2FA handling");
-                    if (!"checkpoint_required".equals(PluginJSonUtils.getJsonValue(br, "message"))) {
+                    /* 2021-07-13 */
+                    final boolean twoFAUnsupported = true;
+                    if (twoFAUnsupported) {
+                        showCookieLogin2FAWorkaroundInformation();
+                        throw new AccountUnavailableException("2-factor-authentication required: Try cookie login method", 30 * 60 * 1000l);
+                    } else if (!"checkpoint_required".equals(PluginJSonUtils.getJsonValue(br, "message"))) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     final String page = PluginJSonUtils.getJsonValue(br, "checkpoint_url");
@@ -680,6 +690,43 @@ public class InstaGramCom extends PluginForHost {
             // PluginException.VALUE_ID_PREMIUM_DISABLE);
             // }
         }
+    }
+
+    private Thread showCookieLogin2FAWorkaroundInformation() {
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    final String help_article_url = "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = "Instagram - Login";
+                        message += "Hallo liebe(r) Instagram NutzerIn\r\n";
+                        message += "Instagram verlangt eine 2-Faktor-Authentifizierung für diesen Account. JDownloader unterstützt diesen Login-Typ nicht.\r\n";
+                        message += "Versuche bitte folgende alternative login Methode:\r\n";
+                        message += help_article_url;
+                    } else {
+                        title = "Instagram - Login";
+                        message += "Hello dear Instagram user\r\n";
+                        message += "Instagram is asking for a 2-factor-authentication for your account. JDownloader does not support this kind of login.\r\n";
+                        message += "Try the following alternative login method as a workaround:\r\n";
+                        message += help_article_url;
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(3 * 60 * 1000);
+                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL(help_article_url);
+                    }
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
     }
 
     /** Checks loggedin state based on html code (NOT cookies!) */
