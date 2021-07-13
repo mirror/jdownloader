@@ -708,7 +708,7 @@ public class InstaGramCom extends PluginForHost {
                     } else {
                         title = "Instagram - Login";
                         message += "Hello dear Instagram user\r\n";
-                        message += "Instagram is asking for a 2-factor-authentication for your account. JDownloader does not support this kind of login.\r\n";
+                        message += "Instagram is asking for a 2-factor-authentication for your account. JDownloader does not support this login method.\r\n";
                         message += "Try the following alternative login method as a workaround:\r\n";
                         message += help_article_url;
                     }
