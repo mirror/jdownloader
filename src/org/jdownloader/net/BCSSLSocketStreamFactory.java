@@ -27,9 +27,12 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Vector;
 
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLSocketFactory;
 
 import org.appwork.utils.DebugMode;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamFactory;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamInterface;
@@ -431,13 +434,13 @@ public class BCSSLSocketStreamFactory implements SSLSocketStreamFactory {
                 return options.addRetryReason("enable " + bcRetry + " for TLS1.3");
             }
         }
-        if (e instanceof SSLHandshakeException || StringUtils.containsIgnoreCase(e.getMessage(), "Remote host terminated the handshake")) {
+        if (Exceptions.containsInstanceOf(e, SSLHandshakeException.class) || StringUtils.containsIgnoreCase(eMessage, "Remote host terminated the handshake")) {
             if (options.getCustomFactorySettings().add(TLS10_11_DISABLED)) {
                 // disable old TLS1.0 and TLS1.1 and retry with TLS1.2
                 return options.addRetryReason("disable TLS1.0/TLS1.1");
             }
         }
-        if (e instanceof SocketException && StringUtils.containsIgnoreCase(eMessage, "reset")) {
+        if (Exceptions.containsInstanceOf(e, SSLException.class, SocketException.class) && StringUtils.containsIgnoreCase(eMessage, "reset")) {
             final String jsseRetry = options.enableNextDisabledCipher("GCM");
             if (jsseRetry != null) {
                 // retry with TLS1.2 GCM
@@ -448,5 +451,14 @@ public class BCSSLSocketStreamFactory implements SSLSocketStreamFactory {
             }
         }
         return null;
+    }
+
+    @Override
+    public SSLSocketFactory getSSLSocketFactory(SSLSocketStreamOptions options, String sniHostName) throws IOException {
+        try {
+            return new org.bouncycastle.jsse.provider.SSLSocketFactoryImpl();
+        } catch (Exception e) {
+            throw new SSLException(e);
+        }
     }
 }

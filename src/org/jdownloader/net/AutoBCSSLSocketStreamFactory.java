@@ -5,6 +5,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 
+import javax.net.ssl.SSLSocketFactory;
+
 import org.appwork.utils.net.httpconnection.JavaSSLSocketStreamFactory;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamFactory;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamInterface;
@@ -104,6 +106,15 @@ public class AutoBCSSLSocketStreamFactory implements SSLSocketStreamFactory {
             return options.addRetryReason("fallback BouncyCastle");
         } else {
             return null;
+        }
+    }
+
+    @Override
+    public SSLSocketFactory getSSLSocketFactory(SSLSocketStreamOptions options, String sniHostName) throws IOException {
+        if (options.getCustomFactorySettings().contains(BC_FACTORY)) {
+            return bc.getSSLSocketFactory(options, sniHostName);
+        } else {
+            return jsse.getSSLSocketFactory(options, sniHostName);
         }
     }
 }
