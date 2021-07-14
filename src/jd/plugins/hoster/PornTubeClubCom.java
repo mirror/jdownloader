@@ -84,6 +84,9 @@ public class PornTubeClubCom extends antiDDoSForHost {
             filename = url_filename;
         }
         dllink = br.getRegex("\"og:video\"\\s*content\\s*=\\s*\"\\s*(https?://.*?\\.mp4)\\s*\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("<source\\s*src\\s*=\\s*\"\\s*(https?://.*?\\.mp4)\\s*\"").getMatch(0);
+        }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
