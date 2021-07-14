@@ -14,6 +14,17 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.http.Browser;
+import jd.http.Cookies;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.InputField;
+import jd.plugins.Account;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.components.GoogleService;
+
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.TextComponentInterface;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -37,17 +48,6 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.translate._JDT;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.http.Browser;
-import jd.http.Cookies;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.parser.html.InputField;
-import jd.plugins.Account;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.components.GoogleService;
 
 public class GoogleHelper {
     // private static final String COOKIES2 = "googleComCookies";
@@ -232,7 +232,7 @@ public class GoogleHelper {
                 /* 2020-06-19: Enable this if login is only possible via exported cookies and NOT via username & password! */
                 /* 2020-06-19: Enabled cookie-only-login! */
                 final boolean cookieLoginOnly = true;
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
                 final Cookies lastSavedCookies = account.loadCookies("");
                 if (cookieLoginOnly && userCookies == null) {
                     showCookieLoginInformation(account.getHoster());

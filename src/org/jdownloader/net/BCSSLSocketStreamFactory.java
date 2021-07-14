@@ -456,6 +456,7 @@ public class BCSSLSocketStreamFactory implements SSLSocketStreamFactory {
     @Override
     public SSLSocketFactory getSSLSocketFactory(SSLSocketStreamOptions options, String sniHostName) throws IOException {
         try {
+            // TODO: add options support
             return new org.bouncycastle.jsse.provider.SSLSocketFactoryImpl();
         } catch (Exception e) {
             throw new SSLException(e);

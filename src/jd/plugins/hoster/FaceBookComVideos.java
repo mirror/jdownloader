@@ -26,21 +26,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.config.FacebookConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -60,6 +45,21 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.config.FacebookConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FaceBookComVideos extends PluginForHost {
@@ -271,9 +271,8 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     /**
-     * Check video via https://m.facebook.com/watch/?v=<fid> </br>
-     * In some cases, this may also work for videos for which an account is required otherwise. </br>
-     * Not all videos can be accessed via this way!
+     * Check video via https://m.facebook.com/watch/?v=<fid> </br> In some cases, this may also work for videos for which an account is
+     * required otherwise. </br> Not all videos can be accessed via this way!
      */
     @Deprecated
     private AvailableStatus requestFileInformationMobile(final DownloadLink link, final boolean isDownload) throws PluginException, IOException {
@@ -423,13 +422,9 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     /**
-     * 2021-03-18: "plugin embed" method. </br>
-     * Not all videos are embeddable via this method thus make sure to have a fallback and do NOT trust offline status if this fails with
-     * exception! </br>
-     * This sometimes enables us to: </br>
-     * 1. Check content that is otherwise only available when logedIN. </br>
-     * 2. Get higher video quality. </br>
-     * 3. Do superfast linkcheck as it's much faster than the FB website.
+     * 2021-03-18: "plugin embed" method. </br> Not all videos are embeddable via this method thus make sure to have a fallback and do NOT
+     * trust offline status if this fails with exception! </br> This sometimes enables us to: </br> 1. Check content that is otherwise only
+     * available when logedIN. </br> 2. Get higher video quality. </br> 3. Do superfast linkcheck as it's much faster than the FB website.
      */
     @Deprecated
     private AvailableStatus requestFileInformationPluginEmbed(final DownloadLink link, final boolean isDownload) throws Exception {
@@ -439,9 +434,9 @@ public class FaceBookComVideos extends PluginForHost {
         /* TODO: Improve offline detection */
         if (videoO == null) {
             /**
-             * 2021-03-18: We assume that if no video-json object is available, the video is either offline or not embeddable. </br>
-             * They do return an errormessage for non-embeddable videos but it's language-dependant and thus not easy to parse so we don't
-             * try to catch it here!
+             * 2021-03-18: We assume that if no video-json object is available, the video is either offline or not embeddable. </br> They do
+             * return an errormessage for non-embeddable videos but it's language-dependant and thus not easy to parse so we don't try to
+             * catch it here!
              */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -523,8 +518,7 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     /**
-     * Normal linkcheck via website. </br>
-     * Only suited for URLs matching TYPE_VIDEO_WATCH! <br>
+     * Normal linkcheck via website. </br> Only suited for URLs matching TYPE_VIDEO_WATCH! <br>
      * For other URL-types, website can be quite different depending on the video the user wants to download - it can redirect to random
      * other URLs!
      *
@@ -593,8 +587,8 @@ public class FaceBookComVideos extends PluginForHost {
             // }
             // }
             /**
-             * Try to find extra data for nicer filenames. </br>
-             * Do not trust this source 100% so only set properties which haven't been set before!
+             * Try to find extra data for nicer filenames. </br> Do not trust this source 100% so only set properties which haven't been set
+             * before!
              */
             try {
                 final Map<String, Object> entries = (Map<String, Object>) findSchemaJsonVideoObject();
@@ -798,8 +792,7 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     /**
-     * Linkcheck via embed URL. </br>
-     * Not all videos are embeddable!
+     * Linkcheck via embed URL. </br> Not all videos are embeddable!
      */
     public AvailableStatus requestFileInformationEmbed(final DownloadLink link, final boolean isDownload) throws Exception {
         br.getPage("https://www." + this.getHost() + "/video/embed?video_id=" + this.getFID(link));
@@ -1054,7 +1047,7 @@ public class FaceBookComVideos extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 /* 2020-10-9: Experimental login/test */
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
                 final boolean enforceCookieLogin = true;
                 if (cookies != null) {
                     br.setCookies(this.getHost(), cookies);

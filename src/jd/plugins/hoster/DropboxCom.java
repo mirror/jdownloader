@@ -794,7 +794,7 @@ public class DropboxCom extends PluginForHost {
             }
             /* 2020-09-30: Website login is not possible anymore for multiple reasons. We're using cookie-login as a workaround. */
             final boolean allowWebsiteLogin = false;
-            final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
+            final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
             if (userCookies != null) {
                 br.setCookies(userCookies);
                 /* 2020-09-30: This will redirect to login page if cookies are invalid! */

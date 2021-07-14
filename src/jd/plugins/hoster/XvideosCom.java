@@ -563,7 +563,7 @@ public class XvideosCom extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 br.getHeaders().put("Accept-Language", "en-gb");
-                final Cookies cookiesUser = Cookies.parseCookiesFromJsonString(account.getPass());
+                final Cookies cookiesUser = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
                 final Cookies cookiesFree = account.loadCookies("");
                 final Cookies cookiesPremium = account.loadCookies("premium");
                 if (cookiesFree != null && cookiesPremium != null) {

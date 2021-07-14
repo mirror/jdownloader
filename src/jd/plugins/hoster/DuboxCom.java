@@ -21,15 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -50,6 +41,15 @@ import jd.plugins.decrypter.DuboxComFolder;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
+
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DuboxCom extends PluginForHost {
@@ -244,7 +244,7 @@ public class DuboxCom extends PluginForHost {
             br.setFollowRedirects(true);
             br.setCookiesExclusive(true);
             final Cookies cookies = account.loadCookies("");
-            final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
+            final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
             if (cookies != null) {
                 logger.info("Attempting cookie login");
                 this.br.setCookies(this.getHost(), cookies);

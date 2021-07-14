@@ -229,7 +229,7 @@ public class PixivNet extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), plugin.getLogger());
                 if (cookies != null) {
                     /* 2020-04-14: TODO: Add cookie login captcha refresh handling: jdlog://6656815302851/ */
                     plugin.getLogger().info("Attempting normal cookie login");

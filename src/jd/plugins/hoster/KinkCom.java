@@ -280,7 +280,7 @@ public class KinkCom extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 br.setAllowedResponseCodes(new int[] { 401 });
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     if (checkAndSaveCookies(br, cookies, account)) {

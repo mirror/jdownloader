@@ -272,7 +272,7 @@ public class PinterestCom extends PluginForHost {
                     last_used_host = "pinterest.com";
                 }
                 final Cookies cookies = account.loadCookies("");
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
                 /* 2021-01-28: Full login + invisible reCaptcha Enterprise --> Broken -> Use cookie login only */
                 final boolean enforceCookieLoginOnly = true;
                 if (cookies != null) {

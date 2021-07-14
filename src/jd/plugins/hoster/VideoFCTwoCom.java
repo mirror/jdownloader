@@ -24,12 +24,6 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -52,6 +46,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.fc2.com" }, urls = { "https?://(?:video\\.fc2\\.com|xiaojiadianvideo\\.asia|jinniumovie\\.be)/((?:[a-z]{2}/)?(?:a/)?flv2\\.swf\\?i=|(?:[a-z]{2}/)?(?:a/)?content/)\\w+" })
 public class VideoFCTwoCom extends PluginForHost {
@@ -150,8 +150,8 @@ public class VideoFCTwoCom extends PluginForHost {
         String filename = null;
         String uploadername = null;
         /**
-         * 2019-01-28: Some videos are still based on their old (flash-)player and cannot be checked via their new API! </br>
-         * 2020-12-18: TODO: re-check this statement - new API should be used for all videos by now!
+         * 2019-01-28: Some videos are still based on their old (flash-)player and cannot be checked via their new API! </br> 2020-12-18:
+         * TODO: re-check this statement - new API should be used for all videos by now!
          */
         // final boolean useNewAPI = account == null && newAPIVideotoken != null;
         String filenamePrefix = "";
@@ -245,7 +245,7 @@ public class VideoFCTwoCom extends PluginForHost {
             br.setCookiesExclusive(true);
             br.setFollowRedirects(true);
             final Cookies cookies = account.loadCookies("");
-            final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
+            final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
             if (cookies != null) {
                 this.br.setCookies(this.getHost(), cookies);
                 if (!verifyCookies) {

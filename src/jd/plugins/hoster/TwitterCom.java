@@ -34,6 +34,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -472,7 +473,7 @@ public class TwitterCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
+    public static void login(final Plugin plugin, final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
@@ -496,7 +497,7 @@ public class TwitterCom extends PluginForHost {
                 }
                 /* 2020-07-02: Only cookie login is supported! */
                 final boolean allowCookieLoginOnly = true;
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), plugin.getLogger());
                 if (userCookies != null && !userCookies.isEmpty()) {
                     /* 2020-02-13: Experimental - accepts cookies exported via browser addon "EditThisCookie" */
                     br.setCookies(userCookies);
@@ -574,7 +575,7 @@ public class TwitterCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(this.br, account, true);
+        login(this, this.br, account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setMaxSimultanDownloads(1);
@@ -585,7 +586,7 @@ public class TwitterCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        login(this.br, account, false);
+        login(this, this.br, account, false);
         requestFileInformation(link, account, true);
         doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
     }

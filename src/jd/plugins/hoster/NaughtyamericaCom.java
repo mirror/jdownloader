@@ -218,7 +218,7 @@ public class NaughtyamericaCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 prepBR(br);
                 final boolean allowLoginWithUserPW = false;
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     /*
