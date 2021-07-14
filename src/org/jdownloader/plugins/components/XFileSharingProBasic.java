@@ -3583,7 +3583,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                  * Example: filejoker.net
                  */
                 logger.info("Full login required");
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
                 if (userCookies != null) {
                     /* Fallback */
                     logger.info("Verifying user-login-cookies");

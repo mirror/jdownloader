@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.util.Arrays;
 
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -33,6 +31,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
+
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "contasturbo.com" }, urls = { "" })
 public class ContasturboCom extends PluginForHost {
@@ -59,7 +59,7 @@ public class ContasturboCom extends PluginForHost {
             br.setFollowRedirects(true);
             br.setCookiesExclusive(true);
             br.setFollowRedirects(true);
-            final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
+            final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
             if (userCookies != null) {
                 /* Developer debug test */
                 logger.info("Attempting user cookie login");

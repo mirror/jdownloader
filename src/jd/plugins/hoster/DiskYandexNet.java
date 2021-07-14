@@ -470,7 +470,7 @@ public class DiskYandexNet extends PluginForHost {
                 br.setFollowRedirects(true);
                 /* Always try to re-use cookies to avoid login captchas! */
                 final Cookies cookies = account.loadCookies("");
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
                 if (cookies != null) {
                     this.setCookies(cookies);
                     if (!force) {

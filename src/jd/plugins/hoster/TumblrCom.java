@@ -137,7 +137,7 @@ public class TumblrCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
                 String apikey = account.getStringProperty(PROPERTY_APIKEY);
                 if (cookies != null && apikey != null) {
                     br.setCookies(account.getHoster(), cookies);
