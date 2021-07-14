@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.html.Form;
@@ -25,10 +28,6 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ClicknuploadOrg extends XFileSharingProBasic {
@@ -96,20 +95,20 @@ public class ClicknuploadOrg extends XFileSharingProBasic {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return -2;
+            return 1;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
             return -5;
         } else {
             /* Free(anonymous) and unknown account type */
-            return -2;
+            return 1;
         }
     }
 
     @Override
     protected void processFileInfo(String[] fileInfo, Browser altbr, DownloadLink link) {
         try {
-            // ?op=check_files is broken, file size from free download page
+            // 2021-07: ?op=check_files is broken, use file size from 2nd free download page
             final Form download1 = findFormDownload1Free(br);
             if (download1 != null && (link.getKnownDownloadSize() == -1 && StringUtils.isEmpty(fileInfo[1]))) {
                 final Browser brc = br.cloneBrowser();
@@ -129,12 +128,14 @@ public class ClicknuploadOrg extends XFileSharingProBasic {
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return 4;
+        /* 2021-07-14 */
+        return 1;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 4;
+        /* 2021-07-14: Free account dl allows 2 connections in total */
+        return 2;
     }
 
     @Override
@@ -150,6 +151,7 @@ public class ClicknuploadOrg extends XFileSharingProBasic {
 
     @Override
     protected boolean enableAccountApiOnlyMode() {
-        return DebugMode.TRUE_IN_IDE_ELSE_FALSE;
+        // return DebugMode.TRUE_IN_IDE_ELSE_FALSE;
+        return false;
     }
 }
