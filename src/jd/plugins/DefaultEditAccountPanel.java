@@ -8,6 +8,8 @@ import javax.swing.JLabel;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter.HighlightPainter;
 
+import jd.http.Cookies;
+
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.swing.components.ExtTextField;
@@ -85,7 +87,6 @@ public class DefaultEditAccountPanel extends MigPanel implements AccountBuilderI
                 }
             });
             name.setHelpText(_GUI.T.jd_gui_swing_components_AccountDialog_help_username());
-            name.paste();
         } else {
             name = null;
         }
@@ -104,6 +105,16 @@ public class DefaultEditAccountPanel extends MigPanel implements AccountBuilderI
             }
         }, "");
         pass.setHelpText(_GUI.T.BuyAndAddPremiumAccount_layoutDialogContent_pass());
+        final ExtTextField dummy = new ExtTextField();
+        dummy.paste();
+        final String clipboard = dummy.getText();
+        if (StringUtils.isNotEmpty(clipboard)) {
+            if (Cookies.parseCookiesFromJsonString(clipboard, null) != null && pass != null) {
+                pass.setPassword(clipboard.toCharArray());
+            } else if (name != null) {
+                name.setText(clipboard);
+            }
+        }
     }
 
     public InputChangedCallbackInterface getCallback() {
