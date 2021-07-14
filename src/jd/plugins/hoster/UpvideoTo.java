@@ -20,6 +20,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
@@ -149,5 +150,14 @@ public class UpvideoTo extends XFileSharingProBasic {
             logger.log(e);
         }
         return null;
+    }
+
+    @Override
+    public String[] scanInfo(final String[] fileInfo) {
+        super.scanInfo(fileInfo);
+        if (StringUtils.isEmpty(fileInfo[0])) {
+            fileInfo[0] = br.getRegex("name=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
+        }
+        return fileInfo;
     }
 }
