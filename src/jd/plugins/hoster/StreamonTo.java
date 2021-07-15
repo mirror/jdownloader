@@ -18,14 +18,21 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class StreamonTo extends XFileSharingProBasic {
@@ -118,5 +125,40 @@ public class StreamonTo extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
+        // final String dllink = super.getDllink(link, account, br, src);
+        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            return null;
+        }
+        String[][] hunters = br.getRegex("<script[^>]*>\\s*(var _.*?\\})eval(\\(function\\(h,u,n,t,e,r\\).*?)</script>").getMatches();
+        int counter = 0;
+        String dllink = null;
+        for (final String[] hunter : hunters) {
+            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
+            final ScriptEngine engine = manager.getEngineByName("javascript");
+            final StringBuilder sb = new StringBuilder();
+            /* First function always has the same functionality but is always named differently */
+            sb.append(hunter[0]);
+            sb.append("var res = ");
+            /* 2nd function always calls the same function but with different parameters. */
+            sb.append(hunter[1]);
+            String result = null;
+            try {
+                engine.eval(sb.toString());
+                result = engine.get("res").toString();
+                System.out.println(counter + ":\r\n" + result);
+                dllink = new Regex(result, "\"(/dl\\?[^\"]+)").getMatch(0);
+                if (dllink != null) {
+                    break;
+                }
+            } catch (final Exception e) {
+                e.printStackTrace();
+            }
+            counter += 1;
+        }
+        return dllink;
     }
 }
