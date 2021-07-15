@@ -9,6 +9,8 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.JVMVersion;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.os.hardware.HardwareType;
+import org.appwork.utils.os.hardware.HardwareTypeInterface;
 import org.jdownloader.settings.GeneralSettings;
 
 public class DiskSpaceManager {
@@ -57,6 +59,23 @@ public class DiskSpaceManager {
                 final String bestRootMatch = checker.getRoot();
                 if (bestRootMatch == null || (!new File(bestRootMatch).isDirectory() && !new File(bestRootMatch).equals(reservation.getDestination()))) {
                     return handle(checker, DISKSPACERESERVATIONRESULT.INVALIDDESTINATION, null);
+                }
+                try {
+                    final HardwareTypeInterface hardwareType = HardwareType.getHardware();
+                    if (hardwareType != null) {
+                        switch (hardwareType.getHardwareType()) {
+                        case QNAP:
+                        case SYNOLOGY:
+                            if (checker.isSameRoot("/")) {
+                                return handle(checker, DISKSPACERESERVATIONRESULT.INVALIDDESTINATION, null);
+                            }
+                            break;
+                        default:
+                            break;
+                        }
+                    }
+                } catch (final Throwable e) {
+                    reservation.getLogger().log(e);
                 }
                 final long forcedFreeSpaceOnDisk = Math.max(0l, config.getForcedFreeSpaceOnDisk() * 1024l * 1024l);
                 long requestedDiskSpace = Math.max(0, reservation.getSize()) + forcedFreeSpaceOnDisk;

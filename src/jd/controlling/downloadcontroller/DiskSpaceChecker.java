@@ -2,6 +2,7 @@ package jd.controlling.downloadcontroller;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -68,6 +69,28 @@ public class DiskSpaceChecker {
 
     protected LogInterface getLogger() {
         return getDiskSpaceReservation().getLogger();
+    }
+
+    public boolean isSameRoot(final String... root) {
+        final Set<String> remainingRoots = new HashSet<String>(getRoots());
+        final List<String> roots = Arrays.asList(root);
+        boolean sameRoot = remainingRoots.removeAll(roots);
+        if (CrossSystem.isWindows() && !sameRoot) {
+            for (final String otherRoot : roots) {
+                String matchingRoot = null;
+                for (final String testRoot : remainingRoots) {
+                    if (testRoot.equalsIgnoreCase(otherRoot)) {
+                        matchingRoot = testRoot;
+                        break;
+                    }
+                }
+                if (matchingRoot != null && remainingRoots.remove(matchingRoot)) {
+                    break;
+                }
+            }
+            sameRoot = getRoots().size() > remainingRoots.size();
+        }
+        return sameRoot;
     }
 
     public boolean isSameRoot(final DiskSpaceChecker checker) {
