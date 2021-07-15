@@ -41,7 +41,7 @@ public class UpvideoTo extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info: 2021-04-26: Unknown as website is using js obfuscation <br />
+     * limit-info: 2021-07-15 <br />
      * captchatype-info: null<br />
      * other:<br />
      */
@@ -97,29 +97,29 @@ public class UpvideoTo extends XFileSharingProBasic {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return 0;
+            return -4;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
-            return 0;
+            return -4;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 0;
+            return -4;
         }
     }
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return -1;
+        return 2;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return -1;
+        return 2;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return 2;
     }
 
     @Override
@@ -159,5 +159,10 @@ public class UpvideoTo extends XFileSharingProBasic {
             fileInfo[0] = br.getRegex("name=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
         }
         return fileInfo;
+    }
+
+    @Override
+    protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
+        return StreamonTo.huntDllink(this, src);
     }
 }
