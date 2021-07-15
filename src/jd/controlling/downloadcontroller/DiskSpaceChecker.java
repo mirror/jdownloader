@@ -99,24 +99,7 @@ public class DiskSpaceChecker {
         } else if (checker == this) {
             return true;
         } else {
-            final Set<String> remainingRoots = new HashSet<String>(getRoots());
-            boolean sameRoot = remainingRoots.removeAll(checker.getRoots());
-            if (CrossSystem.isWindows() && !sameRoot) {
-                for (final String otherRoot : checker.getRoots()) {
-                    String matchingRoot = null;
-                    for (final String testRoot : remainingRoots) {
-                        if (testRoot.equalsIgnoreCase(otherRoot)) {
-                            matchingRoot = testRoot;
-                            break;
-                        }
-                    }
-                    if (matchingRoot != null && remainingRoots.remove(matchingRoot)) {
-                        break;
-                    }
-                }
-                sameRoot = getRoots().size() > remainingRoots.size();
-            }
-            return sameRoot;
+            return isSameRoot(checker.getRoots().toArray(new String[0]));
         }
     }
 
