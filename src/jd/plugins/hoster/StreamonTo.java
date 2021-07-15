@@ -21,7 +21,6 @@ import java.util.List;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
@@ -33,6 +32,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class StreamonTo extends XFileSharingProBasic {
@@ -88,13 +88,13 @@ public class StreamonTo extends XFileSharingProBasic {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return 0;
+            return -4;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
-            return 0;
+            return -4;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 0;
+            return -4;
         }
     }
 
@@ -114,30 +114,31 @@ public class StreamonTo extends XFileSharingProBasic {
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return -1;
+        return 1;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return -1;
+        return 1;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override
     protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
         // final String dllink = super.getDllink(link, account, br, src);
-        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            return null;
-        }
-        String[][] hunters = br.getRegex("<script[^>]*>\\s*(var _.*?\\})eval(\\(function\\(h,u,n,t,e,r\\).*?)</script>").getMatches();
-        int counter = 0;
+        return StreamonTo.huntDllink(this, src);
+    }
+
+    public static final String huntDllink(final PluginForHost plg, final String src) {
         String dllink = null;
+        String[][] hunters = new Regex(src, "<script[^>]*>\\s*(var _.*?\\})eval(\\(function\\(h,u,n,t,e,r\\).*?)</script>").getMatches();
+        int counter = 0;
         for (final String[] hunter : hunters) {
-            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
+            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(plg);
             final ScriptEngine engine = manager.getEngineByName("javascript");
             final StringBuilder sb = new StringBuilder();
             /* First function always has the same functionality but is always named differently */
@@ -149,10 +150,21 @@ public class StreamonTo extends XFileSharingProBasic {
             try {
                 engine.eval(sb.toString());
                 result = engine.get("res").toString();
-                System.out.println(counter + ":\r\n" + result);
-                dllink = new Regex(result, "\"(/dl\\?[^\"]+)").getMatch(0);
-                if (dllink != null) {
-                    break;
+                // System.out.println(counter + ":\r\n" + result);
+                final String relevantPart1 = new Regex(result, "(var abfbecee.*?)(?:window\\.videoConfig|function)").getMatch(0);
+                if (relevantPart1 != null) {
+                    final StringBuilder sb2 = new StringBuilder();
+                    sb2.append(relevantPart1);
+                    sb2.append("function atob (f){var g={},b=65,d=0,a,c=0,h,e='',k=String.fromCharCode,l=f.length;for(a='';91>b;)a+=k(b++);a+=a.toLowerCase()+'0123456789+/';for(b=0;64>b;b++)g[a.charAt(b)]=b;for(a=0;a<l;a++)for(b=g[f.charAt(a)],d=(d<<6)+b,c+=6;8<=c;)((h=d>>>(c-=8)&255)||a<l-2)&&(e+=k(h));return e};");
+                    sb2.append("var baabaffcac = efdcdbbfbefd.replace(\"RWFiZGVkYmJlZg\", \"\");var bbafcafccebb= atob(baabaffcac);var towait = 5;var fabefacdffbd = \"#badaebaccbacff\";var res = cccebacdeccc.replace(\"YWJmNDQ0YWIyOWFiYTdlNzE2ZjgwMzdlMjIyZGEwOGM\", \"\");var res2 = res.replace(\"NTljOTkzNTcxMTdjZDc1YzZiMTlhYzFjODY0NjBhZGE=\", \"\");var decode = atob(res2);");
+                    engine.eval(sb2.toString());
+                    dllink = engine.get("decode").toString();
+                    if (!StringUtils.isEmpty(dllink)) {
+                        plg.getLogger().info("js success");
+                        break;
+                    } else {
+                        plg.getLogger().warning("Hunter failed -> Hunter won?");
+                    }
                 }
             } catch (final Exception e) {
                 e.printStackTrace();
