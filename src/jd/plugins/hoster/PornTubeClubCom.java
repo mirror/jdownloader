@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -27,10 +30,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn-tube-club.com" }, urls = { "https?://(?:www\\.)?porn\\-tube\\-club\\.com/(v\\d+/\\d+|play/\\d+)" })
 public class PornTubeClubCom extends antiDDoSForHost {
@@ -58,17 +57,24 @@ public class PornTubeClubCom extends antiDDoSForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        if (linkid != null) {
-            return linkid;
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
         } else {
             return super.getLinkID(link);
         }
     }
 
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        if (!link.isNameSet()) {
+            /* Set fallback name first */
+            link.setName(getFID(link) + ".mp4");
+        }
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
@@ -78,38 +84,33 @@ public class PornTubeClubCom extends antiDDoSForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("id=\"myvideo\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = getLinkID(link);
         String filename = br.getRegex("\"og:title\"\\s*content\\s*=\\s*\"\\s*(.*?)\\s*\"").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            filename = url_filename;
-        }
         dllink = br.getRegex("\"og:video\"\\s*content\\s*=\\s*\"\\s*(https?://.*?\\.mp4)\\s*\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("<source\\s*src\\s*=\\s*\"\\s*(https?://.*?\\.mp4)\\s*\"").getMatch(0);
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        String ext;
-        if (!StringUtils.isEmpty(dllink)) {
-            ext = getFileNameExtensionFromString(dllink, default_extension);
-            if (ext != null && !ext.matches("\\.(?:flv|mp4)")) {
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename);
+            filename = filename.trim();
+            filename = encodeUnicode(filename);
+            String ext;
+            if (!StringUtils.isEmpty(dllink)) {
+                ext = getFileNameExtensionFromString(dllink, default_extension);
+                if (ext != null && !ext.matches("\\.(?:flv|mp4)")) {
+                    ext = default_extension;
+                }
+            } else {
                 ext = default_extension;
             }
-        } else {
-            ext = default_extension;
-        }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
+            if (!filename.endsWith(ext)) {
+                filename += ext;
+            }
+            link.setFinalFileName(filename);
         }
         if (!StringUtils.isEmpty(dllink)) {
             dllink = Encoding.htmlDecode(dllink);
             /* 2020-10-20: Fix wrong URL obtained from html */
             dllink = dllink.replace(".com.com/", ".com/");
-            link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
             br.getHeaders().put("accept-encoding", "identity;q=1, *;q=0");
             br.getHeaders().put("accept", "*/*");

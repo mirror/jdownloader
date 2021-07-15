@@ -129,7 +129,7 @@ public class ArchiveOrg extends PluginForHost {
         } else if (isBookPreview(link) && con.getURL().toString().contains("preview-unavailable.png")) {
             // https://archive.org/bookreader/static/preview-unavailable.png
             /* Page of a book which is only available when book is borrowed by user (paid content). */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Book preview unavailables");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Book preview unavailable");
         }
     }
 
