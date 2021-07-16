@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
+import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -74,9 +75,9 @@ public class MightyScriptAdLinkFlyDefault extends MightyScriptAdLinkFly {
             /** 2019-10-30: exe.io domains */
             "exe.io", "exe.app", "exee.io", "exey.io", "iddeas.xyz", "artiicle.xyz", "techbeast.xyz", "techofaqs.com", "caat.site", "2xs.io", "wealthh.xyz", "cu6.io", "mediumarticles.com", "bolssc.com", "mealip.com",
             /** 2019-08-29: 4snip.pw domains, handles by FoursnipPw plugin */
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     /*
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      * "4snip.pw",
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      */
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    /*
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     * "4snip.pw",
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     */
             /** 2019-11-13: linkjust.com domains */
             "linkjust.com", "thegreatfuture.com", "siha.xyz", "akltu.com", "rahlatt.com", "ekhtr.com",
             /** 2020-01-21: encurta.net domains */
@@ -140,19 +141,18 @@ public class MightyScriptAdLinkFlyDefault extends MightyScriptAdLinkFly {
     private static final List<String> domains_captcha_skippable  = Arrays.asList(new String[] { "safelinku.com", "idsly.bid", "idsly.net" });
 
     @Override
-    protected String correctURL(final String url) {
-        if (url.contains("linkdrop.net")) {
+    protected void correctURL(final CryptedLink param) {
+        if (param.getCryptedUrl().contains("linkdrop.net")) {
             /* 2018-12-11: Their https is broken */
-            return url.replace("https://", "http://");
-        } else if (url.contains("curs.io")) {
+            param.setCryptedUrl(param.getCryptedUrl().replace("https://", "http://"));
+        } else if (param.getCryptedUrl().contains("curs.io")) {
             /*
              * 2019-02-21: curs.io is a cut-urls.com domain which is down but the URLs can still be online so we need to replace it with one
              * of their working domains.
              */
-            return url.replace("curs.io", "cuto.io");
+            param.setCryptedUrl(param.getCryptedUrl().replace("curs.io", "cuto.io"));
         } else {
             /* Nothing to correct */
-            return url;
         }
     }
 

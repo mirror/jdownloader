@@ -19,6 +19,10 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,10 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -66,87 +66,37 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
 
     private String appVars = null;
 
-    protected String correctURL(final String url) {
-        return url;
+    protected void correctURL(final CryptedLink param) {
     }
 
     protected boolean supportsHost(final String host) {
         return host.equalsIgnoreCase(this.getHost());
     }
 
+    protected String regexAppVars(final Browser br) {
+        return br.getRegex("var (app_vars.*?)</script>").getMatch(0);
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = correctURL(param.toString());
-        final String source_host = Browser.getHost(parameter);
-        br.setFollowRedirects(false);
-        getPage(parameter);
-        // 2019-11-13: http->https->different domain(https)
-        // 2019-11-13: http->https->different domain(http)->different domain(https)
-        while (true) {
-            if (isAbort()) {
-                return decryptedLinks;
-            }
-            String redirect = br.getRedirectLocation();
-            if (redirect == null) {
-                /* 2019-01-29: E.g. cuon.io */
-                redirect = br.getRegex("<meta http\\-equiv=\"refresh\" content=\"\\d+;url=(https?://[^\"]+)\">").getMatch(0);
-            }
-            if (redirect == null) {
-                /* 2019-04-25: E.g. clkfly.pw */
-                redirect = br.getHttpConnection().getHeaderField("Refresh");
-                if (redirect != null && redirect.matches("^\\d+, http.+")) {
-                    redirect = new Regex(redirect, "^\\d+, (http.+)").getMatch(0);
-                }
-            }
-            if (redirect == null) {
-                /* 2021-01-14 exe.io */
-                /* document.getElementById('clickable').click() */
-                redirect = br.containsHTML("\\('clickable'\\)\\.click\\(\\)") ? br.getRegex("<a\\s*href\\s*=\\s*\"(https?://[^\"]+)\"\\s*id\\s*=\\s*\"clickable\"").getMatch(0) : null;
-            }
-            // if (redirect == null) {
-            // /*
-            // * 2021-01-14: shortzzy.link --> janusnotes.com --> This code is incomplete but so far not needed. We need to make this
-            // * class extendable to be able to easily implement such special cases!
-            // */
-            // final String specialRedirect = br.getRegex("var api = \"(https?://[^\"]+)\";").getMatch(0);
-            // final String clickarlink = br.getRegex("var fetch = \"(https?://[^\"]+)\";").getMatch(0);
-            // if (specialRedirect != null && clickarlink != null) {
-            // this.postPage(specialRedirect, "clickarlink=" + Encoding.urlEncode(clickarlink));
-            // redirect = br.getRedirectLocation();
-            // }
-            // }
-            if (redirect == null) {
-                break;
-            }
-            if (!this.supportsHost(Browser.getHost(redirect))) {
-                /*
-                 * 2018-07-18: Direct redirect without captcha or any Form e.g. vivads.net OR redirect to other domain of same service e.g.
-                 * wi.cr --> wicr.me
-                 */
-                decryptedLinks.add(this.createDownloadlink(redirect));
-                return decryptedLinks;
-            } else {
-                getPage(redirect);
-            }
-        }
-        br.setFollowRedirects(true);
+        final String sourceHost = Browser.getHost(param.getCryptedUrl());
+        correctURL(param);
+        handlePreCrawlProcess(param, decryptedLinks);
         if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.toString().length() < 100) {
             /* 2020-05-29: E.g. https://uii.io/full */
             logger.info("Invalid HTML - probably offline content");
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        br.setFollowRedirects(true);
         final Form beforeCaptcha = br.getFormbyProperty("id", "before-captcha");
         if (beforeCaptcha != null) {
             /* 2019-10-30: E.g. exe.io */
             logger.info("Found pre-captcha Form");
             this.submitForm(beforeCaptcha);
         }
-        appVars = br.getRegex("var (app_vars.*?)</script>").getMatch(0);
+        appVars = regexAppVars(this.br);
         Form form = getCaptchaForm();
         if (form == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -173,24 +123,21 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             if (form == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            // we want redirect off here
             br.setFollowRedirects(false);
             submitForm(form);
             final String finallink = br.getRedirectLocation();
             if (finallink == null) {
                 if (br.containsHTML("<script>alert\\('(?:Link not found)\\s*!'\\);")) {
-                    // invalid link
-                    logger.warning("Invalid link : " + parameter);
-                    return decryptedLinks;
+                    logger.warning("Invalid link : " + param.getCryptedUrl());
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                logger.warning("Decrypter broken for link: " + parameter);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
             /* 2018-07-18: Not all sites require a captcha to be solved */
             final CaptchaType captchaType = getCaptchaType();
-            if (evalulateCaptcha(captchaType, parameter)) {
+            if (evalulateCaptcha(captchaType, param.getCryptedUrl())) {
                 logger.info("Captcha required");
                 boolean requiresCaptchaWhichCanFail = false;
                 boolean captchaFailed = false;
@@ -267,7 +214,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                  */
                 // this.submitForm(form);
             }
-            final boolean skipWait = waittimeIsSkippable(source_host);
+            final boolean skipWait = waittimeIsSkippable(sourceHost);
             /** TODO: Fix waittime-detection for tmearn.com */
             /* 2018-07-18: It is very important to keep this exact as some websites have "ad-forms" e.g. urlcloud.us !! */
             Form f2 = br.getFormbyKey("_Token[fields]");
@@ -327,14 +274,69 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             if (finallink == null) {
                 if (br.containsHTML("<h1>Whoops, looks like something went wrong\\.</h1>")) {
                     logger.warning("Hoster has issue");
-                    return decryptedLinks;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                logger.warning("Decrypter broken for link: " + parameter);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             decryptedLinks.add(createDownloadlink(finallink));
         }
         return decryptedLinks;
+    }
+
+    /** Accesses input URL and handles "Pre-AdLinkFly" redirects. */
+    protected void handlePreCrawlProcess(final CryptedLink param, final ArrayList<DownloadLink> decryptedLinks) throws Exception {
+        br.setFollowRedirects(false);
+        getPage(param.getCryptedUrl());
+        // 2019-11-13: http->https->different domain(https)
+        // 2019-11-13: http->https->different domain(http)->different domain(https)
+        while (true) {
+            if (isAbort()) {
+                return;
+            }
+            String redirect = br.getRedirectLocation();
+            if (redirect == null) {
+                /* 2019-01-29: E.g. cuon.io */
+                redirect = br.getRegex("<meta http\\-equiv=\"refresh\" content=\"\\d+;url=(https?://[^\"]+)\">").getMatch(0);
+            }
+            if (redirect == null) {
+                /* 2019-04-25: E.g. clkfly.pw */
+                redirect = br.getHttpConnection().getHeaderField("Refresh");
+                if (redirect != null && redirect.matches("^\\d+, http.+")) {
+                    redirect = new Regex(redirect, "^\\d+, (http.+)").getMatch(0);
+                }
+            }
+            if (redirect == null) {
+                /* 2021-01-14 exe.io */
+                /* document.getElementById('clickable').click() */
+                redirect = br.containsHTML("\\('clickable'\\)\\.click\\(\\)") ? br.getRegex("<a\\s*href\\s*=\\s*\"(https?://[^\"]+)\"\\s*id\\s*=\\s*\"clickable\"").getMatch(0) : null;
+            }
+            // if (redirect == null) {
+            // /*
+            // * 2021-01-14: shortzzy.link --> janusnotes.com --> This code is incomplete but so far not needed. We need to make this
+            // * class extendable to be able to easily implement such special cases!
+            // */
+            // final String specialRedirect = br.getRegex("var api = \"(https?://[^\"]+)\";").getMatch(0);
+            // final String clickarlink = br.getRegex("var fetch = \"(https?://[^\"]+)\";").getMatch(0);
+            // if (specialRedirect != null && clickarlink != null) {
+            // this.postPage(specialRedirect, "clickarlink=" + Encoding.urlEncode(clickarlink));
+            // redirect = br.getRedirectLocation();
+            // }
+            // }
+            if (redirect == null) {
+                break;
+            }
+            if (!this.supportsHost(Browser.getHost(redirect))) {
+                /*
+                 * 2018-07-18: Direct redirect without captcha or any Form e.g. vivads.net OR redirect to other domain of same service e.g.
+                 * wi.cr --> wicr.me
+                 */
+                decryptedLinks.add(this.createDownloadlink(redirect));
+                return;
+            } else {
+                getPage(redirect);
+            }
+        }
     }
 
     protected boolean waittimeIsSkippable(final String source_host) {
