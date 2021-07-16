@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -80,22 +81,30 @@ public enum SplitType {
         }
     },
     /**
-     * Multipart Unix-Split Archive (.aa, .ab ...), aa-zz -> max 676 parts
+     * Multipart Unix-Split Archive (.aa, .ab ...), aa-zz , different(minimum two) suffix length supported
      */
     UNIX_SPLIT {
-        private final Pattern pattern = Pattern.compile("(?i)(.*)\\.((?-i)[a-z][a-z])$");
+        private final Pattern pattern = Pattern.compile("(?i)(.*)\\.((?-i)[a-z]{2,})$");
 
         private int parseIndex(final String index) {
-            final int x1 = index.charAt(0) - 'a';
-            final int x2 = index.charAt(1) - 'a';
-            return x1 * 26 + x2;
+            final int length = index.length();
+            int ret = 0;
+            for (int i = 0; i < length; i++) {
+                final int x = index.charAt(i) - 'a';
+                ret += x * Math.pow(26, length - 1 - i);
+            }
+            return ret;
         }
 
-        private String createIndex(final int index) {
-            final char ret[] = new char[2];
-            ret[0] = (char) ('a' + (index / 26));
-            ret[1] = (char) ('a' + (index % 26));
-            return String.copyValueOf(ret);
+        private String createIndex(int value, int suffixLength) {
+            final char[] ret = new char[suffixLength];
+            for (int index = 0; index < suffixLength; index++) {
+                final int pos = (int) Math.pow(26, suffixLength - 1 - index);
+                final int remaining = value / pos;
+                value = value % pos;
+                ret[index] = (char) ('a' + remaining);
+            }
+            return new String(ret);
         }
 
         @Override
@@ -105,7 +114,7 @@ public enum SplitType {
 
         @Override
         protected String buildIDPattern(String[] matches) {
-            return "\\.(?-i)[a-z][a-z]";
+            return "\\.(?-i)[a-z]{2,}";
         }
 
         @Override
@@ -142,17 +151,22 @@ public enum SplitType {
 
         @Override
         protected String buildMissingPart(String[] matches, int partIndex, int partStringLength) {
-            return matches[0] + "." + createIndex(partIndex);
+            return matches[0] + "." + createIndex(partIndex, partStringLength);
         }
 
         @Override
         protected boolean looksLikeAnArchive(BitSet bitset) {
             int count = 0;
-            final int js = parseIndex("js");
-            final int xz = parseIndex("xz");
-            final int db = parseIndex("db");
+            final HashSet<Integer> exclude = new HashSet<Integer>();
+            exclude.add(parseIndex("js"));
+            exclude.add(parseIndex("xz"));
+            exclude.add(parseIndex("db"));
+            exclude.add(parseIndex("aac"));
+            exclude.add(parseIndex("zip"));
+            exclude.add(parseIndex("rar"));
+            exclude.add(parseIndex("bmp"));
             for (int index = 0; index < bitset.length(); index++) {
-                if (index == js || index == xz || index == db) {
+                if (exclude.contains(Integer.valueOf(index))) {
                     /* exclude js,xz,db for validation */
                     continue;
                 }
