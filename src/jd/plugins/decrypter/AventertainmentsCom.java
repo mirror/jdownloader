@@ -58,7 +58,7 @@ public class AventertainmentsCom extends PluginForDecrypt {
         }
         if (fpName != null) {
             /* Clean packagename */
-            final String rubbish = new Regex(fpName, "(\\s*?AVEntertainment\\s*?:.+)").getMatch(0);
+            final String rubbish = new Regex(fpName, "(?i)((\\s*? \\|)?\\s*?AVEntertainments?(\\s*:.+|\\.com))").getMatch(0);
             if (rubbish != null) {
                 fpName = fpName.replace(rubbish, "");
             }
@@ -122,30 +122,37 @@ public class AventertainmentsCom extends PluginForDecrypt {
             dl.setProperty("type", "screenshot");
             decryptedLinks.add(dl);
         }
-        final String[] videos = br.getRegex("(https?://(?:www\\.)?aventertainments\\.com/newdlsample\\.aspx[^<>\"\\']+\\.mp4)").getColumn(0);
-        if (videos != null && videos.length > 0) {
-            logger.info("Found video download(s)");
-            for (final String singleLink : videos) {
+        /*
+         * 2021-07-16: User has to enter a captcha to download those URLs now. This captcha does not even work via browser --> Prefer
+         * stream-download over official download
+         */
+        final String[] officialVideoDownloads = br.getRegex("(https?://(?:www\\.)?aventertainments\\.com/newdlsample\\.aspx[^<>\"\\']+\\.mp4)").getColumn(0);
+        String urlStream = this.br.getRegex("src[\t\n\r ]*?:[\t\n\r ]*?\"(http[^\"]*?\\.m3u8[^\"]*?)\"").getMatch(0);
+        if (urlStream == null) {
+            /* 2021-07-16 */
+            urlStream = this.br.getRegex("<source src=\"(https://[^\"]+\\.m3u8)\"").getMatch(0);
+        }
+        if (urlStream != null) {
+            logger.info("Stream download available");
+            /* Replace '.m3u8' with '.m3u9' to prevent generic HLS decrypter from picking this up first! */
+            final DownloadLink dl = this.createDownloadlink(urlStream.replace(".m3u8", ".m3u9"));
+            dl.setContentUrl(urlStream);
+            dl.setProperty("mainlink", parameter);
+            dl.setProperty("type", "video_stream");
+            dl.setFinalFileName(fpName + ".mp4");
+            dl.setAvailable(true);
+            decryptedLinks.add(dl);
+        } else if (officialVideoDownloads.length > 0) {
+            logger.info("Found " + officialVideoDownloads.length + " official video download(s)");
+            for (final String singleLink : officialVideoDownloads) {
                 final DownloadLink dl = createDownloadlink(singleLink);
                 dl.setProperty("mainlink", parameter);
                 dl.setProperty("type", "video");
                 decryptedLinks.add(dl);
             }
         } else {
-            /* Download stream */
-            logger.info("Could not find video download(s) --> Trying stream download");
-            final String url_stream = this.br.getRegex("src[\t\n\r ]*?:[\t\n\r ]*?\"(http[^\"]*?\\.m3u8[^\"]*?)\"").getMatch(0);
-            if (url_stream != null) {
-                logger.info("Stream download available");
-                /* Replace '.m3u8' with '.m3u9' to prevent generic HLS decrypter from picking this up first! */
-                final DownloadLink dl = this.createDownloadlink(url_stream.replace(".m3u8", ".m3u9"));
-                dl.setContentUrl(url_stream);
-                dl.setProperty("mainlink", parameter);
-                dl.setProperty("type", "video_stream");
-                dl.setFinalFileName(fpName + ".mp4");
-                dl.setAvailable(true);
-                decryptedLinks.add(dl);
-            }
+            /* Plugin broken or content offline or maybe no video available at all but only covers/images */
+            logger.warning("Failed to find any results");
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();

@@ -39,7 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgs.aventertainments.com", "aventertainments.com" }, urls = { "https?://imgs\\.aventertainments\\.com/.+", "https?://www\\.aventertainments\\.com/newdlsample\\.aspx.+\\.mp4|https?://ppvclips\\d+\\.aventertainments\\.com/.+\\.m3u9|https?://(?:www\\.)?aventertainments\\.com/ppv/new_detail\\.aspx\\?ProID=\\d+.*?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgs.aventertainments.com", "aventertainments.com" }, urls = { "https?://imgs\\.aventertainments\\.com/.+", "https?://www\\.aventertainments\\.com/newdlsample\\.aspx.+\\.mp4|https?://ppvclips\\d+\\.aventertainments\\.com/.+\\.m3u9|https?://(?:www\\.)?aventertainments\\.com/ppv/new_detail\\.aspx\\?ProID=\\d+.*" })
 public class AventertainmentsCom extends PluginForHost {
     public AventertainmentsCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -55,6 +55,10 @@ public class AventertainmentsCom extends PluginForHost {
     private final String       TYPE_VIDEO_HTTP   = "(?i)https?://(?:www\\.)?aventertainments\\.com/newdlsample\\.aspx.*?\\.mp4";
     /* TODO: 2020-10-21: Check if this linktype still exists */
     private final String       TYPE_VIDEO_HLS    = "(?i)https?://ppvclips\\d+\\.aventertainments\\.com/.+\\.m3u8";
+    /*
+     * 2021-07-16: Important: Allow more parameters after "ProID" as URLs can also contain the user preferred language via parameter
+     * "languageID".
+     */
     private final String       TYPE_NEW_2020     = "(?i)https?://(?:www\\.)?aventertainments\\.com/ppv/new_detail\\.aspx\\?ProID=\\d+.*?";
     public static final String html_loggedin     = "aventertainments.com/logout\\.aspx";
     /* Connection stuff */
