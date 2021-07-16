@@ -2,15 +2,11 @@ package org.jdownloader.gui.views.linkgrabber.bottombar;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
 
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-import javax.swing.KeyStroke;
-
-import jd.controlling.linkcollector.LinkCollector;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.swing.SwingUtils;
@@ -24,12 +20,15 @@ import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextActi
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.OnOfflineLinksAction;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 
+import jd.controlling.linkcollector.LinkCollector;
+
 public class AutoConfirmStopAction extends CustomizableAppAction implements CustomSettingsPanelInterface {
     public AutoConfirmStopAction() {
         super();
         setName(_GUI.T.AutoConfirmMenuLink_getName());
         setIconKey(IconKey.ICON_GO_NEXT);
-        setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0));
+        // same KeyStroke as clear selection
+        // setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0));
     }
 
     public static final String AUTO_START = "autoStart";
