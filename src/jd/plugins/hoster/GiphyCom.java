@@ -24,7 +24,6 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -35,15 +34,13 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class GiphyCom extends antiDDoSForHost {
+public class GiphyCom extends PluginForHost {
     public GiphyCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-    /* DEV NOTES */
-    // Tags: Porn plugin
-    // other:
 
     /* Connection stuff */
     private static final boolean free_resume       = true;
@@ -106,14 +103,14 @@ public class GiphyCom extends antiDDoSForHost {
         br.setFollowRedirects(true);
         final boolean useOembedAPI = true;
         if (useOembedAPI) {
-            getPage("https://" + this.getHost() + "/services/oembed?url=" + Encoding.urlEncode(link.getPluginPatternMatcher()));
+            br.getPage("https://" + this.getHost() + "/services/oembed?url=" + Encoding.urlEncode(link.getPluginPatternMatcher()));
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             this.dllink = (String) entries.get("url");
         } else {
-            getPage(link.getPluginPatternMatcher());
+            br.getPage(link.getPluginPatternMatcher());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -123,7 +120,7 @@ public class GiphyCom extends antiDDoSForHost {
             dllink = Encoding.htmlDecode(dllink);
             URLConnectionAdapter con = null;
             try {
-                con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
+                con = br.openHeadConnection(this.dllink);
                 if (!this.looksLikeDownloadableContent(con)) {
                     server_issues = true;
                 } else {
