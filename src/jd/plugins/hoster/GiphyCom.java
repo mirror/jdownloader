@@ -107,6 +107,9 @@ public class GiphyCom extends antiDDoSForHost {
         final boolean useOembedAPI = true;
         if (useOembedAPI) {
             getPage("https://" + this.getHost() + "/services/oembed?url=" + Encoding.urlEncode(link.getPluginPatternMatcher()));
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             this.dllink = (String) entries.get("url");
         } else {
