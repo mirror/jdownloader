@@ -547,7 +547,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 final String cdn = (String) entries.get("cdn");
                 long filesize = JavaScriptEngineFactory.toLong(entries.get("filesize"), 0);
                 final String audio_class_user_readable = convertInternalAudioClassToUserReadable(audio_class);
-                String finalDownloadURL;
                 String linkid;
                 String final_filename;
                 /* internal_videoid, type, cdn, language, audio_class, protocol, resolution */
@@ -590,7 +589,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         }
                         final String height_for_quality_selection = getHeightForQualitySelection(hlscontainer.getHeight());
                         final String resolution = hlscontainer.getResolution();
-                        finalDownloadURL = hlscontainer.getDownloadurl();
+                        final String finalDownloadURL = hlscontainer.getDownloadurl();
                         ext = hlscontainer.getFileExtension().replace(".", "");
                         linkid = this.getHost() + "://" + String.format(linkid_format, internal_videoid, type, cdn, language, audio_class, protocol, resolution);
                         final_filename = filename_packagename_base_title + "_" + protocol + "_" + resolution + "_" + language + "_" + audio_class_user_readable + "." + ext;
@@ -627,98 +626,103 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     }
                 } else {
                     /* http download */
-                    String quality = (String) entries.get("quality");
-                    finalDownloadURL = uri;
-                    /*
-                     * 2020-12-21: Some tests: There are higher http qualities available than what we get via API
+                    final String realQuality = (String) entries.get("quality");
+                    Object[][] qualities = new Object[][] { { realQuality, uri, filesize } };
+                    /**
+                     * Sometimes we can modify the final downloadurls and thus get higher quality streams. We want to keep all versions
+                     * though!
                      */
                     final boolean useNewHandling = true;
-                    boolean setFilesize = true;
                     if (useNewHandling) {
-                        String newFinalDownloadURL = null;
-                        final List<String> betterQualities = getBetterQualities(finalDownloadURL);
+                        final List<String> betterQualities = getBetterQualities(uri);
                         if (betterQualities != null) {
                             /* We cannot be 100% sure if these will work thus let's check... */
                             long filesizeNew = -1;
+                            String improvedQualityDownloadURL = null;
                             for (final String betterQualityDownloadurl : betterQualities) {
                                 filesizeNew = this.checkDownloadable(betterQualityDownloadurl);
                                 if (filesizeNew > -1) {
-                                    newFinalDownloadURL = betterQualityDownloadurl;
+                                    improvedQualityDownloadURL = betterQualityDownloadurl;
                                     break;
                                 }
                             }
-                            if (newFinalDownloadURL != finalDownloadURL) {
+                            if (improvedQualityDownloadURL != uri) {
                                 /* Update quality modifier if needed */
-                                logger.info("Optimization for: " + quality + "|Old: " + finalDownloadURL + "|New: " + newFinalDownloadURL);
-                                if (quality.equalsIgnoreCase("low")) {
+                                logger.info("Optimization for: " + realQuality + "|Old: " + uri + "|New: " + improvedQualityDownloadURL);
+                                final Object[] oldQuality = qualities[0];
+                                final String improvedQuality;
+                                if (realQuality.equalsIgnoreCase("low")) {
                                     /* Improve "low" -> medium (?) */
-                                    quality = "medium";
-                                } else if (quality.equalsIgnoreCase("medium")) {
+                                    improvedQuality = "medium";
+                                } else if (realQuality.equalsIgnoreCase("medium")) {
                                     /* Improve "high/medium" --> veryhigh (?) */
-                                    quality = "veryhigh";
-                                } else if (quality.equalsIgnoreCase("veryhigh")) {
+                                    improvedQuality = "veryhigh";
+                                } else if (realQuality.equalsIgnoreCase("veryhigh")) {
                                     /* Improve "veryhigh" --> hd */
-                                    quality = "hd";
+                                    improvedQuality = "hd";
                                 } else {
-                                    logger.warning("Unsupported quality string");
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported quality string");
                                 }
-                                if (filesizeNew > 0) {
-                                    filesize = filesizeNew;
-                                } else {
-                                    /* Previously crawled filesize is not valid anymore! */
-                                    filesize = -1;
-                                }
-                                finalDownloadURL = newFinalDownloadURL;
+                                qualities = new Object[][] { oldQuality, { improvedQuality, improvedQualityDownloadURL, filesizeNew } };
                             }
                         }
                     } else {
-                        setFilesize = false;
-                        if (finalDownloadURL.matches("https?://[a-z0-9]*rodlzdf[^/]+\\.akamaihd\\.net/.+_\\d+k_p\\d+v\\d+\\.mp4")) {
+                        /* Old handling */
+                        if (uri.matches("https?://[a-z0-9]*rodlzdf[^/]+\\.akamaihd\\.net/.+_\\d+k_p\\d+v\\d+\\.mp4")) {
+                            String improvedQualityDownloadURL = null;
                             /* Improve "veryhigh" --> hd */
-                            if (finalDownloadURL.contains("_1628k_p13v15.mp4")) {
-                                finalDownloadURL = finalDownloadURL.replace("_1628k_p13v15.mp4", "_3360k_p36v15.mp4");
-                                quality = "hd";
-                            } else if (finalDownloadURL.contains("_808k_p11v15.mp4")) {
+                            final String improvedQuality;
+                            if (uri.contains("_1628k_p13v15.mp4")) {
+                                improvedQualityDownloadURL = uri.replace("_1628k_p13v15.mp4", "_3360k_p36v15.mp4");
+                                improvedQuality = "hd";
+                            } else if (uri.contains("_808k_p11v15.mp4")) {
                                 /* Improve "high/medium" --> veryhigh (?) */
-                                finalDownloadURL = finalDownloadURL.replace("_808k_p11v15.mp4", "_2360k_p35v15.mp4");
-                                quality = "veryhigh";
-                            } else if (finalDownloadURL.contains("_508k_p9v15.mp4")) {
+                                improvedQualityDownloadURL = uri.replace("_808k_p11v15.mp4", "_2360k_p35v15.mp4");
+                                improvedQuality = "veryhigh";
+                            } else if (uri.contains("_508k_p9v15.mp4")) {
                                 /* Improve "low" -> medium (?) */
-                                finalDownloadURL = finalDownloadURL.replace("_508k_p9v15.mp4", "_808k_p11v15.mp4");
-                                quality = "medium";
+                                improvedQualityDownloadURL = uri.replace("_508k_p9v15.mp4", "_808k_p11v15.mp4");
+                                improvedQuality = "medium";
                             } else {
-                                logger.info("Not altering quality: " + quality);
+                                logger.info("Not altering quality: " + realQuality);
                             }
-                        } else {
-                            setFilesize = true;
+                            if (improvedQualityDownloadURL != null) {
+                                final Object[] oldQuality = qualities[0];
+                                qualities = new Object[][] { oldQuality, { improvedQuality, improvedQualityDownloadURL, -1 } };
+                            }
                         }
                     }
-                    linkid = this.getHost() + "://" + String.format(linkid_format, internal_videoid, type, cdn, language, audio_class, protocol, quality);
-                    final_filename = filename_packagename_base_title + "_" + protocol + "_" + quality + "_" + language + "_" + audio_class_user_readable + "." + ext;
-                    final DownloadLink dl = createDownloadlink(finalDownloadURL);
-                    /**
-                     * Usually filesize is only given for the official downloads.</br>
-                     * Only set it here if we haven't touched the original downloadurls!
-                     */
-                    if (filesize > 0 && setFilesize) {
-                        dl.setAvailable(true);
-                        dl.setVerifiedFileSize(filesize);
-                        // dl.setDownloadSize(filesize);
-                    }
-                    setDownloadlinkProperties(dl, final_filename, type, linkid, title, tv_show, date_formatted, tv_station);
-                    final String qualitySelectorString = generateQualitySelectorString(protocol, ext, quality, language, audio_class);
-                    all_found_downloadlinks.put(qualitySelectorString, dl);
-                    addDownloadLinkAndGenerateSubtitleDownloadLink(allDownloadLinks, dl);
-                    if (containsQuality(selectedQualityStrings, qualitySelectorString)) {
-                        userSelectedQualitiesTmp.add(dl);
-                        selectedQualitiesMapTmp.put(qualitySelectorString, dl);
-                    } else if (grabUnknownQualities && !containsQuality(allKnownQualities, qualitySelectorString)) {
-                        userSelectedQualitiesTmp.add(dl);
-                    }
-                    final int httpQualityValueTmp = convertInternalHttpQualityIdentifierToIntegerValue(quality);
-                    if (httpQualityValueTmp > highestHTTPQualityValue) {
-                        highestHTTPQualityValue = httpQualityValueTmp;
-                        highestHTTPDownloadLink = dl;
+                    for (final Object[] qualityInfo : qualities) {
+                        final String quality = qualityInfo[0].toString();
+                        final String finalDownloadURL = qualityInfo[1].toString();
+                        filesize = ((Number) qualityInfo[2]).longValue();
+                        linkid = this.getHost() + "://" + String.format(linkid_format, internal_videoid, type, cdn, language, audio_class, protocol, quality);
+                        final_filename = filename_packagename_base_title + "_" + protocol + "_" + quality + "_" + language + "_" + audio_class_user_readable + "." + ext;
+                        final DownloadLink dl = createDownloadlink(finalDownloadURL);
+                        /**
+                         * Usually filesize is only given for the official downloads.</br>
+                         * Only set it here if we haven't touched the original downloadurls!
+                         */
+                        if (filesize > 0) {
+                            dl.setAvailable(true);
+                            dl.setVerifiedFileSize(filesize);
+                            // dl.setDownloadSize(filesize);
+                        }
+                        setDownloadlinkProperties(dl, final_filename, type, linkid, title, tv_show, date_formatted, tv_station);
+                        final String qualitySelectorString = generateQualitySelectorString(protocol, ext, quality, language, audio_class);
+                        all_found_downloadlinks.put(qualitySelectorString, dl);
+                        addDownloadLinkAndGenerateSubtitleDownloadLink(allDownloadLinks, dl);
+                        if (containsQuality(selectedQualityStrings, qualitySelectorString)) {
+                            userSelectedQualitiesTmp.add(dl);
+                            selectedQualitiesMapTmp.put(qualitySelectorString, dl);
+                        } else if (grabUnknownQualities && !containsQuality(allKnownQualities, qualitySelectorString)) {
+                            userSelectedQualitiesTmp.add(dl);
+                        }
+                        final int httpQualityValueTmp = convertInternalHttpQualityIdentifierToIntegerValue(quality);
+                        if (httpQualityValueTmp > highestHTTPQualityValue) {
+                            highestHTTPQualityValue = httpQualityValueTmp;
+                            highestHTTPDownloadLink = dl;
+                        }
                     }
                 }
             }
