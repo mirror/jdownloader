@@ -95,7 +95,7 @@ public class ClicknuploadOrg extends XFileSharingProBasic {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 1;
+            return -2;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
             return -5;
@@ -134,8 +134,8 @@ public class ClicknuploadOrg extends XFileSharingProBasic {
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        /* 2021-07-14: Free account dl allows 2 connections in total */
-        return 2;
+        /* 2021-07-19 */
+        return 10;
     }
 
     @Override
