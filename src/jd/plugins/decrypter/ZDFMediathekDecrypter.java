@@ -29,6 +29,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -42,14 +50,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.ZdfDeMediathek;
 import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "3sat.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?zdf\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)", "https?://(?:www\\.)?3sat\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?3sat\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)" })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
@@ -556,7 +556,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                  * Each final filename should contain: filename_packagename_base_title, protocol, resolution, language,
                  * audio_class_user_readable, ext
                  */
-                DownloadLink dl;
                 if (isAdaptive) {
                     if (!grabHLS) {
                         /* Skip hls if not required by the user. */
@@ -595,7 +594,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         ext = hlscontainer.getFileExtension().replace(".", "");
                         linkid = this.getHost() + "://" + String.format(linkid_format, internal_videoid, type, cdn, language, audio_class, protocol, resolution);
                         final_filename = filename_packagename_base_title + "_" + protocol + "_" + resolution + "_" + language + "_" + audio_class_user_readable + "." + ext;
-                        dl = createDownloadlink(finalDownloadURL);
+                        final DownloadLink dl = createDownloadlink(finalDownloadURL);
                         if (hlscontainer.getBandwidth() > highestHlsBandwidth) {
                             /*
                              * While adding the URLs, let's find the BEST quality url. In case we need it later we will already know which
@@ -633,10 +632,10 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     /*
                      * 2020-12-21: Some tests: There are higher http qualities available than what we get via API
                      */
-                    String newFinalDownloadURL = null;
                     final boolean useNewHandling = true;
                     boolean setFilesize = true;
                     if (useNewHandling) {
+                        String newFinalDownloadURL = null;
                         final List<String> betterQualities = getBetterQualities(finalDownloadURL);
                         if (betterQualities != null) {
                             /* We cannot be 100% sure if these will work thus let's check... */
@@ -696,10 +695,10 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     }
                     linkid = this.getHost() + "://" + String.format(linkid_format, internal_videoid, type, cdn, language, audio_class, protocol, quality);
                     final_filename = filename_packagename_base_title + "_" + protocol + "_" + quality + "_" + language + "_" + audio_class_user_readable + "." + ext;
-                    dl = createDownloadlink(finalDownloadURL);
+                    final DownloadLink dl = createDownloadlink(finalDownloadURL);
                     /**
-                     * Usually filesize is only given for the official downloads.</br> Only set it here if we haven't touched the original
-                     * downloadurls!
+                     * Usually filesize is only given for the official downloads.</br>
+                     * Only set it here if we haven't touched the original downloadurls!
                      */
                     if (filesize > 0 && setFilesize) {
                         dl.setAvailable(true);
@@ -723,23 +722,34 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     }
                 }
             }
+            /* Now decide what's the BEST candidate for this round --> Prefer HTTP over HLS */
+            DownloadLink best = null;
+            if (highestHlsDownload != null) {
+                best = highestHlsDownload;
+            } else if (highestHTTPDownloadLink != null) {
+                best = highestHTTPDownloadLink;
+            } else {
+                /* No BEST candidate available in current round! */
+            }
             /* Finally, check which qualities the user actually wants to have. */
             if (grabBest) {
-                /* Best: Prefer best HLS quality - fallback to best http quality */
-                if (highestHlsDownload != null) {
+                if (best != null) {
                     userSelectedQualitiesTmp.clear();
-                    userSelectedQualitiesTmp.add(highestHlsDownload);
-                } else if (highestHTTPDownloadLink != null) {
-                    userSelectedQualitiesTmp.clear();
-                    userSelectedQualitiesTmp.add(highestHTTPDownloadLink);
-                } else {
-                    /* No BEST candidate available in current round! */
+                    userSelectedQualitiesTmp.add(best);
                 }
             } else if (cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled()) {
                 /* Best of selected */
                 final DownloadLink bestOfSelection = findBESTInsideGivenMapNew(selectedQualitiesMapTmp, allKnownQualities);
-                userSelectedQualitiesTmp.clear();
-                userSelectedQualitiesTmp.add(bestOfSelection);
+                if (bestOfSelection != null) {
+                    userSelectedQualitiesTmp.clear();
+                    userSelectedQualitiesTmp.add(bestOfSelection);
+                } else if (best != null) {
+                    logger.info("Failed to find user selected BEST --> Fallback to 'best best'");
+                    userSelectedQualitiesTmp.clear();
+                    userSelectedQualitiesTmp.add(best);
+                } else {
+                    /* Add all selected as final fallback */
+                }
             } else {
                 /* Add all selected */
             }
@@ -846,8 +856,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
     // return newMap;
     // }
     private DownloadLink findBESTInsideGivenMapNew(final HashMap<String, DownloadLink> bestMap, final List<String> allKnownQualities) {
-        DownloadLink keep = null;
         if (bestMap.size() > 0) {
+            DownloadLink keep = null;
             for (final String quality : allKnownQualities) {
                 keep = bestMap.get(quality);
                 if (keep != null) {
