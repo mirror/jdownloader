@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.regex.Pattern;
+import java.util.Random;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -53,6 +53,7 @@ public class BcVc extends antiDDoSForDecrypt {
 
     private Browser ajax = null;
 
+    @Deprecated
     private void ajaxPostPage(final String url, final LinkedHashMap<String, String> param) throws Exception {
         ajax = br.cloneBrowser();
         ajax.getHeaders().put("Accept", "*/*");
@@ -61,11 +62,6 @@ public class BcVc extends antiDDoSForDecrypt {
         postPage(ajax, url, param);
     }
 
-    /**
-     * Important note: Via browser the videos are streamed via RTMP (maybe even in one part) but with this method we get HTTP links which is
-     * fine.
-     */
-    // NOTE: Similar plugins: BcVc, AdliPw, AdcrunCh
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -98,17 +94,17 @@ public class BcVc extends antiDDoSForDecrypt {
         if (redirect == null) {
             redirect = br.getRegex("top\\.location\\.href = \"((?:http|ftp)[^<>\"]*?)\"").getMatch(0);
         }
-        if (redirect != null && !new Regex(redirect, this.getSupportedLinks()).matches()) {
+        if (redirect != null && !this.canHandle(redirect)) {
             decryptedLinks.add(createDownloadlink(redirect));
             return decryptedLinks;
         } else if (redirect != null) {
             getPage(redirect);
         }
-        if (StringUtils.endsWithCaseInsensitive(redirect, "//bc.vc/7") || br.getURL().matches("https?://(?:www\\.)?bc.vc/") || br.containsHTML("top\\.location\\.href = \"https?://(?:www\\.)?bc\\.vc/\"") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">404 Not Found<") || br.containsHTML(">Sorry the page you are looking for does not exist")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
-        if (br.containsHTML("Unable to connect to database")) {
+        if (StringUtils.endsWithCaseInsensitive(redirect, "//bc.vc/7") || br.getURL().matches("https?://(?:www\\.)?bc.vc/") || br.containsHTML("top\\.location\\.href = \"https?://(?:www\\.)?bc\\.vc/\"") || br.containsHTML(">404 Not Found<") || br.containsHTML(">Sorry the page you are looking for does not exist")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("Unable to connect to database")) {
             logger.info("Link can't be decrypted because of server problems: " + parameter);
             return decryptedLinks;
         }
@@ -146,84 +142,49 @@ public class BcVc extends antiDDoSForDecrypt {
                     decryptedLinks.add(createDownloadlink(url));
                 }
             } else {
-                // new method, way less requests.. really should use inhouse js
-                String javascript = br.getRegex("(\\$\\.post\\('https?://bc\\.vc/fly/ajax\\.php\\?.*?\\}),\\s*function").getMatch(0);
-                if (javascript == null) {
-                    /*
-                     * 2020-11-16: Hmm not sure about that. They want users to allow notifications in browser but then simply redirect to
-                     * random ad websites --> Offline content ?!
-                     */
-                    if (br.getHost().equals("bcvc.live")) {
-                        decryptedLinks.add(this.crawlBcbclive());
-                        return decryptedLinks;
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                }
-                // from here we have construct some ajax request
-                javascript = javascript.replaceFirst(":\\s*tZ(,?)", ": '480'$1");
-                javascript = javascript.replaceFirst(":\\s*cW(,?)", ": '1920'$1");
-                javascript = javascript.replaceFirst(":\\s*cH(,?)", ": '984'$1");
-                javascript = javascript.replaceFirst(":\\s*sW(,?)", ": '1920'$1");
-                javascript = javascript.replaceFirst(":\\s*sH(,?)", ": '1080'$1");
-                // last figure time from clicking button and some x and y math
-                String url = new Regex(javascript, "'(http://bc\\.vc/fly/.*?)'").getMatch(0);
-                url += "1845,30:71.01:20:1457";
-                final LinkedHashMap<String, String> data = new LinkedHashMap<String, String>();
-                // enter all parameters within map
-                final Regex regex = new Regex(javascript, "(\\w+):\\s*\\{(.*?)\\},?");
-                final String[] parm = regex.getRow(0);
-                if (parm != null) {
-                    final String[][] keyValue = new Regex(parm[1], "\\s*(\\w+):\\s*'(.*?)',?\\s*").getMatches();
-                    if (keyValue == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    for (final String[] kV : keyValue) {
-                        data.put(parm[0] + Encoding.urlEncode("[" + kV[0] + "]"), Encoding.urlEncode(kV[1]));
-                    }
-                }
-                javascript = javascript.replaceAll(Pattern.quote(regex.getMatch(-1)), "");
-                // others
-                final String[][] other = new Regex(javascript, "\\s*(\\w+):\\s*'(.*?)',?\\s*").getMatches();
-                for (final String[] o : other) {
-                    data.put(Encoding.urlEncode(o[0]), Encoding.urlEncode(o[1]));
-                }
-                sleep(6000, param);
-                ajaxPostPage(url, data);
-                final String link = PluginJSonUtils.getJsonValue(ajax, "url");
-                if (link != null) {
-                    decryptedLinks.add(createDownloadlink(link));
-                }
+                /* 2021: New handling */
+                decryptedLinks.add(this.crawlBcbclive(param));
+                return decryptedLinks;
             }
         }
         return decryptedLinks;
     }
 
-    private DownloadLink crawlBcbclive() throws IOException, PluginException {
-        /** 2021-02-08 */
-        final boolean pluginBroken = true;
-        if (pluginBroken) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+    private DownloadLink crawlBcbclive(final CryptedLink param) throws IOException, PluginException, InterruptedException {
         final String token1 = br.getRegex("let tkn = \\'([^<>\"\\']+)").getMatch(0);
         final String xyz = br.getRegex("let xyz = '([a-f0-9]{32})';").getMatch(0);
         if (token1 == null || xyz == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final Form form1 = new Form();
-        form1.setAction("https://bcvc.live/ln.php?wds=" + xyz + "&time=937,258:347.171875,31.609375:1737_TODO");
+        br.setCookie(br.getHost(), "_kei_", "1");
+        /* e.pageX + ',' + e.pageY + ':' + (e.pageX - posX)+ ',' + (e.pageY - posY) + new Date().getTime() - start_button */
+        final String timeBlock1 = new Random().nextInt(1000) + "," + new Random().nextInt(1000);
+        final String timeBlock2 = new Random().nextInt(1000) + "." + new Random().nextInt(10000) + "," + new Random().nextInt(1000) + "." + new Random().nextInt(10000);
+        final String timeBlock3 = new Random().nextInt(10000) + "";
+        // String time = "851,262:261.171875,35.609375:" + new Random().nextInt(10000);
+        String time = timeBlock1 + ":" + timeBlock2 + ":" + timeBlock3;
+        form1.setAction("https://bcvc.live/ln.php?wds=" + xyz + "&time=" + Encoding.urlEncode(time));
         form1.setMethod(MethodType.POST);
-        form1.put(Encoding.urlEncode("xdf[afg]"), "12_TODO");
-        form1.put(Encoding.urlEncode("xdf[bfg]"), "1234_TODO");
-        form1.put(Encoding.urlEncode("xdf[cfg]"), "1234_TODO");
+        /* See https://bcvc.live/dist/js/bcvcv3.js */
+        form1.put(Encoding.urlEncode("xdf[afg]"), new Random().nextInt(300) + ""); // new Date().getTimezoneOffset() / -1
+        form1.put(Encoding.urlEncode("xdf[bfg]"), new Random().nextInt(10000) + ""); // document.documentElement.clientWidth;
+        form1.put(Encoding.urlEncode("xdf[cfg]"), new Random().nextInt(10000) + ""); // document.documentElement.clientHeight;
         form1.put(Encoding.urlEncode("xdf[jki]"), Encoding.urlEncode(token1));
-        form1.put(Encoding.urlEncode("xdf[dfg]"), "1234_TODO");
-        form1.put(Encoding.urlEncode("xdf[efg]"), "1234_TODO");
+        /* Monitor resolution dimensions */
+        form1.put(Encoding.urlEncode("xdf[dfg]"), new Random().nextInt(10000) + ""); // window.screen.width;
+        form1.put(Encoding.urlEncode("xdf[efg]"), new Random().nextInt(10000) + ""); // window.screen.height;
         form1.put(Encoding.urlEncode("ojk"), "jfhg");
+        br.getHeaders().put("Origin", "https://" + br.getHost());
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getHeaders().put("Accept", "*/*");
+        /* 2021-07-19: Waittime is skippable */
+        // this.sleep(5001l, param);
         this.br.submitForm(form1);
+        /* On error, browser will redirect to random ad website. */
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final Object errorO = entries.get("error");
-        if (errorO != null && !(errorO instanceof Boolean)) {
+        if (errorO == null || (Boolean) errorO) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String url = (String) JavaScriptEngineFactory.walkJson(entries, "message/url");
