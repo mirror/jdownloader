@@ -60,9 +60,9 @@ public class TropicShareCom extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = getFID(link);
-        if (linkid != null) {
-            return this.getHost() + "://" + linkid;
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
         } else {
             return super.getLinkID(link);
         }
@@ -150,18 +150,19 @@ public class TropicShareCom extends PluginForHost {
                 if (cookies != null) {
                     logger.info("Attempting cookie login");
                     this.br.setCookies(this.getHost(), cookies);
-                    if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l) {
-                        logger.info("Cookies are still fresh --> Trust cookies without login");
-                        return;
-                    }
-                    br.getPage("http://" + this.getHost() + "/");
-                    if (this.isLoggedin()) {
-                        logger.info("Cookie login successful");
-                        /* Refresh cookie timestamp */
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                    if (!force) {
+                        logger.info("Trust cookies without check");
                         return;
                     } else {
-                        logger.info("Cookie login failed");
+                        br.getPage("http://" + this.getHost() + "/");
+                        if (this.isLoggedin()) {
+                            logger.info("Cookie login successful");
+                            /* Refresh cookie timestamp */
+                            account.saveCookies(this.br.getCookies(this.getHost()), "");
+                            return;
+                        } else {
+                            logger.info("Cookie login failed");
+                        }
                     }
                 }
                 br.setFollowRedirects(false);
@@ -190,8 +191,8 @@ public class TropicShareCom extends PluginForHost {
         if (br.getURL() == null || !br.getURL().equals("http://" + this.getHost() + "/")) {
             br.getPage("http://" + this.getHost() + "/");
         }
-        final Regex expireInfo = br.getRegex("Remain: <span>(\\d+)</span> Months <span>(\\d+)</span> Days");
-        if (!br.containsHTML("<span>[\r\n\t ]+Premium") || expireInfo.getMatches().length != 1) {
+        final Regex expireInfo = br.getRegex("(?i)Remain:\\s*<span>\\s*(\\d+)\\s*</span>\\s*Months?\\s*<span>\\s*(\\d+)\\s*</span>\\s*Days?");
+        if (!br.containsHTML("<span>\\s*Premium") || expireInfo.getMatches().length != 1) {
             final String lang = System.getProperty("user.language");
             if ("de".equalsIgnoreCase(lang)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -206,17 +207,14 @@ public class TropicShareCom extends PluginForHost {
         final long daysSeconds = Integer.parseInt(days) * 24 * 60 * 60;
         final long expireMilliseconds = (monthsSeconds + daysSeconds) * 1001;
         ai.setValidUntil(System.currentTimeMillis() + expireMilliseconds);
-        ai.setStatus("Premium Account");
         return ai;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        br = new Browser();
         login(account, false);
-        // can be directlinks!
+        br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, -4);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
