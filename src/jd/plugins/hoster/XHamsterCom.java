@@ -105,7 +105,7 @@ public class XHamsterCom extends PluginForHost {
             /* Movies old pattern */
             pattern += "|https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/movies/[0-9]+/[^/]+\\.html";
             /* Premium pattern */
-            pattern += "|https?://gold\\.xhamsterpremium\\.com/videos/([A-Za-z0-9]+)";
+            pattern += "|https?://(?:gold\\.xhamsterpremium\\.com|faphouse\\.com)/videos/([A-Za-z0-9]+)";
             ret.add(pattern);
         }
         return ret.toArray(new String[0]);
@@ -139,8 +139,8 @@ public class XHamsterCom extends PluginForHost {
     /* The list of qualities/formats displayed to the user */
     private static final String[] FORMATS                         = new String[] { "Best available", "240p", "480p", "720p", "960p", "1080p", "1440p", "2160p" };
     private boolean               friendsOnly                     = false;
-    public static final String    domain_premium                  = "xhamsterpremium.com";
-    public static final String    api_base_premium                = "https://xhamsterpremium.com/api";
+    public static final String    domain_premium                  = "faphouse.com";
+    public static final String    api_base_premium                = "https://faphouse.com/api";
 
     private void setConfigElements() {
         String user_text;
@@ -171,7 +171,7 @@ public class XHamsterCom extends PluginForHost {
 
     private static final String TYPE_MOBILE    = "(?i).+m\\.xhamster\\.+";
     private static final String TYPE_EMBED     = "(?i)^https?://(?:www\\.)?xhamster\\.[^/]+/(?:x?embed\\.php\\?video=|embed/)([A-Za-z0-9\\-]+)(?:$|\\?)";
-    private static final String TYPE_PREMIUM   = ".+xhamsterpremium\\.com.+";
+    private static final String TYPE_PREMIUM   = ".+(xhamsterpremium\\.com|faphouse\\.com).+";
     private static final String NORESUME       = "NORESUME";
     private static Object       ctrlLock       = new Object();
     private final String        recaptchav2    = "<div class=\"text\">In order to watch this video please prove you are a human\\.\\s*<br> Click on checkbox\\.</div>";
@@ -257,10 +257,7 @@ public class XHamsterCom extends PluginForHost {
             /* quick fix to force old player */
             String filename = null;
             String filesizeStr = null;
-            Account aa = AccountController.getInstance().getValidAccount(this.getHost());
-            if (aa == null) {
-                aa = AccountController.getInstance().getValidAccount(domain_premium);
-            }
+            final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
             if (aa != null) {
                 login(aa, false);
             }
@@ -480,7 +477,7 @@ public class XHamsterCom extends PluginForHost {
         if (internalVideoID == null) {
             logger.warning("internalVideoID is null");
         }
-        br.getPage(String.format("https://gold.xhamsterpremium.com/api/videos/%s/original-video-config", internalVideoID));
+        br.getPage(String.format(api_base_premium + "/videos/%s/original-video-config", internalVideoID));
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         entries = (LinkedHashMap<String, Object>) entries.get("downloadFormats");
         return (String) entries.get(Integer.toString(highestQuality));
@@ -811,8 +808,8 @@ public class XHamsterCom extends PluginForHost {
                 prepBr();
                 br.setFollowRedirects(true);
                 /*
-                 * 2020-01-31: They got their free page xhamster.com and paid xhamsterpremium.com. This plugin will always try to login into
-                 * both. Free users can also login to xhamsterpremium.to they just cannot watch anything. Failures of premium login will be
+                 * 2020-01-31: They got their free page xhamster.com and paid faphouse.com. This plugin will always try to login into both.
+                 * Free users can also login via their premium page but they just cannot watch anything. Failures of premium login will be
                  * ignored and account will be accepted as free account then.
                  */
                 final Cookies cookies = account.loadCookies("");
@@ -856,7 +853,7 @@ public class XHamsterCom extends PluginForHost {
                 /** 2021-01-08: Free login is broken and premium works for both -> Use premium login only */
                 final boolean usePremiumLoginONLY = true;
                 if (br.getHost() == null) {
-                    br.getPage("https://" + account.getHoster() + "/");
+                    br.getPage("https://" + this.getHost() + "/");
                 }
                 if (usePremiumLoginONLY) {
                     isloggedinPremium = this.loginPremium(account, true);
@@ -995,9 +992,9 @@ public class XHamsterCom extends PluginForHost {
         logger.info("Performing full premium login");
         br.getHeaders().put("Referer", null);
         /* Login premium --> Same logindata */
-        br.getPage("https://xhamsterpremium.com/");
+        br.getPage("https://faphouse.com/");
         if (this.getDownloadLink() == null) {
-            final DownloadLink dummyLink = new DownloadLink(this, "Account", "xhamsterpremium.com", "http://xhamsterpremium.com", true);
+            final DownloadLink dummyLink = new DownloadLink(this, "Account", "faphouse.com", "https://faphouse.com", true);
             this.setDownloadLink(dummyLink);
         }
         String rcKey = br.getRegex("data-site-key=\"([^\"]+)\"").getMatch(0);
@@ -1069,10 +1066,6 @@ public class XHamsterCom extends PluginForHost {
         }
     }
 
-    /** THIS DOES NOT WORK Checks login state for xhamsterpremium.com */
-    // private boolean isLoggedInHTMLPremium(final Browser br) {
-    // return br.containsHTML("class=\"header__user-title\"");
-    // }
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -1093,7 +1086,6 @@ public class XHamsterCom extends PluginForHost {
             expire = TimeFormatter.getMilliSeconds(expireStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
         }
         if (expire < System.currentTimeMillis()) {
-            ai.setStatus("Free Account");
             account.setType(AccountType.FREE);
         } else {
             String status = "Premium Account";
