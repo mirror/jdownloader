@@ -13,6 +13,19 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.PluralsightComConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -39,19 +52,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.PluralsightComDecrypter;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.PluralsightComConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  *
@@ -131,7 +131,7 @@ public class PluralsightCom extends antiDDoSForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(plugin.getHost(), cookies);
-                    if (!revalidate && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 5 * 60 * 1000l) {
+                    if (!revalidate) {
                         return;
                     }
                     getRequest(br, plugin, br.createGetRequest("https://app.pluralsight.com/web-analytics/api/v1/users/current"));
@@ -248,6 +248,7 @@ public class PluralsightCom extends antiDDoSForHost {
         HIGH(1024, 768),
         MEDIUM(848, 640),
         LOW(640, 480);
+
         private final int x;
         private final int y;
 
@@ -463,7 +464,7 @@ public class PluralsightCom extends antiDDoSForHost {
                 final Request checkStream = getRequest(br, this, br.createHeadRequest(streamURL));
                 final URLConnectionAdapter con = checkStream.getHttpConnection();
                 try {
-                    if (con.getResponseCode() == 200 && !StringUtils.containsIgnoreCase(con.getContentType(), "text") && con.getCompleteContentLength() > 0) {
+                    if (looksLikeDownloadableContent(con)) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                         return AvailableStatus.TRUE;
                     } else {
@@ -477,6 +478,11 @@ public class PluralsightCom extends antiDDoSForHost {
         } else {
             return AvailableStatus.TRUE;
         }
+    }
+
+    @Override
+    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
+        return super.looksLikeDownloadableContent(urlConnection) && urlConnection.getCompleteContentLength() > 0;
     }
 
     public static ArrayList<DownloadLink> getClips(Plugin plugin, Browser br, Map<String, Object> map) throws Exception {
@@ -494,11 +500,13 @@ public class PluralsightCom extends antiDDoSForHost {
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         int moduleIndex = 0;
+        // int totalNumberofClips = 0;
         for (final Map<String, Object> module : modules) {
             final int moduleID = moduleIndex++;
             final List<Map<String, Object>> clips = (List<Map<String, Object>>) module.get("clips");
             if (clips != null) {
                 for (final Map<String, Object> clip : clips) {
+                    // totalNumberofClips += 1;
                     String playerUrl = (String) clip.get("playerUrl");
                     if (StringUtils.isEmpty(playerUrl)) {
                         final String id[] = new Regex((String) clip.get("id"), "(.*?):(.*?):(\\d+):(.+)").getRow(0);
@@ -582,7 +590,7 @@ public class PluralsightCom extends antiDDoSForHost {
             }
         }
         dl = BrowserAdapter.openDownload(br, link, streamURL, true, 0);
-        if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection();
             } catch (IOException e) {
