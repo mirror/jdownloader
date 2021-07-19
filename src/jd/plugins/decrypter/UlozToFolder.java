@@ -37,6 +37,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UlozToFolder extends PluginForDecrypt {
@@ -93,10 +94,14 @@ public class UlozToFolder extends PluginForDecrypt {
         }
     }
 
-    private ArrayList<DownloadLink> crawlSingleURL(final CryptedLink param) throws IOException {
+    private ArrayList<DownloadLink> crawlSingleURL(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
+        final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
+        /* Important! Sets e.g. age-restricted removal headers! */
+        ((jd.plugins.hoster.UlozTo) plg).prepBR(this.br);
         br.getPage(param.getCryptedUrl());
+        ((jd.plugins.hoster.UlozTo) plg).handleAgeRestrictedRedirects();
         final String finallink = br.getRedirectLocation();
         if (finallink == null) {
             decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));

@@ -22,6 +22,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -43,10 +47,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class UlozTo extends PluginForHost {
@@ -127,7 +127,7 @@ public class UlozTo extends PluginForHost {
         return -1;
     }
 
-    private Browser prepBR(final Browser br) {
+    public Browser prepBR(final Browser br) {
         br.setCustomCharset("utf-8");
         br.setAllowedResponseCodes(new int[] { 400, 401, 410, 451 });
         br.setCookie(this.getHost(), "adblock_detected", "false");
@@ -141,7 +141,6 @@ public class UlozTo extends PluginForHost {
      * 2019-09-16: They are GEO-blocking several countries including Germany. Error 451 will then be returned! This can be avoided via their
      * Android-App: https://uloz.to/androidapp
      */
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         synchronized (CTRLLOCK) {
@@ -166,7 +165,7 @@ public class UlozTo extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         checkGeoBlocked(br, null);
-        handleAgeRestrictedRedirects(link);
+        handleAgeRestrictedRedirects();
         if (br.containsHTML("The file is not available at this moment, please, try it later")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The file is not available at this moment, please, try it later", 15 * 60 * 1000l);
         }
@@ -217,32 +216,41 @@ public class UlozTo extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private void handleAgeRestrictedRedirects(final DownloadLink link) throws Exception {
+    public void handleAgeRestrictedRedirects() throws Exception {
         /* For age restricted links */
         final String ageFormToken = br.getRegex("id=\"frm-askAgeForm-_token_\" value=\"([^<>\"]*?)\"").getMatch(0);
+        String urlBefore = br.getURL();
         if (ageFormToken != null) {
             /* 2016-05-24: This might be outdated */
             br.postPage(br.getURL(), "agree=Confirm&do=askAgeForm-submit&_token_=" + Encoding.urlEncode(ageFormToken));
-            handleRedirect(link);
+            handleRedirect();
         } else if (br.containsHTML("value=\"pornDisclaimer-submit\"")) {
             /* 2016-05-24: This might be outdated */
-            br.setFollowRedirects(true);
             String currenturlpart = new Regex(br.getURL(), "https?://[^/]+(/.+)").getMatch(0);
             currenturlpart = Encoding.urlEncode(currenturlpart);
             br.postPage("/porn-disclaimer/?back=" + currenturlpart, "agree=Souhlas%C3%ADm&_do=pornDisclaimer-submit");
-            br.setFollowRedirects(false);
+            /* Only follow redirects going back to our initial URL */
+            if (br.getRedirectLocation() != null && br.getRedirectLocation().equalsIgnoreCase(urlBefore)) {
+                br.getPage(br.getRedirectLocation());
+            }
         } else if (br.containsHTML("id=\"frm\\-askAgeForm\"")) {
             /*
              * 2016-05-24: Uloz.to recognizes porn files and moves them from uloz.to to pornfile.cz (usually with the same filename- and
              * link-ID.
              */
-            this.br.setFollowRedirects(true);
             /* Agree to redirect from uloz.to to pornfile.cz */
             br.postPage(this.br.getURL(), "agree=Souhlas%C3%ADm&do=askAgeForm-submit");
+            /* Only follow redirects going back to our initial URL */
+            if (br.getRedirectLocation() != null && br.getRedirectLocation().equalsIgnoreCase(urlBefore)) {
+                br.getPage(br.getRedirectLocation());
+            }
             /* Agree to porn disclaimer */
             final String currenturlpart = new Regex(br.getURL(), "https?://[^/]+(/.+)").getMatch(0);
             br.postPage("/porn-disclaimer/?back=" + Encoding.urlEncode(currenturlpart), "agree=Souhlas%C3%ADm&do=pornDisclaimer-submit");
-            br.setFollowRedirects(false);
+            /* Only follow redirects going back to our initial URL */
+            if (br.getRedirectLocation() != null && br.getRedirectLocation().equalsIgnoreCase(urlBefore)) {
+                br.getPage(br.getRedirectLocation());
+            }
         }
     }
 
@@ -307,14 +315,10 @@ public class UlozTo extends PluginForHost {
     }
 
     /** Handles special redirects e.g. after submitting 'Age restricted' Form. */
-    @SuppressWarnings("deprecation")
-    private void handleRedirect(final DownloadLink downloadLink) throws Exception {
+    private void handleRedirect() throws Exception {
         for (int i = 0; i <= i; i++) {
             final String continuePage = br.getRegex("<p><a href=\"(http://.*?)\">Please click here to continue</a>").getMatch(0);
             if (continuePage != null) {
-                if (downloadLink != null) {
-                    downloadLink.setUrlDownload(continuePage);
-                }
                 br.getPage(continuePage);
             } else {
                 break;
@@ -463,9 +467,9 @@ public class UlozTo extends PluginForHost {
                     final String redirectToSecondCaptcha = PluginJSonUtils.getJson(br, "redirectDialogContent");
                     if (redirectToSecondCaptcha != null) {
                         /**
-                         * 2021-02-11: Usually: /download-dialog/free/limit-exceeded?fileSlug=<FUID>&repeated=0&nocaptcha=0 </br> This can
-                         * happen after downloading some files. The user is allowed to download more but has to solve two captchas in a row
-                         * to do so!
+                         * 2021-02-11: Usually: /download-dialog/free/limit-exceeded?fileSlug=<FUID>&repeated=0&nocaptcha=0 </br>
+                         * This can happen after downloading some files. The user is allowed to download more but has to solve two captchas
+                         * in a row to do so!
                          */
                         br.getPage(redirectToSecondCaptcha);
                         final Form f = br.getFormbyActionRegex(".*limit-exceeded.*");
@@ -798,7 +802,7 @@ public class UlozTo extends PluginForHost {
                     this.br.setCookies(this.getHost(), cookies);
                     this.br.getPage("https://" + account.getHoster());
                     checkGeoBlocked(br, account);
-                    handleAgeRestrictedRedirects(null);
+                    handleAgeRestrictedRedirects();
                     if (br.containsHTML("do=web-login")) {
                         logger.info("Cookie login failed");
                     } else if (br.getCookie(this.br.getHost(), "permanentLogin2", Cookies.NOTDELETEDPATTERN) == null) {
@@ -813,7 +817,7 @@ public class UlozTo extends PluginForHost {
                 logger.info("Performing full login");
                 this.br.getPage("https://" + account.getHoster() + "/login");
                 checkGeoBlocked(br, account);
-                handleAgeRestrictedRedirects(null);
+                handleAgeRestrictedRedirects();
                 final Form loginform = br.getFormbyKey("username");
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
