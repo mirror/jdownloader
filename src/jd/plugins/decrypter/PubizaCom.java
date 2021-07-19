@@ -48,11 +48,6 @@ public class PubizaCom extends antiDDoSForDecrypt {
         postPage(ajax, url, param);
     }
 
-    /**
-     * Important note: Via browser the videos are streamed via RTMP (maybe even in one part) but with this method we get HTTP links which is
-     * fine.
-     */
-    // NOTE: Similar plugins: BcVc, AdliPw, AdcrunCh,
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
