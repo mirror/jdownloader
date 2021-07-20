@@ -121,24 +121,27 @@ public class AboutDialog extends AbstractDialog<Integer> {
         lbl.setFont(lbl.getFont().deriveFont(lbl.getFont().getSize() * 2.0f));
         final JPanel links = new JPanel(new MigLayout("ins 0", "[]push[]push[]push[]"));
         try {
-            JButton btn = Factory.createButton(_GUI.T.jd_gui_swing_components_AboutDialog_license(), new AbstractIcon(IconKey.ICON_PREMIUM, 16), new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    String license = JDIO.readFileToString(JDUtilities.getResourceFile("licenses/jdownloader.license"));
-                    try {
-                        ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.jd_gui_swing_components_AboutDialog_license_title(), license, null, null, null) {
-                            @Override
-                            protected boolean isResizable() {
-                                return true;
-                            }
-                        };
-                        d.setPreferredSize(JDGui.getInstance().getMainFrame().getSize());
-                        Dialog.getInstance().showDialog(d);
-                    } catch (DialogNoAnswerException ignore) {
+            final File file = JDUtilities.getResourceFile("licenses/jdownloader.license");
+            if (file.isFile()) {
+                JButton btn = Factory.createButton(_GUI.T.jd_gui_swing_components_AboutDialog_license(), new AbstractIcon(IconKey.ICON_PREMIUM, 16), new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        String license = JDIO.readFileToString(file);
+                        try {
+                            ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.jd_gui_swing_components_AboutDialog_license_title(), license, null, null, null) {
+                                @Override
+                                protected boolean isResizable() {
+                                    return true;
+                                }
+                            };
+                            d.setPreferredSize(JDGui.getInstance().getMainFrame().getSize());
+                            Dialog.getInstance().showDialog(d);
+                        } catch (DialogNoAnswerException ignore) {
+                        }
                     }
-                }
-            });
-            btn.setBorder(null);
-            links.add(btn);
+                });
+                btn.setBorder(null);
+                links.add(btn);
+            }
             links.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_homepage(), new AbstractIcon(IconKey.ICON_URL, 16), new URL("https://jdownloader.org/home")));
             links.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_forum(), new AbstractIcon(IconKey.ICON_BOARD, 16), new URL("https://board.jdownloader.org/")));
             links.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_ticket(), new AbstractIcon(IconKey.ICON_BOARD, 16), new URL("https://support.jdownloader.org/")));
