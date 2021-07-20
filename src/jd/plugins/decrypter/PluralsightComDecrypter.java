@@ -69,10 +69,8 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
         }
         PluralsightCom.getClips(br, this, course);
         if (br.getHttpConnection().getResponseCode() != 200 || br.containsHTML("You have reached the end of the internet")) {
-            ret.add(this.createOfflinelink(parameter.getCryptedUrl()));
-            return ret;
-        }
-        if (br.getRequest().getHttpConnection().getResponseCode() != 200) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getRequest().getHttpConnection().getResponseCode() != 200) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Course or Data not found");
         }
         final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
