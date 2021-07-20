@@ -12,7 +12,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.Regex;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vipergirls.to" }, urls = { "https?://(?:www\\.)?vipergirls\\.to/threads/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vipergirls.to" }, urls = { "https?://(?:www\\.)?vipergirls\\.to/threads/\\d+(.+)?" })
 public class VipergirlsToBoard extends PluginForDecrypt {
     // WOO-945-41428
     public VipergirlsToBoard(PluginWrapper wrapper) {
@@ -21,24 +21,30 @@ public class VipergirlsToBoard extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        // The title is in the H2 tag spanning 3 lines
-        final String title = br.getRegex("<h2[^>]*>[\\r\\n\\s]*(.*?)[\\r\\n\\s]*</h2>").getMatch(0);
-        // Get all post content and then filter it for the href links
-        final String postContent = br.getRegex("<h2 class=\"title icon\">\\s*(.*?)\\s*</blockquote>").getMatch(0);
-        final String[] results = new Regex(postContent, "<a href=\"(https?://[^\"]+)").getColumn(0);
-        for (final String result : results) {
-            decryptedLinks.add(createDownloadlink(result));
+        final String[] posts = br.getRegex("<li[^>]*id\\s*=\\s*\"post_[^>]*>(.*?)</li>\\s*<(li[^>]*id\\s*=\\s*\"post|/ol)").getColumn(0);
+        for (final String post : posts) {
+            final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+            // The title is in the H2 tag spanning 3 lines
+            String title = new Regex(post, "<h2[^>]*>[\\r\\n\\s]*(.*?)[\\r\\n\\s]*</h2>").getMatch(0);
+            // Get all post content and then filter it for the href links
+            final String postContent = new Regex(post, "<h2 class=\"title icon\">\\s*(.*?)\\s*</blockquote>").getMatch(0);
+            final String[] results = new Regex(postContent, "<a href=\"(https?://[^\"]+)").getColumn(0);
+            for (final String result : results) {
+                decryptedLinks.add(createDownloadlink(result));
+            }
+            if (title != null) {
+                title = title.replaceAll("(<img.*>)", "").trim();
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(title);
+                fp.addLinks(decryptedLinks);
+            }
+            ret.addAll(decryptedLinks);
         }
-        if (title != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(title);
-            fp.addLinks(decryptedLinks);
-        }
-        return decryptedLinks;
+        return ret;
     }
 
     @Override
