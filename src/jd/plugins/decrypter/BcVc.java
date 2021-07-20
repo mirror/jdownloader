@@ -17,7 +17,6 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
 
@@ -30,7 +29,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -40,33 +38,17 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.components.PluginJSonUtils;
 
-/**
- * Note: using cloudflare, has simlar link structure/behaviour to adfly
- */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bc.vc" }, urls = { "https?://(?:www\\.)?(?:bc\\.vc|bcvc\\.live)/(\\d+/.+|[A-Za-z0-9]{5,7})" })
 public class BcVc extends antiDDoSForDecrypt {
     public BcVc(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private Browser ajax = null;
-
-    @Deprecated
-    private void ajaxPostPage(final String url, final LinkedHashMap<String, String> param) throws Exception {
-        ajax = br.cloneBrowser();
-        ajax.getHeaders().put("Accept", "*/*");
-        ajax.getHeaders().put("Connection-Type", "application/x-www-form-urlencoded");
-        ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        postPage(ajax, url, param);
-    }
-
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
         {
-            final String linkInsideLink = new Regex(parameter, "bc\\.vc/\\d+/(.+)").getMatch(0);
+            final String linkInsideLink = new Regex(param.getCryptedUrl(), "bc\\.vc/\\d+/(.+)").getMatch(0);
             if (linkInsideLink != null) {
                 final String finalLinkInsideLink;
                 if (StringUtils.startsWithCaseInsensitive(linkInsideLink, "http") || StringUtils.startsWithCaseInsensitive(linkInsideLink, "ftp")) {
@@ -80,15 +62,17 @@ public class BcVc extends antiDDoSForDecrypt {
                     decryptedLinks.add(link);
                     return decryptedLinks;
                 } else {
-                    parameter = linkInsideLink;
+                    param.setCryptedUrl(linkInsideLink);
                 }
             }
         }
-        // we have to rename them here because we can damage urls within urls.
-        // - parameters containing www. will always be offline.
-        parameter = parameter.replaceFirst("://www.", "://").replaceFirst("http://", "https://");
+        /**
+         * we have to rename them here because we can damage urls within urls.</br>
+         * URLs containing www. will always be offline.
+         */
+        param.setCryptedUrl(param.getCryptedUrl().replaceFirst("://www.", "://").replaceFirst("http://", "https://"));
         br.setFollowRedirects(false);
-        getPage(parameter);
+        getPage(param.getCryptedUrl());
         /* Check for direct redirect */
         String redirect = br.getRedirectLocation();
         if (redirect == null) {
@@ -105,48 +89,10 @@ public class BcVc extends antiDDoSForDecrypt {
         } else if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("Unable to connect to database")) {
-            logger.info("Link can't be decrypted because of server problems: " + parameter);
+            logger.info("Link can't be decrypted because of server problems: " + param.getCryptedUrl());
             return decryptedLinks;
         }
-        {
-            // old method
-            final String[] matches = br.getRegex("aid\\s*:\\s*(.*?)\\s*,\\s*lid\\s*:\\s*(.*?)\\s*,\\s*oid:\\s*(.*?)\\s*,\\s*ref\\s*:\\s*\\'(.*?)\\'\\s*\\}").getRow(0);
-            if (matches != null) {
-                final LinkedHashMap<String, String> data = new LinkedHashMap<String, String>();
-                // first
-                data.put("opt", "checks_log");
-                ajaxPostPage("/fly/ajax.fly.php", data);
-                // second repeated twice
-                data.put("opt", "check_log");
-                data.put(Encoding.urlEncode("args[aid]"), matches[0]);
-                data.put(Encoding.urlEncode("args[lid]"), matches[1]);
-                data.put(Encoding.urlEncode("args[oid]"), matches[2]);
-                data.put(Encoding.urlEncode("args[ref]"), "");
-                ajaxPostPage("/fly/ajax.fly.php", data);
-                ajaxPostPage("/fly/ajax.fly.php", data);
-                // waittime is 5 seconds. but somehow this often results in an error.
-                // we use 5.5 seconds to avoid them
-                sleep(5500, param);
-                // third
-                data.put("opt", "make_log");
-                data.put(Encoding.urlEncode("args[nok]"), "no");
-                ajaxPostPage("/fly/ajax.fly.php", data);
-                String url = PluginJSonUtils.getJsonValue(ajax, "url");
-                if (url == null) {
-                    // maybe we have to wait even longer?
-                    sleep(2000, param);
-                    ajaxPostPage("/fly/ajax.fly.php", data);
-                    url = PluginJSonUtils.getJsonValue(ajax, "url");
-                }
-                if (url != null) {
-                    decryptedLinks.add(createDownloadlink(url));
-                }
-            } else {
-                /* 2021: New handling */
-                decryptedLinks.add(this.crawlBcbclive(param));
-                return decryptedLinks;
-            }
-        }
+        decryptedLinks.add(this.crawlBcbclive(param));
         return decryptedLinks;
     }
 
