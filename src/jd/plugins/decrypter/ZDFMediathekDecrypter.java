@@ -627,7 +627,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 } else {
                     /* http download */
                     final String realQuality = (String) entries.get("quality");
-                    Object[][] qualities = new Object[][] { { realQuality, uri, filesize } };
+                    final ArrayList<Object[]> qualities = new ArrayList<Object[]>();
+                    qualities.add(new Object[] { realQuality, uri, filesize });
                     /**
                      * Sometimes we can modify the final downloadurls and thus get higher quality streams. We want to keep all versions
                      * though!
@@ -649,7 +650,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                             if (improvedQualityDownloadURL != uri) {
                                 /* Update quality modifier if needed */
                                 logger.info("Optimization for: " + realQuality + "|Old: " + uri + "|New: " + improvedQualityDownloadURL);
-                                final Object[] oldQuality = qualities[0];
                                 final String improvedQuality;
                                 if (realQuality.equalsIgnoreCase("low")) {
                                     /* Improve "low" -> medium (?) */
@@ -663,7 +663,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                 } else {
                                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported quality string");
                                 }
-                                qualities = new Object[][] { oldQuality, { improvedQuality, improvedQualityDownloadURL, filesizeNew } };
+                                qualities.add(new Object[] { improvedQuality, improvedQualityDownloadURL, filesizeNew });
                             }
                         }
                     } else {
@@ -687,8 +687,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                 logger.info("Not altering quality: " + realQuality);
                             }
                             if (improvedQualityDownloadURL != null) {
-                                final Object[] oldQuality = qualities[0];
-                                qualities = new Object[][] { oldQuality, { improvedQuality, improvedQualityDownloadURL, -1 } };
+                                qualities.add(new Object[] { improvedQuality, improvedQualityDownloadURL, -1 });
                             }
                         }
                     }
