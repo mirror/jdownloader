@@ -701,6 +701,6 @@ public class PluralsightCom extends antiDDoSForHost {
 
     @Override
     public String getDescription() {
-        return "Download videos course from Pluralsight.Com (Subtitles coming soon)";
+        return "Download videos course from Pluralsight.com (Subtitles coming soon)";
     }
 }
