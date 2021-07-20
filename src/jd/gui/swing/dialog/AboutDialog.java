@@ -45,7 +45,6 @@ import jd.gui.swing.Factory;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.JDGui;
 import jd.nutils.io.JDIO;
-import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.JSonStorage;
@@ -121,7 +120,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         lbl.setFont(lbl.getFont().deriveFont(lbl.getFont().getSize() * 2.0f));
         final JPanel links = new JPanel(new MigLayout("ins 0", "[]push[]push[]push[]"));
         try {
-            final File file = JDUtilities.getResourceFile("licenses/jdownloader.license");
+            final File file = Application.getResource("licenses/jdownloader.license");
             if (file.isFile()) {
                 JButton btn = Factory.createButton(_GUI.T.jd_gui_swing_components_AboutDialog_license(), new AbstractIcon(IconKey.ICON_PREMIUM, 16), new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
