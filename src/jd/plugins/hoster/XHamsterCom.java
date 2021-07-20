@@ -35,7 +35,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -99,10 +98,10 @@ public class XHamsterCom extends PluginForHost {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
             /* Videos current pattern */
-            String pattern = "https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/(?:preview|movies|videos)/[a-z0-9\\-]+\\-[A-Za-z0-9\\-]+(?:$|\\?)";
+            String pattern = "https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/videos/[a-z0-9\\-_]+-[A-Za-z0-9]+";
             /* Embed pattern: 2020-05-08: /embed/123 = current pattern, x?embed.php = old one */
             pattern += "|https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/(embed/[A-Za-z0-9]+|x?embed\\.php\\?video=[A-Za-z0-9]+)";
-            /* Movies old pattern */
+            /* Movies old pattern --> Redirects to TYPE_VIDEOS_2 (or TYPE_VIDEOS_3) */
             pattern += "|https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/movies/[0-9]+/[^/]+\\.html";
             /* Premium pattern */
             pattern += "|https?://(?:gold\\.xhamsterpremium\\.com|faphouse\\.com)/videos/([A-Za-z0-9]+)";
@@ -141,6 +140,10 @@ public class XHamsterCom extends PluginForHost {
     private boolean               friendsOnly                     = false;
     public static final String    domain_premium                  = "faphouse.com";
     public static final String    api_base_premium                = "https://faphouse.com/api";
+    private static final String   TYPE_MOVIES                     = "(?i)^https?://[^/]+/movies/(\\d+)/([^/]+)\\.html$";
+    private static final String   TYPE_VIDEOS                     = "(?i)^https?://[^/]+/videos/([A-Za-z0-9]+)$";
+    private static final String   TYPE_VIDEOS_2                   = "(?i)^https?://[^/]+/videos/([a-z0-9\\-_]+)-(\\d+)$";
+    private static final String   TYPE_VIDEOS_3                   = "(?i)^https?://[^/]+/videos/([a-z0-9\\-_]+)-([A-Za-z0-9]+)$";
 
     private void setConfigElements() {
         String user_text;
@@ -155,12 +158,12 @@ public class XHamsterCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "Filename_id", "Only for videos: Change Choose file name to 'filename_ID.exe' e.g. 'test_48604.mp4' ?").setDefaultValue(false));
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
+    @Override
+    public boolean allowHandle(final DownloadLink link, final PluginForHost plugin) {
         if (this.getPluginConfig().getBooleanProperty(ALLOW_MULTIHOST_USAGE, default_allow_multihoster_usage)) {
             return true;
         } else {
-            return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+            return link.getHost().equalsIgnoreCase(plugin.getHost());
         }
     }
 
@@ -170,7 +173,7 @@ public class XHamsterCom extends PluginForHost {
     }
 
     private static final String TYPE_MOBILE    = "(?i).+m\\.xhamster\\.+";
-    private static final String TYPE_EMBED     = "(?i)^https?://(?:www\\.)?xhamster\\.[^/]+/(?:x?embed\\.php\\?video=|embed/)([A-Za-z0-9\\-]+)(?:$|\\?)";
+    private static final String TYPE_EMBED     = "(?i)^https?://[^/]+/(?:x?embed\\.php\\?video=|embed/)([A-Za-z0-9\\-]+)";
     private static final String TYPE_PREMIUM   = ".+(xhamsterpremium\\.com|faphouse\\.com).+";
     private static final String NORESUME       = "NORESUME";
     private static Object       ctrlLock       = new Object();
@@ -183,10 +186,10 @@ public class XHamsterCom extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getPluginPatternMatcher().replaceAll("://(www\\.)?([a-z]{2}\\.)?", "://"));
         if (link.getPluginPatternMatcher().matches(TYPE_MOBILE) || link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
-            link.setUrlDownload("https://xhamster.com/videos/" + getLinkpart(link));
+            link.setUrlDownload("https://xhamster.com/videos/" + new Regex(link.getPluginPatternMatcher(), TYPE_EMBED).getMatch(0));
         } else {
             final String thisdomain = new Regex(link.getPluginPatternMatcher(), "https?://(?:www\\.)?([^/]+)/.+").getMatch(0);
-            link.getPluginPatternMatcher().replace(thisdomain, DOMAIN_CURRENT);
+            link.getPluginPatternMatcher().replaceFirst(org.appwork.utils.Regex.escape(thisdomain), DOMAIN_CURRENT);
         }
     }
 
@@ -200,21 +203,59 @@ public class XHamsterCom extends PluginForHost {
         }
     }
 
-    private String getFID(final DownloadLink link) {
+    private static String getFID(final DownloadLink link) {
         if (link.getPluginPatternMatcher() == null) {
             return null;
         } else {
-            final String fid;
-            if (link.getPluginPatternMatcher().matches(TYPE_PREMIUM)) {
-                fid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-            } else if (link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
-                fid = new Regex(link.getPluginPatternMatcher(), TYPE_EMBED).getMatch(0);
-            } else if (link.getPluginPatternMatcher().matches(TYPE_MOBILE)) {
-                fid = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/[^/]+/[^/]*?([a-z0-9]+)(/|$|\\?)").getMatch(0);
+            return getFID(link.getPluginPatternMatcher());
+        }
+    }
+
+    private static String getFID(final String url) {
+        if (url == null) {
+            return null;
+        } else {
+            if (url.matches(TYPE_EMBED)) {
+                return new Regex(url, TYPE_EMBED).getMatch(0);
+            } else if (url.matches(TYPE_MOBILE)) {
+                return new Regex(url, "https?://[^/]+/[^/]+/[^/]*?([a-z0-9]+)(/|$|\\?)").getMatch(0);
+            } else if (url.matches(TYPE_MOVIES)) {
+                return new Regex(url, TYPE_MOVIES).getMatch(0);
+            } else if (url.matches(TYPE_VIDEOS)) {
+                return new Regex(url, TYPE_VIDEOS).getMatch(0);
+            } else if (url.matches(TYPE_VIDEOS_2)) {
+                return new Regex(url, TYPE_VIDEOS_2).getMatch(1);
+            } else if (url.matches(TYPE_VIDEOS_3)) {
+                return new Regex(url, TYPE_VIDEOS_3).getMatch(1);
             } else {
-                fid = new Regex(link.getPluginPatternMatcher(), "(?:movies|videos)/[^/]*?([a-z0-9]+)(/|$|\\?)").getMatch(0);
+                /* This should never happen */
+                return null;
             }
-            return fid;
+        }
+    }
+
+    private static String getUrlTitle(final String url) {
+        if (url.matches(TYPE_MOVIES)) {
+            return new Regex(url, TYPE_MOVIES).getMatch(1);
+        } else if (url.matches(TYPE_VIDEOS_2)) {
+            return new Regex(url, TYPE_VIDEOS_2).getMatch(0);
+        } else if (url.matches(TYPE_VIDEOS_3)) {
+            return new Regex(url, TYPE_VIDEOS_3).getMatch(0);
+        } else {
+            /* All other linktypes do not contain any title hint --> Return fid */
+            return null;
+        }
+    }
+
+    private String getFallbackFileTitle(final String url) {
+        if (url == null) {
+            return null;
+        }
+        final String urlTitle = getUrlTitle(url);
+        if (urlTitle != null) {
+            return urlTitle;
+        } else {
+            return getFID(getDownloadLink());
         }
     }
 
@@ -245,21 +286,23 @@ public class XHamsterCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, false);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return requestFileInformation(link, account, false);
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         synchronized (ctrlLock) {
             friendsOnly = false;
-            link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+            if (!link.isNameSet()) {
+                link.setName(getFallbackFileTitle(link.getPluginPatternMatcher()) + ".mp4");
+            }
             br.setFollowRedirects(true);
             prepBr();
             /* quick fix to force old player */
             String filename = null;
             String filesizeStr = null;
-            final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
-            if (aa != null) {
-                login(aa, false);
+            if (account != null) {
+                login(account, false);
             }
             br.getPage(link.getPluginPatternMatcher());
             final int responsecode = br.getRequest().getHttpConnection().getResponseCode();
@@ -285,7 +328,7 @@ public class XHamsterCom extends PluginForHost {
             if (link.getPluginPatternMatcher().matches(TYPE_PREMIUM)) {
                 /* Premium content */
                 filename = br.getRegex("<div class=\"spoiler__content\">([^<>\"]+)</div>").getMatch(0);
-                if (aa == null || aa.getType() != AccountType.PREMIUM) {
+                if (account == null || account.getType() != AccountType.PREMIUM) {
                     /* Free / Free-Account users can only download low quality trailers */
                     this.dllink = br.getRegex("<video src=\"(http[^<>\"]+)\"").getMatch(0);
                 } else {
@@ -301,8 +344,6 @@ public class XHamsterCom extends PluginForHost {
                 }
                 if (filename != null) {
                     link.setFinalFileName(filename + ".mp4");
-                } else {
-                    link.setName(this.getFID(link) + ".mp4");
                 }
             } else {
                 // embeded correction --> Usually not needed
@@ -336,7 +377,6 @@ public class XHamsterCom extends PluginForHost {
                 final String onlyfor = videoOnlyForFriendsOf();
                 if (onlyfor != null) {
                     link.getLinkStatus().setStatusText("Only downloadable for friends of " + onlyfor);
-                    link.setName(getFID(link));
                     return AvailableStatus.TRUE;
                 } else if (isPasswordProtected()) {
                     return AvailableStatus.TRUE;
@@ -693,7 +733,7 @@ public class XHamsterCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link, true);
+        requestFileInformation(link, null, true);
         doFree(link);
     }
 
@@ -1101,9 +1141,9 @@ public class XHamsterCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link, true);
-        /* No need to login as we'll already be loggedin via requestFileInformation. */
+        /* No need to login as we'll login in requestFileInformation. */
         // login(account, false);
+        requestFileInformation(link, account, true);
         doFree(link);
     }
 
