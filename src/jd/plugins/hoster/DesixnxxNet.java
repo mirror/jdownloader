@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -31,7 +29,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "desixnxx.net" }, urls = { "desixnxxdecrypted://(?:www\\.)?(desixnxx2?\\.net|masalabin\\.com|desi121\\.com)/[a-z0-9\\-]+/" })
+import org.appwork.utils.StringUtils;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "desixnxx.net" }, urls = { "desixnxxdecrypted://(?:www\\.)?(desixnxx2?\\.net|masalabin\\.com|desi121\\.com|unlockxh9\\.com)/[a-z0-9\\-]+/" })
 public class DesixnxxNet extends PluginForHost {
     public DesixnxxNet(PluginWrapper wrapper) {
         super(wrapper);

@@ -52,6 +52,11 @@ public class FilebonusNet extends XFileSharingProBasic {
     }
 
     @Override
+    protected boolean websiteSupportsHTTPS() {
+        return false;
+    }
+
+    @Override
     public String[] siteSupportedNames() {
         return buildSupportedNames(getPluginDomains());
     }
