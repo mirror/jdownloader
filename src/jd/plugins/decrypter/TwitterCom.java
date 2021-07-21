@@ -29,6 +29,15 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -43,6 +52,8 @@ import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -50,15 +61,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(?:www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/status/\\d+|https?://(?:www\\.|mobile\\.)?twitter\\.com/(?!i/)[A-Za-z0-9_\\-]{2,}(?:/(?:media|likes))?|https://twitter\\.com/i/cards/tfw/v1/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" })
 public class TwitterCom extends PornEmbedParser {
@@ -202,19 +204,7 @@ public class TwitterCom extends PornEmbedParser {
         final boolean useNewMethod = true; /* 2021-06-15 */
         if (useNewMethod) {
             br.getPage("https://api.twitter.com/1.1/statuses/show/" + tweetID + ".json?cards_platform=Web-12&include_reply_count=1&include_cards=1&include_user_entities=0&tweet_mode=extended");
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                /* 2021-06-22: {"errors":[{"code":144,"message":"No status found with that ID."}]} */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.getHttpConnection().getResponseCode() == 429) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Rate-limit reached", 5 * 60 * 1000l);
-            } else if (br.getHttpConnection().getResponseCode() == 403) {
-                final String code = PluginJSonUtils.getJson(br, "code");
-                if ("63".equals(code)) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "User has been suspended");
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-            }
+            handleErrorsAPI(this.br);
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final Map<String, Object> user = (Map<String, Object>) entries.get("user");
             final String username = (String) user.get("screen_name");
@@ -608,17 +598,8 @@ public class TwitterCom extends PornEmbedParser {
             }
             final String url = String.format("https://api.twitter.com/2/timeline/%s/%s.json", content_type, user_id);
             br.getPage(url + "?" + thisquery.toString());
-            if (br.containsHTML("Your credentials do not allow access to this resource")) {
-                /* 2020-08-24: {"errors":[{"code":220,"message":"Your credentials do not allow access to this resource."}]} */
-                throw new AccountRequiredException();
-            }
+            handleErrorsAPI(this.br);
             entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            final Object errors = entries.get("errors");
-            if (errors != null) {
-                logger.info("Twitter error happened - probably offline- or protected content");
-                decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-                return;
-            }
             final ArrayList<Object> pagination_info = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "timeline/instructions/{0}/addEntries/entries");
             final Map<String, Object> tweetMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "globalObjects/tweets");
             if (tweetMap == null || tweetMap.isEmpty()) {
@@ -670,6 +651,48 @@ public class TwitterCom extends PornEmbedParser {
             this.sleep(3000l, param);
         } while (!this.isAbort());
         logger.info(String.format("Done after %d pages", index));
+    }
+
+    /**
+     * https://developer.twitter.com/en/support/twitter-api/error-troubleshooting </br>
+     * Scroll down to "Twitter API error codes"
+     */
+    private void handleErrorsAPI(final Browser br) throws Exception {
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Object errorsO = entries.get("errors");
+        if (errorsO != null) {
+            final List<Map<String, Object>> errors = (List<Map<String, Object>>) errorsO;
+            for (final Map<String, Object> error : errors) {
+                final int code = ((Number) error.get("code")).intValue();
+                switch (code) {
+                case 34:
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                case 63:
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                case 109:
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                case 144:
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                case 325:
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                case 421:
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                case 220:
+                    /* {"errors":[{"code":220,"message":"Your credentials do not allow access to this resource."}]} */
+                    throw new AccountRequiredException();
+                default:
+                    throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, error.get("message").toString());
+                }
+            }
+        }
+        /* Check for some pure http error-responsecodes. */
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 429) {
+            throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "Rate-Limit reached");
+        } else if (br.getHttpConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     /* 2020-01-30: Mobile website will only show 1 tweet per page */
