@@ -78,28 +78,42 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
     public static List<String> getBetterQualities(final String url) {
         final String base[] = new Regex(url, "((\\d{3,4}k_p\\d{1,2})(v\\d{2})\\.mp4)", Pattern.CASE_INSENSITIVE).getRow(0);
         if (base != null && base.length == 3) {
-            final String version = base[2];
+            final String qualityModifierComplete = base[0];
             final String bitrateAndP = base[1];
-            // final String versionLower = base[2].toLowerCase(Locale.ENGLISH);
-            final List<String> qualities = QUALITIES_MAP.get(version.toLowerCase(Locale.ENGLISH));
-            if (qualities != null) {
-                final Iterator<String> it = qualities.iterator();
-                while (it.hasNext()) {
-                    String thisBitrateAndP = it.next();
-                    /* Find list where first item equals */
-                    if (thisBitrateAndP.equalsIgnoreCase(bitrateAndP)) {
-                        final List<String> ret = new ArrayList<String>();
-                        while (it.hasNext()) {
-                            thisBitrateAndP = it.next();
-                            final String nextURL = url.replaceFirst("(?i)" + Pattern.quote(base[0]), thisBitrateAndP + version + ".mp4");
-                            ret.add(nextURL);
-                        }
-                        if (ret.size() > 0) {
-                            /* Reverse sort so highest quality is on the beginning */
-                            Collections.sort(ret, Collections.reverseOrder());
-                            return ret;
-                        } else {
-                            return null;
+            final String version = base[2];
+            if (qualityModifierComplete.equalsIgnoreCase("508k_p9v15.mp4")) {
+                /**
+                 * 2021-07-21: Workaround for low quality --> med </br>
+                 * TODO: Check to see if we can remove this in the future.
+                 */
+                final List<String> ret = new ArrayList<String>();
+                final String[] betterCandidates = new String[] { "2360k_p35v15" };
+                for (final String thisQualityModifierWithoutExt : betterCandidates) {
+                    ret.add(url.replaceFirst("(?i)" + Pattern.quote(qualityModifierComplete), thisQualityModifierWithoutExt + ".mp4"));
+                }
+                return ret;
+            } else {
+                // final String versionLower = base[2].toLowerCase(Locale.ENGLISH);
+                final List<String> qualities = QUALITIES_MAP.get(version.toLowerCase(Locale.ENGLISH));
+                if (qualities != null) {
+                    final Iterator<String> it = qualities.iterator();
+                    while (it.hasNext()) {
+                        String thisBitrateAndP = it.next();
+                        /* Find list where first item equals */
+                        if (thisBitrateAndP.equalsIgnoreCase(bitrateAndP)) {
+                            final List<String> ret = new ArrayList<String>();
+                            while (it.hasNext()) {
+                                thisBitrateAndP = it.next();
+                                final String nextURL = url.replaceFirst("(?i)" + Pattern.quote(qualityModifierComplete), thisBitrateAndP + version + ".mp4");
+                                ret.add(nextURL);
+                            }
+                            if (ret.size() > 0) {
+                                /* Reverse sort so highest quality is on the beginning */
+                                Collections.sort(ret, Collections.reverseOrder());
+                                return ret;
+                            } else {
+                                return null;
+                            }
                         }
                     }
                 }
