@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "aventertainments.com" }, urls = { "https?://(?:www\\.)?aventertainments\\.com/(?!newdlsample|ppv/new_detail\\.aspx).+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "aventertainments.com" }, urls = { "https?://(?:www\\.)?aventertainments\\.com/(?!newdlsample).+" })
 public class AventertainmentsCom extends PluginForDecrypt {
     public AventertainmentsCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -65,7 +65,11 @@ public class AventertainmentsCom extends PluginForDecrypt {
         }
         boolean foundScreenshot = false;
         final String screenshot_url_part = this.br.getRegex("imgs\\.aventertainments\\.com/new/bigcover/([A-Za-z0-9\\-_]+\\.jpg)\"").getMatch(0);
-        final String[] screenshotRegexes = { "(https?://imgs\\d*\\.aventertainments\\.com/[^/]+/screen_shot/[^<>\"\\']+\\.jpg)", "(https?://imgs\\s*\\.aventertainments\\.com/(?:[a-z0-9]+)?/?vodimages/screenshot/large/[^<>\"\\']+\\.jpg)" };
+        /*
+         * 2021-07-21: Removed this screenshot RegEx as it will pickup screenshots of "related" videos:
+         * (https?://imgs\\d*\\.aventertainments\\.com/[^/]+/screen_shot/[^<>\"\\']+\\.jpg)
+         */
+        final String[] screenshotRegexes = { "(https?://imgs\\d*\\.aventertainments\\.com/(?:[a-z0-9]+)?/?vodimages/screenshot/large/[^<>\"\\']+\\.jpg)" };
         final String[] galleryRegexes = { "(https?://imgs\\d*\\.aventertainments\\.com/(?:[a-z0-9]+)?/vodimages/gallery/large/[^<>\"\\']+\\.jpg)" };
         final String[] coverRegexes = { "\"(https?://imgs\\d*\\.aventertainments\\.com/(?:[a-z0-9]+)?/bigcover/[^/]+\\.jpg)\"" };
         for (final String screenshotRegex : screenshotRegexes) {
@@ -75,10 +79,13 @@ public class AventertainmentsCom extends PluginForDecrypt {
                 for (final String singleLink : screenshots) {
                     final DownloadLink dl = createDownloadlink(singleLink);
                     final String filename_url = getFileNameFromURL(new URL(singleLink));
-                    final String filename = "screenshot_" + filename_url;
-                    dl.setFinalFileName(filename);
+                    if (filename_url != null) {
+                        final String filename = "screenshot_" + filename_url;
+                        dl.setFinalFileName(filename);
+                    }
                     dl.setProperty("mainlink", parameter);
                     dl.setProperty("type", "screenshot");
+                    dl.setAvailable(true);
                     decryptedLinks.add(dl);
                 }
             }
@@ -89,10 +96,13 @@ public class AventertainmentsCom extends PluginForDecrypt {
                 for (final String singleLink : galleryImages) {
                     final DownloadLink dl = createDownloadlink(singleLink);
                     final String filename_url = getFileNameFromURL(new URL(singleLink));
-                    final String filename = "gallery_" + filename_url;
-                    dl.setFinalFileName(filename);
+                    if (filename_url != null) {
+                        final String filename = "gallery_" + filename_url;
+                        dl.setFinalFileName(filename);
+                    }
                     dl.setProperty("mainlink", parameter);
                     dl.setProperty("type", "gallery");
+                    dl.setAvailable(true);
                     decryptedLinks.add(dl);
                 }
             }
@@ -103,10 +113,13 @@ public class AventertainmentsCom extends PluginForDecrypt {
                 for (final String singleLink : coverImages) {
                     final DownloadLink dl = createDownloadlink(singleLink);
                     final String filename_url = getFileNameFromURL(new URL(singleLink));
-                    final String filename = "cover_" + filename_url;
-                    dl.setFinalFileName(filename);
+                    if (filename_url != null) {
+                        final String filename = "cover_" + filename_url;
+                        dl.setFinalFileName(filename);
+                    }
                     dl.setProperty("mainlink", parameter);
                     dl.setProperty("type", "cover");
+                    dl.setAvailable(true);
                     decryptedLinks.add(dl);
                 }
             }
@@ -116,10 +129,13 @@ public class AventertainmentsCom extends PluginForDecrypt {
             final String screenshot_directurl = "http://imgs.aventertainments.com/new/screen_shot/" + screenshot_url_part;
             final DownloadLink dl = createDownloadlink(screenshot_directurl);
             final String filename_url = getFileNameFromURL(new URL(screenshot_directurl));
-            final String filename = "screenshot_" + filename_url;
-            dl.setFinalFileName(filename);
+            if (filename_url != null) {
+                final String filename = "screenshot_" + filename_url;
+                dl.setFinalFileName(filename);
+            }
             dl.setProperty("mainlink", parameter);
             dl.setProperty("type", "screenshot");
+            dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
         /*
