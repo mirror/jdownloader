@@ -21,11 +21,6 @@ import java.util.List;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.Account;
@@ -33,6 +28,11 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class StreamonTo extends XFileSharingProBasic {
@@ -151,7 +151,7 @@ public class StreamonTo extends XFileSharingProBasic {
                 engine.eval(sb.toString());
                 result = engine.get("res").toString();
                 // System.out.println(counter + ":\r\n" + result);
-                final String relevantPart1 = new Regex(result, "(var abfbecee.*?)(?:window\\.videoConfig|function)").getMatch(0);
+                final String relevantPart1 = new Regex(result, "\\);[\r\n\\s]*(var.*?)\\s*(?:window\\.videoConfig|function)").getMatch(0);
                 if (relevantPart1 != null) {
                     final StringBuilder sb2 = new StringBuilder();
                     sb2.append(relevantPart1);
@@ -167,7 +167,7 @@ public class StreamonTo extends XFileSharingProBasic {
                     }
                 }
             } catch (final Exception e) {
-                e.printStackTrace();
+                plg.getLogger().log(e);
             }
             counter += 1;
         }
