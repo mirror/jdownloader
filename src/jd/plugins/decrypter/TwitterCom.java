@@ -169,6 +169,13 @@ public class TwitterCom extends PornEmbedParser {
         return decryptedLinks;
     }
 
+    @Override
+    public void init() {
+        super.init();
+        Browser.setRequestIntervalLimitGlobal("twimg.com", true, 350);
+        Browser.setRequestIntervalLimitGlobal("api.twitter.com", true, 350);
+    }
+
     @Deprecated
     private boolean switchtoMobile() throws IOException {
         /*
