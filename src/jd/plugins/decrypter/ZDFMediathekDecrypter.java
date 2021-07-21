@@ -91,7 +91,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             final String qualityModifierComplete = base[0];
             final String bitrateAndP = base[1];
             final String version = base[2];
-            // final String versionLower = base[2].toLowerCase(Locale.ENGLISH);
             final List<String[]> qualities = QUALITIES_MAP.get(version.toLowerCase(Locale.ENGLISH));
             if (qualities != null) {
                 boolean unknownQuality = false;
