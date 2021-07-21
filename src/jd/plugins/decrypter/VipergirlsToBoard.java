@@ -25,7 +25,11 @@ public class VipergirlsToBoard extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        final String[] posts = br.getRegex("<li[^>]*id\\s*=\\s*\"post_[^>]*>(.*?)</li>\\s*<(li[^>]*id\\s*=\\s*\"post|/ol)").getColumn(0);
+        String postID = new Regex(parameter, "p(?:=|post)(\\d+)").getMatch(0);
+        if (postID == null) {
+            postID = "";
+        }
+        final String[] posts = br.getRegex("<li[^>]*id\\s*=\\s*\"post_" + postID + "[^>]*>(.*?)</li>\\s*<(li[^>]*id\\s*=\\s*\"post|/ol)").getColumn(0);
         for (final String post : posts) {
             final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             // The title is in the H2 tag spanning 3 lines
