@@ -22,11 +22,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -66,40 +68,50 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final static Map<String, List<String>> QUALITIES_MAP = new HashMap<String, List<String>>();
-    static {
-        QUALITIES_MAP.put("v11", Arrays.asList(new String[] { "1456k_p13", "2256k_p14", "2328k_p35" }));
-        QUALITIES_MAP.put("v12", Arrays.asList(new String[] { "1456k_p13", "2256k_p14", "2328k_p35", "3328k_p36", "3256k_p15" }));
-        QUALITIES_MAP.put("v13", Arrays.asList(new String[] { "1496k_p13", "2296k_p14", "2328k_p35", "3328k_p36", "3296k_p15" }));
-        QUALITIES_MAP.put("v14", Arrays.asList(new String[] { "1496k_p13", "2296k_p14", "2328k_p35", "3328k_p36", "3328k_p35" }));
-        QUALITIES_MAP.put("v15", Arrays.asList(new String[] { "1628k_p13", "2360k_p35", "3360k_p36" }));
+    private static enum QUALITY {
+        LOW,
+        MEDIUM,
+        HIGH,
+        VERYHIGH,
+        HD
     }
 
-    public static List<String> getBetterQualities(final String url) {
+    private final static Map<String, List<String[]>> QUALITIES_MAP = new HashMap<String, List<String[]>>();
+    static {
+        QUALITIES_MAP.put("v11", Arrays.asList(new String[][] { new String[] { "1456k_p13", QUALITY.MEDIUM.name() }, new String[] { "2256k_p14", QUALITY.VERYHIGH.name() }, new String[] { "2328k_p35", QUALITY.VERYHIGH.name() } }));
+        QUALITIES_MAP.put("v12", Arrays.asList(new String[][] { new String[] { "1456k_p13", QUALITY.MEDIUM.name() }, new String[] { "2256k_p14", QUALITY.VERYHIGH.name() }, new String[] { "2328k_p35", QUALITY.VERYHIGH.name() }, new String[] { "3256k_p15", QUALITY.HD.name() }, new String[] { "3328k_p36", QUALITY.HD.name() } }));
+        QUALITIES_MAP.put("v13", Arrays.asList(new String[][] { new String[] { "1496k_p13", QUALITY.MEDIUM.name() }, new String[] { "2296k_p14", QUALITY.VERYHIGH.name() }, new String[] { "2328k_p35", QUALITY.VERYHIGH.name() }, new String[] { "3296k_p15", QUALITY.HD.name() }, new String[] { "3328k_p36", QUALITY.HD.name() } }));
+        QUALITIES_MAP.put("v14", Arrays.asList(new String[][] { new String[] { "1496k_p13", QUALITY.MEDIUM.name() }, new String[] { "2296k_p14", QUALITY.VERYHIGH.name() }, new String[] { "2328k_p35", QUALITY.VERYHIGH.name() }, new String[] { "3328k_p35", QUALITY.HD.name() }, new String[] { "3328k_p36", QUALITY.HD.name() } }));
+        QUALITIES_MAP.put("v15", Arrays.asList(new String[][] { new String[] { "1628k_p13", QUALITY.MEDIUM.name() }, new String[] { "2360k_p35", QUALITY.VERYHIGH.name() }, new String[] { "3360k_p36", QUALITY.HD.name() } }));
+    }
+
+    public static List<String[]> getBetterQualities(final String url) {
         final String base[] = new Regex(url, "((\\d{3,4}k_p\\d{1,2})(v\\d{2})\\.mp4)", Pattern.CASE_INSENSITIVE).getRow(0);
         if (base != null && base.length == 3) {
             final String qualityModifierComplete = base[0];
             final String bitrateAndP = base[1];
             final String version = base[2];
             // final String versionLower = base[2].toLowerCase(Locale.ENGLISH);
-            final List<String> qualities = QUALITIES_MAP.get(version.toLowerCase(Locale.ENGLISH));
+            final List<String[]> qualities = QUALITIES_MAP.get(version.toLowerCase(Locale.ENGLISH));
             if (qualities != null) {
                 boolean unknownQuality = false;
                 while (true) {
-                    final Iterator<String> it = qualities.iterator();
+                    final Iterator<String[]> it = qualities.iterator();
                     while (it.hasNext()) {
-                        String thisBitrateAndP = unknownQuality ? null : it.next();
+                        String next[] = unknownQuality ? null : it.next();
+                        String thisBitrateAndP = next != null ? next[0] : null;
                         /* Find list where first item equals */
                         if (thisBitrateAndP == null || thisBitrateAndP.equalsIgnoreCase(bitrateAndP)) {
-                            final List<String> ret = new ArrayList<String>();
+                            final List<String[]> ret = new ArrayList<String[]>();
                             while (it.hasNext()) {
-                                thisBitrateAndP = it.next();
+                                next = it.next();
+                                thisBitrateAndP = next[0];
                                 final String nextURL = url.replaceFirst("(?i)" + Pattern.quote(qualityModifierComplete), thisBitrateAndP + version + ".mp4");
-                                ret.add(nextURL);
+                                ret.add(new String[] { nextURL, next[1].toLowerCase(Locale.ENGLISH) });
                             }
                             if (ret.size() > 0) {
                                 /* Reverse sort so highest quality is on the beginning */
-                                Collections.sort(ret, Collections.reverseOrder());
+                                Collections.reverse(ret);
                                 return ret;
                             } else {
                                 return null;
@@ -523,6 +535,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             DownloadLink highestHTTPDownloadLink = null;
             int highestHlsBandwidth = 0;
             int highestHTTPQualityValue = 0;
+            final Set<String> httpQualities = new HashSet<String>();
             for (final Object qualityO : qualitiesList) {
                 entries = (Map<String, Object>) qualityO;
                 final boolean isAdaptive = ((Boolean) entries.get("isAdaptive"));
@@ -639,44 +652,27 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     }
                 } else {
                     /* http download */
-                    final String realQuality = (String) entries.get("quality");
+                    final String realQuality = ((String) entries.get("quality")).toLowerCase(Locale.ENGLISH);
                     final ArrayList<Object[]> qualities = new ArrayList<Object[]>();
-                    qualities.add(new Object[] { realQuality, uri, filesize });
                     /**
                      * Sometimes we can modify the final downloadurls and thus get higher quality streams. We want to keep all versions
                      * though!
                      */
                     final boolean useNewHandling = true;
                     if (useNewHandling) {
-                        final List<String> betterQualities = getBetterQualities(uri);
+                        final List<String[]> betterQualities = getBetterQualities(uri);
                         if (betterQualities != null) {
                             /* We cannot be 100% sure if these will work thus let's check... */
-                            long filesizeNew = -1;
-                            String improvedQualityDownloadURL = null;
-                            for (final String betterQualityDownloadurl : betterQualities) {
-                                filesizeNew = this.checkDownloadable(betterQualityDownloadurl);
-                                if (filesizeNew > -1) {
-                                    improvedQualityDownloadURL = betterQualityDownloadurl;
-                                    break;
+                            for (final String[] betterQualityEntry : betterQualities) {
+                                final String betterQuality = betterQualityEntry[1];
+                                if (!httpQualities.contains(betterQuality)) {
+                                    final long filesizeNew = this.checkDownloadable(betterQualityEntry[0]);
+                                    if (filesizeNew > -1) {
+                                        logger.info("Optimization for: " + realQuality + "(" + uri + ")->" + betterQuality + "(" + betterQualityEntry[0] + ")");
+                                        qualities.add(new Object[] { betterQuality, betterQualityEntry[0], filesizeNew });
+                                        httpQualities.add(betterQuality);
+                                    }
                                 }
-                            }
-                            if (improvedQualityDownloadURL != uri) {
-                                /* Update quality modifier if needed */
-                                logger.info("Optimization for: " + realQuality + "|Old: " + uri + "|New: " + improvedQualityDownloadURL);
-                                final String improvedQuality;
-                                if (realQuality.equalsIgnoreCase("low")) {
-                                    /* Improve "low" -> medium (?) */
-                                    improvedQuality = "medium";
-                                } else if (realQuality.equalsIgnoreCase("medium")) {
-                                    /* Improve "high/medium" --> veryhigh (?) */
-                                    improvedQuality = "veryhigh";
-                                } else if (realQuality.equalsIgnoreCase("veryhigh")) {
-                                    /* Improve "veryhigh" --> hd */
-                                    improvedQuality = "hd";
-                                } else {
-                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported quality string");
-                                }
-                                qualities.add(new Object[] { improvedQuality, improvedQualityDownloadURL, filesizeNew });
                             }
                         }
                     } else {
@@ -704,6 +700,10 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                 qualities.add(new Object[] { improvedQuality, improvedQualityDownloadURL, -1 });
                             }
                         }
+                    }
+                    if (!httpQualities.contains(realQuality)) {
+                        qualities.add(new Object[] { realQuality, uri, filesize });
+                        httpQualities.add(realQuality);
                     }
                     for (final Object[] qualityInfo : qualities) {
                         final String quality = qualityInfo[0].toString();
