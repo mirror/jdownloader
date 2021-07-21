@@ -171,7 +171,12 @@ public class GfyCatCom extends PluginForHost {
         br.setFollowRedirects(true);
         this.br.getHeaders().put("User-Agent", "JDownloader");
         br.setAllowedResponseCodes(new int[] { 500 });
-        if (Browser.getHost(link.getPluginPatternMatcher()).equals("redgifs.com")) {
+        br.getPage(link.getPluginPatternMatcher());
+        // gfycat/gifdeliverynetwork may redirect to redgifs
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (Browser.getHost(br.getHost()).equals("redgifs.com")) {
             /* 2021-05-04: New API handling required for URLs of this domain */
             String key = null;
             synchronized (redgifsAccessKey) {
@@ -318,10 +323,6 @@ public class GfyCatCom extends PluginForHost {
             }
             this.dllink = url;
         } else {
-            br.getPage(link.getPluginPatternMatcher());
-            if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
             if (br.getHost().equalsIgnoreCase("gifdeliverynetwork.com")) {
                 /* 2020-06-18: New and should not be needed! */
                 dllink = br.getRegex("\"(https?://[^<>\"]+\\.webm)\"").getMatch(0);
