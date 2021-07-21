@@ -27,22 +27,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -67,6 +51,22 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OneFichierCom extends PluginForHost {
@@ -482,20 +482,21 @@ public class OneFichierCom extends PluginForHost {
         if (ibr.getHttpConnection() != null) {
             responsecode = ibr.getHttpConnection().getResponseCode();
         }
+        final boolean preferReconnect = PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferReconnectEnabled();
         if (ibr.containsHTML(">\\s*IP Locked|>\\s*Will be unlocked within 1h\\.")) {
             // jdlog://2958376935451/ https://board.jdownloader.org/showthread.php?t=67204&page=2
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "IP will be locked 1h", 60 * 60 * 1000l);
+            throw new PluginException(preferReconnect ? LinkStatus.ERROR_IP_BLOCKED : LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "IP will be locked 1h", 60 * 60 * 1000l);
         } else if (ibr.containsHTML(">\\s*File not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (ibr.containsHTML("Warning ! Without subscription, you can only download one file at|<span style=\"color:red\">Warning\\s*!\\s*</span>\\s*<br/>Without subscription, you can only download one file at a time\\.\\.\\.")) {
             // jdlog://3278035891641 jdlog://7543779150841
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many downloads - wait before starting new downloads", 3 * 60 * 1000l);
+            throw new PluginException(preferReconnect ? LinkStatus.ERROR_IP_BLOCKED : LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many downloads - wait before starting new downloads", 3 * 60 * 1000l);
         } else if (ibr.containsHTML(">\\s*Software error:<")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Software error'", 10 * 60 * 1000l);
         } else if (ibr.containsHTML(">\\s*Connexion à la base de données impossible<|>Can\\'t connect DB")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Internal database error", 5 * 60 * 1000l);
         } else if (ibr.containsHTML(">\\s*Votre adresse IP ouvre trop de connexions vers le serveur")) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many connections - wait before starting new downloads", 3 * 60 * 1000l);
+            throw new PluginException(preferReconnect ? LinkStatus.ERROR_IP_BLOCKED : LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many connections - wait before starting new downloads", 3 * 60 * 1000l);
         } else if (ibr.containsHTML("not possible to free unregistered users")) {
             throw new AccountRequiredException();
         } else if (ibr.containsHTML("Your account will be unlock")) {
@@ -517,7 +518,7 @@ public class OneFichierCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 15 * 60 * 1000l);
         } else if (responsecode == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
-        } else if (ibr.getHttpConnection().getResponseCode() == 503 && ibr.containsHTML(">\\s*Our services are in maintenance\\. Please come back after")) {
+        } else if (ibr.getHttpConnection().getResponseCode() == 503 && ibr.containsHTML(">\\s*Our services are in maintenance\\.\\s*Please come back after")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Hoster is in maintenance mode!", 20 * 60 * 1000l);
         } else {
             ipBlockedErrorHandling(ibr);
@@ -525,8 +526,8 @@ public class OneFichierCom extends PluginForHost {
     }
 
     /**
-     * Access restricted by IP / only registered users / only premium users / only owner. </br>
-     * See here for all possible reasons (login required): https://1fichier.com/console/acl.pl
+     * Access restricted by IP / only registered users / only premium users / only owner. </br> See here for all possible reasons (login
+     * required): https://1fichier.com/console/acl.pl
      *
      * @throws PluginException
      */
@@ -538,12 +539,12 @@ public class OneFichierCom extends PluginForHost {
     }
 
     private static void ipBlockedErrorHandling(final Browser br) throws PluginException {
-        String waittime = br.getRegex("you must wait (at least|up to) (\\d+) minutes between each downloads").getMatch(1);
+        String waittime = br.getRegex("you must wait (at least|up to)\\s*(\\d+)\\s*minutes between each downloads").getMatch(1);
         if (waittime == null) {
-            waittime = br.getRegex(">You must wait (\\d+) minutes").getMatch(0);
-        }
-        if (waittime == null) {
-            waittime = br.getRegex(">\\s*Vous devez attendre encore (\\d+) minutes").getMatch(0);
+            waittime = br.getRegex(">\\s*You must wait\\s*(\\d+)\\s*minutes").getMatch(0);
+            if (waittime == null) {
+                waittime = br.getRegex(">\\s*Vous devez attendre encore\\s*(\\d+)\\s*minutes").getMatch(0);
+            }
         }
         boolean isBlocked = waittime != null;
         isBlocked |= br.containsHTML("/>Téléchargements en cours");
@@ -963,8 +964,8 @@ public class OneFichierCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         /**
-         * 2021-02-11: Don't do availablecheck in premium mode to reduce requests. </br>
-         * According to their admin, using the public availablecheck call just before downloading via API can be troublesome
+         * 2021-02-11: Don't do availablecheck in premium mode to reduce requests. </br> According to their admin, using the public
+         * availablecheck call just before downloading via API can be troublesome
          */
         if (AccountType.FREE.equals(account.getType())) {
             /**
@@ -1008,8 +1009,8 @@ public class OneFichierCom extends PluginForHost {
 
     private String getDllinkPremiumAPI(final DownloadLink link, final Account account) throws IOException, PluginException {
         /**
-         * 2019-04-05: At the moment there are no benefits for us when using this. </br>
-         * 2021-01-29: Removed this because if login is blocked because of "flood control" this won't work either!
+         * 2019-04-05: At the moment there are no benefits for us when using this. </br> 2021-01-29: Removed this because if login is
+         * blocked because of "flood control" this won't work either!
          */
         // requestFileInformationAPI(this.br, link, account, true);
         // this.checkErrorsAPI(account);
