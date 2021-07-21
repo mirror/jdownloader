@@ -17,7 +17,6 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -58,10 +57,19 @@ import jd.plugins.decrypter.PluralsightComDecrypter;
  * @author Neokyuubi
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "pluralsight.com" }, urls = { "https?://app\\.pluralsight\\.com\\/player\\??.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "pluralsight.com" }, urls = { "https://app\\.pluralsight\\.com/course-player\\?clipId=[a-f0-9\\-]+" })
 public class PluralsightCom extends antiDDoSForHost {
-    private static WeakHashMap<Account, List<Long>> map100PerHour   = new WeakHashMap<Account, List<Long>>();
-    private static WeakHashMap<Account, List<Long>> map200Per4Hours = new WeakHashMap<Account, List<Long>>();
+    private static WeakHashMap<Account, List<Long>> map100PerHour                        = new WeakHashMap<Account, List<Long>>();
+    private static WeakHashMap<Account, List<Long>> map200Per4Hours                      = new WeakHashMap<Account, List<Long>>();
+    public static final String                      PROPERTY_DURATION                    = "duration";
+    public static final String                      PROPERTY_CLIP_ID                     = "clipID";
+    public static final String                      PROPERTY_CLIP_VERSION                = "version";
+    public static final String                      PROPERTY_MODULE_ORDER_ID             = "module";
+    public static final String                      PROPERTY_ORDERING                    = "ordering";
+    public static final String                      PROPERTY_SUPPORTS_WIDESCREEN_FORMATS = "supportsWideScreenVideoFormats";
+    public static final String                      PROPERTY_TYPE                        = "type";
+    public static final String                      PROPERTY_FORCED_RESOLUTION           = "forced_resolution";
+    private static final String                     PROPERTY_DIRECTURL                   = "directurl";
 
     public PluralsightCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -81,7 +89,7 @@ public class PluralsightCom extends antiDDoSForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         login(account, br, this, true);
         if (!StringUtils.equals(br.getURL(), "https://app.pluralsight.com/web-analytics/api/v1/users/current")) {
             getRequest(br, this, br.createGetRequest("https://app.pluralsight.com/web-analytics/api/v1/users/current"));
@@ -94,11 +102,9 @@ public class PluralsightCom extends antiDDoSForHost {
         final AccountInfo ai = new AccountInfo();
         if (subscriptions == null) {
             account.setType(AccountType.UNKNOWN);
-            ai.setStatus("Unknown");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Something went wrong with account verification type.");
         } else if (subscriptions.size() == 0) {
             account.setType(AccountType.FREE);
-            ai.setStatus("Free Account");
         } else {
             boolean isPremium = false;
             for (Map<String, Object> subscription : subscriptions) {
@@ -124,7 +130,7 @@ public class PluralsightCom extends antiDDoSForHost {
         return ai;
     }
 
-    public static void login(final Account account, Browser br, Plugin plugin, boolean revalidate) throws Exception {
+    public static void login(final Account account, final Browser br, final Plugin plugin, final boolean revalidate) throws Exception {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
@@ -226,21 +232,17 @@ public class PluralsightCom extends antiDDoSForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this);
         if (account != null) {
             if (antiAccountBlockProtection(account)) {
                 throw new AccountUnavailableException("Account block protection, please wait!", 5 * 60 * 1000l);
             }
-            try {
-                login(account, br, this, false);
-                return fetchFileInformation(link, account);
-            } catch (PluginException e) {
-                final LogInterface logger = getLogger();
-                handleAccountException(account, logger, e);
-            }
+            login(account, br, this, false);
+            return fetchFileInformation(link, account);
+        } else {
+            return fetchFileInformation(link, null);
         }
-        return fetchFileInformation(link, account);
     }
 
     public static enum QUALITY {
@@ -271,14 +273,12 @@ public class PluralsightCom extends antiDDoSForHost {
         }
     }
 
-    public static final String PROPERTY_forced_resolution = "forced_resolution";
-
-    public static String getStreamURL(Browser br, Plugin plugin, DownloadLink link, QUALITY quality) throws Exception {
+    public static String getStreamURL(final Browser br, final Plugin plugin, final DownloadLink link, QUALITY quality) throws Exception {
         /* 2020-04-21: Try and error. Browser does the same lol */
         final String[] resolutions = new String[] { "1280x720", "1024x768" };
         List<Map<String, Object>> urls = null;
         /* Re-use previously working resolution in case there is one. */
-        String existant_resolution = link.getStringProperty(PROPERTY_forced_resolution);
+        String existant_resolution = link.getStringProperty(PROPERTY_FORCED_RESOLUTION);
         for (String resolution : resolutions) {
             if (existant_resolution != null) {
                 plugin.getLogger().info("Override quality-check of " + resolution + " with " + existant_resolution);
@@ -286,17 +286,13 @@ public class PluralsightCom extends antiDDoSForHost {
             } else {
                 plugin.getLogger().info("Checking resolution: " + resolution);
             }
-            UrlQuery urlParams = UrlQuery.parse(link.getPluginPatternMatcher());
-            final String author = urlParams.get("author");
-            final String course = urlParams.get("course");
-            final String clip = urlParams.get("clip");
-            final String clipID = link.getStringProperty("clipID");
-            /* General information should be given in URL! */
-            if (StringUtils.isEmpty(author) || StringUtils.isEmpty(course) || StringUtils.isEmpty(clip) || StringUtils.isEmpty(clip) || StringUtils.isEmpty(clipID)) {
+            final String clipID = link.getStringProperty(PROPERTY_CLIP_ID);
+            final String version = link.getStringProperty(PROPERTY_CLIP_VERSION);
+            if (StringUtils.isEmpty(clipID)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (quality == null) {
-                quality = link.getBooleanProperty("supportsWideScreenVideoFormats", false) ? QUALITY.HIGH_WIDESCREEN : QUALITY.HIGH;
+                quality = link.getBooleanProperty(PROPERTY_SUPPORTS_WIDESCREEN_FORMATS, false) ? QUALITY.HIGH_WIDESCREEN : QUALITY.HIGH;
             }
             final Map<String, Object> params = new HashMap<String, Object>();
             final boolean useAPIv3 = true;
@@ -308,7 +304,11 @@ public class PluralsightCom extends antiDDoSForHost {
                 params.put("quality", resolution);
                 params.put("online", true);
                 params.put("boundedContext", "course");
-                params.put("versionId", "");
+                if (version != null) {
+                    params.put("versionId", version);
+                } else {
+                    params.put("versionId", "");
+                }
                 request = br.createPostRequest("https://app.pluralsight.com/video/clips/v3/viewclip", JSonStorage.toString(params));
                 request.setContentType("application/json;charset=UTF-8");
                 request.getHeaders().put("Origin", "https://app.pluralsight.com");
@@ -327,6 +327,14 @@ public class PluralsightCom extends antiDDoSForHost {
                     plugin.getLogger().info("Found working resolution: " + resolution);
                 }
             } else {
+                /* Old handling */
+                UrlQuery urlParams = UrlQuery.parse(link.getPluginPatternMatcher());
+                final String author = urlParams.get("author");
+                final String course = urlParams.get("course");
+                final String clip = urlParams.get("clip");
+                if (StringUtils.isEmpty(author) || StringUtils.isEmpty(course) || StringUtils.isEmpty(clip)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 params.put("query", "query viewClip { viewClip(input: { author: \"" + author + "\", clipIndex: " + clip + ", courseName: \"" + course + "\", includeCaptions: false, locale: \"en\", mediaType: \"mp4\", moduleName: \"" + urlParams.get("name") + "\" , quality: \"" + quality + "\"}) { urls { url cdn rank source }, status } }");
                 params.put("variables", "{}");
                 request = br.createPostRequest("https://app.pluralsight.com/player/api/graphql", JSonStorage.toString(params));
@@ -350,7 +358,7 @@ public class PluralsightCom extends antiDDoSForHost {
             break;
         }
         if (existant_resolution != null) {
-            link.setProperty(PROPERTY_forced_resolution, existant_resolution);
+            link.setProperty(PROPERTY_FORCED_RESOLUTION, existant_resolution);
             if (urls != null) {
                 for (final Map<String, Object> url : urls) {
                     final String streamURL = (String) url.get("url");
@@ -405,11 +413,10 @@ public class PluralsightCom extends antiDDoSForHost {
         super.sendRequest(ibr, request);
     }
 
-    private String streamURL = null;
-
-    public static Request getClips(Browser br, Plugin plugin, String course) throws Exception {
+    @Deprecated
+    public static Request getClips(final Browser br, final Plugin plugin, final String courseSlug) throws Exception {
         final Map<String, Object> params = new HashMap<String, Object>();
-        params.put("query", "query  BootstrapPlayer  {  rpc  {   bootstrapPlayer  {  profile  {   firstName   lastName   email   username   userHandle   authed   isAuthed   plan  }  course(courseId:  \"" + course + "\")  {   name   title   courseHasCaptions   translationLanguages  {   code   name   }   supportsWideScreenVideoFormats   timestamp   modules  {   name   title   duration   formattedDuration   author   authorized   clips  {    authorized   clipId    duration   formattedDuration   id   index   moduleIndex   moduleTitle   name   title   watched   }   }  }   }  }}");
+        params.put("query", "query  BootstrapPlayer  {  rpc  {   bootstrapPlayer  {  profile  {   firstName   lastName   email   username   userHandle   authed   isAuthed   plan  }  course(courseId:  \"" + courseSlug + "\")  {   name   title   courseHasCaptions   translationLanguages  {   code   name   }   supportsWideScreenVideoFormats   timestamp   modules  {   name   title   duration   formattedDuration   author   authorized   clips  {    authorized   clipId    duration   formattedDuration   id   index   moduleIndex   moduleTitle   name   title   watched   }   }  }   }  }}");
         params.put("variables", "{}");
         final PostRequest request = br.createPostRequest("https://app.pluralsight.com/player/api/graphql", JSonStorage.toString(params));
         request.setContentType("application/json;charset=UTF-8");
@@ -417,55 +424,66 @@ public class PluralsightCom extends antiDDoSForHost {
         return getRequest(br, plugin, request);
     }
 
-    private AvailableStatus fetchFileInformation(DownloadLink link, final Account account) throws Exception {
-        streamURL = null;
-        if (!link.getBooleanProperty("isNameSet", false) || UrlQuery.parse(link.getPluginPatternMatcher()).get("author") == null || link.getProperty("supportsWideScreenVideoFormats") == null) {
-            final UrlQuery urlParams = UrlQuery.parse(link.getPluginPatternMatcher());
-            final String course = urlParams.get("course");
-            if (course == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final Request request = getClips(br, this, course);
-            if (br.containsHTML("Not Found")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final Map<String, Object> map = JSonStorage.restoreFromString(request.getHtmlCode().toString(), TypeRef.HASHMAP);
-            final ArrayList<DownloadLink> clips = PluralsightCom.getClips(this, br, (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "data/rpc/bootstrapPlayer"));
-            DownloadLink foundClip = null;
-            if (clips != null) {
-                final String clipID = urlParams.get("clip");
-                if (clipID == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final String moduleID = new Regex(urlParams.get("name"), "-m(\\d+)$").getMatch(0);
-                for (final DownloadLink clip : clips) {
-                    if (StringUtils.equals(clipID, String.valueOf(clip.getProperty("ordering")))) {
-                        if (moduleID == null || StringUtils.equals(moduleID, String.valueOf(clip.getProperty("module")))) {
-                            foundClip = clip;
-                            break;
-                        }
+    private AvailableStatus fetchFileInformation(final DownloadLink link, final Account account) throws Exception {
+        final String storedDirecturl = link.getStringProperty(PROPERTY_DIRECTURL);
+        if (storedDirecturl != null) {
+            final Request checkStream = getRequest(br, this, br.createHeadRequest(storedDirecturl));
+            final URLConnectionAdapter con = checkStream.getHttpConnection();
+            try {
+                if (looksLikeDownloadableContent(con)) {
+                    logger.info("Availablecheck via stored directurl sccessful");
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
+                    return AvailableStatus.TRUE;
+                } else {
+                    logger.info("Availablecheck via stored directurl failed");
+                    link.removeProperty(PROPERTY_DIRECTURL);
                 }
-            }
-            if (foundClip == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                link.setFinalFileName(foundClip.getName());
-                link.setPluginPatternMatcher(foundClip.getPluginPatternMatcher());
-                link.setProperty("supportsWideScreenVideoFormats", foundClip.getBooleanProperty("supportsWideScreenVideoFormats", false));
-                link.setProperty("isNameSet", true);
+            } finally {
+                con.disconnect();
             }
         }
+        // if (!link.getBooleanProperty("isNameSet", false) || UrlQuery.parse(link.getPluginPatternMatcher()).get("author") == null ||
+        // link.getProperty("supportsWideScreenVideoFormats") == null) {
+        // final PluginForDecrypt plg = this.getNewPluginForDecryptInstance(this.getHost());
+        // final CryptedLink cryptedLink = new CryptedLink(link.getPluginPatternMatcher());
+        // final ArrayList<DownloadLink> crawlerResults = plg.decryptIt(cryptedLink, null);
+        // DownloadLink foundClip = null;
+        // final String clipID = link.getStringProperty(PROPERTY_CLIP_ID);
+        // if (clipID == null) {
+        // /* This should never happen */
+        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // }
+        // for (final DownloadLink clip : crawlerResults) {
+        // if (StringUtils.equals(clipID, clip.getStringProperty(PROPERTY_CLIP_ID))) {
+        // foundClip = clip;
+        // break;
+        // }
+        // }
+        // if (foundClip == null) {
+        // /* Assume that content is offline */
+        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // } else {
+        // link.setFinalFileName(foundClip.getName());
+        // link.setPluginPatternMatcher(foundClip.getPluginPatternMatcher());
+        // link.setProperties(foundClip.getProperties());
+        // }
+        // }
         if (Thread.currentThread() instanceof SingleDownloadController) {
             return AvailableStatus.UNCHECKABLE;
         } else if (link.getKnownDownloadSize() == -1) {
-            streamURL = getStreamURL(br, this, link, null);
+            /* Only check for filesize if none has been set yet. */
+            final String streamURL = getStreamURL(br, this, link, null);
             if (!StringUtils.isEmpty(streamURL)) {
                 final Request checkStream = getRequest(br, this, br.createHeadRequest(streamURL));
                 final URLConnectionAdapter con = checkStream.getHttpConnection();
                 try {
                     if (looksLikeDownloadableContent(con)) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                        if (con.getCompleteContentLength() > 0) {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
+                        link.setProperty(PROPERTY_DIRECTURL, streamURL);
                         return AvailableStatus.TRUE;
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -483,68 +501,6 @@ public class PluralsightCom extends antiDDoSForHost {
     @Override
     protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
         return super.looksLikeDownloadableContent(urlConnection) && urlConnection.getCompleteContentLength() > 0;
-    }
-
-    public static ArrayList<DownloadLink> getClips(Plugin plugin, Browser br, Map<String, Object> map) throws Exception {
-        final Object courseO = map.get("course");
-        if (courseO == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final Map<String, Object> course = (Map<String, Object>) courseO;
-        final boolean supportsWideScreenVideoFormats = Boolean.TRUE.equals(course.get("supportsWideScreenVideoFormats"));
-        final List<Map<String, Object>> modules = (List<Map<String, Object>>) course.get("modules");
-        if (modules == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if (modules.size() == 0) {
-            return null;
-        }
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        int moduleIndex = 0;
-        // int totalNumberofClips = 0;
-        for (final Map<String, Object> module : modules) {
-            final int moduleID = moduleIndex++;
-            final List<Map<String, Object>> clips = (List<Map<String, Object>>) module.get("clips");
-            if (clips != null) {
-                for (final Map<String, Object> clip : clips) {
-                    // totalNumberofClips += 1;
-                    String playerUrl = (String) clip.get("playerUrl");
-                    if (StringUtils.isEmpty(playerUrl)) {
-                        final String id[] = new Regex((String) clip.get("id"), "(.*?):(.*?):(\\d+):(.+)").getRow(0);
-                        playerUrl = "https://app.pluralsight.com/player?name=" + id[1] + "&mode=live&clip=" + id[2] + "&course=" + id[0] + "&author=" + id[3];
-                    }
-                    final String url = br.getURL(playerUrl).toString();
-                    final DownloadLink link = new DownloadLink(null, null, plugin.getHost(), url, true);
-                    final String duration = clip.get("duration").toString();
-                    link.setProperty("duration", duration);
-                    final String clipId = (String) clip.get("clipId");
-                    if (StringUtils.isEmpty(clipId)) {
-                        /* Skip invalid items */
-                        continue;
-                    }
-                    link.setProperty("clipID", clipId);
-                    link.setLinkID(plugin.getHost() + "://" + clipId);
-                    final String title = (String) clip.get("title");
-                    final String moduleTitle = (String) clip.get("moduleTitle");
-                    Object ordering = clip.get("ordering");
-                    if (ordering == null) {
-                        ordering = clip.get("index");
-                    }
-                    link.setProperty("ordering", ordering);
-                    link.setProperty("supportsWideScreenVideoFormats", supportsWideScreenVideoFormats);
-                    link.setProperty("module", moduleID);
-                    if (StringUtils.isNotEmpty(title) && StringUtils.isNotEmpty(moduleTitle) && ordering != null) {
-                        String fullName = String.format("%02d", moduleIndex) + "-" + String.format("%02d", Long.parseLong(ordering.toString()) + 1) + " - " + moduleTitle + " -- " + title;
-                        fullName = PluralsightCom.correctFileName(fullName);
-                        link.setFinalFileName(fullName + ".mp4");
-                        link.setProperty("isNameSet", true);
-                    }
-                    link.setProperty("type", "mp4");
-                    link.setAvailable(true);
-                    ret.add(link);
-                }
-            }
-        }
-        return ret;
     }
 
     public static String correctFileName(String fileName) {
@@ -566,37 +522,52 @@ public class PluralsightCom extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        downloadStream(link, null, streamURL);
+    public void handleFree(final DownloadLink link) throws Exception {
+        downloadStream(link, null);
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        downloadStream(link, account, streamURL);
+        downloadStream(link, account);
     }
 
-    private void downloadStream(final DownloadLink link, final Account account, String streamURL) throws Exception {
-        if (StringUtils.isEmpty(streamURL)) {
-            streamURL = getStreamURL(br, this, link, null);
+    private void downloadStream(final DownloadLink link, final Account account) throws Exception {
+        final boolean resume = true;
+        /*
+         * More possible but let's limit it to 1 as this website doesn't like users establishing a lot of connections at the same/in a short
+         * time.
+         */
+        final int maxchunks = 1;
+        if (!attemptStoredDownloadurlDownload(link, resume, maxchunks)) {
+            logger.info("Generating fresh directurl");
+            if (account != null) {
+                login(account, br, this, false);
+            }
+            fetchFileInformation(link, account);
+            String streamURL = null;
             if (StringUtils.isEmpty(streamURL)) {
-                handleErrors();
-                if (account == null || !AccountType.PREMIUM.equals(account.getType())) {
-                    throw new AccountRequiredException();
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                streamURL = getStreamURL(br, this, link, null);
+                if (StringUtils.isEmpty(streamURL)) {
+                    handleErrors(account);
+                    if (account == null || !AccountType.PREMIUM.equals(account.getType())) {
+                        throw new AccountRequiredException();
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
             }
-        }
-        dl = BrowserAdapter.openDownload(br, link, streamURL, true, 0);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection();
-            } catch (IOException e) {
-                logger.log(e);
+            dl = BrowserAdapter.openDownload(br, link, streamURL, resume, maxchunks);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection();
+                } catch (IOException e) {
+                    logger.log(e);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            link.setProperty(PROPERTY_DIRECTURL, streamURL);
+        } else {
+            logger.info("Re-using existing directurl");
         }
         // TODO subtitle
         /*
@@ -611,15 +582,43 @@ public class PluralsightCom extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    /** 2020-04-27: New: TODO: Add errorhandling for more error-cases */
-    private void handleErrors() throws AccountUnavailableException {
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final boolean resume, final int maxchunks) throws Exception {
+        final String url = link.getStringProperty(PROPERTY_DIRECTURL);
+        if (StringUtils.isEmpty(url)) {
+            return false;
+        }
+        try {
+            final Browser brc = br.cloneBrowser();
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resume, maxchunks);
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                return true;
+            } else {
+                brc.followConnection(true);
+                throw new IOException();
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+            try {
+                dl.getConnection().disconnect();
+            } catch (Throwable ignore) {
+            }
+            link.removeProperty(PROPERTY_DIRECTURL);
+            return false;
+        }
+    }
+
+    private void handleErrors(final Account account) throws PluginException {
         /*
          * 2020-04-27: E.g.
          * {"success":false,"error":{"message":"user not authorized"},"meta":{"status":403,"libraries":[]},"trace":[{"service":
          * "videoservices_clip","version":"1.0.450","latency":44,"fn":"viewClipV3"}]}
          */
         if (br.getHttpConnection().getResponseCode() == 403) {
-            throw new AccountUnavailableException("Session expired or premium required to download content?", 5 * 60 * 1000l);
+            if (account != null) {
+                throw new AccountUnavailableException("Session expired or premium required to download content?", 5 * 60 * 1000l);
+            } else {
+                throw new AccountRequiredException();
+            }
         }
     }
 
@@ -701,6 +700,6 @@ public class PluralsightCom extends antiDDoSForHost {
 
     @Override
     public String getDescription() {
-        return "Download videos course from Pluralsight.com (Subtitles coming soon)";
+        return "Download videos course from Pluralsight.com";
     }
 }
