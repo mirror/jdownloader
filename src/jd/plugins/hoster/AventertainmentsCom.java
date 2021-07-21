@@ -39,7 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgs.aventertainments.com", "aventertainments.com" }, urls = { "https?://imgs\\.aventertainments\\.com/.+", "https?://www\\.aventertainments\\.com/newdlsample\\.aspx.+\\.mp4|https?://ppvclips\\d+\\.aventertainments\\.com/.+\\.m3u9|https?://(?:www\\.)?aventertainments\\.com/ppv/new_detail\\.aspx\\?ProID=\\d+.*" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgs.aventertainments.com", "aventertainments.com" }, urls = { "https?://imgs\\d+\\.aventertainments\\.com/.+", "https?://www\\.aventertainments\\.com/newdlsample\\.aspx.+\\.mp4|https?://ppvclips\\d+\\.aventertainments\\.com/.+\\.m3u9|https?://(?:www\\.)?aventertainments\\.com/ppv/new_detail\\.aspx\\?ProID=\\d+.*" })
 public class AventertainmentsCom extends PluginForHost {
     public AventertainmentsCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -89,6 +89,10 @@ public class AventertainmentsCom extends PluginForHost {
         String urlTitle = new Regex(link.getDownloadURL(), "/([^/]+)$").getMatch(0);
         String filename = link.getFinalFileName();
         if (link.getPluginPatternMatcher().matches(TYPE_NEW_2020)) {
+            /*
+             * 2021-07-21: Not used anymore as these are now also processed by our crawler which will add found videos as TYPE_VIDEO_HTTP
+             * and/or TYPE_VIDEO_HLS.
+             */
             urlTitle = UrlQuery.parse(link.getPluginPatternMatcher().toLowerCase()).get("proid");
             /* Set fallback-filename */
             if (!link.isNameSet()) {
@@ -119,17 +123,20 @@ public class AventertainmentsCom extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
             } else {
+                /* Picture directURL */
                 dllink = link.getDownloadURL();
             }
             dllink = Encoding.htmlDecode(dllink);
-            filename = Encoding.htmlDecode(filename);
-            filename = filename.trim();
-            filename = encodeUnicode(filename);
-            final String ext = getFileNameExtensionFromString(dllink, link.getDownloadURL().matches(TYPE_IMAGE) ? ".mp4" : ".jpg");
-            if (!filename.endsWith(ext)) {
-                filename += ext;
+            if (filename != null) {
+                filename = Encoding.htmlDecode(filename);
+                filename = filename.trim();
+                filename = encodeUnicode(filename);
+                final String ext = getFileNameExtensionFromString(dllink, link.getDownloadURL().matches(TYPE_IMAGE) ? ".mp4" : ".jpg");
+                if (!filename.endsWith(ext)) {
+                    filename += ext;
+                }
+                link.setFinalFileName(filename);
             }
-            link.setFinalFileName(filename);
             final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);

@@ -444,32 +444,6 @@ public class PluralsightCom extends antiDDoSForHost {
                 con.disconnect();
             }
         }
-        // if (!link.getBooleanProperty("isNameSet", false) || UrlQuery.parse(link.getPluginPatternMatcher()).get("author") == null ||
-        // link.getProperty("supportsWideScreenVideoFormats") == null) {
-        // final PluginForDecrypt plg = this.getNewPluginForDecryptInstance(this.getHost());
-        // final CryptedLink cryptedLink = new CryptedLink(link.getPluginPatternMatcher());
-        // final ArrayList<DownloadLink> crawlerResults = plg.decryptIt(cryptedLink, null);
-        // DownloadLink foundClip = null;
-        // final String clipID = link.getStringProperty(PROPERTY_CLIP_ID);
-        // if (clipID == null) {
-        // /* This should never happen */
-        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // }
-        // for (final DownloadLink clip : crawlerResults) {
-        // if (StringUtils.equals(clipID, clip.getStringProperty(PROPERTY_CLIP_ID))) {
-        // foundClip = clip;
-        // break;
-        // }
-        // }
-        // if (foundClip == null) {
-        // /* Assume that content is offline */
-        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // } else {
-        // link.setFinalFileName(foundClip.getName());
-        // link.setPluginPatternMatcher(foundClip.getPluginPatternMatcher());
-        // link.setProperties(foundClip.getProperties());
-        // }
-        // }
         if (Thread.currentThread() instanceof SingleDownloadController) {
             return AvailableStatus.UNCHECKABLE;
         } else if (link.getKnownDownloadSize() == -1) {
