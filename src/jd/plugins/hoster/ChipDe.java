@@ -13,20 +13,22 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -38,13 +40,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chip.de" }, urls = { "https?://(?:www\\.)?(?:chip\\.de/downloads|download\\.chip\\.(?:eu|asia)/.{2})/[A-Za-z0-9_\\-]+_\\d+\\.html|https?://(?:[a-z0-9]+\\.)?chip\\.de/[^/]+/[^/]+_\\d+\\.html" })
 public class ChipDe extends PluginForHost {
-
     public ChipDe(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -59,28 +56,27 @@ public class ChipDe extends PluginForHost {
         return -1;
     }
 
-    private static final String           type_chip_de_file         = "https?://(?:www\\.)?chip\\.de/downloads/[^/]+_\\d+\\.html";
-    private static final String           type_chip_eu_file         = "https?://(?:www\\.)?download\\.chip\\.(?:eu|asia)/.+";
-    public static final String            type_chip_de_video        = "https?://(?:www\\.)?chip\\.de/video/[^/]+_\\d+\\.html";
-    public static final String            type_chip_de_pictures     = "https?://(?:www\\.)?chip\\.de/bildergalerie/[^/]+_\\d+\\.html";
-    private static final String           type_chip_de_video_others = "https?://(?:[a-z0-9]+\\.)?chip\\.de/[^/]+/[^/]+_\\d+\\.html";
-
-    private static final boolean          video_use_API             = true;
-
+    private static final String  type_chip_de_file         = "https?://(?:www\\.)?chip\\.de/downloads/[^/]+_\\d+\\.html";
+    private static final String  type_chip_eu_file         = "https?://(?:www\\.)?download\\.chip\\.(?:eu|asia)/.+";
+    public static final String   type_chip_de_video        = "https?://(?:www\\.)?chip\\.de/video/[^/]+_(\\d+)\\.html";
+    public static final String   type_chip_de_pictures     = "https?://(?:www\\.)?chip\\.de/bildergalerie/[^/]+_\\d+\\.html";
+    private static final String  type_chip_de_video_others = "https?://(?:[a-z0-9]+\\.)?chip\\.de/[^/]+/[^/]+_\\d+\\.html";
+    private static final boolean video_use_API             = true;
     /* Tags: kaltura player, medianac, api.medianac.com */
     /* Static values of their kaltura player configuration */
-    private static final String           kaltura_partner_id        = "1741931";
-    private static final String           kaltura_uiconf_id         = "30910812";
-    private static final String           kaltura_sp                = "174193100";
-    private static final String           host_chip_de              = "chip.de";
-
-    private String                        DLLINK                    = null;
-    private LinkedHashMap<String, Object> entries                   = null;
+    private static final String  kaltura_partner_id        = "1741931";
+    private static final String  kaltura_uiconf_id         = "30910812";
+    private static final String  kaltura_sp                = "174193100";
+    private static final String  host_chip_de              = "chip.de";
+    private String               dllink                    = null;
+    private Map<String, Object>  entries                   = null;
+    private static final String  PROPERTY_DOWNLOAD_TARGET  = "download_target";
 
     /**
      * <b>Information for file (software)-downloads:</b> <br />
-     * <b>Example URL:</b> <a
-     * href="http://www.chip.de/downloads/Firefox-32-Bit_13014344.html">http://www.chip.de/downloads/Firefox-32-Bit_13014344.html</a> <br />
+     * <b>Example URL:</b>
+     * <a href="http://www.chip.de/downloads/Firefox-32-Bit_13014344.html">http://www.chip.de/downloads/Firefox-32-Bit_13014344.html</a>
+     * <br />
      * <b>1.</b> Links are language dependant. Unfortunately we cannot just force a specified language as content is different for each
      * country. <br />
      * That means we have to make RegExes that can handle all languages. <br />
@@ -88,12 +84,12 @@ public class ChipDe extends PluginForHost {
      * installers (usually without any adware). <br />
      *
      * <b>Information for video downloads:</b> <br />
-     * <b>Example URL:</b> <a
-     * href="http://www.chip.de/video/DSLR-fuer-die-Hosentasche-DxO-One-im-Test-Video_85225530.html">http://www.chip.de
+     * <b>Example URL:</b>
+     * <a href="http://www.chip.de/video/DSLR-fuer-die-Hosentasche-DxO-One-im-Test-Video_85225530.html">http://www.chip.de
      * /video/DSLR-fuer-die-Hosentasche-DxO-One-im-Test-Video_85225530.html</a> <br />
      * <b>Videoid or how they call it "containerIdBeitrag": 85225530</b><br />
-     * <b>1.</b> They use an external CDN for their videos called "kaltura video platform": <a
-     * href="http://corp.kaltura.com/">kaltura.com</a> <br />
+     * <b>1.</b> They use an external CDN for their videos called "kaltura video platform":
+     * <a href="http://corp.kaltura.com/">kaltura.com</a> <br />
      * <b>2.</b> Information about their API: <br />
      * -https is usually possible via valid certificate even though it is not (always) possible via browser!<br />
      * -V1: <a href="http://apps-rest.chip.de/api/v1/?format=json">http://apps-rest.chip.de/api/v1/?format=json</a> --> Used by their
@@ -110,44 +106,62 @@ public class ChipDe extends PluginForHost {
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("ISO-8859-1");
         br.setAllowedResponseCodes(410);
-
         boolean set_final_filename = false;
         String date = null;
         String date_formatted = null;
         String filename = null;
         String md5 = null;
-        String filename_url = null;
+        String title_URL = null;
         String description = null;
-        long filesize = 0;
-        final String linkid;
+        long filesize = -1;
+        final String contentID_URL;
         final Regex linkinfo = new Regex(link.getDownloadURL(), "/([^/]+)_(\\d+)\\.html$");
-        filename_url = linkinfo.getMatch(0);
-        linkid = linkinfo.getMatch(1);
+        title_URL = linkinfo.getMatch(0);
+        contentID_URL = linkinfo.getMatch(1);
         /* Set name here in case the content is offline --> Users still have a nice filename. */
-        link.setName(filename_url + "_" + linkid);
-        /* Set linkid right away to avoid/identify duplicates! */
-        link.setLinkID(linkid);
+        if (!link.isNameSet() && title_URL != null && contentID_URL != null) {
+            link.setName(title_URL + "_" + contentID_URL);
+        }
         if (link.getDownloadURL().matches(type_chip_de_file) || link.getDownloadURL().matches(type_chip_eu_file)) {
-
             set_final_filename = false;
             accessURL(this.br, link.getDownloadURL());
             if (link.getDownloadURL().matches(type_chip_eu_file) && !this.br.containsHTML("class=\"downloadnow_button")) {
                 /* chip.eu url without download button --> No downloadable content --> URL is offline for us */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = br.getRegex("\"pagetitle\":\"([^<>\"]*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("\"dachzeile\":\"([^<>\"]*?)\"").getMatch(0);
+            String filesize_str = null;
+            final String json = br.getRegex(" var digitalData = (\\{.+\\});").getMatch(0);
+            if (json != null) {
+                /* 2021-07-22 */
+                final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
+                final Object downloadO = entries.get("download");
+                if (downloadO == null) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                final Map<String, Object> download = (Map<String, Object>) downloadO;
+                final String productID = (String) download.get("productID");
+                if (productID != null) {
+                    link.setLinkID(this.getHost() + "://application/" + productID);
+                }
+                filename = (String) download.get("name");
+                /* Sometimes filesize is not given --> "n/a" */
+                final String filesizeTmp = (String) download.get("fileSize");
+                if (filesizeTmp.matches("\\d+(\\.\\d+)")) {
+                    filesize_str = filesizeTmp + "MB";
+                }
+                link.setProperty(PROPERTY_DOWNLOAD_TARGET, download.get("Target").toString());
             }
-            if (filename == null) {
+            if (StringUtils.isEmpty(filename)) {
                 filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             }
-            String filesize_str = br.getRegex(">Dateigr\\&ouml;\\&szlig;e:</p>[\t\n\r ]+<p class=\"col2\">([^<>\"]*?)<meta itemprop=\"fileSize\"").getMatch(0);
+            if (StringUtils.isEmpty(filesize_str)) {
+                filesize_str = br.getRegex(">Dateigr\\&ouml;\\&szlig;e:</p>[\t\n\r ]+<p class=\"col2\">([^<>\"]*?)<meta itemprop=\"fileSize\"").getMatch(0);
+            }
             if (filesize_str == null) {
                 /* For the international chip websites! */
                 filesize_str = br.getRegex("<dt>(?:File size:|Размер файла:|Dimensioni:|Dateigröße:|Velikost:|Fájlméret:|Bestandsgrootte:|Rozmiar pliku:|Mărime fişier:|Dosya boyu:|文件大小：)<br /></dt>[\t\n\r ]+<dd>(.*?)<br /></dd>").getMatch(0);
@@ -159,12 +173,10 @@ public class ChipDe extends PluginForHost {
                 filesize_str = filesize_str.replace("GByte", "GB");
                 filesize = SizeFormatter.getSize(filesize_str);
             }
-
             /* Checksum is usually only available for chip.eu downloads! */
             md5 = br.getRegex("<dt>(?:Контрольная сумма \\(MD 5\\):|Checksum:|Prüfsumme:|Kontrolní součet:|Szumma:|Suma kontrolna|Checksum|Kontrol toplamı:|校验码：)<br /></dt>[\t\n\r ]+<dd>(.*?)<br /></dd>").getMatch(0);
             date = this.br.getRegex("itemprop=\"datePublished\" datetime=\"(\\d{4}\\-\\d{2}\\-\\d{2}T\\d{2}:\\d{2}:\\d{2})\"").getMatch(0);
             description = this.br.getRegex("description:\"([^<>\"]*?)\"").getMatch(0);
-
             /*
              * Include linkid in this case because otherwise links could be identified as duplicates / mirrors wrongly e.g.
              *
@@ -174,19 +186,20 @@ public class ChipDe extends PluginForHost {
              */
             if (filename == null) {
                 /* Last chance! */
-                filename = filename_url + "_" + linkid;
+                filename = title_URL + "_" + contentID_URL;
             } else {
-                filename += "_" + linkid;
+                filename += "_" + contentID_URL;
             }
-
         } else {
             /* type_chip_de_video and type_chip_de_video_others */
-
+            if (contentID_URL != null) {
+                link.setLinkID(this.getHost() + "://video/" + contentID_URL);
+            }
             set_final_filename = true;
             String ext = null;
             if (video_use_API) {
                 prepBRAPI(this.br);
-                accesscontainerIdBeitrag(this.br, linkid);
+                accesscontainerIdBeitrag(this.br, contentID_URL);
                 if (this.br.containsHTML("\"error_message\"")) {
                     /*
                      * Usually that should be covered already as API will return 404 on offline content but let's double-check by this
@@ -194,12 +207,12 @@ public class ChipDe extends PluginForHost {
                      */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
                 final String source_videoid = (String) JavaScriptEngineFactory.walkJson(entries, "videos/{0}/containerIdBeitrag");
                 if (!link.getDownloadURL().matches(type_chip_de_video) && source_videoid != null) {
                     /* User added an article which may or may not contain one (or multiple) videos. */
                     accesscontainerIdBeitrag(this.br, source_videoid);
-                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+                    entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
                 }
                 /*
                  * The directlinks returned by their API are quality-wise not the best (middle) but in case everysthing fails, we still have
@@ -210,22 +223,22 @@ public class ChipDe extends PluginForHost {
                 final String dllink_fallback = (String) entries.get("videoUrl");
                 final String title = (String) entries.get("title");
                 final String subtitle = (String) entries.get("headline");
-                if (!inValidate(title)) {
+                if (!StringUtils.isEmpty(title)) {
                     filename = title;
-                    if (!inValidate(subtitle)) {
+                    if (!StringUtils.isEmpty(subtitle)) {
                         filename += " - " + subtitle;
                     }
                 }
                 try {
-                    DLLINK = videos_kaltura_getDllink();
+                    dllink = videos_kaltura_getDllink();
                 } catch (final Throwable e) {
                     /* Whatever happens, catch it - we might have a working fallback :) */
                 }
-                if (inValidate(DLLINK)) {
+                if (StringUtils.isEmpty(dllink)) {
                     logger.warning("Failed to find highest quality final downloadlink via kaltura player --> Fallback to API downloadlink");
-                    DLLINK = dllink_fallback;
+                    dllink = dllink_fallback;
                 }
-                if (!link.getDownloadURL().matches(type_chip_de_video) && inValidate(DLLINK)) {
+                if (!link.getDownloadURL().matches(type_chip_de_video) && StringUtils.isEmpty(dllink)) {
                     /* Whatever the user added - there is no downloadable content! */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -233,21 +246,21 @@ public class ChipDe extends PluginForHost {
                 accessURL(this.br, link.getDownloadURL());
                 filename = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\"").getMatch(0);
                 date = this.br.getRegex("\"publishDateTime\":\"(\\d{4}\\-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\+\\d{2}:\\d{2})\"").getMatch(0);
-                DLLINK = videos_kaltura_getDllink();
+                dllink = videos_kaltura_getDllink();
                 // DLLINK = "http://video.chip.de/38396417/textzwei.flv";
             }
             try {
                 ext = (String) entries.get("fileExt");
             } catch (final Throwable e) {
             }
-            if (DLLINK == null) {
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (filename == null) {
                 /* Last chance! */
-                filename = filename_url + "_" + linkid;
+                filename = title_URL + "_" + contentID_URL;
             }
-            if (inValidate(ext)) {
+            if (StringUtils.isEmpty(ext)) {
                 /* Fallback to chip standard video-extension */
                 ext = "mp4";
             }
@@ -256,13 +269,11 @@ public class ChipDe extends PluginForHost {
             this.br.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                try {
-                    con = br.openHeadConnection(DLLINK);
-                } catch (final BrowserException e) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (!con.getContentType().contains("html")) {
-                    filesize = con.getLongContentLength();
+                con = br.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        filesize = con.getCompleteContentLength();
+                    }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -272,7 +283,6 @@ public class ChipDe extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-
         }
         date_formatted = formatDate(date);
         if (date_formatted != null) {
@@ -291,7 +301,7 @@ public class ChipDe extends PluginForHost {
         } else {
             link.setName(filename);
         }
-        if (filesize > -1) {
+        if (filesize > 0) {
             link.setDownloadSize(filesize);
         }
         /*
@@ -310,66 +320,73 @@ public class ChipDe extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        if (downloadLink.getDownloadURL().matches(type_chip_de_video)) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        if (link.getDownloadURL().matches(type_chip_de_video)) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 handleServerErrors();
                 br.followConnection();
                 /* We use APIs which we can trust so retrying is okay ;) */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
             }
-        } else if (downloadLink.getDownloadURL().matches(type_chip_eu_file)) {
+        } else if (link.getDownloadURL().matches(type_chip_eu_file)) {
             /* TODO: Find a way around their .exe adware installers - then our CRC check will finally also work for chip.eu! */
-            /* Re-Use saved downloadlinks */
-            DLLINK = this.checkDirectLink(downloadLink, "free_directlink");
-            if (DLLINK == null) {
-                String getfile_url = br.getRegex("\"(/.{2}/download_getfile_[^<>\"]*?)\"").getMatch(0);
-                if (getfile_url == null) {
-                    getfile_url = this.br.getRegex("href=\"([^<>\"]*?)\" rel=\"nofollow\" class=\"dwnld\"").getMatch(0);
+            /* Re-Use saved direct-downloadlinks */
+            dllink = this.checkDirectLink(link, "free_directlink");
+            if (dllink == null) {
+                if (isExternalDownload(link)) {
+                    errorExternalDownloadImpossible();
                 }
-                if (getfile_url == null) {
+                String getfileUrl = br.getRegex("\"(/.{2}/download_getfile_[^<>\"]*?)\"").getMatch(0);
+                if (getfileUrl == null) {
+                    getfileUrl = this.br.getRegex("href=\"([^<>\"]*?)\" rel=\"nofollow\" class=\"dwnld\"").getMatch(0);
+                }
+                if (getfileUrl == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (getfile_url.startsWith("http") && !getfile_url.contains("chip.eu/")) {
-                    /*
-                     * Happens for software whos manufactors do not allow direct mirrors from chip servers e.g.
-                     * http://download.chip.eu/en/Graffiti-Studio_1066113.html
-                     */
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Externer download - nicht per JDownloader ladbar!");
+                if (getfileUrl.startsWith("http") && !getfileUrl.contains("chip.eu/")) {
+                    errorExternalDownloadImpossible();
                 }
-                this.br.getPage(getfile_url);
-                DLLINK = br.getRegex("If not, please click <a href=\"(http[^<>\"]*?)\"").getMatch(0);
-                if (DLLINK == null) {
+                this.br.getPage(getfileUrl);
+                dllink = br.getRegex("If not, please click <a href=\"(http[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
-            if (dl.getConnection().getContentType().contains("html")) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 handleServerErrors();
-                br.followConnection();
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 if (!this.br.getHost().contains("chip")) {
-                    /*
-                     * Happens for software whos manufactors do not allow direct mirrors from chip servers e.g.
-                     * http://www.chip.de/downloads/Windows-10-64-Bit_72189999.html
-                     */
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "External download - not possible via JDownloader!");
+                    errorExternalDownloadImpossible();
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
-            downloadLink.setProperty("free_directlink", dl.getConnection().getURL().toString());
+            link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+            link.setProperty("free_directlink", dl.getConnection().getURL().toString());
             dl.startDownload();
-
         } else {
+            /* Normal chip.de downloads (application downloads) */
             /* Re-Use saved downloadlinks */
-            DLLINK = this.checkDirectLink(downloadLink, "free_directlink");
-            if (DLLINK == null) {
+            dllink = this.checkDirectLink(link, "free_directlink");
+            if (dllink == null) {
+                if (isExternalDownload(link)) {
+                    errorExternalDownloadImpossible();
+                }
                 String step1 = br.getRegex("\"https?://x\\.chip\\.de/intern/dl/\\?url=(http[^<>\"]*?)\"").getMatch(0);
                 if (step1 == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    /*
+                     * 2021-07-22: Treat such files as non-downloadable although this could also mean there is a plugin failure. Some items
+                     * are just "dummy" items which don't have any download options e.g.
+                     * https://www.chip.de/downloads/WordPress-Android-App_54778552.html
+                     */
+                    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "No download button available");
                 }
                 step1 = Encoding.htmlDecode(step1);
                 br.getPage(step1);
@@ -378,13 +395,12 @@ public class ChipDe extends PluginForHost {
                     step2 = Encoding.htmlDecode(step2);
                     br.getPage(step2);
                 }
-                DLLINK = downloads_getDllink();
-                if (DLLINK == null) {
+                dllink = applicationDownloadsGetDllink();
+                if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
             String etag = this.br.getRequest().getResponseHeader("ETag");
             if (etag != null) {
                 /* chip.de servers will often | always return md5 hash via headers! */
@@ -393,14 +409,18 @@ public class ChipDe extends PluginForHost {
                     final String[] etagInfo = etag.split(":");
                     final String md5 = etagInfo[0];
                     if (md5.matches("[A-Fa-f0-9]{32}")) {
-                        downloadLink.setMD5Hash(md5);
+                        link.setMD5Hash(md5);
                     }
-                } catch (final Throwable e) {
+                } catch (final Throwable ignore) {
                 }
             }
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 handleServerErrors();
-                br.followConnection();
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 if (!this.br.getHost().contains("chip")) {
                     /*
                      * Happens for software whos manufactors do not allow direct mirrors from chip servers e.g.
@@ -410,10 +430,31 @@ public class ChipDe extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+            link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         }
-        downloadLink.setProperty("free_directlink", dl.getConnection().getURL().toString());
+        link.setProperty("free_directlink", dl.getConnection().getURL().toString());
         dl.startDownload();
+    }
+
+    private void errorExternalDownloadImpossible() throws PluginException {
+        /**
+         * Happens for software whose manufacturers do not allow direct mirrors from chip servers e.g.
+         * http://www.chip.de/downloads/Windows-10-64-Bit_72189999.html </br>
+         * https://www.chip.de/downloads/WordPress-Android-App_54778552.html
+         */
+        throw new PluginException(LinkStatus.ERROR_FATAL, "External download - not possible via JDownloader!");
+    }
+
+    private boolean isExternalDownload(final DownloadLink link) {
+        if (link.hasProperty(PROPERTY_DOWNLOAD_TARGET)) {
+            if (link.getStringProperty(PROPERTY_DOWNLOAD_TARGET).equalsIgnoreCase("intern")) {
+                return false;
+            } else {
+                return true;
+            }
+        } else {
+            return false;
+        }
     }
 
     /* Handles general server errors. */
@@ -425,7 +466,7 @@ public class ChipDe extends PluginForHost {
         }
     }
 
-    private String downloads_getDllink() {
+    private String applicationDownloadsGetDllink() {
         String dllink = br.getRegex("Falls der Download nicht beginnt,\\&nbsp;<a class=\"b\" href=\"(http.*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("class=\"dl\\-btn\"><a href=\"(http.*?)\"").getMatch(0);
@@ -477,10 +518,10 @@ public class ChipDe extends PluginForHost {
         }
         long max_bitrate = 0;
         long max_bitrate_temp = 0;
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+        entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "entryResult/contextData/flavorAssets");
         for (final Object videoo : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) videoo;
+            entries = (Map<String, Object>) videoo;
             final String flavourid = (String) entries.get("id");
             if (flavourid == null) {
                 continue;
@@ -524,35 +565,38 @@ public class ChipDe extends PluginForHost {
         return br;
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    return dllink;
+                } else {
+                    throw new IOException();
                 }
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                logger.log(e);
+                return null;
             } finally {
-                try {
+                if (con != null) {
                     con.disconnect();
-                } catch (final Throwable e) {
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
     public static String formatDate(String input) {
         if (input == null) {
             return null;
         }
-
         final long date;
         if (input.matches("\\d{4}\\-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}")) {
             /* Typically for videos via API */
@@ -582,22 +626,6 @@ public class ChipDe extends PluginForHost {
         return formattedDate;
     }
 
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     */
-    protected boolean inValidate(final String s) {
-        if (s == null || s.matches("\\s+") || s.equals("")) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     @Override
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.KalturaVideoPlatform;
@@ -610,5 +638,4 @@ public class ChipDe extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

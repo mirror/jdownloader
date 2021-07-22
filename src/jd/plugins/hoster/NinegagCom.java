@@ -16,10 +16,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -34,7 +36,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "9gag.com" }, urls = { "https?://(?:www\\.)?9gag\\.com/[/]+/([a-zA-Z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "9gag.com" }, urls = { "https?://(?:www\\.)?9gag\\.com/[^/]+/([a-zA-Z0-9]+)" })
 public class NinegagCom extends PluginForHost {
     public NinegagCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -81,28 +83,48 @@ public class NinegagCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("?post_removed=1")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String id = new Regex(link.getDownloadURL(), "([a-zA-Z0-9]+)$").getMatch(0);
+        final String id = this.getFID(link);
         String filename = null;
+        String description = null;
         String jsonParse = br.getRegex("window\\._config\\s*=\\s*JSON\\.parse\\((.*?)\\)\\s*;\\s*</script").getMatch(0);
-        Map<String, Object> map = null;
+        Map<String, Object> root = null;
+        boolean video = false;
         if (jsonParse != null) {
             jsonParse = JSonStorage.restoreFromString(jsonParse, TypeRef.STRING);
-            map = JSonStorage.restoreFromString(jsonParse, TypeRef.HASHMAP);
-            filename = (String) JavaScriptEngineFactory.walkJson(map, "data/post/title");
-        }
-        if (filename == null) {
-            filename = id;
-        }
-        boolean video = false;
-        if (map != null) {
-            final Map<String, Object> images = (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "data/post/images");
-            final Map<String, Object> image460sv = (Map<String, Object>) images.get("image460sv");
-            if (image460sv != null && image460sv.get("url") != null) {
-                video = true;
-                dllink = (String) image460sv.get("url");
+            root = JSonStorage.restoreFromString(jsonParse, TypeRef.HASHMAP);
+            final Object postsO = JavaScriptEngineFactory.walkJson(root, "data/posts");
+            Map<String, Object> post = null;
+            if (postsO != null) {
+                /* Variant1: We need to find the object containing the data of the post we want. */
+                final List<Map<String, Object>> posts = (List<Map<String, Object>>) postsO;
+                for (final Map<String, Object> thispost : posts) {
+                    final String thisID = thispost.get("id").toString();
+                    if (thisID.equals(id)) {
+                        post = thispost;
+                        break;
+                    }
+                }
+            }
+            if (post == null) {
+                /* Variant2: There is only one post object which is the one we want. */
+                post = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "data/post");
+            }
+            if (post != null) {
+                final Map<String, Object> images = (Map<String, Object>) post.get("images");
+                final Map<String, Object> image460sv = (Map<String, Object>) images.get("image460sv");
+                if (image460sv != null && image460sv.get("url") != null) {
+                    video = true;
+                    dllink = (String) image460sv.get("url");
+                }
+                filename = post.get("title").toString();
+                description = post.get("description").toString();
             }
         }
-        if (dllink == null) {
+        if (StringUtils.isEmpty(filename)) {
+            /* Fallback */
+            filename = id;
+        }
+        if (StringUtils.isEmpty(dllink)) {
             dllink = br.getRegex("rel\\s*=\\s*\"image_src\"\\s*href\\s*=\\s*\"(https?[^<>\"]*?)\"").getMatch(0);
         }
         if (filename == null || dllink == null) {
@@ -116,6 +138,9 @@ public class NinegagCom extends PluginForHost {
             filename += ext;
         }
         link.setFinalFileName(filename);
+        if (!StringUtils.isEmpty(description) && link.getComment() == null) {
+            link.setComment(description);
+        }
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
