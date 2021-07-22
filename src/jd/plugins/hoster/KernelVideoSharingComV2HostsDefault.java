@@ -18,10 +18,10 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2 {
@@ -95,6 +95,8 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "porntn.com" });
         /* 2021-04-06 */
         ret.add(new String[] { "punishbang.com" });
+        /* 2021-07-22 */
+        ret.add(new String[] { "txxx.tube" });
         return ret;
     }
 

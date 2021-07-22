@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1002,50 +1003,82 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                     }
                 }
             }
-            // hdzog.com, hclips.com
+            /* Hosts with crypted URLs: hdzog.com, hclips.com */
             String video_url_append = br.getRegex("video_url\\s*\\+=\\s*(\"|')(.*?)(\"|')\\s*;").getMatch(1);
             if (video_url != null && video_url_append != null) {
                 video_url += video_url_append;
             }
             if (video_url != null) {
-                String[] videoUrlSplit = video_url.split("\\|\\|");
-                video_url = videoUrlSplit[0];
-                if (!video_url.startsWith("http")) {
-                    final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
-                    final ScriptEngine engine = manager.getEngineByName("javascript");
-                    final Invocable inv = (Invocable) engine;
-                    try {
-                        engine.eval(IO.readURLToString(Script.class.getResource("script.js")));
-                        final Object result = inv.invokeFunction("result", video_url);
-                        if (result != null) {
-                            dllink = result.toString();
-                        }
-                    } catch (final Throwable e) {
-                        this.getLogger().log(e);
-                    }
-                } else {
-                    dllink = video_url;
-                }
-                if (videoUrlSplit.length == 2) {
-                    dllink = dllink.replaceFirst("/get_file/\\d+/[0-9a-z]{32}/", videoUrlSplit[1]);
-                } else if (videoUrlSplit.length == 4) {
-                    dllink = dllink.replaceFirst("/get_file/\\d+/[0-9a-z]{32}/", videoUrlSplit[1]);
-                    dllink = dllink + "&lip=" + videoUrlSplit[2];
-                    dllink = dllink + "&lt=" + videoUrlSplit[3];
-                }
-                return dllink;
+                // String[] videoUrlSplit = video_url.split("\\|\\|");
+                // video_url = videoUrlSplit[0];
+                // if (!video_url.startsWith("http")) {
+                // final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
+                // final ScriptEngine engine = manager.getEngineByName("javascript");
+                // final Invocable inv = (Invocable) engine;
+                // try {
+                // engine.eval(IO.readURLToString(Script.class.getResource("script.js")));
+                // final Object result = inv.invokeFunction("result", video_url);
+                // if (result != null) {
+                // dllink = result.toString();
+                // }
+                // } catch (final Throwable e) {
+                // this.getLogger().log(e);
+                // }
+                // } else {
+                // dllink = video_url;
+                // }
+                // if (videoUrlSplit.length == 2) {
+                // dllink = dllink.replaceFirst("/get_file/\\d+/[0-9a-z]{32}/", videoUrlSplit[1]);
+                // } else if (videoUrlSplit.length == 4) {
+                // dllink = dllink.replaceFirst("/get_file/\\d+/[0-9a-z]{32}/", videoUrlSplit[1]);
+                // dllink = dllink + "&lip=" + videoUrlSplit[2];
+                // dllink = dllink + "&lt=" + videoUrlSplit[3];
+                // }
+                // return dllink;
+                return decryptVideoURL(video_url);
             }
         }
         if (StringUtils.isEmpty(dllink)) {
             final String query = br.getRegex("\"query\"\\s*:\\s*(\\{[^\\{\\}]*?\\})").getMatch(0);
             if (query != null) {
-                // tubepornclassic.com, vjav.com
+                /* tubepornclassic.com, vjav.com, hotmovs.com, txxx.tube */
                 final Map<String, Object> queryMap = JSonStorage.restoreFromString(query, TypeRef.HASHMAP);
                 final String videoID = (String) queryMap.get("video_id");
                 if (StringUtils.isNotEmpty(videoID) && queryMap.containsKey("lifetime")) {
                     final Browser brc = br.cloneBrowser();
                     brc.getPage("/api/videofile.php?video_id=" + videoID + "&lifetime=8640000");
-                    return getDllink(brc);
+                    /*
+                     * 2021-07-22: Sites which got this API may as well have such an API endpoint available which could be used for
+                     * linkchecking (well also only if the internal videoID is given like in the above example):
+                     * https://hotmovs.com/api/json/video/86400/8000000/8787000/<videoID>.json </br> This json may also contain a field
+                     * representing the online status. For some offline items, title and other metadata is given although it is offline.
+                     * </br> "status_id":"1" --> Online </br> "status_id":"5" --> Offline
+                     */
+                    final List<Map<String, Object>> formats = (List<Map<String, Object>>) JSonStorage.restoreFromString(brc.toString(), TypeRef.OBJECT);
+                    /* 2021-07-22: I wasn't able to find any website using this API that had more than 1 quality available. */
+                    if (formats.size() > 1) {
+                        logger.warning("!! Developer work needed !! KVS website with API got multiple video qualities available!");
+                    }
+                    for (final Map<String, Object> format : formats) {
+                        final String cryptedVideoURL = format.get("video_url").toString();
+                        final String decryptedVideoURL = decryptVideoURL(cryptedVideoURL);
+                        try {
+                            /*
+                             * Check for valid URL. We're not using their API to verify onlinestatus, instead we're using the result here as
+                             * an offline-indicator.
+                             */
+                            if (decryptedVideoURL.startsWith("/")) {
+                                /* Add dummy-host because relative URLs would throw exception. */
+                                new URL("https://example.com" + decryptedVideoURL);
+                            } else {
+                                new URL(decryptedVideoURL);
+                            }
+                        } catch (final Throwable ignore) {
+                            /* 2021-07-22: E.g. instead of a valid URL we get: "c46d....&ti=<timestamp>" */
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        }
+                        return decryptedVideoURL;
+                    }
                 }
             }
             if (!br.containsHTML("license_code:") && !br.containsHTML("kt_player_[0-9\\.]+\\.swfx?")) {
@@ -1060,6 +1093,36 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             dllink = Encoding.htmlDecode(dllink);
         }
         return dllink;
+    }
+
+    /** Decrypts given URL if needed. */
+    protected String decryptVideoURL(final String url) {
+        final String[] videoUrlSplit = url.split("\\|\\|");
+        final String videoUrl = videoUrlSplit[0];
+        String finalURL = null;
+        if (!videoUrl.startsWith("http")) {
+            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
+            final ScriptEngine engine = manager.getEngineByName("javascript");
+            final Invocable inv = (Invocable) engine;
+            try {
+                engine.eval(IO.readURLToString(Script.class.getResource("script.js")));
+                final Object result = inv.invokeFunction("result", videoUrl);
+                return result.toString();
+            } catch (final Throwable ignore) {
+                this.getLogger().log(ignore);
+            }
+        } else {
+            /* URL is not crypted */
+            finalURL = videoUrl;
+            if (videoUrlSplit.length == 2) {
+                finalURL = finalURL.replaceFirst("/get_file/\\d+/[0-9a-z]{32}/", videoUrlSplit[1]);
+            } else if (videoUrlSplit.length == 4) {
+                finalURL = finalURL.replaceFirst("/get_file/\\d+/[0-9a-z]{32}/", videoUrlSplit[1]);
+                finalURL = finalURL + "&lip=" + videoUrlSplit[2];
+                finalURL = finalURL + "&lt=" + videoUrlSplit[3];
+            }
+        }
+        return finalURL;
     }
 
     private boolean addQualityURL(final DownloadLink link, final HashMap<Integer, String> qualityMap, final String url) {
