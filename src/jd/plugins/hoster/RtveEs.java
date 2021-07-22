@@ -230,12 +230,13 @@ public class RtveEs extends PluginForHost {
             /* 2021-07-13: Required as assetIDs are not in current html anymore. */
             final boolean useWorkaroundForAssetID = true;
             if (useWorkaroundForAssetID) {
-                final String alternativeContentURL = br.getRegex("(https://secure\\.rtve\\.es/drmn/embed/video/\\d+[^<>\"\\']+)").getMatch(0);
+                final String alternativeContentURL = br.getRegex("(https://(?:secure\\.|www\\.)?rtve\\.es/drmn/embed/video/\\d+[^<>\"\\']+)").getMatch(0);
                 if (alternativeContentURL == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 br.getPage(alternativeContentURL);
             }
+            /* E.g. "1234567_es_videos" */
             String[] flashVars = br.getRegex("assetID\\s*=\\s*(?:\"|')?(\\d+)_([a-z]{2,3})_(audios|videos)(\\&location=alacarta)?").getRow(0);
             if (flashVars == null || flashVars.length != 4) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
