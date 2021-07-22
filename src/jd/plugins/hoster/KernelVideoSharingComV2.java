@@ -1009,32 +1009,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 video_url += video_url_append;
             }
             if (video_url != null) {
-                // String[] videoUrlSplit = video_url.split("\\|\\|");
-                // video_url = videoUrlSplit[0];
-                // if (!video_url.startsWith("http")) {
-                // final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
-                // final ScriptEngine engine = manager.getEngineByName("javascript");
-                // final Invocable inv = (Invocable) engine;
-                // try {
-                // engine.eval(IO.readURLToString(Script.class.getResource("script.js")));
-                // final Object result = inv.invokeFunction("result", video_url);
-                // if (result != null) {
-                // dllink = result.toString();
-                // }
-                // } catch (final Throwable e) {
-                // this.getLogger().log(e);
-                // }
-                // } else {
-                // dllink = video_url;
-                // }
-                // if (videoUrlSplit.length == 2) {
-                // dllink = dllink.replaceFirst("/get_file/\\d+/[0-9a-z]{32}/", videoUrlSplit[1]);
-                // } else if (videoUrlSplit.length == 4) {
-                // dllink = dllink.replaceFirst("/get_file/\\d+/[0-9a-z]{32}/", videoUrlSplit[1]);
-                // dllink = dllink + "&lip=" + videoUrlSplit[2];
-                // dllink = dllink + "&lt=" + videoUrlSplit[3];
-                // }
-                // return dllink;
                 return decryptVideoURL(video_url);
             }
         }
