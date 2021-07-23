@@ -21,6 +21,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.config.YoupornConfig;
+import org.jdownloader.plugins.components.config.YoupornConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -32,15 +41,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.config.YoupornConfig;
-import org.jdownloader.plugins.components.config.YoupornConfig.PreferredStreamQuality;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YouPornCom extends PluginForHost {
@@ -155,13 +155,16 @@ public class YouPornCom extends PluginForHost {
         } else if (br.containsHTML("404 \\- Page Not Found<|id=\"title_404\"") || this.br.getHttpConnection().getResponseCode() == 404) {
             /* Invalid link */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (this.br.containsHTML("<div class='geo-blocked-content'>\\s*This video has been disabled")) {
+        } else if (this.br.containsHTML("(?i)<div class='geo-blocked-content'>\\s*This video has been disabled")) {
             /* 2021-01-18 */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (this.br.containsHTML("<div class='geo-blocked-content'>\\s*Video has been flagged for verification")) {
+        } else if (this.br.containsHTML("(?i)<div class='geo-blocked-content'>\\s*This video has been removed by the uploader")) {
+            /* 2021-01-18 */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.containsHTML("(?i)<div class='geo-blocked-content'>\\s*Video has been flagged for verification")) {
             /* 2021-01-18 */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video has been flagged for verification", 3 * 60 * 60 * 1000l);
-        } else if (this.br.containsHTML("class='geo-blocked-content'")) {
+        } else if (this.br.containsHTML("(?i)class='geo-blocked-content'")) {
             /* 2020-07-02: New: E.g. if you go to youpornru.com with a german IP and add specific URLs (not all content is GEO-blocked!). */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GEO-blocked", 3 * 60 * 60 * 1000l);
         } else if (this.br.containsHTML("onload=\"go\\(\\)\"")) {
@@ -287,7 +290,8 @@ public class YouPornCom extends PluginForHost {
         if (dllink == null) {
             /**
              * 2020-05-27: Workaround/Fallback for some users who seem to get a completely different pornhub page (???) RE:
-             * https://svn.jdownloader.org/issues/88346 </br> This source will be lower quality than their other sources!
+             * https://svn.jdownloader.org/issues/88346 </br>
+             * This source will be lower quality than their other sources!
              */
             dllink = br.getRegex("meta name=\"twitter:player:stream\" content=\"(http[^<>\"\\']+)\"").getMatch(0);
         }
