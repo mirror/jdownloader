@@ -20,16 +20,17 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.plugins.HashCheckPluginProgress;
-import org.jdownloader.settings.GeneralSettings;
-
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.raf.FileBytesMap.FileBytesMapView;
+import jd.plugins.download.raf.HTTPDownloader;
+
+import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.plugins.HashCheckPluginProgress;
+import org.jdownloader.settings.GeneralSettings;
 
 abstract public class DownloadInterface {
     @Deprecated
@@ -62,14 +63,19 @@ abstract public class DownloadInterface {
         this.allowFilenameFromURL = b;
     }
 
+    public static final boolean isNewHTTPCore() {
+        return HTTPDownloader.class.isAssignableFrom(RAFDownload.class);
+    }
+
     /* do not use in old JD 09581 plugins */
     public abstract ManagedThrottledConnectionHandler getManagedConnetionHandler();
 
     public void setInitialRequest(Request initialRequest) {
         if (initialRequest == null) {
             throw new IllegalArgumentException("initialRequest is null!");
+        } else {
+            this.initialRequest = initialRequest;
         }
-        this.initialRequest = initialRequest;
     };
 
     public abstract URLConnectionAdapter connect(Browser br) throws Exception;

@@ -2,6 +2,7 @@ package jd.plugins.download.raf;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.http.Browser;
@@ -129,23 +130,28 @@ public class HTTPChunk extends Thread {
             long[] responseRange = con.getRange();
             if (responseRange != null) {
                 if (responseRange[0] != chunkRange.getFrom()) {
-                    setError(ERROR.RANGE, new IOException("RangeError(From)"));
+                    setError(ERROR.RANGE, new IOException("RangeError(From):" + Arrays.toString(responseRange) + "|" + chunkRange + "|" + dl.getVerifiedFileSize()));
                     return null;
                 }
                 if (chunkRange.getTo() != null && chunkRange.getTo() >= 0 && responseRange[1] < chunkRange.getTo()) {
-                    setError(ERROR.RANGE, new IOException("RangeError(To)"));
-                    return null;
+                    if (true) {
+                        // server is allowed to respond with smaller chunk than required
+                        logger.info("RangeWarning(To):" + Arrays.toString(responseRange) + "|" + chunkRange + "|" + dl.getVerifiedFileSize());
+                    } else {
+                        setError(ERROR.RANGE, new IOException("RangeError(To):" + Arrays.toString(responseRange) + "|" + chunkRange + "|" + dl.getVerifiedFileSize()));
+                        return null;
+                    }
                 }
                 if (dl.getVerifiedFileSize() >= 0 && responseRange[2] != dl.getVerifiedFileSize()) {
                     if (responseRange[2] == -1) {
-                        logger.info("RangeWarning(Size)");
+                        logger.info("RangeWarning(size):" + Arrays.toString(responseRange) + "|" + chunkRange + "|" + dl.getVerifiedFileSize());
                     } else {
-                        setError(ERROR.RANGE, new IOException("RangeError(Size)"));
+                        setError(ERROR.RANGE, new IOException("RangeError(size):" + Arrays.toString(responseRange) + "|" + chunkRange + "|" + dl.getVerifiedFileSize()));
                         return null;
                     }
                 }
             } else if (chunkRange.getFrom() > 0) {
-                setError(ERROR.RANGE, new IOException("RangeError(Missing)"));
+                setError(ERROR.RANGE, new IOException("RangeError(Missing):" + Arrays.toString(responseRange) + "|" + chunkRange + "|" + dl.getVerifiedFileSize()));
                 return null;
             }
             return con;
@@ -165,7 +171,7 @@ public class HTTPChunk extends Thread {
             try {
                 final String requestedRange;
                 if (chunkRange.isRangeRequested()) {
-                    requestedRange = dl.getRange(chunkRange.getFrom(), chunkRange.getTo());
+                    requestedRange = chunkRange.getRangeHeaderContent(false);
                 } else {
                     requestedRange = null;
                 }
@@ -214,16 +220,16 @@ public class HTTPChunk extends Thread {
                             if (contentRange != null) {
                                 // content-range available
                                 if (contentRange[0] != chunkRange.getFrom()) {
-                                    setError(ERROR.RANGE, new IOException("RangeError(From)"));
+                                    setError(ERROR.RANGE, new IOException("RangeError(From):" + Arrays.toString(contentRange) + "|" + chunkRange + "|" + dl.getVerifiedFileSize()));
                                     return null;
                                 } else if (chunkRange.getTo() != null && chunkRange.getTo() >= 0 && contentRange[1] < chunkRange.getTo()) {
                                     setError(ERROR.RANGE, new IOException("RangeError(To)"));
                                     return null;
                                 } else if (dl.getVerifiedFileSize() >= 0 && contentRange[2] != dl.getVerifiedFileSize()) {
                                     if (contentRange[2] == -1) {
-                                        logger.info("RangeWarning(Size)");
+                                        logger.info("RangeWarning(Size):" + Arrays.toString(contentRange) + "|" + chunkRange + "|" + dl.getVerifiedFileSize());
                                     } else {
-                                        setError(ERROR.RANGE, new IOException("RangeError(Size)"));
+                                        setError(ERROR.RANGE, new IOException("RangeError(Size):" + Arrays.toString(contentRange) + "|" + chunkRange + "|" + dl.getVerifiedFileSize()));
                                         return null;
                                     }
                                 }
@@ -234,7 +240,7 @@ public class HTTPChunk extends Thread {
                                         // found servers that respond with 200 code and correct content length but no content-range/206
                                         logger.info("ResponseWarning(invalid content-range?!)");
                                     } else {
-                                        setError(ERROR.RANGE, new IOException("RangeError(Missing)"));
+                                        setError(ERROR.RANGE, new IOException("RangeError(Missing):" + Arrays.toString(contentRange) + "|" + chunkRange + "|" + dl.getVerifiedFileSize()));
                                         return null;
                                     }
                                 }
@@ -253,7 +259,7 @@ public class HTTPChunk extends Thread {
                         setError(ERROR.INVALID_RESPONSE, null);
                     }
                     final String contentType = con.getContentType();
-                    if (contentType != null && contentType.contains("text") || contentType.contains("html")) {
+                    if (contentType != null && (contentType.contains("text") || contentType.contains("html"))) {
                         br.followConnection();
                     }
                     return null;

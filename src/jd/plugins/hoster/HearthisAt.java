@@ -28,6 +28,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
@@ -43,11 +44,11 @@ public class HearthisAt extends PluginForHost {
     // protocol: no https
     // other:
     /* Connection stuff */
-    private boolean          free_resume        = false;
-    private int              free_maxchunks     = 1;
-    private static final int free_maxdownloads  = -1;
-    private String           dllink             = null;
-    private boolean          isOfficialDownload = false;
+    private boolean   free_resume        = false;
+    private int       free_maxchunks     = 1;
+    private final int free_maxdownloads  = -1;
+    private String    dllink             = null;
+    private boolean   isOfficialDownload = false;
 
     @Override
     public String getAGBLink() {
@@ -150,11 +151,10 @@ public class HearthisAt extends PluginForHost {
                 con = br2.openGetConnection(dllink);
                 if (looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                        if (con.getCompleteContentLength() != con.getLongContentLength()) {
-                            link.setProperty("ticket89269", true);
+                        if (DownloadInterface.isNewHTTPCore()) {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
                         } else {
-                            link.removeProperty("ticket89269");
+                            link.setDownloadSize(con.getCompleteContentLength());
                         }
                     }
                     final String ext = getFileNameExtensionFromString(getFileNameFromHeader(con), ".mp3");
@@ -184,8 +184,7 @@ public class HearthisAt extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // required to enforce use of range requests
-        link.setProperty("ServerComaptibleForByteRangeRequest", true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume && DownloadInterface.isNewHTTPCore(), free_maxchunks);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);

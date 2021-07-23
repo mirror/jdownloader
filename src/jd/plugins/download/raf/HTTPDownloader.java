@@ -244,8 +244,9 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
         final Boolean isRangeRequestSupported = rafHints.isRangeRequestSupported();
         if (Boolean.FALSE.equals(isRangeRequestSupported)) {
             return isRangeRequestSupported;
+        } else {
+            return tryRangeRequest || downloadable.isServerComaptibleForByteRangeRequest();
         }
-        return tryRangeRequest || downloadable.isServerComaptibleForByteRangeRequest();
     }
 
     /**
@@ -436,18 +437,6 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
         return connect();
     }
 
-    protected String getRange(Long from, Long to) {
-        if (from == null || from < 0) {
-            return null;
-        } else {
-            if (to == null || to < 0) {
-                return "bytes=" + from + "-";
-            } else {
-                return "bytes=" + from + "-" + to;
-            }
-        }
-    }
-
     protected long[] parseRange(String bytes) {
         final String from = new Regex(bytes, "bytes\\s*=\\s*(\\d*)-").getMatch(0);
         final String to = new Regex(bytes, "bytes\\s*=\\s*.*?-\\s*(\\d*)").getMatch(0);
@@ -474,8 +463,8 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
         final long verifiedFileSize = downloadable.getVerifiedFileSize();
         final String rangeRequest;
         if (tryRangeRequest && (unMarkedAreas.size() > 0 && unMarkedAreas.get(0).getFrom() > 0) || Boolean.TRUE.equals(requestRangeIfPossible)) {
-            ChunkRange chunkRange = unMarkedAreas.get(0);
-            rangeRequest = getRange(chunkRange.getFrom(), null);
+            final ChunkRange chunkRange = unMarkedAreas.get(0);
+            rangeRequest = chunkRange.getRangeHeaderContent(true);
         } else {
             rangeRequest = null;
         }
@@ -577,13 +566,13 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
     protected boolean isDownloadComplete() {
         if (isFileComplete()) {
             return true;
-        }
-        if (externalDownloadStop() == false && !hasErrors()) {
+        } else if (externalDownloadStop() == false && !hasErrors()) {
             logger.info("isDownloadComplete: errorFree=true");
             return true;
+        } else {
+            logger.info("isDownloadComplete: false");
+            return false;
         }
-        logger.info("isDownloadComplete: false");
-        return false;
     }
 
     /**
@@ -875,11 +864,11 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
         final long verifiedFileSize = downloadable.getVerifiedFileSize();
         if (verifiedFileSize >= 0) {
             return verifiedFileSize;
-        }
-        if (connection != null) {
+        } else if (connection != null) {
             return getCompleteContentLength(connection, false);
+        } else {
+            return -1;
         }
-        return -1;
     }
 
     public Request getRequest() {
@@ -890,8 +879,9 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
     public URLConnectionAdapter getConnection() {
         if (connection == null && initialRequest != null) {
             return initialRequest.getHttpConnection();
+        } else {
+            return this.connection;
         }
-        return this.connection;
     }
 
     @Override
