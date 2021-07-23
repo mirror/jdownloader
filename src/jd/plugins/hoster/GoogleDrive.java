@@ -669,8 +669,8 @@ public class GoogleDrive extends PluginForHost {
                 link.setComment("Using preferred quality: " + preferredQualityHeight + "p | Used quality: " + usedQuality + "p");
             }
         }
-        /** Reset this because md5hash could possibly have been set during availablecheck before! */
-        link.setMD5Hash(null);
+        /** Reset this because hash could possibly have been set before and is only valid for the original file! */
+        link.setHashInfo(null);
         if (!userHasDownloadedStreamBefore) {
             /* User could have started download of original file before: Clear progress! */
             logger.info("Resetting progress");
@@ -837,6 +837,20 @@ public class GoogleDrive extends PluginForHost {
         if (link.getFinalFileName() == null && !StringUtils.isEmpty(getFileNameFromHeader(dl.getConnection()))) {
             link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
         }
+        /* 2021-07-23: TODO: Set CRC32 filehash if possible */
+        // final String googleHash = this.br.getRequest().getResponseHeader("X-Goog-Hash");
+        // if (googleHash != null) {
+        // try {
+        // /* Hashes are base64 encoded. Multiple hashes can be given. */
+        // /* https://cloud.google.com/storage/docs/xml-api/reference-headers#xgooghash */
+        // final String crc32 = new Regex(googleHash, "crc32c=([^,]+)").getMatch(0);
+        // final String md5 = new Regex(googleHash, "md5=([^,]+)").getMatch(0);
+        // if (crc32 != null) {
+        // link.setHashInfo(HashInfo.newInstanceSafe(crc32, HashInfo.TYPE.CRC32));
+        // }
+        // } catch (final Throwable ignore) {
+        // }
+        // }
         this.dl.startDownload();
     }
 
