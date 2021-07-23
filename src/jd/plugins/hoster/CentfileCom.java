@@ -15,11 +15,15 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.regex.Pattern;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -35,11 +39,29 @@ public class CentfileCom extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info:<br />
-     * captchatype-info: 2019-02-11: null<br />
+     * limit-info: 2021-07-23: No limits at all <br />
+     * captchatype-info: 2021-07-23: reCaptchaV2<br />
      * other:<br />
      */
-    private static String[] domains = new String[] { "centfile.com" };
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "centfile.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+    }
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
@@ -84,37 +106,32 @@ public class CentfileCom extends XFileSharingProBasic {
         return -1;
     }
 
-    public static String[] getAnnotationNames() {
-        return new String[] { domains[0] };
-    }
-
     @Override
-    public String[] siteSupportedNames() {
-        return domains;
-    }
-
-    /**
-     * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/(?:embed\\-)?[a-z0-9]{12}'
-     *
-     */
-    public static String[] getAnnotationUrls() {
-        // construct pattern
-        final String host = getHostsPattern();
-        return new String[] { host + "/(?:embed\\-)?[a-z0-9]{12}" };
-    }
-
-    /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */
-    private static String getHostsPattern() {
-        final String hosts = "https?://(?:www\\.)?" + "(?:" + getHostsPatternPart() + ")";
-        return hosts;
-    }
-
-    /** Returns '(?:domain1|domain2)' */
-    public static String getHostsPatternPart() {
-        final StringBuilder pattern = new StringBuilder();
-        for (final String name : domains) {
-            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
+    public Form findFormDownload1Free(final Browser br) throws Exception {
+        /* 2021-07-23: Form contains one more "method_free" field with value "fast" which causes error 500 if sent like that! */
+        final Form download1 = super.findFormDownload1Free(br);
+        if (download1 != null) {
+            int countMethodFree = 0;
+            String methodFreeRealValue = null; // typically "Free+Download+%3E%3E"
+            for (final InputField field : download1.getInputFields()) {
+                if (field.getKey().equals("method_free")) {
+                    if (!field.getValue().equals("fast")) {
+                        methodFreeRealValue = field.getValue();
+                    }
+                    countMethodFree += 1;
+                }
+            }
+            if (countMethodFree > 1) {
+                if (methodFreeRealValue != null) {
+                    for (int i = 0; i < countMethodFree; i++) {
+                        download1.remove("method_free");
+                    }
+                    download1.put("method_free", methodFreeRealValue);
+                } else {
+                    logger.warning("Possibly broken download1 Form");
+                }
+            }
         }
-        return pattern.toString();
+        return download1;
     }
 }

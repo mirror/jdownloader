@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedMap;
@@ -64,7 +65,35 @@ public class ExLoadCom extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+        return ExLoadCom.buildAnnotationUrls(getPluginDomains());
+    }
+
+    private static final String TYPE_SPECIAL = "https?://[^/]+/dl\\?op=download1\\&id=([a-z0-9]{12})";
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(?:" + "/dl\\?op=download1\\&id=[a-z0-9]{12}" + "|" + XFileSharingProBasic.getDefaultAnnotationPatternPart() + ")");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        if (link == null || link.getPluginPatternMatcher() == null) {
+            return;
+        }
+        final Regex special = new Regex(link.getPluginPatternMatcher(), TYPE_SPECIAL);
+        if (special.matches()) {
+            /* Update to "normal" linktype */
+            try {
+                final URL oldURL = new URL(link.getPluginPatternMatcher());
+                link.setPluginPatternMatcher(oldURL.getProtocol() + "://" + oldURL.getHost() + "/" + special.getMatch(0));
+            } catch (final Throwable ignore) {
+            }
+        }
+        /* Let the upper handling do the rest */
+        super.correctDownloadLink(link);
     }
 
     @Override
