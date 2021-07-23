@@ -1,18 +1,11 @@
 package jd.plugins.decrypter;
 
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.plugins.components.config.PluralsightComConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -27,6 +20,17 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.hoster.PluralsightCom;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.components.config.PluralsightComConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "pluralsight.com" }, urls = { "https?://(?:app|www)?\\.pluralsight\\.com(\\/library)?\\/courses\\/[^/]+|https://app\\.pluralsight\\.com/course-player\\?clipId=[a-f0-9\\-]+" })
 public class PluralsightComDecrypter extends antiDDoSForDecrypt {
@@ -68,12 +72,18 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
         final UrlQuery query = new UrlQuery().parse(param.getCryptedUrl());
         if (!query.containsKey("clipId")) {
             logger.info("Looking for clipID");
-            final String clipPlayerURL = br.getRegex("(https://[^/]+/course-player\\?clipId=[a-f0-9\\-]+)\"").getMatch(0);
-            if (clipPlayerURL == null) {
+            final Set<String> dup = new HashSet<String>();
+            final String clipPlayerURL[] = br.getRegex("(/course-player\\?clipId=[a-f0-9\\-]+)\"").getColumn(0);
+            if (clipPlayerURL.length == 0) {
                 /* Content offline or plugin broken */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            getPage(clipPlayerURL);
+            for (final String clipID : clipPlayerURL) {
+                if (dup.add(clipID)) {
+                    ret.add(createDownloadlink(URLHelper.parseLocation(new URL("https://app.pluralsight.com"), clipID).toString()));
+                }
+            }
+            return ret;
         }
         final String jsonRoot = br.getRegex("type=\"application/json\">(\\{.*?)</script>").getMatch(0);
         final Map<String, Object> root = JSonStorage.restoreFromString(jsonRoot, TypeRef.HASHMAP);
