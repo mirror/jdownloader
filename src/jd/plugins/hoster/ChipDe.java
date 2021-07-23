@@ -17,7 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
@@ -41,7 +40,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.SiteType.SiteTemplate;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chip.de" }, urls = { "https?://(?:www\\.)?(?:chip\\.de/downloads|download\\.chip\\.(?:eu|asia)/.{2})/[A-Za-z0-9_\\-]+_\\d+\\.html|https?://(?:[a-z0-9]+\\.)?chip\\.de/[^/]+/[^/]+_\\d+\\.html" })
 public class ChipDe extends PluginForHost {
@@ -59,21 +58,14 @@ public class ChipDe extends PluginForHost {
         return -1;
     }
 
-    private static final String  type_chip_de_file         = "https?://(?:www\\.)?chip\\.de/downloads/[^/]+_\\d+\\.html";
-    private static final String  type_chip_eu_file         = "https?://(?:www\\.)?download\\.chip\\.(?:eu|asia)/.+";
-    public static final String   type_chip_de_video        = "https?://(?:www\\.)?chip\\.de/video/[^/]+_(\\d+)\\.html";
-    public static final String   type_chip_de_pictures     = "https?://(?:www\\.)?chip\\.de/bildergalerie/[^/]+_\\d+\\.html";
-    private static final String  type_chip_de_video_others = "https?://(?:[a-z0-9]+\\.)?chip\\.de/[^/]+/[^/]+_\\d+\\.html";
-    private static final boolean video_use_API             = true;
-    /* Tags: kaltura player, medianac, api.medianac.com */
-    /* Static values of their kaltura player configuration */
-    private static final String  kaltura_partner_id        = "1741931";
-    private static final String  kaltura_uiconf_id         = "30910812";
-    private static final String  kaltura_sp                = "174193100";
-    private static final String  host_chip_de              = "chip.de";
-    private String               dllink                    = null;
-    private Map<String, Object>  entries                   = null;
-    private static final String  PROPERTY_DOWNLOAD_TARGET  = "download_target";
+    private static final String type_chip_de_file         = "https?://(?:www\\.)?chip\\.de/downloads/[^/]+_\\d+\\.html";
+    private static final String type_chip_eu_file         = "https?://(?:www\\.)?download\\.chip\\.(?:eu|asia)/.+";
+    public static final String  type_chip_de_video        = "https?://(?:www\\.)?chip\\.de/video/[^/]+_(\\d+)\\.html";
+    public static final String  type_chip_de_pictures     = "https?://(?:www\\.)?chip\\.de/bildergalerie/[^/]+_\\d+\\.html";
+    private static final String type_chip_de_video_others = "https?://(?:[a-z0-9]+\\.)?chip\\.de/[^/]+/[^/]+_\\d+\\.html";
+    private static final String host_chip_de              = "chip.de";
+    private String              dllink                    = null;
+    private static final String PROPERTY_DOWNLOAD_TARGET  = "download_target";
 
     /**
      * <b>Information for file (software)-downloads:</b> <br />
@@ -91,19 +83,6 @@ public class ChipDe extends PluginForHost {
      * <a href="http://www.chip.de/video/DSLR-fuer-die-Hosentasche-DxO-One-im-Test-Video_85225530.html">http://www.chip.de
      * /video/DSLR-fuer-die-Hosentasche-DxO-One-im-Test-Video_85225530.html</a> <br />
      * <b>Videoid or how they call it "containerIdBeitrag": 85225530</b><br />
-     * <b>1.</b> They use an external CDN for their videos called "kaltura video platform":
-     * <a href="http://corp.kaltura.com/">kaltura.com</a> <br />
-     * <b>2.</b> Information about their API: <br />
-     * -https is usually possible via valid certificate even though it is not (always) possible via browser!<br />
-     * -V1: <a href="http://apps-rest.chip.de/api/v1/?format=json">http://apps-rest.chip.de/api/v1/?format=json</a> --> Used by their
-     * official (Android) App <br />
-     * --> It is not possible for us to use this as the API uses different IDs which are neither in the URL our users add nor in their HTML
-     * code!<br />
-     * -V2: <a href="http://apps-rest.chip.de/api/v2/?format=json">http://apps-rest.chip.de/api/v2/?format=json</a> --> Used by us <br />
-     * -V3-5 or higher: Seems like they re still under development - whatever, nothing we need!<br />
-     * -Via V2 we can actually access videos via API: https://apps-rest.chip.de/api/v2/containerIdBeitrag/85225530/<br />
-     * --> That will actually also contain an URL to the V1 API in the field "resource_uri": /api/v1/video/<b>136736</b>/<br />
-     * ---> As you can see we are not able to (directly) use the V1 API because we do not have this ID: <b>136736</b><br />
      *
      */
     @SuppressWarnings({ "deprecation", "unchecked" })
@@ -122,14 +101,14 @@ public class ChipDe extends PluginForHost {
         String description = null;
         long filesize = -1;
         final String contentID_URL;
-        final Regex linkinfo = new Regex(link.getDownloadURL(), "/([^/]+)_(\\d+)\\.html$");
+        final Regex linkinfo = new Regex(link.getPluginPatternMatcher(), "/([^/]+)_(\\d+)\\.html$");
         title_URL = linkinfo.getMatch(0);
         contentID_URL = linkinfo.getMatch(1);
         /* Set name here in case the content is offline --> Users still have a nice filename. */
         if (!link.isNameSet() && title_URL != null && contentID_URL != null) {
             link.setName(title_URL + "_" + contentID_URL);
         }
-        if (link.getDownloadURL().matches(type_chip_de_file) || link.getDownloadURL().matches(type_chip_eu_file)) {
+        if (link.getPluginPatternMatcher().matches(type_chip_de_file) || link.getPluginPatternMatcher().matches(type_chip_eu_file)) {
             set_final_filename = false;
             accessURL(this.br, link.getDownloadURL());
             if (link.getDownloadURL().matches(type_chip_eu_file) && !this.br.containsHTML("class=\"downloadnow_button")) {
@@ -137,7 +116,7 @@ public class ChipDe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String filesize_str = null;
-            final String json = br.getRegex(" var digitalData = (\\{.+\\});").getMatch(0);
+            final String json = br.getRegex("var digitalData = (\\{.+\\});").getMatch(0);
             if (json != null) {
                 /* 2021-07-22 */
                 final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
@@ -200,76 +179,23 @@ public class ChipDe extends PluginForHost {
                 link.setLinkID(this.getHost() + "://video/" + contentID_URL);
             }
             set_final_filename = true;
-            String ext = null;
-            if (video_use_API) {
-                prepBRAPI(this.br);
-                accesscontainerIdBeitrag(this.br, contentID_URL);
-                if (this.br.containsHTML("\"error_message\"")) {
-                    /*
-                     * Usually that should be covered already as API will return 404 on offline content but let's double-check by this
-                     * errormessage-json-object.
-                     */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
-                final String source_videoid = (String) JavaScriptEngineFactory.walkJson(entries, "videos/{0}/containerIdBeitrag");
-                if (!link.getDownloadURL().matches(type_chip_de_video) && source_videoid != null) {
-                    /* User added an article which may or may not contain one (or multiple) videos. */
-                    accesscontainerIdBeitrag(this.br, source_videoid);
-                    entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
-                }
-                /*
-                 * The directlinks returned by their API are quality-wise not the best (middle) but in case everysthing fails, we still have
-                 * them and our users can still download the video :)
-                 */
-                date = (String) entries.get("date");
-                description = (String) entries.get("description");
-                final String dllink_fallback = (String) entries.get("videoUrl");
-                final String title = (String) entries.get("title");
-                final String subtitle = (String) entries.get("headline");
-                if (!StringUtils.isEmpty(title)) {
-                    filename = title;
-                    if (!StringUtils.isEmpty(subtitle)) {
-                        filename += " - " + subtitle;
-                    }
-                }
-                try {
-                    dllink = videos_kaltura_getDllink();
-                } catch (final Throwable e) {
-                    /* Whatever happens, catch it - we might have a working fallback :) */
-                }
-                if (StringUtils.isEmpty(dllink)) {
-                    logger.warning("Failed to find highest quality final downloadlink via kaltura player --> Fallback to API downloadlink");
-                    dllink = dllink_fallback;
-                }
-                if (!link.getDownloadURL().matches(type_chip_de_video) && StringUtils.isEmpty(dllink)) {
-                    /* Whatever the user added - there is no downloadable content! */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-            } else {
-                accessURL(this.br, link.getDownloadURL());
-                filename = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\"").getMatch(0);
-                date = this.br.getRegex("\"publishDateTime\":\"(\\d{4}\\-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\+\\d{2}:\\d{2})\"").getMatch(0);
-                dllink = videos_kaltura_getDllink();
-                // DLLINK = "http://video.chip.de/38396417/textzwei.flv";
-            }
-            try {
-                ext = (String) entries.get("fileExt");
-            } catch (final Throwable e) {
-            }
+            accessURL(this.br, link.getPluginPatternMatcher());
+            filename = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\"").getMatch(0);
+            date = this.br.getRegex("\"publishDateTime\":\"(\\d{4}\\-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\+\\d{2}:\\d{2})\"").getMatch(0);
+            /*
+             * 2021-07-23: Their website obtains this URL via a 3rd party CDN/API but they also expose their direct-video-URLs like this
+             * (maybe a legacy way?) so we'll use the easy way for now.
+             */
+            dllink = PluginJSonUtils.getJson(this.br, "contentUrl");
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (filename == null) {
+            if (StringUtils.isEmpty(filename)) {
                 /* Last chance! */
                 filename = title_URL + "_" + contentID_URL;
             }
-            if (StringUtils.isEmpty(ext)) {
-                /* Fallback to chip standard video-extension */
-                ext = "mp4";
-            }
             filename = Encoding.htmlDecode(filename).trim();
-            filename += "." + ext;
+            filename += ".mp4";
             this.br.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
@@ -330,6 +256,7 @@ public class ChipDe extends PluginForHost {
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         final String directlinkproperty = "directlink";
         if (link.getPluginPatternMatcher().matches(type_chip_de_video)) {
+            requestFileInformation(link);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 handleServerErrors();
@@ -472,6 +399,11 @@ public class ChipDe extends PluginForHost {
         }
     }
 
+    @Deprecated
+    public static void accesscontainerIdBeitrag(final Browser br, final String containerIdBeitrag) throws PluginException, IOException {
+        accessURL(br, "https://apps-rest.chip.de/api/v2/containerIdBeitrag/" + containerIdBeitrag + "/");
+    }
+
     private void errorExternalDownloadImpossible() throws PluginException {
         /**
          * Happens for software whose manufacturers do not allow direct mirrors from chip servers e.g.
@@ -518,62 +450,6 @@ public class ChipDe extends PluginForHost {
             dllink = br.getRegex("(?:\"|\\')(https?://dl\\.cdn\\.chip\\.de/downloads/\\d+/.*?)(?:\"|\\')").getMatch(0);
         }
         return dllink;
-    }
-
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    private String videos_kaltura_getDllink() throws Exception {
-        String dllink_temp = null;
-        /* First try to get informartion via website */
-        String sp = this.br.getRegex("sp/(\\d+)/embedIframeJs").getMatch(0);
-        final String entry_id = this.br.getRegex("/entry_id/([^/]*?)/").getMatch(0);
-        String uiconf_id = this.br.getRegex("uiconf_id/(\\d+)").getMatch(0);
-        String partner_id = this.br.getRegex("/partner_id/(\\d+)").getMatch(0);
-        if (partner_id == null) {
-            partner_id = this.br.getRegex("kaltura.com/p/(\\d+)").getMatch(0);
-        }
-        /* Then eventually fallback to static information */
-        if (partner_id == null) {
-            partner_id = kaltura_partner_id;
-        }
-        if (uiconf_id == null) {
-            uiconf_id = kaltura_uiconf_id;
-        }
-        if (sp == null) {
-            sp = kaltura_sp;
-        }
-        if (entry_id == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /* They use waay more arguments via browser - we don't need them :) */
-        final String postData = "cache_st=5&wid=_" + partner_id + "&uiconf_id=" + uiconf_id + "&entry_id=" + entry_id + "&urid=2.39";
-        final Browser tempbr = new Browser();
-        /* Beware of the Content-Type - it will not work using 'application/json; charset=utf-8' */
-        tempbr.postPage("http://cdnapi.kaltura.com/html5/html5lib/v2.39/mwEmbedFrame.php", postData);
-        final String json = tempbr.getRegex("window\\.kalturaIframePackageData = (\\{.*?\\});").getMatch(0);
-        if (json == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        long max_bitrate = 0;
-        long max_bitrate_temp = 0;
-        entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-        final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "entryResult/contextData/flavorAssets");
-        for (final Object videoo : ressourcelist) {
-            entries = (Map<String, Object>) videoo;
-            final String flavourid = (String) entries.get("id");
-            if (flavourid == null) {
-                continue;
-            }
-            max_bitrate_temp = JavaScriptEngineFactory.toLong(entries.get("bitrate"), 0);
-            if (max_bitrate_temp > max_bitrate) {
-                dllink_temp = "http://cdnapi.kaltura.com/p/" + partner_id + "/sp/" + sp + "/playManifest/entryId/" + entry_id + "/flavorId/" + flavourid + "/format/url/protocol/http/a.mp4";
-                max_bitrate = max_bitrate_temp;
-            }
-        }
-        return dllink_temp;
-    }
-
-    public static void accesscontainerIdBeitrag(final Browser br, final String containerIdBeitrag) throws PluginException, IOException {
-        accessURL(br, "https://apps-rest.chip.de/api/v2/containerIdBeitrag/" + containerIdBeitrag + "/");
     }
 
     public static void accessURL(final Browser br, final String url) throws PluginException, IOException {
@@ -666,11 +542,6 @@ public class ChipDe extends PluginForHost {
     @Override
     public Class<? extends PluginConfigInterface> getConfigInterface() {
         return ChipDeConfig.class;
-    }
-
-    @Override
-    public SiteTemplate siteTemplateType() {
-        return SiteTemplate.KalturaVideoPlatform;
     }
 
     @Override
