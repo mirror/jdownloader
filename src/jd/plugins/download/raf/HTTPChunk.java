@@ -127,7 +127,7 @@ public class HTTPChunk extends Thread {
     private URLConnectionAdapter openConnection() {
         URLConnectionAdapter con = reuseConnection;
         if (con != null) {
-            long[] responseRange = con.getRange();
+            final long[] responseRange = con.getRange();
             if (responseRange != null) {
                 if (responseRange[0] != chunkRange.getFrom()) {
                     setError(ERROR.RANGE, new IOException("RangeError(From):" + Arrays.toString(responseRange) + "|" + chunkRange + "|" + dl.getVerifiedFileSize()));
@@ -213,7 +213,7 @@ public class HTTPChunk extends Thread {
                     return null;
                 }
                 final VALIDATION_RESULT validation_result = dl.validateConnection(con);
-                long[] contentRange = con.getRange();
+                final long[] contentRange = con.getRange();
                 if (validation_result.isOk() || (validation_result.countOk() > 0 && validation_result.countFailed() == 1 && validation_result.hasFailed(VALIDATION.CONTENT_LENGTH))) {
                     if (con.getResponseCode() == 200 || con.getResponseCode() == 206) {
                         if (requestedRange != null) {
