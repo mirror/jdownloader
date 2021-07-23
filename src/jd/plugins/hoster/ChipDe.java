@@ -25,6 +25,9 @@ import java.util.Map;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.config.ChipDeConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -106,7 +109,6 @@ public class ChipDe extends PluginForHost {
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("ISO-8859-1");
@@ -159,15 +161,16 @@ public class ChipDe extends PluginForHost {
             if (StringUtils.isEmpty(filename)) {
                 filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             }
+            if (filesize_str == null) {
+                /* Verified filesize! */
+                filesize_str = br.getRegex("itemprop=\"fileSize\" content=\"([0-9\\.]+)\"").getMatch(0);
+            }
             if (StringUtils.isEmpty(filesize_str)) {
                 filesize_str = br.getRegex(">Dateigr\\&ouml;\\&szlig;e:</p>[\t\n\r ]+<p class=\"col2\">([^<>\"]*?)<meta itemprop=\"fileSize\"").getMatch(0);
             }
             if (filesize_str == null) {
                 /* For the international chip websites! */
                 filesize_str = br.getRegex("<dt>(?:File size:|Размер файла:|Dimensioni:|Dateigröße:|Velikost:|Fájlméret:|Bestandsgrootte:|Rozmiar pliku:|Mărime fişier:|Dosya boyu:|文件大小：)<br /></dt>[\t\n\r ]+<dd>(.*?)<br /></dd>").getMatch(0);
-            }
-            if (filesize_str == null) {
-                filesize_str = br.getRegex("itemprop=\"fileSize\" content=\"([0-9\\.]+)\"").getMatch(0);
             }
             if (filesize_str != null) {
                 filesize_str = filesize_str.replace("GByte", "GB");
@@ -191,6 +194,7 @@ public class ChipDe extends PluginForHost {
                 filename += "_" + contentID_URL;
             }
         } else {
+            /* 2021-07-23: This seems to be broken */
             /* type_chip_de_video and type_chip_de_video_others */
             if (contentID_URL != null) {
                 link.setLinkID(this.getHost() + "://video/" + contentID_URL);
@@ -315,14 +319,17 @@ public class ChipDe extends PluginForHost {
             description = Encoding.htmlDecode(description);
             link.setComment(description);
         }
+        if (PluginJsonConfig.get(ChipDeConfig.class).isDisplayExternalDownloadsAsOffline() && this.isExternalDownload(link)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         return AvailableStatus.TRUE;
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        if (link.getDownloadURL().matches(type_chip_de_video)) {
+        final String directlinkproperty = "directlink";
+        if (link.getPluginPatternMatcher().matches(type_chip_de_video)) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 handleServerErrors();
@@ -331,10 +338,11 @@ public class ChipDe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
             }
         } else if (link.getDownloadURL().matches(type_chip_eu_file)) {
-            /* TODO: Find a way around their .exe adware installers - then our CRC check will finally also work for chip.eu! */
             /* Re-Use saved direct-downloadlinks */
-            dllink = this.checkDirectLink(link, "free_directlink");
-            if (dllink == null) {
+            final boolean resume = false;
+            final int maxchunks = 1;
+            if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resume, maxchunks)) {
+                requestFileInformation(link);
                 if (isExternalDownload(link)) {
                     errorExternalDownloadImpossible();
                 }
@@ -368,13 +376,15 @@ public class ChipDe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
-            link.setProperty("free_directlink", dl.getConnection().getURL().toString());
+            link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
             dl.startDownload();
         } else {
             /* Normal chip.de downloads (application downloads) */
+            final boolean resume = true;
+            final int maxchunks = 1;
             /* Re-Use saved downloadlinks */
-            dllink = this.checkDirectLink(link, "free_directlink");
-            if (dllink == null) {
+            if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resume, maxchunks)) {
+                requestFileInformation(link);
                 if (isExternalDownload(link)) {
                     errorExternalDownloadImpossible();
                 }
@@ -399,41 +409,67 @@ public class ChipDe extends PluginForHost {
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-            String etag = this.br.getRequest().getResponseHeader("ETag");
-            if (etag != null) {
-                /* chip.de servers will often | always return md5 hash via headers! */
-                try {
-                    etag = etag.replace("\"", "");
-                    final String[] etagInfo = etag.split(":");
-                    final String md5 = etagInfo[0];
-                    if (md5.matches("[A-Fa-f0-9]{32}")) {
-                        link.setMD5Hash(md5);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+                String etag = this.br.getRequest().getResponseHeader("ETag");
+                if (etag != null) {
+                    /* chip.de servers will often | always return md5 hash via headers! */
+                    try {
+                        etag = etag.replace("\"", "");
+                        final String[] etagInfo = etag.split(":");
+                        final String md5 = etagInfo[0];
+                        if (md5.matches("[A-Fa-f0-9]{32}")) {
+                            link.setMD5Hash(md5);
+                        }
+                    } catch (final Throwable ignore) {
                     }
-                } catch (final Throwable ignore) {
                 }
+                if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                    handleServerErrors();
+                    try {
+                        br.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
+                    if (!this.br.getHost().contains("chip")) {
+                        /*
+                         * Happens for software whos manufactors do not allow direct mirrors from chip servers e.g.
+                         * http://www.chip.de/downloads/Windows-10-64-Bit_72189999.html
+                         */
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "External download - not possible via JDownloader!");
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dl.setFilenameFix(true);
+                // link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
             }
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                handleServerErrors();
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
-                if (!this.br.getHost().contains("chip")) {
-                    /*
-                     * Happens for software whos manufactors do not allow direct mirrors from chip servers e.g.
-                     * http://www.chip.de/downloads/Windows-10-64-Bit_72189999.html
-                     */
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "External download - not possible via JDownloader!");
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+            link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         }
-        link.setProperty("free_directlink", dl.getConnection().getURL().toString());
         dl.startDownload();
+    }
+
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directlinkproperty, final boolean resumable, final int maxchunks) throws Exception {
+        final String url = link.getStringProperty(directlinkproperty);
+        if (StringUtils.isEmpty(url)) {
+            return false;
+        }
+        try {
+            final Browser brc = br.cloneBrowser();
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resumable, maxchunks);
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                return true;
+            } else {
+                brc.followConnection(true);
+                throw new IOException();
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+            try {
+                dl.getConnection().disconnect();
+            } catch (Throwable ignore) {
+            }
+            link.removeProperty(directlinkproperty);
+            return false;
+        }
     }
 
     private void errorExternalDownloadImpossible() throws PluginException {
@@ -445,6 +481,7 @@ public class ChipDe extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FATAL, "External download - not possible via JDownloader!");
     }
 
+    /** Externally hosted content is not directly downloadable via chip.de servers thus cannot be downloaded via this plugin! */
     private boolean isExternalDownload(final DownloadLink link) {
         if (link.hasProperty(PROPERTY_DOWNLOAD_TARGET)) {
             if (link.getStringProperty(PROPERTY_DOWNLOAD_TARGET).equalsIgnoreCase("intern")) {
@@ -460,9 +497,9 @@ public class ChipDe extends PluginForHost {
     /* Handles general server errors. */
     private void handleServerErrors() throws PluginException {
         if (dl.getConnection().getResponseCode() == 403) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
         } else if (dl.getConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
         }
     }
 
@@ -624,6 +661,11 @@ public class ChipDe extends PluginForHost {
             formattedDate = input;
         }
         return formattedDate;
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return ChipDeConfig.class;
     }
 
     @Override
