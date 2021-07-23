@@ -15,6 +15,8 @@ package jd.plugins.hoster;
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -24,10 +26,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.XFileSharingProBasicSpecialFilejoker;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -41,6 +39,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasicSpecialFilejoker;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
@@ -65,7 +66,7 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "novafile.com" });
+        ret.add(new String[] { "novafile.com", "nfile.cc" });
         return ret;
     }
 
@@ -73,13 +74,56 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
         return buildAnnotationNames(getPluginDomains());
     }
 
+    protected URL_TYPE getURLType(final String url) {
+        if (url != null && url.matches("(?i)https?://[^/]*nfile\\.cc/([A-Za-z0-9]+)")) {
+            return URL_TYPE.SHORT;
+        } else {
+            return super.getURLType(url);
+        }
+    }
+
+    protected String getFUID(final String url, URL_TYPE type) {
+        if (url != null && type != null) {
+            try {
+                switch (type) {
+                case SHORT:
+                    return new Regex(new URL(url).getPath(), "/([A-Za-z0-9]+)").getMatch(0);
+                default:
+                    return super.getFUID(url, type);
+                }
+            } catch (MalformedURLException e) {
+                logger.log(e);
+            }
+        }
+        return null;
+    }
+
     @Override
     public String[] siteSupportedNames() {
         return buildSupportedNames(getPluginDomains());
     }
 
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        if (!isShortURL(link)) {
+            super.correctDownloadLink(link);
+        }
+    }
+
     public static String[] getAnnotationUrls() {
-        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String getAnnotationPatternPart() {
+        return "/(?:embed-|file/)?[a-z0-9]{8,}(?:/[^/]+(?:\\.html)?)?";
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + getAnnotationPatternPart());
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override

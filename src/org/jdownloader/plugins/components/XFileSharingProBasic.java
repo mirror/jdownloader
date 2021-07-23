@@ -64,6 +64,7 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.hoster.RTMPDownload;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
@@ -151,8 +152,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     protected static final String             PROPERTY_ACCOUNT_apikey                                           = "apikey";
     private static final String               PROPERTY_PLUGIN_api_domain_with_protocol                          = "apidomain";
     private static final String               PROPERTY_PLUGIN_REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP = "REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP";
-    private static final String               TYPE_NORMAL                                                       = "(?i)https?://[^/]+/([a-z0-9]{12})";
-    private static final String               TYPE_SHORTURL                                                     = "(?i)https?://[^/]+/d/([A-Za-z0-9]+)";
+
+    public static enum URL_TYPE {
+        SHORT,
+        NORMAL,
+        FILE,
+        EMBED
+    }
 
     /* TODO: Maybe add thumbnail -> Fullsize support for all XFS plugins, see ImagetwistCom and ImgSpiceCom */
     // private static final String TYPE_DIRECT_IMAGE_FULLSIZE = "(?i)https?:///i/\\d+/[a-z0-9]{12}\\.jpg";
@@ -518,19 +524,38 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     protected boolean isEmbedURL(final DownloadLink link) {
-        return link.getPluginPatternMatcher().matches("https?://[A-Za-z0-9\\-\\.:]+/embed-[a-z0-9]{12}.*");
+        return URL_TYPE.EMBED.equals(getURLType(link));
     }
 
     protected String buildEmbedURLPath(DownloadLink link, final String fuid) {
-        return "/embed-" + fuid + ".html";
+        return buildURLPath(link, fuid, URL_TYPE.EMBED);
     }
 
     protected String buildNormalURLPath(DownloadLink link, final String fuid) {
-        return "/" + fuid;
+        return buildURLPath(link, fuid, URL_TYPE.NORMAL);
+    }
+
+    protected String buildNormalFileURLPath(DownloadLink link, final String fuid) {
+        return buildURLPath(link, fuid, URL_TYPE.FILE);
     }
 
     protected String buildShortURLPath(DownloadLink link, final String fuid) {
-        return "/d/" + fuid;
+        return buildURLPath(link, fuid, URL_TYPE.SHORT);
+    }
+
+    protected String buildURLPath(DownloadLink link, final String fuid, URL_TYPE type) {
+        switch (type) {
+        case EMBED:
+            return "/embed-" + fuid + ".html";
+        case NORMAL:
+            return "/" + fuid;
+        case FILE:
+            return "/file/" + fuid;
+        case SHORT:
+            return "/d/" + fuid;
+        default:
+            throw new WTFException("Unsupported type:" + type);
+        }
     }
 
     /**
@@ -574,21 +599,33 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     // only append www when no other subDomain is set
                     hostCorrected = "www." + hostCorrected;
                 }
-                if (isShortURL(link)) {
-                    /*
-                     * Important! Do not change the domain in shorturls! Some host have extra domains for shortURLs which means they may not
-                     * work with the current main domain of the filehost!!
-                     */
-                    link.setPluginPatternMatcher(protocolCorrected + urlHost + buildShortURLPath(link, fuid));
-                } else {
-                    if (isEmbedURL(link)) {
+                final URL_TYPE type = getURLType(link);
+                if (type != null) {
+                    switch (type) {
+                    case SHORT:
+                        /*
+                         * Important! Do not change the domain in shorturls! Some host have extra domains for shortURLs which means they may
+                         * not work with the current main domain of the filehost!!
+                         */
+                        link.setPluginPatternMatcher(protocolCorrected + urlHost + buildShortURLPath(link, fuid));
+                        break;
+                    case EMBED:
                         /*
                          * URL displayed to the user. We correct this as we do not catch the ".html" part but we don't care about the host
                          * inside this URL!
                          */
                         link.setContentUrl(url.getProtocol() + "://" + urlHost + buildEmbedURLPath(link, fuid));
+                        break;
+                    case FILE:
+                        link.setPluginPatternMatcher(protocolCorrected + hostCorrected + buildNormalFileURLPath(link, fuid));
+                        break;
+                    case NORMAL:
+                        link.setPluginPatternMatcher(protocolCorrected + hostCorrected + buildNormalURLPath(link, fuid));
+                        break;
+                    default:
+                        link.setPluginPatternMatcher(protocolCorrected + hostCorrected + buildURLPath(link, fuid, type));
+                        break;
                     }
-                    link.setPluginPatternMatcher(protocolCorrected + hostCorrected + buildNormalURLPath(link, fuid));
                 }
             } catch (final MalformedURLException e) {
                 logger.log(e);
@@ -839,7 +876,54 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     protected boolean isShortURL(final DownloadLink link) {
-        return link != null && link.getPluginPatternMatcher().matches(TYPE_SHORTURL);
+        return URL_TYPE.SHORT.equals(getURLType(link));
+    }
+
+    protected URL_TYPE getURLType(final DownloadLink link) {
+        return link != null ? getURLType(link.getPluginPatternMatcher()) : null;
+    }
+
+    protected URL_TYPE getURLType(final String url) {
+        if (url != null) {
+            if (url.matches("(?i)https?://[^/]+/d/([A-Za-z0-9]+)")) {
+                return URL_TYPE.SHORT;
+            } else if (url.matches("(?i)https?://[^/]+/([a-z0-9]{12})")) {
+                return URL_TYPE.NORMAL;
+            } else if (url.matches("(?i)https?://[^/]+/file/([a-z0-9]{12})")) {
+                return URL_TYPE.FILE;
+            } else if (url.matches("(?i)https?://[A-Za-z0-9\\-\\.:]+/embed-[a-z0-9]{12}.*")) {
+                return URL_TYPE.EMBED;
+            } else {
+                logger.info("Unknown type:" + url);
+            }
+        }
+        return null;
+    }
+
+    protected String getFUID(final String url, URL_TYPE type) {
+        if (url != null && type != null) {
+            try {
+                switch (type) {
+                case EMBED:
+                    return new Regex(new URL(url).getPath(), "/(?:embed-)?([a-z0-9]{12})").getMatch(0);
+                case FILE:
+                    return new Regex(new URL(url).getPath(), "/file/([a-z0-9]{12})").getMatch(0);
+                case SHORT:
+                    return new Regex(new URL(url).getPath(), "/d/([A-Za-z0-9]+)").getMatch(0);
+                case NORMAL:
+                    return new Regex(new URL(url).getPath(), "/([a-z0-9]{12})").getMatch(0);
+                default:
+                    throw new WTFException("Unsupported type:" + type);
+                }
+            } catch (MalformedURLException e) {
+                logger.log(e);
+            }
+        }
+        return null;
+    }
+
+    protected String getFUID(DownloadLink link, URL_TYPE type) {
+        return link != null ? getFUID(link.getPluginPatternMatcher(), type) : null;
     }
 
     /**
@@ -857,10 +941,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 if (this.isOffline(link, brc, brc.toString())) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
+                final URL_TYPE type = getURLType(brc.getURL());
                 final String realFUID;
-                /* Check for direct-redirect */
-                if (brc.getURL().matches(TYPE_NORMAL)) {
-                    realFUID = new Regex(brc.getURL(), TYPE_NORMAL).getMatch(0);
+                if (type != null) {
+                    realFUID = getFUID(brc.getURL(), type);
                 } else {
                     final Form form = brc.getFormbyProperty("name", "F1");
                     final InputField id = form != null ? form.getInputFieldByName("id") : null;
@@ -873,10 +957,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                      */
                     this.checkErrors(brc, brc.toString(), link, account, false);
                     /* Assume that this URL is offline */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "realFUID:" + realFUID);
                 } else {
                     /* Success! */
-                    final String urlNew = this.getMainPage() + "/" + realFUID;
+                    final String urlNew;
+                    if (URL_TYPE.FILE.equals(type)) {
+                        urlNew = this.getMainPage() + buildNormalFileURLPath(link, realFUID);
+                    } else {
+                        urlNew = this.getMainPage() + buildNormalURLPath(link, realFUID);
+                    }
                     logger.info("resolve URL|old: " + pluginPatternMatcher + "|new:" + urlNew);
                     link.setPluginPatternMatcher(urlNew);
                 }
@@ -2768,21 +2857,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /** Returns unique id from inside URL - usually with this pattern: [a-z0-9]{12} */
     public String getFUIDFromURL(final DownloadLink link) {
-        try {
-            if (link != null && link.getPluginPatternMatcher() != null) {
-                if (isShortURL(link)) {
-                    return new Regex(link.getPluginPatternMatcher(), TYPE_SHORTURL).getMatch(0);
-                } else {
-                    final String result = new Regex(new URL(link.getPluginPatternMatcher()).getPath(), "/(?:embed-)?([a-z0-9]{12})").getMatch(0);
-                    return result;
-                }
-            } else {
-                return null;
-            }
-        } catch (MalformedURLException e) {
-            logger.log(e);
+        final URL_TYPE type = getURLType(link);
+        if (type != null) {
+            return getFUID(link, type);
+        } else {
+            return null;
         }
-        return null;
     }
 
     /**

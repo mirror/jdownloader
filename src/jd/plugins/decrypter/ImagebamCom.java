@@ -111,11 +111,10 @@ public class ImagebamCom extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage(param.getCryptedUrl());
-        /* Error handling */
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("(?i)The gallery you are looking for")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        errorHandling(br, param);
+        if (br.containsHTML("(?i)>\\s*Continue to your image")) {
+            /* Reload page */
+            br.getPage(param.getCryptedUrl());
         }
         return crawlProcessGallery(param, this.br);
     }
@@ -127,9 +126,10 @@ public class ImagebamCom extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage(param.getCryptedUrl());
-        /* Errorhandling */
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        errorHandling(br, param);
+        if (br.containsHTML("(?i)>\\s*Continue to your image")) {
+            /* Reload page */
+            br.getPage(param.getCryptedUrl());
         }
         if (br.containsHTML("class=\"links gallery\"")) {
             return this.crawlProcessGallery(param, this.br);
@@ -226,18 +226,24 @@ public class ImagebamCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    private void errorHandling(Browser br, CryptedLink param) throws PluginException {
+        /* Error handling */
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("Image not found|>\\s*Image violated our terms of service|>\\s*The requested image could not be located|>\\s*The image has been deleted")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)The gallery you are looking for")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+    }
+
     private DownloadLink crawlSingleImage(final CryptedLink param) throws Exception {
         final String imageID = new Regex(param.getCryptedUrl(), TYPE_IMAGE).getMatch(0);
         if (imageID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage(param.getCryptedUrl());
-        /* Error handling */
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("Image not found|>Image violated our terms of service|>The requested image could not be located|>The image has been deleted")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        errorHandling(br, param);
         if (br.containsHTML("(?i)>\\s*Continue to your image")) {
             /* Reload page */
             br.getPage(param.getCryptedUrl());

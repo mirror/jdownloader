@@ -117,6 +117,7 @@ public class ImxTo extends PluginForHost {
                 imageLink = imageLink.replaceFirst("/t/", "/i/");
                 imageLink = imageLink.replaceFirst("https?://x", "https://i");
                 link.setProperty(PROPERTY_DIRECTURL, imageLink);
+                logger.info("Verify directurl:" + imageLink);
                 if (this.checkDirectLink(link, PROPERTY_DIRECTURL) != null) {
                     logger.info("Availablecheck via directurl complete");
                     return AvailableStatus.TRUE;
@@ -177,6 +178,7 @@ public class ImxTo extends PluginForHost {
                 }
             }
             link.setProperty(PROPERTY_DIRECTURL, dl.getConnection().getURL().toString());
+            dl.setAllowFilenameFromURL(true);// old core
         }
         dl.startDownload();
     }
@@ -200,7 +202,7 @@ public class ImxTo extends PluginForHost {
                     if (link.getFinalFileName() == null) {
                         String name = link.getName();
                         final String existingExt = getFileNameExtensionFromString(name);
-                        if (existingExt == null) {
+                        if (existingExt == null || ".html".equals(existingExt)) {
                             name += ".jpg";
                         }
                         link.setFinalFileName(name);
