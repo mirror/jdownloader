@@ -27,10 +27,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -42,8 +38,14 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 // http://tvthek,orf.at/live/... --> HDS
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvthek.orf.at" }, urls = { "https?://(?:www\\.)?tvthek\\.orf\\.at/(?:index\\.php/)?(?:programs?|topic|profile)/.+" })
@@ -83,12 +85,17 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
         }
         decryptedLinks.addAll(getDownloadLinks(parameter, SubConfiguration.getConfig("orf.at")));
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
-            if (parameter.matches(TYPE_TOPIC)) {
-                logger.warning("MAYBE Decrypter out of date for link: " + parameter);
+            if (br.containsHTML("DRMTestbetrieb")) {
+                logger.info("DRMTestbetrieb");
+                return decryptedLinks;
             } else {
-                logger.warning("Decrypter for sure out of date for link: " + parameter);
+                if (parameter.matches(TYPE_TOPIC)) {
+                    logger.warning("MAYBE Decrypter out of date for link: " + parameter);
+                } else {
+                    logger.warning("Decrypter for sure out of date for link: " + parameter);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            return null;
         }
         return decryptedLinks;
     }
@@ -235,21 +242,27 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                             if ("progressive".equals(delivery)) {
                                 boolean veryhigh_is_available = true;
                                 try {
-                                    final URLConnectionAdapter con = br.openHeadConnection(url_directlink_video);
-                                    if (!con.isOK()) {
-                                        veryhigh_is_available = false;
-                                    } else {
-                                        /*
-                                         * Basically we already did the availablecheck here so for this particular quality we don't have to
-                                         * do it again in the linkgrabber!
-                                         */
-                                        filesize = con.getLongContentLength();
-                                    }
+                                    final Browser brc = br.cloneBrowser();
+                                    brc.setFollowRedirects(true);
+                                    final URLConnectionAdapter con = brc.openHeadConnection(url_directlink_video);
                                     try {
-                                        con.disconnect();
-                                    } catch (final Throwable e) {
+                                        if (!con.isOK()) {
+                                            veryhigh_is_available = false;
+                                        } else {
+                                            /*
+                                             * Basically we already did the availablecheck here so for this particular quality we don't have
+                                             * to do it again in the linkgrabber!
+                                             */
+                                            filesize = con.getLongContentLength();
+                                        }
+                                    } finally {
+                                        try {
+                                            con.disconnect();
+                                        } catch (final Throwable e) {
+                                        }
                                     }
                                 } catch (final Throwable e) {
+                                    logger.log(e);
                                     veryhigh_is_available = false;
                                 }
                                 if (!veryhigh_is_available) {
@@ -284,6 +297,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                             }
                         } else if ("ADAPTIV".equals(fmt)) {
                             if (true) {
+                                // NOT SUPPORTED
                                 continue;
                             } else {
                                 if ((cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.Q_VERYHIGH, true) || BEST) == false) {
@@ -437,29 +451,30 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
         return title;
     }
 
-    private String humanReadableQualityIdentifier(String s) {
+    private String humanReadableQualityIdentifier(String quality) {
         final String humanreabable;
-        if ("Q1A".equals(s)) {
+        if ("Q1A".equals(quality)) {
             humanreabable = "LOW";
-        } else if ("Q4A".equals(s)) {
+        } else if ("Q4A".equals(quality)) {
             humanreabable = "MEDIUM";
-        } else if ("Q6A".equals(s)) {
+        } else if ("Q6A".equals(quality)) {
             humanreabable = "HIGH";
-        } else if ("Q8C".equals(s)) {
+        } else if ("Q8C".equals(quality)) {
             humanreabable = "VERYHIGH";
-        } else if ("QXB".equals(s)) {
+        } else if ("QXB".equals(quality)) {
             humanreabable = "ADAPTIV";
         } else {
-            humanreabable = null;
+            humanreabable = quality;
         }
         return humanreabable;
     }
 
     private boolean unknownQualityIdentifier(String s) {
-        if (s.matches("(DESCRIPTION|SMIL|SUBTITLEURL|DURATION|TRANSCRIPTURL|TITLE|QUALITY|QUALITY_STRING|PROTOCOL|TYPE|DELIVERY)")) {
+        if (s != null && s.matches("(DESCRIPTION|SMIL|SUBTITLEURL|DURATION|TRANSCRIPTURL|TITLE|QUALITY|QUALITY_STRING|PROTOCOL|TYPE|DELIVERY)")) {
             return false;
+        } else {
+            return true;
         }
-        return true;
     }
 
     private String formatDate(String input) {
