@@ -885,13 +885,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     protected URL_TYPE getURLType(final String url) {
         if (url != null) {
-            if (url.matches("(?i)https?://[^/]+/d/([A-Za-z0-9]+)")) {
+            if (url.matches("(?i)^https?://[^/]+/d/([a-z0-9]+).*")) {
                 return URL_TYPE.SHORT;
-            } else if (url.matches("(?i)https?://[^/]+/([a-z0-9]{12})")) {
+            } else if (url.matches("(?i)^https?://[^/]+/([a-z0-9]{12}).*")) {
                 return URL_TYPE.NORMAL;
-            } else if (url.matches("(?i)https?://[^/]+/file/([a-z0-9]{12})")) {
+            } else if (url.matches("(?i)^https?://[^/]+/file/([a-z0-9]{12}).*")) {
                 return URL_TYPE.FILE;
-            } else if (url.matches("(?i)https?://[A-Za-z0-9\\-\\.:]+/embed-[a-z0-9]{12}.*")) {
+            } else if (url.matches("(?i)^https?://[A-Za-z0-9\\-\\.:]+/embed-([a-z0-9]{12}).*")) {
                 return URL_TYPE.EMBED;
             } else {
                 logger.info("Unknown type:" + url);
@@ -909,7 +909,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 case FILE:
                     return new Regex(new URL(url).getPath(), "/file/([a-z0-9]{12})").getMatch(0);
                 case SHORT:
-                    return new Regex(new URL(url).getPath(), "/d/([A-Za-z0-9]+)").getMatch(0);
+                    return new Regex(new URL(url).getPath(), "/d/([a-z0-9]+)").getMatch(0);
                 case NORMAL:
                     return new Regex(new URL(url).getPath(), "/([a-z0-9]{12})").getMatch(0);
                 default:
@@ -950,7 +950,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     final InputField id = form != null ? form.getInputFieldByName("id") : null;
                     realFUID = id != null ? id.getValue() : null;
                 }
-                if (realFUID == null || !realFUID.matches("[a-z0-9]{12}")) {
+                if (realFUID == null || !realFUID.matches("[A-Za-z0-9]{12}")) {
                     /**
                      * The usual XFS errors can happen here in which case we won't be able to find the long FUID. </br> Even while a limit
                      * is reached, such URLs can sometimes be checked via: "/?op=check_files" but we won't do this for now!
