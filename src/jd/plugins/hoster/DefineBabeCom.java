@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.LinkedHashMap;
+import java.util.Map;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -27,6 +27,8 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -73,38 +75,49 @@ public class DefineBabeCom extends PluginForHost {
 
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(link.getDownloadURL());
         if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("Please, call later\\.")) {
-            downloadLink.getLinkStatus().setStatusText("Server is busy");
+            link.getLinkStatus().setStatusText("Server is busy");
             return AvailableStatus.UNCHECKABLE;
         }
         String filename = br.getRegex("<strong style=\"font:bold 18px Verdana;\">([^<>]*?)</strong>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
         }
-        String video_id = br.getRegex("video_id=(\\d+)").getMatch(0);
-        if (video_id == null) {
-            video_id = br.getRegex("id=\\'comment_object_id\\' value=\"(\\d+)\"").getMatch(0);
+        String videoID = br.getRegex("video_id=(\\d+)").getMatch(0);
+        if (videoID == null) {
+            videoID = br.getRegex("id=\\'comment_object_id\\' value=\"(\\d+)\"").getMatch(0);
         }
-        if (video_id == null) {
+        if (videoID == null) {
+            /* 2021-07-26 */
+            videoID = br.getRegex("'video_id'\\s*:\\s*(\\d+)").getMatch(0);
+        }
+        if (videoID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage("http://www." + downloadLink.getHost() + "/playlist/playlist.php?type=regular&video_id=" + video_id);
-        final String decrypted = decryptRC4HexString("TubeContext@Player", br.toString().trim());
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(decrypted);
-        final LinkedHashMap<String, Object> videos = (LinkedHashMap<String, Object>) entries.get("videos");
-        /* Usually only 360 is available */
-        final String[] qualities = { "1080p", "720p", "480p", "360p", "320p", "240p", "180p" };
-        for (final String currentqual : qualities) {
-            final LinkedHashMap<String, Object> quality_info = (LinkedHashMap<String, Object>) videos.get("_" + currentqual);
-            if (quality_info != null) {
-                dllink = (String) quality_info.get("fileUrl");
-                break;
+        final boolean useNewAPI = true;
+        if (useNewAPI) {
+            br.getPage("/player/config.php?id=" + videoID);
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            this.dllink = (String) entries.get("video_url");
+        } else {
+            br.getPage("http://www." + link.getHost() + "/playlist/playlist.php?type=regular&video_id=" + videoID);
+            final String decrypted = decryptRC4HexString("TubeContext@Player", br.toString().trim());
+            final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(decrypted);
+            final Map<String, Object> videos = (Map<String, Object>) entries.get("videos");
+            /* Usually only 360 is available */
+            final String[] qualities = { "1080p", "720p", "480p", "360p", "320p", "240p", "180p" };
+            for (final String currentqual : qualities) {
+                final Map<String, Object> quality_info = (Map<String, Object>) videos.get("_" + currentqual);
+                if (quality_info != null) {
+                    dllink = (String) quality_info.get("fileUrl");
+                    break;
+                }
             }
         }
         if (filename == null) {
@@ -112,18 +125,20 @@ public class DefineBabeCom extends PluginForHost {
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim() + ".mp4";
-        downloadLink.setFinalFileName(filename);
+        link.setFinalFileName(filename);
         if (dllink != null) {
             dllink = Encoding.htmlDecode(dllink);
             URLConnectionAdapter con = null;
             try {
                 con = br.openGetConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
-                    downloadLink.setDownloadSize(con.getCompleteContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 } else {
                     server_issues = true;
                 }
-                downloadLink.setProperty("directlink", dllink);
+                link.setProperty("directlink", dllink);
             } finally {
                 try {
                     con.disconnect();
