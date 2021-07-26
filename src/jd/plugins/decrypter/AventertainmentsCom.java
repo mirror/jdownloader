@@ -80,7 +80,14 @@ public class AventertainmentsCom extends PluginForDecrypt {
                     final DownloadLink dl = createDownloadlink(singleLink);
                     final String filename_url = getFileNameFromURL(new URL(singleLink));
                     if (filename_url != null) {
-                        final String filename = "screenshot_" + filename_url;
+                        final String filenamePrefix = new Regex(singleLink, "/large/([^/]+)/").getMatch(0);
+                        final String filename;
+                        if (filenamePrefix != null) {
+                            /* 2021-07-26: Add extra prefix to prevent duplicated filenames for different files. */
+                            filename = "screenshot_" + filenamePrefix + "_" + filename_url;
+                        } else {
+                            filename = "screenshot_" + filename_url;
+                        }
                         dl.setFinalFileName(filename);
                     }
                     dl.setProperty("mainlink", parameter);
