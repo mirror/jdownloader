@@ -39,7 +39,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.JulesjordanCom.JulesjordanComConfigInterface;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "julesjordan.com" }, urls = { "https?://(?:www\\.)?julesjordan\\.com/(?:trial|members)/(?:movies|scenes)/[^/]+\\.html" })
 public class JulesjordanComDecrypter extends PluginForDecrypt {
@@ -55,7 +54,7 @@ public class JulesjordanComDecrypter extends PluginForDecrypt {
         List<String> all_selected_qualities = new ArrayList<String>();
         final JulesjordanComConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.JulesjordanCom.JulesjordanComConfigInterface.class);
         final String parameter = param.toString();
-        final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
+        final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
         final Account aa = AccountController.getInstance().getValidAccount(plg);
         final String url_name = jd.plugins.hoster.JulesjordanCom.getURLName(parameter);
         final boolean grabBest = cfg.isGrabBESTEnabled();
@@ -82,7 +81,7 @@ public class JulesjordanComDecrypter extends PluginForDecrypt {
             all_selected_qualities = all_known_qualities;
         }
         if (aa != null) {
-            ((jd.plugins.hoster.JulesjordanCom) plg).login(this.br, aa, false);
+            ((jd.plugins.hoster.JulesjordanCom) plg).login(aa, false);
         }
         if (aa == null) {
             /* Only MOCH download and / or trailer download --> Add link for hostplugin */
