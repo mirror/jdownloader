@@ -33,6 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xnxx.com" }, urls = { "https?://[\\w\\.]*?xnxx\\.com/video-([a-z0-9\\-]+)" })
+@Deprecated
 public class XnXxCom extends PluginForHost {
     public XnXxCom(PluginWrapper wrapper) {
         super(wrapper);
