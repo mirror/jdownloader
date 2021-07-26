@@ -25,16 +25,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -58,6 +48,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/file/([0-9A-Z]+)" })
 public class FShareVn extends PluginForHost {
@@ -936,27 +936,37 @@ public class FShareVn extends PluginForHost {
          */
         // final String trafficStr = PluginJSonUtils.getJson(br, "traffic");
         // final String traffic_usedStr = PluginJSonUtils.getJson(br, "traffic_used");
-        // final String account_type = PluginJSonUtils.getJson(br, "account_type");
         ai.setUsedSpace(JavaScriptEngineFactory.toLong(entries.get("webspace_used"), 0));
         ai.setCreateTime(JavaScriptEngineFactory.toLong(entries.get("joindate"), 0) * 1000);
-        final long validuntil = JavaScriptEngineFactory.toLong(entries.get("expire_vip"), 0) * 1000;
-        if (validuntil > System.currentTimeMillis()) {
-            ai.setValidUntil(validuntil, br);
+        final String expire_vip = StringUtils.valueOfOrNull(entries.get("expire_vip"));
+        final String account_type = StringUtils.valueOfOrNull(entries.get("account_type"));
+        if ("Forever".equalsIgnoreCase(expire_vip) || "Forever".equalsIgnoreCase(account_type)) {
+            ai.setValidUntil(-1);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
             /* 2021-07-09: E.g. "Vip" */
-            ai.setStatus(entries.get("account_type").toString());
+            ai.setStatus(account_type);
             account.setType(AccountType.PREMIUM);
         } else {
-            /* 2021-07-09: Free Accounts are not allowed to be used via API anymore so most likely this code won't ever be reached! */
-            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
-            account.setConcurrentUsePossible(true);
-            if (validuntil > 0) {
-                ai.setStatus("Free (expired Premium) Account");
+            final long validuntil = JavaScriptEngineFactory.toLong(expire_vip, 0) * 1000;
+            if (validuntil > System.currentTimeMillis()) {
+                ai.setValidUntil(validuntil, br);
+                account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+                account.setConcurrentUsePossible(true);
+                /* 2021-07-09: E.g. "Vip" */
+                ai.setStatus(account_type);
+                account.setType(AccountType.PREMIUM);
             } else {
-                ai.setStatus("Free Account");
+                /* 2021-07-09: Free Accounts are not allowed to be used via API anymore so most likely this code won't ever be reached! */
+                account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+                account.setConcurrentUsePossible(true);
+                if (validuntil > 0) {
+                    ai.setStatus("Free (expired Premium) Account");
+                } else {
+                    ai.setStatus("Free Account");
+                }
+                account.setType(AccountType.FREE);
             }
-            account.setType(AccountType.FREE);
         }
         return ai;
     }
