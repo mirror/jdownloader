@@ -15,6 +15,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 
@@ -30,24 +32,49 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xnxx.com" }, urls = { "https?://[\\w\\.]*?xnxx\\.(?:com|hot1000\\.ru)/video[a-z0-9\\-]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xnxx.com" }, urls = { "https?://[\\w\\.]*?xnxx\\.com/video-([a-z0-9\\-]+)" })
 public class XnXxCom extends PluginForHost {
     public XnXxCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
-    /* Porn_plugin */
+    /* Porn_plugin, similar to xvideos.com */
+    /**
+     * 2021-07-26: XnXxComCrawler will now handle (most of?) all xnxx.com URLs as they simply "double-embed" xvideos.com URLs. </br>
+     * This host plugin is still there for special/legacy handling!
+     */
     private String dllink = null;
 
-    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         /* Correct link for user 'open in browser' */
-        final String addedlink = link.getDownloadURL();
-        if (!addedlink.endsWith("/")) {
-            final String user_url = addedlink + "/";
-            link.setContentUrl(user_url);
+        link.setPluginPatternMatcher(correctURL(link.getPluginPatternMatcher()));
+    }
+
+    public static String correctURL(final String url) {
+        if (!url.endsWith("/")) {
+            return url + "/";
+        } else {
+            return url;
         }
+    }
+
+    public static final boolean isOffline(final Browser br) {
+        return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(Page not found|This page may be in preparation, please check back in a few minutes)");
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
@@ -68,10 +95,10 @@ public class XnXxCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getHeaders().put("Accept-Language", "en-gb");
         br.getPage(link.getPluginPatternMatcher() + "/");
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(Page not found|This page may be in preparation, please check back in a few minutes)")) {
+        if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename_url = new Regex(link.getDownloadURL(), "/video([a-z0-9\\-]+)").getMatch(0);
+        final String filename_url = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
         String filename = br.getRegex("<title>(.+) \\- [A-Za-z0-9\\.]+\\.[A-Za-z0-9]{3,8}</title>").getMatch(0);
         if (filename == null) {
             br.getRegex("<span class=\"style5\"><strong>(.*?)</strong>").getMatch(0);
@@ -149,6 +176,19 @@ public class XnXxCom extends PluginForHost {
         } else {
             /* HTTP download */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             dl.startDownload();
         }
     }
