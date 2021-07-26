@@ -17,14 +17,15 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -35,6 +36,8 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -125,7 +128,7 @@ public class EsouboryCz extends PluginForHost {
         String filesize;
         if (aa != null && USE_API_FOR_SELFHOSTED_CONTENT) {
             /* API */
-            br.getPage(API_BASE + "/exists?token=" + getToken(aa) + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
+            br.getPage(API_BASE + "/exists?token=" + loginAPI(aa, false) + "&url=" + Encoding.urlEncode(link.getPluginPatternMatcher()));
             if (!br.containsHTML("\"exists\":true")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -201,7 +204,7 @@ public class EsouboryCz extends PluginForHost {
                 if (isSelfhostedContent) {
                     requestFileInformation(link, account);
                 }
-                br.getPage(API_BASE + "/filelink?token=" + getToken(account) + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
+                br.getPage(API_BASE + "/filelink?token=" + loginAPI(account, false) + "&url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
                 if (br.containsHTML("\"error\":\"not\\-enough\\-credits\"")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
@@ -217,8 +220,12 @@ public class EsouboryCz extends PluginForHost {
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, -2);
-        if (!dl.getConnection().isContentDisposition()) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (isSelfhostedContent) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
@@ -280,65 +287,116 @@ public class EsouboryCz extends PluginForHost {
         account.setMaxSimultanDownloads(-1);
         prepBr();
         br.setAllowedResponseCodes(new int[] { 400 });
-        br.getPage(API_BASE + "/accountinfo?token=" + getToken(account));
-        if (br.containsHTML("\"last_login\":null")) {
-            account.setProperty("token", Property.NULL);
-            br.getPage(API_BASE + "/accountinfo?token=" + getToken(account));
+        final String token = loginAPI(account, true);
+        if (!br.getURL().contains("/accountinfo?token=")) {
+            br.getPage(API_BASE + "/accountinfo?token=" + token);
         }
-        String trafficLeftMB = PluginJSonUtils.getJson(br, "credit");
-        if (!StringUtils.isEmpty(trafficLeftMB)) {
-            if (trafficLeftMB.matches("\\d+")) {
-                trafficLeftMB += "MB";
-            }
-            ai.setTrafficLeft(SizeFormatter.getSize(trafficLeftMB));
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> data = (Map<String, Object>) entries.get("data");
+        if (data.containsKey("credit")) {
+            final long trafficLeftMB = ((Number) data.get("credit")).longValue();
+            ai.setTrafficLeft(trafficLeftMB * 1024 * 1024);
         }
         br.getPage(API_BASE + "/list");
-        String hostsSup = br.getRegex("\"list\":\"(.*?)\"").getMatch(0);
-        if (hostsSup != null) {
-            hostsSup = hostsSup.replace("\\", "");
-            hostsSup = hostsSup.replaceAll("https?://(www\\.)?", "");
-            final String[] hosts = hostsSup.split(";");
-            final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-            ai.setMultiHostSupport(this, supportedHosts);
+        /*
+         * E.g. {"error":"","data":{"list":"http:\/\/www.edisk.cz;https:\/\/datoid.cz;https:\/\/webshare.cz;https:\/\/www.shareprofi.com"}}
+         */
+        entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        data = (Map<String, Object>) entries.get("data");
+        final String hostsStr = (String) data.get("list");
+        final String[] hosts = hostsStr.split(";");
+        final ArrayList<String> supportedHosts = new ArrayList<String>();
+        for (final String hostAsURL : hosts) {
+            final String host = Browser.getHost(hostAsURL);
+            supportedHosts.add(host);
         }
-        ai.setStatus("Premium account");
+        ai.setMultiHostSupport(this, supportedHosts);
         account.setType(AccountType.PREMIUM);
         return ai;
     }
 
-    private String getToken(final Account account) throws Exception {
-        String token = account.getStringProperty("token", null);
-        if (token == null) {
-            br.getPage(API_BASE + "/login?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            if (br.containsHTML("\"error\":\"login\\-failed\"")) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    private String loginAPI(final Account account, final boolean validate) throws Exception {
+        synchronized (account) {
+            String token = account.getStringProperty("token", null);
+            if (token != null) {
+                if (!validate) {
+                    logger.info("Trust token without checking");
+                    return token;
+                } else {
+                    br.getPage(API_BASE + "/accountinfo?token=" + token);
+                    try {
+                        checkErrorsAPI(this.br);
+                    } catch (final Throwable ignore) {
+                        logger.info("Token login failed");
+                    }
+                    /**
+                     * 2021-07-26: This may also returns teh following on invalid token </br>
+                     * {"error":"","data":{"credit":0,"last_login":null}}
+                     */
+                    final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+                    if (data.get("last_login") != null) {
+                        logger.info("Token login successful");
+                        return token;
+                    } else {
+                        logger.info("Token login failed");
+                    }
+                }
             }
-            token = PluginJSonUtils.getJson(br, "token");
+            logger.info("Performing full login");
+            br.getPage(API_BASE + "/login?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            checkErrorsAPI(this.br);
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+            token = (String) data.get("token");
             if (StringUtils.isEmpty(token)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             account.setProperty("token", token);
+            return token;
         }
-        return token;
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            try {
-                final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-                con.disconnect();
-            } catch (Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+    private void checkErrorsAPI(final Browser br) throws AccountUnavailableException, AccountInvalidException {
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final String error = (String) entries.get("error");
+        /* "error":"" == default! */
+        if (!StringUtils.isEmpty(error)) {
+            if (error.equalsIgnoreCase("invalid-email")) {
+                throw new AccountInvalidException();
+            } else {
+                /* Undefined error --> Treat as account-error */
+                throw new AccountUnavailableException(error, 5 * 60 * 1000l);
             }
         }
-        return dllink;
+    }
+
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    return dllink;
+                } else {
+                    throw new IOException();
+                }
+            } catch (final Exception e) {
+                logger.log(e);
+                return null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
+            }
+        }
+        return null;
     }
 
     @Override
