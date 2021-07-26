@@ -54,7 +54,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
             /** file-up.org domains */
             "file-up.org", "file-up.io", "file-up.cc", "file-up.com", "file-upload.org", "file-upload.io", "file-upload.cc", "file-upload.com", "tstorage.info", "fastfile.cc" };
     /* This list contains all hosts which need special Patterns (see below) - all other XFS hosts have the same folder patterns! */
-    private static final String[] specialDomains = { "usersfiles.com", "userscloud.com", "hotlink.cc", "ex-load.com", "imgbaron.com", "filespace.com", "spaceforfiles.com", "prefiles.com", "imagetwist.com", "file.al", "send.cm" };
+    private static final String[] specialDomains = { "usersfiles.com", "userscloud.com", "hotlink.cc", "ex-load.com", "imgbaron.com", "filespace.com", "spaceforfiles.com", "prefiles.com", "imagetwist.com", "file.al", "send.cm", "takefile.link" };
 
     public static String[] getAnnotationNames() {
         return getAllDomains();
@@ -102,6 +102,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         ret.add("https?://(?:www\\.)?file\\.al/public/\\d+/.+");
         /* send.cm */
         ret.add("https?://(?:www\\.)?send\\.cm/s/.+");
+        ret.add("https?://(?:www\\.)?takefile\\.link/folder/[a-f0-9\\-]+");
         return ret.toArray(new String[0]);
     }
 

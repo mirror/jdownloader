@@ -71,22 +71,18 @@ public class JizzbunkerCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().contains(this.getFID(link))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
-        String filename = br.getRegex("<h1 class=\"font\\-smoothing gallery\\-item\\-title\">([^<>\"]+)</h1>").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            filename = url_filename.replace("-", " ");
-        }
+        /* Use title from inside URL as filename */
+        String filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1).replace("-", " ");
         /* RegExes sometimes used for streaming */
         final String jssource = br.getRegex("sources[\t\n\r ]*?:[\t\n\r ]*?(\\[.*?\\])").getMatch(0);
         if (jssource != null) {
@@ -151,7 +147,9 @@ public class JizzbunkerCom extends PluginForHost {
             try {
                 con = br.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
-                    link.setDownloadSize(con.getLongContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                     link.setVerifiedFileSize(con.getLongContentLength());
                 } else {
                     server_issues = true;
