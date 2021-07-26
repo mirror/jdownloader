@@ -80,7 +80,7 @@ public class JulesjordanCom extends antiDDoSForHost {
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
             /* 2017-08-02: Login not required, neither for premium-direct-downloadlinks */
-            this.login(this.br, aa, false);
+            this.login(aa, false);
         }
         // final String decrypter_filename = link.getStringProperty("decrypter_filename", null);
         if (!isTrailerURL(link.getDownloadURL())) {
@@ -236,7 +236,7 @@ public class JulesjordanCom extends antiDDoSForHost {
         }
     }
 
-    public void login(Browser br, final Account account, final boolean force) throws Exception {
+    public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 prepBR(br, account.getHoster());
@@ -250,12 +250,19 @@ public class JulesjordanCom extends antiDDoSForHost {
                     br.setCookies(account.getHoster(), cookies);
                     br.getPage("https://www." + account.getHoster() + "/members/index.php");
                     if (br.containsHTML(html_loggedin)) {
+                        logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(account.getHoster()), "");
                         return;
+                    } else {
+                        logger.info("Cookie login failed");
+                        br.clearAll();
                     }
-                    br = prepBR(new Browser(), account.getHoster());
                 }
+                logger.info("Performing full login");
+                br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.164 Safari/537.36");
+                // br.getPage("https://www." + this.getHost() + "/trial/index.php");
                 br.getPage("https://www." + account.getHoster() + "/members/");
+                br.setCookie(br.getHost(), "CookieScriptConsent", "{\"action\":\"accept\"}");
                 String postdata = "rlm=My+Server&for=https%253a%252f%252fwww%252ejulesjordan%252ecom%252fmembers%252f&uid=" + Encoding.urlEncode(account.getUser()) + "&pwd=" + Encoding.urlEncode(account.getPass()) + "&rmb=y";
                 final DownloadLink dlinkbefore = this.getDownloadLink();
                 if (dlinkbefore == null) {
@@ -263,6 +270,23 @@ public class JulesjordanCom extends antiDDoSForHost {
                 }
                 final String code = this.getCaptchaCode("/img.cptcha", this.getDownloadLink());
                 postdata += "&img=" + Encoding.urlEncode(code);
+                br.getHeaders().put("Origin", "https://www.julesjordan.com");
+                /* 2021-07-26: Without these headers we'll always get http response 500! */
+                br.getHeaders().put("Cache-Control", "max-age=0");
+                br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+                // if (br.getCookie(br.getHost(), "pcar%5fTXkgU2VydmVy", Cookies.NOTDELETEDPATTERN) != null) {
+                // /* 2021-07-26: Debug-test: Remove "pcar" cookie */
+                // final Cookies thiscookies = br.getCookies(br.getHost());
+                // final Cookies newcookies = new Cookies();
+                // for (final Cookie cookie : thiscookies.getCookies()) {
+                // if (cookie.getKey().equals("pcar%5fTXkgU2VydmVy")) {
+                // continue;
+                // }
+                // newcookies.add(cookie);
+                // }
+                // br.clearCookies(br.getHost());
+                // br.setCookies(newcookies);
+                // }
                 br.postPage("/auth.form", postdata);
                 if (!br.containsHTML(html_loggedin)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -282,16 +306,10 @@ public class JulesjordanCom extends antiDDoSForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(this.br, account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         ai.setUnlimitedTraffic();
         /*
          * 2017-08-02: No way to verify premium status and/or expire date - I guess if an account works, it always has a subscription
@@ -299,8 +317,6 @@ public class JulesjordanCom extends antiDDoSForHost {
          */
         account.setType(AccountType.PREMIUM);
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Premium account");
-        account.setValid(true);
         return ai;
     }
 
