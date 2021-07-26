@@ -80,6 +80,7 @@ public class FShareVn extends PluginForHost {
     private static final boolean use_api_for_free_account_downloads    = true;
     private static final boolean use_api_for_login_fetch_account_info  = true;
     private static final String  PROPERTY_ACCOUNT_TOKEN                = "token";
+    private static final String  PROPERTY_ACCOUNT_COOKIES              = "apicookies";
 
     public FShareVn(PluginWrapper wrapper) {
         super(wrapper);
@@ -188,11 +189,32 @@ public class FShareVn extends PluginForHost {
 
     public AvailableStatus requestFileInformationAPI(final DownloadLink link, final Account account) throws Exception {
         this.setBrowserExclusive();
-        final String token = this.loginAPI(account, false);
-        final PostRequest filecheckReq = br.createJSonPostRequest("https://" + getAPIHost() + "/api/fileops/get", String.format("{\"token\":\"%s\",\"url\":\"%s\"}", token, link.getPluginPatternMatcher()));
-        br.getPage(filecheckReq);
-        checkErrorsAPI(this.br);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = null;
+        AccountUnavailableException e = null;
+        synchronized (account) {
+            while (true) {
+                final String token;
+                try {
+                    token = getAPITokenAndSetCookies(account, br);
+                } catch (PluginException pe) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, null, pe);
+                }
+                final PostRequest filecheckReq = br.createJSonPostRequest("https://" + getAPIHost() + "/api/fileops/get", String.format("{\"token\":\"%s\",\"url\":\"%s\"}", token, link.getPluginPatternMatcher()));
+                br.getPage(filecheckReq);
+                try {
+                    checkErrorsAPI(this.br, account, token);
+                } catch (AccountUnavailableException aue) {
+                    logger.log(e);
+                    if (e == null) {
+                        e = aue;
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, null, aue);
+                    }
+                }
+                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                break;
+            }
+        }
         final String filename = entries.get("name").toString();
         final String description = (String) entries.get("description");
         final long deleted = JavaScriptEngineFactory.toLong(entries.get("deleted"), 1);
@@ -214,7 +236,7 @@ public class FShareVn extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private void checkErrorsAPI(final Browser br) throws Exception {
+    private void checkErrorsAPI(final Browser br, final Account account, final String token) throws Exception {
         /* 2021-07-09: File offline can redirect to html page so our json parser would fail --> Check for this first! */
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -228,9 +250,26 @@ public class FShareVn extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 201) {
                 /* This should never happen at this stage! */
                 logger.info("session_id cookie invalid");
+                if (account != null) {
+                    synchronized (account) {
+                        if (StringUtils.equals(token, getAPIToken(account))) {
+                            logger.info("Clear invalid token!");
+                            account.removeProperty(PROPERTY_ACCOUNT_TOKEN);
+                            account.removeProperty(PROPERTY_ACCOUNT_COOKIES);
+                        }
+                    }
+                }
                 throw new AccountUnavailableException("Session expired", 30 * 1000l);
             } else if (br.getHttpConnection().getResponseCode() == 400) {
                 logger.info("Seems like stored logintoken expired");
+                if (account != null) {
+                    synchronized (account) {
+                        if (StringUtils.equals(token, getAPIToken(account))) {
+                            logger.info("Clear invalid token!");
+                            account.removeProperty(PROPERTY_ACCOUNT_TOKEN);
+                        }
+                    }
+                }
                 throw new AccountUnavailableException("Login token invalid", 5 * 60 * 1000l);
             } else if (br.getHttpConnection().getResponseCode() == 403) {
                 /* 2021-07-09: E.g. {"code":403,"msg":"Application for vip accounts only"} */
@@ -374,7 +413,7 @@ public class FShareVn extends PluginForHost {
     }
 
     /** Sets required headers. */
-    public static void prepBrowserAPI(final Browser br) throws IOException {
+    public static void prepBrowserAPI(final Browser br) {
         /* Sometimes their API is extremely slow! */
         br.setReadTimeout(120 * 1000);
         br.setAllowedResponseCodes(new int[] { 201, 400, 405, 406, 410, 424, 500 });
@@ -511,12 +550,26 @@ public class FShareVn extends PluginForHost {
          * offline file!
          */
         // requestFileInformationAPI(link, account);
-        final String token = getAPITokenAndSetCookies(account, this.br);
-        final PostRequest downloadReq = br.createJSonPostRequest("https://" + getAPIHost() + "/api/session/download", String.format("{\"token\":\"%s\",\"url\":\"%s\"}", token, link.getPluginPatternMatcher()));
-        br.getPage(downloadReq);
-        checkErrorsAPI(this.br);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        return entries.get("location").toString();
+        AccountUnavailableException e = null;
+        synchronized (account) {
+            while (true) {
+                final String token = getAPITokenAndSetCookies(account, this.br);
+                final PostRequest downloadReq = br.createJSonPostRequest("https://" + getAPIHost() + "/api/session/download", String.format("{\"token\":\"%s\",\"url\":\"%s\"}", token, link.getPluginPatternMatcher()));
+                final String response = br.getPage(downloadReq);
+                try {
+                    checkErrorsAPI(this.br, account, token);
+                } catch (AccountUnavailableException aue) {
+                    logger.log(e);
+                    if (e == null) {
+                        e = aue;
+                    } else {
+                        throw aue;
+                    }
+                }
+                final Map<String, Object> entries = JSonStorage.restoreFromString(response, TypeRef.HASHMAP);
+                return entries.get("location").toString();
+            }
+        }
     }
 
     /** Retrieves downloadurl via website. */
@@ -592,19 +645,27 @@ public class FShareVn extends PluginForHost {
     }
 
     /** Returns APIToken and sets cookies if both is available. */
-    private String getAPITokenAndSetCookies(final Account account, final Browser br) {
-        final String token = getAPIToken(account);
-        final Cookies cookies = account.loadCookies("apicookies");
-        if (token != null && cookies != null) {
-            br.setCookies(getAPIHost(), cookies);
-            return token;
-        } else {
-            return null;
+    private String getAPITokenAndSetCookies(final Account account, final Browser br) throws Exception {
+        synchronized (account) {
+            prepBrowserAPI(br);
+            String token = getAPIToken(account);
+            if (token == null) {
+                token = loginAPI(account, br, true);
+            }
+            final Cookies cookies = account.loadCookies(PROPERTY_ACCOUNT_COOKIES);
+            if (token != null && cookies != null) {
+                br.setCookies(getAPIHost(), cookies);
+                return token;
+            } else {
+                return null;
+            }
         }
     }
 
     private String getAPIToken(final Account account) {
-        return account.getStringProperty(PROPERTY_ACCOUNT_TOKEN);
+        synchronized (account) {
+            return account.getStringProperty(PROPERTY_ACCOUNT_TOKEN);
+        }
     }
 
     @Override
@@ -751,12 +812,12 @@ public class FShareVn extends PluginForHost {
     /**
      * Login via API - docs: https://www.fshare.vn/api-doc
      */
-    private String loginAPI(final Account account, final boolean verifyCookies) throws Exception {
+    private String loginAPI(final Account account, final Browser br, final boolean verifyCookies) throws Exception {
         synchronized (account) {
             try {
-                prepBrowserAPI(this.br);
+                prepBrowserAPI(br);
                 String token = getAPIToken(account);
-                final Cookies cookies = account.loadCookies("apicookies");
+                final Cookies cookies = account.loadCookies(PROPERTY_ACCOUNT_COOKIES);
                 final String app_key = new String(HexFormatter.hexToByteArray("644D6E714D4D5A4D556E4E355970764B454E614568645151356A784471646474"));
                 if (token != null && cookies != null) {
                     logger.info("Logging in via cookies");
@@ -780,7 +841,7 @@ public class FShareVn extends PluginForHost {
                              * next request!
                              */
                             final Browser refreshLoginBR = br.cloneBrowser();
-                            final PostRequest refreshLoginReq = br.createJSonPostRequest("https://" + getAPIHost() + "/api/user/refreshToken", JSonStorage.toString(map));
+                            final PostRequest refreshLoginReq = refreshLoginBR.createJSonPostRequest("https://" + getAPIHost() + "/api/user/refreshToken", JSonStorage.toString(map));
                             refreshLoginBR.getPage(refreshLoginReq);
                             final Map<String, Object> entries = JSonStorage.restoreFromString(refreshLoginBR.toString(), TypeRef.HASHMAP);
                             if (entries.containsKey("token")) {
@@ -788,7 +849,7 @@ public class FShareVn extends PluginForHost {
                                 token = entries.get("token").toString();
                                 br.setCookie(getAPIHost(), "session_id", entries.get("session_id").toString());
                                 account.setProperty(PROPERTY_ACCOUNT_TOKEN, token);
-                                account.saveCookies(br.getCookies(getAPIHost()), "apicookies");
+                                account.saveCookies(br.getCookies(getAPIHost()), PROPERTY_ACCOUNT_COOKIES);
                                 return token;
                             } else {
                                 /*
@@ -816,7 +877,7 @@ public class FShareVn extends PluginForHost {
                 final Browser loginbr = br.cloneBrowser();
                 final PostRequest loginReq = br.createJSonPostRequest("https://" + getAPIHost() + "/api/user/login", JSonStorage.toString(map));
                 loginbr.getPage(loginReq);
-                checkErrorsAPI(loginbr);
+                checkErrorsAPI(loginbr, account, null);
                 final Map<String, Object> entries = JSonStorage.restoreFromString(loginbr.toString(), TypeRef.HASHMAP);
                 token = (String) entries.get(PROPERTY_ACCOUNT_TOKEN);
                 /*
@@ -831,12 +892,12 @@ public class FShareVn extends PluginForHost {
                 /* Same cookie key as in browser (website-version) but not usable for website-sessions! */
                 br.setCookie(getAPIHost(), "session_id", sessionID);
                 account.setProperty(PROPERTY_ACCOUNT_TOKEN, token);
-                account.saveCookies(br.getCookies(getAPIHost()), "apicookies");
+                account.saveCookies(br.getCookies(getAPIHost()), PROPERTY_ACCOUNT_COOKIES);
                 return token;
             } catch (final PluginException e) {
                 /* Dump cookies on login failure */
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("apicookies");
+                    account.clearCookies(PROPERTY_ACCOUNT_COOKIES);
                     account.removeProperty(PROPERTY_ACCOUNT_TOKEN);
                 }
                 throw e;
@@ -926,7 +987,7 @@ public class FShareVn extends PluginForHost {
 
     public AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        this.loginAPI(account, true);
+        this.loginAPI(account, this.br, true);
         if (br.getURL() == null || !br.getURL().contains("/api/user/get")) {
             br.getPage("https://" + getAPIHost() + "/api/user/get");
         }

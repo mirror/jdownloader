@@ -863,7 +863,7 @@ public class PornHubCom extends PluginForDecrypt {
     }
 
     public static boolean isOfflineVideo(final Browser br) {
-        return !br.containsHTML("\\'embedSWF\\'") || br.containsHTML("<span>\\s*Video has been removed at the request of") || isOfflineGeneral(br);
+        return !br.containsHTML("\\'embedSWF\\'") || br.containsHTML("<span[^>]*>\\s*Video has been removed at the request of") || br.containsHTML("<span[^>]*>\\s*This video has been removed\\s*</span>") || isOfflineGeneral(br);
     }
 
     public static boolean isOfflineGeneral(final Browser br) {
