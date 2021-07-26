@@ -941,14 +941,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 if (this.isOffline(link, brc, brc.toString())) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                final URL_TYPE type = getURLType(brc.getURL());
+                URL_TYPE type = getURLType(brc.getURL());
                 final String realFUID;
-                if (type != null) {
+                if (type != null && !URL_TYPE.SHORT.equals(type)) {
                     realFUID = getFUID(brc.getURL(), type);
                 } else {
                     final Form form = brc.getFormbyProperty("name", "F1");
                     final InputField id = form != null ? form.getInputFieldByName("id") : null;
                     realFUID = id != null ? id.getValue() : null;
+                    type = URL_TYPE.NORMAL;
                 }
                 if (realFUID == null || !realFUID.matches("[A-Za-z0-9]{12}")) {
                     /**
