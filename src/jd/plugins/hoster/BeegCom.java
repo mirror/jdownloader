@@ -36,7 +36,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "beeg.com" }, urls = { "https?://(?:www\\.)?beeg\\.com/([a-z0-9\\-]+/[a-z0-9\\-]+|\\d+)(?:\\?t=\\d+-\\d+)?|https?://beta\\.beeg\\.com/-\\d+\\?t=\\d+-\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "beeg.com" }, urls = { "https?://(?:www\\.)?beeg\\.com/([a-z0-9\\-]+/[a-z0-9\\-]+|\\d+)(?:\\?t=\\d+-\\d+)?|https?://beta\\.beeg\\.com/-\\d+(?:\\?t=\\d+-\\d+)?" })
 public class BeegCom extends PluginForHost {
     /* DEV NOTES */
     /* Porn_plugin */
@@ -57,7 +57,7 @@ public class BeegCom extends PluginForHost {
     }
 
     private static final String INVALIDLINKS = "(?i)https://(?:www\\.)?beeg\\.com/(generator|section|static|tag).*";
-    private static final String TYPE_BETA    = "https?://beta\\.beeg\\.com/-(\\d+)\\?t=(\\d+-\\d+)";
+    private static final String TYPE_BETA    = "https?://beta\\.beeg\\.com/-(\\d+)(?:\\?t=(\\d+-\\d+))?";
     private boolean             server_issue = false;
 
     @Override
@@ -118,8 +118,19 @@ public class BeegCom extends PluginForHost {
             final Map<String, Object> file = (Map<String, Object>) entries.get("file");
             final Map<String, Object> stuff = (Map<String, Object>) file.get("stuff");
             filename = stuff.get("sf_name").toString();
+            Map<String, String> qualities = null;
             for (final Map<String, Object> vid : vids) {
-                final Map<String, String> qualities = (Map<String, String>) vid.get("resources");
+                qualities = (Map<String, String>) vid.get("resources");
+                if (qualities == null) {
+                    continue;
+                }
+                break;
+            }
+            if (qualities == null) {
+                /* E.g. videos without "t" parameter inside URL. */
+                qualities = (Map<String, String>) file.get("resources");
+            }
+            if (qualities != null) {
                 /* Pick best quality */
                 final String[] qualityStrings = { "2160", "1080", "720", "480", "360", "240" };
                 for (final String qualityStr : qualityStrings) {
@@ -131,10 +142,9 @@ public class BeegCom extends PluginForHost {
                         }
                     }
                 }
-                break;
-            }
-            if (!StringUtils.isEmpty(dllink) && !dllink.startsWith("http")) {
-                dllink = "https://video.beeg.com/" + dllink;
+                if (!StringUtils.isEmpty(dllink) && !dllink.startsWith("http")) {
+                    dllink = "https://video.beeg.com/" + dllink;
+                }
             }
         } else {
             String videoid = videoid_original;
