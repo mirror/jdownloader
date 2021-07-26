@@ -94,15 +94,15 @@ public class PornHubCom extends PluginForHost {
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
     /* Quality, { videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate } */
     public static LinkedHashMap<String, String[]> formats                               = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-        {
-            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
-            put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
-            put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
-        }
-    });
+                                                                                            {
+                                                                                                put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+                                                                                                put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+                                                                                                put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+                                                                                                put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+                                                                                                put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
+                                                                                                put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
+                                                                                            }
+                                                                                        });
     public static final String                    BEST_ONLY                             = "BEST_ONLY";
     public static final String                    BEST_SELECTION_ONLY                   = "BEST_SELECTION_ONLY";
     public static final String                    FAST_LINKCHECK                        = "FAST_LINKCHECK";
@@ -271,7 +271,9 @@ public class PornHubCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Video has been flagged");
         } else if (br.containsHTML(">\\s*This content is unavailable in your country.?\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "This content is unavailable in your country", 24 * 60 * 60 * 1000l);
-        } else if (br.containsHTML("<span>\\s*Video has been removed at the request of")) {
+        } else if (br.containsHTML("<span[^>]*>\\s*Video has been removed at the request of")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Video has been removed");
+        } else if (br.containsHTML("<span[^>]*>\\s*This video has been removed\\s*</span>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Video has been removed");
         } else if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
