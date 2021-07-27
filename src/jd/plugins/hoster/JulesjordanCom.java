@@ -76,6 +76,11 @@ public class JulesjordanCom extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final Account account = AccountController.getInstance().getValidAccount(this);
+        return requestFileInformation(link, account);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         // final String decrypter_filename = link.getStringProperty("decrypter_filename", null);
@@ -86,11 +91,10 @@ public class JulesjordanCom extends antiDDoSForHost {
                 con = br.openHeadConnection(dllink);
                 if (con.getResponseCode() == 410) {
                     logger.info("Directurl expired --> Trying to refresh it");
-                    final Account aa = AccountController.getInstance().getValidAccount(this);
-                    if (aa == null) {
+                    if (account == null) {
                         throw new AccountRequiredException();
                     }
-                    this.login(aa, false);
+                    this.login(account, false);
                     /* Refresh directurl */
                     final String mainlink = link.getStringProperty("mainlink");
                     final String quality = link.getStringProperty("quality");
@@ -176,7 +180,7 @@ public class JulesjordanCom extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
+        requestFileInformation(link, null);
         doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
@@ -265,7 +269,6 @@ public class JulesjordanCom extends antiDDoSForHost {
                     }
                 }
                 logger.info("Performing full login");
-                br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.164 Safari/537.36");
                 // br.getPage("https://www." + this.getHost() + "/trial/index.php");
                 br.getPage("https://www." + account.getHoster() + "/members/");
                 br.setCookie(br.getHost(), "CookieScriptConsent", "{\"action\":\"accept\"}");
@@ -328,7 +331,7 @@ public class JulesjordanCom extends antiDDoSForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, account);
         if (account.getType() == AccountType.FREE) {
             /* This should never happen! */
             logger.warning("Entering untested free account code");
