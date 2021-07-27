@@ -315,7 +315,11 @@ public class XHamsterCom extends PluginForHost {
                 } else if (isPasswordProtected()) {
                     return AvailableStatus.TRUE;
                 } else {
-                    final String exactErrorMessage = br.getRegex("class=\"item-status not-found\">\\s*<i class=\"xh-icon smile-sad cobalt\"></i>\\s*<div class=\"status-text\">([^<>]+)</div>").getMatch(0);
+                    String exactErrorMessage = br.getRegex("class=\"item-status not-found\">\\s*<i class=\"xh-icon smile-sad cobalt\"></i>\\s*<div class=\"status-text\">([^<>]+)</div>").getMatch(0);
+                    if (exactErrorMessage == null) {
+                        /* 2021-07-27 */
+                        exactErrorMessage = br.getRegex("class=\"error-title\"[^>]*>([^<>\"]+)<").getMatch(0);
+                    }
                     if (exactErrorMessage != null) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 423: " + exactErrorMessage, 60 * 60 * 1000l);
                     } else {
