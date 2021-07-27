@@ -27,6 +27,22 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -51,22 +67,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OneFichierCom extends PluginForHost {
@@ -332,7 +332,7 @@ public class OneFichierCom extends PluginForHost {
 
     public void doFree(final Account account, final DownloadLink link) throws Exception, PluginException {
         /* The following code will cover saved hotlinks */
-        String dllink = link.getStringProperty(PROPERTY_HOTLINK, null);
+        String dllink = link.getStringProperty(PROPERTY_HOTLINK);
         if (dllink != null) {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume_free_hotlink, maxchunks_free_hotlink);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
@@ -355,7 +355,7 @@ public class OneFichierCom extends PluginForHost {
             }
         }
         /* retry/resume of cached free link! */
-        dllink = link.getStringProperty(PROPERTY_FREELINK, null);
+        dllink = link.getStringProperty(PROPERTY_FREELINK);
         if (dllink != null) {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume_free, maxchunks_free);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
@@ -369,23 +369,22 @@ public class OneFichierCom extends PluginForHost {
                 } catch (final IOException e) {
                     logger.log(e);
                 }
-                // link has expired... but it could be for any reason! dont care!
-                // clear saved final link
-                link.setProperty(PROPERTY_FREELINK, Property.NULL);
-                br = new Browser();
+                /* link has expired... but it could be for any reason! dont care! */
+                /* Clear saved final link */
+                link.removeProperty(PROPERTY_FREELINK);
+                br.clearAll();
                 prepareBrowserWebsite(br);
             }
         }
-        /* this covers virgin downloads which end up been hot link-able... */
-        dllink = link.getPluginPatternMatcher();
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume_free_hotlink, maxchunks_free_hotlink);
+        final String contentURL = getContentURLWebsite(link);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, contentURL, resume_free_hotlink, maxchunks_free_hotlink);
         if (this.looksLikeDownloadableContent(dl.getConnection())) {
-            /* resume download */
-            link.setProperty(PROPERTY_HOTLINK, dllink);
+            /* Hotlink */
+            link.setProperty(PROPERTY_HOTLINK, dl.getConnection().getURL().toString());
             dl.startDownload();
             return;
         }
-        /* not hotlinkable.. standard free link... */
+        /* Not hotlinkable.. standard free link... */
         br.followConnection();
         dllink = null;
         br.setFollowRedirects(false);
@@ -396,7 +395,7 @@ public class OneFichierCom extends PluginForHost {
             if (i > 1) {
                 br.setFollowRedirects(true);
                 // no need to do this link twice as it's been done above.
-                br.getPage(link.getPluginPatternMatcher());
+                br.getPage(contentURL);
                 br.setFollowRedirects(false);
             }
             if (this.br.getHttpConnection().getResponseCode() == 404) {
@@ -441,13 +440,13 @@ public class OneFichierCom extends PluginForHost {
                         dllink = br3.getRedirectLocation();
                     }
                     if (dllink == null) {
-                        dllink = br3.getRegex("<a href=\"([^<>\"]*?)\"[^<>]*?>Click here to download").getMatch(0);
+                        dllink = br3.getRegex("<a href=\"([^<>\"]*?)\"[^<>]*?>\\s*Click here to download").getMatch(0);
                     }
                     if (dllink == null) {
                         dllink = br3.getRegex("window\\.location\\s*=\\s*('|\")(https?://[a-zA-Z0-9_\\-]+\\.(1fichier|desfichiers)\\.com/[a-zA-Z0-9]+/.*?)\\1").getMatch(1);
                     }
                     if (dllink == null) {
-                        String wait = br3.getRegex(" var count = (\\d+);").getMatch(0);
+                        String wait = br3.getRegex("var count = (\\d+);").getMatch(0);
                         if (wait != null && retried == false) {
                             retried = true;
                             sleep(1000 * Long.parseLong(wait), link);
@@ -482,21 +481,12 @@ public class OneFichierCom extends PluginForHost {
         if (ibr.getHttpConnection() != null) {
             responsecode = ibr.getHttpConnection().getResponseCode();
         }
-        final boolean preferReconnect = PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferReconnectEnabled();
-        if (ibr.containsHTML(">\\s*IP Locked|>\\s*Will be unlocked within 1h\\.")) {
-            // jdlog://2958376935451/ https://board.jdownloader.org/showthread.php?t=67204&page=2
-            throw new PluginException(preferReconnect ? LinkStatus.ERROR_IP_BLOCKED : LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "IP will be locked 1h", 60 * 60 * 1000l);
-        } else if (ibr.containsHTML(">\\s*File not found")) {
+        if (ibr.containsHTML(">\\s*File not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (ibr.containsHTML("Warning ! Without subscription, you can only download one file at|<span style=\"color:red\">Warning\\s*!\\s*</span>\\s*<br/>Without subscription, you can only download one file at a time\\.\\.\\.")) {
-            // jdlog://3278035891641 jdlog://7543779150841
-            throw new PluginException(preferReconnect ? LinkStatus.ERROR_IP_BLOCKED : LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many downloads - wait before starting new downloads", 3 * 60 * 1000l);
         } else if (ibr.containsHTML(">\\s*Software error:<")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Software error'", 10 * 60 * 1000l);
         } else if (ibr.containsHTML(">\\s*Connexion à la base de données impossible<|>Can\\'t connect DB")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Internal database error", 5 * 60 * 1000l);
-        } else if (ibr.containsHTML(">\\s*Votre adresse IP ouvre trop de connexions vers le serveur")) {
-            throw new PluginException(preferReconnect ? LinkStatus.ERROR_IP_BLOCKED : LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many connections - wait before starting new downloads", 3 * 60 * 1000l);
         } else if (ibr.containsHTML("not possible to free unregistered users")) {
             throw new AccountRequiredException();
         } else if (ibr.containsHTML("Your account will be unlock")) {
@@ -525,9 +515,19 @@ public class OneFichierCom extends PluginForHost {
         }
     }
 
+    /** Returns content-URL for website requests */
+    private String getContentURLWebsite(final DownloadLink link) {
+        String contentURL = link.getPluginPatternMatcher();
+        if (contentURL.contains("?") && !contentURL.contains("&")) {
+            /* 2021-07-27: Another attempt to force English language as only setting the cookie may not be enough. */
+            contentURL += "&lg=en";
+        }
+        return contentURL;
+    }
+
     /**
-     * Access restricted by IP / only registered users / only premium users / only owner. </br> See here for all possible reasons (login
-     * required): https://1fichier.com/console/acl.pl
+     * Access restricted by IP / only registered users / only premium users / only owner. </br>
+     * See here for all possible reasons (login required): https://1fichier.com/console/acl.pl
      *
      * @throws PluginException
      */
@@ -538,16 +538,24 @@ public class OneFichierCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FATAL, "Access to this file has been restricted");
     }
 
+    /** Contains all errorhandling for IP related limits/errormessages. */
     private static void ipBlockedErrorHandling(final Browser br) throws PluginException {
-        String waittime = br.getRegex("you must wait (at least|up to)\\s*(\\d+)\\s*minutes between each downloads").getMatch(1);
-        if (waittime == null) {
-            waittime = br.getRegex(">\\s*You must wait\\s*(\\d+)\\s*minutes").getMatch(0);
-            if (waittime == null) {
-                waittime = br.getRegex(">\\s*Vous devez attendre encore\\s*(\\d+)\\s*minutes").getMatch(0);
+        /**
+         * 2021-07-27: TODO: Maybe add a text-string representing a normalized English version of the actual errormessage. At this moment we
+         * show the same message no matter which errormessage is displayed on the 1fichier.com website.
+         */
+        String waittimeMinutesStr = br.getRegex("you must wait (at least|up to)\\s*(\\d+)\\s*minutes between each downloads").getMatch(1);
+        if (waittimeMinutesStr == null) {
+            waittimeMinutesStr = br.getRegex(">\\s*You must wait\\s*(\\d+)\\s*minutes").getMatch(0);
+            if (waittimeMinutesStr == null) {
+                waittimeMinutesStr = br.getRegex(">\\s*Vous devez attendre encore\\s*(\\d+)\\s*minutes").getMatch(0);
             }
         }
-        boolean isBlocked = waittime != null;
-        isBlocked |= br.containsHTML("/>Téléchargements en cours");
+        if (br.containsHTML(">\\s*IP Locked|>\\s*Will be unlocked within 1h\\.")) {
+            waittimeMinutesStr = "60";
+        }
+        boolean isBlocked = waittimeMinutesStr != null;
+        isBlocked |= br.containsHTML("/>\\s*Téléchargements en cours");
         isBlocked |= br.containsHTML("En téléchargement standard, vous ne pouvez télécharger qu\\'un seul fichier");
         isBlocked |= br.containsHTML(">veuillez patienter avant de télécharger un autre fichier");
         isBlocked |= br.containsHTML(">You already downloading (some|a) file");
@@ -557,23 +565,21 @@ public class OneFichierCom extends PluginForHost {
         isBlocked |= br.containsHTML("Without premium status, you can download only one file at a time");
         isBlocked |= br.containsHTML("Without Premium, you can only download one file at a time");
         isBlocked |= br.containsHTML("Without Premium, you must wait between downloads");
-        // <div style="text-align:center;margin:auto;color:red">Warning ! Without premium status, you must wait between each
-        // downloads<br/>Your last download finished 05 minutes ago</div>
-        isBlocked |= br.containsHTML("you must wait between each downloads");
-        // <div style="text-align:center;margin:auto;color:red">Warning ! Without premium status, you must wait 15 minutes between each
-        // downloads<br/>You must wait 15 minutes to download again or subscribe to a premium offer</div>
-        isBlocked |= br.containsHTML("you must wait \\d+ minutes between each downloads<");
+        // jdlog://3278035891641 jdlog://7543779150841
+        isBlocked |= br.containsHTML("Warning ! Without subscription, you can only download one file at|<span style=\"color:red\">Warning\\s*!\\s*</span>\\s*<br/>Without subscription, you can only download one file at a time\\.\\.\\.");
+        isBlocked |= br.containsHTML(">\\s*Votre adresse IP ouvre trop de connexions vers le serveur");
         if (isBlocked) {
             final boolean preferReconnect = PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferReconnectEnabled();
-            if (waittime != null && preferReconnect) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 60 * 1001l);
-            } else if (waittime != null && Integer.parseInt(waittime) >= 10) {
+            if (waittimeMinutesStr != null && preferReconnect) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittimeMinutesStr) * 60 * 1001l);
+            } else if (waittimeMinutesStr != null && Integer.parseInt(waittimeMinutesStr) >= 10) {
                 /* High waittime --> Reconnect */
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 60 * 1001l);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittimeMinutesStr) * 60 * 1001l);
             } else if (preferReconnect) {
+                /* User prefers reconnect --> Throw Exception with LinkStatus to trigger reconnect */
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
-            } else if (waittime != null) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait between download, Reconnect is disabled in plugin settings", Integer.parseInt(waittime) * 60 * 1001l);
+            } else if (waittimeMinutesStr != null) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait between download, Reconnect is disabled in plugin settings", Integer.parseInt(waittimeMinutesStr) * 60 * 1001l);
             } else {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait between download, Reconnect is disabled in plugin settings", 5 * 60 * 1001);
             }
@@ -964,8 +970,8 @@ public class OneFichierCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         /**
-         * 2021-02-11: Don't do availablecheck in premium mode to reduce requests. </br> According to their admin, using the public
-         * availablecheck call just before downloading via API can be troublesome
+         * 2021-02-11: Don't do availablecheck in premium mode to reduce requests. </br>
+         * According to their admin, using the public availablecheck call just before downloading via API can be troublesome
          */
         if (AccountType.FREE.equals(account.getType())) {
             /**
@@ -1009,8 +1015,8 @@ public class OneFichierCom extends PluginForHost {
 
     private String getDllinkPremiumAPI(final DownloadLink link, final Account account) throws IOException, PluginException {
         /**
-         * 2019-04-05: At the moment there are no benefits for us when using this. </br> 2021-01-29: Removed this because if login is
-         * blocked because of "flood control" this won't work either!
+         * 2019-04-05: At the moment there are no benefits for us when using this. </br>
+         * 2021-01-29: Removed this because if login is blocked because of "flood control" this won't work either!
          */
         // requestFileInformationAPI(this.br, link, account, true);
         // this.checkErrorsAPI(account);
@@ -1098,13 +1104,14 @@ public class OneFichierCom extends PluginForHost {
         try {
             ipBlockedErrorHandling(br);
         } catch (final PluginException e) {
+            /* Should be a very rare occurence in premium mode */
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l, e);
         }
         if (dllink == null) {
             /* The link is always SSL - based on user setting it will redirect to either https or http. */
             String postData = "did=0&";
             postData += getSSLFormValue();
-            br.postPage(link.getPluginPatternMatcher(), postData);
+            br.postPage(getContentURLWebsite(link), postData);
             dllink = br.getRedirectLocation();
             if (dllink == null) {
                 if (br.containsHTML("\">Warning \\! Without premium status, you can download only")) {
@@ -1285,7 +1292,7 @@ public class OneFichierCom extends PluginForHost {
         br.getHeaders().put("Pragma", null);
         br.getHeaders().put("Cache-Control", null);
         br.setCustomCharset("utf-8");
-        // we want ENGLISH!
+        /* we want ENGLISH! */
         br.setCookie(this.getHost(), "LG", "en");
         br.setAllowedResponseCodes(new int[] { 403, 503 });
     }

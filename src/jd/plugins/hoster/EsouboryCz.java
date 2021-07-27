@@ -181,7 +181,6 @@ public class EsouboryCz extends PluginForHost {
         handleDL(link, account);
     }
 
-    @SuppressWarnings("deprecation")
     private void handleDL(final DownloadLink link, final Account account) throws Exception {
         String finallink = checkDirectLink(link, "esouborydirectlink");
         final boolean isSelfhostedContent = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).matches();
@@ -293,9 +292,13 @@ public class EsouboryCz extends PluginForHost {
         }
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         Map<String, Object> data = (Map<String, Object>) entries.get("data");
-        if (data.containsKey("credit")) {
-            final long trafficLeftMB = ((Number) data.get("credit")).longValue();
-            ai.setTrafficLeft(trafficLeftMB * 1024 * 1024);
+        final long trafficLeftMB = ((Number) data.get("credit")).longValue();
+        ai.setTrafficLeft(trafficLeftMB * 1024 * 1024);
+        if (trafficLeftMB > 0) {
+            account.setType(AccountType.PREMIUM);
+        } else {
+            /* Account without traffic == Free Account --> Useless */
+            account.setType(AccountType.FREE);
         }
         br.getPage(API_BASE + "/list");
         /*
@@ -311,7 +314,6 @@ public class EsouboryCz extends PluginForHost {
             supportedHosts.add(host);
         }
         ai.setMultiHostSupport(this, supportedHosts);
-        account.setType(AccountType.PREMIUM);
         return ai;
     }
 
