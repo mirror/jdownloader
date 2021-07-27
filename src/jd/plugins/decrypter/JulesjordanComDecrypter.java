@@ -20,10 +20,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -47,7 +49,7 @@ public class JulesjordanComDecrypter extends PluginForDecrypt {
     }
 
     /* Important: Keep this updated & keep this in order: Highest --> Lowest */
-    private final List<String> all_known_qualities = Arrays.asList("mp4_4k", "mp4_1080", "mp4_720", "mp4_mobile");
+    private final List<String> all_known_qualities = Arrays.asList("4K", "1080P", "720P", "Mobile");
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -66,16 +68,16 @@ public class JulesjordanComDecrypter extends PluginForDecrypt {
         final boolean grabMobileSD = cfg.isGrabHTTPMp4_MobileSDEnabled();
         final boolean fastLinkcheck = cfg.isFastLinkcheckEnabled();
         if (grab4k) {
-            all_selected_qualities.add("mp4_4k");
+            all_selected_qualities.add("4K");
         }
         if (grab1080p) {
-            all_selected_qualities.add("mp4_1080");
+            all_selected_qualities.add("1080P");
         }
         if (grab720p) {
-            all_selected_qualities.add("mp4_720");
+            all_selected_qualities.add("720P");
         }
         if (grabMobileSD) {
-            all_selected_qualities.add("mp4_mobile");
+            all_selected_qualities.add("Mobile");
         }
         if (all_selected_qualities.isEmpty()) {
             all_selected_qualities = all_known_qualities;
@@ -109,7 +111,8 @@ public class JulesjordanComDecrypter extends PluginForDecrypt {
             final Entry<String, String> entry = it.next();
             final String quality_url = entry.getKey();
             final String dlurl = entry.getValue();
-            final DownloadLink dl = this.createDownloadlink(dlurl);
+            // final DownloadLink dl = this.createDownloadlink(dlurl);
+            final DownloadLink dl = new DownloadLink(plg, null, this.getHost(), dlurl, true);
             final String decrypter_filename = title + "_" + quality_url + ".mp4";
             dl.setName(decrypter_filename);
             if (fastLinkcheck) {
@@ -119,7 +122,8 @@ public class JulesjordanComDecrypter extends PluginForDecrypt {
             dl.setProperty("quality", quality_url);
             dl.setProperty("decrypter_filename", decrypter_filename);
             dl.setProperty("mainlink", parameter);
-            all_found_downloadlinks.put("mp4_" + quality_url, dl);
+            dl.setLinkID(this.getHost() + "://" + url_name + "/" + quality_url);
+            all_found_downloadlinks.put(quality_url, dl);
         }
         final HashMap<String, DownloadLink> all_selected_downloadlinks = handleQualitySelection(all_found_downloadlinks, all_selected_qualities, grabBest, grabBestWithinUserSelection, grabUnknownQualities);
         /* Finally add selected URLs */
@@ -135,16 +139,25 @@ public class JulesjordanComDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    public static HashMap<String, String> findAllQualities(final Browser br) {
+    public static HashMap<String, String> findAllQualities(final Browser br) throws Exception {
         final HashMap<String, String> allQualities = new HashMap<String, String>();
+        /* Old handling */
         final String[] dlinfo = br.getRegex("<option value=\"(https?://dl\\d+\\.julesjordan\\.com/dl/[^<>\"]+\\.mp4)\"").getColumn(0);
         for (final String dlurl : dlinfo) {
             final String quality_url = new Regex(dlurl, "([A-Za-z0-9]+)\\.mp4$").getMatch(0);
             if (dlurl == null || quality_url == null) {
-                /* Skip URLs which do nit fit our pattern. */
+                /* Skip URLs which do not fit our pattern. */
                 continue;
             }
             allQualities.put(quality_url, dlurl);
+        }
+        /* 2021-07-27: New handling */
+        final String[] jsons = br.getRegex("(\\{ path:.*?\\});").getColumn(0);
+        for (final String json : jsons) {
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
+            final String url = (String) entries.get("path");
+            final String name = (String) entries.get("name");
+            allQualities.put(name, url);
         }
         return allQualities;
     }

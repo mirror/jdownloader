@@ -37,6 +37,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -77,19 +78,19 @@ public class JulesjordanCom extends antiDDoSForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa != null) {
-            /* 2017-08-02: Login not required, neither for premium-direct-downloadlinks */
-            this.login(aa, false);
-        }
         // final String decrypter_filename = link.getStringProperty("decrypter_filename", null);
-        if (!isTrailerURL(link.getDownloadURL())) {
-            dllink = link.getDownloadURL();
+        if (!isTrailerURL(link.getPluginPatternMatcher())) {
+            dllink = link.getPluginPatternMatcher();
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
                 if (con.getResponseCode() == 410) {
                     logger.info("Directurl expired --> Trying to refresh it");
+                    final Account aa = AccountController.getInstance().getValidAccount(this);
+                    if (aa == null) {
+                        throw new AccountRequiredException();
+                    }
+                    this.login(aa, false);
                     /* Refresh directurl */
                     final String mainlink = link.getStringProperty("mainlink");
                     final String quality = link.getStringProperty("quality");
@@ -105,7 +106,7 @@ public class JulesjordanCom extends antiDDoSForHost {
                     dllink = allQualities.get(quality);
                     if (StringUtils.isEmpty(dllink)) {
                         logger.warning("Failed to refresh directurl");
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to refresh directurl");
                     }
                     con = br.openHeadConnection(dllink);
                 }
@@ -219,12 +220,12 @@ public class JulesjordanCom extends antiDDoSForHost {
         return true;
     }
 
-    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
-        final boolean is_this_plugin = downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+    public boolean allowHandle(final DownloadLink link, final PluginForHost plugin) {
+        final boolean is_this_plugin = link.getHost().equalsIgnoreCase(plugin.getHost());
         if (is_this_plugin) {
             /* Original plugin is always allowed to download. */
             return true;
-        } else if (!downloadLink.isEnabled() && "".equals(downloadLink.getPluginPatternMatcher())) {
+        } else if (!link.isEnabled() && "".equals(link.getPluginPatternMatcher())) {
             /*
              * setMultiHostSupport uses a dummy DownloadLink, with isEnabled == false. we must set to true for the host to be added to the
              * supported host array.
@@ -232,7 +233,7 @@ public class JulesjordanCom extends antiDDoSForHost {
             return true;
         } else {
             /* MOCHs should only be tried for compatible URLs. */
-            return isMOCHUrlOnly(downloadLink);
+            return isMultihostDownloadAllowed(link);
         }
     }
 
@@ -248,14 +249,19 @@ public class JulesjordanCom extends antiDDoSForHost {
                      * when the user logs in via browser.
                      */
                     br.setCookies(account.getHoster(), cookies);
-                    br.getPage("https://www." + account.getHoster() + "/members/index.php");
-                    if (br.containsHTML(html_loggedin)) {
-                        logger.info("Cookie login successful");
-                        account.saveCookies(br.getCookies(account.getHoster()), "");
+                    if (!force) {
+                        logger.info("Trust cookies without checking");
                         return;
                     } else {
-                        logger.info("Cookie login failed");
-                        br.clearAll();
+                        br.getPage("https://www." + account.getHoster() + "/members/index.php");
+                        if (br.containsHTML(html_loggedin)) {
+                            logger.info("Cookie login successful");
+                            account.saveCookies(br.getCookies(account.getHoster()), "");
+                            return;
+                        } else {
+                            logger.info("Cookie login failed");
+                            br.clearAll();
+                        }
                     }
                 }
                 logger.info("Performing full login");
@@ -361,8 +367,8 @@ public class JulesjordanCom extends antiDDoSForHost {
 
     @Override
     public String buildExternalDownloadURL(final DownloadLink link, final PluginForHost buildForThisPlugin) {
-        if (!StringUtils.equals(this.getHost(), buildForThisPlugin.getHost()) && isMOCHUrlOnly(link)) {
-            return getURLFree(link.getDownloadURL());
+        if (!StringUtils.equals(this.getHost(), buildForThisPlugin.getHost()) && isMultihostDownloadAllowed(link)) {
+            return getURLFree(link.getPluginPatternMatcher());
         } else {
             return super.buildExternalDownloadURL(link, buildForThisPlugin);
         }
@@ -373,8 +379,8 @@ public class JulesjordanCom extends antiDDoSForHost {
         return title;
     }
 
-    private boolean isMOCHUrlOnly(final DownloadLink dl) {
-        return isTrailerURL(dl.getDownloadURL());
+    private boolean isMultihostDownloadAllowed(final DownloadLink dl) {
+        return isTrailerURL(dl.getPluginPatternMatcher());
     }
 
     public static boolean isTrailerURL(final String inputurl) {
