@@ -50,7 +50,8 @@ import jd.plugins.components.PluginJSonUtils;
 public class SpankBangCom extends PluginForDecrypt {
     public SpankBangCom(PluginWrapper wrapper) {
         super(wrapper);
-        Browser.setRequestIntervalLimitGlobal(getHost(), 250);
+        /** 2021-07-27: Important else we'll run into Cloudflare Rate-Limit prohibition after about 250 requests! */
+        Browser.setRequestIntervalLimitGlobal(getHost(), 3000);
     }
 
     private static final String           DOMAIN         = "spankbang.com";

@@ -60,10 +60,11 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
 
     private ArrayList<DownloadLink> newHandling(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final Account account = AccountController.getInstance().getValidAccount(getHost());
-        if (account != null) {
-            PluralsightCom.login(account, br, this, false);
-        }
+        /** 2021-07-27: Login not required in crawler (anymore) */
+        // final Account account = AccountController.getInstance().getValidAccount(getHost());
+        // if (account != null) {
+        // PluralsightCom.login(account, br, this, false);
+        // }
         br.setFollowRedirects(true);
         getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {

@@ -115,7 +115,7 @@ public class ImageFap extends PluginForHost {
 
     private static final String VIDEOLINK = "(?i)https?://[^/]+/video\\.php\\?vid=\\d+";
 
-    private String DecryptLink(final String code) {
+    private String decryptLink(final String code) {
         try {
             final String s1 = Encoding.htmlDecode(code.substring(0, code.length() - 1));
             String t = "";
@@ -288,7 +288,7 @@ public class ImageFap extends PluginForHost {
                 return videoLink;
             }
         } else {
-            String imageLink = br.getRegex("name=\"mainPhoto\".*src=\"(https?://[a-z0-9\\.\\-]+\\.imagefapusercontent\\.com/[^<>\"]+)\"").getMatch(0);
+            String imageLink = br.getRegex("name=\"mainPhoto\"[^>]*src=\"(https?://[^<>\"]+)\"").getMatch(0);
             // if (imagelink == null) {
             // String ID = new Regex(downloadLink.getDownloadURL(), "(\\d+)").getMatch(0);
             // imagelink = br.getRegex("href=\"http://img\\.imagefapusercontent\\.com/images/full/\\d+/\\d+/" + ID +
@@ -297,7 +297,7 @@ public class ImageFap extends PluginForHost {
             if (imageLink == null) {
                 final String returnID = new Regex(br, Pattern.compile("return lD\\(\\'(\\S+?)\\'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0);
                 if (returnID != null) {
-                    imageLink = DecryptLink(returnID);
+                    imageLink = decryptLink(returnID);
                 }
                 if (imageLink == null) {
                     imageLink = br.getRegex("onclick=\"OnPhotoClick\\(\\);\" src=\"(https?://.*?)\"").getMatch(0);
