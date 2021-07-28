@@ -65,11 +65,17 @@ public class PluralsightCom extends antiDDoSForHost {
     public static final String                      PROPERTY_CLIP_ID                     = "clipID";
     public static final String                      PROPERTY_CLIP_VERSION                = "version";
     public static final String                      PROPERTY_MODULE_ORDER_ID             = "module";
+    public static final String                      PROPERTY_CLIP_ORDER_ID               = "module_clip_order_id";
+    @Deprecated
     public static final String                      PROPERTY_ORDERING                    = "ordering";
+    @Deprecated
     public static final String                      PROPERTY_SUPPORTS_WIDESCREEN_FORMATS = "supportsWideScreenVideoFormats";
     public static final String                      PROPERTY_TYPE                        = "type";
     public static final String                      PROPERTY_FORCED_RESOLUTION           = "forced_resolution";
     private static final String                     PROPERTY_DIRECTURL                   = "directurl";
+    /* Packagizer properties */
+    public static final String                      PROPERTY_MODULE_TITLE                = "module_title";
+    public static final String                      PROPERTY_MODULE_CLIP_TITLE           = "module_clip_title";
 
     public PluralsightCom(PluginWrapper wrapper) {
         super(wrapper);
