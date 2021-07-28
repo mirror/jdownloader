@@ -112,6 +112,9 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
                 }
                 link.setProperty(PluralsightCom.PROPERTY_DURATION, clip.get("duration"));
                 link.setProperty(PluralsightCom.PROPERTY_MODULE_ORDER_ID, moduleIndex + 1);
+                link.setProperty(PluralsightCom.PROPERTY_MODULE_TITLE, moduleTitle);
+                link.setProperty(PluralsightCom.PROPERTY_MODULE_CLIP_TITLE, title);
+                link.setProperty(PluralsightCom.PROPERTY_CLIP_ORDER_ID, clipIndex + 1);
                 String fullName = String.format("%02d", moduleIndex + 1) + "-" + String.format("%02d", clipIndex + 1) + " - " + moduleTitle + " -- " + title;
                 fullName = PluralsightCom.correctFileName(fullName);
                 link.setFinalFileName(fullName + ".mp4");
@@ -199,11 +202,15 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
                     if (ordering == null) {
                         ordering = clip.get("index");
                     }
+                    final long orderingInt = Integer.parseInt(ordering.toString());
                     link.setProperty(PluralsightCom.PROPERTY_ORDERING, ordering);
                     link.setProperty(PluralsightCom.PROPERTY_SUPPORTS_WIDESCREEN_FORMATS, supportsWideScreenVideoFormats);
                     link.setProperty(PluralsightCom.PROPERTY_MODULE_ORDER_ID, moduleOrderID);
+                    link.setProperty(PluralsightCom.PROPERTY_MODULE_TITLE, moduleTitle);
+                    link.setProperty(PluralsightCom.PROPERTY_MODULE_CLIP_TITLE, title);
+                    link.setProperty(PluralsightCom.PROPERTY_CLIP_ORDER_ID, orderingInt + 1);
                     if (StringUtils.isNotEmpty(title) && StringUtils.isNotEmpty(moduleTitle) && ordering != null) {
-                        String fullName = String.format("%02d", moduleIndex) + "-" + String.format("%02d", Long.parseLong(ordering.toString()) + 1) + " - " + moduleTitle + " -- " + title;
+                        String fullName = String.format("%02d", moduleIndex) + "-" + String.format("%02d", orderingInt + 1) + " - " + moduleTitle + " -- " + title;
                         fullName = PluralsightCom.correctFileName(fullName);
                         link.setFinalFileName(fullName + ".mp4");
                     }
