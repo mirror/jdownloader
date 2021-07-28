@@ -328,7 +328,7 @@ public class ArchiveOrg extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void crawlXML(final Browser br, final String subfolderPath) {
+    private void crawlXML(final Browser br, final String root) {
         final boolean preferOriginal = PluginJsonConfig.get(ArchiveOrgConfig.class).isPreferOriginal();
         final String[] items = new Regex(br.toString(), "<file\\s*(.*?)\\s*</file>").getColumn(0);
         /*
@@ -340,10 +340,10 @@ public class ArchiveOrg extends PluginForDecrypt {
             final boolean isOldVersion = item.contains("old_version");
             final boolean isOriginal = item.contains("source=\"original\"");
             final boolean isMetadata = item.contains("<format>Metadata</format>");
-            String name = new Regex(item, "name=\"([^\"]+)").getMatch(0);
+            String pathWithFilename = new Regex(item, "name=\"([^\"]+)").getMatch(0);
             final String filesizeStr = new Regex(item, "<size>(\\d+)</size>").getMatch(0);
             final String sha1hash = new Regex(item, "<sha1>([a-f0-9]+)</sha1>").getMatch(0);
-            if (name == null) {
+            if (pathWithFilename == null) {
                 continue;
             } else if (isOldVersion || isMetadata) {
                 /* Skip old elements and metadata! They are invisible to the user anyways */
@@ -352,31 +352,47 @@ public class ArchiveOrg extends PluginForDecrypt {
                 /* Skip non-original content if user only wants original content. */
                 continue;
             }
-            if (Encoding.isHtmlEntityCoded(name)) {
+            if (Encoding.isHtmlEntityCoded(pathWithFilename)) {
                 /* Will sometimes contain "&amp;" */
-                name = Encoding.htmlDecode(name);
+                pathWithFilename = Encoding.htmlOnlyDecode(pathWithFilename);
             }
-            final String url = "https://archive.org/download/" + subfolderPath + "/" + URLEncode.encodeURIComponent(name);
+            String pathEncoded;
+            String pathWithoutFilename = null;
+            String filename = null;
+            /* Search filename and properly encode content-URL. */
+            if (pathWithFilename.contains("/")) {
+                final String[] urlParts = pathWithFilename.split("/");
+                pathEncoded = "";
+                pathWithoutFilename = "";
+                int index = 0;
+                for (final String urlPart : urlParts) {
+                    final boolean isLastSegment = index >= urlParts.length - 1;
+                    pathEncoded += URLEncode.encodeURIComponent(urlPart);
+                    if (isLastSegment) {
+                        filename = urlPart;
+                    } else {
+                        pathWithoutFilename += urlPart;
+                        pathWithoutFilename += "/";
+                        pathEncoded += "/";
+                    }
+                    index++;
+                }
+            } else {
+                pathEncoded = URLEncode.encodeURIComponent(pathWithFilename);
+                filename = pathWithFilename;
+            }
+            final String url = "https://archive.org/download/" + root + "/" + pathEncoded;
             if (dups.add(url)) {
                 final DownloadLink fina = createDownloadlink(url);
                 fina.setDownloadSize(SizeFormatter.getSize(filesizeStr));
                 fina.setAvailable(true);
-                final String filename;
-                if (name.contains("/")) {
-                    /* Remove foldername/path from item name --> Nice filename */
-                    filename = name.substring(name.lastIndexOf("/") + 1);
-                } else {
-                    filename = name;
-                }
                 fina.setFinalFileName(filename);
-                final String subfolderPathInName = new Regex(name, "(.+)/[^/]+$").getMatch(0);
+                // final String subfolderPathInName = new Regex(pathWithFilename, "(.+)/[^/]+$").getMatch(0);
                 final String thisPath;
-                if (subfolderPathInName != null) {
-                    thisPath = subfolderPath + "/" + subfolderPathInName;
-                    // fina.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath + "/" + subfolderPathInName);
+                if (pathWithoutFilename != null) {
+                    thisPath = root + "/" + pathWithoutFilename;
                 } else {
-                    thisPath = subfolderPath;
-                    // fina.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath);
+                    thisPath = root;
                 }
                 fina.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, thisPath);
                 final FilePackage fp = FilePackage.getInstance();

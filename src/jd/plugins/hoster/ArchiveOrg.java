@@ -173,14 +173,15 @@ public class ArchiveOrg extends PluginForHost {
                         /* We trust these cookies --> Do not check them */
                         logger.info("Trust login cookies without check");
                         return;
-                    }
-                    br.getPage("https://archive.org/account/");
-                    if (this.isLoggedIN(br)) {
-                        logger.info("Cookie login successful");
-                        account.saveCookies(br.getCookies(account.getHoster()), "");
-                        return;
                     } else {
-                        logger.info("Cookie login failed");
+                        br.getPage("https://archive.org/account/");
+                        if (this.isLoggedIN(br)) {
+                            logger.info("Cookie login successful");
+                            account.saveCookies(br.getCookies(account.getHoster()), "");
+                            return;
+                        } else {
+                            logger.info("Cookie login failed");
+                        }
                     }
                 }
                 logger.info("Performing full login");
@@ -194,9 +195,9 @@ public class ArchiveOrg extends PluginForHost {
                     }
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
-            } catch (final PluginException e) {
+            } catch (final PluginException ignore) {
                 account.clearCookies("");
-                throw e;
+                throw ignore;
             }
         }
     }
@@ -264,6 +265,10 @@ public class ArchiveOrg extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
+        /*
+         * Remove this property otherwise there is the possibility that the user gets a permanent error for certain files while they might
+         * just be temporarily unavailable (this should never happen...)!
+         */
         link.removeProperty(PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN);
     }
 }
