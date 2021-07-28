@@ -24,33 +24,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.Property;
-import jd.config.SubConfiguration;
-import jd.controlling.AccountController;
-import jd.controlling.captcha.SkipException;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountInvalidException;
-import jd.plugins.AccountUnavailableException;
-import jd.plugins.CaptchaException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.HashInfo;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
@@ -87,6 +60,33 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.translate._JDT;
+
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.Property;
+import jd.config.SubConfiguration;
+import jd.controlling.AccountController;
+import jd.controlling.captcha.SkipException;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.CaptchaException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.HashInfo;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://(?:\\w+(?:\\.download)?\\.)?(?:real\\-debrid\\.com|rdb\\.so|rdeb\\.io)/dl?/\\w+(?:/.+)?" })
 public class RealDebridCom extends PluginForHost {
@@ -230,9 +230,9 @@ public class RealDebridCom extends PluginForHost {
             throw new AccountInvalidException(e, e.getMessage());
         case SERVICE_UNAVAILABLE:
             if (account != null) {
-                throw new AccountUnavailableException(e, e.getMessage(), 5 * 60 * 1000l);
+                throw new AccountUnavailableException(e, e.getMessage(), 1 * 60 * 1000l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, null, 5 * 60 * 1000l, e);
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, null, 1 * 60 * 1000l, e);
             }
         case ACCOUNT_LOCKED:
         case ACCOUNT_NOT_ACTIVATED:
