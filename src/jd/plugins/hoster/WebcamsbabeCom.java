@@ -31,9 +31,9 @@ public class WebcamsbabeCom extends KernelVideoSharingComV2 {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "webcamsbabe.com" });
+        ret.add(new String[] { "sexcams-24.com", "webcamsbabe.com" });
         /* Russian version of webcamsbabe.com. Same URL-pattern but different content/file-servers/contentIDs! */
-        ret.add(new String[] { "privat-zapisi.biz" });
+        ret.add(new String[] { "webcamvau.com", "privat-zapisi.biz" });
         return ret;
     }
 
