@@ -62,10 +62,9 @@ public class GamesReveurDe extends PluginForHost {
         if (filesize == null) {
             filesize = br.getRegex("class=\"addon-info-right\">[\t\n\r ]+(\\d+ (?:kB|mB|gB))[\t\n\r ]+</div>").getMatch(0);
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename.trim()));
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -73,9 +72,9 @@ public class GamesReveurDe extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        final String dlid = new Regex(downloadLink.getDownloadURL(), "/single/(\\d+)/").getMatch(0);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        final String dlid = new Regex(link.getDownloadURL(), "/single/(\\d+)/").getMatch(0);
         final String dltype = br.getRegex("dlType = \\'([^<>\"]*?)\\';").getMatch(0);
         final String gameid = br.getRegex("gameId = \\'(\\d+)\\';").getMatch(0);
         final String gameshort = br.getRegex("gameShort = \\'([^<>\"]*?)\\';").getMatch(0);
@@ -106,7 +105,7 @@ public class GamesReveurDe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 1 * 60 * 1000l);
         }
         final String dllink = "https://games.reveur.de/Download.php?intDlId=" + dlid + "&strDlType=" + dltype + "&strFileType=zip&intGameId=" + gameid + "&strGameShort=" + gameshort + "&strTicket=" + ticket;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
