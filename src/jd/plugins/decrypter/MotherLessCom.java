@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -207,23 +208,23 @@ public class MotherLessCom extends PluginForDecrypt {
         // grabs final page as count.
         String totalpages = br.getRegex("<a href=\"/[A-Z0-9]{9}\\?page=\\d+\"[^>]+>(\\d+)</a><a href=\"/[A-Z0-9]{9}\\?page=\\d+\"[^>]+>NEXT").getMatch(0);
         if (totalpages == null) {
-            totalpages = br.getRegex("<a href=\"/[A-Z0-9]{9}\\?page=(\\d+)\"[^>]+>\\d+</a><a href=\"/[A-Z0-9]{9}\\?page=\\d+\"[^>]+>NEXT").getMatch(0);
-        }
-        if (totalpages == null) {
-            /* Wide open RegEx */
-            totalpages = br.getRegex("<a href=\"/[^<>\"]+\\?page=\\d+\"[^>]+>(\\d+)</a><a href=\"/[^<>\"]+\\?page=\\d+\"[^>]+>NEXT").getMatch(0);
-        }
-        if (totalpages == null) {
-            totalpages = "1";
+            totalpages = br.getRegex("<a href=\"/[A-Z0-9]{9}\\?page=\\d+\"[^>]+>(\\d+)</a><a href=\"/[A-Z0-9]{9}\\?page=\\d+\"[^>]+rel\\s*=\\s*\"next\"").getMatch(0);
+            if (totalpages == null) {
+                /* Wide open RegEx */
+                totalpages = br.getRegex("<a href=\"/[^<>\"]+\\?page=\\d+\"[^>]+>(\\d+)</a><a href=\"/[^<>\"]+\\?page=\\d+\"[^>]+>NEXT").getMatch(0);
+                if (totalpages == null) {
+                    totalpages = "1";
+                }
+            }
         }
         int numberOfPages = Integer.parseInt(totalpages);
+        final HashSet<String> pages = new HashSet<String>();
         logger.info("Found " + numberOfPages + " page(s), decrypting now...");
         for (int i = 1; i <= numberOfPages; i++) {
             // stupid site jumps URLS for NextPage depending on parameter
             String nextPage = br.getRegex("<a href=\"(/[A-Z0-9]{7,9}\\?page=\\d+)\"[^>]+>NEXT").getMatch(0);
             if (nextPage == null) {
-                /* Wide open RegEx */
-                nextPage = br.getRegex("<a href=\"(/[^<>\"]+\\?page=\\d+)\"[^>]+>NEXT").getMatch(0);
+                nextPage = br.getRegex("<a href=\"(/[^<>\"]+\\?page=\\d+)\"[^>]+rel\\s*=\\s*\"next\"").getMatch(0);
             }
             if (parameter.contains("/galleries")) {
                 /*
@@ -287,7 +288,7 @@ public class MotherLessCom extends PluginForDecrypt {
                     return;
                 }
             }
-            if (i != numberOfPages && nextPage != null) {
+            if (i != numberOfPages && nextPage != null && pages.add(nextPage)) {
                 br.getPage(nextPage);
             }
             if (this.isAbort()) {
