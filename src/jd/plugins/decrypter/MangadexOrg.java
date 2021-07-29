@@ -9,6 +9,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -50,30 +51,45 @@ public class MangadexOrg extends antiDDoSForDecrypt {
             ret.add(this.createOfflinelink(param.getCryptedUrl()));
             return ret;
         }
-        Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        map = (Map<String, Object>) map.get("data");
-        map = (Map<String, Object>) map.get("attributes");
-        final String hash = (String) map.get("hash");
+        final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> data = (Map<String, Object>) root.get("data");
+        final Map<String, Object> attributes = (Map<String, Object>) data.get("attributes");
+        final String hash = (String) attributes.get("hash");
         /* 2021-07-12: Hardcoded */
         final String server = "https://uploads.mangadex.org/data/";
-        final String status = (String) map.get("status");
+        final String status = (String) attributes.get("status");
         if ("unavailable".equals(status)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (StringUtils.isEmpty(hash)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // final String mangaID = map.get("mangaId") != null ? String.valueOf(map.get("mangaId")) : null;
         final StringBuilder sb = new StringBuilder();
-        final String mangaTitle = (String) map.get("mangaTitle");
-        final String volume = (String) map.get("volume");
-        final String chapter = (String) map.get("chapter");
-        final String title = (String) map.get("title");
+        final String mangaTitle = (String) attributes.get("mangaTitle");
+        final String volume = (String) attributes.get("volume");
+        final String chapter = (String) attributes.get("chapter");
+        String title = (String) attributes.get("title");
+        String description = null;
+        /* Find title (fallback) and description */
+        final List<Map<String, Object>> relationships = (List<Map<String, Object>>) root.get("relationships");
+        for (final Map<String, Object> relationship : relationships) {
+            final String type = (String) relationship.get("type");
+            if (type.equals("manga")) {
+                final Map<String, Object> mangaAttributes = (Map<String, Object>) relationship.get("attributes");
+                if (StringUtils.isEmpty(title)) {
+                    title = (String) JavaScriptEngineFactory.walkJson(mangaAttributes, "title/en");
+                }
+                description = (String) JavaScriptEngineFactory.walkJson(mangaAttributes, "description/en");
+            }
+        }
         final FilePackage fp = FilePackage.getInstance();
         if (StringUtils.isNotEmpty(mangaTitle)) {
             if (sb.length() > 0) {
                 sb.append("-");
             }
             sb.append(mangaTitle);
+            if (!StringUtils.isEmpty(description)) {
+                fp.setComment(description);
+            }
         }
         if (StringUtils.isNotEmpty(volume)) {
             if (sb.length() > 0) {
@@ -102,7 +118,7 @@ public class MangadexOrg extends antiDDoSForDecrypt {
         } else {
             titleForFilename = mangaTitle;
         }
-        final List<String> pages = (List<String>) map.get("data");
+        final List<String> pages = (List<String>) attributes.get("data");
         if (pages == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

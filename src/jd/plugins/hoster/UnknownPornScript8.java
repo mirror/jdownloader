@@ -74,10 +74,15 @@ public class UnknownPornScript8 extends PluginForHost {
         }
         dllink = br.getRegex("<source src=\"(https?[^<>\"]+)\"").getMatch(0);
         if (dllink == null) {
+            /* Most of all times they're embedding their own content but sometimes it's "external" and e.g. goes to "trendyporn.com" */
             String iframe = br.getRegex("<iframe[^<>]+src=\"([^<>\"]+)\"[^<>]+allowfullscreen").getMatch(0);
             if (iframe != null) {
                 br.getPage(iframe);
                 dllink = br.getRegex("<source src=\"(https?[^<>\"]+)\"").getMatch(0);
+                if (dllink == null) {
+                    /* 2021-07-29: trendyporn.com */
+                    dllink = br.getRegex("src\\s*:\\s*\"(https://[^\"]+\\.mp4[^\"]*)\"").getMatch(0);
+                }
             }
         }
         if (filename == null || dllink == null) {
