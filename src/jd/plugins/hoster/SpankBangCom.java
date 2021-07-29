@@ -18,10 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -35,12 +31,14 @@ import jd.plugins.PluginException;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "http://spankbangdecrypted\\.com/\\d+" })
 public class SpankBangCom extends antiDDoSForHost {
     public SpankBangCom(PluginWrapper wrapper) {
         super(wrapper);
-        /** 2021-07-27: Important else we'll run into Cloudflare Rate-Limit prohibition after about 250 requests! */
-        Browser.setRequestIntervalLimitGlobal(getHost(), 3000);
         this.setConfigElements();
     }
 
@@ -64,6 +62,13 @@ public class SpankBangCom extends antiDDoSForHost {
     @Override
     protected boolean useRUA() {
         return true;
+    }
+
+    @Override
+    public void init() {
+        super.init();
+        /** 2021-07-27: Important else we'll run into Cloudflare Rate-Limit prohibition after about 250 requests! */
+        Browser.setRequestIntervalLimitGlobal(getHost(), 3000);
     }
 
     @Override

@@ -19,15 +19,14 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ImagetwistCom extends XFileSharingProBasic {
@@ -59,15 +58,6 @@ public class ImagetwistCom extends XFileSharingProBasic {
             }
         }
         return super.getLinkID(link);
-    }
-
-    @Override
-    public String getFUIDFromURL(DownloadLink dl) {
-        String ret = super.getFUIDFromURL(dl);
-        if (ret == null) {
-            ret = new Regex(dl.getPluginPatternMatcher(), "/(?:th|i)/\\d+/([a-z0-9]{12})").getMatch(0);
-        }
-        return ret;
     }
 
     public static String[] getAnnotationNames() {

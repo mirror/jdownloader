@@ -18,14 +18,13 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ImgSpiceCom extends XFileSharingProBasic {
@@ -91,15 +90,6 @@ public class ImgSpiceCom extends XFileSharingProBasic {
             /* Free(anonymous) and unknown account type */
             return 1;
         }
-    }
-
-    @Override
-    public String getFUIDFromURL(DownloadLink dl) {
-        String ret = super.getFUIDFromURL(dl);
-        if (ret == null) {
-            ret = new Regex(dl.getPluginPatternMatcher(), "/(?:th|i)/\\d+/([a-z0-9]{12})").getMatch(0);
-        }
-        return ret;
     }
 
     @Override
