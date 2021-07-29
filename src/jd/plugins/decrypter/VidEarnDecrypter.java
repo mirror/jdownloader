@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornxs.com" }, urls = { "https?://(www\\.)?pornxs\\.com/(video\\.php\\?id=|playlists/[^/]+/(?:[^/]\\.html)?|[a-z0-9\\-]+/\\d+\\-[a-z0-9\\-]*?\\.html)|https?://embed\\.pornxs\\.com/embed\\.php\\?id=\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornxs.com" }, urls = { "https?://(www\\.)?pornxs\\.com/(video\\.php\\?id=|playlists/[^/]+/(?:[^/]\\.html)?|[a-z0-9\\-]+/\\d+\\-[a-z0-9\\-]*?\\.html|embed/\\d+)|https?://embed\\.pornxs\\.com/embed\\.php\\?id=\\d+" })
 public class VidEarnDecrypter extends antiDDoSForDecrypt {
     public VidEarnDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -40,9 +40,9 @@ public class VidEarnDecrypter extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         String parameter = param.toString();
-        final String vid = new Regex(parameter, "embed\\.php\\?id=(\\d+)$").getMatch(0);
-        if (vid != null) {
-            parameter = "http://pornxs.com/teen-amateur-mature-cumshot-webcams/" + vid + "-0123456789.html";
+        final String embedID = new Regex(parameter, "https://[^/]+/(?:embed\\.php\\?id=|embed/)(\\d+)$").getMatch(0);
+        if (embedID != null) {
+            parameter = "https://pornxs.com/" + embedID;
         }
         final String url_name;
         final boolean isPlaylist;
@@ -144,7 +144,6 @@ public class VidEarnDecrypter extends antiDDoSForDecrypt {
         return decryptedLinks;
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
