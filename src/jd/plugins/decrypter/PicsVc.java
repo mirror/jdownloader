@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import jd.PluginWrapper;
@@ -32,6 +33,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PicsVc extends PluginForDecrypt {
@@ -76,14 +79,18 @@ public class PicsVc extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<title>\\s*([^<>\"]+)\\s*-\\s*PICS\\.VC\\s*</title>").getMatch(0);
+        final String fpName = br.getRegex("<title>\\s*([^<>\"]+)\\s*-\\s*PICS\\.VC\\s*</title>").getMatch(0);
         int offset = 0;
         int lastNextOffset = 0;
         int page = 0;
         final DecimalFormat df = new DecimalFormat("000");
         final FilePackage fp = FilePackage.getInstance();
         if (fpName != null) {
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            final String lines[] = StringUtils.getLines(fpName);
+            fp.setName(Encoding.htmlDecode(lines[0].trim()));
+            if (lines.length > 1) {
+                fp.setComment(StringUtils.join(Arrays.asList(lines).subList(1, lines.length), ","));
+            }
         } else {
             /* Fallback */
             fp.setName(galleryID);

@@ -10,6 +10,15 @@ public class PackageInfo {
     private Boolean         ignoreVarious         = null;
     private Boolean         allowInheritance      = null;
     private String          packageKey            = null;
+    private String          comment               = null;
+
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
 
     public String getPackageKey() {
         return packageKey;
@@ -48,14 +57,16 @@ public class PackageInfo {
         ret.setUniqueId(getUniqueId());
         ret.setAllowInheritance(isAllowInheritance());
         ret.setPackageKey(getPackageKey());
+        ret.setComment(getComment());
         return ret;
     }
 
     public void setName(String name) {
         if (StringUtils.isEmpty(name)) {
-            name = null;
+            this.name = null;
+        } else {
+            this.name = CrossSystem.alleviatePathParts(name);
         }
-        this.name = CrossSystem.alleviatePathParts(name);
     }
 
     public String getDestinationFolder() {
@@ -64,9 +75,10 @@ public class PackageInfo {
 
     public void setDestinationFolder(String destinationFolder) {
         if (StringUtils.isEmpty(destinationFolder)) {
-            destinationFolder = null;
+            this.destinationFolder = null;
+        } else {
+            this.destinationFolder = destinationFolder;
         }
-        this.destinationFolder = destinationFolder;
     }
 
     private String name              = null;
