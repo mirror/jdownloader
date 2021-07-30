@@ -15,16 +15,16 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -94,7 +94,14 @@ public class PeekVidsCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        final Account account = AccountController.getInstance().getValidAccount(this);
+        return this.requestFileInformation(link, account, false);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link) + ".mp4");
+        }
         synchronized (time) {
             try {
                 final long passedTime = ((System.currentTimeMillis() - time.get()) / 1000) - 1;
@@ -103,23 +110,14 @@ public class PeekVidsCom extends PluginForHost {
                 }
                 // final String[] qualities = { "1080p", "720p", "480p", "360p", "240p" };
                 final String[] qualities = { "1080", "720", "480", "360", "240" };
-                dllink = null;
-                final String uid = new Regex(link.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
-                if (uid != null) {
-                    link.setLinkID(getHost() + "://" + uid);
-                    if (!link.isNameSet()) {
-                        link.setFinalFileName(uid);
-                    }
-                }
                 this.setBrowserExclusive();
                 br.setFollowRedirects(true);
                 br.addAllowedResponseCodes(410, 429);
                 final Request getRequest = br.createGetRequest(link.getDownloadURL());
-                final Account aa = AccountController.getInstance().getValidAccount(this);
-                if (aa != null) {
+                if (account != null) {
                     logger.info("Account available --> Logging in");
                     try {
-                        this.login(aa, false);
+                        this.login(account, false);
                     } catch (final Throwable e) {
                         logger.warning("Failed to login");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -130,6 +128,11 @@ public class PeekVidsCom extends PluginForHost {
                 br.getPage(getRequest);
                 int i = 0;
                 while (br.getHttpConnection().getResponseCode() == 429) {
+                    logger.info("Bot protection triggered --> Captcha required");
+                    if (!isDownload) {
+                        /* Don't handle captcha during availablecheck */
+                        return AvailableStatus.UNCHECKABLE;
+                    }
                     if (i > 3) {
                         return AvailableStatus.UNCHECKABLE;
                     }
@@ -139,12 +142,23 @@ public class PeekVidsCom extends PluginForHost {
                     if (captcha == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    final String img = captcha.getRegex("<img\\s+[^>]*src=\"(.*?)\"").getMatch(0);
-                    if (img == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (captcha.containsHTML("recaptcha")) {
+                        final String rcKey = br.getRegex("data-public-key=\"([^<>\"]+)\"").getMatch(0);
+                        final String recaptchaV2Response;
+                        if (rcKey != null) {
+                            recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, rcKey).getToken();
+                        } else {
+                            recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        }
+                        captcha.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    } else {
+                        final String img = captcha.getRegex("<img\\s+[^>]*src=\"(.*?)\"").getMatch(0);
+                        if (img == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        final String code = getCaptchaCode(img, link);
+                        captcha.put("secimginp", Encoding.urlEncode(code));
                     }
-                    final String code = getCaptchaCode(img, link);
-                    captcha.put("secimginp", Encoding.urlEncode(code));
                     br.submitForm(captcha);
                 }
                 if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410 || br.containsHTML("Video not found<|class=\"play\\-error\"|This video was (deleted|removed)")) {
@@ -174,12 +188,13 @@ public class PeekVidsCom extends PluginForHost {
                         if (dllink.contains(".m3u8")) {
                             /* Do not check hls URLs */
                             break;
-                        }
-                        if (checkDirectLink()) {
-                            if (filesize > 0) {
-                                link.setDownloadSize(filesize);
+                        } else {
+                            if (checkDirectLink()) {
+                                if (filesize > 0) {
+                                    link.setDownloadSize(filesize);
+                                }
+                                break;
                             }
-                            break;
                         }
                     }
                 }
@@ -217,10 +232,10 @@ public class PeekVidsCom extends PluginForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (!this.looksLikeDownloadableContent(con)) {
                     return false;
                 }
-                filesize = con.getLongContentLength();
+                filesize = con.getCompleteContentLength();
             } catch (final Exception e) {
                 if (e instanceof BrowserException) {
                     if (e.getCause() != null && e.getCause().toString().contains("Could not generate DH keypair")) {
@@ -241,7 +256,7 @@ public class PeekVidsCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
+        requestFileInformation(link, null, true);
         doFree(link, true, 0, "free_directlink");
     }
 
@@ -258,8 +273,12 @@ public class PeekVidsCom extends PluginForHost {
         } else {
             /* http download */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
@@ -271,12 +290,9 @@ public class PeekVidsCom extends PluginForHost {
         return -1;
     }
 
-    private static final String MAINPAGE = "http://peekvids.com";
-    private static Object       LOCK     = new Object();
-
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
@@ -291,7 +307,7 @@ public class PeekVidsCom extends PluginForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
+                            br.setCookie(this.getHost(), key, value);
                         }
                         return;
                     }
@@ -301,24 +317,14 @@ public class PeekVidsCom extends PluginForHost {
                 final String status = PluginJSonUtils.getJsonValue(br, "status");
                 final String redirect = PluginJSonUtils.getJsonValue(br, "redirect");
                 if (!"ok".equals(status)) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else if (redirect == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 br.getPage(redirect);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
+                final Cookies add = br.getCookies(this.getHost());
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }
@@ -326,7 +332,9 @@ public class PeekVidsCom extends PluginForHost {
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -336,26 +344,18 @@ public class PeekVidsCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         /* free accounts can still have captcha */
         account.setMaxSimultanDownloads(-1);
         account.setConcurrentUsePossible(false);
-        ai.setStatus("Free Account");
-        account.setValid(true);
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        /* No need to log in here as we're already logged in in availablecheck. */
+        requestFileInformation(link, account, true);
         doFree(link, true, 0, "account_free_directlink");
     }
 
