@@ -18,9 +18,11 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
@@ -28,9 +30,7 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
-import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -44,7 +44,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "peekvids.com" }, urls = { "https?://(?:www\\.)?peekvids\\.com/(?:watch\\?v=|v/)([A-Za-z0-9\\-_]+)(?:/\\w+)?" })
 public class PeekVidsCom extends PluginForHost {
@@ -53,23 +52,25 @@ public class PeekVidsCom extends PluginForHost {
         this.enablePremium("https://accounts.playvid.com/peekvids/join");
     }
 
+    @Override
+    public void init() {
+        super.init();
+        Browser.setRequestIntervalLimitGlobal(getHost(), 5000);
+    }
+
     /* DEV NOTES */
     // Tags:
     // protocol: no https
     // other:
-    private String            dllink   = null;
-    private long              filesize = 0;
-    private static AtomicLong time     = new AtomicLong();
+    private String                            dllink      = null;
+    private long                              filesize    = 0;
+    private static HashMap<String, Cookies>   cookies     = new HashMap<String, Cookies>();
+    /* Don't touch the following! */
+    private static Map<String, AtomicInteger> freeRunning = new HashMap<String, AtomicInteger>();
 
     @Override
     public String getAGBLink() {
         return "https://www.peekvids.com/terms.html";
-    }
-
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        /* Forced https */
-        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
     }
 
     @Override
@@ -84,6 +85,14 @@ public class PeekVidsCom extends PluginForHost {
 
     private String getFID(final DownloadLink link) {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    private Browser prepBR(final Browser br) {
+        /* 2021-07-30: Current User-Agent --> Less rate-limit captchas (??) */
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36");
+        br.setFollowRedirects(true);
+        br.addAllowedResponseCodes(410, 429);
+        return br;
     }
 
     /**
@@ -102,128 +111,118 @@ public class PeekVidsCom extends PluginForHost {
         if (!link.isNameSet()) {
             link.setName(this.getFID(link) + ".mp4");
         }
-        synchronized (time) {
-            try {
-                final long passedTime = ((System.currentTimeMillis() - time.get()) / 1000) - 1;
-                if (passedTime < 15) {
-                    Thread.sleep(((15 - passedTime) + new Random().nextInt(5)) * 1000l);
+        this.setBrowserExclusive();
+        prepBR(this.br);
+        synchronized (cookies) {
+            if (cookies.containsKey(this.getHost())) {
+                br.setCookies(cookies.get(this.getHost()));
+            }
+        }
+        final String[] qualities = { "1080", "720", "480", "360", "240" };
+        if (account != null) {
+            logger.info("Account available --> Logging in");
+            this.login(account, false);
+        } else {
+            logger.info("No account available --> Continuing without account");
+        }
+        br.getPage(link.getPluginPatternMatcher());
+        synchronized (cookies) {
+            int retryNumber = 0;
+            boolean trustCaptchaAnswer = false;
+            boolean saveNewCookies = false;
+            while (br.getHttpConnection().getResponseCode() == 429) {
+                logger.info("Bot protection triggered --> Captcha required");
+                if (!isDownload) {
+                    /* Don't handle captcha during availablecheck */
+                    return AvailableStatus.UNCHECKABLE;
+                } else if (retryNumber > 3 || trustCaptchaAnswer) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Rate Limit Exceeded and too many failed captcha attempts");
                 }
-                // final String[] qualities = { "1080p", "720p", "480p", "360p", "240p" };
-                final String[] qualities = { "1080", "720", "480", "360", "240" };
-                this.setBrowserExclusive();
-                br.setFollowRedirects(true);
-                br.addAllowedResponseCodes(410, 429);
-                final Request getRequest = br.createGetRequest(link.getDownloadURL());
-                if (account != null) {
-                    logger.info("Account available --> Logging in");
-                    try {
-                        this.login(account, false);
-                    } catch (final Throwable e) {
-                        logger.warning("Failed to login");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                } else {
-                    logger.info("No account available --> Continuing without account");
+                retryNumber++;
+                // captcha event
+                final Form captcha = br.getForm(0);
+                if (captcha == null) {
+                    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Rate Limit Exceeded and failed to process captcha");
                 }
-                br.getPage(getRequest);
-                int i = 0;
-                while (br.getHttpConnection().getResponseCode() == 429) {
-                    logger.info("Bot protection triggered --> Captcha required");
-                    if (!isDownload) {
-                        /* Don't handle captcha during availablecheck */
-                        return AvailableStatus.UNCHECKABLE;
-                    }
-                    if (i > 3) {
-                        return AvailableStatus.UNCHECKABLE;
-                    }
-                    i++;
-                    // captcha event
-                    final Form captcha = br.getForm(0);
-                    if (captcha == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    if (captcha.containsHTML("recaptcha")) {
-                        final String rcKey = br.getRegex("data-public-key=\"([^<>\"]+)\"").getMatch(0);
-                        final String recaptchaV2Response;
-                        if (rcKey != null) {
-                            recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, rcKey).getToken();
-                        } else {
-                            recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                        }
-                        captcha.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                if (captcha.containsHTML("recaptcha")) {
+                    final String rcKey = br.getRegex("data-public-key=\"([^<>\"]+)\"").getMatch(0);
+                    final String recaptchaV2Response;
+                    if (rcKey != null) {
+                        recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, rcKey).getToken();
                     } else {
-                        final String img = captcha.getRegex("<img\\s+[^>]*src=\"(.*?)\"").getMatch(0);
-                        if (img == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        final String code = getCaptchaCode(img, link);
-                        captcha.put("secimginp", Encoding.urlEncode(code));
+                        recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     }
-                    br.submitForm(captcha);
-                }
-                if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410 || br.containsHTML("Video not found<|class=\"play\\-error\"|This video was (deleted|removed)")) {
-                    // filename can be present with offline links, so lets set it!
-                    String filename = br.getRegex("<h2>((?!Related Videos).*?)</h2>").getMatch(0);
-                    if (filename != null) {
-                        filename = Encoding.htmlDecode(filename);
-                        filename = filename.trim();
-                        filename = encodeUnicode(filename);
-                        link.setFinalFileName(filename + ".mp4");
+                    captcha.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    trustCaptchaAnswer = true;
+                } else {
+                    final String img = captcha.getRegex("<img\\s+[^>]*src=\"(.*?)\"").getMatch(0);
+                    if (img == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    final String code = getCaptchaCode(img, link);
+                    captcha.put("secimginp", Encoding.urlEncode(code));
                 }
-                String filename = br.getRegex("<title>\\s*([^<>]+?)( - PeekVids)?\\s*</title>").getMatch(0);
-                // String flashvars = br.getRegex("flashvars=\"(.*?)\"").getMatch(0);
-                String flashvars = br.getRegex("(<video.*?</video>)").getMatch(0);
-                if (flashvars == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                flashvars = Encoding.htmlDecode(flashvars);
-                int counter = 0;
-                for (final String quality : qualities) {
-                    // dllink = new Regex(flashvars, "\\[" + quality + "\\]=(http[^<>\"]*?)\\&").getMatch(0);
-                    dllink = new Regex(flashvars, "data-(?:hls-)?src" + quality + "=\"(http[^<>\"]*?)\"").getMatch(0);
-                    if (dllink != null) {
-                        counter++;
-                        if (dllink.contains(".m3u8")) {
-                            /* Do not check hls URLs */
-                            break;
-                        } else {
-                            if (checkDirectLink()) {
-                                if (filesize > 0) {
-                                    link.setDownloadSize(filesize);
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-                if (dllink == null && counter == 0) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                if (filename == null) {
-                    filename = this.getFID(link);
-                }
+                br.submitForm(captcha);
+                saveNewCookies = true;
+            }
+            /* Passed bot protection? Save cookies! */
+            if (saveNewCookies) {
+                logger.info("Saving new cookies");
+                /* These cookies are not necessarily required */
+                br.setCookie(this.getHost(), "mediaPlayerMute", "0");
+                br.setCookie(this.getHost(), "mediaPlayerVolume", "1");
+                cookies.put(this.getHost(), this.br.getCookies(this.getHost()));
+            }
+        }
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410 || br.containsHTML("Video not found<|class=\"play\\-error\"|This video was (deleted|removed)")) {
+            // filename can be present with offline links, so lets set it!
+            String filename = br.getRegex("<h2>((?!Related Videos).*?)</h2>").getMatch(0);
+            if (filename != null) {
                 filename = Encoding.htmlDecode(filename);
                 filename = filename.trim();
                 filename = encodeUnicode(filename);
-                if (dllink == null) {
-                    /* Download not possible at this moment. */
-                    link.setName(filename + ".mp4");
-                    return AvailableStatus.TRUE;
+                link.setFinalFileName(filename + ".mp4");
+            }
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("<title>\\s*([^<>]+?)( - PeekVids)?\\s*</title>").getMatch(0);
+        // String flashvars = br.getRegex("flashvars=\"(.*?)\"").getMatch(0);
+        String flashvars = br.getRegex("(<video.*?</video>)").getMatch(0);
+        if (flashvars == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        flashvars = Encoding.htmlDecode(flashvars);
+        int counter = 0;
+        for (final String quality : qualities) {
+            // dllink = new Regex(flashvars, "\\[" + quality + "\\]=(http[^<>\"]*?)\\&").getMatch(0);
+            dllink = new Regex(flashvars, "data-(?:hls-)?src" + quality + "=\"(http[^<>\"]*?)\"").getMatch(0);
+            if (dllink != null) {
+                counter++;
+                if (dllink.contains(".m3u8")) {
+                    /* Do not check hls URLs */
+                    break;
+                } else {
+                    if (checkDirectLink()) {
+                        if (filesize > 0) {
+                            link.setDownloadSize(filesize);
+                        }
+                        break;
+                    }
                 }
-                dllink = Encoding.htmlDecode(dllink);
-                final String ext = ".mp4";
-                if (!filename.endsWith(ext)) {
-                    filename += ext;
-                }
-                link.setFinalFileName(filename);
-                return AvailableStatus.TRUE;
-                /* Don't check filesize here as this can lead to server errors */
-            } finally {
-                time.set(System.currentTimeMillis());
             }
         }
+        if (dllink == null && counter == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (filename == null) {
+            filename = this.getFID(link);
+        }
+        filename = Encoding.htmlDecode(filename).trim();
+        filename = encodeUnicode(filename);
+        filename += ".mp4";
+        link.setFinalFileName(filename);
+        return AvailableStatus.TRUE;
     }
 
     private boolean checkDirectLink() {
@@ -236,6 +235,7 @@ public class PeekVidsCom extends PluginForHost {
                     return false;
                 }
                 filesize = con.getCompleteContentLength();
+                return true;
             } catch (final Exception e) {
                 if (e instanceof BrowserException) {
                     if (e.getCause() != null && e.getCause().toString().contains("Could not generate DH keypair")) {
@@ -251,16 +251,16 @@ public class PeekVidsCom extends PluginForHost {
                 }
             }
         }
-        return true;
+        return false;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link, null, true);
-        doFree(link, true, 0, "free_directlink");
+        doFree(link, null, true, 0, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void doFree(final DownloadLink link, final Account account, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (dllink == null) {
             /* Very rare case! */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
@@ -269,7 +269,6 @@ public class PeekVidsCom extends PluginForHost {
             /* HLS download - new since 2020-04-22 */
             checkFFmpeg(link, "Download a HLS Stream");
             dl = new HLSDownloader(link, br, dllink);
-            dl.startDownload();
         } else {
             /* http download */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
@@ -281,56 +280,91 @@ public class PeekVidsCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+        }
+        try {
+            /* Add a download slot */
+            controlMaxFreeDownloads(account, link, +1);
+            /* start the dl */
             dl.startDownload();
+        } finally {
+            /* Remove download slot */
+            controlMaxFreeDownloads(account, link, -1);
+        }
+    }
+
+    protected void controlMaxFreeDownloads(final Account account, final DownloadLink link, final int num) {
+        if (account == null) {
+            final AtomicInteger freeRunning = getFreeRunning();
+            synchronized (freeRunning) {
+                final int before = freeRunning.get();
+                final int after = before + num;
+                freeRunning.set(after);
+                logger.info("freeRunning(" + link.getName() + ")|max:" + getMaxSimultanFreeDownloadNum() + "|before:" + before + "|after:" + after + "|num:" + num);
+            }
+        }
+    }
+
+    protected AtomicInteger getFreeRunning() {
+        synchronized (freeRunning) {
+            AtomicInteger ret = freeRunning.get(getHost());
+            if (ret == null) {
+                ret = new AtomicInteger(0);
+                freeRunning.put(getHost(), ret);
+            }
+            return ret;
         }
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        final int max = 20;
+        final int running = getFreeRunning().get();
+        final int ret = Math.min(running + 1, max);
+        return ret;
     }
 
-    @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
+    private void login(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
             try {
-                // Load cookies
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(this.getHost(), key, value);
-                        }
+                this.prepBR(this.br);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    br.setCookies(cookies);
+                    if (!validateCookies) {
+                        logger.info("Trust cookies without checking");
                         return;
+                    } else {
+                        logger.info("Validating cookies...");
+                        br.getPage("https://www." + this.getHost());
+                        if (this.isLoggedIN(this.br)) {
+                            logger.info("Cookie login successful");
+                            account.saveCookies(br.getCookies(br.getHost()), "");
+                            return;
+                        } else {
+                            logger.info("Cookie login failed");
+                            br.clearCookies(br.getHost());
+                        }
                     }
                 }
+                logger.info("Performing full login");
                 br.setFollowRedirects(true);
                 br.postPage("https://accounts.playvids.com/de/login/peekvids", "remember_me=on&back_url=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                final String status = PluginJSonUtils.getJsonValue(br, "status");
-                final String redirect = PluginJSonUtils.getJsonValue(br, "redirect");
+                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final String status = (String) entries.get("status");
+                final String redirect = (String) entries.get("redirect");
                 if (!"ok".equals(status)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else if (redirect == null) {
+                } else if (StringUtils.isEmpty(redirect)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                /* 2021-07-30: Error 429 rate limit reached may happen here but then we're still logged in properly! */
                 br.getPage(redirect);
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(this.getHost());
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
+                if (!this.isLoggedIN(this.br)) {
+                    /* Double-check though it should not fail here! */
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -340,23 +374,24 @@ public class PeekVidsCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
+    private boolean isLoggedIN(final Browser br) {
+        return br.containsHTML("/account/logout");
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
-        /* free accounts can still have captcha */
         account.setMaxSimultanDownloads(-1);
-        account.setConcurrentUsePossible(false);
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, account, true);
-        doFree(link, true, 0, "account_free_directlink");
+        doFree(link, account, true, 0, "account_free_directlink");
     }
 
     @Override
