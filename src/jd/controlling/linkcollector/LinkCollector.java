@@ -830,7 +830,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     }
                 }
 
-                private void addToNewPackage(final List<CrawledLink> links, String newPackageName, final CrawledPackageMappingID crawledPackageMappingID) {
+                private CrawledPackage addToNewPackage(final List<CrawledLink> links, String newPackageName, final CrawledPackageMappingID crawledPackageMappingID) {
                     final CrawledPackage pkg = new CrawledPackage();
                     pkg.setExpanded(CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded());
                     pkg.setName(newPackageName);
@@ -856,9 +856,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     } else {
                         putBadMappings(newPackageName, crawledPackageMappingID, links);
                     }
+                    return pkg;
                 }
 
-                private void addToExistingPackage(final List<CrawledLink> links, CrawledPackage pkg, final CrawledPackageMappingID crawledPackageMappingID) {
+                private CrawledPackage addToExistingPackage(final List<CrawledLink> links, CrawledPackage pkg, final CrawledPackageMappingID crawledPackageMappingID) {
                     final String packageName = pkg.getName();
                     if (links != null && links.size() > 0) {
                         LinkCollector.this.moveOrAddAt(pkg, links, -1);
@@ -882,6 +883,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     } else {
                         putBadMappings(packageName, crawledPackageMappingID, links);
                     }
+                    return pkg;
                 }
 
                 private void putBadMappings(String newPackageName, CrawledPackageMappingID crawledPackageMappingID, List<CrawledLink> links) {
@@ -1129,7 +1131,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                         list = null;
                                     }
                                     if (list != null && list.size() > org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.VARIOUS_PACKAGE_LIMIT.getValue()) {
-                                        addToNewPackage(list, newPackageName, crawledPackageMapID);
+                                        final CrawledPackage newPkg = addToNewPackage(list, newPackageName, crawledPackageMapID);
+                                        if (dpi != null) {
+                                            newPkg.setComment(dpi.getComment());
+                                        }
                                     } else {
                                         final List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                                         add.add(link);
@@ -1138,7 +1143,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 } else {
                                     final List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                                     add.add(link);
-                                    addToNewPackage(add, newPackageName, crawledPackageMapID);
+                                    final CrawledPackage newPkg = addToNewPackage(add, newPackageName, crawledPackageMapID);
+                                    if (dpi != null) {
+                                        newPkg.setComment(dpi.getComment());
+                                    }
                                 }
                             } else {
                                 final List<CrawledLink> add = new ArrayList<CrawledLink>(1);
