@@ -7,17 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.plugins.components.config.PluralsightComConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -31,6 +20,17 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.hoster.PluralsightCom;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.components.config.PluralsightComConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "pluralsight.com" }, urls = { "https?://(?:app|www)?\\.pluralsight\\.com(\\/library)?\\/courses\\/[^/]+|https://app\\.pluralsight\\.com/course-player\\?clipId=[a-f0-9\\-]+" })
 public class PluralsightComDecrypter extends antiDDoSForDecrypt {
@@ -60,11 +60,13 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
 
     private ArrayList<DownloadLink> newHandling(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        /** 2021-07-27: Login not required in crawler (anymore) */
-        // final Account account = AccountController.getInstance().getValidAccount(getHost());
-        // if (account != null) {
-        // PluralsightCom.login(account, br, this, false);
-        // }
+        final Account account = AccountController.getInstance().getValidAccount(getHost());
+        if (account != null) {
+            PluralsightCom.login(account, br, this, false);
+            logger.info("Account - Mode:" + account.getUser());
+        } else {
+            logger.info("No account - Mode");
+        }
         br.setFollowRedirects(true);
         getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -77,7 +79,11 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
             final String clipPlayerURL[] = br.getRegex("(/course-player\\?clipId=[a-f0-9\\-]+)\"").getColumn(0);
             if (clipPlayerURL.length == 0) {
                 /* Content offline or plugin broken */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (account == null && br.containsHTML(">\\s*Start free tria\\s*l<")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
             }
             for (final String clipID : clipPlayerURL) {
                 if (dup.add(clipID)) {
@@ -149,7 +155,11 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
         }
         final Account account = AccountController.getInstance().getValidAccount(getHost());
         if (account != null) {
+            // account login is required for non free courses
             PluralsightCom.login(account, br, this, false);
+            logger.info("Account - Mode:" + account.getUser());
+        } else {
+            logger.info("No account - Mode");
         }
         PluralsightCom.getClips(br, this, courseSlug);
         if (br.getHttpConnection().getResponseCode() != 200 || br.containsHTML("You have reached the end of the internet")) {
