@@ -45,6 +45,7 @@ public class GenericImgShot extends ImgShotCore {
         ret.add(new String[] { "imgadult.com" });
         ret.add(new String[] { "imgtornado.com" });
         ret.add(new String[] { "imgwallet.com" });
+        ret.add(new String[] { "imgtaxi.com" });
         return ret;
     }
 
