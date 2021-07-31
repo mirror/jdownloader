@@ -237,6 +237,7 @@ basics_yes=Evet
 configheader_enabled=Etkinleştirildi
 controller_packages_defaultname=çeşitli
 convert_CLR_Reconnect_to_jdownloader=Cryptload *.clr Yeniden Bağlanma Betiğini JDownloader LiveHeader Betiğine Dönüştür
+decrypter_contentoffline=İçerik çevrimdışı
 decrypter_invalidaccount=Geçerli hesap bulunamadı
 decrypter_plugindefect=Eklenti Kusuru
 decrypter_pluginsettings=Eklenti Ayarlarını Denetle
