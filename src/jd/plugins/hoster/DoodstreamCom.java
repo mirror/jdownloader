@@ -24,14 +24,6 @@ import java.util.Map;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -43,6 +35,14 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DoodstreamCom extends XFileSharingProBasic {
@@ -332,13 +332,20 @@ public class DoodstreamCom extends XFileSharingProBasic {
                 if (embedURL == null) {
                     checkSSLInspection(br, link, account);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    this.getPage(embedURL);
                 }
-                this.getPage(embedURL);
-                /* 2021-06-28: New and untested */
-                final String additionalStep = br.getRegex("\\$\\.get\\(\"(/[^\"]+op=validate\\&gc_response=)").getMatch(0);
-                if (additionalStep != null) {
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Ld-EBYbAAAAAJeysRohqdHT8c3Aq1fgCtkBpu3f").getToken();
-                    this.getPage(additionalStep + Encoding.urlEncode(recaptchaV2Response));
+            }
+            String captchaContainer = br.getRegex("\\$\\.get\\(\"(/[^\"]+op=validate\\&gc_response=)").getMatch(0);
+            if (captchaContainer != null) {
+                final Browser brc = br.cloneBrowser();
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brc, "6LceDBYbAAAAANJ5Kb2RKbuywtAw4YETbEbDAT8l").getToken();
+                this.getPage(brc, captchaContainer + Encoding.urlEncode(recaptchaV2Response), true);
+                sleep(1000, link);
+                getPage(br.getURL());// location.reload();
+                captchaContainer = br.getRegex("\\$\\.get\\(\"(/[^\"]+op=validate\\&gc_response=)").getMatch(0);
+                if (captchaContainer != null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
