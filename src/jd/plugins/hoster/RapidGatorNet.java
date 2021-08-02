@@ -31,6 +31,20 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.RapidGatorConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -51,20 +65,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.RapidGatorConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidgator.net" }, urls = { "https?://(?:www\\.)?(?:rapidgator\\.net|rapidgator\\.asia|rg\\.to)/file/([a-z0-9]{32}(?:/[^/<>]+\\.html)?|\\d+(?:/[^/<>]+\\.html)?)" })
 public class RapidGatorNet extends antiDDoSForHost {
@@ -618,21 +618,12 @@ public class RapidGatorNet extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
-            if (br.containsHTML("<div class=\"error\">\\s*Error\\. Link expired\\. You have reached your daily limit of downloads\\.")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Link expired, or You've reached your daily limit ", FREE_RECONNECTWAIT_DAILYLIMIT);
-            } else if (br.containsHTML("<div class=\"error\">\\s*File is already downloading</div>")) {
-                /*
-                 * 2020-03-11: Do not throw ERROR_IP_BLOCKED error here as this error will usually only show up for 30-60 seconds between
-                 * downloads or upon instant retry of an e.g. interrupted free download --> Reconnect is not required
-                 */
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 1 * 60 * 1000l);
-            } else {
-                logger.info("Unknown error happened");
-                if (StringUtils.isEmpty(errorMsgJson)) {
-                    errorMsgJson = "Unknown server error";
-                }
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsgJson);
+            handleErrorsWebsite(this.br, link, account);
+            logger.info("Unknown error happened");
+            if (StringUtils.isEmpty(errorMsgJson)) {
+                errorMsgJson = "Unknown server error";
             }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsgJson);
         }
         /*
          * Always allow resume again for next attempt as a "failed" attempt will still get us a usable direct-URL thus no time- or captcha
@@ -1563,25 +1554,33 @@ public class RapidGatorNet extends antiDDoSForHost {
                 ac.setTrafficLeft(0);
                 account.setAccountInfo(ac);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            } else if (br.getCookie(RapidGatorNet.MAINPAGE, "user__") == null) {
+            } else if (br.getCookie(RapidGatorNet.MAINPAGE, "user__", Cookies.NOTDELETEDPATTERN) == null) {
                 logger.info("Account seems to be invalid!");
                 // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 account.setProperty("cookies", Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        if (br.containsHTML("File is temporarily unavailable, please try again later\\. Maintenance in data center\\.")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is temporarily not available, please try again later", 15 * 60 * 1000l);
-        } else if (br.containsHTML("File is temporarily not available, please try again later")) {
+        if (br.containsHTML("(?i)>\\s*Error\\. Link expired\\. You have reached your daily limit of downloads\\.")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Link expired, or You've reached your daily limit ", FREE_RECONNECTWAIT_DAILYLIMIT);
+        } else if (br.containsHTML("(?i)>\\s*File is already downloading\\s*<")) {
+            /*
+             * 2020-03-11: Do not throw ERROR_IP_BLOCKED error here as this error will usually only show up for 30-60 seconds between
+             * downloads or upon instant retry of an e.g. interrupted free download --> Reconnect is not required
+             */
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 1 * 60 * 1000l);
+        } else if (br.containsHTML("(?i)File is temporarily not available, please try again later")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is temporarily not available, please try again later");
-        } else if (br.containsHTML(">\\s*You have reached your hourly downloads limit\\.")) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your hourly downloads limit", FREE_RECONNECTWAIT_GENERAL);
-        } else if (br.containsHTML("You can`t download not more than 1 file at a time in free mode\\.\\s*<|>\\s*Wish to remove the restrictions\\?")) {
+        } else if (br.containsHTML("(?i)>\\s*You have reached your hourly downloads limit\\.")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You've reached your hourly downloads limit", FREE_RECONNECTWAIT_GENERAL);
+        } else if (br.containsHTML("(?i)You can`t download not more than 1 file at a time in free mode\\.\\s*<|>\\s*Wish to remove the restrictions\\?")) {
             /*
              * 2020-03-11: Do not throw ERROR_IP_BLOCKED error here as this error will usually only show up for 30-60 seconds between
              * downloads or upon instant retry of an e.g. interrupted free download --> Reconnect is not required
              */
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "You can't download more than one file within a certain time period in free mode", 10 * 60 * 1000l);
+        } else if (br.containsHTML("(?i)>\\s*You have reached your daily downloads limit")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You've reached your daily downloads limit", FREE_RECONNECTWAIT_GENERAL);
         } else if (br.containsHTML("Denied by IP") && false) {
             // disabled because I don't know the exact HTML of this error
             if (account != null) {
