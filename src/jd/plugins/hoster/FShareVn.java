@@ -81,10 +81,10 @@ public class FShareVn extends PluginForHost {
     private static final boolean use_api_for_login_fetch_account_info  = true;
     private static final String  PROPERTY_ACCOUNT_TOKEN                = "token";
     private static final String  PROPERTY_ACCOUNT_COOKIES              = "apicookies";
+    private static final String  PROPERTY_IS_PASSWORD_PROTECTED        = "is_password_protected";
 
     public FShareVn(PluginWrapper wrapper) {
         super(wrapper);
-        // setStartIntervall(2000l);
         Browser.setRequestIntervalLimitGlobal(getHost(), 500);
         this.enablePremium("https://www.fshare.vn/payment/package/?type=vip");
     }
@@ -104,14 +104,6 @@ public class FShareVn extends PluginForHost {
     }
 
     @Override
-    public String rewriteHost(String host) {
-        if ("mega.1280.com".equals(host)) {
-            return "fshare.vn";
-        }
-        return super.rewriteHost(host);
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         if (account != null && USE_API_IN_ACCOUNT_MODE.get()) {
@@ -123,6 +115,9 @@ public class FShareVn extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(this.getUID(link));
+        }
         this.setBrowserExclusive();
         correctDownloadLink(link);
         br.setFollowRedirects(false);
@@ -177,7 +172,7 @@ public class FShareVn extends PluginForHost {
         if (filesize == null) {
             filesize = br.getRegex("(?:>|\\|)\\s*([\\d\\.]+ [K|M|G]B)\\s*<").getMatch(0);
         }
-        if (filename != null) {
+        if (filename != null && !filename.equalsIgnoreCase("Password required")) {
             /* Server sometimes sends bad filenames */
             link.setFinalFileName(Encoding.htmlDecode(filename));
         }
@@ -219,6 +214,7 @@ public class FShareVn extends PluginForHost {
         final String description = (String) entries.get("description");
         final long deleted = JavaScriptEngineFactory.toLong(entries.get("deleted"), 1);
         final long size = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+        final String pwd = (String) entries.get("pwd");
         /* 2019-05-08: This is NOT a hash we can use for anything! */
         // final String hash = PluginJSonUtils.getJson(br, "hash_index");
         if (!StringUtils.isEmpty(filename)) {
@@ -229,6 +225,11 @@ public class FShareVn extends PluginForHost {
         }
         if (description != null && link.getComment() == null) {
             link.setComment(entries.get("description").toString());
+        }
+        if (pwd != null) {
+            link.setProperty(PROPERTY_IS_PASSWORD_PROTECTED, true);
+        } else {
+            link.removeProperty(PROPERTY_IS_PASSWORD_PROTECTED);
         }
         if (deleted == 1) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -243,12 +244,12 @@ public class FShareVn extends PluginForHost {
         }
         if (br.getHttpConnection().getResponseCode() != 200) {
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            String errorMsg = "Unknown error";
+            String errormsg = "Unknown error";
             if (entries.containsKey("msg")) {
-                errorMsg = entries.get("msg").toString();
+                errormsg = entries.get("msg").toString();
             }
             /* First check for some text-based errors, handle the rest via response-code */
-            if (errorMsg.equalsIgnoreCase("Please insert your password")) {
+            if (isDownloadPasswordExpiredOrInvalid(errormsg)) {
                 /*
                  * Along with http response 403. Happens when trying to download a password protected URL and not providing any download
                  * password.
@@ -281,18 +282,22 @@ public class FShareVn extends PluginForHost {
                 throw new AccountUnavailableException("Login token invalid", 5 * 60 * 1000l);
             } else if (br.getHttpConnection().getResponseCode() == 403) {
                 /* 2021-07-09: E.g. {"code":403,"msg":"Application for vip accounts only"} */
-                throw new AccountInvalidException(errorMsg);
+                throw new AccountInvalidException(errormsg);
             } else if (br.getHttpConnection().getResponseCode() == 404) {
                 /* {"code":404,"msg":"T\u1eadp tin kh\u00f4ng t\u1ed3n t\u1ea1i"} */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.getHttpConnection().getResponseCode() == 405) {
                 /** Account invalid e.g. fail on initial login attempt: {"code":405,"msg":"Authenticate fail!"} */
-                throw new AccountInvalidException(errorMsg);
+                throw new AccountInvalidException(errormsg);
             } else {
                 /* Other errors e.g. 406 account locked, see: https://www.fshare.vn/api-doc#/Login%20-%20Logout%20-%20User%20info/login */
-                throw new AccountInvalidException(errorMsg);
+                throw new AccountInvalidException(errormsg);
             }
         }
+    }
+
+    private boolean isDownloadPasswordExpiredOrInvalid(final String msg) {
+        return msg != null && msg.equalsIgnoreCase("Please insert your password");
     }
 
     public void doFree(final DownloadLink link, final Account acc) throws Exception {
@@ -329,6 +334,11 @@ public class FShareVn extends PluginForHost {
             ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             ajax.getHeaders().put("x-requested-with", "XMLHttpRequest");
             ajax.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+            final Form passwordProtectedForm = br.getFormbyProperty("class", "password-form");
+            if (passwordProtectedForm != null) {
+                /** 2021-08-02: TODO: Add support for password protected URLs. */
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected URLs are not yet supported, please contact our support");
+            }
             // final String postdata = "_csrf-app=" + csrf + "&DownloadForm%5Bpwd%5D=&DownloadForm%5Blinkcode%5D=" +
             // getUID(downloadLink) + "&ajax=download-form&undefined=undefined";
             // ajax.postPage("/download/get", postdata);
@@ -552,6 +562,7 @@ public class FShareVn extends PluginForHost {
         return dllink;
     }
 
+    /** https://www.fshare.vn/api-doc#/File%20manager/take-download-link */
     private String getDllinkAPI(final DownloadLink link, final Account account) throws Exception {
         /**
          * Login and check file info. 2021-07-09: file-check is not needed anymore: Download request will return http response 404 on
@@ -559,17 +570,35 @@ public class FShareVn extends PluginForHost {
          */
         // requestFileInformationAPI(link, account);
         AccountUnavailableException e = null;
+        String passCode = link.getDownloadPassword();
+        /* Ask for password right away if we know that an item is password protected --> Can save one http request */
+        if (passCode == null && link.hasProperty(PROPERTY_IS_PASSWORD_PROTECTED)) {
+            passCode = getUserInput("Password?", link);
+        }
+        int loopCounter = 1;
+        int passwordAttemptsCounter = 0;
         synchronized (account) {
             while (true) {
+                logger.info("Download attempt number: " + loopCounter);
                 final String token = getAPITokenAndSetCookies(account, this.br);
-                final PostRequest downloadReq = br.createJSonPostRequest("https://" + getAPIHost() + "/api/session/download", String.format("{\"token\":\"%s\",\"url\":\"%s\"}", token, link.getPluginPatternMatcher()));
-                final String response = br.getPage(downloadReq);
-                final Map<String, Object> entries = JSonStorage.restoreFromString(response, TypeRef.HASHMAP);
-                final String msg = (String) entries.get("msg");
-                if (msg != null && msg.equalsIgnoreCase("Please insert your password")) {
-                    /* 2021-08-02: TODO: Add support for password protected files */
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected URLs are not yet supported in premium mode");
+                final Map<String, Object> postdata = new HashMap<String, Object>();
+                postdata.put("token", token);
+                postdata.put("url", link.getPluginPatternMatcher());
+                if (passCode != null) {
+                    postdata.put("password", passCode);
                 }
+                final PostRequest downloadReq = br.createJSonPostRequest("https://" + getAPIHost() + "/api/session/download", JSonStorage.serializeToJson(postdata));
+                /** 2021-08-02: API returns error 400 bad request on wrong password?! */
+                br.getPage(downloadReq);
+                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final String msg = (String) entries.get("msg");
+                if (isDownloadPasswordExpiredOrInvalid(msg) && passwordAttemptsCounter < 3) {
+                    passCode = getUserInput("Password?", link);
+                    passwordAttemptsCounter += 1;
+                    link.setProperty(PROPERTY_IS_PASSWORD_PROTECTED, true);
+                    continue;
+                }
+                /* if passwordAttemptsCounter is "too high", checkErrorsAPI will handle the "Wrong password" error just fine. */
                 try {
                     checkErrorsAPI(this.br, account, token);
                 } catch (final AccountUnavailableException aue) {
@@ -579,6 +608,9 @@ public class FShareVn extends PluginForHost {
                     } else {
                         throw aue;
                     }
+                }
+                if (passCode != null) {
+                    link.setDownloadPassword(passCode);
                 }
                 return entries.get("location").toString();
             }
