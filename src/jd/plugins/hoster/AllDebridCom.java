@@ -22,7 +22,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -97,7 +96,6 @@ public class AllDebridCom extends antiDDoSForHost {
     public static final String           agent_raw                         = "JDownloader";
     private static final String          PROPERTY_APIKEY_CREATED_TIMESTAMP = "APIKEY_CREATED_TIMESTAMP";
     private static final String          PROPERTY_apikey                   = "apiv4_apikey";
-    private static AtomicInteger         TOO_MANY_REQUESTS                 = new AtomicInteger(0);
 
     public String fetchApikey(final Account account, final AccountInfo accountInfo) throws Exception {
         synchronized (account) {
@@ -649,6 +647,7 @@ public class AllDebridCom extends antiDDoSForHost {
                     } catch (final IOException e) {
                         logger.log(e);
                     }
+                    checkRateLimit(br2, con);
                     throw new IOException();
                 }
             } catch (final Exception e) {
@@ -762,11 +761,6 @@ public class AllDebridCom extends antiDDoSForHost {
             }
         }
         /* 2020-04-12: Chunks limited to 16 RE: admin */
-        final int tooManyRequests = TOO_MANY_REQUESTS.get();
-        int chunks = -16 + tooManyRequests;
-        if (chunks >= 0) {
-            chunks = 1;
-        }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLinkDownloadable, br.createGetRequest(genlink), true, -16);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
@@ -774,10 +768,8 @@ public class AllDebridCom extends antiDDoSForHost {
             } catch (IOException e) {
                 logger.log(e);
             }
-            if (br.containsHTML("rate limiting, please retry") || dl.getConnection().getResponseCode() == 429) {
-                TOO_MANY_REQUESTS.compareAndSet(tooManyRequests, tooManyRequests + 4);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many requests:" + tooManyRequests);
-            } else if (dl.getConnection().getResponseCode() == 404) {
+            checkRateLimit(br, dl.getConnection());
+            if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
             } else if (br.containsHTML("range not ok")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
@@ -788,6 +780,13 @@ public class AllDebridCom extends antiDDoSForHost {
             }
         }
         dl.startDownload();
+    }
+
+    private void checkRateLimit(Browser br, URLConnectionAdapter con) throws PluginException {
+        if (br.containsHTML("rate limiting, please retry") || con.getResponseCode() == 429) {
+            Browser.setRequestIntervalLimitGlobal(br.getHost(), 2000);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many requests:" + br.getHost());
+        }
     }
 
     private String loadApikey(final Account account) throws Exception {
