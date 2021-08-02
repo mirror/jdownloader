@@ -247,6 +247,14 @@ public class FShareVn extends PluginForHost {
             if (entries.containsKey("msg")) {
                 errorMsg = entries.get("msg").toString();
             }
+            /* First check for some text-based errors, handle the rest via response-code */
+            if (errorMsg.equalsIgnoreCase("Please insert your password")) {
+                /*
+                 * Along with http response 403. Happens when trying to download a password protected URL and not providing any download
+                 * password.
+                 */
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+            }
             if (br.getHttpConnection().getResponseCode() == 201) {
                 /* This should never happen at this stage! */
                 logger.info("session_id cookie invalid");
@@ -556,6 +564,12 @@ public class FShareVn extends PluginForHost {
                 final String token = getAPITokenAndSetCookies(account, this.br);
                 final PostRequest downloadReq = br.createJSonPostRequest("https://" + getAPIHost() + "/api/session/download", String.format("{\"token\":\"%s\",\"url\":\"%s\"}", token, link.getPluginPatternMatcher()));
                 final String response = br.getPage(downloadReq);
+                final Map<String, Object> entries = JSonStorage.restoreFromString(response, TypeRef.HASHMAP);
+                final String msg = (String) entries.get("msg");
+                if (msg != null && msg.equalsIgnoreCase("Please insert your password")) {
+                    /* 2021-08-02: TODO: Add support for password protected files */
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected URLs are not yet supported in premium mode");
+                }
                 try {
                     checkErrorsAPI(this.br, account, token);
                 } catch (final AccountUnavailableException aue) {
@@ -566,7 +580,6 @@ public class FShareVn extends PluginForHost {
                         throw aue;
                     }
                 }
-                final Map<String, Object> entries = JSonStorage.restoreFromString(response, TypeRef.HASHMAP);
                 return entries.get("location").toString();
             }
         }

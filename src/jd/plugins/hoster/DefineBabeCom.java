@@ -73,12 +73,12 @@ public class DefineBabeCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("definebabes.com/", "definebabe.com/").replace("definebabedecrypted://", "http://"));
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked" })
+    @SuppressWarnings({ "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("Please, call later\\.")) {
@@ -100,11 +100,20 @@ public class DefineBabeCom extends PluginForHost {
         if (videoID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        /* Set fallback-filename */
+        if (!link.isNameSet()) {
+            link.setName(videoID + ".mp4");
+        }
+        link.setLinkID(this.getHost() + "://" + videoID);
         final boolean useNewAPI = true;
         if (useNewAPI) {
             br.getPage("/player/config.php?id=" + videoID);
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            this.dllink = (String) entries.get("video_url");
+            try {
+                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                this.dllink = (String) entries.get("video_url");
+            } catch (final Throwable e) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Broken video?");
+            }
         } else {
             br.getPage("http://www." + link.getHost() + "/playlist/playlist.php?type=regular&video_id=" + videoID);
             final String decrypted = decryptRC4HexString("TubeContext@Player", br.toString().trim());
