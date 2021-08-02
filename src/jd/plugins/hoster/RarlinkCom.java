@@ -18,14 +18,15 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RarlinkCom extends XFileSharingProBasic {
@@ -116,6 +117,9 @@ public class RarlinkCom extends XFileSharingProBasic {
          */
         if (!isPremiumonlyHTML) {
             isPremiumonlyHTML = br.containsHTML(">\\s*This file is available for .*Premium Users.* only");
+            if (!isPremiumonlyHTML) {
+                isPremiumonlyHTML = new Regex(getCorrectBR(br), ">\\s*This file is available for .*Premium Users.* only").matches();
+            }
         }
         return isPremiumonlyHTML;
     }

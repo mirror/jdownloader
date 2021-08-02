@@ -727,10 +727,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      */
     public boolean isPremiumOnly(final Browser br) {
         final boolean premiumonly_by_url = isPremiumOnlyURL(br);
-        final boolean premiumonly_filehost = br.getRegex("( can download files up to |>\\s*Upgrade your account to download (?:larger|bigger) files|>\\s*The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file\\s*<|>\\s*This file reached max downloads limit|>\\s*This file is available for Premium Users only|>\\s*Available Only for Premium Members|>\\s*File is available only for Premium users|>\\s*This file can be downloaded by)").matches();
+        final String premiumonly_filehost_regex = "( can download files up to |>\\s*Upgrade your account to download (?:larger|bigger) files|>\\s*The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file\\s*<|>\\s*This file reached max downloads limit|>\\s*This file is available for\\s*(<[^>]*>)?\\s*Premium Users only|>\\s*Available Only for Premium Members|>\\s*File is available only for Premium users|>(\\s*Sorry\\s*,)?\\s*This file (can|only can|can only) be downloaded by)";
+        final String premiumonly_videohost_regex = ">\\s*This video is available for Premium users only";
+        final boolean premiumonly_filehost = br.getRegex(premiumonly_filehost_regex).matches();
+        final String corrected = getCorrectBR(br);
+        final boolean premiumonly_filehost_corrected = new Regex(corrected, premiumonly_filehost_regex).matches();
         /* 2019-05-30: Example: xvideosharing.com */
-        final boolean premiumonly_videohost = br.containsHTML(">\\s*This video is available for Premium users only");
-        return premiumonly_by_url || premiumonly_filehost || premiumonly_videohost;
+        final boolean premiumonly_videohost = br.containsHTML(premiumonly_videohost_regex);
+        final boolean premiumonly_videohost_corrected = new Regex(corrected, premiumonly_videohost_regex).matches();
+        return premiumonly_by_url || premiumonly_filehost || premiumonly_filehost_corrected || premiumonly_videohost || premiumonly_videohost_corrected;
     }
 
     /**

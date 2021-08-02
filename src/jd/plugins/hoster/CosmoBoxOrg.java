@@ -112,16 +112,6 @@ public class CosmoBoxOrg extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isPremiumOnly(final Browser br) {
-        /* 2019-07-23: Special */
-        boolean premiumonlyHTML = super.isPremiumOnly(br);
-        if (!premiumonlyHTML) {
-            premiumonlyHTML = br.containsHTML("This file can only be downloaded by");
-        }
-        return premiumonlyHTML;
-    }
-
-    @Override
     protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         /* 2019-07-23: Special */
         String reconnect_hours = new Regex(html, "You have downloaded \\d+ files? per (\\d+) hours?").getMatch(0);

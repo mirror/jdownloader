@@ -111,17 +111,6 @@ public class PreFilesCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isPremiumOnly(final Browser br) {
-        /* 2019-07-03: Special */
-        final boolean premiumonly = super.isPremiumOnly(br);
-        if (premiumonly) {
-            return true;
-        } else {
-            return br.containsHTML("<p>Sorry, This file only can be downloaded by PRO Membership");
-        }
-    }
-
-    @Override
     protected String regExTrafficLeft() {
         /* 2019-07-03: Special */
         String trafficleft = super.regExTrafficLeft();
