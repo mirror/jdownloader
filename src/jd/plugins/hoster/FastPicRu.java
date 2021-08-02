@@ -34,11 +34,11 @@ public class FastPicRu extends PluginForHost {
     public FastPicRu(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     // Tags:
     // protocol: no https
     // other:
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     /* We're only downloading small files so 1 chunk is enough. */
@@ -88,11 +88,11 @@ public class FastPicRu extends PluginForHost {
             filename += ext;
         }
         link.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
+            final Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
             con = br2.openHeadConnection(dllink);
             if (this.looksLikeDownloadableContent(con)) {
                 if (con.getCompleteContentLength() > 0) {
@@ -116,21 +116,18 @@ public class FastPicRu extends PluginForHost {
         requestFileInformation(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
                 logger.log(e);
             }
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }

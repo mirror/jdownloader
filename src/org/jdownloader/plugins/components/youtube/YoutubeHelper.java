@@ -1671,6 +1671,8 @@ public class YoutubeHelper {
         return false;
     }
 
+    private final String ageRestricted = "Sign in to confirm your age";
+
     public void refreshVideo(final YoutubeClipData vid) throws Exception {
         loggedIn = login(logger, false);
         this.vid = vid;
@@ -1726,47 +1728,6 @@ public class YoutubeHelper {
         String sts = apiBrowser.getRegex("\"sts\"\\s*:\\s*(\\d+)").getMatch(0);
         if (StringUtils.isEmpty(sts)) {
             sts = "";
-        }
-        if (fmtMaps.size() == 0 && (unavailableReason == null || !StringUtils.equals(unavailableReason, "Sign in to confirm your age"))) {
-            logger.info("Empty fmtMaps! try get_video_info:" + vid.videoID);
-            getPage(apiBrowser, this.base + "/get_video_info?&video_id=" + vid.videoID + "&hl=en&sts=" + sts + "&disable_polymer=true&gl=US");
-            collectMapsFromVideoInfo(apiBrowser.toString(), apiBrowser.getURL());
-        }
-        if (fmtMaps.size() == 0) {
-            logger.info("Empty fmtMaps! try embed:" + vid.videoID);
-            apiBrowser = br.cloneBrowser();
-            if (true) {
-                apiBrowser.setCurrentURL(this.base + "/embed/" + vid.videoID);
-            } else {
-                getPage(apiBrowser, this.base + "/embed/" + vid.videoID);
-            }
-            getPage(apiBrowser, this.base + "/get_video_info?ps=default&el=embedded&video_id=" + vid.videoID + "&hl=en&sts=" + sts + "&gl=US&eurl=" + Encoding.urlEncode("https://youtube.googleapis.com/v/" + vid.videoID));
-            collectMapsFromVideoInfo(apiBrowser.toString(), apiBrowser.getURL());
-            if (apiBrowser.containsHTML("requires_purchase=1")) {
-                logger.warning("Download not possible: You have to pay to watch this video");
-                throw new Exception("Paid Video");
-            }
-            final String errorcode = apiBrowser.getRegex("errorcode=(\\d+)").getMatch(0);
-            String reason = apiBrowser.getRegex("(?<!encoded_ad_safety_)reason=([^\\&]+)").getMatch(0);
-            if ("150".equals(errorcode)) {
-                // http://www.youtube.com/watch?v=xxWHMmiOTVM
-                // reason=This video contains content from WMG. It is restricted from playback on certain sites.<br/><u><a
-                // href='...>Watch on YouTube</a>
-                // the next error handling below will catch from the original browser and give correct feedback!
-                logger.warning(" failed due to been restricted content. " + reason);
-            }
-            if (reason != null) {
-                reason = Encoding.urlDecode(reason, false);
-                // remove all tags
-                reason = reason.replaceAll("<.*?>", "");
-                if (reason != null && reason.contains("Watch this video on YouTube") && !loggedIn) {
-                    reason = "Account required. Add your Youtube Account to JDownloader";
-                }
-                // do not save this message IF we have unavailableReason
-                if (unavailableReason == null) {
-                    vid.error = reason;
-                }
-            }
         }
         // videos have data available even though they are blocked.
         extractData(vid);
