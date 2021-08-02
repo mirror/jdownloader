@@ -13,14 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -31,13 +29,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastpic.ru" }, urls = { "https?://(www\\.)?fastpic\\.ru/view/[^<>\"]+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastpic.org" }, urls = { "https?://(?:www\\.)?fastpic\\.(?:ru|org)/view/([^<>\"]+)\\.html" })
 public class FastPicRu extends PluginForHost {
-
     public FastPicRu(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: no https
@@ -48,77 +44,88 @@ public class FastPicRu extends PluginForHost {
     /* We're only downloading small files so 1 chunk is enough. */
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
-
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     @Override
     public String getAGBLink() {
         return "http://fastpic.ru/";
     }
 
+    /** 2021-08-02: Main domain has changed from fastpic.ru to fastpic.org. */
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null || host.equalsIgnoreCase("fastpic.ru")) {
+            return this.getHost();
+        } else {
+            return super.rewriteHost(host);
+        }
+    }
+
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = null;
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = new Regex(downloadLink.getDownloadURL(), "fastpic\\.ru/view/([^<>\"]+)\\.html").getMatch(0);
-        DLLINK = br.getRegex("loading_img[\t\n\r ]*?=[\t\n\r ]*?\\'(http[^<>\"]*?)\\';").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("(https?://[a-z0-9]+\\.fastpic\\.ru/big/[^/]+/[^/]+/[^/]+/[a-f0-9]{32}\\.[A-Za-z]+)").getMatch(0);
+        String filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        dllink = br.getRegex("<span class=\"text-muted d-lg-none\">нажмите для увеличения</span>\\s*<img src=\"(https://[^\"]+)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(https?://[a-z0-9]+\\.[^/]+/big/[^/]+/[^/]+/[^/]+/_?[a-f0-9]{32}\\.[A-Za-z]+[^\"]*)\"").getMatch(0);
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(DLLINK, ".jpg");
+        final String ext = getFileNameExtensionFromString(dllink, ".jpg");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        downloadLink.setFinalFileName(filename);
+        link.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            try {
-                con = openConnection(br2, DLLINK);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            con = br2.openHeadConnection(dllink);
+            if (this.looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
-            return AvailableStatus.TRUE;
+            link.setProperty("directlink", dllink);
         } finally {
             try {
                 con.disconnect();
             } catch (final Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {
@@ -131,20 +138,6 @@ public class FastPicRu extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
-    }
-
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override

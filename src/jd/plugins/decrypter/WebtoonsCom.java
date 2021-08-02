@@ -22,6 +22,7 @@ import java.util.HashSet;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -41,7 +42,8 @@ public class WebtoonsCom extends PluginForDecrypt {
         final String parameter = param.toString();
         this.br.setAllowedResponseCodes(400);
         /* This cookie will allow us to access 18+ content */
-        br.setCookie(this.getHost(), "pagGDPR", "true");
+        setImportantCookies(br, this.getHost());
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -86,25 +88,30 @@ public class WebtoonsCom extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
         } else {
-            int pageIndex = 1;
+            int pageNumber = 1;
             final HashSet<String> singleLinks = new HashSet<String>();
             while (true) {
-                if (this.isAbort()) {
-                    return decryptedLinks;
-                }
-                if (pageIndex > 1) {
-                    this.br.getPage(parameter + "&page=" + pageIndex);
+                logger.info("Crawling page: " + pageNumber);
+                if (pageNumber > 1) {
+                    final String nextPage = parameter + "&page=" + pageNumber;
+                    this.br.getPage(nextPage);
+                    /* 2021-08-02: This sometimes randomly happens... */
+                    if (br.getURL().contains("/gdpr/ageGate")) {
+                        setImportantCookies(br, this.br.getHost());
+                        this.br.getPage(nextPage);
+                    }
                 }
                 /* Find urls of all episode of a title --> Re-Add these single episodes to the crawler. */
-                links = br.getRegex("<li id=\"episode_\\d+\">[^<>]*?<a href=\"(https?://[^<>\"]+title_no=" + titlenumber + "\\&episode_no=\\d+)\"").getColumn(0);
-                if (links == null || links.length == 0) {
-                    /* Maybe we already found everything or there simply ism't anything. */
+                links = br.getRegex("<li id=\"episode_\\d+\"[^>]+>[^<>]*?<a href=\"(https?://[^<>\"]+title_no=" + titlenumber + "\\&episode_no=\\d+)\"").getColumn(0);
+                if (links.length == 0) {
+                    /* Maybe we already found everything or there simply isn't anything. */
+                    logger.info("Stopping because: Failed to find any item on current page");
                     break;
                 }
-                boolean nextPage = false;
+                boolean foundNewItem = false;
                 for (final String singleLink : links) {
                     if (singleLinks.add(singleLink)) {
-                        nextPage = true;
+                        foundNewItem = true;
                         final DownloadLink link = this.createDownloadlink(singleLink);
                         if (fp != null) {
                             fp.add(link);
@@ -113,10 +120,17 @@ public class WebtoonsCom extends PluginForDecrypt {
                         decryptedLinks.add(link);
                     }
                 }
-                if (nextPage) {
-                    pageIndex++;
-                } else {
+                if (!foundNewItem) {
+                    logger.info("Stopping because: Failed to find any new item on current page");
                     break;
+                }
+                pageNumber++;
+                if (!br.containsHTML("page=" + pageNumber)) {
+                    logger.info("Stopping because: No next page available");
+                    break;
+                }
+                if (this.isAbort()) {
+                    return decryptedLinks;
                 }
             }
             if (decryptedLinks.size() == 0) {
@@ -124,5 +138,11 @@ public class WebtoonsCom extends PluginForDecrypt {
             }
         }
         return decryptedLinks;
+    }
+
+    private void setImportantCookies(final Browser br, final String host) {
+        br.setCookie(host, "pagGDPR", "true");
+        br.setCookie(host, "atGDPR", "AD_CONSENT");
+        br.setCookie(host, "needGDPR", "false");
     }
 }
