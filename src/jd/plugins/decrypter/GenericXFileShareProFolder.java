@@ -22,12 +22,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -47,12 +41,18 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 @SuppressWarnings("deprecation")
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
     private static final String[] domains        = new String[] { "up-4.net", "up-4ever.com", "up-4ever.net", "subyshare.com", "brupload.net", "koofile.com", "powvideo.net", "lunaticfiles.com", "youwatch.org", "vshare.eu", "up.media1fire.com", "salefiles.com", "ortofiles.com", "restfile.ca", "restfilee.com", "storagely.com", "free-uploading.com", "rapidfileshare.net", "fireget.com", "mixshared.com", "longfiles.com", "novafile.com", "qtyfiles.com", "free-uploading.com", "free-uploading.com", "uppit.com", "downloadani.me", "faststore.org", "clicknupload.org", "isra.cloud", "world-files.com", "katfile.com", "filefox.cc", "cosmobox.org", "easybytez.com", "userupload.net",
-            /** file-up.org domains */
-            "file-up.org", "file-up.io", "file-up.cc", "file-up.com", "file-upload.org", "file-upload.io", "file-upload.cc", "file-upload.com", "tstorage.info", "fastfile.cc" };
+                                                 /** file-up.org domains */
+                                                 "file-up.org", "file-up.io", "file-up.cc", "file-up.com", "file-upload.org", "file-upload.io", "file-upload.cc", "file-upload.com", "tstorage.info", "fastfile.cc" };
     /* This list contains all hosts which need special Patterns (see below) - all other XFS hosts have the same folder patterns! */
     private static final String[] specialDomains = { "usersfiles.com", "userscloud.com", "hotlink.cc", "ex-load.com", "imgbaron.com", "filespace.com", "spaceforfiles.com", "prefiles.com", "imagetwist.com", "file.al", "send.cm", "takefile.link" };
 
@@ -295,6 +295,17 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                         break;
                     }
                 }
+                if (StringUtils.isNotEmpty(html_snippet)) {
+                    // split tr_snippet in case it contains multiple links, eg 3 in a row, eg brupload
+                    final String link_tr_snippet = new Regex(html_snippet, "<TD>.*" + linkid + ".*?</TD>").getMatch(-1);
+                    if (link_tr_snippet != null) {
+                        final String rest_tr_snippet = html_snippet.replace(link_tr_snippet, "");
+                        if (StringUtils.isNotEmpty(rest_tr_snippet)) {
+                            tr_snippets.add(0, rest_tr_snippet);
+                        }
+                        html_snippet = link_tr_snippet;
+                    }
+                }
                 if (StringUtils.isEmpty(html_snippet)) {
                     /* Works for e.g. world-files.com, brupload.net */
                     /* TODO: Improve this RegEx e.g. for katfile.com, brupload.net */
@@ -335,8 +346,10 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                 } else {
                     filename = url_filename;
                 }
+                boolean incompleteFileName = false;
                 if (!StringUtils.isEmpty(filename)) {
                     if (filename.endsWith("&#133;")) {
+                        incompleteFileName = true;
                         /*
                          * Indicates that this is not the complete filename but there is nothing we can do at this stage - full filenames
                          * should be displayed once a full linkcheck is performed or at least once a download starts.
@@ -348,7 +361,9 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                 if (!StringUtils.isEmpty(filesizeStr)) {
                     dl.setDownloadSize(SizeFormatter.getSize(filesizeStr));
                 }
-                dl.setAvailable(true);
+                if (!incompleteFileName) {
+                    dl.setAvailable(true);
+                }
                 if (fp != null) {
                     dl._setFilePackage(fp);
                 }
