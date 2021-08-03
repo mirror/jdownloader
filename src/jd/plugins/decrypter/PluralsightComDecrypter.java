@@ -2,6 +2,7 @@ package jd.plugins.decrypter;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +33,7 @@ import org.jdownloader.plugins.components.config.PluralsightComConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "pluralsight.com" }, urls = { "https?://(?:app|www)?\\.pluralsight\\.com(\\/library)?\\/courses\\/[^/]+|https://app\\.pluralsight\\.com/course-player\\?clipId=[a-f0-9\\-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "pluralsight.com" }, urls = { "https?://(?:app|www)?\\.pluralsight\\.com(\\/library)?\\/courses\\/[^/]+|https://app\\.pluralsight\\.com/course-player\\?(clipId|courseId)=[a-f0-9\\-]+" })
 public class PluralsightComDecrypter extends antiDDoSForDecrypt {
     public PluralsightComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -61,23 +62,29 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
     private ArrayList<DownloadLink> newHandling(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Account account = AccountController.getInstance().getValidAccount(getHost());
-        if (account != null) {
+        if (true) {
+            logger.info("No account - not required");
+        } else if (account != null) {
             PluralsightCom.login(account, br, this, false);
             logger.info("Account - Mode:" + account.getUser());
         } else {
             logger.info("No account - Mode");
         }
         br.setFollowRedirects(true);
-        getPage(param.getCryptedUrl());
+        final String courseURL = new Regex(param.getCryptedUrl(), "https?://(?:app|www)?\\.pluralsight\\.com(?:\\/library)?\\/courses\\/([^/]+)").getMatch(0);
+        if (courseURL != null) {
+            getPage("https://app.pluralsight.com/learner/content/courses/" + courseURL);
+        } else {
+            getPage(param.getCryptedUrl());
+        }
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final UrlQuery query = new UrlQuery().parse(param.getCryptedUrl());
-        if (!query.containsKey("clipId")) {
-            logger.info("Looking for clipIDs");
-            final Set<String> dup = new HashSet<String>();
-            final String clipPlayerURL[] = br.getRegex("(/course-player\\?clipId=[a-f0-9\\-]+)\"").getColumn(0);
-            if (clipPlayerURL.length == 0) {
+        if (!query.containsKey("clipId") && !query.containsKey("courseId")) {
+            final Set<String> coursePlayerURL = new HashSet<String>(Arrays.asList(br.getRegex("(/course-player\\?courseId=[a-f0-9\\-]+)\"").getColumn(0)));
+            final Set<String> clipPlayerURL = new HashSet<String>(Arrays.asList(br.getRegex("(/course-player\\?clipId=[a-f0-9\\-]+)\"").getColumn(0)));
+            if (coursePlayerURL.size() == 0 && clipPlayerURL.size() == 0) {
                 /* Content offline or plugin broken */
                 if (account == null && br.containsHTML(">\\s*Start free tria\\s*l<")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -85,8 +92,13 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
-            for (final String clipID : clipPlayerURL) {
-                if (dup.add(clipID)) {
+            logger.info("Looking for courseIds:(" + coursePlayerURL.size() + ")" + coursePlayerURL);
+            logger.info("Looking for clipIds:(" + clipPlayerURL.size() + ")" + clipPlayerURL);
+            for (final String courseID : coursePlayerURL) {
+                ret.add(createDownloadlink(URLHelper.parseLocation(new URL("https://app.pluralsight.com"), courseID).toString()));
+            }
+            if (ret.size() == 0) {
+                for (final String clipID : clipPlayerURL) {
                     ret.add(createDownloadlink(URLHelper.parseLocation(new URL("https://app.pluralsight.com"), clipID).toString()));
                 }
             }
@@ -125,7 +137,6 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
                 fullName = PluralsightCom.correctFileName(fullName);
                 link.setFinalFileName(fullName + ".mp4");
                 link.setProperty(PluralsightCom.PROPERTY_TYPE, "mp4");
-                link.setAvailable(true);
                 ret.add(link);
                 clipIndex++;
             }
