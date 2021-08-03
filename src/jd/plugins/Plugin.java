@@ -35,11 +35,37 @@ import java.util.regex.Pattern;
 
 import javax.swing.Icon;
 
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.SubConfiguration;
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkCheckerThread;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
+import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.OfflineException;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.BrowserSettingsThread;
+import jd.http.ProxySelectorInterface;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.components.SiteType.SiteTemplate;
+import jd.utils.JDUtilities;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Exceptions;
+import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
@@ -70,31 +96,6 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.translate._JDT;
-
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.SubConfiguration;
-import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkCheckerThread;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
-import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
-import jd.controlling.reconnect.ipcheck.IPCheckException;
-import jd.controlling.reconnect.ipcheck.OfflineException;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.BrowserSettingsThread;
-import jd.http.ProxySelectorInterface;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
 
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins. Alle Plugins müssen von dieser Klasse abgeleitet werden.
@@ -371,6 +372,32 @@ public abstract class Plugin implements ActionListener {
         return getFileNameExtensionFromString(filename, null);
     }
 
+    public String getPluginVersionHash() {
+        Class<?> clazz = getClass();
+        final StringBuilder sb = new StringBuilder();
+        sb.append(getHost());
+        sb.append(getVersion());
+        while (clazz != null && Plugin.class.isAssignableFrom(clazz)) {
+            final HostPlugin hostPlugin;
+            final DecrypterPlugin decryptPlugin;
+            if ((hostPlugin = clazz.getAnnotation(HostPlugin.class)) != null) {
+                sb.append("\r\n");
+                sb.append(clazz.getName());
+                sb.append(hostPlugin.revision());
+            } else if ((decryptPlugin = clazz.getAnnotation(DecrypterPlugin.class)) != null) {
+                sb.append("\r\n");
+                sb.append(clazz.getName());
+                sb.append(decryptPlugin.revision());
+            }
+            clazz = clazz.getSuperclass();
+        }
+        if (sb.length() > 0) {
+            return Hash.getSHA256(sb.toString());
+        } else {
+            return null;
+        }
+    }
+
     /**
      * Holt den Dateinamen aus einem Content-Disposition header. wird dieser nicht gefunden, wird der dateiname aus der url ermittelt
      *
@@ -391,9 +418,8 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Corrects extension of given filename. Adds extension if it is missing. Returns null if given filename is null. </br>
-     * Pass fileExtension with dot(s) to this! </br>
-     * Only replaces extensions with one dot e.g. ".mp4", NOT e.g. ".tar.gz".
+     * Corrects extension of given filename. Adds extension if it is missing. Returns null if given filename is null. </br> Pass
+     * fileExtension with dot(s) to this! </br> Only replaces extensions with one dot e.g. ".mp4", NOT e.g. ".tar.gz".
      *
      * @param filenameOrg
      *            Original filename

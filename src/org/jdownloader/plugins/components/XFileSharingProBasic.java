@@ -37,6 +37,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
@@ -152,6 +153,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     protected static final String             PROPERTY_ACCOUNT_apikey                                           = "apikey";
     private static final String               PROPERTY_PLUGIN_api_domain_with_protocol                          = "apidomain";
     private static final String               PROPERTY_PLUGIN_REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP = "REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP";
+    private static final String               PROPERTY_PLUGIN_REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_VERSION   = "REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_VERSION";
 
     public static enum URL_TYPE {
         SHORT,
@@ -1072,8 +1074,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             if (StringUtils.isEmpty(fileInfo[0])) {
                 /* 2019-05-21: E.g. datoporn.co */
                 fileInfo[0] = new Regex(correctedBR, "name=\"fname\" (?:type=\"hidden\" )?value=\"(.*?)\"").getMatch(0);
-                if (StringUtils.isEmpty(correctedBR)) {
-                    fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+                if (StringUtils.isEmpty(fileInfo[0])) {
+                    fileInfo[0] = new Regex(correctedBR, "<h2>.*?Download File(?:<span>)?\\s*(.*?)\\s*(</span>)?\\s*</h2>").getMatch(0);
                     /* traits from download1 page below */
                     if (StringUtils.isEmpty(fileInfo[0])) {
                         fileInfo[0] = new Regex(correctedBR, "Filename:?\\s*(<[^>]+>\\s*)+?([^<>\"]+)").getMatch(1);
@@ -1422,7 +1424,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             logger.info("Failed to find filename via report_file - using fallbackFilename");
             if (fnameViaAbuseUnsupported) {
                 logger.info("Seems like report_file availablecheck seems not to be supported by this host");
-                this.getPluginConfig().setProperty(PROPERTY_PLUGIN_REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP, System.currentTimeMillis());
+                final SubConfiguration config = this.getPluginConfig();
+                config.setProperty(PROPERTY_PLUGIN_REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP, System.currentTimeMillis());
+                config.setProperty(PROPERTY_PLUGIN_REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_VERSION, getPluginVersionHash());
             }
             return fallbackFilename;
         }
@@ -4873,8 +4877,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         final boolean supported_by_hardcoded_setting = this.supports_availablecheck_filename_abuse();
         final boolean supported_by_indicating_html_code = new Regex(getCorrectBR(br), "op=report_file&(?:amp;)?id=" + this.getFUIDFromURL(this.getDownloadLink())).matches();
         boolean allowed_by_auto_handling = true;
-        final long last_failure = this.getPluginConfig().getLongProperty(PROPERTY_PLUGIN_REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP, 0);
-        if (last_failure > 0) {
+        final SubConfiguration config = this.getPluginConfig();
+        final long last_failure = config.getLongProperty(PROPERTY_PLUGIN_REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP, 0);
+        final String last_version = config.getStringProperty(PROPERTY_PLUGIN_REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_VERSION, null);
+        if (last_failure > 0 && StringUtils.equalsIgnoreCase(getPluginVersionHash(), last_version)) {
             final long timestamp_cooldown = last_failure + internal_waittime_on_alternative_availablecheck_failures();
             if (timestamp_cooldown > System.currentTimeMillis()) {
                 logger.info("internal_supports_availablecheck_filename_abuse is still deactivated as it did not work on the last attempt");
