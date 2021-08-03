@@ -91,20 +91,6 @@ public class TezFilesCom extends K2SApi {
     }
 
     @Override
-    protected boolean isRecaptchaEnterprise() {
-        return true;
-    }
-
-    @Override
-    protected String getReCaptchaV2WebsiteKey() {
-        if (isRecaptchaEnterprise()) {
-            return "6LczeGAbAAAAAEp2EDFZ9sR14Q9N1ZlXgjZHlPf3";
-        } else {
-            return "6Lc4tNIaAAAAAC8HtrpzNkA3xFIan367hNE3pKxF";
-        }
-    }
-
-    @Override
     public void reset() {
     }
 
