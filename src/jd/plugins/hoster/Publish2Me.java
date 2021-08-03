@@ -66,11 +66,6 @@ public class Publish2Me extends K2SApi {
     }
 
     @Override
-    protected String getReCaptchaV2WebsiteKey() {
-        return "6LfzstIaAAAAABq_PJ8RN2fEc2Drs_pbTTskiISu";
-    }
-
-    @Override
     protected void setAccountLimits(Account account) {
         final int max;
         switch (account.getType()) {

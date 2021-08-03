@@ -106,22 +106,8 @@ public class FileBoomMe extends K2SApi {
     }
 
     @Override
-    protected boolean isRecaptchaEnterprise() {
-        return true;
-    }
-
-    @Override
     public void resetDownloadlink(DownloadLink link) {
         super.resetLink(link);
-    }
-
-    @Override
-    protected String getReCaptchaV2WebsiteKey() {
-        if (isRecaptchaEnterprise()) {
-            return "6LerjmAbAAAAAMIX4G4GpTISL3MYiO3ERBSTx4Rj";
-        } else {
-            return "6LevsdIaAAAAAIQkoV594FJum58kto6BBLrITlJk";
-        }
     }
 
     @Override

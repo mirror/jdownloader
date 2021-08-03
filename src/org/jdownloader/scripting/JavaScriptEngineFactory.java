@@ -30,6 +30,9 @@ import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import javax.script.SimpleScriptContext;
 
+import jd.parser.Regex;
+import jd.plugins.components.ThrowingRunnable;
+
 import org.appwork.storage.JSonMapperException;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
@@ -51,9 +54,6 @@ import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Synchronizer;
 import org.mozilla.javascript.Undefined;
 import org.mozilla.javascript.Wrapper;
-
-import jd.parser.Regex;
-import jd.plugins.components.ThrowingRunnable;
 
 public class JavaScriptEngineFactory {
     /**
@@ -1009,9 +1009,9 @@ public class JavaScriptEngineFactory {
                 final String numberStr = (String) value;
                 if (StringUtils.isEmpty(numberStr)) {
                     return fallback;
-                } else if (numberStr.matches("\\d+")) {
+                } else if (numberStr.matches("-?\\d+")) {
                     return Long.parseLong((String) value);
-                } else if (numberStr.matches("\\d+\\.\\d+")) {
+                } else if (numberStr.matches("-?\\d+\\.\\d+")) {
                     return Double.valueOf(numberStr).longValue();
                 } else {
                     throw new Exception("no number?" + numberStr);
@@ -1040,9 +1040,9 @@ public class JavaScriptEngineFactory {
                 final String numberStr = (String) value;
                 if (StringUtils.isEmpty(numberStr)) {
                     return fallback;
-                } else if (numberStr.matches("\\d+")) {
+                } else if (numberStr.matches("-?\\d+")) {
                     return Integer.parseInt((String) value);
-                } else if (numberStr.matches("\\d+\\.\\d+")) {
+                } else if (numberStr.matches("-?\\d+\\.\\d+")) {
                     return Double.valueOf(numberStr).intValue();
                 } else {
                     throw new Exception("no number?" + numberStr);

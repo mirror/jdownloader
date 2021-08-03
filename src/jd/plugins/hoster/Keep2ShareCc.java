@@ -137,20 +137,6 @@ public class Keep2ShareCc extends K2SApi {
     }
 
     @Override
-    protected boolean isRecaptchaEnterprise() {
-        return true;
-    }
-
-    @Override
-    protected String getReCaptchaV2WebsiteKey() {
-        if (isRecaptchaEnterprise()) {
-            return "6LcQS4EbAAAAANM0hNHbLRxRZ4NGAroUzudsQIMx";
-        } else {
-            return "6LcOsNIaAAAAABzCMnQw7u0u8zd1mrqY6ibFtto8";
-        }
-    }
-
-    @Override
     public Class<? extends Keep2shareConfig> getConfigInterface() {
         return Keep2shareConfig.class;
     }
