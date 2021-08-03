@@ -53,6 +53,7 @@ import jd.plugins.download.DownloadInterface;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.simplejson.JSonUtils;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -946,7 +947,12 @@ public abstract class K2SApi extends PluginForHost {
                             logger.info("login-captcha_url is not https --> Changing it to https");
                             captcha_url = captcha_url.replace("http://", "https://");
                         }
-                        cbr.getPage(captcha_url);
+                        if (false) {
+                            // returns wrong sitekey, not matching for api domain
+                            postPageRaw(cbr, "/reCaptcha?id=" + URLEncode.encodeURIComponent(challenge), "", account);
+                        } else {
+                            cbr.getPage(captcha_url);
+                        }
                         final boolean dummyLink = getDownloadLink() == null;
                         try {
                             if (dummyLink) {
