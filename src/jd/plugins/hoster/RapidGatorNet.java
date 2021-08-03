@@ -31,6 +31,20 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.RapidGatorConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -51,20 +65,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.RapidGatorConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidgator.net" }, urls = { "https?://(?:www\\.)?(?:rapidgator\\.net|rapidgator\\.asia|rg\\.to)/file/([a-z0-9]{32}(?:/[^/<>]+\\.html)?|\\d+(?:/[^/<>]+\\.html)?)" })
 public class RapidGatorNet extends antiDDoSForHost {
@@ -249,6 +249,9 @@ public class RapidGatorNet extends antiDDoSForHost {
         hotLinkURL = null;
         correctDownloadLink(link);
         setBrowserExclusive();
+        if (!link.isNameSet()) {
+            link.setName(getFallbackFilename(link));
+        }
         br.setFollowRedirects(false);
         final String custom_referer = PluginJsonConfig.get(RapidGatorConfig.class).getReferer();
         if (!StringUtils.isEmpty(custom_referer)) {
@@ -301,9 +304,6 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
         link.removeProperty(HOTLINK);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("File not found")) {
-            if (!link.isNameSet()) {
-                link.setName(getFallbackFilename(link));
-            }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String freedlsizelimit = br.getRegex("'You can download files up to\\s*([\\d\\.]+ ?(MB|GB))\\s*in free mode<").getMatch(0);
@@ -311,7 +311,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             link.getLinkStatus().setStatusText("This file is restricted to Premium users only");
         }
         final String md5 = br.getRegex(">\\s*MD5\\s*:\\s*([A-Fa-f0-9]{32})<").getMatch(0);
-        String filename = br.getRegex("Downloading\\s*:\\s*</strong>([^<>\"]+)</p>").getMatch(0);
+        String filename = br.getRegex("Downloading\\s*:\\s*</strong>\\s*<a href=\"\"[^>]*>([^<>\"]+)<").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>Download file\\s*([^<>\"]+)</title>").getMatch(0);
         }
@@ -321,9 +321,8 @@ public class RapidGatorNet extends antiDDoSForHost {
                 /* Temp workaround for hidden files */
                 filename = filename.substring(1);
             }
-            link.setName(Encoding.htmlDecode(filename.trim()));
-        } else {
-            link.setName(getFallbackFilename(link));
+            /* Prevent encoding issues when using Content-disposition filenames. */
+            link.setFinalFileName(Encoding.htmlDecode(filename).trim());
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -335,9 +334,6 @@ public class RapidGatorNet extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
-    /**
-     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
-     */
     public boolean isProxyRotationEnabledForLinkChecker() {
         return false;
     }
