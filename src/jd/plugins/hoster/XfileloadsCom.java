@@ -37,7 +37,7 @@ public class XfileloadsCom extends XFileSharingProBasic {
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: null 4dignum solvemedia reCaptchaV2, hcaptcha<br />
+     * captchatype-info: 2021-08-03: null<br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
