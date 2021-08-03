@@ -155,6 +155,12 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Wrong captcha code" })
     String decrypter_wrongcaptcha();
 
+    @Default(lngs = { "en" }, values = { "Not available for current IP" })
+    String decrypter_unavailable_ip();
+
+    @Default(lngs = { "en" }, values = { "Not available for current geolocation" })
+    String decrypter_unavailable_geo();
+
     @Default(lngs = { "en" }, values = { "Server does not support chunkload" })
     String download_error_message_rangeheaders();
 
