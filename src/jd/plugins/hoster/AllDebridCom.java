@@ -18,10 +18,12 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.WeakHashMap;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -454,7 +456,7 @@ public class AllDebridCom extends antiDDoSForHost {
         mhm.runCheck(account, link);
         final String directlinkproperty = getDirectLinkProperty(link, account);
         /* Try to re-use previously generated directurl */
-        String dllink = checkDirectLink(link, directlinkproperty);
+        String dllink = checkDirectLink(account, link, directlinkproperty);
         if (StringUtils.isEmpty(dllink)) {
             showMessage(link, "Phase 1/2: Generating link");
             synchronized (account) {
@@ -630,7 +632,7 @@ public class AllDebridCom extends antiDDoSForHost {
         }
     }
 
-    private String checkDirectLink(final DownloadLink link, final String property) {
+    private String checkDirectLink(final Account account, final DownloadLink link, final String property) {
         final String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
@@ -647,7 +649,7 @@ public class AllDebridCom extends antiDDoSForHost {
                     } catch (final IOException e) {
                         logger.log(e);
                     }
-                    checkRateLimit(br2, con);
+                    checkRateLimit(br2, con, account, link);
                     throw new IOException();
                 }
             } catch (final Exception e) {
@@ -761,14 +763,21 @@ public class AllDebridCom extends antiDDoSForHost {
             }
         }
         /* 2020-04-12: Chunks limited to 16 RE: admin */
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLinkDownloadable, br.createGetRequest(genlink), true, -16);
+        int chunks = -16;
+        synchronized (RATE_LIMITED) {
+            final HashSet<String> set = RATE_LIMITED.get(account);
+            if (set != null && set.contains(link.getHost())) {
+                chunks = 1;
+            }
+        }
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLinkDownloadable, br.createGetRequest(genlink), true, chunks);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (IOException e) {
                 logger.log(e);
             }
-            checkRateLimit(br, dl.getConnection());
+            checkRateLimit(br, dl.getConnection(), account, link);
             if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
             } else if (br.containsHTML("range not ok")) {
@@ -782,9 +791,19 @@ public class AllDebridCom extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    private void checkRateLimit(Browser br, URLConnectionAdapter con) throws PluginException {
+    private static WeakHashMap<Account, HashSet<String>> RATE_LIMITED = new WeakHashMap<Account, HashSet<String>>();
+
+    private void checkRateLimit(Browser br, URLConnectionAdapter con, final Account account, final DownloadLink downloadLink) throws PluginException {
         if (br.containsHTML("rate limiting, please retry") || con.getResponseCode() == 429) {
             Browser.setRequestIntervalLimitGlobal(br.getHost(), 2000);
+            synchronized (RATE_LIMITED) {
+                HashSet<String> set = RATE_LIMITED.get(account);
+                if (set == null) {
+                    set = new HashSet<String>();
+                    RATE_LIMITED.put(account, set);
+                }
+                set.add(downloadLink.getHost());
+            }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many requests:" + br.getHost());
         }
     }
