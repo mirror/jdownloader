@@ -703,8 +703,7 @@ public class PornHubCom extends PluginForDecrypt {
             return decryptedLinks;
         } else if (isGeoRestricted(br)) {
             logger.info("Debug info: geo_blocked: " + parameter);
-            final DownloadLink dl = createOfflinelink(parameter);
-            dl.setFinalFileName("(GeoBlocked)viewkey=" + viewkey);
+            final DownloadLink dl = createLinkCrawlerRetry(getCurrentLink(), new DecrypterRetryException(RetryReason.GEO, "(GeoBlocked)viewkey=" + viewkey));
             decryptedLinks.add(dl);
             return decryptedLinks;
         } else if (br.containsHTML(jd.plugins.hoster.PornHubCom.html_privatevideo)) {
