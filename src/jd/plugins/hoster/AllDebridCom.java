@@ -25,28 +25,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.WeakHashMap;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.linkcrawler.CheckableLink;
@@ -71,6 +49,28 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "" })
 public class AllDebridCom extends antiDDoSForHost {
@@ -669,6 +669,29 @@ public class AllDebridCom extends antiDDoSForHost {
         }
     }
 
+    private int getMaxChunks(final Account account, final DownloadLink link) {
+        /* 2020-04-12: Chunks limited to 16 RE: admin */
+        int chunks = 1;
+        if (link.hasProperty(PROPERTY_maxchunks)) {
+            chunks = (int) link.getLongProperty(PROPERTY_maxchunks, 1);
+            if (chunks <= 0) {
+                chunks = 1;
+            } else if (chunks > 1) {
+                chunks = -chunks;
+            }
+        } else {
+            /* Default */
+            chunks = -16;
+        }
+        synchronized (RATE_LIMITED) {
+            final HashSet<String> set = RATE_LIMITED.get(account);
+            if (set != null && set.contains(link.getHost())) {
+                chunks = 1;
+            }
+        }
+        return chunks;
+    }
+
     @SuppressWarnings("deprecation")
     private void handleDL(final Account account, final DownloadLink link, String genlink) throws Exception {
         if (StringUtils.isEmpty(genlink)) {
@@ -765,23 +788,7 @@ public class AllDebridCom extends antiDDoSForHost {
                 logger.info("New final downloadurl: " + genlink);
             }
         }
-        /* 2020-04-12: Chunks limited to 16 RE: admin */
-        int chunks;
-        if (link.hasProperty(PROPERTY_maxchunks)) {
-            chunks = (int) link.getLongProperty(PROPERTY_maxchunks, 1);
-            if (chunks > 1) {
-                chunks = -chunks;
-            }
-        } else {
-            /* Default */
-            chunks = -16;
-        }
-        synchronized (RATE_LIMITED) {
-            final HashSet<String> set = RATE_LIMITED.get(account);
-            if (set != null && set.contains(link.getHost())) {
-                chunks = 1;
-            }
-        }
+        final int chunks = getMaxChunks(account, link);
         logger.info("Max allowed chunks: " + chunks);
         dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLinkDownloadable, br.createGetRequest(genlink), true, chunks);
         if (!looksLikeDownloadableContent(dl.getConnection())) {

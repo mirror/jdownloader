@@ -83,6 +83,7 @@ import org.jdownloader.controlling.download.DownloadControllerEventSender;
 import org.jdownloader.controlling.download.DownloadControllerEventStructureRefresh;
 import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.controlling.lists.DupeManager;
+import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.FinalLinkState;
@@ -1185,13 +1186,66 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 case URL_CONTENT:
                     dupeController.invalidate();
                     break;
+                case EXTRACTION_STATUS:
+                    if (ExtractionStatus.SUCCESSFUL.equals(eventPropery.getValue())) {
+                        final DownloadLink downloadLink = eventPropery.getDownloadLink();
+                        if (downloadLink != null && !FinalLinkState.CheckFinished(downloadLink.getFinalLinkState())) {
+                            final File file = new File(downloadLink.getFileOutput());
+                            final long filesize;
+                            if (file.isFile() && (filesize = file.length()) > 0) {
+                                DownloadWatchDog.getInstance().enqueueJob(new DownloadWatchDogJob() {
+                                    @Override
+                                    public boolean isHighPriority() {
+                                        return false;
+                                    }
+
+                                    @Override
+                                    public void interrupt() {
+                                    }
+
+                                    private void setFinished(final DownloadLink downloadLink) {
+                                        downloadLink.setVerifiedFileSize(filesize);
+                                        downloadLink.setDownloadCurrent(filesize);
+                                        downloadLink.setFinalLinkState(FinalLinkState.FINISHED_MIRROR);
+                                    }
+
+                                    @Override
+                                    public void execute(DownloadSession currentSession) {
+                                        final SingleDownloadController con = downloadLink.getDownloadLinkController();
+                                        if (con == null) {
+                                            setFinished(downloadLink);
+                                        } else {
+                                            /* link has a running singleDownloadController, abort it and reset it after */
+                                            con.getJobsAfterDetach().add(new DownloadWatchDogJob() {
+                                                @Override
+                                                public void interrupt() {
+                                                }
+
+                                                @Override
+                                                public void execute(DownloadSession currentSession) {
+                                                    setFinished(downloadLink);
+                                                }
+
+                                                @Override
+                                                public boolean isHighPriority() {
+                                                    return false;
+                                                }
+                                            });
+                                            con.abort();
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    }
+                    eventPropery.getDownloadLink().getParentNode().getView().requestUpdate();
+                    break;
                 case NAME:
                 case RESET:
                 case RESUME:
                 case ENABLED:
                 case AVAILABILITY:
                 case PRIORITY:
-                case EXTRACTION_STATUS:
                 case PLUGIN_PROGRESS:
                     eventPropery.getDownloadLink().getParentNode().getView().requestUpdate();
                     break;

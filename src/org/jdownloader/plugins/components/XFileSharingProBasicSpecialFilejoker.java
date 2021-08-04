@@ -179,8 +179,8 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
         }
     }
 
-    protected boolean internal_useAPIZeusCloudManager(final Account account) {
-        return useAPIZeusCloudManager(account) && !isAPITempDisabled(account);
+    protected boolean internal_useAPIZeusCloudManager(final DownloadLink link, final Account account) {
+        return (link == null || !URL_TYPE.FILE.equals(getURLType(link))) && useAPIZeusCloudManager(account) && !isAPITempDisabled(account);
     }
 
     /**
@@ -227,7 +227,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
 
     @Override
     protected boolean useRUA() {
-        if (internal_useAPIZeusCloudManager(null)) {
+        if (internal_useAPIZeusCloudManager(null, null)) {
             /* For API mode */
             return useRandomUserAgentAPI();
         } else {
@@ -448,7 +448,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         this.resolveShortURL(link, account);
-        if (internal_useAPIZeusCloudManager(account) && !URL_TYPE.FILE.equals(getURLType(link))) {
+        if (internal_useAPIZeusCloudManager(link, account)) {
             // api doesn't yet support /file/xy urls?! -> error: "no file"
             handlePremiumAPIZeusCloudManager(this.br, link, account);
         } else {
@@ -524,7 +524,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
 
     @Override
     protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
-        if (internal_useAPIZeusCloudManager(account)) {
+        if (internal_useAPIZeusCloudManager(null, account)) {
             return fetchAccountInfoAPIZeusCloudManager(this.br, account);
         } else {
             final long timestamp_last_api_login_failure_in_website_mode = account.getLongProperty(PROPERTY_LAST_API_LOGIN_FAILURE_IN_WEBSITE_MODE, 0);
@@ -604,11 +604,11 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean loginWebsite(final Account account, final boolean force) throws Exception {
-        if (internal_useAPIZeusCloudManager(account)) {
+    public boolean loginWebsite(final DownloadLink downloadLink, final Account account, final boolean force) throws Exception {
+        if (internal_useAPIZeusCloudManager(downloadLink, account)) {
             return loginAPIZeusCloudManager(this.br, account, force);
         } else {
-            return super.loginWebsite(account, force);
+            return super.loginWebsite(downloadLink, account, force);
         }
     }
 

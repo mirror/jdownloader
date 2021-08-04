@@ -21,11 +21,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -34,6 +29,11 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SecretfileNet extends XFileSharingProBasic {
@@ -117,7 +117,7 @@ public class SecretfileNet extends XFileSharingProBasic {
     @Override
     protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         AccountInfo ai = null;
-        loginWebsite(account, true);
+        loginWebsite(null, account, true);
         final String account_info_url_relative = getRelativeAccountInfoURL();
         /*
          * Only access URL if we haven't accessed it before already. Some sites will redirect to their Account-Info page right after

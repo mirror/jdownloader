@@ -64,6 +64,22 @@ public class ArchiveSandbox {
         }
     }
 
+    public String getArchiveID() {
+        if (archive != null) {
+            return archive.getSettings()._getArchiveID();
+        } else {
+            return null;
+        }
+    }
+
+    public String getSettingsID() {
+        if (archive != null) {
+            return archive.getSettings()._getSettingsID();
+        } else {
+            return null;
+        }
+    }
+
     public List<String> getPasswords() {
         if (archive != null) {
             return archive.getSettings().getPasswords();
