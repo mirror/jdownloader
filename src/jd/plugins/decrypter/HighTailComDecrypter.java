@@ -17,8 +17,14 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,13 +34,13 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hightail.com" }, urls = { "https?://(?:www\\.)?(?:yousendit|hightail)\\.com/download/[A-Za-z0-9\\-_]+|https?://spaces\\.hightail\\.com/receive/[A-Za-z0-9]+/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hightail.com" }, urls = { "https?://(?:www\\.)?(?:yousendit|hightail)\\.com/download/[A-Za-z0-9\\-_]+|https?://spaces\\.hightail\\.com/(?:space|receive)/[A-Za-z0-9]+" })
 public class HighTailComDecrypter extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public HighTailComDecrypter(PluginWrapper wrapper) {
@@ -69,29 +75,25 @@ public class HighTailComDecrypter extends PluginForDecrypt {
             spaceID = PluginJSonUtils.getJson(this.br, "spaceUrl");
         } else {
             /* New URLs --> spaceID is given inside URL. */
-            spaceID = new Regex(parameter, "/receive/([A-Za-z0-9]+)").getMatch(0);
+            spaceID = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
         }
         if (StringUtils.isEmpty(spaceID)) {
             return null;
         }
-        // br.getHeaders().put("Accept", "application/json, text/plain, */*");
-        // br.getHeaders().put("X-Correlation-Id", "gp7n6k11lymls:1fugwrm16otk1n");
-        br.getPage("/api/v1/spaces/url/" + spaceID + "?status=SEND");
-        final String errorMessage = PluginJSonUtils.getJson(this.br, "errorMessage");
+        br.getPage("https://api.spaces." + this.getHost() + "/api/v1/spaces/url/" + spaceID + "?status=ACTIVE");
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final String errorMessage = (String) entries.get("errorMessage");
         if (!StringUtils.isEmpty(errorMessage)) {
             /* 2017-05-04: E.g. {"errorMessage":"SPACE_EXPIRED"} */
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String spaceIDLonger = PluginJSonUtils.getJson(this.br, "id");
-        if (StringUtils.isEmpty(spaceIDLonger)) {
-            return null;
-        }
-        br.getPage("https://api.spaces.hightail.com/api/v1/files/" + spaceIDLonger + "?cacheBuster=" + System.currentTimeMillis() + "&depth=1&limit=10000&offset=0&sort=custom");
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("children");
+        final String spaceIDLonger = (String) entries.get("id");
+        br.getPage("/api/v1/files/" + spaceIDLonger + "?cacheBuster=" + System.currentTimeMillis() + "&depth=1&limit=10000&offset=0&sort=custom");
+        entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        final String spaceName = (String) entries.get("name");
+        final List<Object> ressourcelist = (List<Object>) entries.get("children");
         for (final Object fo : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) fo;
+            entries = (Map<String, Object>) fo;
             final String fileID = (String) entries.get("fileId");
             final String versionId = (String) entries.get("versionId");
             if (StringUtils.isEmpty(fileID) || StringUtils.isEmpty(versionId)) {
@@ -112,7 +114,7 @@ public class HighTailComDecrypter extends PluginForDecrypt {
                 }
                 dl.setFinalFileName(filename);
                 dl.setDownloadSize(filesize);
-                dl.setLinkID(fileID + spaceIDLonger + versionId);
+                dl.setLinkID(this.getHost() + "://" + spaceIDLonger + versionId);
                 dl.setProperty("directname", filename);
                 dl.setProperty("directsize", filesize);
                 dl.setProperty("spaceid", spaceIDLonger);
@@ -122,6 +124,11 @@ public class HighTailComDecrypter extends PluginForDecrypt {
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
+        }
+        if (!StringUtils.isEmpty(spaceName)) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(spaceName);
+            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }

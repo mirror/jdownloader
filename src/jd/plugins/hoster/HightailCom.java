@@ -25,7 +25,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hightail.com" }, urls = { "http(s)?://(www\\.)?yousenditdecrypted\\.com/download/[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hightail.com" }, urls = { "http(s)?://(?:www\\.)?yousenditdecrypted\\.com/download/[A-Za-z0-9]+" })
 public class HightailCom extends PluginForHost {
     private String dllink = null;
 
@@ -54,7 +54,7 @@ public class HightailCom extends PluginForHost {
         final String fileid = link.getStringProperty("fileid", null);
         final String spaceid = link.getStringProperty("spaceid", null);
         final String versionid = link.getStringProperty("versionid", null);
-        if (link.getBooleanProperty("offline", false) || fileid == null || spaceid == null || versionid == null) {
+        if (fileid == null || spaceid == null || versionid == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.setFollowRedirects(true);
@@ -63,19 +63,20 @@ public class HightailCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         if (this.dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         jd.plugins.decrypter.HighTailComDecrypter.getSessionID(this.br);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (this.br.containsHTML("An Error Has Occurred<")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
         }
         dl.startDownload();
     }
