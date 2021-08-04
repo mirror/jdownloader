@@ -4219,6 +4219,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /** Generates final downloadurl via API if API usage is allowed and apikey is available. */
+    /*
+     * TODO: check/add support for URL_TYPE.FILE
+     */
     protected String getDllinkAPI(final DownloadLink link, final Account account) throws Exception {
         String dllink = null;
         /**
