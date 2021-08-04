@@ -25,6 +25,28 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.WeakHashMap;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.linkcrawler.CheckableLink;
@@ -49,28 +71,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "" })
 public class AllDebridCom extends antiDDoSForHost {
@@ -98,6 +98,7 @@ public class AllDebridCom extends antiDDoSForHost {
     public static final String           agent_raw                         = "JDownloader";
     private static final String          PROPERTY_APIKEY_CREATED_TIMESTAMP = "APIKEY_CREATED_TIMESTAMP";
     private static final String          PROPERTY_apikey                   = "apiv4_apikey";
+    private static final String          PROPERTY_maxchunks                = "maxchunks";
 
     public String fetchApikey(final Account account, final AccountInfo accountInfo) throws Exception {
         synchronized (account) {
@@ -503,13 +504,14 @@ public class AllDebridCom extends antiDDoSForHost {
                 }
             }
             try {
-                /* We need the parser as some URLs may have streams available with multiple qualities and multiple downloadurls */
-                // dllink = PluginJSonUtils.getJsonValue(br, "link");
                 Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 entries = (Map<String, Object>) entries.get("data");
+                if (entries.containsKey("max_chunks")) {
+                    link.setProperty(PROPERTY_maxchunks, entries.get("max_chunks"));
+                }
                 dllink = (String) entries.get("link");
-            } catch (final Throwable e) {
-                logger.log(e);
+            } catch (final Throwable ignore) {
+                logger.log(ignore);
             }
             if (dllink == null || !dllink.matches("https?://.+")) {
                 mhm.handleErrorGeneric(account, link, "dllinknull", 50, 1 * 60 * 1000l);
@@ -669,18 +671,19 @@ public class AllDebridCom extends antiDDoSForHost {
 
     @SuppressWarnings("deprecation")
     private void handleDL(final Account account, final DownloadLink link, String genlink) throws Exception {
-        if (genlink == null) {
+        if (StringUtils.isEmpty(genlink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         showMessage(link, "Task 2: Download begins!");
         final boolean useVerifiedFileSize;
-        final String directlinkpawsproperty = getDirectLinkProperty(link, account) + "_paws";
+        /* "paws" handling = old handling to disable setting verified filesize via API. */
+        final String pawsProperty = getDirectLinkProperty(link, account) + "_paws";
         final Boolean paws;
         if (br != null && PluginJSonUtils.getJsonValue(br, "paws") != null) {
             paws = PluginJSonUtils.parseBoolean(PluginJSonUtils.getJsonValue(br, "paws"));
-            link.setProperty(directlinkpawsproperty, paws.booleanValue());
-        } else if (link.hasProperty(directlinkpawsproperty)) {
-            paws = link.getBooleanProperty(directlinkpawsproperty, false);
+            link.setProperty(pawsProperty, paws.booleanValue());
+        } else if (link.hasProperty(pawsProperty)) {
+            paws = link.getBooleanProperty(pawsProperty, false);
         } else {
             paws = false;
         }
@@ -763,13 +766,23 @@ public class AllDebridCom extends antiDDoSForHost {
             }
         }
         /* 2020-04-12: Chunks limited to 16 RE: admin */
-        int chunks = -16;
+        int chunks;
+        if (link.hasProperty(PROPERTY_maxchunks)) {
+            chunks = (int) link.getLongProperty(PROPERTY_maxchunks, 1);
+            if (chunks > 1) {
+                chunks = -chunks;
+            }
+        } else {
+            /* Default */
+            chunks = -16;
+        }
         synchronized (RATE_LIMITED) {
             final HashSet<String> set = RATE_LIMITED.get(account);
             if (set != null && set.contains(link.getHost())) {
                 chunks = 1;
             }
         }
+        logger.info("Max allowed chunks: " + chunks);
         dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLinkDownloadable, br.createGetRequest(genlink), true, chunks);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
