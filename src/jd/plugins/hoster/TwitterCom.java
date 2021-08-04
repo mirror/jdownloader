@@ -100,8 +100,8 @@ public class TwitterCom extends PluginForHost {
     @Override
     public void init() {
         super.init();
-        Browser.setRequestIntervalLimitGlobal("twimg.com", true, 350);
-        Browser.setRequestIntervalLimitGlobal("api.twitter.com", true, 350);
+        Browser.setRequestIntervalLimitGlobal("twimg.com", true, 500);
+        Browser.setRequestIntervalLimitGlobal("api.twitter.com", true, 500);
     }
 
     private void setconstants(final DownloadLink link) {
