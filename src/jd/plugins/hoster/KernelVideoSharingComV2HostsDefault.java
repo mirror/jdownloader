@@ -96,6 +96,8 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "punishbang.com" });
         /* 2021-07-22 */
         ret.add(new String[] { "txxx.tube" });
+        /* 2021-08-04 */
+        ret.add(new String[] { "camstreams.tv" });
         return ret;
     }
 
