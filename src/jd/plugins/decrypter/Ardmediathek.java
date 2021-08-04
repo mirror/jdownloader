@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -42,14 +41,9 @@ import org.jdownloader.plugins.components.config.KikaDeConfig;
 import org.jdownloader.plugins.components.config.MdrDeConfig;
 import org.jdownloader.plugins.components.config.MediathekDasersteConfig;
 import org.jdownloader.plugins.components.config.MediathekProperties;
-import org.jdownloader.plugins.components.config.MediathekRbbOnlineConfig;
-import org.jdownloader.plugins.components.config.NdrDeConfig;
-import org.jdownloader.plugins.components.config.OneARDConfig;
-import org.jdownloader.plugins.components.config.RbbOnlineConfig;
 import org.jdownloader.plugins.components.config.SandmannDeConfig;
 import org.jdownloader.plugins.components.config.SportschauConfig;
 import org.jdownloader.plugins.components.config.SputnikDeConfig;
-import org.jdownloader.plugins.components.config.SrOnlineConfig;
 import org.jdownloader.plugins.components.config.WDRConfig;
 import org.jdownloader.plugins.components.config.WDRMausConfig;
 import org.jdownloader.plugins.components.hls.HlsContainer;
@@ -76,14 +70,11 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.MediathekHelper;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "rbb-online.de", "sandmann.de", "wdr.de", "sportschau.de", "one.ard.de", "wdrmaus.de", "sr-online.de", "ndr.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "checkeins.de" }, urls = { "https?://(?:[A-Z0-9]+\\.)?ardmediathek\\.de/.+", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/[^<>\"]+/(?:videos|videosextern)/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html|https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js", "https?://(?:www\\.)?sportschau\\.de/.*?\\.html",
-        "https?://(?:www\\.)?one\\.ard\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?wdrmaus\\.de/.+", "https?://sr\\-mediathek\\.sr\\-online\\.de/index\\.php\\?seite=\\d+\\&id=\\d+", "https?://(?:[a-z0-9]+\\.)?ndr\\.de/.*?\\.html", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?checkeins\\.de/[^<>\"]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "sandmann.de", "wdr.de", "sportschau.de", "wdrmaus.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "checkeins.de" }, urls = { "https?://(?:[A-Z0-9]+\\.)?ardmediathek\\.de/.+", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/[^<>\"]+/(?:videos|videosextern)/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html|https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js", "https?://(?:\\w+\\.)?sportschau\\.de/.*?\\.html", "https?://(?:www\\.)?wdrmaus\\.de/.+", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html",
+        "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?checkeins\\.de/[^<>\"]+\\.html" })
 public class Ardmediathek extends PluginForDecrypt {
-    private static final String                 EXCEPTION_LINKOFFLINE                      = "EXCEPTION_LINKOFFLINE";
     private static final String                 EXCEPTION_GEOBLOCKED                       = "EXCEPTION_GEOBLOCKED";
     /* Constants */
-    private static final String                 type_unsupported                           = ".+ardmediathek\\.de/(tv/live\\?kanal=\\d+|dossiers/.*)";
-    private static final String                 type_invalid                               = ".+(ardmediathek|mediathek\\.daserste)\\.de/(download|livestream).+";
     private static final String                 type_embedded                              = "https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js";
     /* Variables */
     private final HashMap<String, DownloadLink> foundQualitiesMap                          = new HashMap<String, DownloadLink>();
@@ -126,24 +117,16 @@ public class Ardmediathek extends PluginForDecrypt {
     public Class<? extends ArdConfigInterface> getConfigInterface() {
         if ("ardmediathek.de".equalsIgnoreCase(getHost())) {
             return ArdConfigInterface.class;
-        } else if ("mediathek.rbb-online.de".equalsIgnoreCase(getHost())) {
-            return MediathekRbbOnlineConfig.class;
         } else if ("daserste.de".equalsIgnoreCase(getHost())) {
             return DasersteConfig.class;
         } else if ("mediathek.daserste.de".equalsIgnoreCase(getHost())) {
             return MediathekDasersteConfig.class;
-        } else if ("one.ard.de".equalsIgnoreCase(getHost())) {
-            return OneARDConfig.class;
         } else if ("wdrmaus.de".equalsIgnoreCase(getHost())) {
             return WDRMausConfig.class;
         } else if ("wdr.de".equalsIgnoreCase(getHost())) {
             return WDRConfig.class;
         } else if ("sportschau.de".equalsIgnoreCase(getHost())) {
             return SportschauConfig.class;
-        } else if ("sr-online.de".equalsIgnoreCase(getHost())) {
-            return SrOnlineConfig.class;
-        } else if ("ndr.de".equalsIgnoreCase(getHost())) {
-            return NdrDeConfig.class;
         } else if ("kika.de".equalsIgnoreCase(getHost())) {
             return KikaDeConfig.class;
         } else if ("eurovision.de".equalsIgnoreCase(getHost())) {
@@ -156,8 +139,6 @@ public class Ardmediathek extends PluginForDecrypt {
             return SandmannDeConfig.class;
         } else if ("mdr.de".equalsIgnoreCase(getHost())) {
             return MdrDeConfig.class;
-        } else if ("rbb-online.de".equalsIgnoreCase(getHost())) {
-            return RbbOnlineConfig.class;
         } else {
             return ArdConfigInterface.class;
         }
@@ -167,10 +148,6 @@ public class Ardmediathek extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         parameter = Encoding.htmlDecode(param.toString());
-        if (parameter.matches(type_unsupported) || parameter.matches(type_invalid)) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        }
         br.setFollowRedirects(true);
         cfg = PluginJsonConfig.get(getConfigInterface());
         final List<String> selectedQualities = new ArrayList<String>();
@@ -254,19 +231,16 @@ public class Ardmediathek extends PluginForDecrypt {
                 /* 2020-05-26: Separate handling required */
                 this.decryptArdmediathekDeNew();
             } else {
-                decryptMediathek();
+                this.decryptMediathek(param);
             }
             handleUserQualitySelection(selectedQualities);
         } catch (final DecrypterException e) {
             try {
-                if (e.getMessage().equals(EXCEPTION_LINKOFFLINE)) {
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                    return decryptedLinks;
-                } else if (e.getMessage().equals(EXCEPTION_GEOBLOCKED)) {
+                if (e.getMessage().equals(EXCEPTION_GEOBLOCKED)) {
                     decryptedLinks.add(this.createOfflinelink(parameter, "GEO-blocked_" + getURLPart(this.parameter), "GEO-blocked_" + getURLPart(this.parameter)));
                     return decryptedLinks;
                 }
-            } catch (final Exception x) {
+            } catch (final Exception ignore) {
             }
             throw e;
         }
@@ -339,7 +313,7 @@ public class Ardmediathek extends PluginForDecrypt {
             /* 2018-02-15: E.g. daserste.de, wdr.de */
             final String headline = brHTML.getRegex("<h3 class=\"headline\">([^<>]+)</h3>").getMatch(0);
             try {
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(jsonSchemaOrg);
+                Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(jsonSchemaOrg);
                 final String uploadDate = (String) entries.get("uploadDate");
                 title = (String) entries.get("name");
                 if ("Video".equalsIgnoreCase(title) && !StringUtils.isEmpty(headline)) {
@@ -358,7 +332,7 @@ public class Ardmediathek extends PluginForDecrypt {
                     date = new Regex(uploadDate, "(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
                 }
                 /* Find more data */
-                entries = (LinkedHashMap<String, Object>) entries.get("productionCompany");
+                entries = (Map<String, Object>) entries.get("productionCompany");
                 if (entries != null) {
                     provider = (String) entries.get("name");
                 }
@@ -402,14 +376,8 @@ public class Ardmediathek extends PluginForDecrypt {
             // final String trackerClipCategory = (String) dataEmbeddedContent.get("trackerClipCategory");
             show = (String) dataEmbeddedContent.get("trackerClipSubcategory");
             title = (String) dataEmbeddedContent.get("trackerClipTitle");
-            final String trackerClipAirTime = (String) dataEmbeddedContent.get("trackerClipAirTime");
+            // final String trackerClipAirTime = (String) dataEmbeddedContent.get("trackerClipAirTime");
             date = (String) dataEmbeddedContent.get("trackerClipAirTime");
-        } else if (host.contains("sr-online.de")) {
-            /* sr-mediathek.sr-online.de */
-            title = brHTML.getRegex("<div class=\"ardplayer\\-title\">([^<>\"]+)</div>").getMatch(0);
-            if (StringUtils.isEmpty(date)) {
-                date = brHTML.getRegex("<p>Video \\| (\\d{2}\\.\\d{2}\\.\\d{4}) \\| Dauer:").getMatch(0);
-            }
         } else if (host.equalsIgnoreCase("ndr.de") || host.equalsIgnoreCase("eurovision.de")) {
             /* ndr.de */
             if (brHTML.getURL().contains("daserste.ndr.de") && StringUtils.isEmpty(date)) {
@@ -472,7 +440,7 @@ public class Ardmediathek extends PluginForDecrypt {
             /* E.g. kika.de, sputnik.de, mdr.de */
             br.getPage(this.parameter);
             if (isOffline(this.br)) {
-                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             url_xml = br.getRegex("\\'((?:https?://|(?:\\\\)?/)[^<>\"]+\\-avCustom\\.xml)\\'").getMatch(0);
             if (!StringUtils.isEmpty(url_xml)) {
@@ -483,39 +451,6 @@ public class Ardmediathek extends PluginForDecrypt {
             }
         }
         return url_xml;
-    }
-
-    /** Finds json URL which leads to subtitle and video stream URLs AND sets unique contentID. */
-    private String getVideoJsonURL() throws MalformedURLException {
-        String url_json = null;
-        final String host = getHost();
-        if (host.contains("sr-online.de")) {
-            this.contentID = new Regex(br.getURL(), "id=(\\d+)").getMatch(0);
-            url_json = String.format("http://www.sr-mediathek.de/sr_player/mc.php?id=%s&tbl=&pnr=0&hd=1&devicetype=", this.contentID);
-        } else if (host.equalsIgnoreCase("sandmann.de")) {
-            url_json = br.getRegex("data\\-media\\-ref=\"([^\"]*?\\.jsn)[^\"]*?\"").getMatch(0);
-            if (!StringUtils.isEmpty(url_json)) {
-                if (url_json.startsWith("/")) {
-                    url_json = "https://www.sandmann.de" + url_json;
-                }
-                /* This is a very ugly contentID */
-                this.contentID = new Regex(url_json, "sandmann\\.de/(.+)").getMatch(0);
-            }
-        } else if (host.contains("ndr.de") || host.equalsIgnoreCase("eurovision.de")) {
-            /* E.g. daserste.ndr.de, blabla.ndr.de */
-            this.contentID = br.getRegex("([A-Za-z0-9]+\\d+)\\-(?:ard)?player_[^\"]+\"").getMatch(0);
-            if (!StringUtils.isEmpty(this.contentID)) {
-                url_json = String.format("https://www.ndr.de/%s-ardjson.json", this.contentID);
-            }
-        } else {
-            /* wdr.de, one.ard.de, wdrmaus.de */
-            url_json = this.br.getRegex("(?:\\'|\")mediaObj(?:\\'|\"):\\s*?\\{\\s*?(?:\\'|\")url(?:\\'|\"):\\s*?(?:\\'|\")(https?://[^<>\"]+\\.js)(?:\\'|\")").getMatch(0);
-            if (url_json != null) {
-                /* 2018-03-07: Same IDs that will also appear in every streamingURL! */
-                this.contentID = new Regex(url_json, "(\\d+/\\d+)\\.js$").getMatch(0);
-            }
-        }
-        return url_json;
     }
 
     /**
@@ -557,47 +492,52 @@ public class Ardmediathek extends PluginForDecrypt {
         }
     }
 
-    private String getHlsToHttpURLFormat(final String hls_master) {
-        final Regex regex_hls = new Regex(hls_master, ".+/([^/]+/[^/]+/[^,/]+)(?:/|_|\\.),([A-Za-z0-9_,\\-]+),\\.mp4\\.csmil/?");
+    private String getHlsToHttpURLFormat(final String hlsMaster, final String exampleHTTPURL) {
+        final Regex regex_hls = new Regex(hlsMaster, ".+/([^/]+/[^/]+/[^,/]+)(?:/|_|\\.),([A-Za-z0-9_,\\-]+),\\.mp4\\.csmil/?");
         String urlpart = regex_hls.getMatch(0);
-        String urlpart2 = new Regex(hls_master, "//[^/]+/[^/]+/(.*?)(?:/|_),").getMatch(0);
+        String urlpart2 = new Regex(hlsMaster, "//[^/]+/[^/]+/(.*?)(?:/|_),").getMatch(0);
         String http_url_format = null;
         /**
          * hls --> http urls (whenever possible) <br />
          */
         /* First case */
-        if (hls_master.contains("sr_hls_od-vh") && urlpart != null) {
+        if (hlsMaster.contains("sr_hls_od-vh") && urlpart != null) {
             http_url_format = "http://mediastorage01.sr-online.de/Video/" + urlpart + "_%s.mp4";
         }
         /* 2020-06-02: Do NOT yet try to make a generic RegEx for all types of HLS URLs!! */
         final String pattern_ard = ".*//hlsodswr-vh\\.akamaihd\\.net/i/(.*?),.*?\\.mp4\\.csmil/master\\.m3u8";
         final String pattern_hr = ".*//hrardmediathek-vh\\.akamaihd.net/i/(.*?),.+\\.mp4\\.csmil/master\\.m3u8$";
         /* Daserste */
-        if (hls_master.contains("dasersteuni-vh.akamaihd.net")) {
+        if (hlsMaster.contains("dasersteuni-vh.akamaihd.net")) {
             if (urlpart2 != null) {
                 http_url_format = "https://pdvideosdaserste-a.akamaihd.net/" + urlpart2 + "/%s.mp4";
             }
-        } else if (hls_master.contains("br-i.akamaihd.net")) {
+        } else if (hlsMaster.contains("br-i.akamaihd.net")) {
             if (urlpart2 != null) {
                 http_url_format = "http://cdn-storage.br.de/" + urlpart2 + "_%s.mp4";
             }
-        } else if (hls_master.contains("wdradaptiv-vh.akamaihd.net") && urlpart2 != null) {
+        } else if (hlsMaster.contains("wdradaptiv-vh.akamaihd.net") && urlpart2 != null) {
             /* wdr */
             http_url_format = "http://wdrmedien-a.akamaihd.net/" + urlpart2 + "/%s.mp4";
-        } else if (hls_master.contains("rbbmediaadp-vh") && urlpart2 != null) {
+        } else if (hlsMaster.contains("rbbmediaadp-vh") && urlpart2 != null) {
             /* For all RBB websites e.g. also sandmann.de */
             http_url_format = "https://rbbmediapmdp-a.akamaihd.net/" + urlpart2 + "_%s.mp4";
-        } else if (hls_master.contains("ndrod-vh.akamaihd.net") && urlpart != null) {
+        } else if (hlsMaster.contains("ndrod-vh.akamaihd.net") && urlpart != null) {
             /* 2018-03-07: There is '/progressive/' and '/progressive_geo/' --> We have to grab this from existing http urls */
-            final String server_http = br.getRegex("(https?://mediandr\\-a\\.akamaihd\\.net/progressive[^/]*?/)[^\"]+\\.mp4").getMatch(0);
-            if (server_http != null) {
-                http_url_format = server_http + urlpart + ".%s.mp4";
+            final String baseHttp;
+            if (exampleHTTPURL != null) {
+                baseHttp = new Regex(exampleHTTPURL, "(https?://[^/]+/[^/]+/)").getMatch(0);
+            } else {
+                baseHttp = br.getRegex("(https?://mediandr\\-a\\.akamaihd\\.net/progressive[^/]*?/)[^\"]+\\.mp4").getMatch(0);
             }
-        } else if (new Regex(hls_master, pattern_ard).matches()) {
-            urlpart = new Regex(hls_master, pattern_ard).getMatch(0);
+            if (baseHttp != null) {
+                http_url_format = baseHttp + urlpart + ".%s.mp4";
+            }
+        } else if (new Regex(hlsMaster, pattern_ard).matches()) {
+            urlpart = new Regex(hlsMaster, pattern_ard).getMatch(0);
             http_url_format = "https://pdodswr-a.akamaihd.net/" + urlpart + "%s.mp4";
-        } else if (new Regex(hls_master, pattern_hr).matches()) {
-            urlpart = new Regex(hls_master, pattern_hr).getMatch(0);
+        } else if (new Regex(hlsMaster, pattern_hr).matches()) {
+            urlpart = new Regex(hlsMaster, pattern_hr).getMatch(0);
             http_url_format = "http://hrardmediathek-a.akamaihd.net/" + urlpart + "%skbit.mp4";
         } else {
             /* Unsupported URL */
@@ -628,7 +568,7 @@ public class Ardmediathek extends PluginForDecrypt {
             }
             if (ardBase64 == null) {
                 /* This should never happen */
-                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (Encoding.isUrlCoded(ardBase64)) {
                 ardBase64 = Encoding.urlDecode(ardBase64, true);
@@ -637,11 +577,11 @@ public class Ardmediathek extends PluginForDecrypt {
             final String ardBase64Decoded = Encoding.Base64Decode(ardBase64);
             if (StringUtils.equals(ardBase64, ardBase64Decoded)) {
                 logger.info("Unsupported URL (?)");
-                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             br.getPage("https://page.ardmediathek.de/page-gateway/pages/daserste/item/" + Encoding.urlEncode(ardBase64) + "?devicetype=pc&embedded=false");
             if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             ardDocumentID = PluginJSonUtils.getJson(br, "contentId");
             // final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
@@ -653,7 +593,7 @@ public class Ardmediathek extends PluginForDecrypt {
             final String type = (String) entries.get("type");
             if ("player_live".equalsIgnoreCase(type)) {
                 logger.info("Cannot download livestreams");
-                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (StringUtils.isEmpty(broadcastedOn)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if (StringUtils.isAllEmpty(ardtitle, showname)) {
@@ -681,7 +621,7 @@ public class Ardmediathek extends PluginForDecrypt {
         if (requiresOldContentIDHandling) {
             if (StringUtils.isEmpty(ardDocumentID)) {
                 /* Probably offline content */
-                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             /* 2020-05-26: Also possible: http://page.ardmediathek.de/page-gateway/playerconfig/<documentID> */
             /* Old way: http://www.ardmediathek.de/play/media/%s?devicetype=pc&features=flash */
@@ -694,10 +634,10 @@ public class Ardmediathek extends PluginForDecrypt {
     }
 
     /** Last revision with old handling: 38658 */
-    private void decryptMediathek() throws Exception {
+    private void decryptMediathek(final CryptedLink param) throws Exception {
         br.getPage(parameter);
         if (isOffline(this.br)) {
-            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Browser brBefore = br.cloneBrowser();
         if (this.parameter.matches(type_embedded)) {
@@ -705,35 +645,70 @@ public class Ardmediathek extends PluginForDecrypt {
             // brJSON = br.cloneBrowser();
             /* Do nothing */
         } else {
-            final String[] embeddedVideosType1 = br.getRegex("(?:\\'|\")mediaObj(?:\\'|\"):\\s*?\\{\\s*?(?:\\'|\")url(?:\\'|\"):\\s*?(?:\\'|\")(https?://[^<>\"]+\\.js)(?:\\'|\")").getColumn(0);
-            if (embeddedVideosType1.length > 1) {
-                /* Embedded items --> Go back into decrypter */
-                logger.info("Found multiple embedded items");
-                for (final String embeddedVideo : embeddedVideosType1) {
-                    decryptedLinks.add(this.createDownloadlink(embeddedVideo));
+            String url_json = null;
+            if (this.getHost().equals("sportschau.de")) {
+                /* Special handling: Embedded videoplayer --> "ardjson" URL will be inside that html */
+                final String embedPlayerURL = br.getRegex("allowFullScreen\\s*src=\"(/[^\"]+)\"").getMatch(0);
+                /* This step is optional in case the user directly adds an embedded URL. */
+                if (embedPlayerURL != null && embedPlayerURL.contains("-ardplayer")) {
+                    url_json = embedPlayerURL.replace("-ardplayer", "-ardjson");
+                } else if (br.getURL().contains("-ardplayer")) {
+                    url_json = br.getURL().replace("-ardplayer", "-ardjson");
+                } else if (br.getURL().contains("-ardjson")) {
+                    url_json = br.getURL();
                 }
-                return;
-            }
-            br.setFollowRedirects(true);
-            final String url_json;
-            if (embeddedVideosType1.length == 1) {
-                url_json = embeddedVideosType1[0];
             } else {
-                url_json = getVideoJsonURL();
+                br.setFollowRedirects(true);
+                final String[] embeddedVideosType1 = br.getRegex("(?:\\'|\")mediaObj(?:\\'|\"):\\s*?\\{\\s*?(?:\\'|\")url(?:\\'|\"):\\s*?(?:\\'|\")(https?://[^<>\"]+\\.js)(?:\\'|\")").getColumn(0);
+                if (embeddedVideosType1.length > 1) {
+                    /* Embedded items --> Go back into crawler */
+                    logger.info("Found " + embeddedVideosType1.length + " embedded items");
+                    for (final String embeddedVideo : embeddedVideosType1) {
+                        decryptedLinks.add(this.createDownloadlink(embeddedVideo));
+                    }
+                    return;
+                } else if (embeddedVideosType1.length == 1) {
+                    /* We've already accessed the URL --> Process it right away */
+                    url_json = embeddedVideosType1[0];
+                } else {
+                    if (this.getHost().equalsIgnoreCase("sandmann.de")) {
+                        url_json = br.getRegex("data\\-media\\-ref=\"([^\"]*?\\.jsn)[^\"]*?\"").getMatch(0);
+                        if (!StringUtils.isEmpty(url_json)) {
+                            if (url_json.startsWith("/")) {
+                                url_json = "https://www.sandmann.de" + url_json;
+                            }
+                            /* This is a very ugly contentID */
+                            this.contentID = new Regex(url_json, "sandmann\\.de/(.+)").getMatch(0);
+                        }
+                    } else if (this.getHost().contains("ndr.de") || this.getHost().equalsIgnoreCase("eurovision.de")) {
+                        /* E.g. daserste.ndr.de, blabla.ndr.de */
+                        this.contentID = br.getRegex("([A-Za-z0-9]+\\d+)\\-(?:ard)?player_[^\"]+\"").getMatch(0);
+                        if (!StringUtils.isEmpty(this.contentID)) {
+                            url_json = String.format("https://www.ndr.de/%s-ardjson.json", this.contentID);
+                        }
+                    } else {
+                        /* wdr.de, wdrmaus.de */
+                        url_json = this.br.getRegex("(?:\\'|\")mediaObj(?:\\'|\"):\\s*?\\{\\s*?(?:\\'|\")url(?:\\'|\"):\\s*?(?:\\'|\")(https?://[^<>\"]+\\.js)(?:\\'|\")").getMatch(0);
+                        if (url_json != null) {
+                            /* 2018-03-07: Same IDs that will also appear in every streamingURL! */
+                            this.contentID = new Regex(url_json, "(\\d+/\\d+)\\.js$").getMatch(0);
+                        }
+                    }
+                }
             }
             if (StringUtils.isEmpty(url_json)) {
                 /* No downloadable content --> URL should be offline (or only text content) */
-                /* 2021-04-07: Check for special case e.g. for wdr.de */
+                /* 2021-04-07: Check for special case with json inside html e.g. for wdr.de */
                 final String json = br.getRegex("globalObject\\.gseaInlineMediaData\\[\"mdb-\\d+\"\\] =\\s*(\\{.*?\\});\\s*</script>").getMatch(0);
                 if (json == null) {
-                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 br.getRequest().setHtmlCode(json);
             } else {
                 br.getPage(url_json);
                 /* No json --> No media to crawl (rare case!)! */
                 if (!br.getHttpConnection().getContentType().contains("application/json") && !br.getHttpConnection().getContentType().contains("application/javascript") && !br.containsHTML("\\{") || br.getHttpConnection().getResponseCode() == 404 || br.toString().length() <= 10) {
-                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
         }
@@ -769,6 +744,8 @@ public class Ardmediathek extends PluginForDecrypt {
         } else {
             map = null;
         }
+        String exampleHTTPURL = null;
+        String hlsMaster = null;
         if (map != null && map.containsKey("_mediaArray")) {
             /*
              * Website actually tries to stream video - only then it is safe to know if the items is only "somewhere" GEO-blocked or
@@ -787,17 +764,25 @@ public class Ardmediathek extends PluginForDecrypt {
                         // list is sorted from best to lowest quality, first one is m3u8
                         final Map<String, Object> mediaStream = mediaStreamArray.get(mediaStreamIndex);
                         final int quality;
+                        final Object _stream = mediaStream.get("_stream");
                         if (mediaStream.get("_quality") instanceof Number) {
                             quality = ((Number) mediaStream.get("_quality")).intValue();
                         } else {
+                            /* E.g. skip quality "auto" (HLS) */
+                            if (_stream instanceof String) {
+                                final String url = _stream.toString();
+                                if (url.contains(".m3u8")) {
+                                    hlsMaster = url;
+                                }
+                            }
                             continue;
                         }
                         final List<String> streams;
-                        if (mediaStream.get("_stream") instanceof String) {
+                        if (_stream instanceof String) {
                             streams = new ArrayList<String>();
-                            streams.add((String) mediaStream.get("_stream"));
+                            streams.add((String) _stream);
                         } else {
-                            streams = ((List<String>) mediaStream.get("_stream"));
+                            streams = ((List<String>) _stream);
                         }
                         for (int index = 0; index < streams.size(); index++) {
                             final String stream = streams.get(index);
@@ -806,6 +791,7 @@ public class Ardmediathek extends PluginForDecrypt {
                                 continue;
                             }
                             final String url = br.getURL(stream).toString();
+                            exampleHTTPURL = url;
                             final int widthInt;
                             final int heightInt;
                             /*
@@ -955,9 +941,8 @@ public class Ardmediathek extends PluginForDecrypt {
          * also only have 3 hls qualities --> There are no additional http qualities!
          */
         String http_url_audio = br.getRegex("((?:https?:)?//[^<>\"]+\\.mp3)\"").getMatch(0);
-        final String hls_master = br.getRegex("(//[^<>\"]+\\.m3u8[^<>\"]*?)").getMatch(0);
-        final String quality_string = new Regex(hls_master, ".*?/i/.*?,([A-Za-z0-9_,\\-\\.]+),?\\.mp4\\.csmil.*?").getMatch(0);
-        if (StringUtils.isEmpty(hls_master) && http_url_audio == null && httpStreamsQualityIdentifiers.size() == 0) {
+        final String quality_string = new Regex(hlsMaster, ".*?/i/.*?,([A-Za-z0-9_,\\-\\.]+),?\\.mp4\\.csmil.*?").getMatch(0);
+        if (StringUtils.isEmpty(hlsMaster) && http_url_audio == null && httpStreamsQualityIdentifiers.size() == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             throw new DecrypterException("Plugin broken");
         }
@@ -966,14 +951,14 @@ public class Ardmediathek extends PluginForDecrypt {
          * here!
          */
         final boolean tryToFindAdditionalHTTPURLs = true;
-        if (tryToFindAdditionalHTTPURLs && hls_master != null) {
-            final String http_url_format = getHlsToHttpURLFormat(hls_master);
+        if (tryToFindAdditionalHTTPURLs && hlsMaster != null) {
+            final String http_url_format = getHlsToHttpURLFormat(hlsMaster, exampleHTTPURL);
             final String[] qualities_hls = quality_string != null ? quality_string.split(",") : null;
             if (http_url_format != null && qualities_hls != null && qualities_hls.length > 0) {
                 /* Access HLS master to find correct resolution for each ID (the only possible way) */
                 URLConnectionAdapter con = null;
                 try {
-                    con = br.openGetConnection(br.getURL(hls_master).toString());
+                    con = br.openGetConnection(br.getURL(hlsMaster).toString());
                     if (con.getURL().toString().contains("/static/geoblocking.mp4")) {
                         if (httpStreamsQualityIdentifiers.size() == 0) {
                             throw new DecrypterException(EXCEPTION_GEOBLOCKED);
@@ -1028,8 +1013,8 @@ public class Ardmediathek extends PluginForDecrypt {
                 foundQualitiesMap.putAll(foundQualitiesMap_http_urls_via_HLS_master);
             }
         }
-        if (hls_master != null) {
-            addHLS(br, hls_master, false);
+        if (hlsMaster != null) {
+            addHLS(br, hlsMaster, false);
         }
         if (http_url_audio != null) {
             if (http_url_audio.startsWith("//")) {
@@ -1045,14 +1030,14 @@ public class Ardmediathek extends PluginForDecrypt {
         br.getPage(parameter);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
-            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         setBrowserExclusive();
         br.setFollowRedirects(true);
         final String xml_URL = getVideoXMLURL();
         if (xml_URL == null) {
             /* Probably no downloadable content available */
-            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.getPage(xml_URL);
         /* Usually daserste.de and checkeins.de as there is no way to find a contentID inside URL added by the user. */
@@ -1061,7 +1046,7 @@ public class Ardmediathek extends PluginForDecrypt {
             contentID = Hash.getSHA1(id);
         }
         if (br.getHttpConnection().getResponseCode() == 404 || !br.getHttpConnection().getContentType().contains("xml")) {
-            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.subtitleLink = getXMLSubtitleURL(this.br);
         this.title = getDasersteTitle(this.br);
