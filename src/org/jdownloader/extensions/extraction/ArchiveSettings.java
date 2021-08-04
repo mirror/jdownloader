@@ -3,10 +3,15 @@ package org.jdownloader.extensions.extraction;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.settings.IfFileExistsAction;
 
 public class ArchiveSettings implements Storable {
+    public static final TypeRef<ArchiveSettings>  TYPE_REF                           = new TypeRef<ArchiveSettings>() {
+    };
     private ArchiveController                     archiveController;
     private BooleanStatus                         autoExtract                        = BooleanStatus.UNSET;
     private ExtractionInfo                        extractionInfo;
@@ -16,16 +21,26 @@ public class ArchiveSettings implements Storable {
     private volatile CopyOnWriteArrayList<String> passwords                          = new CopyOnWriteArrayList<String>();
     private BooleanStatus                         removeDownloadLinksAfterExtraction = BooleanStatus.UNSET;
     private BooleanStatus                         removeFilesAfterExtraction         = BooleanStatus.UNSET;
-    private volatile boolean                      needsSaving                        = false;
     public static final String                    PASSWORD                           = "PASSWORD";
     public static final String                    AUTO_EXTRACT                       = "AUTO_EXTRACT";
+    private String                                archiveID                          = null;
+    private String                                settingsID                         = null;
+
+    public String _getArchiveID() {
+        return archiveID;
+    }
+
+    public String _getSettingsID() {
+        return settingsID;
+    }
 
     public ArchiveSettings(/* Storable */) {
     }
 
-    public void assignController(ArchiveController archiveController) {
+    protected void assignController(ArchiveController archiveController, final String archiveID, final String settingsID) {
         this.archiveController = archiveController;
-        needsSaving = false;
+        this.archiveID = archiveID;
+        this.settingsID = settingsID;
     }
 
     public BooleanStatus getAutoExtract() {
@@ -47,8 +62,9 @@ public class ArchiveSettings implements Storable {
     public String getIfFileExistsAction() {
         if (ifFileExistsAction == null) {
             return null;
+        } else {
+            return ifFileExistsAction.toString();
         }
-        return ifFileExistsAction.toString();
     }
 
     public IfFileExistsAction _getIfFileExistsAction() {
@@ -70,7 +86,6 @@ public class ArchiveSettings implements Storable {
     private void fireUpdate() {
         if (archiveController != null) {
             archiveController.update(this);
-            needsSaving = true;
         }
     }
 
@@ -131,7 +146,9 @@ public class ArchiveSettings implements Storable {
         fireUpdate();
     }
 
-    public boolean needsSaving() {
-        return needsSaving;
+    public boolean _needsSaving() {
+        final String templateInstance = JSonStorage.toString(new ArchiveSettings());
+        final String thisInstance = JSonStorage.toString(this);
+        return !StringUtils.equals(templateInstance, thisInstance);
     }
 }

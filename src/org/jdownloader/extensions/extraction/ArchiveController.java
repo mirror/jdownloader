@@ -8,7 +8,6 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
@@ -28,7 +27,6 @@ public class ArchiveController {
     }
 
     private final HashMap<String, ArchiveSettings> map;
-    private final TypeRef<ArchiveSettings>         typeRef;
     private final LogSource                        logger;
 
     /**
@@ -37,9 +35,6 @@ public class ArchiveController {
      */
     private ArchiveController() {
         map = new HashMap<String, ArchiveSettings>();
-        typeRef = new TypeRef<ArchiveSettings>() {
-
-        };
         logger = LogController.getInstance().getLogger(ArchiveController.class.getName());
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
             {
@@ -63,7 +58,7 @@ public class ArchiveController {
         synchronized (map) {
             for (Entry<String, ArchiveSettings> e : map.entrySet()) {
                 try {
-                    if (e.getValue().needsSaving()) {
+                    if (e.getValue()._needsSaving()) {
                         final File path = getPathByID(e.getKey());
                         logger.info("Save " + path);
                         IO.secureWrite(path, JSonStorage.serializeToJson(e.getValue()).getBytes("UTF-8"));
@@ -79,15 +74,15 @@ public class ArchiveController {
         return Application.getResource("cfg/archives/v2_" + internalID + ".json");
     }
 
-    public ArchiveSettings getArchiveSettings(final String id, final ArchiveFactory archiveFactory) {
-        if (id != null) {
+    public ArchiveSettings getArchiveSettings(final String archiveID, final ArchiveFactory archiveFactory) {
+        if (archiveID != null) {
             synchronized (map) {
-                final String internalID = Hash.getSHA256(id);
+                final String internalID = Hash.getSHA256(archiveID);
                 ArchiveSettings ret = map.get(internalID);
                 if (ret != null) {
                     return ret;
                 }
-                ret = createSettingsObject(internalID, archiveFactory != null && archiveFactory.isDeepExtraction());
+                ret = createSettingsObject(archiveID, internalID, archiveFactory != null && archiveFactory.isDeepExtraction());
                 if (archiveFactory != null) {
                     final BooleanStatus defaultAuto = BooleanStatus.get(archiveFactory.getDefaultAutoExtract());
                     if (BooleanStatus.UNSET.equals(ret.getAutoExtract()) && !ret.getAutoExtract().equals(defaultAuto)) {
@@ -102,29 +97,29 @@ public class ArchiveController {
         return null;
     }
 
-    private ArchiveSettings createSettingsObject(final String id, final boolean isDeepExtract) {
+    private ArchiveSettings createSettingsObject(final String archiveID, final String internalID, final boolean isDeepExtract) {
         if (isDeepExtract) {
             final ArchiveSettings instance = new ArchiveSettings() {
                 @Override
-                public boolean needsSaving() {
+                public boolean _needsSaving() {
                     return false;
                 }
             };
-            instance.assignController(this);
+            instance.assignController(this, archiveID, internalID);
             return instance;
         } else {
             try {
-                final File path = getPathByID(id);
+                final File path = getPathByID(internalID);
                 if (path.exists()) {
-                    final ArchiveSettings instance = JSonStorage.restoreFromString(IO.readFileToString(path), typeRef);
-                    instance.assignController(this);
+                    final ArchiveSettings instance = JSonStorage.restoreFromString(IO.readFileToString(path), ArchiveSettings.TYPE_REF);
+                    instance.assignController(this, archiveID, internalID);
                     return instance;
                 }
             } catch (Throwable e) {
                 logger.log(e);
             }
             final ArchiveSettings instance = new ArchiveSettings();
-            instance.assignController(this);
+            instance.assignController(this, archiveID, internalID);
             return instance;
         }
     }
@@ -132,5 +127,4 @@ public class ArchiveController {
     public void update(ArchiveSettings archiveSettings) {
         // we could start some kind of asynch saver delayer here.
     }
-
 }

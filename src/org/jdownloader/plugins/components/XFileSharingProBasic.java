@@ -461,7 +461,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return false;
     }
 
-    protected boolean allowAPIDownloadIfApikeyIsAvailable(final Account account) {
+    protected boolean allowAPIDownloadIfApikeyIsAvailable(final DownloadLink downloadLink, final Account account) {
         final boolean apikey_is_available = this.getAPIKeyFromAccount(account) != null;
         /* Enable this switch to be able to use this in dev mode. Default = off as we do not use the API by default! */
         final boolean allow_api_premium_download = false;
@@ -3181,7 +3181,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         AccountInfo ai = null;
-        loginWebsite(account, true);
+        loginWebsite(null, account, true);
         boolean apiSuccess = false;
         /*
          * Only access URL if we haven't accessed it before already. Some sites will redirect to their Account-Info page right after
@@ -3662,7 +3662,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      *            false = Set stored cookies and trust them if they're not older than 300000l
      *
      */
-    public boolean loginWebsite(final Account account, final boolean validateCookies) throws Exception {
+    public boolean loginWebsite(final DownloadLink downloadLink, final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
             final boolean followRedirects = br.isFollowingRedirects();
             try {
@@ -3950,11 +3950,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                  * Perform linkcheck without logging in. TODO: Remove this and check for offline later as this would save one http request.
                  */
                 requestFileInformationWebsite(link, account, true);
-                final boolean verifiedLogin = loginWebsite(account, false);
+                final boolean verifiedLogin = loginWebsite(link, account, false);
                 /* Access main Content-URL */
                 this.getPage(link.getPluginPatternMatcher());
                 if (isAccountLoginVerificationEnabled(account, verifiedLogin) && !isLoggedin(this.br)) {
-                    loginWebsite(account, true);
+                    loginWebsite(link, account, true);
                     getPage(link.getPluginPatternMatcher());
                 }
                 doFree(link, account);
@@ -3978,10 +3978,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         /* TODO: Maybe skip this, check for offline later */
                         requestFileInformationWebsite(link, account, true);
                         br.setFollowRedirects(false);
-                        final boolean verifiedLogin = loginWebsite(account, false);
+                        final boolean verifiedLogin = loginWebsite(link, account, false);
                         getPage(link.getPluginPatternMatcher());
                         if (isAccountLoginVerificationEnabled(account, verifiedLogin) && !isLoggedin(this.br)) {
-                            loginWebsite(account, true);
+                            loginWebsite(link, account, true);
                             getPage(link.getPluginPatternMatcher());
                         }
                         /*
@@ -4229,7 +4229,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          * Only execude this if you know that a particular host has enabled this API call! </br> Important: For some hosts, this API call
          * will only be available for premium accounts, no for free accounts!
          */
-        if (this.enableAccountApiOnlyMode() || this.allowAPIDownloadIfApikeyIsAvailable(account)) {
+        if (this.enableAccountApiOnlyMode() || this.allowAPIDownloadIfApikeyIsAvailable(link, account)) {
             /* 2019-11-04: Linkcheck is not required here - download API will return offline status. */
             // requestFileInformationAPI(link, account);
             logger.info("Trying to get dllink via API");

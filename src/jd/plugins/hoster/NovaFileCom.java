@@ -224,7 +224,7 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
              * 2020-05-19: May happen when user uses a VPN - this can then especially happen in premium mode for all downloads (via API?!).
              */
             /* jdlog://1827915302851/ */
-            if (this.internal_useAPIZeusCloudManager(account)) {
+            if (this.internal_useAPIZeusCloudManager(link, account)) {
                 /* 2020-05-20: Workaround attempt --> Try via website next time */
                 this.tempDisableAPI(account, "Server error: 'Wrong IP' - attempting website workaround");
             } else {
@@ -314,28 +314,31 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
     private void setDownloadStarted(final DownloadLink dl, final long remaining_reconnect_wait) {
         synchronized (CTRLLOCK) {
             try {
-                final long timestamp_download_started;
-                if (remaining_reconnect_wait > 0) {
-                    /*
-                     * FREE_RECONNECTWAIT minus remaining wait = We know when the user started his download - we want to get the timestamp.
-                     * Add 1 minute to make sure that we wait long enough!
-                     */
-                    long timePassed = FREE_RECONNECTWAIT_DEFAULT - remaining_reconnect_wait;
-                    /* Errorhandling for invalid values */
-                    if (timePassed < 0) {
-                        timePassed = 0;
+                final String currentIP = NovaFileCom.currentIP.get();
+                if (currentIP != null) {
+                    final long timestamp_download_started;
+                    if (remaining_reconnect_wait > 0) {
+                        /*
+                         * FREE_RECONNECTWAIT minus remaining wait = We know when the user started his download - we want to get the
+                         * timestamp. Add 1 minute to make sure that we wait long enough!
+                         */
+                        long timePassed = FREE_RECONNECTWAIT_DEFAULT - remaining_reconnect_wait;
+                        /* Errorhandling for invalid values */
+                        if (timePassed < 0) {
+                            timePassed = 0;
+                        }
+                        timestamp_download_started = System.currentTimeMillis() - timePassed;
+                    } else {
+                        /*
+                         * Nothing given unknown starttime, wrong inputvalue 'remaining_reconnect_wait' or user has started the download
+                         * just now.
+                         */
+                        timestamp_download_started = System.currentTimeMillis();
                     }
-                    timestamp_download_started = System.currentTimeMillis() - timePassed;
-                } else {
-                    /*
-                     * Nothing given unknown starttime, wrong inputvalue 'remaining_reconnect_wait' or user has started the download just
-                     * now.
-                     */
-                    timestamp_download_started = System.currentTimeMillis();
+                    blockedIPsMap.put(currentIP, timestamp_download_started);
+                    getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, blockedIPsMap);
                 }
-                blockedIPsMap.put(currentIP.get(), timestamp_download_started);
                 setIP(dl, null);
-                getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, blockedIPsMap);
             } catch (final Throwable e) {
                 logger.warning("Error happened while trying to save download_started_timestamp");
                 e.printStackTrace();
@@ -428,11 +431,13 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
         if (currentIP == null) {
             if (exception != null) {
                 throw exception;
+            } else {
+                logger.warning("firewall/antivirus/malware/peerblock software is most likely is restricting accesss to JDownloader IP checking services");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            logger.warning("firewall/antivirus/malware/peerblock software is most likely is restricting accesss to JDownloader IP checking services");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            return currentIP;
         }
-        return currentIP;
     }
 
     private final boolean default_eh = false;
