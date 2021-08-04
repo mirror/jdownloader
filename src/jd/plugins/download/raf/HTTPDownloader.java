@@ -1064,7 +1064,7 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
     protected void finalizeDownload(File outputPartFile, File outputCompleteFile) throws Exception {
         if (downloadable.rename(outputPartFile, outputCompleteFile)) {
             try {
-                Date last = TimeFormatter.parseDateString(connection.getHeaderField("Last-Modified"));
+                final Date last = TimeFormatter.parseDateString(connection.getHeaderField("Last-Modified"));
                 if (last != null && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
                     /* set original lastModified timestamp */
                     outputCompleteFile.setLastModified(last.getTime());
