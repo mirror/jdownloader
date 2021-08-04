@@ -60,25 +60,6 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
         return dllink;
     }
 
-    @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        final String fuid = getFUIDFromURL(link);
-        if (fuid != null) {
-            /* link cleanup, prefer https if possible */
-            if (isEmbedURL(link)) {
-                link.setContentUrl(getMainPage() + "/embed-" + fuid + ".html");
-            }
-            if (link.getPluginPatternMatcher().matches("https?://[A-Za-z0-9\\-\\.:]+/file/[a-z0-9]{12}")) {
-                // new fileIDs 23.11.2020 --> URLs with this pattern have to stay like this - it is not possible to remove the "/file/"
-                // part.
-                link.setPluginPatternMatcher(getMainPage() + "/file/" + fuid);
-            } else {
-                // old fileIDs, not compatible with new ones
-                link.setPluginPatternMatcher(getMainPage() + "/" + fuid);
-            }
-        }
-    }
-
     public static final String getFileJokerAnnotationPatternPart() {
         return "/(?:embed-|file/)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?";
     }
