@@ -961,7 +961,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /*
      * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
      * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
-     * 
+     *
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityStatusChecked() {
@@ -993,24 +993,25 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         } else {
             lastAvailableStatusChange = System.currentTimeMillis();
         }
-        if (this.availableStatus == availableStatus) {
-            return;
-        }
-        this.availableStatus = availableStatus;
-        switch (availableStatus) {
-        case FALSE:
-            if (getFinalLinkState() == null) {
-                setFinalLinkState(FinalLinkState.OFFLINE);
+        if (this.availableStatus != availableStatus) {
+            this.availableStatus = availableStatus;
+            switch (availableStatus) {
+            case FALSE:
+                if (getFinalLinkState() == null) {
+                    setFinalLinkState(FinalLinkState.OFFLINE);
+                }
+                break;
+            case TRUE:
+                if (FinalLinkState.OFFLINE.equals(getFinalLinkState())) {
+                    setFinalLinkState(null);
+                }
+                break;
+            default:
+                break;
             }
-            break;
-        case TRUE:
-            if (FinalLinkState.OFFLINE.equals(getFinalLinkState())) {
-                setFinalLinkState(null);
+            if (hasNotificationListener()) {
+                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.AVAILABILITY, availableStatus));
             }
-            break;
-        }
-        if (hasNotificationListener()) {
-            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.AVAILABILITY, availableStatus));
         }
     }
 
