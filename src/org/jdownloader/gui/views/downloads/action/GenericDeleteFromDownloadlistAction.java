@@ -12,6 +12,7 @@ import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageProperty;
@@ -236,23 +237,19 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
     public boolean checkLink(DownloadLink link) {
         if (isDeleteAll()) {
             return true;
-        }
-        if (isDeleteDisabled() && !link.isEnabled()) {
+        } else if (isDeleteDisabled() && !link.isEnabled()) {
             return true;
-        }
-        if (isDeleteFailed() && FinalLinkState.CheckFailed(link.getFinalLinkState())) {
+        } else if (isDeleteFailed() && FinalLinkState.CheckFailed(link.getFinalLinkState())) {
             return true;
-        }
-        if (isDeleteFinished() && FinalLinkState.CheckFinished(link.getFinalLinkState())) {
+        } else if (isDeleteFinished() && FinalLinkState.CheckFinished(link.getFinalLinkState())) {
             return true;
-        }
-        if (isDeleteFinishedPackage() && link.getFilePackage().getView().isFinished()) {
+        } else if (isDeleteFinishedPackage() && link.getFilePackage().getView().isFinished()) {
             return true;
-        }
-        if (isDeleteOffline() && link.getFinalLinkState() == FinalLinkState.OFFLINE) {
+        } else if (isDeleteOffline() && (FinalLinkState.OFFLINE.equals(link.getFinalLinkState()) || AvailableStatus.FALSE.equals(link.getAvailableStatus()))) {
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     private String createName() {
