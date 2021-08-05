@@ -19,6 +19,7 @@ import org.jdownloader.plugins.components.youtube.itag.AudioBitrate;
 import org.jdownloader.plugins.components.youtube.itag.AudioCodec;
 import org.jdownloader.plugins.components.youtube.itag.VideoCodec;
 import org.jdownloader.plugins.components.youtube.itag.VideoResolution;
+import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.variants.generics.GenericVideoInfo;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.translate._JDT;
@@ -147,16 +148,6 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
         return VIDEO;
     }
 
-    // @Override
-    // public double getQualityRating() {
-    // double base = getBaseVariant().getQualityRating();
-    // if (getGenericInfo().getHeight() > 0) {
-    // // we got the actuall height. let's use it for quality rating
-    // base -= getBaseVariant().getiTagVideo().getVideoResolution().getRating();
-    // base += Math.min(getGenericInfo().getWidth(), getGenericInfo().getHeight());
-    // }
-    // return base;
-    // }
     @Override
     public String getStandardGroupingID() {
         return getGroup().name() + "_" + getProjection().name();
@@ -237,19 +228,21 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
 
     @Override
     public VideoCodec getVideoCodec() {
-        if (getiTagVideo() == null) {
+        final YoutubeITAG itag = getiTagVideo();
+        if (itag == null) {
             return null;
         } else {
-            return getiTagVideo().getVideoCodec();
+            return itag.getVideoCodec();
         }
     }
 
     @Override
     public VideoResolution getVideoResolution() {
-        if (getiTagVideo() == null) {
+        final YoutubeITAG itag = getiTagVideo();
+        if (itag == null) {
             return null;
         } else {
-            return getiTagVideo().getVideoResolution();
+            return itag.getVideoResolution();
         }
     }
 
@@ -260,5 +253,15 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
             width = getiTagVideo().getVideoResolution().getWidth();
         }
         return width;
+    }
+
+    @Override
+    public YoutubeITAG getAudioITAG() {
+        return getiTagAudioOrVideoItagEquivalent();
+    }
+
+    @Override
+    public YoutubeITAG getVideoITAG() {
+        return getiTagVideo();
     }
 }

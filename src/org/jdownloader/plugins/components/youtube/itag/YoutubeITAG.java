@@ -10,34 +10,34 @@ import org.appwork.utils.parser.UrlQuery;
 
 public enum YoutubeITAG {
     DASH_VIDEO_144p_AV1(394, StreamContainer.DASH_VIDEO, VideoResolution.P_144, VideoCodec.AV1, VideoFrameRate.FPS_30),
+    DASH_VIDEO_144p_AV1_HIGHER_BITRATE(694, StreamContainer.DASH_VIDEO, VideoResolution.P_144, VideoCodec.AV1, VideoFrameRate.FPS_30),
     DASH_VIDEO_240p_AV1(395, StreamContainer.DASH_VIDEO, VideoResolution.P_240, VideoCodec.AV1, VideoFrameRate.FPS_30),
+    DASH_VIDEO_240p_AV1_HIGHER_BITRATE(695, StreamContainer.DASH_VIDEO, VideoResolution.P_240, VideoCodec.AV1, VideoFrameRate.FPS_30),
     DASH_VIDEO_360p_AV1(396, StreamContainer.DASH_VIDEO, VideoResolution.P_360, VideoCodec.AV1, VideoFrameRate.FPS_30),
+    DASH_VIDEO_360p_AV1_HIGHER_BITRATE(696, StreamContainer.DASH_VIDEO, VideoResolution.P_360, VideoCodec.AV1, VideoFrameRate.FPS_30),
     DASH_VIDEO_480p_AV1(397, StreamContainer.DASH_VIDEO, VideoResolution.P_480, VideoCodec.AV1, VideoFrameRate.FPS_30),
+    DASH_VIDEO_480p_AV1_HIGHER_BITRATE(697, StreamContainer.DASH_VIDEO, VideoResolution.P_480, VideoCodec.AV1, VideoFrameRate.FPS_30),
     // check again, maybe FPS_60?
     DASH_VIDEO_720p_AV1(398, StreamContainer.DASH_VIDEO, VideoResolution.P_720, VideoCodec.AV1, VideoFrameRate.FPS_30),
+    DASH_VIDEO_720p_AV1_HIGHER_BITRATE(698, StreamContainer.DASH_VIDEO, VideoResolution.P_720, VideoCodec.AV1, VideoFrameRate.FPS_30),
     // check again,maybe FPS_60?
-    DASH_VIDEO_1080p_AV1(399, StreamContainer.DASH_VIDEO, VideoResolution.P_1920, VideoCodec.AV1, VideoFrameRate.FPS_30),
+    DASH_VIDEO_1080p_AV1(399, StreamContainer.DASH_VIDEO, VideoResolution.P_1080, VideoCodec.AV1, VideoFrameRate.FPS_30),
+    DASH_VIDEO_1080p_AV1_HIGHER_BITRATE(699, StreamContainer.DASH_VIDEO, VideoResolution.P_1080, VideoCodec.AV1, VideoFrameRate.FPS_30),
     DASH_VIDEO_1440p_AV1(400, StreamContainer.DASH_VIDEO, VideoResolution.P_1440, VideoCodec.AV1, VideoFrameRate.FPS_60),
+    DASH_VIDEO_1440p_AV1_HIGHER_BITRATE(700, StreamContainer.DASH_VIDEO, VideoResolution.P_1440, VideoCodec.AV1, VideoFrameRate.FPS_60),
     DASH_VIDEO_2160p_AV1(401, StreamContainer.DASH_VIDEO, VideoResolution.P_2160, VideoCodec.AV1, VideoFrameRate.FPS_60),
+    DASH_VIDEO_2160p_AV1_HIGHER_BITRATE(701, StreamContainer.DASH_VIDEO, VideoResolution.P_2160, VideoCodec.AV1, VideoFrameRate.FPS_60),
     DASH_VIDEO_4320p_AV1(402, StreamContainer.DASH_VIDEO, VideoResolution.P_4320, VideoCodec.AV1, VideoFrameRate.FPS_60),
     DASH_VIDEO_4320p_AV1_HIGHER_BITRATE(571, StreamContainer.DASH_VIDEO, VideoResolution.P_4320, VideoCodec.AV1, VideoFrameRate.FPS_60),
     DASH_AUDIO_128K_AAC(140, StreamContainer.DASH_AUDIO, AudioCodec.AAC, AudioBitrate.KBIT_128),
     // DASH_AUDIO_48K_OPUS(249, null, null, "Opus", "38kbit", YoutubeITAG.OPUS_48),
     DASH_AUDIO_128K_WEBM(171, StreamContainer.DASH_AUDIO, AudioCodec.VORBIS, AudioBitrate.KBIT_128),
     DASH_AUDIO_192K_WEBM(172, StreamContainer.DASH_AUDIO, AudioCodec.VORBIS, AudioBitrate.KBIT_192),
-    // [bitrate=241311, spatial_audio_type=2, lmt=14 0754970951297, index=3318-3620, init=0-3317, clen=4606281,
-    // url=https%3A%2F%2Fr1---sn-4g57knzd.googlevideo.com%2Fvideoplayback%3Fsource%3Dyoutube%26nh%3DIgpwZjAxLmZyYTE1Kg04Ny4xMjguMjM2LjUz%26pl%3D19%26signature%3DA8263BC5CD261BEA4982973AB1547B69FEABFE06.727C49E18D216876C67D7C6FD40C026DE87F0ABF%26initcwndbps%3D591250%26gir%3Dyes%26sver%3D3%26expire%3D1461080045%26ms%3Dau%26clen%3D4606281%26mv%3Dm%26mt%3D1461058237%26ipbits%3D0%26mn%3Dsn-4g57knzd%26mm%3D31%26requiressl%3Dyes%26id%3Do-AG82gRa3_bivEt9zZg_17JLkO2U_RnxefRI9bwk2GiE3%26itag%3D339%26dur%3D174.353%26lmt%3D1460754970951297%26key%3Dyt6%26ip%3D79.196.104.182%26fexp%3D9408354%252C9416126%252C9416778%252C9416891%252C9420452%252C9422596%252C9424134%252C9426927%252C9427413%252C9428398%252C9431012%252C9431438%252C9432683%252C9432842%252C9433096%252C9433304%252C9433622%252C9433644%252C9433810%252C9433998%252C9434748%26sparams%3Dclen%252Cdur%252Cgir%252Cid%252Cinitcwndbps%252Cip%252Cipbits%252Citag%252Clmt%252Cmime%252Cmm%252Cmn%252Cms%252Cmv%252Cnh%252Cpl%252Crequiressl%252Csource%252Cupn%252Cexpire%26upn%3DmUoYdnZwYhM%26mime%3Daudio%252Fwebm,
-    // itag=339, type=audio%2Fwebm%3B+codecs%3D%22vorbis%22, projection_type=1]
     DASH_AUDIO_256K_WEBM_SPATIAL(339, StreamContainer.DASH_AUDIO, AudioCodec.VORBIS_SPATIAL, AudioBitrate.KBIT_256),
-    // [spatial_audio_type=1, init=0-605, lmt=1460754970147370, index=606-853, clen=5616983, bitrate=259110, projection_type=1,
-    // type=audio%2Fmp4%3B+codecs%3D%22mp4a.40.2%22,
-    // url=https%3A%2F%2Fr2---sn-4g5edn7z.googlevideo.com%2Fvideoplayback%3Fid%3Do-AM3XLfNyTxE2x34ifu9haXJBgInh7OqK5HMgIyPhnW9u%26upn%3Del01TRTB5oc%26ipbits%3D0%26key%3Dyt6%26ip%3D79.196.104.182%26pl%3D19%26sver%3D3%26requiressl%3Dyes%26signature%3D21BFCCF29B9EAAF84E6390EB46C4137927D61E8C.0BA2280F90383C044A5045C703DDC27C4902AA3D%26initcwndbps%3D682500%26nh%3DIgpwZjAyLmZyYTE1Kg0yMDkuODUuMTcyLjY3%26sparams%3Dclen%252Cdur%252Cgir%252Cid%252Cinitcwndbps%252Cip%252Cipbits%252Citag%252Clmt%252Cmime%252Cmm%252Cmn%252Cms%252Cmv%252Cnh%252Cpl%252Crequiressl%252Csource%252Cupn%252Cexpire%26fexp%3D9416126%252C9416891%252C9420452%252C9422596%252C9426201%252C9426926%252C9427547%252C9428334%252C9428398%252C9429610%252C9430016%252C9430814%252C9431012%252C9431449%252C9431685%252C9432683%252C9432773%252C9433097%252C9433181%252C9433275%252C9433720%252C9434065%26expire%3D1461080242%26itag%3D327%26mime%3Daudio%252Fmp4%26source%3Dyoutube%26ms%3Dau%26mt%3D1461058587%26mv%3Dm%26clen%3D5616983%26lmt%3D1460754970147370%26gir%3Dyes%26dur%3D174.421%26mm%3D31%26mn%3Dsn-4g5edn7z,
-    // itag=327]
     DASH_AUDIO_384K_DTSE_SPATIAL(325, StreamContainer.DASH_AUDIO, AudioCodec.DTSE_SPATIAL, AudioBitrate.KBIT_384),
     DASH_AUDIO_384K_EC3_SPATIAL(328, StreamContainer.DASH_AUDIO, AudioCodec.EC3_SPATIAL, AudioBitrate.KBIT_384),
     DASH_AUDIO_384K_AC3_SPATIAL(380, StreamContainer.DASH_AUDIO, AudioCodec.AC3_SPATIAL, AudioBitrate.KBIT_384),
     DASH_AUDIO_256K_AAC_SPATIAL(327, StreamContainer.DASH_AUDIO, AudioCodec.AAC_SPATIAL, AudioBitrate.KBIT_256),
-    // https://www.youtube.com/watch?v=Bkb3jX2hBRs
     DASH_AUDIO_192K_AAC_SPATIAL(256, StreamContainer.DASH_AUDIO, AudioCodec.AAC_SPATIAL, AudioBitrate.KBIT_192),
     DASH_AUDIO_384K_AAC_SPATIAL(258, StreamContainer.DASH_AUDIO, AudioCodec.AAC_SPATIAL, AudioBitrate.KBIT_384),
     DASH_AUDIO_256K_AAC(141, StreamContainer.DASH_AUDIO, AudioCodec.AAC, AudioBitrate.KBIT_256),
@@ -71,7 +71,6 @@ public enum YoutubeITAG {
      * Progressive Bits/(Pixel*Frame) : 0.103 Stream size : 879 KiB (100%) Encoded date : UTC 2013-02-23 01:52:16 Tagged date : UTC
      * 2013-02-23 01:52:16
      */
-    // in my testcase ?v=Qw9oX-kZ_9k 212 had a higher bitrate than 135. It seems that 212 is kind of old
     DASH_VIDEO_480P_H264_2(212, StreamContainer.DASH_VIDEO, VideoResolution.P_480, VideoCodec.H264, VideoFrameRate.FPS_30),
     DASH_VIDEO_720_H264_FPS60(298, StreamContainer.DASH_VIDEO, VideoResolution.P_720, VideoCodec.H264, VideoFrameRate.FPS_60),
     DASH_VIDEO_720P_H264(136, StreamContainer.DASH_VIDEO, VideoResolution.P_720, VideoCodec.H264, VideoFrameRate.FPS_30),
@@ -182,7 +181,6 @@ public enum YoutubeITAG {
     // not sure - did not find testvideos
     WEBM_VIDEO_480P_VP8_AUDIO_VORBIS(44, StreamContainer.WEBM, VideoResolution.P_480, VideoCodec.VP8, VideoFrameRate.FPS_30, AudioCodec.VORBIS, AudioBitrate.KBIT_128),
     WEBM_VIDEO_720P_VP8_AUDIO_192K_VORBIS_3D(102, StreamContainer.WEBM, VideoResolution.P_720, VideoCodec.VP8, VideoFrameRate.FPS_30, AudioCodec.VORBIS, AudioBitrate.KBIT_192),
-    // https://www.youtube.com/watch?v=n-BXNXvTvV4
     // both Itags are almost the same video
     MP4_ITAG59_H264_480P_24FPS_AAC_128KBIT(59, StreamContainer.MP4, VideoResolution.P_480, VideoCodec.H264, VideoFrameRate.FPS_24, AudioCodec.AAC, AudioBitrate.KBIT_128),
     MP4_ITAG78_H264_480P_24FPS_AAC_128KBIT(78, StreamContainer.MP4, VideoResolution.P_480, VideoCodec.H264, VideoFrameRate.FPS_24, AudioCodec.AAC, AudioBitrate.KBIT_128),

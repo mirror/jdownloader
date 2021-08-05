@@ -39,6 +39,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.components.youtube.VariantIDStorable;
+import org.jdownloader.plugins.components.youtube.itag.AudioBitrate;
 import org.jdownloader.plugins.components.youtube.itag.VideoResolution;
 import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.variants.AudioInterface;
@@ -428,34 +429,51 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
             public String getStringValue(AbstractVariantWrapper value) {
                 if (value.variant instanceof AudioInterface) {
                     return ((AudioInterface) value.variant).getAudioCodec().getLabel();
+                } else {
+                    return "";
                 }
-                return "";
             }
 
             @Override
             protected String getTooltipText(AbstractVariantWrapper value) {
                 if (value.variant instanceof AudioInterface) {
-                    return ((AudioInterface) value.variant).getAudioCodec().getLabelLong();
+                    final AudioInterface variant = ((AudioInterface) value.variant);
+                    return getStringValue(value) + "(" + variant.getAudioITAG().getITAG() + ")";
+                } else {
+                    return "";
                 }
-                return "";
             }
         });
         addColumn(audioBitrateColumn = new AutoResizingIntColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_AUDIO_BITRATE()) {
             @Override
             public String getStringValue(AbstractVariantWrapper value) {
-                String v = super.getStringValue(value);
+                final String v = super.getStringValue(value);
                 if (StringUtils.isEmpty(v)) {
                     return "";
+                } else {
+                    return v + " kbit/s";
                 }
-                return v + " kbit/s";
+            }
+
+            @Override
+            protected String getTooltipText(AbstractVariantWrapper value) {
+                if (value.variant instanceof AudioInterface) {
+                    final AudioInterface variant = ((AudioInterface) value.variant);
+                    return getStringValue(value) + "(" + variant.getAudioITAG().getITAG() + ")";
+                } else {
+                    return "";
+                }
             }
 
             @Override
             public int getInt(AbstractVariantWrapper value) {
                 if (value.variant instanceof AudioInterface) {
-                    return ((AudioInterface) value.variant).getAudioBitrate().getKbit();
+                    final AudioInterface variant = ((AudioInterface) value.variant);
+                    final AudioBitrate bitRate = variant.getAudioBitrate();
+                    return bitRate.getKbit();
+                } else {
+                    return -1;
                 }
-                return -1;
             }
         });
         addGroupingColumn();
@@ -530,10 +548,12 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
 
             @Override
             protected String getTooltipText(AbstractVariantWrapper value) {
-                if (value.variant instanceof VideoVariant) {
-                    return ((VideoVariant) value.variant).getVideoCodec().getLabelLong();
+                if (value.variant instanceof VideoInterface) {
+                    final VideoInterface variant = ((VideoInterface) value.variant);
+                    return getStringValue(value) + "(" + variant.getVideoITAG().getITAG() + ")";
+                } else {
+                    return "";
                 }
-                return "";
             }
         });
     }
@@ -544,9 +564,19 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
             public int getInt(AbstractVariantWrapper value) {
                 if (value.variant instanceof VideoVariant) {
                     return ((VideoVariant) value.variant).getVideoFrameRate();
+                } else {
+                    return -1;
                 }
-                ;
-                return -1;
+            }
+
+            @Override
+            protected String getTooltipText(AbstractVariantWrapper value) {
+                if (value.variant instanceof VideoInterface) {
+                    final VideoInterface variant = ((VideoInterface) value.variant);
+                    return getStringValue(value) + "(" + variant.getVideoITAG().getITAG() + ")";
+                } else {
+                    return "";
+                }
             }
         });
     }

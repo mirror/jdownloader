@@ -14,6 +14,7 @@ import org.jdownloader.plugins.components.youtube.YoutubeConfig;
 import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
 import org.jdownloader.plugins.components.youtube.itag.AudioBitrate;
 import org.jdownloader.plugins.components.youtube.itag.AudioCodec;
+import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.variants.generics.GenericAudioInfo;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.translate._JDT;
@@ -113,5 +114,10 @@ public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements A
         }
         id = id.trim().replaceAll("\\s+", "_").toUpperCase(Locale.ENGLISH);
         return id;
+    }
+
+    @Override
+    public YoutubeITAG getAudioITAG() {
+        return getiTagAudioOrVideoItagEquivalent();
     }
 }

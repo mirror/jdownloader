@@ -19,6 +19,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.hoster.PluralsightCom;
 
@@ -117,26 +118,43 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
             int clipIndex = 0;
             for (final Map<String, Object> clip : clips) {
                 totalNumberofClips++;
-                if (!clip.get("type").toString().equalsIgnoreCase("clip")) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown item type");
-                }
                 final String title = (String) clip.get("title");
+                final String type = StringUtils.valueOfOrNull(clip.get("type"));
+                final String id = StringUtils.valueOfOrNull(clip.get("id"));
+                final DownloadLink link;
+                final String extension;
+                if (StringUtils.equalsIgnoreCase(type, "link")) {
+                    final String url = (String) clip.get("url");
+                    if (StringUtils.isEmpty(url)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else {
+                        link = createDownloadlink("directhttp://" + url);
+                        extension = Plugin.getFileNameExtensionFromURL(url, ".pdf");
+                    }
+                } else if (StringUtils.equalsIgnoreCase(type, "clip")) {
+                    link = new DownloadLink(null, null, this.getHost(), createContentURL(id), true);
+                    extension = ".mp4";
+                    final Object duration = clip.get("duration");
+                    if (duration != null) {
+                        link.setProperty(PluralsightCom.PROPERTY_DURATION, duration);
+                    }
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown item type:" + type);
+                }
                 final String version = (String) clip.get("version");
-                final DownloadLink link = new DownloadLink(null, null, this.getHost(), createContentURL(clip.get("id").toString()), true);
                 link.setAvailable(true);
-                link.setProperty(PluralsightCom.PROPERTY_CLIP_ID, clip.get("id").toString());
+                link.setProperty(PluralsightCom.PROPERTY_CLIP_ID, id);
                 if (version != null) {
                     link.setProperty(PluralsightCom.PROPERTY_CLIP_VERSION, version);
                 }
-                link.setProperty(PluralsightCom.PROPERTY_DURATION, clip.get("duration"));
                 link.setProperty(PluralsightCom.PROPERTY_MODULE_ORDER_ID, moduleIndex + 1);
                 link.setProperty(PluralsightCom.PROPERTY_MODULE_TITLE, moduleTitle);
                 link.setProperty(PluralsightCom.PROPERTY_MODULE_CLIP_TITLE, title);
                 link.setProperty(PluralsightCom.PROPERTY_CLIP_ORDER_ID, clipIndex + 1);
                 String fullName = String.format("%02d", moduleIndex + 1) + "-" + String.format("%02d", clipIndex + 1) + " - " + moduleTitle + " -- " + title;
                 fullName = PluralsightCom.correctFileName(fullName);
-                link.setFinalFileName(fullName + ".mp4");
-                link.setProperty(PluralsightCom.PROPERTY_TYPE, "mp4");
+                link.setFinalFileName(fullName + extension);
+                link.setProperty(PluralsightCom.PROPERTY_TYPE, extension.substring(1));
                 ret.add(link);
                 clipIndex++;
             }
