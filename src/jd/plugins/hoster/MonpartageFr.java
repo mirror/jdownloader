@@ -99,8 +99,8 @@ public class MonpartageFr extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("Nom\\s*:\\s*</strong>([^<>\"]+)<br").getMatch(0);
-        String filesize = br.getRegex("Taille\\s*:\\s*</strong>([^<>\"]+)<br").getMatch(0);
+        String filename = br.getRegex("Nom\\s*:\\s*</strong>\\s*([^<>\"]+)\\s*<br").getMatch(0);
+        String filesize = br.getRegex("Taille\\s*:\\s*</strong>\\s*([^<>\"]+)\\s*<br").getMatch(0);
         if (filename != null) {
             filename = Encoding.htmlDecode(filename).trim();
             link.setName(filename);
