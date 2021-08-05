@@ -22,7 +22,6 @@ import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.Item;
 
 public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGetTextPassword {
-
     protected final ISequentialOutStream[]     outStreams;
     protected final ExtractionController       ctrl;
     protected final SevenZipArchiveWrapper     archiveWrapper;
@@ -126,8 +125,7 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
             final Date lastWriteTime = archiveWrapper.getLastWriteTime(index);
             final Boolean itemEncrypted = archiveWrapper.isEncrypted(index);
             final String method = archiveWrapper.getMethod(index);
-            ISimpleInArchiveItem item = new ISimpleInArchiveItem() {
-
+            final ISimpleInArchiveItem item = new ISimpleInArchiveItem() {
                 @Override
                 public String getPath() throws SevenZipException {
                     return path;
@@ -160,12 +158,12 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
 
                 @Override
                 public Date getLastAccessTime() throws SevenZipException {
-                    return lastWriteTime;
+                    return null;
                 }
 
                 @Override
                 public Date getLastWriteTime() throws SevenZipException {
-                    return null;
+                    return lastWriteTime;
                 }
 
                 @Override
@@ -227,7 +225,6 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                 public int getItemIndex() {
                     return index;
                 }
-
             };
             items[index] = item;
             try {
@@ -245,7 +242,6 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                             throw new SevenZipException("Extraction error, extractTo == null");
                         }
                         ret = new MultiCallback(extractTo, ctrl, config) {
-
                             @Override
                             protected void waitCPUPriority() throws SevenZipException {
                                 if (!slowDownWorkaroundNeeded) {
@@ -270,7 +266,6 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                                 ctrl.addProcessedBytesAndPauseIfNeeded(ret);
                                 return ret;
                             }
-
                         };
                         archive.addExtractedFiles(extractTo);
                     }
@@ -322,7 +317,6 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                 }
             };
         }
-
     }
 
     public boolean hasError() {
@@ -426,5 +420,4 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
             }
         }
     }
-
 }

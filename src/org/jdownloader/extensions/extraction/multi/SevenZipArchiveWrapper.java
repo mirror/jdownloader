@@ -9,7 +9,6 @@ import net.sf.sevenzipjbinding.SevenZipException;
 import net.sf.sevenzipjbinding.simple.ISimpleInArchive;
 
 public interface SevenZipArchiveWrapper {
-
     int getNumberOfItems();
 
     boolean isSlowDownWorkaroundNeeded();
