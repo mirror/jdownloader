@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2016  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.UnknownHostingScriptCore;
+import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
@@ -26,19 +26,41 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
-@HostPlugin(revision = "$Revision $", interfaceVersion = 2, names = {}, urls = {})
-public class BayFilesCom extends UnknownHostingScriptCore {
-    public BayFilesCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+public class VinloadCom extends YetiShareCore {
+    public VinloadCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(super.getPurchasePremiumURL());
+        this.enablePremium(getPurchasePremiumURL());
     }
 
     /**
+     * DEV NOTES YetiShare<br />
+     ****************************
      * mods: See overridden functions<br />
-     * limit-info:<br />
-     * captchatype-info: null<br />
-     * other:<br />
+     * limit-info: 2021-08-05: Untested because all testfiles were premiumonly <br />
+     * captchatype-info: 2021-08-05: Untested because all testfiles were premiumonly <br />
+     * other: <br />
      */
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "vinload.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return YetiShareCore.buildAnnotationUrls(getPluginDomains());
+    }
+
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
@@ -53,59 +75,30 @@ public class BayFilesCom extends UnknownHostingScriptCore {
         }
     }
 
-    /** 2021-04-19: Max. number of total connections: 16 */
-    @Override
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return -4;
+            return 0;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return -4;
+            return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return -4;
+            return 0;
         }
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 4;
+        return -1;
     }
 
-    @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 4;
+        return -1;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 4;
-    }
-
-    public static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "bayfiles.com", "letsupload.cc", "megaupload.is", "openload.cc" });
-        return ret;
-    }
-
-    @Override
-    public String rewriteHost(String host) {
-        /* 2020-06-08: letsupload.cc is now bayfiles.com, 2020-06-22: megaupload.is is now bayfiles.com */
-        return this.rewriteHost(getPluginDomains(), host, new String[0]);
-    }
-
-    public static String[] getAnnotationNames() {
-        return buildAnnotationNames(getPluginDomains());
-    }
-
-    @Override
-    public String[] siteSupportedNames() {
-        return buildSupportedNames(getPluginDomains());
-    }
-
-    public static String[] getAnnotationUrls() {
-        return UnknownHostingScriptCore.buildAnnotationUrls(getPluginDomains());
+        return -1;
     }
 }

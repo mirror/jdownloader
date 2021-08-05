@@ -18,8 +18,8 @@ package jd.plugins.decrypter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
@@ -104,23 +104,33 @@ public class BbcComDecrypter extends PluginForDecrypt {
             /* 2019-04-04 */
             jsons = this.br.getRegex("window\\.__IPLAYER_REDUX_STATE__ = (\\{.*?\\});").getColumn(0);
         }
+        if (jsons == null || jsons.length == 0) {
+            /* 2021-08-05: bbc.co.uk/archive/.* */
+            jsons = this.br.getRegex("(\\{\"meta\".*?\\})\\);\\s*\\}\\);</script>").getColumn(0);
+        }
         if (jsons == null) {
             logger.info("Failed to find any playable content");
             return decryptedLinks;
         }
-        LinkedHashMap<String, Object> entries = null;
-        LinkedHashMap<String, Object> entries2 = null;
+        Map<String, Object> entries = null;
+        Map<String, Object> entries2 = null;
         for (String json : jsons) {
             if (json.contains("{&quot;")) {
                 json = Encoding.htmlDecode(json);
             }
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+            try {
+                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+            } catch (final Throwable ignore) {
+                logger.info("Unsupported json (parser failure): " + json);
+                continue;
+            }
             final Object o_story = entries.get("story");
             final Object o_player = entries.get("player");
             final Object o_episode = entries.get("episode");
             final Object o_versions = entries.get("versions");
             final Object o_appStoreState = entries.get("appStoreState");
             final Object o_programmes = entries.get("programmes");
+            final Object o_body_video = JavaScriptEngineFactory.walkJson(entries, "body/video");
             String title = null;
             String subtitle = null;
             String description = null;
@@ -131,17 +141,17 @@ public class BbcComDecrypter extends PluginForDecrypt {
             String vpid = null;
             if (o_story != null) {
                 /* Type 3 */
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "story/Content/AssetVideoIb2/{0}");
+                entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "story/Content/AssetVideoIb2/{0}");
                 if (entries == null) {
                     logger.info("Failed to find video content");
                     break;
                 }
                 title = (String) entries.get("Title");
                 vpid = (String) entries.get("Vpid");
-            } else if (o_player != null && ((LinkedHashMap<String, Object>) o_player).containsKey("title")) {
+            } else if (o_player != null && ((Map<String, Object>) o_player).containsKey("title")) {
                 /* Type 4 */
-                entries2 = (LinkedHashMap<String, Object>) o_episode;
-                entries = (LinkedHashMap<String, Object>) o_player;
+                entries2 = (Map<String, Object>) o_episode;
+                entries = (Map<String, Object>) o_player;
                 title = (String) entries.get("title");
                 subtitle = (String) entries.get("subtitle");
                 vpid = (String) entries.get("vpid");
@@ -151,7 +161,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 description = (String) JavaScriptEngineFactory.walkJson(entries, "synopses/large");
             } else if (o_episode != null && o_versions != null) {
                 /* Type 9 - similar to type 5 */
-                entries = (LinkedHashMap<String, Object>) o_episode;
+                entries = (Map<String, Object>) o_episode;
                 title = (String) entries.get("title");
                 subtitle = (String) entries.get("subtitle");
                 vpid = (String) JavaScriptEngineFactory.walkJson(o_versions, "{0}/id");
@@ -161,7 +171,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 description = (String) JavaScriptEngineFactory.walkJson(entries, "synopses/large");
             } else if (o_episode != null) {
                 /* Type 5 */
-                entries = (LinkedHashMap<String, Object>) o_episode;
+                entries = (Map<String, Object>) o_episode;
                 title = (String) entries.get("title");
                 subtitle = (String) entries.get("subtitle");
                 vpid = (String) JavaScriptEngineFactory.walkJson(entries, "versions/{0}/id");
@@ -171,10 +181,10 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 description = (String) JavaScriptEngineFactory.walkJson(entries, "synopses/large");
             } else if (o_appStoreState != null) {
                 /* Type 6 */
-                entries = (LinkedHashMap<String, Object>) o_appStoreState;
+                entries = (Map<String, Object>) o_appStoreState;
                 vpid = (String) JavaScriptEngineFactory.walkJson(entries, "versions/{0}/id");
                 date = (String) JavaScriptEngineFactory.walkJson(entries, "versions/{0}/firstBroadcast");
-                entries = (LinkedHashMap<String, Object>) entries.get("episode");
+                entries = (Map<String, Object>) entries.get("episode");
                 title = (String) entries.get("title");
                 subtitle = (String) entries.get("subtitle");
                 tv_brand = (String) JavaScriptEngineFactory.walkJson(entries, "masterBrand/id");
@@ -183,8 +193,8 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 description = (String) JavaScriptEngineFactory.walkJson(entries, "synopses/large");
             } else if (o_programmes != null) {
                 /* Type 7 - Audio */
-                entries = (LinkedHashMap<String, Object>) o_programmes;
-                entries = (LinkedHashMap<String, Object>) entries.get("current");
+                entries = (Map<String, Object>) o_programmes;
+                entries = (Map<String, Object>) entries.get("current");
                 vpid = (String) entries.get("id");
                 title = (String) JavaScriptEngineFactory.walkJson(entries, "titles/primary");
                 description = (String) JavaScriptEngineFactory.walkJson(entries, "titles/secondary");
@@ -192,23 +202,28 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 date = (String) JavaScriptEngineFactory.walkJson(entries, "availability/from");
             } else if (entries.containsKey("initData")) {
                 /* Type 8 */
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "initData/items/{0}/smpData/items/{0}");
+                entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "initData/items/{0}/smpData/items/{0}");
                 vpid = (String) entries.get("versionID");
+            } else if (o_body_video != null) {
+                /* 2021-08-05: bbc.co.uk/archive/.* */
+                entries = (Map<String, Object>) o_body_video;
+                vpid = (String) entries.get("vpid");
+                title = (String) entries.get("title");
             } else {
-                /* Type 1 */
+                /* Hopefully type 1 */
                 Object sourcemapo = JavaScriptEngineFactory.walkJson(entries, "settings/playlistObject");
                 if (sourcemapo == null) {
                     /* Type 2 */
                     sourcemapo = JavaScriptEngineFactory.walkJson(entries, "allAvailableVersions/{0}/smpConfig");
                 }
-                entries = (LinkedHashMap<String, Object>) sourcemapo;
-                if (entries == null) {
-                    logger.info("Failed to find video content");
-                    break;
+                if (sourcemapo == null) {
+                    logger.info("Incompatible json: " + json);
+                    continue;
                 }
+                entries = (Map<String, Object>) sourcemapo;
                 title = (String) entries.get("title");
                 description = (String) entries.get("summary");
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "items/{0}");
+                entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "items/{0}");
                 vpid = (String) entries.get("vpid");
             }
             if (inValidate(title)) {

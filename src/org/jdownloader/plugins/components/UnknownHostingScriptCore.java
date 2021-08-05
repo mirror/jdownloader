@@ -10,6 +10,15 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensions;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -29,15 +38,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensions;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class UnknownHostingScriptCore extends antiDDoSForHost {
@@ -385,6 +385,10 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         if (StringUtils.isEmpty(fileInfo[1])) {
             /* Language-independant RegEx */
             fileInfo[1] = br.getRegex("file/filetypes/[^\"]+\"/>\\s*?[A-Za-z0-9 ]+\\s*?\\(([^<>\"]+)\\)</a>").getMatch(0);
+            if (StringUtils.isEmpty(fileInfo[1])) {
+                /* 2021-08-05: Filesize inside Download-button-text */
+                fileInfo[1] = br.getRegex("class=\"glyphicon glyphicon-download\"[^>]*>\\s*</span>\\s*Download\\s*\\((\\d+[^<]+)\\)\\s*<").getMatch(0);
+            }
         }
         return fileInfo;
     }
