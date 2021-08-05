@@ -71,29 +71,31 @@ public class ClipHunterCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("cliphunter.com", "qchange", "h");
-        if (downloadLink.getBooleanProperty("offline")) {
+        if (link.getBooleanProperty("offline")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        dllink = downloadLink.getStringProperty("directlink");
-        if (!linkOk(downloadLink)) {
-            br.getPage(downloadLink.getStringProperty("originallink"));
+        dllink = link.getStringProperty("directlink");
+        if (!linkOk(link)) {
+            br.getPage(link.getStringProperty("originallink"));
             if (br.getURL().contains("error/missing") || br.containsHTML("(>Ooops, This Video is not available|>This video was removed and is no longer available at our site|<title></title>)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final LinkedHashMap<String, String> foundQualities = findAvailableVideoQualities(this.br);
             if (foundQualities == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if (foundQualities.isEmpty()) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Broken video?");
             }
-            final String selectedQuality = downloadLink.getStringProperty("selectedquality");
+            final String selectedQuality = link.getStringProperty("selectedquality");
             dllink = foundQualities.get(selectedQuality);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (!linkOk(downloadLink)) {
+            if (!linkOk(link)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
