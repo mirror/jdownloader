@@ -316,7 +316,7 @@ public class Archive {
     }
 
     public ArchiveSettings getSettings() {
-        return ArchiveController.getInstance().getArchiveSettings(getArchiveID(), getFactory());
+        return ArchiveController.getInstance().getArchiveSettings(getArchiveID(), this, getFactory());
     }
 
     public ArchiveFile getArchiveFileByPath(String filename) {
