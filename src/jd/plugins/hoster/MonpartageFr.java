@@ -19,8 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -31,6 +29,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MonpartageFr extends PluginForHost {
@@ -62,7 +63,7 @@ public class MonpartageFr extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/f/([A-Za-z0-9]+)/");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/f/([A-Za-z0-9]+)/?");
         }
         return ret.toArray(new String[0]);
     }
@@ -90,7 +91,11 @@ public class MonpartageFr extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
+        String url = link.getPluginPatternMatcher();
+        if (!StringUtils.endsWithCaseInsensitive(url, "/")) {
+            url += "/";
+        }
+        br.getPage(url);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -129,6 +134,8 @@ public class MonpartageFr extends PluginForHost {
             }
             dlform.put("password", Encoding.urlEncode(passCode));
         }
+        // server will respond with Content-Length when Range is requested
+        br.getHeaders().put("Range", "bytes=" + 0 + "-");
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, resumable, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
