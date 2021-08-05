@@ -4,6 +4,9 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.plugins.DownloadLink;
+
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -12,6 +15,8 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkArchiveFile;
+import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
 import org.jdownloader.logging.LogController;
 
 public class ArchiveController {
@@ -56,12 +61,25 @@ public class ArchiveController {
 
     protected void save() {
         synchronized (map) {
-            for (Entry<String, ArchiveSettings> e : map.entrySet()) {
+            for (final Entry<String, ArchiveSettings> e : map.entrySet()) {
                 try {
-                    if (e.getValue()._needsSaving()) {
-                        final File path = getPathByID(e.getKey());
-                        logger.info("Save " + path);
+                    final File path = getPathByID(e.getKey());
+                    final ArchiveSettings settings = e.getValue();
+                    Boolean exists = settings._exists();
+                    if (exists == null) {
+                        // TODO: check if archive still exists in list
+                    }
+                    if (Boolean.FALSE.equals(exists)) {
+                        if (path.isFile()) {
+                            logger.info("Archive (" + settings._getArchiveID() + "/" + path + ") no longer exists: removed:" + path.delete());
+                        } else {
+                            logger.info("Archive (" + settings._getArchiveID() + "/" + path + ") no longer exists");
+                        }
+                    } else if (settings._needsSaving()) {
+                        logger.info("Archive (" + settings._getArchiveID() + "/" + path + ") " + (exists == null ? "maybe" : "still") + " exits and changes must be saved");
                         IO.secureWrite(path, JSonStorage.serializeToJson(e.getValue()).getBytes("UTF-8"));
+                    } else {
+                        logger.info("Archive (" + settings._getArchiveID() + "/" + path + ") " + (exists == null ? "maybe" : "still") + " exits but no changes");
                     }
                 } catch (Throwable e1) {
                     logger.log(e1);
@@ -75,6 +93,10 @@ public class ArchiveController {
     }
 
     public ArchiveSettings getArchiveSettings(final String archiveID, final ArchiveFactory archiveFactory) {
+        return getArchiveSettings(archiveID, null, archiveFactory);
+    }
+
+    public ArchiveSettings getArchiveSettings(final String archiveID, final Archive archive, final ArchiveFactory archiveFactory) {
         if (archiveID != null) {
             synchronized (map) {
                 final String internalID = Hash.getSHA256(archiveID);
@@ -88,6 +110,25 @@ public class ArchiveController {
                     if (BooleanStatus.UNSET.equals(ret.getAutoExtract()) && !ret.getAutoExtract().equals(defaultAuto)) {
                         /* only set AutoExtract value when it is UNSET */
                         ret.setAutoExtract(defaultAuto);
+                    }
+                }
+                if (archive != null) {
+                    // make sure assignedLinks field is initialized
+                    ret._getAssignedLinks().size();
+                    for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
+                        if (archiveFile instanceof DownloadLinkArchiveFile) {
+                            for (final DownloadLink downloadLink : ((DownloadLinkArchiveFile) archiveFile).getDownloadLinks()) {
+                                ret._getAssignedLinks().put(downloadLink, null);
+                            }
+                        } else if (archiveFile instanceof CrawledLinkArchiveFile) {
+                            for (final CrawledLink crawledLink : ((CrawledLinkArchiveFile) archiveFile).getLinks()) {
+                                final DownloadLink downloadLink = crawledLink.getDownloadLink();
+                                if (downloadLink != null) {
+                                    ret._getAssignedLinks().put(downloadLink, null);
+                                }
+                                ret._getAssignedLinks().put(crawledLink, null);
+                            }
+                        }
                     }
                 }
                 map.put(internalID, ret);
