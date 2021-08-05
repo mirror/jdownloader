@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -45,8 +46,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.VivaTv;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mtv.de", "mtviggy.com", "southpark.de", "southpark.cc.com", "vh1.com", "nickmom.com", "nicktoons.nick.com", "teennick.com", "nickatnite.com", "mtv.com.au", "mtv.co.uk", "mtv.com", "logotv.com", "cc.com", "funnyclips.cc", "comedycentral.tv", "nick.de", "nickjr.de", "nicknight.de", "tvland.com", "spike.com", "cmt.com", "thedailyshow.cc.com", "tosh.cc.com", "mtvu.com" }, urls = { "https?://(?:www\\.)?mtv\\.de/.+", "https?://(?:www\\.)?(?:mtviggy|mtvdesi|mtvk)\\.com/.+", "https?://(?:www\\.)?southpark\\.de/.+", "https?://southpark\\.cc\\.com/.+", "https?://(?:www\\.)?vh1\\.com/.+", "https?://(?:www\\.)?nickmom\\.com/.+", "https?://nicktoons\\.nick\\.com/.+", "https?://(?:www\\.)?teennick\\.com/.+", "https?://(?:www\\.)?nickatnite\\.com/.+", "https?://(?:www\\.)?mtv\\.com\\.au/.+",
-        "https?://(?:www\\.)?mtv\\.co\\.uk/.+", "https?://(?:www\\.)?mtv\\.com/.+", "https?://(?:www\\.)logotv\\.com/.+", "https?://(?:www\\.)?cc\\.com/.+", "https?://de\\.funnyclips\\.cc/.+", "https?://(?:www\\.)?comedycentral\\.tv/.+", "https?://(?:www\\.)?nick\\.de/.+", "https?://(?:www\\.)?nickjr\\.de/.+", "https?://(?:www\\.)?nicknight\\.de/.+", "https?://(?:www\\.)?tvland\\.com/.+", "https?://(?:www\\.)?spike\\.com/.+", "https?://(?:www\\.)?cmt\\.com/.+", "https?://thedailyshow\\.cc\\.com/.+", "https?://tosh\\.cc\\.com/.+", "https?://(?:www\\.)?mtvu\\.com/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mtv.de", "mtviggy.com", "southpark.de", "southpark.cc.com", "vh1.com", "nicktoons.nick.com", "teennick.com", "nickatnite.com", "mtv.com.au", "mtv.co.uk", "mtv.com", "cc.com", "funnyclips.cc", "comedycentral.tv", "nick.de", "nickjr.de", "nicknight.de", "tvland.com", "spike.com", "thedailyshow.cc.com", "tosh.cc.com", "mtvu.com" }, urls = { "https?://(?:www\\.)?mtv\\.de/.+", "https?://(?:www\\.)?(?:mtviggy|mtvdesi|mtvk)\\.com/.+", "https?://(?:www\\.)?southpark\\.de/.+", "https?://southpark\\.cc\\.com/.+", "https?://(?:www\\.)?vh1\\.com/.+", "https?://nicktoons\\.nick\\.com/.+", "https?://(?:www\\.)?teennick\\.com/.+", "https?://(?:www\\.)?nickatnite\\.com/.+", "https?://(?:www\\.)?mtv\\.com\\.au/.+", "https?://(?:www\\.)?mtv\\.co\\.uk/.+", "https?://(?:www\\.)?mtv\\.com/.+",
+        "https?://(?:www\\.)?cc\\.com/.+", "https?://de\\.funnyclips\\.cc/.+", "https?://(?:www\\.)?comedycentral\\.tv/.+", "https?://(?:www\\.)?nick\\.de/.+", "https?://(?:www\\.)?nickjr\\.de/.+", "https?://(?:www\\.)?nicknight\\.de/.+", "https?://(?:www\\.)?tvland\\.com/.+", "https?://(?:www\\.)?spike\\.com/.+", "https?://thedailyshow\\.cc\\.com/.+", "https?://tosh\\.cc\\.com/.+", "https?://(?:www\\.)?mtvu\\.com/.+" })
 public class VivaTvDecrypt extends PluginForDecrypt {
     public VivaTvDecrypt(PluginWrapper wrapper) {
         super(wrapper);
@@ -58,11 +59,8 @@ public class VivaTvDecrypt extends PluginForDecrypt {
     /** TODO: mtvplay.tv */
     private static final String     type_viva                    = "https?://(?:www\\.)?viva\\.tv/.+";
     private static final String     type_mtv_de                  = "https?://(?:www\\.)?mtv\\.de/.+";
-    private static final String     type_southpark_de_episode    = "http://www\\.southpark\\.de/alle\\-episoden/.+";
     private static final String     type_southpark_cc_episode    = "http://southpark\\.cc\\.com/full\\-episodes/.+";
-    private static final String     type_nickmom_com             = "https?://(?:www\\.)?nickmom\\.com/.+";
     private static final String     type_mtv_com                 = "https?://(?:www\\.)?mtv\\.com/.+";
-    private static final String     type_logotv_com              = "http://www\\.logotv\\.com/.+";
     private static final String     hosterplugin_url_viacom_mgid = "http://viacommgid/";
     private static final String     PATTERN_MGID                 = "mgid:[A-Za-z]+:[A-Za-z0-9_\\-]+:[A-Za-z0-9\\.\\-]+:[A-Za-z0-9_\\-]+";
     private ArrayList<DownloadLink> decryptedLinks               = new ArrayList<DownloadLink>();
@@ -78,16 +76,10 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         VivaTv.prepBR(this.br);
         if (this.getHost().equals("nick.de")) {
             return crawlNickDe(param);
-        } else if (param.getCryptedUrl().matches(type_southpark_de_episode)) {
-            crawlSouthparkDe(param);
         } else if (param.getCryptedUrl().matches(type_southpark_cc_episode)) {
             crawlSouthparkCc(param);
-        } else if (param.getCryptedUrl().matches(type_nickmom_com)) {
-            crawlNickmomCom(param);
         } else if (param.getCryptedUrl().matches(type_mtv_com)) {
             crawlMtvCom(param);
-        } else if (param.getCryptedUrl().matches(type_logotv_com)) {
-            crawlLogoTvCom(param);
         } else {
             /* Universal viacom crawler */
             this.br.getPage(param.getCryptedUrl());
@@ -97,11 +89,11 @@ public class VivaTvDecrypt extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlNickDe(final CryptedLink param) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.getPage(param.getCryptedUrl());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        return this.crawlWebsiteJson(param, new ArrayList<DownloadLink>());
+    }
+
+    private ArrayList<DownloadLink> crawlWebsiteJson(final CryptedLink param, final ArrayList<DownloadLink> ret) throws Exception {
         final String jsonRoot = br.getRegex("window\\.__DATA__\\s*=\\s*(\\{.*?\\};\\s+)").getMatch(0);
         if (jsonRoot == null) {
             /* Assume that there is no downloadable content available. */
@@ -154,22 +146,26 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             final Object imageO = feed.get("image");
             if (imageO != null) {
                 final Map<String, Object> thumbnailMap = (Map<String, Object>) imageO;
-                final String thumbnailFilename = (String) thumbnailMap.get("title");
+                // final String thumbnailFilename = (String) thumbnailMap.get("title");
                 final String thumbnailurl = (String) thumbnailMap.get("url");
                 if (!StringUtils.isEmpty(thumbnailurl)) {
                     final DownloadLink thumbnail = this.createDownloadlink("directhttp://" + thumbnailurl);
-                    // thumbnail.setFinalFileName(title + "_thumbnail" + ".jpg");
-                    thumbnail.setFinalFileName(thumbnailFilename);
+                    thumbnail.setFinalFileName(title + "_thumbnail.jpg");
+                    // thumbnail.setFinalFileName(thumbnailFilename);
                     thumbnail._setFilePackage(fp);
+                    distribute(thumbnail);
                     ret.add(thumbnail);
                 }
             }
-            final List<Map<String, Object>> items = (List<Map<String, Object>>) feed.get("items");
-            if (items.size() > 1) {
-                logger.warning("Unexpected items length: " + items.size());
-            }
-            streamItemLoop: for (final Map<String, Object> item : items) {
-                final Map<String, Object> group = (Map<String, Object>) item.get("group");
+            /* Some videos are split into multiple parts */
+            final List<Map<String, Object>> parts = (List<Map<String, Object>>) feed.get("items");
+            final DecimalFormat pf = new DecimalFormat("00");
+            int partNumber = 0;
+            streamItemLoop: for (final Map<String, Object> part : parts) {
+                partNumber++;
+                logger.info("Crawling video part: " + partNumber + "/" + parts.size());
+                final Map<String, Object> group = (Map<String, Object>) part.get("group");
+                // final Map<String, Object> category = (Map<String, Object>) part.get("category");
                 final String mediagenURL = (String) group.get("content");
                 final UrlQuery queryMediagen = UrlQuery.parse(mediagenURL);
                 /* We don't want rtmp(e) */
@@ -188,11 +184,16 @@ public class VivaTvDecrypt extends PluginForDecrypt {
                 if (videoStreams.size() > 1) {
                     logger.warning("Multiple video streams available: " + videoStreams.size());
                 }
+                /** TODO: Improve filenames - add formatted series information such as season- and episodenumber. */
+                String filenameBase = title;
+                if (parts.size() > 1) {
+                    filenameBase += "_pt_" + pf.format(partNumber);
+                }
                 final Browser hlsBR = new Browser();
-                videoStreamLoop: for (final Map<String, Object> videoStream : videoStreams) {
+                for (final Map<String, Object> videoStream : videoStreams) {
                     // final String origination_date = (String) videoStream.get("origination_date");
                     final List<Map<String, Object>> videoRenditions = (List<Map<String, Object>>) videoStream.get("rendition");
-                    videoStreamRenditionLoop: for (final Map<String, Object> videoRendition : videoRenditions) {
+                    for (final Map<String, Object> videoRendition : videoRenditions) {
                         final String method = (String) videoRendition.get("method");
                         if (!method.equalsIgnoreCase("hls")) {
                             throw new DecrypterException("Unsupported streaming method: " + method);
@@ -204,20 +205,44 @@ public class VivaTvDecrypt extends PluginForDecrypt {
                         final DownloadLink dl = this.createDownloadlink(hlsbest.getDownloadurl().replaceFirst("https?://", "m3u8s://"));
                         dl.setAvailable(true);
                         dl._setFilePackage(fp);
-                        dl.setFinalFileName(title + ".mp4");
+                        dl.setFinalFileName(filenameBase + ".mp4");
+                        distribute(dl);
                         ret.add(dl);
-                        /* 2021-08-05: Only process one item at this moment */
+                        /* 2021-08-05: Only process one videoStream at this moment. */
                         break;
                     }
-                    /* 2021-08-05: Only process one item at this moment */
-                    break;
+                    /* Find- and add all compatible subtitle formats (2021-08-05: .vtt only). */
+                    final List<Map<String, Object>> transcripts = (List<Map<String, Object>>) videoStream.get("transcript");
+                    if (transcripts != null) {
+                        for (final Map<String, Object> transcript : transcripts) {
+                            final String kind = (String) transcript.get("kind");
+                            if (!kind.equalsIgnoreCase("captions")) {
+                                continue;
+                            }
+                            // final String srclang = (String) transcript.get("srclang");
+                            final List<Map<String, Object>> subtitleFormats = (List<Map<String, Object>>) transcript.get("typographic");
+                            for (final Map<String, Object> subtitleFormat : subtitleFormats) {
+                                final String format = (String) subtitleFormat.get("format");
+                                final String url = (String) subtitleFormat.get("src");
+                                if (format.equalsIgnoreCase("vtt") && !StringUtils.isEmpty(url)) {
+                                    final DownloadLink subtitle = this.createDownloadlink("directhttp://" + url);
+                                    subtitle.setFinalFileName(filenameBase + ".vtt");
+                                    subtitle.setAvailable(true);
+                                    subtitle._setFilePackage(fp);
+                                    distribute(subtitle);
+                                    ret.add(subtitle);
+                                }
+                            }
+                        }
+                    }
                 }
-                /* 2021-08-05: Only process one item at this moment */
-                break;
+                if (this.isAbort()) {
+                    return ret;
+                }
             }
             index++;
             if (this.isAbort()) {
-                break;
+                return ret;
             }
         }
         return ret;
@@ -231,9 +256,10 @@ public class VivaTvDecrypt extends PluginForDecrypt {
                 maps.add(entrymap);
             } else {
                 for (final Map.Entry<String, Object> entry : entrymap.entrySet()) {
-                    if (entry.getValue() instanceof Map || entry.getValue() instanceof List) {
-                        findVideoMaps(maps, entry.getValue());
-                    }
+                    // if (entry.getValue() instanceof Map || entry.getValue() instanceof List) {
+                    // findVideoMaps(maps, entry.getValue());
+                    // }
+                    findVideoMaps(maps, entry.getValue());
                 }
             }
             return;
@@ -241,6 +267,9 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             final List<Object> objects = (List) o;
             for (final Object arrayo : objects) {
                 findVideoMaps(maps, arrayo);
+                // if (arrayo instanceof Map || arrayo instanceof List) {
+                // findVideoMaps(maps, arrayo);
+                // }
             }
             return;
         } else {
@@ -330,28 +359,6 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         }
     }
 
-    private void crawlSouthparkDe(final CryptedLink param) throws IOException, DecrypterException {
-        br.getPage(param.getCryptedUrl());
-        this.mgid = br.getRegex("media\\.mtvnservices\\.com/(mgid[^<>\"]+)\"").getMatch(0);
-        if (this.mgid == null) {
-            /* New 2016-10-19 */
-            this.mgid = br.getRegex("data\\-mgid=\"(mgid:[^<>\"]+)\"").getMatch(0);
-        }
-        if (this.mgid == null) {
-            throw new DecrypterException("Decrypter broken for link: " + param.getCryptedUrl());
-        }
-        final String feedURL = String.format(getFEEDURL("southpark.de"), this.mgid);
-        br.getPage(feedURL);
-        fpName = getXML("title");
-        if (fpName == null) {
-            this.decryptedLinks = null;
-            return;
-        }
-        fpName = new Regex(param.getCryptedUrl(), "episoden/(s\\d{2}e\\d{2})").getMatch(0) + " - " + fpName;
-        fpName = Encoding.htmlDecode(fpName.trim());
-        decryptFeed(param);
-    }
-
     private void crawlSouthparkCc(final CryptedLink param) throws IOException, DecrypterException {
         br.getPage(param.getCryptedUrl());
         this.mgid = br.getRegex("data\\-mgid=\"(mgid[^<>\"]*?)\"").getMatch(0);
@@ -367,18 +374,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         }
         fpName = new Regex(param.getCryptedUrl(), "episodes/(s\\d{2}e\\d{2})").getMatch(0) + " - " + fpName;
         fpName = Encoding.htmlDecode(fpName.trim());
-        decryptFeed(param);
-    }
-
-    private void crawlNickmomCom(final CryptedLink param) throws DecrypterException, IOException {
-        br.getPage(param.getCryptedUrl());
-        String extern_ID = br.getRegex("\"(https?://(www\\.)?youtube\\.com/embed/[^<>\"]*?)\"").getMatch(0);
-        if (extern_ID != null) {
-            logger.info("Current link is an extern link");
-            decryptedLinks.add(createDownloadlink(extern_ID));
-            return;
-        }
-        vivaUniversalCrawler(param);
+        crawlFeed(this.br, param);
     }
 
     private void crawlMtvCom(final CryptedLink param) throws Exception {
@@ -405,57 +401,22 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         }
     }
 
-    private void crawlLogoTvCom(final CryptedLink param) throws Exception {
-        boolean isPlaylist = false;
-        final String playlist_id = new Regex(param.getCryptedUrl(), "^.+#id=(\\d+)$").getMatch(0);
-        String url_name = new Regex(param.getCryptedUrl(), "/([A-Za-z0-9\\-_]+)\\.j?html").getMatch(0);
-        if (playlist_id != null) {
-            /* Playlist */
-            this.br.getPage("http://www.logotv.com/global/music/videos/ajax/playlist.jhtml?id=" + playlist_id);
-            crawlMtvComPlaylists(param);
-            isPlaylist = this.decryptedLinks.size() > 0;
-        }
-        if (!isPlaylist) {
-            /* Feed */
-            /* We have no feed-url so let's use this */
-            br.getPage(param.getCryptedUrl());
-            if (crawlVevo()) {
-                return;
-            }
-            logger.info("Current link is NO VEVO link");
-            if (!br.containsHTML("\"video\":")) {
-                decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-                return;
-            }
-            this.mgid = br.getRegex("media\\.mtvnservices\\.com/(mgid[^<>\"]*?)\"").getMatch(0);
-            if (this.mgid == null) {
-                this.decryptedLinks = null;
-                return;
-            }
-            final String feedURL = "http://www.logotv.com/player/includes/rss.jhtml?uri=" + this.mgid;
-            br.getPage(feedURL);
-            decryptFeed(param);
-        }
-        if (fpName == null) {
-            fpName = url_name;
-        }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fpName = Encoding.htmlDecode(fpName.trim());
-            fp.setName(fpName);
-            fp.addLinks(decryptedLinks);
-        }
-    }
-
-    /** This function is able to crawl content of most viacom/mtv websites. */
-    private void vivaUniversalCrawler(final CryptedLink param) throws IOException, DecrypterException {
+    /**
+     * This function is able to crawl content of most viacom/mtv websites.
+     *
+     * @throws Exception
+     */
+    private void vivaUniversalCrawler(final CryptedLink param) throws Exception {
         if (crawlVevo()) {
             return;
         }
-        crawlDrupal(param);
-        crawlMgids(param);
-        crawlTriforceManifestFeed();
-        crawlMtvGermanyPlaylists(param);
+        this.crawlWebsiteJson(param, this.decryptedLinks);
+        if (this.decryptedLinks.isEmpty()) {
+            crawlDrupal(param);
+            crawlMgids(param);
+            crawlTriforceManifestFeed();
+            crawlMtvGermanyPlaylists(param);
+        }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fpName = Encoding.htmlDecode(fpName.trim());
@@ -586,8 +547,9 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             if (feed_url == null) {
                 return;
             }
+            final Browser brc = br.cloneBrowser();
             this.br.getPage(feed_url);
-            decryptFeed(param);
+            crawlFeed(brc, param);
         } else {
             final DownloadLink dl = mgidSingleVideoGetDownloadLink(mgid);
             if (dl != null) {
@@ -644,10 +606,10 @@ public class VivaTvDecrypt extends PluginForDecrypt {
     }
 
     /** General function to decrypt viacom RSS feeds, especially with multiple segments of a single video no matter what their source is. */
-    private void decryptFeed(final CryptedLink param) throws DecrypterException {
+    private void crawlFeed(final Browser br, final CryptedLink param) throws DecrypterException {
         final String[] items = br.getRegex("<item>(.*?)</item>").getColumn(0);
         if (fpName == null) {
-            fpName = getMainFEEDTitle();
+            fpName = getMainFEEDTitle(br);
         }
         if (items == null || items.length == 0 || fpName == null) {
             return;
@@ -684,7 +646,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         }
     }
 
-    private String getMainFEEDTitle() {
+    private String getMainFEEDTitle(final Browser br) {
         String title = getXML("title");
         if (title != null) {
             title = doEncoding(title);
