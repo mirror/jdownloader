@@ -27,10 +27,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision $", interfaceVersion = 2, names = {}, urls = {})
-public class BayFilesCom extends UnknownHostingScriptCore {
-    public BayFilesCom(PluginWrapper wrapper) {
+public class YetifileCom extends UnknownHostingScriptCore {
+    public YetifileCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(super.getPurchasePremiumURL());
+        // this.enablePremium(super.getPurchasePremiumURL());
     }
 
     /**
@@ -83,10 +83,16 @@ public class BayFilesCom extends UnknownHostingScriptCore {
         return 4;
     }
 
+    @Override
+    public boolean supports_availablecheck_via_api() {
+        /* 2021-08-05: They've disabled their API. */
+        return false;
+    }
+
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "bayfiles.com", "letsupload.cc", "megaupload.is", "openload.cc" });
+        ret.add(new String[] { "yetifile.com", "ninefile.com" });
         return ret;
     }
 

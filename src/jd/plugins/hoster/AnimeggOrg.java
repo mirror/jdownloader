@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -56,27 +57,31 @@ public class AnimeggOrg extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (!dl.getConnection().isContentDisposition() && !dl.getConnection().getContentType().contains("video")) {
-            br.followConnection();
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        final String link = downloadLink.getDownloadURL();
+        final String url = link.getDownloadURL();
         br.setFollowRedirects(true);
-        getPage(link);
+        getPage(url);
         // not yet available. We can only say offline!
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<img src=\"\\.\\./images/animegg-unavailable.jpg\" style=\"width: 100%\">")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (!link.matches(".+/embed/\\d+")) {
+        if (!url.matches(".+/embed/\\d+")) {
             final String embed = br.getRegex("<iframe [^>]*src=(\"|')(.*?/embed/\\d+)\\1").getMatch(1);
             if (embed == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -118,10 +123,11 @@ public class AnimeggOrg extends antiDDoSForHost {
             // only way to check for made up links... or offline is here
             if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setFinalFileName(filename + ".mp4");
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            } else if (this.looksLikeDownloadableContent(con)) {
+                link.setFinalFileName(filename + ".mp4");
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
