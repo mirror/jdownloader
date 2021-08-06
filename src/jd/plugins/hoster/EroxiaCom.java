@@ -18,12 +18,12 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eroxia.com" }, urls = { "https?://(?:www\\.)?eroxia\\.com/([A-Za-z0-9_\\-]+/\\d+/.*?|video/[a-z0-9\\-]+\\d+)\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eroxia.com" }, urls = { "https?://(?:www\\.)?eroxia\\.com/(?:video/[a-z0-9\\-]+-\\d+\\.html|embed/\\d+)" })
 public class EroxiaCom extends PluginForHost {
     public EroxiaCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,26 +47,71 @@ public class EroxiaCom extends PluginForHost {
         return "http://www.eroxia.com/contact.php";
     }
 
-    @SuppressWarnings("deprecation")
+    private static final String TYPE_NORMAL = "https?://[^/]+/video/([a-z0-9\\-]+)-(\\d+)\\.html";
+    private static final String TYPE_EMBED  = "https?://[^/]+/embed/(\\d+)";
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        if (link != null && link.getPluginPatternMatcher() != null) {
+            if (link.getPluginPatternMatcher().matches(TYPE_NORMAL)) {
+                return new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(1);
+            } else {
+                return new Regex(link.getPluginPatternMatcher(), TYPE_EMBED).getMatch(0);
+            }
+        } else {
+            return null;
+        }
+    }
+
+    private String getWeakFilename(final DownloadLink link) {
+        final String weakTitle;
+        if (link.getPluginPatternMatcher().matches(TYPE_NORMAL)) {
+            weakTitle = new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(0).replace("-", " ");
+        } else {
+            weakTitle = new Regex(link.getPluginPatternMatcher(), TYPE_EMBED).getMatch(0);
+        }
+        return weakTitle + ".mp4";
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        if (!link.isNameSet()) {
+            link.setName(this.getWeakFilename(link));
+        }
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://www.eroxia.com/") || br.containsHTML("Tube</title>|error\">(Page you are|We're sorry)")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        /* 2021-08-06: Important else we might not be able to find downloadurls! */
+        final boolean forceEmbedHandling = true;
+        if (forceEmbedHandling) {
+            br.getPage("https://www." + this.getHost() + "/embed/" + this.getFID(link));
+            if (br.containsHTML("Invalid Video ID") || br.toString().length() <= 100) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        } else {
+            br.getPage(link.getPluginPatternMatcher());
+            if (!this.canHandle(this.br.getURL()) || br.containsHTML("(?i)Tube</title>|error\">(Page you are|We're sorry)")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
-        String filename = br.getRegex("<h1(?: class=\"detail\\-title\")?>([^<>\"]*?)</h1>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?)\\s*-\\s*Eroxia(?:\\.com)?</title>").getMatch(0);
-        }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filename;
+        if (link.getPluginPatternMatcher().matches(TYPE_NORMAL)) {
+            filename = new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(0).replace("-", " ");
+        } else {
+            filename = this.getFID(link);
         }
         // Try to find direct link first
         dllink = br.getRegex("\\&file=(http[^<>\"]*?)\\&").getMatch(0);
-        final boolean allowCreateVideoUrlFromThumbnail = true;
+        /* This method does not work for all items - only for .mp4 items with hash as internal filename! */
+        final boolean allowCreateVideoUrlFromThumbnail = false;
         if (dllink == null && allowCreateVideoUrlFromThumbnail) {
             /* 2021-08-06: Seems like they somehow block us? But luckily we can generate valid streamingURLs out of their thumbnail URLs. */
             final String thumbnailURLPart = br.getRegex("(https?://media\\.eroxia\\.com/thumbs/[^\"]*?/[a-f0-9]{32}\\.mp4)").getMatch(0);
@@ -97,8 +142,7 @@ public class EroxiaCom extends PluginForHost {
             }
         }
         dllink = Encoding.htmlDecode(dllink);
-        filename = filename.trim();
-        link.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
+        link.setFinalFileName(Encoding.htmlDecode(filename).trim() + ".mp4");
         if (!StringUtils.isEmpty(this.dllink)) {
             URLConnectionAdapter con = null;
             try {
@@ -107,7 +151,7 @@ public class EroxiaCom extends PluginForHost {
                 con = brc.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
-                        link.setDownloadSize(con.getCompleteContentLength());
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

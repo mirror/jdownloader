@@ -20,6 +20,7 @@ import java.io.IOException;
 import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -56,7 +57,7 @@ public class UnknownPornScript8 extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_embed = br.getRegex("<iframe[^>]*?src=\"(https?://(?:www\\.)?xnhub\\.com/embed/\\d+)\"[^>]*?></iframe>").getMatch(0);
@@ -74,15 +75,14 @@ public class UnknownPornScript8 extends PluginForHost {
         }
         dllink = br.getRegex("<source src=\"(https?[^<>\"]+)\"").getMatch(0);
         if (dllink == null) {
-            /* Most of all times they're embedding their own content but sometimes it's "external" and e.g. goes to "trendyporn.com" */
+            /*
+             * Most of all times they're embedding their own content but sometimes it's "external" --> Should be handled by crawlerplugin
+             * and not here!
+             */
             String iframe = br.getRegex("<iframe[^<>]+src=\"([^<>\"]+)\"[^<>]+allowfullscreen").getMatch(0);
             if (iframe != null) {
                 br.getPage(iframe);
                 dllink = br.getRegex("<source src=\"(https?[^<>\"]+)\"").getMatch(0);
-                if (dllink == null) {
-                    /* 2021-07-29: trendyporn.com */
-                    dllink = br.getRegex("src\\s*:\\s*\"(https://[^\"]+\\.mp4[^\"]*)\"").getMatch(0);
-                }
             }
         }
         if (filename == null || dllink == null) {
@@ -113,6 +113,10 @@ public class UnknownPornScript8 extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    public static boolean isOffline(final Browser br) {
+        return br.getHttpConnection().getResponseCode() == 404;
     }
 
     private String getUrlFilename(final DownloadLink dl) {

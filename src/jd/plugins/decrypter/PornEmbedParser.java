@@ -3,6 +3,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -12,8 +14,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.DecrypterArrayList;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class PornEmbedParser extends antiDDoSForDecrypt {
@@ -874,6 +874,15 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         }
         /* 2021-03-15: anon-v.com */
         externID = br.getRegex("\"(https?://(?:www\\.)?anon-v\\.com/embed/\\d+)\"").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = this.createDownloadlink(externID);
+            decryptedLinks.add(dl);
+            if (!processAll) {
+                return decryptedLinks;
+            }
+        }
+        /* 2021-08-06: trendyporn.com */
+        externID = br.getRegex("\"(https?://(?:www\\.)?trendyporn\\.com/embed/\\d+)\"").getMatch(0);
         if (externID != null) {
             final DownloadLink dl = this.createDownloadlink(externID);
             decryptedLinks.add(dl);
