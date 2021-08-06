@@ -109,8 +109,8 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         }
         /* Now collect all URIs */
         final ArrayList<String> uris = new ArrayList<String>();
-        for (final Map<String, Object> websiteVideoEntry : websiteVideoObjects) {
-            final Map<String, Object> video = (Map<String, Object>) websiteVideoEntry.get("video");
+        for (final Map<String, Object> websiteVideoPlayerRoot : websiteVideoObjects) {
+            final Map<String, Object> video = (Map<String, Object>) JavaScriptEngineFactory.walkJson(websiteVideoPlayerRoot, "props/media/video");
             // final String entityType = (String) video.get("entityType");
             final Map<String, Object> config = (Map<String, Object>) video.get("config");
             final String uri = (String) config.get("uri");
@@ -124,6 +124,12 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             logger.info("Failed to find any URIs");
             return ret;
         }
+        /* TODO: Find a better place to find the episodenumber */
+        String episodeNumber = null;
+        if (websiteVideoObjects.size() == 1) {
+            episodeNumber = new Regex(param.getCryptedUrl(), "-ep-(\\d+)").getMatch(0);
+        }
+        final DecimalFormat sf = new DecimalFormat("00");
         final Browser brc = br.cloneBrowser();
         brc.getHeaders().put("Accept", "application/json");
         int index = 0;
@@ -165,7 +171,8 @@ public class VivaTvDecrypt extends PluginForDecrypt {
                 partNumber++;
                 logger.info("Crawling video part: " + partNumber + "/" + parts.size());
                 final Map<String, Object> group = (Map<String, Object>) part.get("group");
-                // final Map<String, Object> category = (Map<String, Object>) part.get("category");
+                final Map<String, Object> metadata = (Map<String, Object>) group.get("category");
+                final String seasonNumber = (String) metadata.get("seasonN");
                 final String mediagenURL = (String) group.get("content");
                 final UrlQuery queryMediagen = UrlQuery.parse(mediagenURL);
                 /* We don't want rtmp(e) */
@@ -184,8 +191,11 @@ public class VivaTvDecrypt extends PluginForDecrypt {
                 if (videoStreams.size() > 1) {
                     logger.warning("Multiple video streams available: " + videoStreams.size());
                 }
-                /** TODO: Improve filenames - add formatted series information such as season- and episodenumber. */
+                /** TODO: Improve filenames */
                 String filenameBase = title;
+                if (seasonNumber != null && episodeNumber != null) {
+                    filenameBase += "S" + sf.format(Integer.parseInt(seasonNumber)) + "E" + sf.format(Integer.parseInt(episodeNumber));
+                }
                 if (parts.size() > 1) {
                     filenameBase += "_pt_" + pf.format(partNumber);
                 }
@@ -252,7 +262,8 @@ public class VivaTvDecrypt extends PluginForDecrypt {
     private void findVideoMaps(final ArrayList<Map<String, Object>> maps, final Object o) {
         if (o instanceof Map) {
             final Map<String, Object> entrymap = (Map<String, Object>) o;
-            if (entrymap.containsKey("video") && entrymap.containsKey("image")) {
+            final Object typeO = entrymap.get("type");
+            if (typeO != null && typeO instanceof String && typeO.toString().equals("VideoPlayer")) {
                 maps.add(entrymap);
             } else {
                 for (final Map.Entry<String, Object> entry : entrymap.entrySet()) {
