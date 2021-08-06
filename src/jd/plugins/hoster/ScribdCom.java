@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -28,6 +27,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -52,15 +52,15 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/(doc|document|book|embeds|read)/\\d+" })
 public class ScribdCom extends PluginForHost {
-    private final String                  formats       = "formats";
+    private final String        formats       = "formats";
     /** The list of server values displayed to the user */
-    private final String[]                allFormats    = new String[] { "PDF", "TXT", "DOCX" };
-    private static final String           FORMAT_PPS    = "class=\"format_ext\">\\.PPS</span>";
-    private static final String           TYPE_DOCUMENT = ".+/(doc|document)/.+";
-    private static final String           TYPE_AUDIO    = ".+/audiobook/.+";
-    private String                        origurl       = null;
-    private LinkedHashMap<String, Object> entries       = null;
-    private int                           json_type     = 1;
+    private final String[]      allFormats    = new String[] { "PDF", "TXT", "DOCX" };
+    private static final String FORMAT_PPS    = "class=\"format_ext\">\\.PPS</span>";
+    private static final String TYPE_DOCUMENT = ".+/(doc|document)/.+";
+    private static final String TYPE_AUDIO    = ".+/audiobook/.+";
+    private String              origurl       = null;
+    private Map<String, Object> entries       = null;
+    private int                 json_type     = 1;
 
     public ScribdCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -153,22 +153,22 @@ public class ScribdCom extends PluginForHost {
                 if (json1 != null) {
                     /* Type 1 */
                     json_type = 1;
-                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json1);
+                    entries = JavaScriptEngineFactory.jsonToJavaMap(json1);
                     is_audiobook = ((Boolean) entries.get("is_audiobook")).booleanValue();
                     filename = (String) entries.get("title");
                     description = (String) entries.get("description");
                 } else if (json2 != null) {
                     /* Type 2 */
                     json_type = 2;
-                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json2);
+                    entries = JavaScriptEngineFactory.jsonToJavaMap(json2);
                     is_audiobook = ((Boolean) entries.get("is_audiobook")).booleanValue();
                     filename = (String) entries.get("document_title");
                     description = (String) entries.get("document_description");
                     is_deleted = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "document/deleted")).booleanValue();
                 } else {
                     json_type = 3;
-                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json3);
-                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "page/word_document");
+                    entries = JavaScriptEngineFactory.jsonToJavaMap(json3);
+                    entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "page/word_document");
                     filename = (String) entries.get("title");
                     // final boolean show_archive_paywall = ((Boolean) entries.get("show_archive_paywall")).booleanValue();
                 }
@@ -203,7 +203,7 @@ public class ScribdCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(this.br, account, true);
+        login(account, true);
         final boolean fetchDataViaPurchaseHistory = true;
         String accountType = null;
         String accountPaymentType = null;
@@ -215,23 +215,23 @@ public class ScribdCom extends PluginForHost {
             /* 2019-08-12: Alternative way */
             /* First attempt - go through payment history and grab the latest entry + expire-date */
             final Browser brc = br.cloneBrowser();
-            brc.getHeaders().put("x-requested-with", "XMLHttpRequest");
+            brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             brc.getHeaders().put("sec-fetch-mode", "cors");
             brc.getHeaders().put("sec-fetch-site", "same-origin");
-            brc.getHeaders().put("accept", "application/json, text/javascript, */*; q=0.01");
+            brc.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             brc.getPage("/account-settings/payment-transactions");
             try {
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
+                Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
                 final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("payment_transactions");
                 for (final Object transactionO : ressourcelist) {
-                    entries = (LinkedHashMap<String, Object>) transactionO;
+                    entries = (Map<String, Object>) transactionO;
                     final boolean refunded = ((Boolean) entries.get("refunded")).booleanValue();
                     final Object descriptionO = entries.get("description");
                     if (refunded || descriptionO == null) {
                         continue;
                     }
                     accountPaymentType = (String) entries.get("payment_method");
-                    entries = (LinkedHashMap<String, Object>) descriptionO;
+                    entries = (Map<String, Object>) descriptionO;
                     expiredateStr = (String) entries.get("valid_until");
                     if (!StringUtils.isEmpty(expiredateStr)) {
                         break;
@@ -239,7 +239,7 @@ public class ScribdCom extends PluginForHost {
                 }
                 /* E.g. "Gültig: 8/12/19 - 9/11/19" */
                 final String[] createDataAndExpireDate = new Regex(expiredateStr, "(\\d{1,2}/\\d{1,2}/\\d{1,2})").getColumn(0);
-                if (createDataAndExpireDate.length >= 2) {
+                if (createDataAndExpireDate != null && createDataAndExpireDate.length >= 2) {
                     expiredateStr = createDataAndExpireDate[1];
                     expireTimestamp = TimeFormatter.getMilliSeconds(expiredateStr, "MM/dd/yy", Locale.ENGLISH);
                 }
@@ -250,12 +250,12 @@ public class ScribdCom extends PluginForHost {
             br.getPage("/account-settings/account");
             final String json_account = br.getRegex("ReactDOM\\.render\\(React\\.createElement\\(Scribd\\.AccountSettings\\.Show, (\\{.*?\\})\\), document\\.getElementById").getMatch(0);
             try {
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_account);
+                Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json_account);
                 final long userIDLong = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "user/id"), 0);
                 if (userIDLong > 0) {
                     userID = Long.toString(userIDLong);
                 }
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "membership_info/plan_info");
+                entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "membership_info/plan_info");
                 /* 2019-08-12: E.g. "cancelled_with_valid_to" */
                 accountType = (String) entries.get("type");
                 expiredateStr = (String) entries.get("valid_to_date");
@@ -355,7 +355,7 @@ public class ScribdCom extends PluginForHost {
     }
 
     public void handlePremium(final DownloadLink parameter, final Account account) throws Exception {
-        login(this.br, account, false);
+        login(account, false);
         requestFileInformation(parameter, false);
         boolean is_downloadable = true;
         boolean is_downloadable_for_premium_users = false;
@@ -370,7 +370,7 @@ public class ScribdCom extends PluginForHost {
                 is_downloadable_for_premium_users = ((Boolean) entries.get("downloadable_for_premium_users")).booleanValue();
                 break;
             case 2:
-                entries = (LinkedHashMap<String, Object>) entries.get("document");
+                entries = (Map<String, Object>) entries.get("document");
                 /* 2019-08-12: Unsure about that, there is also: word_download, text_download, pdf_download */
                 is_downloadable = ((Boolean) entries.get("all_download")).booleanValue();
                 final String document_type = (String) entries.get("document_type");
@@ -415,42 +415,64 @@ public class ScribdCom extends PluginForHost {
         dl.startDownload();
     }
 
-    public static void login(final Browser brlogin, final Account account, final boolean force) throws Exception {
+    public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
-                brlogin.setCookiesExclusive(true);
-                prepBRGeneral(brlogin);
-                brlogin.setFollowRedirects(true);
+                br.setCookiesExclusive(true);
+                prepBRGeneral(br);
+                br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
                 String authenticity_token = null;
                 if (cookies != null) {
-                    brlogin.setCookies(account.getHoster(), cookies);
+                    br.setCookies(account.getHoster(), cookies);
                     authenticity_token = getauthenticity_token(account);
-                    brlogin.getPage("https://www." + account.getHoster() + "/");
-                    if (isLoggedin(brlogin)) {
+                    logger.info("Verifying login cookies");
+                    br.getPage("https://www." + this.getHost() + "/");
+                    if (isLoggedin(br)) {
                         /* Cookie login successful --> Save cookie timestamp */
-                        account.saveCookies(brlogin.getCookies(brlogin.getHost()), "");
+                        logger.info("Cookie login successful");
+                        account.saveCookies(br.getCookies(br.getHost()), "");
                         return;
+                    } else {
+                        logger.info("Cookie login failed");
+                        br.clearAll();
                     }
-                    brlogin.clearAll();
                 }
-                brlogin.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.getPage("https://www." + this.getHost() + "/login");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 /* 2020-06-08: No required anymore(?) */
-                authenticity_token = createCSRFTOKEN(brlogin, account.getHoster());
+                authenticity_token = createCSRFTOKEN(br.cloneBrowser(), account.getHoster());
                 if (authenticity_token != null) {
-                    brlogin.getHeaders().put("x-csrf-token", authenticity_token);
+                    br.getHeaders().put("X-Csrf-Token", authenticity_token);
                 }
-                brlogin.getHeaders().put("content-type", "application/json");
+                br.getHeaders().put("Content-Type", "application/json");
                 // br.getHeaders().put("origin", "https://de.scribd.com");
                 // br.getHeaders().put("referer", "https://de.scribd.com/");
-                brlogin.getHeaders().put("x-requested-with", "XMLHttpRequest");
-                final String postData = String.format("{\"login_or_email\":\"%s\",\"login_password\":\"%s\",\"rememberme\":\"\",\"signup_location\":\"https://de.scribd.com/\",\"login_params\":{}}", account.getUser(), account.getPass());
-                brlogin.postPageRaw("/login", postData);
-                final String loginstatus = PluginJSonUtils.getJson(brlogin, "login");
-                if (brlogin.containsHTML("Invalid username or password") || !"true".equals(loginstatus) || !isLoggedin(brlogin)) {
+                final Map<String, Object> post = new HashMap<String, Object>();
+                post.put("login_or_email", account.getUser());
+                post.put("login_password", account.getPass());
+                post.put("rememberme", "");
+                post.put("signup_location", "");
+                post.put("https://de.scribd.com/", "");
+                post.put("login_params", new HashMap<String, Object>());
+                if (br.containsHTML("\"reCaptchaEnabled\"\\s*:\\s*true")) {
+                    final String rcKey = PluginJSonUtils.getJson(br, "reCaptchaSiteKey");
+                    final String recaptchaV2Response;
+                    if (!StringUtils.isEmpty(rcKey)) {
+                        recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, rcKey).getToken();
+                    } else {
+                        recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    }
+                    post.put("g-recaptcha-response", recaptchaV2Response);
+                }
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.postPageRaw("/login", JSonStorage.serializeToJson(post));
+                /* E.g. success: {"login":true,"success":true,"user":{"id":123456789}} */
+                final String loginstatus = PluginJSonUtils.getJson(br, "login");
+                if (br.containsHTML("Invalid username or password") || !"true".equals(loginstatus) || !isLoggedin(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                account.saveCookies(brlogin.getCookies(brlogin.getHost()), "");
+                account.saveCookies(br.getCookies(br.getHost()), "");
                 account.setProperty("authenticity_token", authenticity_token);
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {

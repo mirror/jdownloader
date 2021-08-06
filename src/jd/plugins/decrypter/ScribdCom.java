@@ -32,6 +32,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
@@ -122,7 +123,8 @@ public class ScribdCom extends PluginForDecrypt {
                 logger.info("Cannot crawl that URL without account");
                 return decryptedLinks;
             }
-            jd.plugins.hoster.ScribdCom.login(this.br, account, false);
+            final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
+            ((jd.plugins.hoster.ScribdCom) plg).login(account, false);
             final String userID = account.getStringProperty("userid", null);
             if (StringUtils.isEmpty(userID)) {
                 logger.warning("Failed to find userID");
