@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.nutils.encoding.Encoding;
@@ -30,8 +32,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "veehd.com" }, urls = { "https?://(?:www\\.)?veehd\\.com/video/\\d+" })
 public class VeeHdCom extends antiDDoSForHost {
@@ -56,6 +56,8 @@ public class VeeHdCom extends antiDDoSForHost {
         br.setCookie("http://veehd.com/", "pref", "1.1");
         getPage(link.getDownloadURL());
         if (br.containsHTML(">This is a private video") || br.getURL().contains("/?removed=") || br.containsHTML("This video has been removed due")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h2 style=\"\">([^<>]*?) \\| <font").getMatch(0);

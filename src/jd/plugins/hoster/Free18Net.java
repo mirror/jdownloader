@@ -100,10 +100,14 @@ public class Free18Net extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
+    public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("<source[^>]*src=\"\"[^>]*type=\"video/mp4\" */>")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Broken video?");
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
