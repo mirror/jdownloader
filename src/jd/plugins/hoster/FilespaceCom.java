@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -27,9 +30,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FilespaceCom extends XFileSharingProBasic {
@@ -104,8 +104,23 @@ public class FilespaceCom extends XFileSharingProBasic {
     public void checkErrors(final Browser br, final String correctedBR, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         /* 2019-05-21: Special */
         super.checkErrors(br, correctedBR, link, account, checkAll);
-        if (correctedBR.contains(">\\s*You, or someone with the same IP address, are downloading the")) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Server error 'You're using all download slots for IP'", 10 * 60 * 1001l);
+        if (new Regex(correctedBR, "(?i)>\\s*You, or someone with the same IP address, are downloading the").matches()) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You're using all download slots for current IP", 10 * 60 * 1001l);
+        }
+        if (checkAll) {
+            if (new Regex(correctedBR, "(?i)>[^<]*Wrong captcha[^<]*<").matches()) {
+                logger.warning("Wrong captcha (or wrong password as well)!");
+                /*
+                 * TODO: Find a way to avoid using a property for this or add the property in very plugin which overrides handleCaptcha e.g.
+                 * subyshare.com. If a dev forgets to set this, it will cause invalid errormessages on wrong captcha!
+                 */
+                final boolean websiteDidAskForCaptcha = link.getBooleanProperty(PROPERTY_captcha_required, false);
+                if (websiteDidAskForCaptcha) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server says 'wrong captcha' but never prompted for one");
+                }
+            }
         }
     }
 
