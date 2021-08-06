@@ -11,12 +11,13 @@ import jd.controlling.packagecontroller.AbstractPackageNode;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.settings.IfFileExistsAction;
 
 public class ArchiveSettings implements Storable {
     public static final TypeRef<ArchiveSettings>                TYPE_REF                           = new TypeRef<ArchiveSettings>() {
-    };
+                                                                                                   };
     private ArchiveController                                   archiveController;
     private BooleanStatus                                       autoExtract                        = BooleanStatus.UNSET;
     private ExtractionInfo                                      extractionInfo;
@@ -31,6 +32,7 @@ public class ArchiveSettings implements Storable {
     private String                                              archiveID                          = null;
     private String                                              settingsID                         = null;
     private WeakHashMap<AbstractPackageChildrenNode<?>, Object> assignedLinks                      = null;
+    private String                                              lastStorableHash                   = null;
 
     protected WeakHashMap<AbstractPackageChildrenNode<?>, Object> _getAssignedLinks() {
         if (assignedLinks == null) {
@@ -54,6 +56,7 @@ public class ArchiveSettings implements Storable {
         this.archiveController = archiveController;
         this.archiveID = archiveID;
         this.settingsID = settingsID;
+        this.lastStorableHash = Hash.getSHA256(JSonStorage.toString(this));
     }
 
     public BooleanStatus getAutoExtract() {
@@ -161,9 +164,8 @@ public class ArchiveSettings implements Storable {
     }
 
     protected boolean _needsSaving() {
-        final String templateInstance = JSonStorage.toString(new ArchiveSettings());
-        final String thisInstance = JSonStorage.toString(this);
-        return !StringUtils.equals(templateInstance, thisInstance);
+        final String storableHash = Hash.getSHA256(JSonStorage.toString(this));
+        return !StringUtils.equals(lastStorableHash, storableHash);
     }
 
     protected Boolean _exists() {
