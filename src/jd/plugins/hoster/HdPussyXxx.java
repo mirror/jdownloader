@@ -43,27 +43,35 @@ public class HdPussyXxx extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        if (linkid != null) {
-            return linkid;
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
         } else {
             return super.getLinkID(link);
         }
     }
 
-    @SuppressWarnings("deprecation")
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link) + ".mp4");
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(downloadLink.getPluginPatternMatcher());
-            dllink = downloadLink.getPluginPatternMatcher();
-            if (!con.getContentType().contains("html")) {
+            con = br.openGetConnection(link.getPluginPatternMatcher());
+            if (this.looksLikeDownloadableContent(con)) {
                 /* 2019-02-21: Directurl */
-                downloadLink.setDownloadSize(con.getLongContentLength());
-                downloadLink.setFinalFileName(getLinkID(downloadLink) + ".mp4");
+                dllink = link.getPluginPatternMatcher();
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                link.setFinalFileName(getFID(link) + ".mp4");
                 return AvailableStatus.TRUE;
             } else {
                 br.followConnection();
@@ -74,21 +82,18 @@ public class HdPussyXxx extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This page not found")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*This page not found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.canHandle(this.br.getURL())) {
+            /* E.g. external redirect to advertising website */
+            logger.info("Offline because of redirect to external website: " + this.br.getURL());
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<div class=\"title\\-box\">([^<>\"]*?)<").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?)\\| HD Pussy XXX</title>").getMatch(0);
         }
-        if (filename == null) {
-            /* Fallback to URL-filename */
-            filename = new Regex(downloadLink.getDownloadURL(), "([a-f0-9]{32})/$").getMatch(0);
-        }
-        dllink = br.getRegex("file[\t\n\r ]*?:[\t\n\r ]*?\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        dllink = br.getRegex("file\\s*:\\s*\"([^<>\"]*?)\"").getMatch(0);
         String ext = null;
         if (dllink != null) {
             dllink = Encoding.htmlDecode(dllink);
@@ -96,32 +101,35 @@ public class HdPussyXxx extends PluginForHost {
                 /* E.g. missing videosource, player will show error 'No playable sources found' --> Offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            ext = getFileNameExtensionFromString(dllink, ".flv");
+            ext = getFileNameExtensionFromString(dllink, ".mp4");
         }
         if (ext == null || ext.length() > 5) {
-            ext = ".flv";
+            ext = ".mp4";
         }
-        filename = Encoding.htmlDecode(filename).trim();
-        downloadLink.setFinalFileName(filename + ext);
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename).trim();
+            link.setFinalFileName(filename + ext);
+        }
         /* Do NOT check for filesize as their directurls often time out which would make this process really really slow! */
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             final long responsecode = dl.getConnection().getResponseCode();
             if (responsecode == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
             } else if (responsecode == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
             }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
         }
         dl.startDownload();
     }
