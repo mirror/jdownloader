@@ -134,8 +134,8 @@ public class MonpartageFr extends PluginForHost {
             }
             dlform.put("password", Encoding.urlEncode(passCode));
         }
-        // server will respond with Content-Length when Range is requested
-        br.getHeaders().put("Range", "bytes=" + 0 + "-");
+        // server will respond with Content-Length
+        br.getHeaders().put("Accept-Encoding", "identity");
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, resumable, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
