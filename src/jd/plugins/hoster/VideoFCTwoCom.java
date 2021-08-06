@@ -18,11 +18,16 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Random;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -46,12 +51,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.fc2.com" }, urls = { "https?://(?:video\\.fc2\\.com|xiaojiadianvideo\\.asia|jinniumovie\\.be)/((?:[a-z]{2}/)?(?:a/)?flv2\\.swf\\?i=|(?:[a-z]{2}/)?(?:a/)?content/)\\w+" })
 public class VideoFCTwoCom extends PluginForHost {
@@ -150,8 +149,8 @@ public class VideoFCTwoCom extends PluginForHost {
         String filename = null;
         String uploadername = null;
         /**
-         * 2019-01-28: Some videos are still based on their old (flash-)player and cannot be checked via their new API! </br> 2020-12-18:
-         * TODO: re-check this statement - new API should be used for all videos by now!
+         * 2019-01-28: Some videos are still based on their old (flash-)player and cannot be checked via their new API! </br>
+         * 2020-12-18: TODO: re-check this statement - new API should be used for all videos by now!
          */
         // final boolean useNewAPI = account == null && newAPIVideotoken != null;
         String filenamePrefix = "";
@@ -276,29 +275,39 @@ public class VideoFCTwoCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
-            br.getPage("https://video.fc2.com/");
-            br.getPage("https://secure.id.fc2.com/?done=video&switch_language=en");
-            /* 2020-12-18: Typically a redirect to: https://fc2.com/en/login.php?ref=video */
-            final String redirect = br.getRegex("http-equiv=\"Refresh\" content=\"\\d+; url=(https?://[^<>\"]+)\"").getMatch(0);
-            if (redirect != null) {
-                br.getPage(redirect);
+            final boolean useAltLogin = false;
+            final Form loginform;
+            if (useAltLogin) {
+                br.getPage("https://video.fc2.com/");
+                br.getPage("https://secure.id.fc2.com/?done=video&switch_language=en");
+                /* 2020-12-18: Typically a redirect to: https://fc2.com/en/login.php?ref=video */
+                final String redirect = br.getRegex("http-equiv=\"Refresh\" content=\"\\d+; url=(https?://[^<>\"]+)\"").getMatch(0);
+                if (redirect != null) {
+                    br.getPage(redirect);
+                }
+                loginform = br.getFormbyProperty("name", "form_login");
+                if (loginform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("email", Encoding.urlEncode(account.getUser()));
+                loginform.put("pass", Encoding.urlEncode(account.getPass()));
+                // loginform.put("Submit.x", new Random().nextInt(100) + "");
+                // loginform.put("Submit.y", new Random().nextInt(100) + "");
+                // loginform.put("image.x", new Random().nextInt(100) + "");
+                // loginform.put("image.y", new Random().nextInt(100) + "");
+                loginform.remove("image");
+            } else {
+                /* 2021-08-06 */
+                br.getHeaders().put("Referer", "https://video.fc2.com/");
+                br.getPage("https://secure.id.fc2.com/index.php?mode=login");
+                loginform = br.getFormbyProperty("name", "form_login");
+                if (loginform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("email", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
             }
-            final Form loginform = br.getFormbyProperty("name", "form_login");
-            if (loginform == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            loginform.put("email", Encoding.urlEncode(account.getUser()));
-            loginform.put("pass", Encoding.urlEncode(account.getPass()));
-            // loginform.put("Submit.x", new Random().nextInt(100) + "");
-            // loginform.put("Submit.y", new Random().nextInt(100) + "");
-            loginform.put("image.x", new Random().nextInt(100) + "");
-            loginform.put("image.y", new Random().nextInt(100) + "");
-            // loginform.remove("image");
-            /*
-             * "Keep login" functionality is serverside broken? I'm not able to select this on their website/it doesn't get set. --> Let's
-             * try it anyways and hope it makes our cookies valid for a longer period of time!
-             */
-            // loginform.remove("keep_login");
+            /* Make sure cookies are valid for as long as possible. */
             loginform.put("keep_login", "1");
             if (loginform.hasInputFieldByName("recaptcha")) {
                 final DownloadLink dlinkbefore = this.getDownloadLink();
@@ -311,7 +320,13 @@ public class VideoFCTwoCom extends PluginForHost {
                         this.setDownloadLink(dl_dummy);
                     }
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    loginform.put("recaptcha", Encoding.urlEncode(recaptchaV2Response));
+                    if (loginform.hasInputFieldByName("recaptchaep")) {
+                        /* https://secure.id.fc2.com/?done=video&switch_language=en */
+                        loginform.put("recaptchaep", Encoding.urlEncode(recaptchaV2Response));
+                    } else {
+                        /* https://secure.id.fc2.com/index.php?mode=login */
+                        loginform.put("recaptcha", Encoding.urlEncode(recaptchaV2Response));
+                    }
                 } finally {
                     this.setDownloadLink(dlinkbefore);
                 }

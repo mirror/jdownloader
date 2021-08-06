@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -28,9 +31,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eroxia.com" }, urls = { "https?://(?:www\\.)?eroxia\\.com/([A-Za-z0-9_\\-]+/\\d+/.*?|video/[a-z0-9\\-]+\\d+)\\.html" })
 public class EroxiaCom extends PluginForHost {
@@ -66,12 +66,12 @@ public class EroxiaCom extends PluginForHost {
         }
         // Try to find direct link first
         dllink = br.getRegex("\\&file=(http[^<>\"]*?)\\&").getMatch(0);
-        final boolean allowCreateVideoUrlFromThumbnail = false;
+        final boolean allowCreateVideoUrlFromThumbnail = true;
         if (dllink == null && allowCreateVideoUrlFromThumbnail) {
-            /* 2020-10-01 */
-            dllink = br.getRegex("\"(https?://[^/]+/thumbs/[^\"]*?\\.mp4)").getMatch(0);
-            if (dllink != null) {
-                dllink = dllink.replace("/thumbs/", "/");
+            /* 2021-08-06: Seems like they somehow block us? But luckily we can generate valid streamingURLs out of their thumbnail URLs. */
+            final String thumbnailURLPart = br.getRegex("(https?://media\\.eroxia\\.com/thumbs/[^\"]*?/[a-f0-9]{32}\\.mp4)").getMatch(0);
+            if (thumbnailURLPart != null) {
+                dllink = thumbnailURLPart.replaceFirst("/thumbs/", "/");
             }
         }
         if (dllink == null) {

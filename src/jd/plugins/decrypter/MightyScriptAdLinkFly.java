@@ -110,6 +110,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         // form.remove("_Token%5Bfields%5D");
         // form.put("_Token%5Bfields%5D", valueNew);
         // }
+        String recaptchaV2Response = null;
         if (form.hasInputFieldByName("captcha")) {
             /* original captcha/ VERY OLD way! [2018-07-18: Very rare or non existent anymore!] */
             logger.info("OLD captcha required");
@@ -160,7 +161,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                             logger.warning("Failed to find reCaptchaV2 key");
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, key) {
+                        recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, key) {
                             @Override
                             public TYPE getType() {
                                 if (captchaType == CaptchaType.reCaptchaV2_invisible) {
@@ -232,6 +233,10 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
                 br.getHeaders().put("Origin", "https://" + br.getHost());
+                if (br.containsHTML(org.appwork.utils.Regex.escape("name:'gc_token', value:e}).appendTo('#go-link')")) && recaptchaV2Response != null) {
+                    /* 2021-08-06: Special: tny.so (and maybe others too) */
+                    f2.put("gc_token", Encoding.urlEncode(recaptchaV2Response));
+                }
                 if (f2.hasInputFieldByName("_csrfToken")) {
                     /*
                      * 2021-03-29: E.g. tny.so will return error if this header is missing/wrong:
@@ -253,10 +258,9 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                     }
                 }
                 if (!skipWait) {
-                    int wait = 15;
                     if (waitStr != null) {
                         logger.info("Found waittime in html, waiting (seconds): " + waitStr);
-                        wait = Integer.parseInt(waitStr) * +1;
+                        final int wait = Integer.parseInt(waitStr) * +1;
                         this.sleep(wait * 1000, param);
                     } else {
                         logger.info("Failed to find waittime in html");
