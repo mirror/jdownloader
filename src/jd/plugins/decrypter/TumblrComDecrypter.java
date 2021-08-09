@@ -18,8 +18,10 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.net.URL;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -64,7 +66,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
 
     private static final String GENERALOFFLINE                      = "(?i)>\\s*Not found\\.<";
     private static final String TYPE_INVALID                        = "https?://(?:(?:platform|embed|assets)\\.)tumblr\\.com/.+";
-    private static final String TYPE_POST                           = "https?://(\\w+)\\.[^/]+/post/(\\d+)(/([a-z0-9\\-]+))?";
+    private static final String TYPE_POST                           = "https?://([\\w\\-]+)\\.[^/]+/post/(\\d+)(/([a-z0-9\\-]+))?";
     private static final String TYPE_POST_LOGGEDIN                  = "https?://[^/]+/blog/view/([^/]+)/(\\d+)";
     private static final String TYPE_IMAGE                          = ".+tumblr\\.com/image/\\d+";
     private static final String TYPE_USER_LOGGEDIN                  = "https?://(?:www\\.)?tumblr\\.com/blog/view/([^/]+)";
@@ -72,6 +74,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
     private static final String TYPE_USER_OWN_LIKES                 = "https?://[^/]+/likes$";
     private static final String urlpart_passwordneeded              = "/blog_auth";
     private static final String PROPERTY_TAGS                       = "tags";
+    private static final String PROPERTY_DATE                       = "date";
     // private String parameter = null;
     private String              passCode                            = null;
     private boolean             useOriginalFilename                 = false;
@@ -245,7 +248,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
     }
 
     private void crawlSinglePostJsonAPI(final ArrayList<DownloadLink> ret, Map<String, Object> entries) {
-        final String postURL = (String) entries.get("post_url");
+        // final String postURL = (String) entries.get("post_url");
         final String blogName = (String) entries.get("blog_name");
         final String fpName = blogName + " - " + ((String) entries.get("slug")).replace("-", " ").trim();
         final FilePackage fp = FilePackage.getInstance();
@@ -260,6 +263,8 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 contentArrays.add(entries.get("content"));
             }
         }
+        final long timestamp = ((Number) entries.get("timestamp")).longValue();
+        final String dateFormatted = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH).format(new Date(timestamp * 1000));
         for (final Object contentArrayO : contentArrays) {
             final List<Object> ressourcelist = (List<Object>) contentArrayO;
             for (final Object contentO : ressourcelist) {
@@ -334,6 +339,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 // if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && !StringUtils.isEmpty(postURL)) {
                 // dl.setContentUrl(postURL);
                 // }
+                dl.setProperty(PROPERTY_DATE, dateFormatted);
                 dl._setFilePackage(fp);
                 ret.add(dl);
                 distribute(dl);
