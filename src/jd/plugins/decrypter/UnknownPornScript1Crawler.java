@@ -26,9 +26,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "frigtube.com", "vidxporn.com" }, urls = { "https?://(?:www\\.)?frigtube\\.com/video/([a-z0-9\\-]+)\\-(\\d+)\\.html", "https?://(?:www\\.)?vidxporn\\.com/video/([a-z0-9\\-]+)\\-(\\d+)\\.html" })
-public class FrigtubeCom extends PornEmbedParser {
-    public FrigtubeCom(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornsteep.com", "frigtube.com", "vidxporn.com", "porndull.com" }, urls = { "https?://(?:www\\.)?pornsteep\\.com/video/([a-z0-9\\-]+)\\-(\\d+)\\.html", "https?://(?:www\\.)?frigtube\\.com/video/([a-z0-9\\-]+)\\-(\\d+)\\.html", "https?://(?:www\\.)?vidxporn\\.com/video/([a-z0-9\\-]+)\\-(\\d+)\\.html", "https?://(?:www\\.)?porndull\\.com/video/([a-z0-9\\-]+)\\-(\\d+)\\.html" })
+public class UnknownPornScript1Crawler extends PornEmbedParser {
+    public UnknownPornScript1Crawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
