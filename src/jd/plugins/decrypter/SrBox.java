@@ -39,6 +39,14 @@ import jd.plugins.FilePackage;
 public class SrBox extends antiDDoSForDecrypt {
     public SrBox(PluginWrapper wrapper) {
         super(wrapper);
+        Browser.setRequestIntervalLimitGlobal("isrbx.net", 3000);
+    }
+
+    @Override
+    public void init() {
+        super.init();
+        /** Without limit rate-limit may kick in after about 800 items. */
+        Browser.setRequestIntervalLimitGlobal("isrbx.net", 1000);
     }
 
     private final String        base                 = "(?i)https?://[\\w\\.]*(?:isra?bo?x\\.(?:[a-zA-Z]+)|isbox\\.net)/";

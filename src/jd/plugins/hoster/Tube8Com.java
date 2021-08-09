@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.security.InvalidKeyException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 
 import javax.crypto.Cipher;
@@ -27,6 +26,8 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
@@ -193,15 +194,17 @@ public class Tube8Com extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private boolean requestVideo(final DownloadLink downloadLink) throws Exception {
+    private boolean requestVideo(final DownloadLink link) throws Exception {
         URLConnectionAdapter con = null;
         final Browser br2 = br.cloneBrowser();
+        br2.setFollowRedirects(true);
+        ;
         try {
             con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+                link.setDownloadSize(con.getLongContentLength());
             } else if (br2.getHttpConnection().getResponseCode() == 401) {
-                downloadLink.setProperty("401", 401);
+                link.setProperty("401", 401);
                 return true;
             } else {
                 return false;
@@ -246,26 +249,22 @@ public class Tube8Com extends PluginForHost {
     }
 
     private void findStreamingLink() throws Exception {
-        String flashVars = br.getRegex("var flashvars[ \t\n\r]+=[ ]+\\{([^\\}]+)").getMatch(0);
+        String flashVars = br.getRegex("var flashvars\\s*=\\s*(\\{.*?\\});").getMatch(0);
         if (flashVars == null) {
             return;
         }
-        flashVars = flashVars.replaceAll("\"", "");
-        Map<String, String> values = new HashMap<String, String>();
-        for (String s : flashVars.split(",")) {
-            if (!s.matches(".+:.+")) {
-                continue;
+        final Map<String, Object> entries = JSonStorage.restoreFromString(flashVars, TypeRef.HASHMAP);
+        final String[] quals = new String[] { "quality_2160p", "quality_1440p", "quality_720p", "quality_480p", "quality_240p", "quality_180p" };
+        for (final String qual : quals) {
+            final Object qualO = entries.get(qual);
+            if (qualO instanceof String) {
+                this.dllink = qualO.toString();
             }
-            values.put(s.split(":")[0], s.split(":", 2)[1]);
         }
-        String isEncrypted = values.get("encrypted");
-        dllink = values.get("video_url");
-        if (dllink != null) {
-            dllink = dllink.replace("\\/", "/");
-        }
-        if ("1".equals(isEncrypted) || Boolean.parseBoolean(isEncrypted)) {
-            String decrypted = values.get("video_url");
-            String key = values.get("video_title");
+        final boolean isEncrypted = ((Boolean) entries.get("encrypted")).booleanValue();
+        if (isEncrypted) {
+            final String decrypted = (String) entries.get("video_url");
+            String key = (String) entries.get("video_title");
             /* Dirty workaround, needed for links with cyrillic titles/filenames. */
             if (key == null) {
                 key = "";

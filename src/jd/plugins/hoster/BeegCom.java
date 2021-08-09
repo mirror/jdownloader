@@ -21,7 +21,6 @@ import java.util.Map;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -95,7 +94,9 @@ public class BeegCom extends PluginForHost {
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link) + ".mp4");
+        }
         server_issue = false;
         final String videoid_original = getFID(link);
         if (link.getPluginPatternMatcher().matches(INVALIDLINKS)) {
@@ -120,7 +121,7 @@ public class BeegCom extends PluginForHost {
             final List<Map<String, Object>> vids = (List<Map<String, Object>>) entries.get("fc_facts");
             final Map<String, Object> file = (Map<String, Object>) entries.get("file");
             final Map<String, Object> stuff = (Map<String, Object>) file.get("stuff");
-            filename = stuff.get("sf_name").toString();
+            filename = (String) stuff.get("sf_name");
             Map<String, String> qualities = null;
             for (final Map<String, Object> vid : vids) {
                 qualities = (Map<String, String>) vid.get("resources");
@@ -285,15 +286,17 @@ public class BeegCom extends PluginForHost {
                 dllink = dllink.replace(key, deckey).replace("%2C", ",");
             }
         }
-        String ext = dllink.substring(dllink.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".mp4";
+        if (!StringUtils.isEmpty(filename)) {
+            String ext = dllink.substring(dllink.lastIndexOf("."));
+            if (ext == null || ext.length() > 5) {
+                ext = ".mp4";
+            }
+            filename = filename.trim();
+            if (filename.endsWith(".")) {
+                filename = filename.substring(0, filename.length() - 1);
+            }
+            link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         }
-        filename = filename.trim();
-        if (filename.endsWith(".")) {
-            filename = filename.substring(0, filename.length() - 1);
-        }
-        link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         br.setFollowRedirects(true);
         br.getHeaders().put("Referer", link.getDownloadURL());
         URLConnectionAdapter con = null;
