@@ -46,8 +46,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.VivaTv;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mtv.de", "mtviggy.com", "southpark.de", "southpark.cc.com", "vh1.com", "nicktoons.nick.com", "teennick.com", "nickatnite.com", "mtv.com.au", "mtv.co.uk", "mtv.com", "cc.com", "funnyclips.cc", "comedycentral.tv", "nick.de", "nickjr.de", "nicknight.de", "tvland.com", "spike.com", "thedailyshow.cc.com", "tosh.cc.com", "mtvu.com" }, urls = { "https?://(?:www\\.)?mtv\\.de/.+", "https?://(?:www\\.)?(?:mtviggy|mtvdesi|mtvk)\\.com/.+", "https?://(?:www\\.)?southpark\\.de/.+", "https?://southpark\\.cc\\.com/.+", "https?://(?:www\\.)?vh1\\.com/.+", "https?://nicktoons\\.nick\\.com/.+", "https?://(?:www\\.)?teennick\\.com/.+", "https?://(?:www\\.)?nickatnite\\.com/.+", "https?://(?:www\\.)?mtv\\.com\\.au/.+", "https?://(?:www\\.)?mtv\\.co\\.uk/.+", "https?://(?:www\\.)?mtv\\.com/.+",
-        "https?://(?:www\\.)?cc\\.com/.+", "https?://de\\.funnyclips\\.cc/.+", "https?://(?:www\\.)?comedycentral\\.tv/.+", "https?://(?:www\\.)?nick\\.de/.+", "https?://(?:www\\.)?nickjr\\.de/.+", "https?://(?:www\\.)?nicknight\\.de/.+", "https?://(?:www\\.)?tvland\\.com/.+", "https?://(?:www\\.)?spike\\.com/.+", "https?://thedailyshow\\.cc\\.com/.+", "https?://tosh\\.cc\\.com/.+", "https?://(?:www\\.)?mtvu\\.com/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mtv.de", "mtviggy.com", "southpark.de", "southpark.cc.com", "mtv.com.au", "mtv.co.uk", "mtv.com", "cc.com", "funnyclips.cc", "comedycentral.tv", "nick.de", "tvland.com", "spike.com", "thedailyshow.cc.com", "tosh.cc.com", "mtvu.com" }, urls = { "https?://(?:www\\.)?mtv\\.de/.+", "https?://(?:www\\.)?(?:mtviggy|mtvdesi|mtvk)\\.com/.+", "https?://(?:www\\.)?southpark\\.de/.+", "https?://southpark\\.cc\\.com/.+", "https?://(?:www\\.)?mtv\\.com\\.au/.+", "https?://(?:www\\.)?mtv\\.co\\.uk/.+", "https?://(?:www\\.)?mtv\\.com/.+", "https?://(?:www\\.)?cc\\.com/.+", "https?://de\\.funnyclips\\.cc/.+", "https?://(?:www\\.)?comedycentral\\.tv/.+", "https?://(?:www\\.)?nick\\.de/.+", "https?://(?:www\\.)?tvland\\.com/.+", "https?://(?:www\\.)?spike\\.com/.+", "https?://thedailyshow\\.cc\\.com/.+",
+        "https?://tosh\\.cc\\.com/.+", "https?://(?:www\\.)?mtvu\\.com/.+" })
 public class VivaTvDecrypt extends PluginForDecrypt {
     public VivaTvDecrypt(PluginWrapper wrapper) {
         super(wrapper);
@@ -107,34 +107,38 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             logger.info("Failed to find any video items inside json");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /* Now collect all URIs */
-        final ArrayList<String> uris = new ArrayList<String>();
-        for (final Map<String, Object> websiteVideoPlayerRoot : websiteVideoObjects) {
-            final Map<String, Object> video = (Map<String, Object>) JavaScriptEngineFactory.walkJson(websiteVideoPlayerRoot, "props/media/video");
-            // final String entityType = (String) video.get("entityType");
-            final Map<String, Object> config = (Map<String, Object>) video.get("config");
-            final String uri = (String) config.get("uri");
-            if (StringUtils.isEmpty(uri)) {
-                logger.warning("Object has missing/invalid uri");
-            } else {
-                uris.add(uri);
-            }
-        }
-        if (uris.isEmpty()) {
-            logger.info("Failed to find any URIs");
-            return ret;
-        }
-        /* TODO: Find a better place to find the episodenumber */
-        String episodeNumber = null;
-        if (websiteVideoObjects.size() == 1) {
-            episodeNumber = new Regex(param.getCryptedUrl(), "-ep-(\\d+)").getMatch(0);
-        }
+        // String episodeNumber = null;
+        // if (websiteVideoObjects.size() == 1) {
+        // /* We can only do this if we only got one item */
+        // episodeNumber = new Regex(param.getCryptedUrl(), "-ep-(\\d+)").getMatch(0);
+        // }
         final DecimalFormat sf = new DecimalFormat("00");
         final Browser brc = br.cloneBrowser();
         brc.getHeaders().put("Accept", "application/json");
         int index = 0;
-        uriLoop: for (final String uri : uris) {
-            logger.info("Crawling uri " + (index + 1) + "/" + uris.size() + " --> " + uri);
+        for (final Map<String, Object> websiteVideoPlayerRoot : websiteVideoObjects) {
+            long seasonNumber = -1;
+            long episodeNumber = -1;
+            String tvShow = null;
+            final Map<String, Object> props = (Map<String, Object>) websiteVideoPlayerRoot.get("props");
+            final String schemaText = (String) props.get("schema");
+            if (schemaText != null) {
+                final Map<String, Object> schema = JSonStorage.restoreFromString(schemaText, TypeRef.HASHMAP);
+                final String mediaType = (String) schema.get("@type");
+                if (mediaType.equalsIgnoreCase("TVEpisode")) {
+                    final Map<String, Object> partOfSeries = (Map<String, Object>) schema.get("partOfSeries");
+                    seasonNumber = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(schema, "partOfSeason/seasonNumber"), -1);
+                    episodeNumber = JavaScriptEngineFactory.toLong(schema.get("episodeNumber"), -1);
+                    tvShow = partOfSeries.get("name").toString();
+                } else {
+                    /* Type "VideoObject" */
+                }
+            }
+            final Map<String, Object> videoPlayer = (Map<String, Object>) JavaScriptEngineFactory.walkJson(props, "media/video");
+            // final String entityType = (String) video.get("entityType");
+            final Map<String, Object> config = (Map<String, Object>) videoPlayer.get("config");
+            final String uri = (String) config.get("uri");
+            logger.info("Crawling uri " + (index + 1) + "/" + websiteVideoObjects.size() + " --> " + uri);
             final UrlQuery query = new UrlQuery();
             query.add("uri", Encoding.urlEncode(uri));
             query.add("configtype", "edge");
@@ -167,12 +171,12 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             final List<Map<String, Object>> parts = (List<Map<String, Object>>) feed.get("items");
             final DecimalFormat pf = new DecimalFormat("00");
             int partNumber = 0;
-            streamItemLoop: for (final Map<String, Object> part : parts) {
+            for (final Map<String, Object> part : parts) {
                 partNumber++;
                 logger.info("Crawling video part: " + partNumber + "/" + parts.size());
                 final Map<String, Object> group = (Map<String, Object>) part.get("group");
                 final Map<String, Object> metadata = (Map<String, Object>) group.get("category");
-                final String seasonNumber = (String) metadata.get("seasonN");
+                // final String seasonNumber = (String) metadata.get("seasonN");
                 final String mediagenURL = (String) group.get("content");
                 final UrlQuery queryMediagen = UrlQuery.parse(mediagenURL);
                 /* We don't want rtmp(e) */
@@ -191,10 +195,17 @@ public class VivaTvDecrypt extends PluginForDecrypt {
                 if (videoStreams.size() > 1) {
                     logger.warning("Multiple video streams available: " + videoStreams.size());
                 }
-                /** TODO: Improve filenames */
-                String filenameBase = title;
-                if (seasonNumber != null && episodeNumber != null) {
-                    filenameBase += "S" + sf.format(Integer.parseInt(seasonNumber)) + "E" + sf.format(Integer.parseInt(episodeNumber));
+                String filenameBase;
+                if (seasonNumber > -1 && episodeNumber > -1) {
+                    final String seasonEpisodeNumberInfoFormatted = "S" + sf.format(seasonNumber) + "E" + sf.format(episodeNumber);
+                    filenameBase = title;
+                    if (!StringUtils.isEmpty(tvShow)) {
+                        filenameBase = tvShow + "_" + seasonEpisodeNumberInfoFormatted + " - " + title;
+                    } else {
+                        filenameBase = title + "_" + seasonEpisodeNumberInfoFormatted;
+                    }
+                } else {
+                    filenameBase = title;
                 }
                 if (parts.size() > 1) {
                     filenameBase += "_pt_" + pf.format(partNumber);
