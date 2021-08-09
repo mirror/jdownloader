@@ -36,7 +36,7 @@ public class File4SafeCom extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info: 2020-06-15: Untested, website is broken <br />
+     * limit-info: 2021-08-09 <br />
      * captchatype-info: 2020-06-15: null<br />
      * other:<br />
      */
