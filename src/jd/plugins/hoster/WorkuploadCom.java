@@ -100,27 +100,27 @@ public class WorkuploadCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         final String first_url = this.br.getURL();
         // String dllink = checkDirectLink(downloadLink, directlinkproperty);
         String dllink = null;
         if (dllink == null) {
             if (passwordprotected) {
-                String passCode = downloadLink.getDownloadPassword();
+                String passCode = link.getDownloadPassword();
                 if (passCode == null) {
-                    passCode = getUserInput("Password?", downloadLink);
+                    passCode = getUserInput("Password?", link);
                 }
                 this.br.postPage(this.br.getURL(), "passwordprotected_file%5Bpassword%5D=" + Encoding.urlEncode(passCode) + "&passwordprotected_file%5Bsubmit%5D=&passwordprotected_file%5Bkey%5D=" + fid);
                 if (this.br.containsHTML(html_passwordprotected)) {
-                    downloadLink.setDownloadPassword(null);
+                    link.setDownloadPassword(null);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                 } else {
-                    downloadLink.setDownloadPassword(passCode);
+                    link.setDownloadPassword(passCode);
                 }
             }
             this.br.getPage("/start/" + fid);
@@ -133,16 +133,21 @@ public class WorkuploadCom extends PluginForHost {
             }
         }
         this.br.getHeaders().put("Referer", first_url);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (br.getURL().contains("/file/")) {
                 logger.info("Final downloadurl redirected to main url");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
+        dl.setFilenameFix(true);
+        link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 

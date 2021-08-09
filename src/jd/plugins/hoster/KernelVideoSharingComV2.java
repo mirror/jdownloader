@@ -36,7 +36,6 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.components.config.KVSConfig;
@@ -102,10 +101,10 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
      */
     protected static final String type_only_numbers        = "^https?://[^/]+/(\\d+)/?$";
     protected static final String type_embedded            = "^https?://[^/]+/embed/(\\d+)/?$";
-    private String                dllink                   = null;
-    private boolean               server_issues            = false;
-    private boolean               private_video            = false;
-    private static final String   PROPERTY_FUID            = "fuid";
+    protected String              dllink                   = null;
+    protected boolean             server_issues            = false;
+    protected boolean             private_video            = false;
+    protected static final String PROPERTY_FUID            = "fuid";
 
     /**
      * Use this e.g. for: </br>
@@ -297,6 +296,21 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return requestFileInformation(link, null, false);
     }
 
+    protected String getWeakFilename(final DownloadLink link) {
+        final String titleURL = this.getURLTitleCorrected(link.getPluginPatternMatcher());
+        if (!StringUtils.isEmpty(titleURL)) {
+            /* Set this so that offline items have "nice" titles too. */
+            return titleURL + ".mp4";
+        } else {
+            final String fuid = this.getFUID(link);
+            if (fuid != null) {
+                return fuid + ".mp4";
+            } else {
+                return null;
+            }
+        }
+    }
+
     /**
      * Alternative way to linkcheck (works only for some hosts and only if FUIS is given): privat-zapisi.biz/feed/12345.xml | Als working
      * for: webcamsbabe.com
@@ -305,11 +319,10 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         dllink = null;
         server_issues = false;
         prepBR(this.br);
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
-        final String titleURL = this.getURLTitleCorrected(link.getPluginPatternMatcher());
-        if (!link.isNameSet() && !StringUtils.isEmpty(titleURL)) {
+        final String weakFilename = getWeakFilename(link);
+        if (!link.isNameSet() && weakFilename != null) {
             /* Set this so that offline items have "nice" titles too. */
-            link.setName(titleURL + ".mp4");
+            link.setName(weakFilename);
         }
         if (account == null) {
             /* Was not called in download mode -> Try to grab any valid account */
@@ -532,13 +545,13 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/404.php");
     }
 
-    protected void setSpecialFlags() {
+    protected boolean isPrivateVideo(final Browser br) {
         /* 2020-10-09: Tested for pornyeah.com, anyporn.com, camwhoreshd.com */
-        if (br.containsHTML(">\\s*This video is a private video uploaded by |Only active members can watch private videos")) {
-            this.private_video = true;
-        } else {
-            this.private_video = false;
-        }
+        return br.containsHTML(">\\s*This video is a private video uploaded by |Only active members can watch private videos");
+    }
+
+    protected void setSpecialFlags() {
+        this.private_video = this.isPrivateVideo(br);
     }
 
     protected String getFileTitle(final DownloadLink link) {

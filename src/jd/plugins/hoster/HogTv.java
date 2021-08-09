@@ -18,13 +18,16 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -71,7 +74,9 @@ public class HogTv extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link) + ".mp4");
+        }
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
@@ -141,6 +146,18 @@ public class HogTv extends antiDDoSForHost {
         if (StringUtils.isEmpty(dllink)) {
             dllink = br.getRegex("property=\"og:video:url\" content=\"([^\"]+)").getMatch(0);
         }
+        /* 2021-08-09 */
+        // if (StringUtils.isEmpty(dllink)) {
+        // dllink = br.getRegex("<a href=\"([^\"]+)\"[^>]*class=\"video-download-url\"").getMatch(0);
+        // }
+        if (StringUtils.isEmpty(dllink)) {
+            // dllink = br.getRegex("property=\"og:video:url\"[^>]*content=\"([^\"]+)\"").getMatch(0);
+            final Browser brc = br.cloneBrowser();
+            brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            brc.postPage("/api/video-info", "videoId=" + this.getFID(link));
+            final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+            dllink = (String) entries.get("downloadUrl");
+        }
         final String ext = ".mp4";
         if (filename != null) {
             filename = Encoding.htmlDecode(filename);
@@ -150,18 +167,17 @@ public class HogTv extends antiDDoSForHost {
                 filename += ext;
             }
             link.setFinalFileName(filename);
-        } else {
-            /* Fallback */
-            link.setName(this.getFID(link) + ext);
         }
         if (!StringUtils.isEmpty(dllink)) {
             URLConnectionAdapter con = null;
             try {
-                con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
+                con = openAntiDDoSRequestConnection(br, br.createGetRequest(this.dllink));
                 if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
                     server_issues = true;
                 } else {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
             } finally {
                 try {
@@ -182,7 +198,7 @@ public class HogTv extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {

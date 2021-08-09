@@ -13,7 +13,9 @@ import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -21,11 +23,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "https?://(\\w+\\.)?porn\\.com/videos/(embed/)?[a-z0-9\\-]*?\\-\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "https?://(\\w+\\.)?porn\\.com/(?:videos/(embed/)?[a-z0-9\\-]*?\\-\\d+|out/[a-z]/[^/]+/[a-zA-Z0-9_/\\+\\=\\-%]+)" })
 public class PornCom extends PluginForDecrypt {
     public PornCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    private static final String TYPE_REDIRECT_BASE64 = "https?://(?:\\w+\\.)?[^/]+/out/[a-z]/[^/]+/([a-zA-Z0-9_/\\+\\=\\-%]+)/.*";
 
     /* DEV NOTES */
     /* Porn_plugin */
@@ -35,39 +39,55 @@ public class PornCom extends PluginForDecrypt {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String url = parameter.getCryptedUrl();
-        final String fid = new Regex(url, "(\\d+)(?:\\.html)?$").getMatch(0);
-        final Account aa = AccountController.getInstance().getValidAccount(getHost());
-        if (aa != null) {
-            try {
-                jd.plugins.hoster.PornCom.login(br, aa, false);
-            } catch (final PluginException e) {
-                LogSource.exception(logger, e);
+        if (url.matches(TYPE_REDIRECT_BASE64)) {
+            /* These ones redirect to a single external URL and contain a base64 encoded String containing that URL. */
+            final String b64 = Encoding.htmlDecode(new Regex(url, "https?://(?:\\w+\\.)?[^/]+/out/[a-z]/[^/]+/([a-zA-Z0-9_/\\+\\=\\-%]+)/.*").getMatch(0));
+            final String decoded = Encoding.Base64Decode(b64);
+            final String[] urls = HTMLParser.getHttpLinks(decoded, br.getURL());
+            if (urls.length == 0) {
+                /* Allow this to happen */
+                logger.info("Found no results");
+            } else {
+                /* Usually we will get exactly 1 result. */
+                for (final String thisurl : urls) {
+                    links.add(this.createDownloadlink(thisurl));
+                }
             }
-        }
-        jd.plugins.hoster.PornHubCom.getPage(br, url.replace("/embed/", "/"));
-        if (br.containsHTML("(id=\"error\"><h2>404|No such video|<title>PORN\\.COM</title>|/removed(_dmca|_deleted_single)?.png)") || this.br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(fid)) {
-            links.add(this.createOfflinelink(parameter.getCryptedUrl()));
-            return links;
-        }
-        String filename = jd.plugins.hoster.PornCom.getFilename(br);
-        links = getLinks(br, url, filename);
-        /* A little trick to download videos that are usually only available for registered users WITHOUT account :) */
-        if (links.size() == 0) {
-            final Browser brc = br.cloneBrowser();
-            /* This way we can access links which are usually only accessible for registered users */
-            jd.plugins.hoster.PornHubCom.getPage(brc, "https://www.porn.com/videos/embed/" + fid);
-            if (brc.containsHTML("<div id=\"player-removed\">") || br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(fid)) {
+        } else {
+            final String fid = new Regex(url, "(\\d+)(?:\\.html)?$").getMatch(0);
+            final Account aa = AccountController.getInstance().getValidAccount(getHost());
+            if (aa != null) {
+                try {
+                    jd.plugins.hoster.PornCom.login(br, aa, false);
+                } catch (final PluginException e) {
+                    LogSource.exception(logger, e);
+                }
+            }
+            jd.plugins.hoster.PornHubCom.getPage(br, url.replace("/embed/", "/"));
+            if (br.containsHTML("(id=\"error\"><h2>404|No such video|<title>PORN\\.COM</title>|/removed(_dmca|_deleted_single)?.png)") || this.br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(fid)) {
                 links.add(this.createOfflinelink(parameter.getCryptedUrl()));
                 return links;
             }
-            links = getLinks(brc, url, filename);
-        }
-        if (links.size() == 0) {
-            if (br.containsHTML(">Sorry, this video is only available to members")) {
-                logger.info("Sorry, this video is only available to members");
-                return new ArrayList<DownloadLink>(0);
-            } else {
-                return null;
+            String filename = jd.plugins.hoster.PornCom.getFilename(br);
+            links = getLinks(br, url, filename);
+            /* A little trick to download videos that are usually only available for registered users WITHOUT account :) */
+            if (links.size() == 0) {
+                final Browser brc = br.cloneBrowser();
+                /* This way we can access links which are usually only accessible for registered users */
+                jd.plugins.hoster.PornHubCom.getPage(brc, "https://www.porn.com/videos/embed/" + fid);
+                if (brc.containsHTML("<div id=\"player-removed\">") || br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(fid)) {
+                    links.add(this.createOfflinelink(parameter.getCryptedUrl()));
+                    return links;
+                }
+                links = getLinks(brc, url, filename);
+            }
+            if (links.size() == 0) {
+                if (br.containsHTML(">Sorry, this video is only available to members")) {
+                    logger.info("Sorry, this video is only available to members");
+                    return new ArrayList<DownloadLink>(0);
+                } else {
+                    return null;
+                }
             }
         }
         return links;

@@ -36,7 +36,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "beeg.com" }, urls = { "https?://(?:www\\.)?beeg\\.com/([a-z0-9\\-]+/[a-z0-9\\-]+|\\d+)(?:\\?t=\\d+-\\d+)?|https?://beta\\.beeg\\.com/-\\d+(?:\\?t=\\d+-\\d+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "beeg.com" }, urls = { "https?://(?:www\\.)?beeg\\.com/([a-z0-9\\-]+/[a-z0-9\\-]+|-?\\d+)(?:\\?t=\\d+-\\d+)?|https?://beta\\.beeg\\.com/-\\d+(?:\\?t=\\d+-\\d+)?" })
 public class BeegCom extends PluginForHost {
     /* DEV NOTES */
     /* Porn_plugin */
@@ -58,6 +58,7 @@ public class BeegCom extends PluginForHost {
 
     private static final String INVALIDLINKS = "(?i)https://(?:www\\.)?beeg\\.com/(generator|section|static|tag).*";
     private static final String TYPE_BETA    = "https?://beta\\.beeg\\.com/-(\\d+)(?:\\?t=(\\d+-\\d+))?";
+    private static final String TYPE_NORMAL  = "https?://beeg\\.com/-?(\\d+)(?:\\?t=(\\d+-\\d+))?";
     private boolean             server_issue = false;
 
     @Override
@@ -77,7 +78,7 @@ public class BeegCom extends PluginForHost {
         if (link.getPluginPatternMatcher().matches(TYPE_BETA)) {
             return new Regex(link.getPluginPatternMatcher(), TYPE_BETA).getMatch(0);
         } else {
-            return new Regex(link.getPluginPatternMatcher(), "/(\\d+)(\\?t=\\d+-\\d+)?$").getMatch(0);
+            return new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(0);
         }
     }
 
@@ -105,7 +106,9 @@ public class BeegCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String filename = null;
-        if (link.getPluginPatternMatcher().matches(TYPE_BETA)) {
+        /* 2021-08-09: Seems like they've moved 100% to the new version of their website. */
+        final boolean enforceNewWebsiteHandling = true;
+        if (link.getPluginPatternMatcher().matches(TYPE_BETA) || enforceNewWebsiteHandling) {
             br.getPage("https://store.externulls.com/facts/file/" + videoid_original);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -284,7 +287,7 @@ public class BeegCom extends PluginForHost {
         }
         String ext = dllink.substring(dllink.lastIndexOf("."));
         if (ext == null || ext.length() > 5) {
-            ext = ".flv";
+            ext = ".mp4";
         }
         filename = filename.trim();
         if (filename.endsWith(".")) {

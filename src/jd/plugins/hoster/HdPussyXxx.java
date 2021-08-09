@@ -62,33 +62,47 @@ public class HdPussyXxx extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(link.getPluginPatternMatcher());
-            if (this.looksLikeDownloadableContent(con)) {
-                /* 2019-02-21: Directurl */
-                dllink = link.getPluginPatternMatcher();
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-                link.setFinalFileName(getFID(link) + ".mp4");
-                return AvailableStatus.TRUE;
-            } else {
-                br.followConnection();
-            }
-        } finally {
+        int counter = 0;
+        do {
+            counter += 1;
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                con = br.openGetConnection(link.getPluginPatternMatcher());
+                if (this.looksLikeDownloadableContent(con)) {
+                    /* 2019-02-21: Directurl */
+                    dllink = link.getPluginPatternMatcher();
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    link.setFinalFileName(getFID(link) + ".mp4");
+                    return AvailableStatus.TRUE;
+                } else {
+                    br.followConnection();
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
-        }
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*This page not found")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (!this.canHandle(this.br.getURL())) {
-            /* E.g. external redirect to advertising website */
-            logger.info("Offline because of redirect to external website: " + this.br.getURL());
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*This page not found")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (!this.canHandle(this.br.getURL())) {
+                /**
+                 * 2021-08-09: E.g. external redirect to advertising website. </br>
+                 * This may sometimes happen randomly but not more than two times in a row so retry if this happens.
+                 */
+                if (counter >= 4) {
+                    logger.info("MAYBE Offline because of redirect to external website: " + this.br.getURL() + " | Attempt: " + counter);
+                    continue;
+                } else {
+                    logger.info("Offline because of redirect to external website: " + this.br.getURL());
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } else {
+                break;
+            }
+        } while (true);
         String filename = br.getRegex("<div class=\"title\\-box\">([^<>\"]*?)<").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?)\\| HD Pussy XXX</title>").getMatch(0);
