@@ -166,6 +166,8 @@ public class ArchiveOrg extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
+                /* 2021-08-09: Added this as alternative method e.g. for users that have registered on archive.org via Google login. */
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
                 if (cookies != null) {
                     logger.info("Attempting cookie login");
                     br.setCookies(account.getHoster(), cookies);
@@ -174,31 +176,61 @@ public class ArchiveOrg extends PluginForHost {
                         logger.info("Trust login cookies without check");
                         return;
                     } else {
-                        br.getPage("https://archive.org/account/");
-                        if (this.isLoggedIN(br)) {
-                            logger.info("Cookie login successful");
+                        if (this.checkCookies(this.br, account, cookies)) {
                             account.saveCookies(br.getCookies(account.getHoster()), "");
                             return;
-                        } else {
-                            logger.info("Cookie login failed");
                         }
+                    }
+                } else if (userCookies != null) {
+                    if (this.checkCookies(this.br, account, userCookies)) {
+                        account.saveCookies(br.getCookies(account.getHoster()), "");
+                        /*
+                         * User can entry anything into username field but we want unique strings --> Try to find "real username" in HTML
+                         * code.
+                         */
+                        final String realUsername = br.getRegex("username=\"([^\"]+)\"").getMatch(0);
+                        if (realUsername != null) {
+                            account.setUser(realUsername);
+                        } else {
+                            logger.warning("Failed to find \"real\" username");
+                        }
+                        return;
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 logger.info("Performing full login");
+                if (!account.getUser().matches(".+@.+\\..+")) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail address in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 br.getPage("https://" + account.getHoster() + "/account/login.php");
                 br.postPage("/account/login.php", "remember=CHECKED&referer=https%3A%2F%2F" + account.getHoster() + "%2F&action=login&submit=Log+in&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (!isLoggedIN(br)) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException ignore) {
-                account.clearCookies("");
+                if (ignore.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw ignore;
             }
+        }
+    }
+
+    private boolean checkCookies(final Browser br, final Account account, final Cookies cookies) throws IOException {
+        br.setCookies(account.getHoster(), cookies);
+        br.getPage("https://" + this.getHost() + "/account/");
+        if (this.isLoggedIN(br)) {
+            logger.info("Cookie login successful");
+            return true;
+        } else {
+            logger.info("Cookie login failed");
+            return false;
         }
     }
 
@@ -208,13 +240,6 @@ public class ArchiveOrg extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        if (!account.getUser().matches(".+@.+\\..+")) {
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail address in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         ai.setUnlimitedTraffic();
