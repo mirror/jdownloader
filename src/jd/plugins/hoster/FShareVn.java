@@ -81,7 +81,6 @@ public class FShareVn extends PluginForHost {
     private static final boolean use_api_for_login_fetch_account_info  = true;
     private static final String  PROPERTY_ACCOUNT_TOKEN                = "token";
     private static final String  PROPERTY_ACCOUNT_COOKIES              = "apicookies";
-    private static final String  PROPERTY_IS_PASSWORD_PROTECTED        = "is_password_protected";
 
     public FShareVn(PluginWrapper wrapper) {
         super(wrapper);
@@ -173,7 +172,7 @@ public class FShareVn extends PluginForHost {
         /* Filename/size is not available for password protected items via website (and always via API!). */
         final boolean isPasswordProtected = websiteGetPasswordProtectedForm(this.br) != null;
         if (isPasswordProtected) {
-            link.setProperty(PROPERTY_IS_PASSWORD_PROTECTED, true);
+            link.setPasswordProtected(true);
         } else {
             /*  */
             if (filename != null) {
@@ -183,7 +182,7 @@ public class FShareVn extends PluginForHost {
             if (filesize != null) {
                 link.setDownloadSize(SizeFormatter.getSize(filesize));
             }
-            link.removeProperty(PROPERTY_IS_PASSWORD_PROTECTED);
+            link.setPasswordProtected(false);
         }
         return AvailableStatus.TRUE;
     }
@@ -233,9 +232,9 @@ public class FShareVn extends PluginForHost {
             link.setComment(entries.get("description").toString());
         }
         if (pwd != null) {
-            link.setProperty(PROPERTY_IS_PASSWORD_PROTECTED, true);
+            link.setPasswordProtected(true);
         } else {
-            link.removeProperty(PROPERTY_IS_PASSWORD_PROTECTED);
+            link.setPasswordProtected(false);
         }
         if (deleted == 1) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -606,7 +605,7 @@ public class FShareVn extends PluginForHost {
         AccountUnavailableException e = null;
         String passCode = link.getDownloadPassword();
         /* Ask for password right away if we know that an item is password protected --> Can save one http request */
-        if (passCode == null && link.hasProperty(PROPERTY_IS_PASSWORD_PROTECTED)) {
+        if (passCode == null && link.isPasswordProtected()) {
             passCode = getUserInput("Password?", link);
         }
         int loopCounter = 1;
@@ -632,7 +631,7 @@ public class FShareVn extends PluginForHost {
                 if (isDownloadPasswordRequiredOrInvalid((String) entries.get("msg")) && passwordAttemptsCounter < 3) {
                     passCode = getUserInput("Password?", link);
                     passwordAttemptsCounter += 1;
-                    link.setProperty(PROPERTY_IS_PASSWORD_PROTECTED, true);
+                    link.setPasswordProtected(true);
                     continue;
                 }
                 /* if passwordAttemptsCounter is "too high", checkErrorsAPI will handle the "Wrong password" error just fine. */
