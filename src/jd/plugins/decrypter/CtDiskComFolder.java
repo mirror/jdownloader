@@ -15,13 +15,11 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -45,6 +43,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.CtDiskCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class CtDiskComFolder extends PluginForDecrypt {
@@ -55,10 +54,11 @@ public class CtDiskComFolder extends PluginForDecrypt {
     private String        fuid = null;
     private static Object LOCK = new Object();
 
+    /** Important!! Sync this between hoster- and crawler plugin! */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "ctfile.com", "ctdisk.com", "400gb.com", "pipipan.com", "t00y.com", "bego.cc", "72k.us", "tc5.us", "545c.com", "sn9.us", "089u.com", "474b.com" });
+        ret.add(new String[] { "ctfile.com", "ctdisk.com", "400gb.com", "pipipan.com", "t00y.com", "bego.cc", "72k.us", "tc5.us", "545c.com", "sn9.us", "089u.com", "474b.com", "590m.com" });
         return ret;
     }
 
@@ -75,7 +75,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
         final List<String[]> pluginDomains = getPluginDomains();
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://([A-Za-z0-9]+\\.)?" + buildHostsPatternPart(domains) + "/(?:dir/.+|u/\\d+/\\d+|d/[a-f0-9\\-]+(?:\\?\\d+))");
+            ret.add("https?://([A-Za-z0-9]+\\.)?" + buildHostsPatternPart(domains) + "/(?:dir/.+|u/\\d+/\\d+|d/[a-f0-9\\-]+(?:\\?\\d+)?)");
         }
         return ret.toArray(new String[0]);
     }
@@ -92,6 +92,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
         return prepBr;
     }
 
+    @Deprecated
     protected String correctHost(final String oldhostOld) {
         final List<String[]> pluginDomains = getPluginDomains();
         for (final String[] domains : pluginDomains) {
@@ -138,14 +139,12 @@ public class CtDiskComFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> crawlFolderNew(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Regex urlinfo = new Regex(param.getCryptedUrl(), TYPE_NEW);
+        /* Root-ID of a folder */
         final String folderBaseID = urlinfo.getMatch(0);
+        /* ID that goes to specific subfolder */
         final String folderID = urlinfo.getMatch(1);
-        // br.getPage(param.getCryptedUrl());
-        // if (br.getHttpConnection().getResponseCode() == 404) {
-        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // }
         prepAjax(this.br);
-        br.getHeaders().put("Origin", "https://089u.com");
+        br.getHeaders().put("Origin", "https://" + Browser.getHost(param.getCryptedUrl()));
         br.getHeaders().put("Referer", param.getCryptedUrl());
         final UrlQuery query = new UrlQuery();
         query.add("path", "d");
@@ -174,25 +173,37 @@ public class CtDiskComFolder extends PluginForDecrypt {
                 break;
             }
         } while (true);
-        // br.getPage("https://webapi.ctfile.com/getdir.php?path=d&d=3843664-44401628-d378b5&folder_id=44401634&passcode=&token=false&r=0.24955112885817732&ref=https%3A//089u.com/d/3843664-44401628-d378b5");
         br.getPage(folderinfo.get("url").toString());
-        // br.getPage("https://webapi.ctfile.com/api.php?item=file_act&action=file_list&folder_id=" + folderinfo.get("") + "&uid=" +
-        // folderinfo.get("userid") +
-        // "&mb=0&display_subfolders=1&t=1628600541&k=8e5c8821dd7b78a60bf891c66db90545&oldurl=0&sEcho=1&iColumns=4&sColumns=%2C%2C%2C&iDisplayStart=0&iDisplayLength=10&mDataProp_0=0&sSearch_0=&bRegex_0=false&bSearchable_0=true&bSortable_0=false&mDataProp_1=1&sSearch_1=&bRegex_1=false&bSearchable_1=true&bSortable_1=true&mDataProp_2=2&sSearch_2=&bRegex_2=false&bSearchable_2=true&bSortable_2=true&mDataProp_3=3&sSearch_3=&bRegex_3=false&bSearchable_3=true&bSortable_3=true&sSearch=&bRegex=false&iSortCol_0=0&sSortDir_0=asc&iSortingCols=1&_=1628600543096");
+        String subfolderpath = this.getAdoptedCloudFolderStructure();
+        if (subfolderpath == null) {
+            subfolderpath = (String) folderinfo.get("folder_name");
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(subfolderpath);
         final Map<String, Object> folderoverview = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         /* This is where the crappy part starts: json containing string-arrays with HTML code... */
         final List<List<Object>> items = (List<List<Object>>) folderoverview.get("aaData");
+        final String folderBaseURL;
+        if (param.getCryptedUrl().contains("?")) {
+            /* User added subfolder --> We need to build the root folder URL on our own. */
+            folderBaseURL = param.getCryptedUrl().substring(0, param.getCryptedUrl().lastIndexOf("?"));
+        } else {
+            /* User added root folder */
+            folderBaseURL = param.getCryptedUrl();
+        }
         for (final List<Object> item : items) {
             // final String info0 = item.get(0).toString();
             final String info1 = item.get(1).toString();
-            final String subfolderID = new Regex(info1, "load_subdir\\((\\d+)\\)").getMatch(0);
-            if (subfolderID != null) {
-                if (true) {
-                    /* TODO */
-                    continue;
-                }
+            final Regex folderRegex = new Regex(info1, "onclick=\"load_subdir\\((\\d+)\\)\">([^<]+)</a>");
+            if (folderRegex.matches()) {
+                final String subfolderID = folderRegex.getMatch(0);
+                final String subfolderName = folderRegex.getMatch(1);
                 /* Subfolder */
-                final DownloadLink folder = this.createDownloadlink("");
+                final DownloadLink folder = this.createDownloadlink(folderBaseURL + "?" + subfolderID);
+                if (passCode != null) {
+                    folder.setDownloadPassword(passCode);
+                }
+                folder.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderpath + "/" + subfolderName);
                 ret.add(folder);
             } else {
                 final Regex fileinfo = new Regex(info1, "href=\"(/f/tempdir-[A-Za-z0-9_\\-]+)\">([^<>\"]+)<");
@@ -209,6 +220,9 @@ public class CtDiskComFolder extends PluginForDecrypt {
                 if (passCode != null) {
                     file.setDownloadPassword(passCode);
                 }
+                file.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderpath);
+                file.setProperty(CtDiskCom.PROPERTY_PARENT_DIR, param.getCryptedUrl());
+                file._setFilePackage(fp);
                 ret.add(file);
             }
         }
@@ -224,7 +238,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
         prepBrowser(br);
         // lock to one thread!
         synchronized (LOCK) {
-            getPage(br, parameter);
+            br.getPage(parameter);
             final boolean accessDenied = br.containsHTML("主页分享功能已经关闭，请直接分享文件或文件夹");
             if (br.getHttpConnection().getResponseCode() == 404 || accessDenied || br.containsHTML("(Due to the limitaion of local laws, this url has been disabled!<|该用户还未打开完全共享\\。|您目前无法访问他的资源列表\\。)")) {
                 ret.add(this.createOfflinelink(parameter));
@@ -277,7 +291,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
         }
         Browser ajax = br.cloneBrowser();
         prepAjax(ajax);
-        getPage(ajax, ajaxSource);
+        ajax.getPage(ajaxSource);
         // ajax.getHttpConnection().getRequest().setHtmlCode(ajax.toString().replaceAll("\\\\/", "/").replaceAll("\\\\\"", "\""));
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(ajax.toString());
         /*
@@ -328,43 +342,6 @@ public class CtDiskComFolder extends PluginForDecrypt {
             }
             ret.add(dl);
         }
-    }
-
-    /**
-     * Website has really bad connective issues, this method helps retry over throwing exception at the first try
-     *
-     * @author raztoki
-     */
-    private boolean getPage(Browser ibr, final String url) throws Exception {
-        if (ibr == null || url == null) {
-            return false;
-        }
-        final Browser obr = ibr.cloneBrowser();
-        boolean failed = false;
-        int repeat = 4;
-        for (int i = 0; i <= repeat; i++) {
-            if (failed) {
-                long meep = 0;
-                while (meep == 0) {
-                    meep = new Random().nextInt(4) * 1371;
-                }
-                Thread.sleep(meep);
-                failed = false;
-                ibr = obr.cloneBrowser();
-            }
-            try {
-                ibr.getPage(url);
-                break;
-            } catch (IOException e) {
-                if (i == (repeat - 1)) {
-                    logger.warning("Exausted retry getPage count");
-                    throw e;
-                }
-                failed = true;
-                continue;
-            }
-        }
-        return true;
     }
 
     public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
