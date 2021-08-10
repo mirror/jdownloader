@@ -16,42 +16,49 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class CtDiskComFolder extends PluginForDecrypt {
-    // DEV NOTES
-    // protocol: no https.
-    // user unique id
-    private String        uuid  = null;
+    @Deprecated
+    private String        uuid = null;
     // folder unique id
-    private String        fuid  = null;
-    private static String agent = null;
-    private static Object LOCK  = new Object();
+    @Deprecated
+    private String        fuid = null;
+    private static Object LOCK = new Object();
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "ctfile.com", "ctdisk.com", "400gb.com", "pipipan.com", "t00y.com", "bego.cc", "72k.us", "tc5.us", "545c.com", "sn9.us" });
+        ret.add(new String[] { "ctfile.com", "ctdisk.com", "400gb.com", "pipipan.com", "t00y.com", "bego.cc", "72k.us", "tc5.us", "545c.com", "sn9.us", "089u.com", "474b.com" });
         return ret;
     }
 
@@ -68,7 +75,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
         final List<String[]> pluginDomains = getPluginDomains();
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://[A-Za-z0-9]+\\." + buildHostsPatternPart(domains) + "/(?:dir/.+|u/\\d+/\\d+)");
+            ret.add("https?://([A-Za-z0-9]+\\.)?" + buildHostsPatternPart(domains) + "/(?:dir/.+|u/\\d+/\\d+|d/[a-f0-9\\-]+(?:\\?\\d+))");
         }
         return ret.toArray(new String[0]);
     }
@@ -77,30 +84,24 @@ public class CtDiskComFolder extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private Browser prepBrowser(Browser prepBr) {
+    private Browser prepBrowser(final Browser prepBr) {
         Browser.setRequestIntervalLimitGlobal(this.getHost(), 1000);
         prepBr.setCookiesExclusive(true);
         prepBr.setConnectTimeout(3 * 60 * 1000);
         prepBr.setReadTimeout(3 * 60 * 1000);
-        if (agent == null) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
-        }
-        br.getHeaders().put("User-Agent", agent);
         return prepBr;
     }
 
-    protected String correctHost(String host) {
+    protected String correctHost(final String oldhostOld) {
         final List<String[]> pluginDomains = getPluginDomains();
         for (final String[] domains : pluginDomains) {
             for (String domain : domains) {
-                if (StringUtils.equalsIgnoreCase(host, domain)) {
+                if (StringUtils.equalsIgnoreCase(oldhostOld, domain)) {
                     return domains[0];
                 }
             }
         }
-        return host;
+        return oldhostOld;
     }
 
     public static String getUserID(final String url) {
@@ -122,8 +123,101 @@ public class CtDiskComFolder extends PluginForDecrypt {
         return fileid;
     }
 
+    private static final String TYPE_NEW    = "https?://[^/]+/d/([a-f0-9\\-]+)(?:\\?(\\d+))?";
+    private static final String WEBAPI_BASE = "https://webapi.ctfile.com";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        if (param.getCryptedUrl().matches(TYPE_NEW)) {
+            return crawlFolderNew(param);
+        } else {
+            return crawlFolderOld(param);
+        }
+    }
+
+    /** 2021-08-10: New */
+    public ArrayList<DownloadLink> crawlFolderNew(final CryptedLink param) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final Regex urlinfo = new Regex(param.getCryptedUrl(), TYPE_NEW);
+        final String folderBaseID = urlinfo.getMatch(0);
+        final String folderID = urlinfo.getMatch(1);
+        // br.getPage(param.getCryptedUrl());
+        // if (br.getHttpConnection().getResponseCode() == 404) {
+        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // }
+        prepAjax(this.br);
+        br.getHeaders().put("Origin", "https://089u.com");
+        br.getHeaders().put("Referer", param.getCryptedUrl());
+        final UrlQuery query = new UrlQuery();
+        query.add("path", "d");
+        query.add("d", folderBaseID);
+        query.add("folder_id", folderID != null ? folderID : "");
+        query.add("token", "false");
+        query.add("ref", Encoding.urlEncode(param.getCryptedUrl()));
+        String passCode = param.getDecrypterPassword();
+        Map<String, Object> folderinfo = null;
+        int passwordCounter = 0;
+        do {
+            passwordCounter += 1;
+            query.addAndReplace("passcode", passCode != null ? Encoding.urlEncode(passCode) : "");
+            query.addAndReplace("r", "0." + System.currentTimeMillis());
+            br.getPage(WEBAPI_BASE + "/getdir.php?" + query.toString());
+            folderinfo = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            if (((Number) folderinfo.get("code")).intValue() == 401) {
+                if (passwordCounter > 3) {
+                    throw new DecrypterException(DecrypterException.PASSWORD);
+                } else {
+                    logger.info("Wrong password or password required");
+                    passCode = getUserInput("Password?", param);
+                    continue;
+                }
+            } else {
+                break;
+            }
+        } while (true);
+        // br.getPage("https://webapi.ctfile.com/getdir.php?path=d&d=3843664-44401628-d378b5&folder_id=44401634&passcode=&token=false&r=0.24955112885817732&ref=https%3A//089u.com/d/3843664-44401628-d378b5");
+        br.getPage(folderinfo.get("url").toString());
+        // br.getPage("https://webapi.ctfile.com/api.php?item=file_act&action=file_list&folder_id=" + folderinfo.get("") + "&uid=" +
+        // folderinfo.get("userid") +
+        // "&mb=0&display_subfolders=1&t=1628600541&k=8e5c8821dd7b78a60bf891c66db90545&oldurl=0&sEcho=1&iColumns=4&sColumns=%2C%2C%2C&iDisplayStart=0&iDisplayLength=10&mDataProp_0=0&sSearch_0=&bRegex_0=false&bSearchable_0=true&bSortable_0=false&mDataProp_1=1&sSearch_1=&bRegex_1=false&bSearchable_1=true&bSortable_1=true&mDataProp_2=2&sSearch_2=&bRegex_2=false&bSearchable_2=true&bSortable_2=true&mDataProp_3=3&sSearch_3=&bRegex_3=false&bSearchable_3=true&bSortable_3=true&sSearch=&bRegex=false&iSortCol_0=0&sSortDir_0=asc&iSortingCols=1&_=1628600543096");
+        final Map<String, Object> folderoverview = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        /* This is where the crappy part starts: json containing string-arrays with HTML code... */
+        final List<List<Object>> items = (List<List<Object>>) folderoverview.get("aaData");
+        for (final List<Object> item : items) {
+            // final String info0 = item.get(0).toString();
+            final String info1 = item.get(1).toString();
+            final String subfolderID = new Regex(info1, "load_subdir\\((\\d+)\\)").getMatch(0);
+            if (subfolderID != null) {
+                if (true) {
+                    /* TODO */
+                    continue;
+                }
+                /* Subfolder */
+                final DownloadLink folder = this.createDownloadlink("");
+                ret.add(folder);
+            } else {
+                final Regex fileinfo = new Regex(info1, "href=\"(/f/tempdir-[A-Za-z0-9_\\-]+)\">([^<>\"]+)<");
+                final String url = fileinfo.getMatch(0);
+                final String filename = fileinfo.getMatch(1);
+                final String filesize = item.get(2).toString();
+                if (url == null || filename == null || StringUtils.isEmpty(filesize)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final DownloadLink file = this.createDownloadlink(URLHelper.createURL(URLHelper.parseLocation(new URL(param.getCryptedUrl()), url)).toString());
+                file.setName(filename);
+                file.setDownloadSize(SizeFormatter.getSize(filesize));
+                file.setAvailable(true);
+                if (passCode != null) {
+                    file.setDownloadPassword(passCode);
+                }
+                ret.add(file);
+            }
+        }
+        return ret;
+    }
+
+    @Deprecated
+    public ArrayList<DownloadLink> crawlFolderOld(final CryptedLink param) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String host_current = Browser.getHost(param.getCryptedUrl());
         final String host_new = correctHost(host_current);
         String parameter = param.toString().replace(host_current + "/", host_new + "/");
@@ -133,8 +227,8 @@ public class CtDiskComFolder extends PluginForDecrypt {
             getPage(br, parameter);
             final boolean accessDenied = br.containsHTML("主页分享功能已经关闭，请直接分享文件或文件夹");
             if (br.getHttpConnection().getResponseCode() == 404 || accessDenied || br.containsHTML("(Due to the limitaion of local laws, this url has been disabled!<|该用户还未打开完全共享\\。|您目前无法访问他的资源列表\\。)")) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                ret.add(this.createOfflinelink(parameter));
+                return ret;
             }
             uuid = getUserID(parameter);
             if (uuid == null) {
@@ -157,17 +251,17 @@ public class CtDiskComFolder extends PluginForDecrypt {
             }
             // covers base /u/\d+ directories,
             // no fpName for these as results of base directory returns subdirectories.
-            parsePage(decryptedLinks, parameter);
+            parsePage(ret, parameter);
             if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpName.trim());
-                fp.addLinks(decryptedLinks);
+                fp.addLinks(ret);
             }
-            return decryptedLinks;
         }
+        return ret;
     }
 
-    private Browser prepAjax(Browser prepBr) {
+    private Browser prepAjax(final Browser prepBr) {
         prepBr.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         prepBr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         prepBr.getHeaders().put("Accept-Charset", null);
@@ -237,7 +331,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
     }
 
     /**
-     * site has really bad connective issues, this method helps retry over throwing exception at the first try
+     * Website has really bad connective issues, this method helps retry over throwing exception at the first try
      *
      * @author raztoki
      */
@@ -273,8 +367,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
         return true;
     }
 
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
         return false;
     }
 }
