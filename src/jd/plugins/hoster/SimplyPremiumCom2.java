@@ -43,8 +43,6 @@ import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 4, names = { "simply-premium.com" }, urls = { "" })
 public class SimplyPremiumCom2 extends HighWayCore {
-    private static final String PROPERTY_ACCOUNT_API_MIGRATION_MESSAGE_DISPLAYED = "API_MIGRATION_MESSAGE_DISPLAYED";
-
     public SimplyPremiumCom2(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.simply-premium.com/vip");
@@ -82,61 +80,12 @@ public class SimplyPremiumCom2 extends HighWayCore {
 
     @Override
     protected void exceptionAccountInvalid(final Account account) throws PluginException {
-        if (account.hasProperty("maxconnections") && !account.hasProperty(PROPERTY_ACCOUNT_API_MIGRATION_MESSAGE_DISPLAYED)) {
-            /**
-             * Show this message once for every user after migration to APIv2. </br>
-             * This uses property "usenetU" to determine if this account has ever been checked successfully before. </br>
-             * TODO: Remove this after 2021-09 (some time in 2021-10)
-             */
-            account.setProperty(PROPERTY_ACCOUNT_API_MIGRATION_MESSAGE_DISPLAYED, true);
-            showOneTimeLougoutAPIMigrationMessage();
-        } else {
-            showAPILoginInformation();
-        }
+        showAPILoginInformation();
         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAPI Key!\r\nDeinen API Key findest du hier: simply-premium.com/profile", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid API Key!\r\nYou can find your API Key here: simply-premium.com/profile", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-    }
-
-    private Thread showOneTimeLougoutAPIMigrationMessage() {
-        final Thread thread = new Thread() {
-            public void run() {
-                final String apiCredsURLWithoutProtocol = "simply-premium.com/profile";
-                try {
-                    String message = "";
-                    final String title;
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        title = "simply-premium.com - einmaliger Logout";
-                        message += "Hallo liebe(r) simply-premium NutzerIn\r\n";
-                        message += "Wegen technischer Änderungen wurdest du einmalig automatisch ausgeloggt.\r\n";
-                        message += "Ab sofort benötigst du für den simply-premium Login in JD nur noch deinen API Key.\r\n";
-                        message += "Dies dient der Sicherheit deines simply-premium Accounts!\r\n";
-                        message += "Du findest deinen API Key unter: " + apiCredsURLWithoutProtocol;
-                    } else {
-                        title = "simply-premium.com - you've been logged out";
-                        message += "Hello dear simply-premium user\r\n";
-                        message += "Due to technical changes you have been logged out automatically once.\r\n";
-                        message += "From now on you will need your simply-premium API Key to login in JD.\r\n";
-                        message += "This step was taken to improve account security.\r\n";
-                        message += "Your can find your API Key here: " + apiCredsURLWithoutProtocol;
-                    }
-                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                    dialog.setTimeout(3 * 60 * 1000);
-                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
-                        CrossSystem.openURL("https://" + apiCredsURLWithoutProtocol);
-                    }
-                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
-                    ret.throwCloseExceptions();
-                } catch (final Throwable e) {
-                    getLogger().log(e);
-                }
-            };
-        };
-        thread.setDaemon(true);
-        thread.start();
-        return thread;
     }
 
     private Thread showAPILoginInformation() {
