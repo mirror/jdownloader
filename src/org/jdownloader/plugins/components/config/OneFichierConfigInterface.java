@@ -29,6 +29,10 @@ public interface OneFichierConfigInterface extends PluginConfigInterface {
         public String getUsePremiumAPIEnabled_label() {
             return "Use premium API[recommended]? If you want to add 1fichier free-accounts, disable this and make sure to disable 2-factor-authentication in your 1fichier account!";
         }
+
+        public String getIgnoreConnectionLimits_label() {
+            return "Ignore safe connection limits? See https://1fichier.com/hlp.html#dllent";
+        }
     }
 
     public static final OneFichierConfigInterface.OneFichierConfigInterfaceTranslation TRANSLATION = new OneFichierConfigInterfaceTranslation();
@@ -67,4 +71,11 @@ public interface OneFichierConfigInterface extends PluginConfigInterface {
     int getSmallFilesWaitInterval();
 
     void setSmallFilesWaitInterval(int i);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @Order(50)
+    boolean isIgnoreConnectionLimits();
+
+    void setIgnoreConnectionLimits(boolean b);
 }
