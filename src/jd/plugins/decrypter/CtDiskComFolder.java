@@ -75,7 +75,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
         final List<String[]> pluginDomains = getPluginDomains();
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://([A-Za-z0-9]+\\.)?" + buildHostsPatternPart(domains) + "/(?:dir/.+|u/\\d+/\\d+|d/[a-f0-9\\-]+(?:\\?\\d+)?)");
+            ret.add("https?://([A-Za-z0-9]+\\.)?" + buildHostsPatternPart(domains) + "/(?:dir/[a-f0-9\\-]+(?:\\?\\d+)?|u/\\d+/\\d+|d/[a-f0-9\\-]+(?:\\?\\d+)?)");
         }
         return ret.toArray(new String[0]);
     }
@@ -124,11 +124,13 @@ public class CtDiskComFolder extends PluginForDecrypt {
         return fileid;
     }
 
-    private static final String TYPE_NEW    = "https?://[^/]+/d/([a-f0-9\\-]+)(?:\\?(\\d+))?";
-    private static final String WEBAPI_BASE = "https://webapi.ctfile.com";
+    private static final String TYPE_NEW_1    = "https?://[^/]+/(d)/([a-f0-9\\-]+)(?:\\?(\\d+))?";
+    private static final String TYPE_NEW_2    = "https?://[^/]+/(dir)/([a-f0-9\\-]+)(?:\\?(\\d+))?";
+    private static final String TYPE_NEW_BOTH = "https?://[^/]+/(d|dir)/([a-f0-9\\-]+)(?:\\?(\\d+))?";
+    private static final String WEBAPI_BASE   = "https://webapi.ctfile.com";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        if (param.getCryptedUrl().matches(TYPE_NEW)) {
+        if (param.getCryptedUrl().matches(TYPE_NEW_1) || param.getCryptedUrl().matches(TYPE_NEW_2)) {
             return crawlFolderNew(param);
         } else {
             return crawlFolderOld(param);
@@ -138,20 +140,20 @@ public class CtDiskComFolder extends PluginForDecrypt {
     /** 2021-08-10: New */
     public ArrayList<DownloadLink> crawlFolderNew(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final Regex urlinfo = new Regex(param.getCryptedUrl(), TYPE_NEW);
+        final Regex urlinfo = new Regex(param.getCryptedUrl(), TYPE_NEW_BOTH);
         /* Root-ID of a folder */
-        final String folderBaseID = urlinfo.getMatch(0);
+        final String folderBaseID = urlinfo.getMatch(1);
         /* ID that goes to specific subfolder */
-        final String folderID = urlinfo.getMatch(1);
+        final String folderID = urlinfo.getMatch(2);
         prepAjax(this.br);
-        br.getHeaders().put("Origin", "https://" + Browser.getHost(param.getCryptedUrl()));
-        br.getHeaders().put("Referer", param.getCryptedUrl());
         final UrlQuery query = new UrlQuery();
-        query.add("path", "d");
+        query.add("path", urlinfo.getMatch(0));
         query.add("d", folderBaseID);
         query.add("folder_id", folderID != null ? folderID : "");
         query.add("token", "false");
         query.add("ref", Encoding.urlEncode(param.getCryptedUrl()));
+        br.getHeaders().put("Origin", "https://" + Browser.getHost(param.getCryptedUrl()));
+        br.getHeaders().put("Referer", param.getCryptedUrl());
         String passCode = param.getDecrypterPassword();
         Map<String, Object> folderinfo = null;
         int passwordCounter = 0;
