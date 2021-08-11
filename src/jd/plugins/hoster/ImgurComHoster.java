@@ -210,7 +210,16 @@ public class ImgurComHoster extends PluginForHost {
                 }
                 // String title = br.getRegex("property=\"og:title\" data-react-helmet=\"true\" content=\"([^<>\"]+)\"").getMatch(0);
                 String title = br.getRegex("link rel=\"alternate\" type=\"application/json\\+oembed\"[^>]*title=\"([^\"]*?)( - Imgur)?\"").getMatch(0);
-                this.dllink = br.getRegex("property=\"og:image\"[^>]*content=\"(https://[^<>\"]+)\"").getMatch(0);
+                if (br.containsHTML("(?i)i\\.imgur\\.com/" + this.imgUID + "\\.gifv")) {
+                    /* gif/mp4 content */
+                    if (userPrefersMp4()) {
+                        this.dllink = ImgurComGallery.getURLMp4Download(this.imgUID);
+                    } else {
+                        this.dllink = ImgurComGallery.getURLGifDownload(this.imgUID);
+                    }
+                } else {
+                    this.dllink = br.getRegex("property=\"og:image\"[^>]*content=\"(https://[^<>\"]+)\"").getMatch(0);
+                }
                 if (this.dllink != null) {
                     /* 2020-10-08: Remove all arguments e.g. "?fb" - they would often alter the resolution/quality! */
                     final String removeme = new Regex(this.dllink, "(\\?.+)").getMatch(0);
