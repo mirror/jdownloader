@@ -981,11 +981,15 @@ public class OneFichierCom extends PluginForHost {
             doFree(account, link);
             return;
         } else {
-            int maxChunks = maxchunks_account_premium;
-            if (PluginJsonConfig.get(OneFichierConfigInterface.class).isIgnoreConnectionLimits()) {
-                logger.info("Ignore safe connection limits!");
+            int maxChunks = PluginJsonConfig.get(OneFichierConfigInterface.class).getMaxPremiumChunks();
+            if (maxChunks <= 1) {
+                maxChunks = 1;
+            } else if (maxChunks >= 20) {
                 maxChunks = 0;
+            } else {
+                maxChunks = -maxChunks;
             }
+            logger.info("Max Chunks:" + maxChunks);
             if (!this.attemptStoredDownloadurlDownload(link, PROPERTY_PREMLINK, resume_account_premium, maxChunks)) {
                 String dllink;
                 if (canUseAPI(account)) {
