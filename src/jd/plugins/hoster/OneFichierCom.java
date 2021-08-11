@@ -982,9 +982,9 @@ public class OneFichierCom extends PluginForHost {
             return;
         } else {
             int maxChunks = PluginJsonConfig.get(OneFichierConfigInterface.class).getMaxPremiumChunks();
-            if (maxChunks <= 1) {
+            if (maxChunks == 1) {
                 maxChunks = 1;
-            } else if (maxChunks >= 20) {
+            } else if (maxChunks < 1 || maxChunks >= 20) {
                 maxChunks = 0;
             } else {
                 maxChunks = -maxChunks;

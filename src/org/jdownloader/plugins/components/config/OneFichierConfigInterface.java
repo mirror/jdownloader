@@ -75,6 +75,7 @@ public interface OneFichierConfigInterface extends PluginConfigInterface {
     @AboutConfig
     @DefaultIntValue(3)
     @Order(50)
+    @SpinnerValidator(min = 0, max = 20, step = 1)
     int getMaxPremiumChunks();
 
     void setMaxPremiumChunks(int b);
