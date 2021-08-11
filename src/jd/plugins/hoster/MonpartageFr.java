@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -49,6 +51,12 @@ public class MonpartageFr extends PluginForHost {
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "mon-partage.fr" });
         return ret;
+    }
+
+    @Override
+    public void init() {
+        super.init();
+        Browser.setRequestIntervalLimitGlobal(getHost(), 2500);
     }
 
     public static String[] getAnnotationNames() {
@@ -124,7 +132,12 @@ public class MonpartageFr extends PluginForHost {
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks) throws Exception, PluginException {
         final Form dlform = br.getFormbyKey("download_token");
         if (dlform == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML(">\\s*Votre adresse IP a été temporairement suspendue")) {
+                // <span id="error">Votre adresse IP a été temporairement suspendue. Merci de réessayer plus tard.</span>
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         String passCode = null;
         if (dlform.hasInputFieldByName("password")) {
@@ -134,8 +147,26 @@ public class MonpartageFr extends PluginForHost {
             }
             dlform.put("password", Encoding.urlEncode(passCode));
         }
-        // server will respond with Content-Length
-        br.getHeaders().put("Accept-Encoding", "identity");
+        if (link.getVerifiedFileSize() == -1) {
+            final Browser brc = br.cloneBrowser();
+            // server will respond with Content-Length
+            brc.getHeaders().put("Accept-Encoding", "identity");
+            URLConnectionAdapter con = null;
+            try {
+                con = brc.openFormConnection(dlform);
+                if (looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                }
+            } catch (IOException e) {
+                logger.log(e);
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
+            }
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, resumable, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
