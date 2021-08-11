@@ -21,14 +21,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -43,16 +35,24 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.hoster.CtDiskCom;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class CtDiskComFolder extends PluginForDecrypt {
     @Deprecated
-    private String        uuid = null;
+    private String             uuid                = null;
     // folder unique id
     @Deprecated
-    private String        fuid = null;
-    private static Object LOCK = new Object();
+    private String             fuid                = null;
+    private static Object      LOCK                = new Object();
+    public static final String PROPERTY_PARENT_DIR = "parent_dir";
 
     /** Important!! Sync this between hoster- and crawler plugin! */
     public static List<String[]> getPluginDomains() {
@@ -221,7 +221,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
                     file.setDownloadPassword(passCode);
                 }
                 file.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderpath);
-                file.setProperty(CtDiskCom.PROPERTY_PARENT_DIR, param.getCryptedUrl());
+                file.setProperty(PROPERTY_PARENT_DIR, param.getCryptedUrl());
                 file._setFilePackage(fp);
                 ret.add(file);
             }
