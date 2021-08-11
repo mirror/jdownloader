@@ -53,6 +53,7 @@ public class HidriveCom extends PluginForHost {
     private static final int     FREE_MAXDOWNLOADS                 = 20;
     public static final String   PROPERTY_ACCESS_TOKEN             = "PROPERTY_ACCESS_TOKEN";
     public static final String   PROPERTY_ACCESS_TOKEN_VALID_UNTIL = "PROPERTY_ACCESS_TOKEN_VALID_UNTIL";
+    public static final String   PROPERTY_DOWNLOAD_CODE            = "PROPERTY_DOWNLOAD_CODE";
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -150,7 +151,14 @@ public class HidriveCom extends PluginForHost {
                     link.setPasswordProtected(false);
                     link.setFinalFileName(entries.get("name").toString());
                     link.setVerifiedFileSize(((Number) entries.get("size")).longValue());
-                    /* TODO: What to do with "download_code" in json? We need a password protected URL + password to find out. */
+                    /* Required to be able to download the file (especially for password protected files). */
+                    final String download_code = (String) entries.get("download_code");
+                    if (!StringUtils.isEmpty(download_code)) {
+                        link.setProperty(PROPERTY_DOWNLOAD_CODE, download_code);
+                    }
+                    if (passCode != null) {
+                        link.setDownloadPassword(passCode);
+                    }
                 }
             } else {
                 /* Old non-API handling */
@@ -205,6 +213,12 @@ public class HidriveCom extends PluginForHost {
         if (link.getPluginPatternMatcher().matches(TYPE_SINGLE_FILE_AS_PART_OF_FOLDER)) {
             final String fileID = new Regex(link.getPluginPatternMatcher(), TYPE_SINGLE_FILE_AS_PART_OF_FOLDER).getMatch(1);
             return "https://my.hidrive.com/api/file?attachment=true&pid=" + Encoding.urlEncode(fileID) + "&access_token=" + link.getStringProperty(PROPERTY_ACCESS_TOKEN);
+        } else if (link.hasProperty(PROPERTY_DOWNLOAD_CODE)) {
+            /*
+             * E.g. required for password protected files as user has to enter correct password in order to get this string in order to be
+             * able to download.
+             */
+            return "https://my.hidrive.com/api/sharelink/download?id=" + this.getFID(link) + "&download_code=" + link.getStringProperty(PROPERTY_DOWNLOAD_CODE);
         } else {
             /* Alternative: https://my.hidrive.com/api/sharelink/download?id=<fid> */
             return "https://www.hidrive.strato.com/wget/" + this.getFID(link);
@@ -212,25 +226,20 @@ public class HidriveCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
-            requestFileInformation(link, true);
-            if (link.isPasswordProtected()) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected items cannot be downloaded yet");
+        requestFileInformation(link, true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, generateDirectDownloadurl(link), resumable, maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, generateDirectDownloadurl(link), resumable, maxchunks);
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
             }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -238,30 +247,6 @@ public class HidriveCom extends PluginForHost {
     @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         return false;
-    }
-
-    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directlinkproperty, final boolean resumable, final int maxchunks) throws Exception {
-        final String url = link.getStringProperty(directlinkproperty);
-        if (StringUtils.isEmpty(url)) {
-            return false;
-        }
-        try {
-            final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resumable, maxchunks);
-            if (this.looksLikeDownloadableContent(dl.getConnection())) {
-                return true;
-            } else {
-                brc.followConnection(true);
-                throw new IOException();
-            }
-        } catch (final Throwable e) {
-            logger.log(e);
-            try {
-                dl.getConnection().disconnect();
-            } catch (Throwable ignore) {
-            }
-            return false;
-        }
     }
 
     @Override
