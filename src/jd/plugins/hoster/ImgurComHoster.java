@@ -85,7 +85,6 @@ public class ImgurComHoster extends PluginForHost {
     /** User settings */
     /* 2021-05-26: Modified key as default has changed from false to true */
     private static final String  SETTING_MP4                       = "SETTING_MP4_2021_05";
-    private static final String  SETTING_ENABLE_EXTENDED_LINKCHECK = "SETTING_ENABLE_EXTENDED_LINKCHECK";
     public static final String   SETTING_USE_API                   = "SETTING_USE_API_2020_10_07";
     public static final String   SETTING_USE_API_IN_ANONYMOUS_MODE = "SETTING_USE_API_IN_ANONYMOUS_MODE_2020_10_09";
     private static final String  SETTING_CLIENT_ID                 = "CLIENT_ID";
@@ -136,16 +135,15 @@ public class ImgurComHoster extends PluginForHost {
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         imgUID = getImgUID(link);
-        dllink = link.getStringProperty(PROPERTY_DOWNLOADLINK_DIRECT_URL, null);
+        dllink = link.getStringProperty(PROPERTY_DOWNLOADLINK_DIRECT_URL);
         /*
          * Avoid unneccessary requests --> If we have the directlink, filesize and a "nice" filename, do not access site/API and only check
          * directurl if needed!
          */
-        final boolean allowExtendedLinkCheck = this.getPluginConfig().getBooleanProperty(SETTING_ENABLE_EXTENDED_LINKCHECK, defaultSETTING_ENABLE_EXTENDED_LINKCHECK);
         final boolean isLackingFileInformation = link.getView().getBytesTotal() <= 0 || link.getFinalFileName() == null || getFiletype(link) == null;
         boolean filesizeHasBeenSetInThisLinkcheck = false;
         boolean filenameHasBeenSetInThisLinkcheck = false;
-        if (allowExtendedLinkCheck && isLackingFileInformation) {
+        if (isLackingFileInformation || dllink == null) {
             logger.info("Handling extended linkcheck");
             final boolean apiMode = canUseAPI();
             final boolean useApiInAnonymousMode = this.getPluginConfig().getBooleanProperty(SETTING_USE_API_IN_ANONYMOUS_MODE, defaultSETTING_USE_API);
@@ -205,7 +203,7 @@ public class ImgurComHoster extends PluginForHost {
                 }
             } else {
                 /* Website mode */
-                br = prepBRWebsite(this.br);
+                prepBRWebsite(this.br);
                 getPage(this.br, "https://" + this.getHost() + "/" + imgUID);
                 if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("oembed\\.json")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -232,10 +230,13 @@ public class ImgurComHoster extends PluginForHost {
                 }
             }
         }
-        if (StringUtils.isEmpty(this.dllink)) {
-            /* Fallback */
-            dllink = getURLDownload(imgUID);
-        }
+        /**
+         * 2021-08-11: Don't do this anymore! Not all items are officially downloadable! This can result in: </br>
+         * {"data":{"error":"Imgur is temporarily over capacity. Please try again later."},"success":false,"status":500}
+         */
+        // if (StringUtils.isEmpty(this.dllink)) {
+        // this.dllink = getURLDownload(this.imgUID);
+        // }
         if (StringUtils.isEmpty(this.dllink)) {
             /* This should never happen */
             logger.warning("Failed to find final downloadurl");
@@ -274,8 +275,12 @@ public class ImgurComHoster extends PluginForHost {
             if (con.isOK()) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
-                /* E.g. HTTP/1.1 503 first byte timeout */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+                /**
+                 * E.g. HTTP/1.1 503 first byte timeout or e.g. error on trying to do "/download/" (official download / download button):
+                 * </br>
+                 * {"data":{"error":"Imgur is temporarily over capacity. Please try again later."},"success":false,"status":500}
+                 */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error " + con.getResponseCode(), 10 * 60 * 1000l);
             }
         } else if (con.getLongContentLength() == 0) {
             /*
@@ -922,7 +927,10 @@ public class ImgurComHoster extends PluginForHost {
         return contentURL;
     }
 
-    /** Returns downloadable imgur link. */
+    /**
+     * Returns downloadable imgur link. </br>
+     * Not all imgur items can be downloaded this way!
+     */
     public static final String getURLDownload(final String imgUID) {
         return "https://imgur.com/download/" + imgUID;
     }
@@ -1170,7 +1178,6 @@ public class ImgurComHoster extends PluginForHost {
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
                                                   {
                                                       put("SETTING_PREFER_MP4", "Prefer .mp4 files over .gif?");
-                                                      put("SETTING_ENABLE_EXTENDED_LINKCHECK", "Activate extended linkcheck? Enable this if file-titles are sometimes incomplete. Will only work for all items added after this setting has been changed!");
                                                       put("SETTING_TEXT_API_SETTINGS", "API settings - see imgur.com/account/settings/apps");
                                                       put("SETTING_USE_API", "Use API instead of website?");
                                                       put("SETTING_USE_API_IN_ANONYMOUS_MODE", "Use API in anonymous mode? To be able to use the API you will have to add your own API credentials below otherwise this will render the imgur plugin useless!");
@@ -1187,7 +1194,6 @@ public class ImgurComHoster extends PluginForHost {
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
                                                   {
                                                       put("SETTING_PREFER_MP4", "Bevorzuge .mp4 Dateien anstelle von .gif Dateien?");
-                                                      put("SETTING_ENABLE_EXTENDED_LINKCHECK", "Aktiviere erweiterten Linkcheck? Kann hilfreich sein, falls Dateinamen unvollständig sind. Nur gültig für alle Links, die nach Änderung dieser einstellung hinzugefügt werden!");
                                                       put("SETTING_TEXT_API_SETTINGS", "API Einstellungen - siehe imgur.com/account/settings/apps");
                                                       put("SETTING_USE_API", "Verwende API anstatt Webseite?");
                                                       put("SETTING_USE_API_IN_ANONYMOUS_MODE", "API als anonymer User verwenden verwenden? Um die API überhaupt verwenden zu können deine eigenen API Zugangsdaten unten eintragen ansonsten wirst du dieses Plugin nicht mehr verwenden können!");
@@ -1220,7 +1226,6 @@ public class ImgurComHoster extends PluginForHost {
 
     private static final String defaultAPISettingUserVisibleText         = "JDDEFAULT";
     public static final boolean defaultMP4                               = true;
-    public static final boolean defaultSETTING_ENABLE_EXTENDED_LINKCHECK = false;
     public static final boolean defaultSETTING_USE_API                   = false;
     public static final boolean defaultSETTING_USE_API_IN_ANONYMOUS_MODE = false;
     public static final boolean defaultSOURCEVIDEO                       = false;
@@ -1229,7 +1234,6 @@ public class ImgurComHoster extends PluginForHost {
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_MP4, this.getPhrase("SETTING_PREFER_MP4")).setDefaultValue(defaultMP4));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_ENABLE_EXTENDED_LINKCHECK, this.getPhrase("SETTING_ENABLE_EXTENDED_LINKCHECK")).setDefaultValue(defaultSETTING_ENABLE_EXTENDED_LINKCHECK));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         /* API settings */
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, this.getPhrase("SETTING_TEXT_API_SETTINGS")));
