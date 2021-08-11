@@ -34,7 +34,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.UniqueAlltimeID;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.config.ArdConfigInterface;
-import org.jdownloader.plugins.components.config.CheckeinsDeConfig;
 import org.jdownloader.plugins.components.config.DasersteConfig;
 import org.jdownloader.plugins.components.config.EurovisionConfig;
 import org.jdownloader.plugins.components.config.KikaDeConfig;
@@ -70,8 +69,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.MediathekHelper;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "sandmann.de", "wdr.de", "sportschau.de", "wdrmaus.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "checkeins.de" }, urls = { "https?://(?:[A-Z0-9]+\\.)?ardmediathek\\.de/.+", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/[^<>\"]+/(?:videos|videosextern)/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html|https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js", "https?://(?:\\w+\\.)?sportschau\\.de/.*?\\.html", "https?://(?:www\\.)?wdrmaus\\.de/.+", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html",
-        "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?checkeins\\.de/[^<>\"]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "sandmann.de", "wdr.de", "sportschau.de", "wdrmaus.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "ndr.de" }, urls = { "https?://(?:[A-Z0-9]+\\.)?ardmediathek\\.de/.+", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/[^<>\"]+/(?:videos|videosextern)/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html|https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js", "https?://(?:\\w+\\.)?sportschau\\.de/.*?\\.html", "https?://(?:www\\.)?wdrmaus\\.de/.+", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html",
+        "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?ndr\\.de/[^<>\"]+\\.html" })
 public class Ardmediathek extends PluginForDecrypt {
     private static final String                 EXCEPTION_GEOBLOCKED                       = "EXCEPTION_GEOBLOCKED";
     /* Constants */
@@ -133,8 +132,6 @@ public class Ardmediathek extends PluginForDecrypt {
             return EurovisionConfig.class;
         } else if ("sputnik.de".equalsIgnoreCase(getHost())) {
             return SputnikDeConfig.class;
-        } else if ("checkeins.de".equalsIgnoreCase(getHost())) {
-            return CheckeinsDeConfig.class;
         } else if ("sandmann.de".equalsIgnoreCase(getHost())) {
             return SandmannDeConfig.class;
         } else if ("mdr.de".equalsIgnoreCase(getHost())) {
@@ -225,7 +222,7 @@ public class Ardmediathek extends PluginForDecrypt {
              * in mind when changing things!
              */
             final String host = this.getHost();
-            if (host.equalsIgnoreCase("daserste.de") || host.equalsIgnoreCase("kika.de") || host.equalsIgnoreCase("sputnik.de") || host.equalsIgnoreCase("mdr.de") || host.equalsIgnoreCase("checkeins.de")) {
+            if (host.equalsIgnoreCase("daserste.de") || host.equalsIgnoreCase("kika.de") || host.equalsIgnoreCase("sputnik.de") || host.equalsIgnoreCase("mdr.de")) {
                 decryptDasersteVideo();
             } else if (host.equalsIgnoreCase("ardmediathek.de")) {
                 /* 2020-05-26: Separate handling required */
@@ -294,7 +291,7 @@ public class Ardmediathek extends PluginForDecrypt {
     private String getMediathekTitle(final Browser brHTML, final Browser brJSON) {
         Map<String, Object> dataEmbeddedContent = null;
         try {
-            final String json = brJSON.getRegex("\\$mediaObject\\.jsonpHelper\\.storeAndPlay\\((.*?)\\);").getMatch(0);
+            final String json = regexOldJson(brJSON.toString());
             dataEmbeddedContent = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
         } catch (final Throwable e) {
         }
@@ -429,7 +426,7 @@ public class Ardmediathek extends PluginForDecrypt {
     private String getVideoXMLURL() throws Exception {
         final String host = getHost();
         String url_xml = null;
-        if (host.equalsIgnoreCase("daserste.de") || host.equalsIgnoreCase("checkeins.de")) {
+        if (host.equalsIgnoreCase("daserste.de")) {
             /* The fast way - we do not even have to access the main URL which the user has added :) */
             url_xml = parameter.replace(".html", "~playerXml.xml");
         } else if (this.parameter.matches(".+mdr\\.de/.+/((?:video|audio)\\-\\d+)\\.html")) {
@@ -458,10 +455,11 @@ public class Ardmediathek extends PluginForDecrypt {
      */
     private String getXMLSubtitleURL(final Browser xmlBR) throws IOException {
         String subtitleURL = getXML(xmlBR.toString(), "videoSubtitleUrl");
-        if (StringUtils.isEmpty(subtitleURL)) {
-            /* E.g. checkeins.de */
-            subtitleURL = xmlBR.getRegex("<dataTimedTextNoOffset url=\"((?:https:)?[^<>\"]+\\.xml)\">").getMatch(0);
-        }
+        /* TODO: Check if we can safely remove the following lines of code */
+        // if (StringUtils.isEmpty(subtitleURL)) {
+        // /* E.g. checkeins.de */
+        // subtitleURL = xmlBR.getRegex("<dataTimedTextNoOffset url=\"((?:https:)?[^<>\"]+\\.xml)\">").getMatch(0);
+        // }
         if (subtitleURL != null) {
             return xmlBR.getURL(subtitleURL).toString();
         } else {
@@ -645,6 +643,15 @@ public class Ardmediathek extends PluginForDecrypt {
             // brJSON = br.cloneBrowser();
             /* Do nothing */
         } else {
+            /**
+             * Look for embedded content which will go back into this crawler. Especially needed for: wdr.de, wdrmaus.de, sportschau.de,
+             * sandmann.de
+             */
+            final ArrayList<DownloadLink> embeds = crawlEmbeddedContent(this.br);
+            if (!embeds.isEmpty()) {
+                this.decryptedLinks.addAll(embeds);
+                return;
+            }
             String url_json = null;
             if (this.getHost().equals("sportschau.de")) {
                 /* Special handling: Embedded videoplayer --> "ardjson" URL will be inside that html */
@@ -655,44 +662,32 @@ public class Ardmediathek extends PluginForDecrypt {
                 } else if (br.getURL().contains("-ardplayer")) {
                     url_json = br.getURL().replace("-ardplayer", "-ardjson");
                 } else if (br.getURL().contains("-ardjson")) {
+                    /* URL has already been accessed. */
                     url_json = br.getURL();
                 }
             } else {
                 br.setFollowRedirects(true);
-                final String[] embeddedVideosType1 = br.getRegex("(?:\\'|\")mediaObj(?:\\'|\"):\\s*?\\{\\s*?(?:\\'|\")url(?:\\'|\"):\\s*?(?:\\'|\")(https?://[^<>\"]+\\.js)(?:\\'|\")").getColumn(0);
-                if (embeddedVideosType1.length > 1) {
-                    /* Embedded items --> Go back into crawler */
-                    logger.info("Found " + embeddedVideosType1.length + " embedded items");
-                    for (final String embeddedVideo : embeddedVideosType1) {
-                        decryptedLinks.add(this.createDownloadlink(embeddedVideo));
+                if (this.getHost().equalsIgnoreCase("sandmann.de")) {
+                    url_json = br.getRegex("data\\-media\\-ref=\"([^\"]*?\\.jsn)[^\"]*?\"").getMatch(0);
+                    if (!StringUtils.isEmpty(url_json)) {
+                        if (url_json.startsWith("/")) {
+                            url_json = "https://www.sandmann.de" + url_json;
+                        }
+                        /* This is a very ugly contentID */
+                        this.contentID = new Regex(url_json, "sandmann\\.de/(.+)").getMatch(0);
                     }
-                    return;
-                } else if (embeddedVideosType1.length == 1) {
-                    /* We've already accessed the URL --> Process it right away */
-                    url_json = embeddedVideosType1[0];
+                } else if (this.getHost().contains("ndr.de") || this.getHost().equalsIgnoreCase("eurovision.de")) {
+                    /* E.g. daserste.ndr.de, blabla.ndr.de */
+                    this.contentID = br.getRegex("([A-Za-z0-9]+\\d+)\\-(?:ard)?player_[^\"]+\"").getMatch(0);
+                    if (!StringUtils.isEmpty(this.contentID)) {
+                        url_json = String.format("https://www.ndr.de/%s-ardjson.json", this.contentID);
+                    }
                 } else {
-                    if (this.getHost().equalsIgnoreCase("sandmann.de")) {
-                        url_json = br.getRegex("data\\-media\\-ref=\"([^\"]*?\\.jsn)[^\"]*?\"").getMatch(0);
-                        if (!StringUtils.isEmpty(url_json)) {
-                            if (url_json.startsWith("/")) {
-                                url_json = "https://www.sandmann.de" + url_json;
-                            }
-                            /* This is a very ugly contentID */
-                            this.contentID = new Regex(url_json, "sandmann\\.de/(.+)").getMatch(0);
-                        }
-                    } else if (this.getHost().contains("ndr.de") || this.getHost().equalsIgnoreCase("eurovision.de")) {
-                        /* E.g. daserste.ndr.de, blabla.ndr.de */
-                        this.contentID = br.getRegex("([A-Za-z0-9]+\\d+)\\-(?:ard)?player_[^\"]+\"").getMatch(0);
-                        if (!StringUtils.isEmpty(this.contentID)) {
-                            url_json = String.format("https://www.ndr.de/%s-ardjson.json", this.contentID);
-                        }
-                    } else {
-                        /* wdr.de, wdrmaus.de */
-                        url_json = this.br.getRegex("(?:\\'|\")mediaObj(?:\\'|\"):\\s*?\\{\\s*?(?:\\'|\")url(?:\\'|\"):\\s*?(?:\\'|\")(https?://[^<>\"]+\\.js)(?:\\'|\")").getMatch(0);
-                        if (url_json != null) {
-                            /* 2018-03-07: Same IDs that will also appear in every streamingURL! */
-                            this.contentID = new Regex(url_json, "(\\d+/\\d+)\\.js$").getMatch(0);
-                        }
+                    /* wdr.de, wdrmaus.de */
+                    url_json = this.br.getRegex("(?:\\'|\")mediaObj(?:\\'|\"):\\s*?\\{\\s*?(?:\\'|\")url(?:\\'|\"):\\s*?(?:\\'|\")(https?://[^<>\"]+\\.js)(?:\\'|\")").getMatch(0);
+                    if (url_json != null) {
+                        /* 2018-03-07: Same IDs that will also appear in every streamingURL! */
+                        this.contentID = new Regex(url_json, "(\\d+/\\d+)\\.js$").getMatch(0);
                     }
                 }
             }
@@ -712,6 +707,11 @@ public class Ardmediathek extends PluginForDecrypt {
                 }
             }
         }
+        /* 2021-08-11: E.g. wdr.de | type_embedded */
+        final String specialOldJson = regexOldJson(br.toString());
+        if (specialOldJson != null) {
+            br.getRequest().setHtmlCode(specialOldJson);
+        }
         title = getMediathekTitle(brBefore, this.br);
         Object entries = null;
         try {
@@ -719,6 +719,19 @@ public class Ardmediathek extends PluginForDecrypt {
         } catch (final Throwable e) {
         }
         crawlARDJson(entries);
+    }
+
+    private static String regexOldJson(final String html) {
+        return new Regex(html, "\\$mediaObject\\.jsonpHelper\\.storeAndPlay\\((\\{.*?\\})\\);").getMatch(0);
+    }
+
+    private ArrayList<DownloadLink> crawlEmbeddedContent(final Browser br) {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String[] embeddedVideosTypeOldJson = br.getRegex("(?:\\'|\")mediaObj(?:\\'|\"):\\s*?\\{\\s*?(?:\\'|\")url(?:\\'|\"):\\s*?(?:\\'|\")(https?://[^<>\"]+\\.js)(?:\\'|\")").getColumn(0);
+        for (final String embeddedVideo : embeddedVideosTypeOldJson) {
+            ret.add(this.createDownloadlink(embeddedVideo));
+        }
+        return ret;
     }
 
     private void crawlARDJson(final Object mediaCollection) throws Exception {
@@ -735,211 +748,230 @@ public class Ardmediathek extends PluginForDecrypt {
         /* For http stream quality identifiers which have been created by the hls --> http URLs converter */
         final List<String> httpStreamsQualityIdentifiers_2_over_hls_master = new ArrayList<String>();
         Map<String, Object> map;
-        if (mediaCollection instanceof Map) {
-            map = (Map<String, Object>) mediaCollection;
-            if (!map.containsKey("_mediaArray")) {
-                /* 2020-06-08: For new ARD URLs */
-                map = (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "widgets/{0}/mediaCollection/embedded");
-            }
-        } else {
-            map = null;
-        }
         String exampleHTTPURL = null;
         String hlsMaster = null;
-        if (map != null && map.containsKey("_mediaArray")) {
-            /*
-             * Website actually tries to stream video - only then it is safe to know if the items is only "somewhere" GEO-blocked or
-             * GEO-blocked for the current user/IP!
-             */
-            // final boolean geoBlocked = ((Boolean) map.get("_geoblocked")).booleanValue();
-            // if (geoBlocked) {
-            // /* 2020-11-19: Direct-URLs are given but will all redirect to a "GEO-blocked" video so let's stop here! */
-            // throw new DecrypterException(EXCEPTION_GEOBLOCKED);
-            // }
-            try {
-                final List<Map<String, Object>> mediaArray = (List<Map<String, Object>>) map.get("_mediaArray");
-                mediaArray: for (Map<String, Object> media : mediaArray) {
-                    final List<Map<String, Object>> mediaStreamArray = (List<Map<String, Object>>) media.get("_mediaStreamArray");
-                    for (int mediaStreamIndex = mediaStreamArray.size() - 1; mediaStreamIndex >= 0; mediaStreamIndex--) {
-                        // list is sorted from best to lowest quality, first one is m3u8
-                        final Map<String, Object> mediaStream = mediaStreamArray.get(mediaStreamIndex);
-                        final int quality;
-                        final Object _stream = mediaStream.get("_stream");
-                        if (mediaStream.get("_quality") instanceof Number) {
-                            quality = ((Number) mediaStream.get("_quality")).intValue();
-                        } else {
-                            /* E.g. skip quality "auto" (HLS) */
-                            if (_stream instanceof String) {
-                                final String url = _stream.toString();
-                                if (url.contains(".m3u8")) {
-                                    hlsMaster = url;
+        if (mediaCollection instanceof Map && ((Map<String, Object>) mediaCollection).containsKey("mediaResource")) {
+            /* E.g. older wdr.de json --> Only extract hls-master, then generate http URLs down below */
+            final Map<String, Object> mediaResource = (Map<String, Object>) ((Map<String, Object>) mediaCollection).get("mediaResource");
+            /* All of these are usually HLS */
+            final String[] mediaNames = new String[] { "dflt", "alt" };
+            for (final String mediaType : mediaNames) {
+                if (mediaResource.containsKey(mediaType)) {
+                    final Map<String, Object> media = (Map<String, Object>) mediaResource.get(mediaType);
+                    final String hlsMasterTmp = (String) media.get("videoURL");
+                    if (media.get("mediaFormat").toString().equalsIgnoreCase("hls") && !StringUtils.isEmpty(hlsMasterTmp)) {
+                        hlsMaster = hlsMasterTmp;
+                        break;
+                    }
+                }
+            }
+        } else {
+            if (mediaCollection instanceof Map) {
+                map = (Map<String, Object>) mediaCollection;
+                if (!map.containsKey("_mediaArray")) {
+                    /* 2020-06-08: For new ARD URLs */
+                    map = (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "widgets/{0}/mediaCollection/embedded");
+                }
+            } else {
+                map = null;
+            }
+            if (map != null && map.containsKey("_mediaArray")) {
+                /*
+                 * Website actually tries to stream video - only then it is safe to know if the items is only "somewhere" GEO-blocked or
+                 * GEO-blocked for the current user/IP!
+                 */
+                // final boolean geoBlocked = ((Boolean) map.get("_geoblocked")).booleanValue();
+                // if (geoBlocked) {
+                // /* 2020-11-19: Direct-URLs are given but will all redirect to a "GEO-blocked" video so let's stop here! */
+                // throw new DecrypterException(EXCEPTION_GEOBLOCKED);
+                // }
+                try {
+                    final List<Map<String, Object>> mediaArray = (List<Map<String, Object>>) map.get("_mediaArray");
+                    mediaArray: for (Map<String, Object> media : mediaArray) {
+                        final List<Map<String, Object>> mediaStreamArray = (List<Map<String, Object>>) media.get("_mediaStreamArray");
+                        for (int mediaStreamIndex = mediaStreamArray.size() - 1; mediaStreamIndex >= 0; mediaStreamIndex--) {
+                            // list is sorted from best to lowest quality, first one is m3u8
+                            final Map<String, Object> mediaStream = mediaStreamArray.get(mediaStreamIndex);
+                            final int quality;
+                            final Object _stream = mediaStream.get("_stream");
+                            if (mediaStream.get("_quality") instanceof Number) {
+                                quality = ((Number) mediaStream.get("_quality")).intValue();
+                            } else {
+                                /* E.g. skip quality "auto" (HLS) */
+                                if (_stream instanceof String) {
+                                    final String url = _stream.toString();
+                                    if (url.contains(".m3u8")) {
+                                        hlsMaster = url;
+                                    }
                                 }
-                            }
-                            continue;
-                        }
-                        final List<String> streams;
-                        if (_stream instanceof String) {
-                            streams = new ArrayList<String>();
-                            streams.add((String) _stream);
-                        } else {
-                            streams = ((List<String>) _stream);
-                        }
-                        for (int index = 0; index < streams.size(); index++) {
-                            final String stream = streams.get(index);
-                            if (stream == null || !StringUtils.endsWithCaseInsensitive(stream, ".mp4")) {
-                                /* Skip invalid objects */
                                 continue;
                             }
-                            final String url = br.getURL(stream).toString();
-                            exampleHTTPURL = url;
-                            final int widthInt;
-                            final int heightInt;
-                            /*
-                             * Sometimes the resolutions is given, sometimes we have to assume it and sometimes (e.g. HLS streaming) there
-                             * are multiple qualities available for one stream URL.
-                             */
-                            if (mediaStream.containsKey("_width") && mediaStream.containsKey("_height")) {
-                                widthInt = ((Number) mediaStream.get("_width")).intValue();
-                                heightInt = ((Number) mediaStream.get("_height")).intValue();
-                            } else if (quality == 0 && streams.size() == 1) {
-                                widthInt = 320;
-                                heightInt = 180;
-                            } else if (quality == 1 && streams.size() == 1) {
-                                widthInt = 512;
-                                heightInt = 288;
-                            } else if (quality == 1 && streams.size() == 2) {
-                                switch (index) {
-                                case 0:
+                            final List<String> streams;
+                            if (_stream instanceof String) {
+                                streams = new ArrayList<String>();
+                                streams.add((String) _stream);
+                            } else {
+                                streams = ((List<String>) _stream);
+                            }
+                            for (int index = 0; index < streams.size(); index++) {
+                                final String stream = streams.get(index);
+                                if (stream == null || !StringUtils.endsWithCaseInsensitive(stream, ".mp4")) {
+                                    /* Skip invalid objects */
+                                    continue;
+                                }
+                                final String url = br.getURL(stream).toString();
+                                exampleHTTPURL = url;
+                                final int widthInt;
+                                final int heightInt;
+                                /*
+                                 * Sometimes the resolutions is given, sometimes we have to assume it and sometimes (e.g. HLS streaming)
+                                 * there are multiple qualities available for one stream URL.
+                                 */
+                                if (mediaStream.containsKey("_width") && mediaStream.containsKey("_height")) {
+                                    widthInt = ((Number) mediaStream.get("_width")).intValue();
+                                    heightInt = ((Number) mediaStream.get("_height")).intValue();
+                                } else if (quality == 0 && streams.size() == 1) {
+                                    widthInt = 320;
+                                    heightInt = 180;
+                                } else if (quality == 1 && streams.size() == 1) {
                                     widthInt = 512;
                                     heightInt = 288;
-                                    break;
-                                case 1:
-                                default:
-                                    widthInt = 480;
-                                    heightInt = 270;
-                                    break;
-                                }
-                            } else if (quality == 2 && streams.size() == 1) {
-                                widthInt = 960;
-                                heightInt = 544;
-                            } else if (quality == 2 && streams.size() == 2) {
-                                switch (index) {
-                                case 0:
-                                    widthInt = 640;
-                                    heightInt = 360;
-                                    break;
-                                case 1:
-                                default:
-                                    widthInt = 960;
-                                    heightInt = 540;
-                                    break;
-                                }
-                            } else if (quality == 3 && streams.size() == 1) {
-                                widthInt = 960;
-                                heightInt = 540;
-                            } else if (quality == 3 && streams.size() == 2) {
-                                switch (index) {
-                                case 0:
-                                    widthInt = 1280;
-                                    heightInt = 720;
-                                    break;
-                                case 1:
-                                default:
-                                    widthInt = 960;
-                                    heightInt = 540;
-                                    break;
-                                }
-                            } else if (StringUtils.containsIgnoreCase(stream, "0.mp4") || StringUtils.containsIgnoreCase(stream, "128k.mp4")) {
-                                widthInt = 320;
-                                heightInt = 180;
-                            } else if (StringUtils.containsIgnoreCase(stream, "lo.mp4")) {
-                                widthInt = 256;
-                                heightInt = 144;
-                            } else if (StringUtils.containsIgnoreCase(stream, "A.mp4") || StringUtils.containsIgnoreCase(stream, "mn.mp4") || StringUtils.containsIgnoreCase(stream, "256k.mp4")) {
-                                widthInt = 480;
-                                heightInt = 270;
-                            } else if (StringUtils.containsIgnoreCase(stream, "B.mp4") || StringUtils.containsIgnoreCase(stream, "hi.mp4") || StringUtils.containsIgnoreCase(stream, "512k.mp4")) {
-                                widthInt = 512;
-                                heightInt = 288;
-                            } else if (StringUtils.containsIgnoreCase(stream, "C.mp4") || StringUtils.containsIgnoreCase(stream, "hq.mp4") || StringUtils.containsIgnoreCase(stream, "1800k.mp4")) {
-                                widthInt = 960;
-                                heightInt = 540;
-                            } else if (StringUtils.containsIgnoreCase(stream, "E.mp4") || StringUtils.containsIgnoreCase(stream, "ln.mp4") || StringUtils.containsIgnoreCase(stream, "1024k.mp4") || StringUtils.containsIgnoreCase(stream, "1.mp4")) {
-                                widthInt = 640;
-                                heightInt = 360;
-                            } else if (StringUtils.containsIgnoreCase(stream, "X.mp4") || StringUtils.containsIgnoreCase(stream, "hd.mp4")) {
-                                widthInt = 1280;
-                                heightInt = 720;
-                            } else {
-                                /*
-                                 * Fallback to 'old' handling which could result in wrong resolutions (but that's better than missing
-                                 * downloadlinks!)
-                                 */
-                                final Object width = mediaStream.get("_width");
-                                final Object height = mediaStream.get("_height");
-                                if (width instanceof Number) {
-                                    widthInt = ((Number) width).intValue();
-                                } else {
-                                    switch (((Number) quality).intValue()) {
+                                } else if (quality == 1 && streams.size() == 2) {
+                                    switch (index) {
                                     case 0:
-                                        widthInt = 320;
-                                        break;
-                                    case 1:
                                         widthInt = 512;
-                                        break;
-                                    case 2:
-                                        widthInt = 640;
-                                        break;
-                                    case 3:
-                                        widthInt = 1280;
-                                        break;
-                                    default:
-                                        widthInt = -1;
-                                        break;
-                                    }
-                                }
-                                if (width instanceof Number) {
-                                    heightInt = ((Number) height).intValue();
-                                } else {
-                                    switch (((Number) quality).intValue()) {
-                                    case 0:
-                                        heightInt = 180;
-                                        break;
-                                    case 1:
                                         heightInt = 288;
                                         break;
-                                    case 2:
-                                        heightInt = 360;
-                                        break;
-                                    case 3:
-                                        heightInt = 720;
-                                        break;
+                                    case 1:
                                     default:
-                                        heightInt = -1;
+                                        widthInt = 480;
+                                        heightInt = 270;
                                         break;
                                     }
+                                } else if (quality == 2 && streams.size() == 1) {
+                                    widthInt = 960;
+                                    heightInt = 544;
+                                } else if (quality == 2 && streams.size() == 2) {
+                                    switch (index) {
+                                    case 0:
+                                        widthInt = 640;
+                                        heightInt = 360;
+                                        break;
+                                    case 1:
+                                    default:
+                                        widthInt = 960;
+                                        heightInt = 540;
+                                        break;
+                                    }
+                                } else if (quality == 3 && streams.size() == 1) {
+                                    widthInt = 960;
+                                    heightInt = 540;
+                                } else if (quality == 3 && streams.size() == 2) {
+                                    switch (index) {
+                                    case 0:
+                                        widthInt = 1280;
+                                        heightInt = 720;
+                                        break;
+                                    case 1:
+                                    default:
+                                        widthInt = 960;
+                                        heightInt = 540;
+                                        break;
+                                    }
+                                } else if (StringUtils.containsIgnoreCase(stream, "0.mp4") || StringUtils.containsIgnoreCase(stream, "128k.mp4")) {
+                                    widthInt = 320;
+                                    heightInt = 180;
+                                } else if (StringUtils.containsIgnoreCase(stream, "lo.mp4")) {
+                                    widthInt = 256;
+                                    heightInt = 144;
+                                } else if (StringUtils.containsIgnoreCase(stream, "A.mp4") || StringUtils.containsIgnoreCase(stream, "mn.mp4") || StringUtils.containsIgnoreCase(stream, "256k.mp4")) {
+                                    widthInt = 480;
+                                    heightInt = 270;
+                                } else if (StringUtils.containsIgnoreCase(stream, "B.mp4") || StringUtils.containsIgnoreCase(stream, "hi.mp4") || StringUtils.containsIgnoreCase(stream, "512k.mp4")) {
+                                    widthInt = 512;
+                                    heightInt = 288;
+                                } else if (StringUtils.containsIgnoreCase(stream, "C.mp4") || StringUtils.containsIgnoreCase(stream, "hq.mp4") || StringUtils.containsIgnoreCase(stream, "1800k.mp4")) {
+                                    widthInt = 960;
+                                    heightInt = 540;
+                                } else if (StringUtils.containsIgnoreCase(stream, "E.mp4") || StringUtils.containsIgnoreCase(stream, "ln.mp4") || StringUtils.containsIgnoreCase(stream, "1024k.mp4") || StringUtils.containsIgnoreCase(stream, "1.mp4")) {
+                                    widthInt = 640;
+                                    heightInt = 360;
+                                } else if (StringUtils.containsIgnoreCase(stream, "X.mp4") || StringUtils.containsIgnoreCase(stream, "hd.mp4")) {
+                                    widthInt = 1280;
+                                    heightInt = 720;
+                                } else {
+                                    /*
+                                     * Fallback to 'old' handling which could result in wrong resolutions (but that's better than missing
+                                     * downloadlinks!)
+                                     */
+                                    final Object width = mediaStream.get("_width");
+                                    final Object height = mediaStream.get("_height");
+                                    if (width instanceof Number) {
+                                        widthInt = ((Number) width).intValue();
+                                    } else {
+                                        switch (((Number) quality).intValue()) {
+                                        case 0:
+                                            widthInt = 320;
+                                            break;
+                                        case 1:
+                                            widthInt = 512;
+                                            break;
+                                        case 2:
+                                            widthInt = 640;
+                                            break;
+                                        case 3:
+                                            widthInt = 1280;
+                                            break;
+                                        default:
+                                            widthInt = -1;
+                                            break;
+                                        }
+                                    }
+                                    if (width instanceof Number) {
+                                        heightInt = ((Number) height).intValue();
+                                    } else {
+                                        switch (((Number) quality).intValue()) {
+                                        case 0:
+                                            heightInt = 180;
+                                            break;
+                                        case 1:
+                                            heightInt = 288;
+                                            break;
+                                        case 2:
+                                            heightInt = 360;
+                                            break;
+                                        case 3:
+                                            heightInt = 720;
+                                            break;
+                                        default:
+                                            heightInt = -1;
+                                            break;
+                                        }
+                                    }
                                 }
-                            }
-                            final DownloadLink download = addQuality(foundQualitiesMap, url, null, 0, widthInt, heightInt, false);
-                            if (download != null) {
-                                httpStreamsQualityIdentifiers.add(getQualityIdentifier(url, 0, widthInt, heightInt));
-                                if (cfg.isGrabBESTEnabled()) {
-                                    // we iterate mediaStreamArray from best to lowest
-                                    // TODO: optimize for cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled()
-                                    break mediaArray;
+                                final DownloadLink download = addQuality(foundQualitiesMap, url, null, 0, widthInt, heightInt, false);
+                                if (download != null) {
+                                    httpStreamsQualityIdentifiers.add(getQualityIdentifier(url, 0, widthInt, heightInt));
+                                    if (cfg.isGrabBESTEnabled()) {
+                                        // we iterate mediaStreamArray from best to lowest
+                                        // TODO: optimize for cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled()
+                                        break mediaArray;
+                                    }
                                 }
                             }
                         }
                     }
+                } catch (Throwable e) {
+                    logger.log(e);
                 }
-            } catch (Throwable e) {
-                logger.log(e);
             }
         }
         /*
          * TODO: It might only make sense to attempt this if we found more than 3 http qualities previously because usually 3 means we will
          * also only have 3 hls qualities --> There are no additional http qualities!
          */
+        // hlsMaster =
+        // "https://wdradaptiv-vh.akamaihd.net/i/medp/ondemand/weltweit/fsk0/232/2326527/,2326527_32403893,2326527_32403894,2326527_32403895,2326527_32403891,2326527_32403896,2326527_32403892,.mp4.csmil/master.m3u8";
         String http_url_audio = br.getRegex("((?:https?:)?//[^<>\"]+\\.mp3)\"").getMatch(0);
         final String quality_string = new Regex(hlsMaster, ".*?/i/.*?,([A-Za-z0-9_,\\-\\.]+),?\\.mp4\\.csmil.*?").getMatch(0);
         if (StringUtils.isEmpty(hlsMaster) && http_url_audio == null && httpStreamsQualityIdentifiers.size() == 0) {
@@ -1040,7 +1072,7 @@ public class Ardmediathek extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.getPage(xml_URL);
-        /* Usually daserste.de and checkeins.de as there is no way to find a contentID inside URL added by the user. */
+        /* Usually daserste.de as there is no way to find a contentID inside URL added by the user. */
         final String id = br.getRegex("<c7>(.*?)</c7>").getMatch(0);
         if (id != null && this.contentID == null) {
             contentID = Hash.getSHA1(id);
