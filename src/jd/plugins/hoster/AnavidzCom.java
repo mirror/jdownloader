@@ -27,8 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class AnavidsCom extends XFileSharingProBasic {
-    public AnavidsCom(final PluginWrapper wrapper) {
+public class AnavidzCom extends XFileSharingProBasic {
+    public AnavidzCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -43,8 +43,14 @@ public class AnavidsCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "anavids.com" });
+        ret.add(new String[] { "anavidz.com", "anavids.com" });
         return ret;
+    }
+
+    /** 2021-08-11: anavids.com -> anavidz.com */
+    @Override
+    public String rewriteHost(final String host) {
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     public static String[] getAnnotationNames() {
