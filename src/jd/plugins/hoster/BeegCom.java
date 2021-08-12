@@ -35,7 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "beeg.com" }, urls = { "https?://(?:www\\.)?beeg\\.com/([a-z0-9\\-]+/[a-z0-9\\-]+|-?\\d+)(?:\\?t=\\d+-\\d+)?|https?://beta\\.beeg\\.com/-\\d+(?:\\?t=\\d+-\\d+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "beeg.com" }, urls = { "https?://(?:www\\.)?beeg\\.com/-?\\d+(?:\\?t=\\d+-\\d+)?|https?://beta\\.beeg\\.com/-\\d+(?:\\?t=\\d+-\\d+)?" })
 public class BeegCom extends PluginForHost {
     /* DEV NOTES */
     /* Porn_plugin */
@@ -55,7 +55,6 @@ public class BeegCom extends PluginForHost {
         return -1;
     }
 
-    private static final String INVALIDLINKS = "(?i)https://(?:www\\.)?beeg\\.com/(generator|section|static|tag).*";
     private static final String TYPE_BETA    = "https?://beta\\.beeg\\.com/-(\\d+)(?:\\?t=(\\d+-\\d+))?";
     private static final String TYPE_NORMAL  = "https?://beeg\\.com/-?(\\d+)(?:\\?t=(\\d+-\\d+))?";
     private boolean             server_issue = false;
@@ -98,10 +97,9 @@ public class BeegCom extends PluginForHost {
             link.setName(this.getFID(link) + ".mp4");
         }
         server_issue = false;
-        final String videoid_original = getFID(link);
-        if (link.getPluginPatternMatcher().matches(INVALIDLINKS)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (videoid_original == null) {
+        final String videoidOriginal = getFID(link);
+        if (videoidOriginal == null) {
+            /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.setBrowserExclusive();
@@ -110,7 +108,7 @@ public class BeegCom extends PluginForHost {
         /* 2021-08-09: Seems like they've moved 100% to the new version of their website. */
         final boolean enforceNewWebsiteHandling = true;
         if (link.getPluginPatternMatcher().matches(TYPE_BETA) || enforceNewWebsiteHandling) {
-            br.getPage("https://store.externulls.com/facts/file/" + videoid_original);
+            br.getPage("https://store.externulls.com/facts/file/" + videoidOriginal);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.toString().length() < 100) {
@@ -151,7 +149,7 @@ public class BeegCom extends PluginForHost {
                 }
             }
         } else {
-            String videoid = videoid_original;
+            String videoid = videoidOriginal;
             br.getPage(link.getPluginPatternMatcher());
             final String videoidInsideCurrentURL = new Regex(br.getURL(), "https?://[^/]+/(\\d+)").getMatch(0);
             if (videoidInsideCurrentURL != null && !videoidInsideCurrentURL.equals(videoid)) {
@@ -264,7 +262,7 @@ public class BeegCom extends PluginForHost {
             }
             filename = (String) entries.get("title");
             if (StringUtils.isEmpty(filename)) {
-                filename = videoid_original;
+                filename = videoidOriginal;
             }
             final String[] qualities = { "2160", "1080", "720", "480", "360", "240" };
             for (final String quality : qualities) {
