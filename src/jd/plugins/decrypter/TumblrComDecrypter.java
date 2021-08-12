@@ -263,8 +263,14 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 contentArrays.add(entries.get("content"));
             }
         }
-        final long timestamp = ((Number) entries.get("timestamp")).longValue();
-        final String dateFormatted = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH).format(new Date(timestamp * 1000));
+        String dateFormatted = null;
+        final Object timestampO = entries.get("timestamp");
+        if (timestampO != null) {
+            final long timestamp = ((Number) timestampO).longValue();
+            dateFormatted = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH).format(new Date(timestamp * 1000));
+        } else {
+            logger.warning("WTF");
+        }
         for (final Object contentArrayO : contentArrays) {
             final List<Object> ressourcelist = (List<Object>) contentArrayO;
             for (final Object contentO : ressourcelist) {
@@ -339,7 +345,9 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 // if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && !StringUtils.isEmpty(postURL)) {
                 // dl.setContentUrl(postURL);
                 // }
-                dl.setProperty(PROPERTY_DATE, dateFormatted);
+                if (dateFormatted != null) {
+                    dl.setProperty(PROPERTY_DATE, dateFormatted);
+                }
                 dl._setFilePackage(fp);
                 ret.add(dl);
                 distribute(dl);

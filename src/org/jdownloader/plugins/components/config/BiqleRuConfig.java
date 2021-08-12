@@ -72,7 +72,7 @@ public interface BiqleRuConfig extends PluginConfigInterface {
     }
 
     @AboutConfig
-    @DefaultEnumValue("BEST")
+    @DefaultEnumValue("ALL")
     @DescriptionForConfigEntry("Define how this plugin should pick your desired qualities?")
     @Order(10)
     QualitySelectionMode getQualitySelectionMode();
@@ -80,7 +80,7 @@ public interface BiqleRuConfig extends PluginConfigInterface {
     void setQualitySelectionMode(QualitySelectionMode mode);
 
     @AboutConfig
-    @DefaultEnumValue("BEST")
+    @DefaultEnumValue("Q720")
     @Order(20)
     @DescriptionForConfigEntry("Best will be used if selected preferred quality does not exist")
     BiqleRuConfig.Quality getPreferredQuality();
