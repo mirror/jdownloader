@@ -268,8 +268,6 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         if (timestampO != null) {
             final long timestamp = ((Number) timestampO).longValue();
             dateFormatted = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH).format(new Date(timestamp * 1000));
-        } else {
-            logger.warning("WTF");
         }
         for (final Object contentArrayO : contentArrays) {
             final List<Object> ressourcelist = (List<Object>) contentArrayO;
