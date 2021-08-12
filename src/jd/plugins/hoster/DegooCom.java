@@ -24,14 +24,16 @@ import java.util.Map;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.http.Cookies;
-import jd.nutils.encoding.Encoding;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -43,7 +45,7 @@ import jd.plugins.PluginForHost;
 public class DegooCom extends PluginForHost {
     public DegooCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("https://degoo.com/");
+        this.enablePremium("https://degoo.com/");
     }
 
     @Override
@@ -76,16 +78,19 @@ public class DegooCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final boolean        FREE_RESUME                  = false;
-    private final int            FREE_MAXCHUNKS               = 1;
-    private final int            FREE_MAXDOWNLOADS            = 20;
-    private static final boolean ACCOUNT_FREE_RESUME          = false;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    public static final String   PROPERTY_DIRECTURL           = "free_directlink";
+    private final boolean        FREE_RESUME                    = false;
+    private final int            FREE_MAXCHUNKS                 = 1;
+    private final int            FREE_MAXDOWNLOADS              = 20;
+    private static final boolean ACCOUNT_FREE_RESUME            = false;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS         = 1;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS      = 20;
+    private static final boolean ACCOUNT_PREMIUM_RESUME         = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS      = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS   = 20;
+    public static final String   PROPERTY_DIRECTURL             = "free_directlink";
+    public static final String   PROPERTY_DIRECTURL_ACCOUNT     = "account_directlink";
+    private static final String  PROPERTY_ACCOUNT_TOKEN         = "token";
+    private static final String  PROPERTY_ACCOUNT_REFRESH_TOKEN = "refresh_token";
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -98,8 +103,8 @@ public class DegooCom extends PluginForHost {
     }
 
     private String getUniqueLinkIDFromURL(final DownloadLink link) {
-        final String folderID = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        final String fileID = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+        final String folderID = getFolderID(link);
+        final String fileID = getFileID(link);
         if (folderID != null && fileID != null) {
             return folderID + "_" + fileID;
         } else {
@@ -107,15 +112,25 @@ public class DegooCom extends PluginForHost {
         }
     }
 
-    private String              dllink   = null;
-    private static final String API_BASE = "https://rest-api.degoo.com";
+    private String                         dllink           = null;
+    private static final String            API_BASE         = "https://rest-api.degoo.com";
+    private static final String            API_BASE_GRAPHQL = "https://production-appsync.degoo.com/graphql";
+    private static HashMap<String, Object> API_INFO         = new HashMap<String, Object>();
+
+    private String getFolderID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    private String getFileID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 400 });
-        final String folderID = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        final String fileID = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+        final String folderID = getFolderID(link);
+        final String fileID = getFileID(link);
         if (folderID == null || fileID == null) {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -143,137 +158,214 @@ public class DegooCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, PROPERTY_DIRECTURL);
-    }
-
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (this.dllink == null) {
-            logger.warning("Failed to find final downloadurl");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
+        if (!this.attemptStoredDownloadurlDownload(link, PROPERTY_DIRECTURL, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS)) {
+            requestFileInformation(link);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                checkDownloadErrorsLastResort(dl.getConnection());
             }
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 429) {
-                /**
-                 * 2021-01-17: Plaintext response: "Rate Limit" </br>
-                 * This limit sits on the files themselves and/or the uploader account. There is no way to bypass this by reconnecting!
-                 * </br>
-                 * Displayed error on website: "Daily limit reached, upgrade to increase this limit or wait until tomorrow"
-                 */
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Daily limit reached");
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
-            }
+            link.setProperty(PROPERTY_DIRECTURL, dl.getConnection().getURL().toString());
         }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
-    private boolean login(final Account account, final boolean force) throws Exception {
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directurlproperty, final boolean resume, final int maxchunks) throws Exception {
+        final String url = link.getStringProperty(directurlproperty);
+        if (StringUtils.isEmpty(url)) {
+            return false;
+        }
+        try {
+            final Browser brc = br.cloneBrowser();
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resume, maxchunks);
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                return true;
+            } else {
+                brc.followConnection(true);
+                throw new IOException();
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+            try {
+                dl.getConnection().disconnect();
+            } catch (Throwable ignore) {
+            }
+            return false;
+        }
+    }
+
+    private boolean login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
+                br.setAllowedResponseCodes(400);
+                String token = account.getStringProperty(PROPERTY_ACCOUNT_TOKEN);
+                if (token != null) {
                     logger.info("Attempting token login");
-                    this.br.setCookies(this.getHost(), cookies);
                     if (!force) {
                         logger.info("Trust token without checking");
                         return false;
+                    } else {
+                        accessAccountInfoIfNotAlreadyAccessed(br, account);
+                        try {
+                            checkLoginErrorsAPI(br, account);
+                            logger.info("Token login successful");
+                            return true;
+                        } catch (final Throwable e) {
+                            logger.info("Token login failed");
+                            account.removeProperty(PROPERTY_ACCOUNT_TOKEN);
+                            account.removeProperty(PROPERTY_ACCOUNT_REFRESH_TOKEN);
+                        }
                     }
-                    /* TODO */
-                    // br.getPage("https://" + this.getHost() + "/");
-                    // if (this.isLoggedin()) {
-                    // logger.info("Cookie login successful");
-                    // /* Refresh cookie timestamp */
-                    // account.saveCookies(this.br.getCookies(this.getHost()), "");
-                    // return true;
-                    // } else {
-                    // logger.info("Cookie login failed");
-                    // }
                 }
                 logger.info("Performing full login");
-                final boolean useAPI = true;
-                if (useAPI) {
-                    /* Login is possible with both requests */
-                    br.postPageRaw(API_BASE + "/login", "{\"Username\":\"" + account.getUser() + "\",\"Password\":\"" + account.getPass() + "\",\"GenerateToken\":true}");
-                    // br.postPageRaw(API_BASE + "/register", "{\"Username\":\"" + account.getUser() + "\",\"Password\":\"" +
-                    // account.getPass() + "\",\"LanguageCode\":\"de-DE\",\"CountryCode\":\"DE\",\"Source\":\"Web
-                    // App\",\"GenerateToken\":true}");
-                    final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                    final String refreshToken = (String) entries.get("RefreshToken");
-                    final String token = (String) entries.get("Token");
-                    if (StringUtils.isEmpty(refreshToken) || StringUtils.isEmpty(token)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                    /* Response 400: {"Error": "Not authorized!"} */
-                } else {
-                    /* Unfinished code */
-                    br.getPage("https://" + this.getHost() + "/me/login");
-                    final Form loginform = br.getFormbyActionRegex(".*me/login");
-                    if (loginform == null) {
-                        logger.warning("Failed to find loginform");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    loginform.put("Email", Encoding.urlEncode(account.getUser()));
-                    loginform.put("Password", Encoding.urlEncode(account.getPass()));
-                    br.submitForm(loginform);
-                    account.saveCookies(this.br.getCookies(this.getHost()), "");
+                /* Login is possible with both requests */
+                br.postPageRaw(API_BASE + "/login", "{\"Username\":\"" + account.getUser() + "\",\"Password\":\"" + account.getPass() + "\",\"GenerateToken\":true}");
+                checkLoginErrorsAPI(br, account);
+                // br.postPageRaw(API_BASE + "/register", "{\"Username\":\"" + account.getUser() + "\",\"Password\":\"" +
+                // account.getPass() + "\",\"LanguageCode\":\"de-DE\",\"CountryCode\":\"DE\",\"Source\":\"Web
+                // App\",\"GenerateToken\":true}");
+                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final String refreshToken = (String) entries.get("RefreshToken");
+                token = (String) entries.get("Token");
+                if (StringUtils.isEmpty(refreshToken) || StringUtils.isEmpty(token)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unknown login failure", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
+                account.setProperty(PROPERTY_ACCOUNT_TOKEN, token);
+                /* TODO: Check if/how we can make use of that refresh token */
+                account.setProperty(PROPERTY_ACCOUNT_REFRESH_TOKEN, refreshToken);
                 return true;
             } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                }
                 throw e;
             }
+        }
+    }
+
+    private Browser prepBRGraphQL(final Browser br) throws IOException, PluginException {
+        br.getHeaders().put("x-api-key", getAPIKey(br));
+        br.getHeaders().put("Content-Type", "application/json");
+        br.getHeaders().put("Origin", "https://app." + this.getHost());
+        return br;
+    }
+
+    private String getAPIKey(final Browser br) throws IOException, PluginException {
+        synchronized (API_INFO) {
+            if (!API_INFO.containsKey("timestamp") || System.currentTimeMillis() - ((Number) API_INFO.get("API_INFO")).longValue() > 2 * 60 * 60 * 1000) {
+                logger.info("Refreshing public apikey");
+                final Browser brc = br.cloneBrowser();
+                brc.getPage("https://app." + this.getHost() + "/8314-es2015.67eb1618e0f6169f0c76.js");
+                final String key = brc.getRegex("this\\.API_KEY=this\\.useProduction\\(\\)\\?\"([^\"]+)\"").getMatch(0);
+                if (key == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                API_INFO.put("apikey", key);
+                return key;
+            } else {
+                /* Return existing apikey */
+                return API_INFO.get("apikey").toString();
+            }
+        }
+    }
+
+    private void checkLoginErrorsAPI(final Browser br, final Account account) throws Exception {
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Object errorO = entries.get("Error");
+        /* Collection of possible errors below */
+        /* Response 400: {"Error": "Not authorized!"} */
+        if (errorO instanceof String) {
+            final String error = errorO.toString();
+            throw new AccountInvalidException(error);
+        }
+    }
+
+    private String getToken(final Account account) {
+        return account.getStringProperty(PROPERTY_ACCOUNT_TOKEN);
+    }
+
+    private void accessAccountInfoIfNotAlreadyAccessed(final Browser br, final Account account) throws IOException, PluginException {
+        if (!br.containsHTML("getUserInfo3")) {
+            prepBRGraphQL(br);
+            br.postPageRaw(API_BASE_GRAPHQL, "{\"operationName\":\"GetUserInfo3\",\"variables\":{\"Token\":\"" + this.getToken(account) + "\"},\"query\":\"query GetUserInfo3($Token: String!) {    getUserInfo3(Token: $Token) {      ID      FirstName      LastName      Email      AvatarURL      CountryCode      LanguageCode      Phone      AccountType      UsedQuota      TotalQuota      OAuth2Provider      GPMigrationStatus    }  }\"}");
         }
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(account, true);
-        String space = br.getRegex("").getMatch(0);
-        if (space != null) {
-            ai.setUsedSpace(space.trim());
-        }
+        login(this.br, account, true);
+        accessAccountInfoIfNotAlreadyAccessed(this.br, account);
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+        final Map<String, Object> userinfo = (Map<String, Object>) data.get("getUserInfo3");
+        ai.setUsedSpace(JavaScriptEngineFactory.toLong(userinfo.get("UsedQuota"), 0));
         ai.setUnlimitedTraffic();
-        // if (br.containsHTML("")) {
-        // account.setType(AccountType.FREE);
-        // account.setConcurrentUsePossible(false);
-        // ai.setStatus("Registered (free) user");
-        // } else {
-        // final String expire = br.getRegex("").getMatch(0);
-        // if (expire == null) {
-        // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        // } else {
-        // ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
-        // }
-        // account.setType(AccountType.PREMIUM);
-        // account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-        // account.setConcurrentUsePossible(true);
-        // ai.setStatus("Premium account");
-        // }
+        /* 1 = Free Account, 2 = Pro Account, 3 = Ultimate */
+        final int accType = ((Number) userinfo.get("AccountType")).intValue();
+        if (accType == 1) {
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+        } else if (accType == 2) {
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            ai.setStatus("Pro Account");
+        } else if (accType == 3) {
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            ai.setStatus("Ultimate Account");
+        } else {
+            /* This should never happen */
+            account.setType(AccountType.UNKNOWN);
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+        }
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        login(account, false);
-        this.handleFree(link);
+        if (!this.attemptStoredDownloadurlDownload(link, PROPERTY_DIRECTURL_ACCOUNT, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS)) {
+            requestFileInformation(link);
+            final Browser brAPI = br.cloneBrowser();
+            this.login(brAPI, account, false);
+            this.prepBRGraphQL(brAPI);
+            brAPI.postPageRaw(API_BASE_GRAPHQL, "{\"operationName\":\"GetOverlay4\",\"variables\":{\"Token\":\"" + this.getToken(account) + "\",\"ID\":{\"FileID\":\"" + this.getFileID(link)
+                    + "\"}},\"query\":\"query GetOverlay4($Token: String!, $ID: IDType!) {    getOverlay4(Token: $Token, ID: $ID) {      ID      MetadataID      UserID      DeviceID      MetadataKey      Name      FilePath      LocalPath      LastUploadTime      LastModificationTime      ParentID      Category      Size      Platform      URL      ThumbnailURL      CreationTime      IsSelfLiked      Likes      Comments      IsHidden      IsInRecycleBin      Description      Location {        Country        Province        Place        GeoLocation {          Latitude          Longitude        }      }      Location2 {        Country        Region        SubRegion        Municipality        Neighborhood        GeoLocation {          Latitude          Longitude        }      }      Data      DataBlock      CompressionParameters      Shareinfo {        Status        ShareTime      }      HasViewed      QualityScore    }  }\"}");
+            // this.checkErrorsAPI(this.br, account);
+            final Map<String, Object> entries = JSonStorage.restoreFromString(brAPI.toString(), TypeRef.HASHMAP);
+            this.dllink = JavaScriptEngineFactory.walkJson(entries, "data/getOverlay4/URL").toString();
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                checkDownloadErrorsLastResort(dl.getConnection());
+            }
+            link.setProperty(PROPERTY_DIRECTURL_ACCOUNT, dl.getConnection().getURL().toString());
+        }
+        dl.startDownload();
+    }
+
+    private void checkDownloadErrorsLastResort(final URLConnectionAdapter con) throws PluginException {
+        if (con.getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+        } else if (con.getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        } else if (con.getResponseCode() == 429) {
+            /**
+             * 2021-01-17: Plaintext response: "Rate Limit" </br>
+             * This limit sits on the files themselves and/or the uploader account. There is no way to bypass this by reconnecting! </br>
+             * Displayed error on website: "Daily limit reached, upgrade to increase this limit or wait until tomorrow"
+             */
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Daily limit reached");
+        } else {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
+        }
     }
 
     @Override
