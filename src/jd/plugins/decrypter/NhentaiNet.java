@@ -19,6 +19,11 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -33,17 +38,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 /**
  *
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nhentai.net" }, urls = { "https?://(?:www\\.)?nhentai\\.(?:net|to)/g/(\\d+)/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nhentai.net" }, urls = { "https?://(?:www\\.)?nhentai\\.(?:net|to|xxx)/g/(\\d+)/?" })
 public class NhentaiNet extends antiDDoSForDecrypt {
     public NhentaiNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -116,7 +116,6 @@ public class NhentaiNet extends antiDDoSForDecrypt {
         return decryptedLinks;
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
