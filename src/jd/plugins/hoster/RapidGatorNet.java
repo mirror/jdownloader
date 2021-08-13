@@ -389,7 +389,6 @@ public class RapidGatorNet extends antiDDoSForHost {
             handleErrorsWebsite(this.br, link, null);
             final String freedlsizelimit = br.getRegex("(?i)'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode\\s*<").getMatch(0);
             if (freedlsizelimit != null) {
-                // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 throw new AccountRequiredException();
             }
             final String reconnectWait = br.getRegex("Delay between downloads must be not less than (\\d+) min\\.<br>Don`t want to wait\\? <a style=\"").getMatch(0);
