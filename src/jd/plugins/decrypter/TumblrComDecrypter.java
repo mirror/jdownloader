@@ -251,6 +251,14 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         // final String postURL = (String) entries.get("post_url");
         final String blogName = (String) entries.get("blog_name");
         final String fpName = blogName + " - " + ((String) entries.get("slug")).replace("-", " ").trim();
+        String dateFormatted = null;
+        final Object timestampO = entries.get("timestamp");
+        if (timestampO != null) {
+            final long timestamp = ((Number) timestampO).longValue();
+            dateFormatted = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH).format(new Date(timestamp * 1000));
+        } else {
+            logger.warning("Timestamp missing for: " + fpName);
+        }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
         // final int arraySizeBefore = ret.size();
@@ -262,12 +270,6 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             if (entries.containsKey("content")) {
                 contentArrays.add(entries.get("content"));
             }
-        }
-        String dateFormatted = null;
-        final Object timestampO = entries.get("timestamp");
-        if (timestampO != null) {
-            final long timestamp = ((Number) timestampO).longValue();
-            dateFormatted = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH).format(new Date(timestamp * 1000));
         }
         for (final Object contentArrayO : contentArrays) {
             final List<Object> ressourcelist = (List<Object>) contentArrayO;
