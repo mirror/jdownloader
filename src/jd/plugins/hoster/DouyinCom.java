@@ -122,7 +122,7 @@ public class DouyinCom extends PluginForHost {
         }
         final Map<String, Object> videoInfo = (Map<String, Object>) ((Map<String, Object>) aweme).get("detail");
         /* 2021-08-13: This can contain an "official" download-URL but it seems like the quality is really bad andspeed is very limited. */
-        // final Map<String, Object> download = (Map<String, Object>) videoInfo.get("video");
+        // final Map<String, Object> download = (Map<String, Object>) videoInfo.get("download");
         final Map<String, Object> video = (Map<String, Object>) videoInfo.get("video");
         final Map<String, Object> authorInfo = (Map<String, Object>) videoInfo.get("authorInfo");
         final String username = (String) authorInfo.get("nickname");
