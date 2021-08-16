@@ -16,12 +16,14 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -35,118 +37,148 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mais.uol.com.br" }, urls = { "https?://(?:www\\.)?mais\\.uol\\.com\\.br/view/([a-z0-9]+)/([A-Za-z0-9\\-]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mais.uol.com.br" }, urls = { "https?://((?:www\\.)?mais\\.uol\\.com\\.br/view/[a-z0-9]+/[A-Za-z0-9\\-]+|player\\.mais\\.uol\\.com\\.br/\\?mediaId=\\d+\\&type=video)" })
 public class MaisUolComBr extends PluginForHost {
     public MaisUolComBr(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String  dllink        = null;
-    private boolean server_issues = false;
+    private String  dllinkHTTP      = null;
+    private String  dllinkHLSMaster = null;
+    private boolean server_issues   = false;
 
     @Override
     public String getAGBLink() {
         return "http://mais.uol.com.br/";
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
+    private static final String TYPE_NORMAL = "(?i)https?://(?:www\\.)?mais\\.uol\\.com\\.br/view/([a-z0-9]+)/([A-Za-z0-9\\-]+)";
+    private static final String TYPE_EMBED  = "(?i)https?://player\\.mais\\.uol\\.com\\.br/\\?mediaId=(\\d+)\\&type=video";
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        dllink = null;
+        dllinkHTTP = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 400, 500 });
-        br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404 | br.getHttpConnection().getResponseCode() == 500) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (br.containsHTML("> M\\&iacute;dia n\\&atilde;o encontrada|class=\"msg alert\"") || !br.getURL().contains("/view/")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String mediaID = br.getRegex("name=\"mediaId\" value=\"(\\d+)\"").getMatch(0);
-        if (mediaID == null) {
-            mediaID = br.getRegex("mediaId=(\\d+)\"").getMatch(0);
-        }
-        if (mediaID == null) {
-            /* 2020-11-23: ID is inside URL */
-            mediaID = new Regex(br.getURL(), ".*/(\\d+)$").getMatch(0);
-        }
-        if (mediaID != null) {
-            /* Old request */
-            br.getPage("https://api.mais.uol.com.br/apiuol/v3/player/" + mediaID);
+        String mediaID;
+        Map<String, Object> entries;
+        if (link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
+            mediaID = new Regex(link.getPluginPatternMatcher(), TYPE_EMBED).getMatch(0);
         } else {
-            /* 2020-11-30: New */
-            final String urlpart = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
-            br.getPage("https://api.mais.uol.com.br/apiuol/v3/media/detail/" + urlpart);
-        }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        entries = (LinkedHashMap<String, Object>) entries.get("item");
-        String filename = (String) entries.get("title");
-        final Object formatso = entries.get("formats");
-        final Object audioUrlo = entries.get("audioUrl");
-        if (audioUrlo != null && audioUrlo instanceof String) {
-            /* 2017-02-14 */
-            dllink = (String) audioUrlo;
-            if (dllink == null || dllink.equals("") || !dllink.startsWith("//")) {
-                dllink = null;
-            } else {
-                dllink = "http:" + dllink;
+            /* 2021-08-16: TODO: Find a way to get the v4 API json with only a single HTTP request */
+            br.getPage(link.getPluginPatternMatcher());
+            if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404 | br.getHttpConnection().getResponseCode() == 500) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML("> M\\&iacute;dia n\\&atilde;o encontrada|class=\"msg alert\"") || !this.canHandle(this.br.getURL())) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            mediaID = br.getRegex("name=\"mediaId\" value=\"(\\d+)\"").getMatch(0);
+            if (mediaID == null) {
+                mediaID = br.getRegex("mediaId=(\\d+)\"").getMatch(0);
+            }
+            if (mediaID == null) {
+                /* 2020-11-23: ID is inside URL */
+                mediaID = new Regex(br.getURL(), ".*/(\\d+)$").getMatch(0);
+            }
+            if (mediaID == null) {
+                /* Find mediaID */
+                final String urlpart = new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(1);
+                br.getPage("https://api.mais.uol.com.br/apiuol/v3/media/detail/" + urlpart);
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+                entries = (Map<String, Object>) entries.get("item");
+                mediaID = entries.get("mediaId").toString();
             }
         }
-        if (formatso != null && dllink == null) {
-            if (formatso instanceof ArrayList) {
-                final ArrayList<Object> ressourcelist = (ArrayList) formatso;
+        link.setLinkID(this.getHost() + "://" + mediaID);
+        br.getPage("https://api.mais.uol.com.br/apiuol/v4/player/data/" + mediaID);
+        /* Old way */
+        // br.getPage("https://api.mais.uol.com.br/apiuol/v3/player/" + mediaID);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+        entries = (Map<String, Object>) entries.get("item");
+        String filename = (String) entries.get("title");
+        final Object formatsO = entries.get("formats");
+        final Object audioUrlO = entries.get("audioUrl");
+        if (audioUrlO != null && audioUrlO instanceof String) {
+            /* 2017-02-14 */
+            dllinkHTTP = (String) audioUrlO;
+            if (StringUtils.isEmpty(dllinkHTTP) || !dllinkHTTP.startsWith("//")) {
+                dllinkHTTP = null;
+            } else {
+                dllinkHTTP = "http:" + dllinkHTTP;
+            }
+        }
+        if (formatsO != null && dllinkHTTP == null) {
+            if (formatsO instanceof List) {
+                /* Old handling */
+                final List<Object> ressourcelist = (List) formatsO;
                 /* Old */
                 for (final Object o : ressourcelist) {
-                    final LinkedHashMap<String, Object> format = (LinkedHashMap<String, Object>) o;
+                    final Map<String, Object> format = (Map<String, Object>) o;
                     final int id = ((Number) format.get("id")).intValue();
                     if (id == 9 || id == 2) {
-                        dllink = (String) format.get("url");
+                        dllinkHTTP = (String) format.get("url");
                         break;
                     }
                 }
             } else {
-                entries = (LinkedHashMap<String, Object>) formatso;
+                entries = (Map<String, Object>) formatsO;
                 final Iterator<Entry<String, Object>> formatiterate = entries.entrySet().iterator();
+                /*
+                 * 2021-08-16: Skip http URLs as they require additional parameters which we only get by doing another API request. For HLS
+                 * URLs these parameters are not required!
+                 */
+                final boolean skipHttpURLs = true;
                 while (formatiterate.hasNext()) {
-                    final Entry entry = formatiterate.next();
-                    entries = (LinkedHashMap<String, Object>) entry.getValue();
-                    this.dllink = (String) entries.get("url");
-                    if (!StringUtils.isEmpty(dllink) && dllink.startsWith("http")) {
-                        break;
+                    final Entry<String, Object> entry = formatiterate.next();
+                    entries = (Map<String, Object>) entry.getValue();
+                    if (StringUtils.equalsIgnoreCase(entry.getKey(), "HLS")) {
+                        if (StringUtils.isEmpty(this.dllinkHLSMaster)) {
+                            this.dllinkHLSMaster = (String) entries.get("url");
+                        }
+                    } else {
+                        if (skipHttpURLs) {
+                            continue;
+                        } else if (StringUtils.isEmpty(dllinkHTTP)) {
+                            this.dllinkHTTP = (String) entries.get("url");
+                        }
                     }
                 }
             }
-        }
-        if (dllink == null) {
-            /* Old but still working 2017-02-14 */
-            dllink = "http://storage.mais.uol.com.br/" + mediaID + ".mp3?ver=0";
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
-        filename = filename.trim();
-        final String ext;
-        if (dllink != null) {
-            ext = getFileNameExtensionFromString(dllink, ".mp4");
+        filename = Encoding.htmlDecode(filename).trim();
+        if (dllinkHTTP != null && dllinkHTTP.contains(".mp3")) {
+            link.setFinalFileName(filename + ".mp3");
         } else {
-            ext = ".mp4";
+            link.setFinalFileName(filename + ".mp4");
         }
-        link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openHeadConnection(dllink);
-            if (this.looksLikeDownloadableContent(con)) {
-                link.setDownloadSize(con.getLongContentLength());
-            } else {
-                server_issues = true;
-            }
-        } finally {
+        if (!StringUtils.isEmpty(this.dllinkHTTP)) {
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (Throwable e) {
+                con = br.openHeadConnection(dllinkHTTP);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                } else {
+                    server_issues = true;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         }
         return AvailableStatus.TRUE;
@@ -157,23 +189,31 @@ public class MaisUolComBr extends PluginForHost {
         requestFileInformation(link);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dllink == null) {
+        } else if (StringUtils.isEmpty(this.dllinkHTTP) && StringUtils.isEmpty(this.dllinkHLSMaster)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
+        if (!StringUtils.isEmpty(this.dllinkHTTP)) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllinkHTTP, true, 0);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
             }
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
+            dl.startDownload();
+        } else {
+            br.getPage(this.dllinkHLSMaster);
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     @Override
