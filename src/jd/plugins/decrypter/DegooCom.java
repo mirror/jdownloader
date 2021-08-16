@@ -69,6 +69,11 @@ public class DegooCom extends PluginForDecrypt {
             }
             br.postPageRaw("https://rest-api.degoo.com/shared", JSonStorage.serializeToJson(params));
             if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
+                /* Empty folder e.g.: {"Error": "Got empty result!"} */
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            } else if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
+                /* Offline folder */
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }

@@ -62,18 +62,19 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.InstaGramCom;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?instagram\\.com/(stories/(?:highlights/\\d+/?|[^/]+)|explore/tags/[^/]+/?|((?:p|tv|reel)/[A-Za-z0-9_-]+|(?!explore)[^/]+(/saved|/p/[A-Za-z0-9_-]+)?))" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?instagram\\.com/(stories/(?:highlights/\\d+/?|[^/]+)|explore/tags/[^/]+/?|((?:p|tv|reel)/[A-Za-z0-9_-]+|(?!explore)[^/]+(/saved|/tagged/?|/p/[A-Za-z0-9_-]+)?))" })
 public class InstaGramComDecrypter extends PluginForDecrypt {
     public InstaGramComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String                  TYPE_PROFILE                      = "https?://[^/]+/([^/]+)(?:/.*)?";
-    private static final String                  TYPE_GALLERY                      = ".+/(?:p|tv|reel)/([A-Za-z0-9_-]+)/?";
-    private static final String                  TYPE_STORY                        = "https?://[^/]+/stories/([^/]+).*";
-    private static final String                  TYPE_STORY_HIGHLIGHTS             = "https?://[^/]+/stories/highlights/(\\d+)/?";
-    private static final String                  TYPE_SAVED_OBJECTS                = "https?://[^/]+/([^/]+)/saved/?$";
-    private static final String                  TYPE_TAGS                         = "https?://[^/]+/explore/tags/([^/]+)/?$";
+    private static final String                  TYPE_PROFILE                      = "(?i)https?://[^/]+/([^/]+)(?:/.*)?";
+    private static final String                  TYPE_PROFILE_TAGGED               = "(?i)https?://([^/]+)/tagged/?";
+    private static final String                  TYPE_GALLERY                      = "(?i).+/(?:p|tv|reel)/([A-Za-z0-9_-]+)/?";
+    private static final String                  TYPE_STORY                        = "(?i)https?://[^/]+/stories/([^/]+).*";
+    private static final String                  TYPE_STORY_HIGHLIGHTS             = "(?i)https?://[^/]+/stories/highlights/(\\d+)/?";
+    private static final String                  TYPE_SAVED_OBJECTS                = "(?i)https?://[^/]+/([^/]+)/saved/?$";
+    private static final String                  TYPE_TAGS                         = "(?i)https?://[^/]+/explore/tags/([^/]+)/?$";
     /** For links matching pattern {@link #TYPE_TAGS} --> This will be set on created DownloadLink objects as a (packagizer-) property. */
     private String                               hashtag                           = null;
     private final ArrayList<DownloadLink>        decryptedLinks                    = new ArrayList<DownloadLink>();
@@ -302,9 +303,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 this.crawlStoryAltAPI(param, account, userID, loggedIN);
             }
         } else {
-            /* Crawl all items of a user */
+            /* Crawl all items of a user or all items where one user was tagged */
             final boolean useAltAPI = account != null && SubConfiguration.getConfig(this.getHost()).getBooleanProperty(InstaGramCom.PROFILE_CRAWLER_PREFER_ALTERNATIVE_API, InstaGramCom.defaultPREFER_ALTERNATIVE_API_FOR_PROFILE_CRAWLER);
-            if (useAltAPI) {
+            if (useAltAPI && canBeProcessedByCrawlUserAltAPI(param.getCryptedUrl())) {
                 final String user = new Regex(param.getCryptedUrl(), TYPE_PROFILE).getMatch(0);
                 final String userID = findUserID(param, account, loggedIN, user);
                 if (StringUtils.isEmpty(userID)) {
@@ -493,8 +494,22 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
      * Sometimes required user to be logged in to see all/more than X items. <br>
      */
     private void crawlUser(final CryptedLink param, final Account account, final AtomicBoolean loggedIN) throws UnsupportedEncodingException, Exception {
-        final String username_url = new Regex(parameter, "instagram\\.com/([^/]+)").getMatch(0);
-        fp.setName(username_url);
+        String username_url = null;
+        if (param.getCryptedUrl().matches(TYPE_PROFILE_TAGGED)) {
+            /**
+             * Crawl all items in which user from username inside URL is tagged. </br>
+             * Do not assign username_url because this will be used as the owner-name of all found items which would be wrong here as the
+             * content could have been posted by anyone who tagged that specific user!
+             */
+            /* 2021-08-16: Not yet supported */
+            /* TODO: Needs update of getQueryHash! */
+            logger.warning("Linktype is not yet supported: " + param.getCryptedUrl());
+            fp.setName(new Regex(param.getCryptedUrl(), TYPE_PROFILE_TAGGED).getMatch(0) + " - tagged");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            username_url = new Regex(param.getCryptedUrl(), TYPE_PROFILE).getMatch(0);
+            fp.setName(username_url);
+        }
         int counter = 0;
         long itemCount = 0;
         boolean isPrivate = false;
@@ -1289,11 +1304,22 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
     }
 
+    private boolean canBeProcessedByCrawlUserAltAPI(final String url) {
+        if (url.matches(TYPE_PROFILE_TAGGED)) {
+            return false;
+        } else if (url.matches(TYPE_PROFILE)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     private void crawlUserAltAPI(final CryptedLink param, final Account account, final AtomicBoolean loggedIN, final String userID) throws UnsupportedEncodingException, Exception {
         /* Login is mandatory! */
         loginOrFail(account, loggedIN);
         final String usernameURL = new Regex(param.getCryptedUrl(), TYPE_PROFILE).getMatch(0);
         if (usernameURL == null || userID == null) {
+            /* Most likely developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         fp.setName(usernameURL);

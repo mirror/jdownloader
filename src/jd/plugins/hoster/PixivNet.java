@@ -15,6 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -137,29 +140,39 @@ public class PixivNet extends PluginForHost {
             if (!link.isNameSet()) {
                 link.setName(this.getFID(link));
             }
-            URLConnectionAdapter con = null;
-            final Browser brc = br.cloneBrowser();
-            try {
-                con = brc.openHeadConnection(link.getPluginPatternMatcher());
-                if (con.getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (this.looksLikeDownloadableContent(con)) {
-                    if (link.getFinalFileName() == null) {
-                        link.setFinalFileName(this.getFID(link) + ".json");
-                    }
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                    this.dllink = link.getPluginPatternMatcher();
-                } else {
-                    server_issues = true;
-                }
-            } finally {
+            if (link.hasProperty(ANIMATION_META)) {
+                /*
+                 * Metadata is aready saved as property so we don't care if it is still online. All we have to do is to save it to a
+                 * text-file once the user stars downloading.
+                 */
+                return AvailableStatus.TRUE;
+            } else {
+                URLConnectionAdapter con = null;
+                final Browser brc = br.cloneBrowser();
                 try {
-                    if (con != null) {
-                        con.disconnect();
+                    con = brc.openGetConnection(link.getPluginPatternMatcher());
+                    if (con.getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else if (this.looksLikeDownloadableContent(con)) {
+                        if (link.getFinalFileName() == null) {
+                            link.setFinalFileName(this.getFID(link) + ".json");
+                        }
+                        if (con.getCompleteContentLength() > 0) {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
+                        this.dllink = link.getPluginPatternMatcher();
+                        brc.followConnection();
+                        link.setProperty(ANIMATION_META, brc.toString());
+                    } else {
+                        server_issues = true;
                     }
-                } catch (final Throwable e) {
+                } finally {
+                    try {
+                        if (con != null) {
+                            con.disconnect();
+                        }
+                    } catch (final Throwable e) {
+                    }
                 }
             }
         } else {
@@ -263,25 +276,46 @@ public class PixivNet extends PluginForHost {
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
+        if (link.hasProperty(ANIMATION_META)) {
+            /* Write text to file. */
+            final String metadata = link.getStringProperty(ANIMATION_META);
+            BufferedWriter dest = null;
             try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
+                final File source = new File(link.getFileOutput());
+                dest = new BufferedWriter(new FileWriter(new File(source.getAbsolutePath())));
+                dest.write(metadata);
+            } finally {
+                try {
+                    dest.close();
+                } catch (IOException e) {
+                }
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* Set filesize so user can see it in UI. */
+            link.setVerifiedFileSize(metadata.getBytes("UTF-8").length);
+            /* Set progress to finished - the "download" is complete ;) */
+            link.getDownloadLinkController().getLinkStatus().setStatus(LinkStatus.FINISHED);
+        } else {
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setProperty(directlinkproperty, dllink);
+            dl.startDownload();
         }
-        link.setProperty(directlinkproperty, dllink);
-        dl.startDownload();
     }
 
     @Override

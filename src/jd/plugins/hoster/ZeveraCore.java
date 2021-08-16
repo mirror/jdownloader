@@ -335,7 +335,6 @@ abstract public class ZeveraCore extends UseNet {
         try {
             antiCloudflare(br, dllink);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            final String contentType = dl.getConnection().getContentType();
             final long completeContentLength = dl.getConnection().getCompleteContentLength();
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
@@ -344,7 +343,7 @@ abstract public class ZeveraCore extends UseNet {
                     logger.log(e);
                 }
                 handleAPIErrors(this.br, link, account);
-                mhm.handleErrorGeneric(account, link, "unknowndlerror", 2, 5 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, link, "unknowndlerror", 50, 5 * 60 * 1000l);
             }
             final long verifiedFileSize = link.getVerifiedFileSize();
             if (completeContentLength != verifiedFileSize) {
