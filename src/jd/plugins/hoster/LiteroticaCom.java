@@ -178,7 +178,7 @@ public class LiteroticaCom extends PluginForHost {
         }
         /* Set filesize so user can see it in UI. */
         link.setVerifiedFileSize(sb.toString().getBytes("UTF-8").length);
-        /* Set progress to finished - the "download" iks complete ;) */
+        /* Set progress to finished - the "download" is complete ;) */
         link.getDownloadLinkController().getLinkStatus().setStatus(LinkStatus.FINISHED);
     }
 

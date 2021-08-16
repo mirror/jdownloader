@@ -15,6 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,6 +32,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -158,20 +162,50 @@ public class DegooCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        if (!this.attemptStoredDownloadurlDownload(link, PROPERTY_DIRECTURL, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS)) {
+        if (this.attemptStoredDownloadurlDownload(link, PROPERTY_DIRECTURL, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS)) {
+            logger.info("Re-using stored directurl");
+            dl.startDownload();
+        } else {
             requestFileInformation(link);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
+            if (!StringUtils.isEmpty(this.dllink)) {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
+                if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                    try {
+                        br.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
+                    checkDownloadErrorsLastResort(dl.getConnection());
                 }
-                checkDownloadErrorsLastResort(dl.getConnection());
+                link.setProperty(PROPERTY_DIRECTURL, dl.getConnection().getURL().toString());
+                dl.startDownload();
+            } else {
+                /* For text files they may return the full content of a file as base64 encoded text right away. */
+                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final String b64EncodedData = (String) entries.get("Data");
+                if (StringUtils.isEmpty(b64EncodedData)) {
+                    /* 2021-08-16: Don't use PLUGIN_DEFECT LinkStatus here as we're using an API which is supposed to be fairly stable. */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl");
+                }
+                final String rawText = Encoding.Base64Decode(b64EncodedData);
+                /* Write text to file */
+                BufferedWriter dest = null;
+                try {
+                    final File source = new File(link.getFileOutput());
+                    dest = new BufferedWriter(new FileWriter(new File(source.getAbsolutePath())));
+                    dest.write(rawText);
+                } finally {
+                    try {
+                        dest.close();
+                    } catch (IOException e) {
+                    }
+                }
+                /* Set filesize so user can see it in UI. */
+                link.setVerifiedFileSize(rawText.getBytes("UTF-8").length);
+                /* Set progress to finished - the "download" is complete. */
+                link.getDownloadLinkController().getLinkStatus().setStatus(LinkStatus.FINISHED);
             }
-            link.setProperty(PROPERTY_DIRECTURL, dl.getConnection().getURL().toString());
         }
-        dl.startDownload();
     }
 
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directurlproperty, final boolean resume, final int maxchunks) throws Exception {
@@ -255,7 +289,7 @@ public class DegooCom extends PluginForHost {
 
     private String getAPIKey(final Browser br) throws IOException, PluginException {
         synchronized (API_INFO) {
-            if (!API_INFO.containsKey("timestamp") || System.currentTimeMillis() - ((Number) API_INFO.get("API_INFO")).longValue() > 2 * 60 * 60 * 1000) {
+            if (!API_INFO.containsKey("apikey") || !API_INFO.containsKey("timestamp") || System.currentTimeMillis() - ((Number) API_INFO.get("timestamp")).longValue() > 2 * 60 * 60 * 1000) {
                 logger.info("Refreshing public apikey");
                 final Browser brc = br.cloneBrowser();
                 brc.getPage("https://app." + this.getHost() + "/8314-es2015.67eb1618e0f6169f0c76.js");
@@ -264,6 +298,7 @@ public class DegooCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 API_INFO.put("apikey", key);
+                API_INFO.put("timestamp", System.currentTimeMillis());
                 return key;
             } else {
                 /* Return existing apikey */
@@ -327,7 +362,10 @@ public class DegooCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        if (!this.attemptStoredDownloadurlDownload(link, PROPERTY_DIRECTURL_ACCOUNT, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS)) {
+        if (this.attemptStoredDownloadurlDownload(link, PROPERTY_DIRECTURL_ACCOUNT, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS)) {
+            logger.info("Re-using stored directurl");
+            dl.startDownload();
+        } else {
             requestFileInformation(link);
             final Browser brAPI = br.cloneBrowser();
             this.login(brAPI, account, false);
@@ -337,18 +375,44 @@ public class DegooCom extends PluginForHost {
             // this.checkErrorsAPI(this.br, account);
             final Map<String, Object> entries = JSonStorage.restoreFromString(brAPI.toString(), TypeRef.HASHMAP);
             this.dllink = JavaScriptEngineFactory.walkJson(entries, "data/getOverlay4/URL").toString();
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
+            if (!StringUtils.isEmpty(this.dllink)) {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+                if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                    try {
+                        br.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
+                    checkDownloadErrorsLastResort(dl.getConnection());
                 }
-                checkDownloadErrorsLastResort(dl.getConnection());
+                link.setProperty(PROPERTY_DIRECTURL_ACCOUNT, dl.getConnection().getURL().toString());
+                dl.startDownload();
+            } else {
+                /* For text files they may return the full content of a file as base64 encoded text right away. */
+                final String b64EncodedData = JavaScriptEngineFactory.walkJson(entries, "data/getOverlay4/Data").toString();
+                if (StringUtils.isEmpty(b64EncodedData)) {
+                    /* 2021-08-16: Don't use PLUGIN_DEFECT LinkStatus here as we're using an API which is supposed to be fairly stable. */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl");
+                }
+                final String rawText = Encoding.Base64Decode(b64EncodedData);
+                /* Write text to file */
+                BufferedWriter dest = null;
+                try {
+                    final File source = new File(link.getFileOutput());
+                    dest = new BufferedWriter(new FileWriter(new File(source.getAbsolutePath())));
+                    dest.write(rawText);
+                } finally {
+                    try {
+                        dest.close();
+                    } catch (IOException e) {
+                    }
+                }
+                /* Set filesize so user can see it in UI. */
+                link.setVerifiedFileSize(rawText.getBytes("UTF-8").length);
+                /* Set progress to finished - the "download" is complete. */
+                link.getDownloadLinkController().getLinkStatus().setStatus(LinkStatus.FINISHED);
             }
-            link.setProperty(PROPERTY_DIRECTURL_ACCOUNT, dl.getConnection().getURL().toString());
         }
-        dl.startDownload();
     }
 
     private void checkDownloadErrorsLastResort(final URLConnectionAdapter con) throws PluginException {
