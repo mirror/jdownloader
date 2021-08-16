@@ -15,9 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -49,6 +47,7 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
+import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
@@ -286,26 +285,17 @@ public class PixivNet extends PluginForHost {
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (link.hasProperty(ANIMATION_META)) {
             /* Write text to file. */
-            final String metadata = link.getStringProperty(ANIMATION_META);
+            final String metadata = link.getStringProperty(ANIMATION_META, null);
             if (StringUtils.isEmpty(metadata)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            BufferedWriter writer = null;
-            try {
-                final File dest = new File(link.getFileOutput());
-                writer = new BufferedWriter(new FileWriter(dest));
-                writer.write(metadata);
-                writer.close();
-                /* Set filesize so user can see it in UI. */
-                link.setVerifiedFileSize(dest.length());
-            } finally {
-                try {
-                    writer.close();
-                } catch (IOException e) {
-                }
-            }
+            /* Write text to file */
+            final File dest = new File(link.getFileOutput());
+            IO.writeToFile(dest, metadata.getBytes("UTF-8"), IO.SYNC.META_AND_DATA);
+            /* Set filesize so user can see it in UI. */
+            link.setVerifiedFileSize(dest.length());
             /* Set progress to finished - the "download" is complete ;) */
-            link.getDownloadLinkController().getLinkStatus().setStatus(LinkStatus.FINISHED);
+            link.getLinkStatus().setStatus(LinkStatus.FINISHED);
         } else {
             if (server_issues) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);

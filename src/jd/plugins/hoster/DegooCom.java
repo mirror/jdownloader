@@ -15,9 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,6 +40,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -189,22 +188,12 @@ public class DegooCom extends PluginForHost {
                 }
                 final String rawText = Encoding.Base64Decode(b64EncodedData);
                 /* Write text to file */
-                BufferedWriter writer = null;
-                try {
-                    final File dest = new File(link.getFileOutput());
-                    writer = new BufferedWriter(new FileWriter(dest));
-                    writer.write(rawText);
-                    writer.close();
-                    /* Set filesize so user can see it in UI. */
-                    link.setVerifiedFileSize(dest.length());
-                } finally {
-                    try {
-                        writer.close();
-                    } catch (IOException e) {
-                    }
-                }
+                final File dest = new File(link.getFileOutput());
+                IO.writeToFile(dest, rawText.getBytes("UTF-8"), IO.SYNC.META_AND_DATA);
+                /* Set filesize so user can see it in UI. */
+                link.setVerifiedFileSize(dest.length());
                 /* Set progress to finished - the "download" is complete. */
-                link.getDownloadLinkController().getLinkStatus().setStatus(LinkStatus.FINISHED);
+                link.getLinkStatus().setStatus(LinkStatus.FINISHED);
             }
         }
     }
@@ -403,22 +392,12 @@ public class DegooCom extends PluginForHost {
                 }
                 final String rawText = Encoding.Base64Decode(b64EncodedData);
                 /* Write text to file */
-                BufferedWriter writer = null;
-                try {
-                    final File dest = new File(link.getFileOutput());
-                    writer = new BufferedWriter(new FileWriter(dest));
-                    writer.write(rawText);
-                    writer.close();
-                    /* Set filesize so user can see it in UI. */
-                    link.setVerifiedFileSize(dest.length());
-                } finally {
-                    try {
-                        writer.close();
-                    } catch (IOException e) {
-                    }
-                }
+                final File dest = new File(link.getFileOutput());
+                IO.writeToFile(dest, rawText.getBytes("UTF-8"), IO.SYNC.META_AND_DATA);
+                /* Set filesize so user can see it in UI. */
+                link.setVerifiedFileSize(dest.length());
                 /* Set progress to finished - the "download" is complete. */
-                link.getDownloadLinkController().getLinkStatus().setStatus(LinkStatus.FINISHED);
+                link.getLinkStatus().setStatus(LinkStatus.FINISHED);
             }
         }
     }

@@ -13,19 +13,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 
-import org.appwork.utils.IO;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.jdownloader.controlling.FileCreationManager;
-import org.jdownloader.plugins.FinalLinkState;
-import org.jdownloader.plugins.HashCheckPluginProgress;
-import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.plugins.SkipReasonException;
-
 import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -43,6 +30,19 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.HashInfo.TYPE;
+
+import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.plugins.HashCheckPluginProgress;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
 
 public class DownloadLinkDownloadable implements Downloadable {
     private static volatile boolean crcHashingInProgress = false;
@@ -236,71 +236,65 @@ public class DownloadLinkDownloadable implements Downloadable {
         hashProgress.setProgressSource(this);
         try {
             addPluginProgress(hashProgress);
-            final byte[] b = new byte[128 * 1024];
+            final byte[] b = new byte[512 * 1024];
             String hashFile = null;
             FileInputStream fis = null;
-            int n = 0;
-            int cur = 0;
-            switch (type) {
-            case MD5:
-            case SHA1:
-            case SHA224:
-            case SHA256:
-            case SHA384:
-            case SHA512:
-                DigestInputStream is = null;
-                try {
-                    crcHashingInProgress = true;
-                    is = new DigestInputStream(fis = new FileInputStream(outputPartFile), MessageDigest.getInstance(type.getDigest()));
-                    while ((n = is.read(b)) >= 0) {
-                        cur += n;
-                        hashProgress.setCurrent(cur);
-                    }
-                    hashFile = HexFormatter.byteArrayToHex(is.getMessageDigest().digest());
-                } catch (final Throwable e) {
-                    getLogger().log(e);
-                } finally {
-                    crcHashingInProgress = false;
+            try {
+                int read = 0;
+                long currentPosition = 0;
+                switch (type) {
+                case MD5:
+                case SHA1:
+                case SHA224:
+                case SHA256:
+                case SHA384:
+                case SHA512:
                     try {
+                        fis = new FileInputStream(outputPartFile);
+                        crcHashingInProgress = true;
+                        final DigestInputStream is = new DigestInputStream(fis, MessageDigest.getInstance(type.getDigest()));
+                        while ((read = is.read(b)) >= 0) {
+                            currentPosition += read;
+                            hashProgress.setCurrent(currentPosition);
+                        }
+                        hashFile = HexFormatter.byteArrayToHex(is.getMessageDigest().digest());
                         is.close();
                     } catch (final Throwable e) {
+                        getLogger().log(e);
+                    } finally {
+                        crcHashingInProgress = false;
                     }
+                    break;
+                case CRC32:
                     try {
-                        fis.close();
-                    } catch (final Throwable e) {
-                    }
-                }
-                break;
-            case CRC32:
-                CheckedInputStream cis = null;
-                try {
-                    crcHashingInProgress = true;
-                    fis = new FileInputStream(outputPartFile);
-                    cis = new CheckedInputStream(fis, new CRC32());
-                    while ((n = cis.read(b)) >= 0) {
-                        cur += n;
-                        hashProgress.setCurrent(cur);
-                    }
-                    long value = cis.getChecksum().getValue();
-                    byte[] longBytes = new byte[] { (byte) (value >>> 24), (byte) (value >>> 16), (byte) (value >>> 8), (byte) value };
-                    hashFile = HexFormatter.byteArrayToHex(longBytes);
-                } catch (final Throwable e) {
-                    getLogger().log(e);
-                } finally {
-                    crcHashingInProgress = false;
-                    try {
+                        fis = new FileInputStream(outputPartFile);
+                        crcHashingInProgress = true;
+                        final CheckedInputStream cis = new CheckedInputStream(fis, new CRC32());
+                        while ((read = cis.read(b)) >= 0) {
+                            currentPosition += read;
+                            hashProgress.setCurrent(currentPosition);
+                        }
+                        final long value = cis.getChecksum().getValue();
                         cis.close();
+                        final byte[] longBytes = new byte[] { (byte) (value >>> 24), (byte) (value >>> 16), (byte) (value >>> 8), (byte) value };
+                        hashFile = HexFormatter.byteArrayToHex(longBytes);
                     } catch (final Throwable e) {
+                        getLogger().log(e);
+                    } finally {
+                        crcHashingInProgress = false;
                     }
+                    break;
+                case NONE:
+                default:
+                    break;
+                }
+            } finally {
+                if (fis != null) {
                     try {
                         fis.close();
                     } catch (final Throwable e) {
                     }
                 }
-                break;
-            case NONE:
-            default:
-                break;
             }
             return new HashResult(hashInfo, hashFile);
         } finally {
