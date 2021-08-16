@@ -23,18 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.Files;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.PixivNetConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -56,6 +44,18 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.Files;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.PixivNetConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "decryptedpixivnet://(?:www\\.)?.+|https?://(?:www\\.)?pixiv\\.net/ajax/illust/\\d+/ugoira_meta" })
 public class PixivNet extends PluginForHost {
@@ -148,8 +148,9 @@ public class PixivNet extends PluginForHost {
                 return AvailableStatus.TRUE;
             } else {
                 URLConnectionAdapter con = null;
-                final Browser brc = br.cloneBrowser();
                 try {
+                    final Browser brc = br.cloneBrowser();
+                    brc.setFollowRedirects(true);
                     con = brc.openGetConnection(link.getPluginPatternMatcher());
                     if (con.getResponseCode() == 404) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -164,6 +165,11 @@ public class PixivNet extends PluginForHost {
                         brc.followConnection();
                         link.setProperty(ANIMATION_META, brc.toString());
                     } else {
+                        try {
+                            brc.followConnection(true);
+                        } catch (IOException e) {
+                            logger.log(e);
+                        }
                         server_issues = true;
                     }
                 } finally {
@@ -202,15 +208,17 @@ public class PixivNet extends PluginForHost {
                 logger.info("Account is available --> Trying to download original quality");
                 String original = dllink.replaceFirst("/img-master/", "/img-original/").replaceFirst("_master\\d+", "").replaceFirst("/c/\\d+x\\d+/", "/");
                 try {
-                    con = br.openHeadConnection(original);
+                    final Browser brc = br.cloneBrowser();
+                    brc.setFollowRedirects(true);
+                    con = brc.openHeadConnection(original);
                     if (!con.isOK() || con.getContentType().contains("html")) {
                         con.disconnect();
                         if (original.matches(".*?\\.jpe?g$")) {
                             original = original.replaceFirst("\\.jpe?g$", ".png");
-                            con = br.openHeadConnection(original);
+                            con = brc.openHeadConnection(original);
                         } else if (original.matches(".*?\\.png$")) {
                             original = original.replaceFirst("\\.png$", ".jpg");
-                            con = br.openHeadConnection(original);
+                            con = brc.openHeadConnection(original);
                         }
                     }
                     if (this.looksLikeDownloadableContent(con)) {
@@ -240,7 +248,9 @@ public class PixivNet extends PluginForHost {
                 logger.info("Account is not available --> NOT trying to download original quality");
             }
             try {
-                con = br.openHeadConnection(dllink);
+                final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(true);
+                con = brc.openHeadConnection(dllink);
                 if (con.getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (this.looksLikeDownloadableContent(con)) {
@@ -274,44 +284,48 @@ public class PixivNet extends PluginForHost {
     }
 
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        }
         if (link.hasProperty(ANIMATION_META)) {
             /* Write text to file. */
             final String metadata = link.getStringProperty(ANIMATION_META);
-            BufferedWriter dest = null;
+            if (StringUtils.isEmpty(metadata)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            BufferedWriter writer = null;
             try {
-                final File source = new File(link.getFileOutput());
-                dest = new BufferedWriter(new FileWriter(new File(source.getAbsolutePath())));
-                dest.write(metadata);
+                final File dest = new File(link.getFileOutput());
+                writer = new BufferedWriter(new FileWriter(dest));
+                writer.write(metadata);
+                writer.close();
+                /* Set filesize so user can see it in UI. */
+                link.setVerifiedFileSize(dest.length());
             } finally {
                 try {
-                    dest.close();
+                    writer.close();
                 } catch (IOException e) {
                 }
             }
-            /* Set filesize so user can see it in UI. */
-            link.setVerifiedFileSize(metadata.getBytes("UTF-8").length);
             /* Set progress to finished - the "download" is complete ;) */
             link.getDownloadLinkController().getLinkStatus().setStatus(LinkStatus.FINISHED);
         } else {
-            if (dllink == null) {
+            if (server_issues) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+            } else if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                }
                 try {
                     br.followConnection(true);
                 } catch (final IOException e) {
                     logger.log(e);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             link.setProperty(directlinkproperty, dllink);
             dl.startDownload();
@@ -321,7 +335,7 @@ public class PixivNet extends PluginForHost {
     @Override
     protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
         if (urlConnection.getURL().toString().matches(TYPE_ANIMATION_META)) {
-            return urlConnection.isOK() && urlConnection.getContentType().contains("json");
+            return (urlConnection.getResponseCode() == 200 || urlConnection.getResponseCode() == 206) && StringUtils.containsIgnoreCase(urlConnection.getContentType(), "json");
         } else {
             return super.looksLikeDownloadableContent(urlConnection);
         }
