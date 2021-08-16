@@ -27,14 +27,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.config.TumblrComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -57,6 +49,14 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.TumblrCom;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.config.TumblrComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https?://(?![a-z0-9]+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/image/\\d+|/post/\\d+|/likes|/?$|/blog/view/[^/]+(?:/\\d+)?)(?:\\?password=.+)?" })
 public class TumblrComDecrypter extends PluginForDecrypt {
@@ -253,11 +253,11 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         final String fpName = blogName + " - " + ((String) entries.get("slug")).replace("-", " ").trim();
         String dateFormatted = null;
         final Object timestampO = entries.get("timestamp");
-        if (timestampO != null) {
+        if (timestampO != null && timestampO instanceof Number) {
             final long timestamp = ((Number) timestampO).longValue();
             dateFormatted = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH).format(new Date(timestamp * 1000));
         } else {
-            logger.warning("Timestamp missing for: " + fpName);
+            logger.warning("Timestamp missing for: " + fpName + "|" + timestampO);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
@@ -804,8 +804,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
     }
 
     /**
-     * Crawls all posts of a blog via API: </br>
-     * https://www.tumblr.com/docs/en/api/v2#posts--retrieve-published-posts
+     * Crawls all posts of a blog via API: </br> https://www.tumblr.com/docs/en/api/v2#posts--retrieve-published-posts
      */
     private ArrayList<DownloadLink> decryptUserAPI(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();

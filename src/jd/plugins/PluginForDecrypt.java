@@ -457,7 +457,7 @@ public abstract class PluginForDecrypt extends Plugin {
                     } else if (DecrypterException.PASSWORD.equals(e.getMessage())) {
                         throw new DecrypterRetryException(RetryReason.PASSWORD, null, null, e);
                     } else if (e instanceof AccountRequiredException) {
-                        throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, null, null, e);
+                        throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, e.getMessage(), null, e);
                     } else if (e instanceof DecrypterException || e.getCause() instanceof DecrypterException) {
                         return results;
                     } else if (e instanceof PluginException) {

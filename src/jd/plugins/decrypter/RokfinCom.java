@@ -21,6 +21,7 @@ import java.util.Map;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -35,7 +36,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rokfin.com" }, urls = { "https?://(www\\.)?rokfin.com/post/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rokfin.com" }, urls = { "https?://(www\\.)?rokfin.com/(post|stream)/\\d+" })
 public class RokfinCom extends PluginForDecrypt {
     public RokfinCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,19 +53,45 @@ public class RokfinCom extends PluginForDecrypt {
         if (postID != null) {
             // free posts with without authentication
             map = JSonStorage.restoreFromString(brc.getPage("https://prod-api-v2.production.rokfin.com/api/v2/public/post/" + postID), TypeRef.HASHMAP);
+            final String type = (String) JavaScriptEngineFactory.walkJson(map, "content/contentType");
+            if (!"video".equalsIgnoreCase(type) && !"audio".equalsIgnoreCase(type)) {
+                logger.info("Unsupported type:" + type);
+                return new ArrayList<DownloadLink>();
+            } else {
+                final String title = (String) JavaScriptEngineFactory.walkJson(map, "content/contentTitle");
+                if (StringUtils.isEmpty(title)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String premiumPlan = StringUtils.valueOfOrNull(JavaScriptEngineFactory.walkJson(map, "premiumPlan"));
+                if ("true".equalsIgnoreCase(premiumPlan) || "1".equalsIgnoreCase(premiumPlan)) {
+                    throw new AccountRequiredException(title);
+                }
+                final String m3u8 = (String) JavaScriptEngineFactory.walkJson(map, "content/contentUrl");
+                if (StringUtils.isEmpty(m3u8) || StringUtils.equalsIgnoreCase("fake.m3u8", m3u8)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                brc = br.cloneBrowser();
+                brc.getPage(m3u8);
+                final ArrayList<DownloadLink> ret = GenericM3u8Decrypter.parseM3U8(this, m3u8, brc, null, null, null, title);
+                if (ret.size() > 1) {
+                    final FilePackage fp = FilePackage.getInstance();
+                    fp.setName(title);
+                    fp.addLinks(ret);
+                }
+                return ret;
+            }
         } else {
-            // requires authentication
+            // may require authentication
             map = JSonStorage.restoreFromString(brc.getPage("https://prod-api-v2.production.rokfin.com/api/v2/public/stream/" + streamID), TypeRef.HASHMAP);
-        }
-        final String type = (String) JavaScriptEngineFactory.walkJson(map, "content/contentType");
-        if (!"video".equalsIgnoreCase(type)) {
-            return new ArrayList<DownloadLink>();
-        } else {
-            final String title = (String) JavaScriptEngineFactory.walkJson(map, "content/contentTitle");
+            final String title = (String) JavaScriptEngineFactory.walkJson(map, "title");
             if (StringUtils.isEmpty(title)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String m3u8 = (String) JavaScriptEngineFactory.walkJson(map, "content/contentUrl");
+            final String premium = StringUtils.valueOfOrNull(JavaScriptEngineFactory.walkJson(map, "premium"));
+            if ("true".equalsIgnoreCase(premium) || "1".equalsIgnoreCase(premium)) {
+                throw new AccountRequiredException(title);
+            }
+            final String m3u8 = (String) JavaScriptEngineFactory.walkJson(map, "vodUrl");
             if (StringUtils.isEmpty(m3u8)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
