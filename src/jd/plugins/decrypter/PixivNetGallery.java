@@ -25,6 +25,8 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.PixivNetConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -135,7 +137,16 @@ public class PixivNetGallery extends PluginForDecrypt {
             if (illustType == 2) {
                 logger.info("Found animation (?)");
                 try {
-                    br.getPage("/ajax/illust/" + itemID + "/ugoira_meta?lang=en");
+                    final String animationsMetadataURL = this.br.getURL("/ajax/illust/" + itemID + "/ugoira_meta?lang=en").toString();
+                    br.getPage(animationsMetadataURL);
+                    final String filenameBase = itemID + "_" + illustTitle;
+                    if (PluginJsonConfig.get(this.getConfigInterface()).isCrawlAnimationsMetadata()) {
+                        final DownloadLink meta = this.createDownloadlink(animationsMetadataURL);
+                        meta.setFinalFileName(filenameBase + ".json");
+                        meta.setAvailable(true);
+                        meta.setProperty(PixivNet.ANIMATION_META, br.toString());
+                        decryptedLinks.add(meta);
+                    }
                     final String zipURL = PluginJSonUtils.getJson(br, "originalSrc");
                     if (!StringUtils.isEmpty(zipURL)) {
                         final DownloadLink dl = createDownloadlink(zipURL.replaceAll("https?://", "decryptedpixivnet://"));
@@ -146,7 +157,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                         }
                         dl.setProperty(PixivNet.PROPERTY_GALLERYURL, br.getURL());
                         dl.setContentUrl(parameter);
-                        dl.setFinalFileName(itemID + "_" + illustTitle + ".zip");
+                        dl.setFinalFileName(filenameBase + ".zip");
                         dl.setAvailable(true);
                         decryptedLinks.add(dl);
                     }
@@ -394,5 +405,10 @@ public class PixivNetGallery extends PluginForDecrypt {
     // }
     public static boolean isAccountOrRightsRequired(final Browser br) {
         return br.getURL().contains("return_to=");
+    }
+
+    @Override
+    public Class<? extends PixivNetConfig> getConfigInterface() {
+        return PixivNetConfig.class;
     }
 }

@@ -75,13 +75,20 @@ public class NhentaiNet extends antiDDoSForDecrypt {
             json = PluginJSonUtils.unescape(json);
             Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
             Map<String, Object> titles = (Map<String, Object>) entries.get("title");
-            title = br.getRegex("id\\s*=\\s*\"info\"\\s*>\\s*<h1>\\s*(.*?)\\s*</h1>").getMatch(0);
             title = (String) titles.get("english");
             if (StringUtils.isEmpty(title)) {
                 title = (String) titles.get("english");
             }
-        } catch (final Throwable e) {
-            logger.log(e);
+        } catch (final Throwable ignore) {
+            logger.log(ignore);
+        }
+        if (title == null) {
+            /* nhentai.xxx */
+            title = br.getRegex("id\\s*=\\s*\"info\"\\s*>\\s*<h1[^>]*><span class=\"pretty\">\\s*(.*?)\\s*<").getMatch(0);
+        }
+        if (title == null) {
+            /* nhentai.to */
+            title = br.getRegex("id\\s*=\\s*\"info\"\\s*>\\s*<h1[^>]*>\\s*(.*?)\\s*<").getMatch(0);
         }
         if (StringUtils.isEmpty(title)) {
             /* Fallback */
