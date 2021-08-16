@@ -23,7 +23,6 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -44,6 +43,7 @@ public class DownloadSaikoanimesNetFolder extends PluginForDecrypt {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "download.saikoanimes.net" });
+        ret.add(new String[] { "storage.saikoanimes.net" });
         return ret;
     }
 
@@ -76,15 +76,16 @@ public class DownloadSaikoanimesNetFolder extends PluginForDecrypt {
         query.add("withEntries", "true");
         /* TODO: Add pagination support */
         query.add("page", "1");
-        br.getPage("https://download.saikoanimes.net/secure/drive/shareable-links/" + folderID + "?" + query.toString());
+        br.getPage("https://" + this.getHost() + "/secure/drive/shareable-links/" + folderID + "?" + query.toString());
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> folderChildren = (Map<String, Object>) entries.get("folderChildren");
         final Map<String, Object> linkInfo = (Map<String, Object>) entries.get("link");
-        final Map<String, Object> folderInfo = (Map<String, Object>) linkInfo.get("entry");
-        final String folderName = (String) folderInfo.get("name");
+        final Map<String, Object> fileFolderInfo = (Map<String, Object>) linkInfo.get("entry");
+        final String folderName = (String) fileFolderInfo.get("name");
         final FilePackage fp = FilePackage.getInstance();
         if (!StringUtils.isEmpty(folderName)) {
             fp.setName(folderName);
@@ -95,14 +96,21 @@ public class DownloadSaikoanimesNetFolder extends PluginForDecrypt {
         /* TODO: Find out what happens when this == false */
         // final boolean allowDownload = ((Boolean)linkInfo.get("allow_download")).booleanValue();
         final int linkID = ((Number) linkInfo.get("id")).intValue();
-        final List<Object> ressourcelist = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "folderChildren/data");
-        for (final Object fileO : ressourcelist) {
-            entries = (Map<String, Object>) fileO;
-            final String filename = (String) entries.get("name");
+        List<Map<String, Object>> ressourcelist = null;
+        if (((Number) folderChildren.get("total")).intValue() > 0) {
+            /* Add all items of a folder */
+            ressourcelist = (List<Map<String, Object>>) folderChildren.get("data");
+        } else {
+            /* Assume we got a single file --> Add that */
+            ressourcelist = new ArrayList<Map<String, Object>>();
+            ressourcelist.add(fileFolderInfo);
+        }
+        for (final Map<String, Object> file : ressourcelist) {
+            final String filename = (String) file.get("name");
             // final String url = (String) entries.get("url");
-            final String hash = (String) entries.get("hash");
-            final long filesize = ((Number) entries.get("file_size")).longValue();
-            final DownloadLink dl = this.createDownloadlink("directhttp://https://download.saikoanimes.net/secure/uploads/download?hashes=" + hash + "&shareable_link=" + linkID);
+            final String hash = (String) file.get("hash");
+            final long filesize = ((Number) file.get("file_size")).longValue();
+            final DownloadLink dl = this.createDownloadlink("directhttp://https://" + this.getHost() + "/secure/uploads/download?hashes=" + hash + "&shareable_link=" + linkID);
             dl.setFinalFileName(filename);
             dl.setVerifiedFileSize(filesize);
             dl.setAvailable(true);
