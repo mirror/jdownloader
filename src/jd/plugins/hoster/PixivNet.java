@@ -20,6 +20,18 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.Files;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.PixivNetConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -42,17 +54,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "decryptedpixivnet://(?:www\\.)?.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "decryptedpixivnet://(?:www\\.)?.+|https?://(?:www\\.)?pixiv\\.net/ajax/illust/\\d+/ugoira_meta" })
 public class PixivNet extends PluginForHost {
     public PixivNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -60,7 +62,7 @@ public class PixivNet extends PluginForHost {
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("decryptedpixivnet://", "https://"));
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("decryptedpixivnet://", "https://"));
     }
 
     @Override
@@ -70,6 +72,7 @@ public class PixivNet extends PluginForHost {
 
     public static Browser prepBR(final Browser br) {
         br.setAllowedResponseCodes(new int[] { 400 });
+        br.setFollowRedirects(true);
         return br;
     }
 
@@ -83,78 +86,73 @@ public class PixivNet extends PluginForHost {
     }
 
     /* Extension which will be used if no correct extension is found */
-    public static final String default_extension            = ".jpg";
+    public static final String  default_extension            = ".jpg";
     /* Connection stuff */
-    private final boolean      FREE_RESUME                  = true;
-    private final int          FREE_MAXCHUNKS               = 1;
-    private final int          FREE_MAXDOWNLOADS            = 20;
-    private final boolean      ACCOUNT_FREE_RESUME          = true;
-    private final int          ACCOUNT_FREE_MAXCHUNKS       = 1;
+    private final boolean       FREE_RESUME                  = true;
+    private final int           FREE_MAXCHUNKS               = 1;
+    private final int           FREE_MAXDOWNLOADS            = 20;
+    private final boolean       ACCOUNT_FREE_RESUME          = true;
+    private final int           ACCOUNT_FREE_MAXCHUNKS       = 1;
     // private final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
     // private final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 1;
-    private final int          ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    private String             dllink                       = null;
-    private boolean            server_issues                = false;
+    private final int           ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private String              dllink                       = null;
+    private boolean             server_issues                = false;
     /* DownloadLink Properties / Packagizer properties */
-    public static final String PROPERTY_MAINLINK            = "mainlink";
-    public static final String PROPERTY_GALLERYID           = "galleryid";
-    public static final String PROPERTY_GALLERYURL          = "galleryurl";
-    public static final String PROPERTY_UPLOADDATE          = "createdate";
-    public static final String PROPERTY_UPLOADER            = "uploader";
+    public static final String  PROPERTY_MAINLINK            = "mainlink";
+    public static final String  PROPERTY_GALLERYID           = "galleryid";
+    public static final String  PROPERTY_GALLERYURL          = "galleryurl";
+    public static final String  PROPERTY_UPLOADDATE          = "createdate";
+    public static final String  PROPERTY_UPLOADER            = "uploader";
+    public static final String  ANIMATION_META               = "animation_meta";
+    private static final String TYPE_ANIMATION_META          = "https?://[^/]+/ajax/illust/(\\d+)/ugoira_meta";
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        if (link.getPluginPatternMatcher() != null) {
+            if (link.getPluginPatternMatcher().matches(TYPE_ANIMATION_META)) {
+                return new Regex(link.getPluginPatternMatcher(), TYPE_ANIMATION_META).getMatch(0);
+            } else {
+                return null;
+            }
+        } else {
+            return null;
+        }
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         prepBR(this.br);
-        Account account = AccountController.getInstance().getValidAccount(this);
-        if (!(Thread.currentThread() instanceof SingleDownloadController)) {
-            this.setBrowserExclusive();
-            if (account != null) {
-                try {
-                    login(this, br, account, false, false);
-                } catch (Exception e) {
-                    account = null;
-                    logger.log(e);
-                }
+        if (link.getPluginPatternMatcher().matches(TYPE_ANIMATION_META)) {
+            if (!link.isNameSet()) {
+                link.setName(this.getFID(link));
             }
-        }
-        final String galleryurl = link.getStringProperty("galleryurl", null);
-        if (galleryurl == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        br.getPage(galleryurl);
-        if (jd.plugins.decrypter.PixivNetGallery.isOffline(this.br)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        dllink = link.getDownloadURL();
-        URLConnectionAdapter con = null;
-        if (account != null) {
-            logger.info("Account is available --> Trying to download original quality");
-            String original = dllink.replaceFirst("/img-master/", "/img-original/").replaceFirst("_master\\d+", "").replaceFirst("/c/\\d+x\\d+/", "/");
+            URLConnectionAdapter con = null;
+            final Browser brc = br.cloneBrowser();
             try {
-                con = br.openHeadConnection(original);
-                if (!con.isOK() || con.getContentType().contains("html")) {
-                    con.disconnect();
-                    if (original.matches(".*?\\.jpe?g$")) {
-                        original = original.replaceFirst("\\.jpe?g$", ".png");
-                        con = br.openHeadConnection(original);
-                    } else if (original.matches(".*?\\.png$")) {
-                        original = original.replaceFirst("\\.png$", ".jpg");
-                        con = br.openHeadConnection(original);
+                con = brc.openHeadConnection(link.getPluginPatternMatcher());
+                if (con.getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (this.looksLikeDownloadableContent(con)) {
+                    if (link.getFinalFileName() == null) {
+                        link.setFinalFileName(this.getFID(link) + ".json");
                     }
-                }
-                if (!con.getContentType().contains("html") && con.isOK()) {
-                    logger.info("Original download: success");
-                    dllink = original;
-                    final String urlExtension = getFileNameExtensionFromURL(original);
-                    final String nameExtension = Files.getExtension(link.getName());
-                    if (!StringUtils.endsWithCaseInsensitive(urlExtension, nameExtension)) {
-                        link.setFinalFileName(link.getName().replaceFirst("\\." + Pattern.quote(nameExtension) + "$", urlExtension));
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
-                    link.setDownloadSize(con.getLongContentLength());
-                    return AvailableStatus.TRUE;
+                    this.dllink = link.getPluginPatternMatcher();
                 } else {
-                    logger.info("Original download: failure");
+                    server_issues = true;
                 }
             } finally {
                 try {
@@ -165,57 +163,134 @@ public class PixivNet extends PluginForHost {
                 }
             }
         } else {
-            logger.info("Account is not available --> NOT trying to download original quality");
-        }
-        try {
-            con = br.openHeadConnection(dllink);
-            if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (!con.getContentType().contains("html") && con.isOK()) {
-                final String urlExtension = getFileNameExtensionFromURL(dllink);
-                final String nameExtension = Files.getExtension(link.getName());
-                if (!StringUtils.endsWithCaseInsensitive(urlExtension, nameExtension)) {
-                    link.setFinalFileName(link.getName().replaceFirst("\\." + Pattern.quote(nameExtension) + "$", urlExtension));
+            Account account = AccountController.getInstance().getValidAccount(this);
+            if (!(Thread.currentThread() instanceof SingleDownloadController)) {
+                this.setBrowserExclusive();
+                if (account != null) {
+                    try {
+                        login(this, br, account, false, false);
+                    } catch (Exception e) {
+                        account = null;
+                        logger.log(e);
+                    }
                 }
-                link.setDownloadSize(con.getLongContentLength());
-            } else {
-                server_issues = true;
             }
-        } finally {
-            try {
-                if (con != null) {
-                    con.disconnect();
+            final String galleryurl = link.getStringProperty("galleryurl", null);
+            if (galleryurl == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            br.getPage(galleryurl);
+            if (jd.plugins.decrypter.PixivNetGallery.isOffline(this.br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            dllink = link.getPluginPatternMatcher();
+            URLConnectionAdapter con = null;
+            if (account != null) {
+                logger.info("Account is available --> Trying to download original quality");
+                String original = dllink.replaceFirst("/img-master/", "/img-original/").replaceFirst("_master\\d+", "").replaceFirst("/c/\\d+x\\d+/", "/");
+                try {
+                    con = br.openHeadConnection(original);
+                    if (!con.isOK() || con.getContentType().contains("html")) {
+                        con.disconnect();
+                        if (original.matches(".*?\\.jpe?g$")) {
+                            original = original.replaceFirst("\\.jpe?g$", ".png");
+                            con = br.openHeadConnection(original);
+                        } else if (original.matches(".*?\\.png$")) {
+                            original = original.replaceFirst("\\.png$", ".jpg");
+                            con = br.openHeadConnection(original);
+                        }
+                    }
+                    if (this.looksLikeDownloadableContent(con)) {
+                        logger.info("Original download: success");
+                        dllink = original;
+                        final String urlExtension = getFileNameExtensionFromURL(original);
+                        final String nameExtension = Files.getExtension(link.getName());
+                        if (!StringUtils.endsWithCaseInsensitive(urlExtension, nameExtension)) {
+                            link.setFinalFileName(link.getName().replaceFirst("\\." + Pattern.quote(nameExtension) + "$", urlExtension));
+                        }
+                        if (con.getCompleteContentLength() > 0) {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
+                        return AvailableStatus.TRUE;
+                    } else {
+                        logger.info("Original download: failure");
+                    }
+                } finally {
+                    try {
+                        if (con != null) {
+                            con.disconnect();
+                        }
+                    } catch (final Throwable e) {
+                    }
                 }
-            } catch (final Throwable e) {
+            } else {
+                logger.info("Account is not available --> NOT trying to download original quality");
+            }
+            try {
+                con = br.openHeadConnection(dllink);
+                if (con.getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (this.looksLikeDownloadableContent(con)) {
+                    final String urlExtension = getFileNameExtensionFromURL(dllink);
+                    final String nameExtension = Files.getExtension(link.getName());
+                    if (!StringUtils.endsWithCaseInsensitive(urlExtension, nameExtension)) {
+                        link.setFinalFileName(link.getName().replaceFirst("\\." + Pattern.quote(nameExtension) + "$", urlExtension));
+                    }
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                } else {
+                    server_issues = true;
+                }
+            } finally {
+                try {
+                    if (con != null) {
+                        con.disconnect();
+                    }
+                } catch (final Throwable e) {
+                }
             }
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
+        link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
+    }
+
+    @Override
+    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
+        if (urlConnection.getURL().toString().matches(TYPE_ANIMATION_META)) {
+            return urlConnection.isOK() && urlConnection.getContentType().contains("json");
+        } else {
+            return super.looksLikeDownloadableContent(urlConnection);
+        }
     }
 
     @Override
@@ -476,5 +551,10 @@ public class PixivNet extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    public Class<? extends PixivNetConfig> getConfigInterface() {
+        return PixivNetConfig.class;
     }
 }
