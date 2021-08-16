@@ -98,9 +98,7 @@ public class PluginJSonUtils {
                         ii = i + 4;
                         for (; i < ii; i++) {
                             ch = s.charAt(i);
-                            if (sb2.length() > 0 || ch != '0') {
-                                sb2.append(ch);
-                            }
+                            sb2.append(ch);
                         }
                         i--;
                         // can not use short....
