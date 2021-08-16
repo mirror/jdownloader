@@ -15,18 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -38,6 +31,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class LiteroticaCom extends PluginForHost {
@@ -165,21 +164,13 @@ public class LiteroticaCom extends PluginForHost {
             }
         } while (!this.isAbort());
         /* Write text to file */
-        BufferedWriter dest = null;
-        try {
-            final File source = new File(link.getFileOutput());
-            dest = new BufferedWriter(new FileWriter(new File(source.getAbsolutePath())));
-            dest.write(sb.toString());
-        } finally {
-            try {
-                dest.close();
-            } catch (IOException e) {
-            }
-        }
+        /* Write text to file */
+        final File dest = new File(link.getFileOutput());
+        IO.writeToFile(dest, sb.toString().getBytes("UTF-8"), IO.SYNC.META_AND_DATA);
         /* Set filesize so user can see it in UI. */
-        link.setVerifiedFileSize(sb.toString().getBytes("UTF-8").length);
-        /* Set progress to finished - the "download" is complete ;) */
-        link.getDownloadLinkController().getLinkStatus().setStatus(LinkStatus.FINISHED);
+        link.setVerifiedFileSize(dest.length());
+        /* Set progress to finished - the "download" is complete. */
+        link.getLinkStatus().setStatus(LinkStatus.FINISHED);
     }
 
     @Override
