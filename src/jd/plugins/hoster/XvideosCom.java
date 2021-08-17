@@ -149,14 +149,16 @@ public class XvideosCom extends PluginForHost {
         return -1;
     }
 
-    private static final String type_normal      = "https?://[^/]+/video(\\d+)(/(.+))?$";
-    private static final String type_embed       = "https?://[^/]+/embedframe/(\\d+)";
-    private static final String type_special1    = "https?://[^/]+/[^/]+/upload/[^/]+/(\\d+)/([a-z0-9_\\-]+)";
-    private static final String type_special2    = "https?://[^/]+/[^/]+/(upload|pornstar|model)/([a-z0-9\\-\\_]+)/(\\d+).*";
-    private static final String NOCHUNKS         = "NOCHUNKS";
-    private String              streamURL        = null;
-    private HlsContainer        hlsContainer     = null;
-    private static final String URL_BASE_PREMIUM = "https://www.xvideos.red";
+    private static final String type_normal       = "https?://[^/]+/video(\\d+)(/(.+))?$";
+    private static final String type_embed        = "https?://[^/]+/embedframe/(\\d+)";
+    private static final String type_special1     = "https?://[^/]+/[^/]+/upload/[^/]+/(\\d+)/([a-z0-9_\\-]+)";
+    private static final String type_special2     = "https?://[^/]+/[^/]+/(upload|pornstar|model)/([a-z0-9\\-\\_]+)/(\\d+).*";
+    private static final String NOCHUNKS          = "NOCHUNKS";
+    private String              streamURL         = null;
+    private HlsContainer        hlsContainer      = null;
+    private static final String URL_BASE_PREMIUM  = "https://www.xvideos.red";
+    private static final String PROPERTY_USERNAME = "username";
+    private static final String PROPERTY_TAGS     = "tags";
 
     public void correctDownloadLink(final DownloadLink link) {
         if (!link.getPluginPatternMatcher().matches(type_normal)) {
@@ -303,10 +305,23 @@ public class XvideosCom extends PluginForHost {
             }
         }
         {
-            /* Set packagizer property */
+            /* Set packagizer properties */
             final String uploadername = PluginJSonUtils.getJson(br, "uploader");
             if (StringUtils.isEmpty(link.getStringProperty("username", null)) && !StringUtils.isEmpty(uploadername)) {
-                link.setProperty("username", uploadername);
+                link.setProperty(PROPERTY_USERNAME, uploadername);
+            }
+            final String[] tagsList = br.getRegex("<a[^>]*href=\"/tags/([^\"]+)\"[^>]*class=\"btn btn-default\"[^>]*>").getColumn(0);
+            if (tagsList.length > 0) {
+                final StringBuilder sb = new StringBuilder();
+                int index = 0;
+                for (final String tag : tagsList) {
+                    sb.append(Encoding.htmlDecode(tag).trim());
+                    if (index < tagsList.length - 1) {
+                        sb.append(",");
+                    }
+                    index += 1;
+                }
+                link.setProperty(PROPERTY_TAGS, sb.toString());
             }
         }
         final String videoID = getVideoID(link);
