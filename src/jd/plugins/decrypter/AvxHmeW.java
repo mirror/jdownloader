@@ -20,8 +20,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -39,6 +37,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.captcha.v2.challenge.hcaptcha.AbstractHCaptcha;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 /**
  * @author typek_pb
@@ -115,9 +118,19 @@ public class AvxHmeW extends PluginForDecrypt {
                     counter++;
                     logger.info("Captcha attempt " + counter);
                     final Form captchaForm = br.getForm(0);
-                    if (captchaForm.hasInputFieldByName("g-recaptcha-response")) {
+                    if (AbstractRecaptchaV2.containsRecaptchaV2Class(br)) {
                         final String siteURL = br.getURL("/").toString();
                         final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br) {
+                            protected String getSiteUrl() {
+                                // special handling
+                                // being logged in can result in auto redirect/no captcha
+                                return siteURL;
+                            };
+                        }.getToken();
+                        captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    } else if (AbstractHCaptcha.containsHCaptcha(br)) {
+                        final String siteURL = br.getURL("/").toString();
+                        final String recaptchaV2Response = new CaptchaHelperCrawlerPluginHCaptcha(this, br) {
                             protected String getSiteUrl() {
                                 // special handling
                                 // being logged in can result in auto redirect/no captcha

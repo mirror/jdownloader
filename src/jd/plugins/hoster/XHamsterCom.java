@@ -27,18 +27,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -62,6 +50,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XHamsterCom extends PluginForHost {
@@ -319,15 +319,18 @@ public class XHamsterCom extends PluginForHost {
             final String[] tagsList = br.getRegex("<a class=\"categories-container__item\"[^>]*href=\"https?://[^/]+/tags/([^\"]+)\"").getColumn(0);
             if (tagsList.length > 0) {
                 final StringBuilder sb = new StringBuilder();
-                int index = 0;
-                for (final String tag : tagsList) {
-                    sb.append(Encoding.htmlDecode(tag).trim());
-                    if (index < tagsList.length - 1) {
-                        sb.append(",");
+                for (String tag : tagsList) {
+                    tag = Encoding.htmlDecode(tag).trim();
+                    if (StringUtils.isNotEmpty(tag)) {
+                        if (sb.length() > 0) {
+                            sb.append(",");
+                        }
+                        sb.append(tag);
                     }
-                    index += 1;
                 }
-                link.setProperty(PROPERTY_TAGS, sb.toString());
+                if (sb.length() > 0) {
+                    link.setProperty(PROPERTY_TAGS, sb.toString());
+                }
             }
             final int responsecode = br.getRequest().getHttpConnection().getResponseCode();
             if (responsecode == 423) {
