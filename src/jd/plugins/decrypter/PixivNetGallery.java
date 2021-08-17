@@ -92,7 +92,7 @@ public class PixivNetGallery extends PluginForDecrypt {
             final long illustType = JavaScriptEngineFactory.toLong(entries.get("illustType"), 0);
             uploadDate = (String) entries.get("uploadDate");
             int pagecount = (int) JavaScriptEngineFactory.toLong(entries.get("pageCount"), 1);
-            final String userName = (String) entries.get("userName");
+            final String username = (String) entries.get("userName");
             final String illustUploadDate = (String) entries.get("createDate");
             String illustTitle = (String) entries.get("illustTitle");
             String tags = null;
@@ -112,7 +112,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                 illustTitle = itemID;
             }
             final String singleLink = (String) JavaScriptEngineFactory.walkJson(entries, "urls/regular");
-            decryptedLinks.add(generateDownloadLink(parameter, itemID, illustTitle, illustUploadDate, userName, tags, singleLink));
+            decryptedLinks.add(generateDownloadLink(parameter, itemID, illustTitle, illustUploadDate, username, tags, singleLink));
             if (pagecount > 1) {
                 /* == click on "Load more" */
                 br.getPage(String.format("https://www.%s/ajax/illust/%s/pages?lang=en", this.getHost(), itemID));
@@ -131,7 +131,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                         /* Skip invalid items */
                         continue;
                     }
-                    decryptedLinks.add(generateDownloadLink(parameter, itemID, illustTitle, illustUploadDate, userName, tags, directurl));
+                    decryptedLinks.add(generateDownloadLink(parameter, itemID, illustTitle, illustUploadDate, username, tags, directurl));
                 }
             }
             if (illustType == 2) {
@@ -145,21 +145,32 @@ public class PixivNetGallery extends PluginForDecrypt {
                         meta.setFinalFileName(filenameBase + ".json");
                         meta.setAvailable(true);
                         meta.setProperty(PixivNet.ANIMATION_META, br.toString());
+                        if (!StringUtils.isEmpty(uploadDate)) {
+                            meta.setProperty(PixivNet.PROPERTY_UPLOADDATE, uploadDate);
+                        }
+                        if (!StringUtils.isEmpty(username)) {
+                            /* Packagizer property */
+                            meta.setProperty(PixivNet.PROPERTY_UPLOADER, username);
+                        }
                         decryptedLinks.add(meta);
                     }
                     final String zipURL = PluginJSonUtils.getJson(br, "originalSrc");
                     if (!StringUtils.isEmpty(zipURL)) {
-                        final DownloadLink dl = createDownloadlink(zipURL.replaceAll("https?://", "decryptedpixivnet://"));
-                        dl.setProperty(PixivNet.PROPERTY_MAINLINK, parameter);
+                        final DownloadLink zip = createDownloadlink(zipURL.replaceAll("https?://", "decryptedpixivnet://"));
+                        zip.setProperty(PixivNet.PROPERTY_MAINLINK, parameter);
                         // dl.setProperty(PixivNet.PROPERTY_GALLERYID, userid);
                         if (!StringUtils.isEmpty(uploadDate)) {
-                            dl.setProperty(PixivNet.PROPERTY_UPLOADDATE, uploadDate);
+                            zip.setProperty(PixivNet.PROPERTY_UPLOADDATE, uploadDate);
                         }
-                        dl.setProperty(PixivNet.PROPERTY_GALLERYURL, br.getURL());
-                        dl.setContentUrl(parameter);
-                        dl.setFinalFileName(filenameBase + ".zip");
-                        dl.setAvailable(true);
-                        decryptedLinks.add(dl);
+                        if (!StringUtils.isEmpty(username)) {
+                            /* Packagizer property */
+                            zip.setProperty(PixivNet.PROPERTY_UPLOADER, username);
+                        }
+                        zip.setProperty(PixivNet.PROPERTY_GALLERYURL, br.getURL());
+                        zip.setContentUrl(parameter);
+                        zip.setFinalFileName(filenameBase + ".zip");
+                        zip.setAvailable(true);
+                        decryptedLinks.add(zip);
                     }
                 } catch (final Throwable e) {
                     logger.warning("Failure in animation crawler handling");
