@@ -42,7 +42,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -144,6 +143,9 @@ public class XHamsterCom extends PluginForHost {
     private static final String   TYPE_VIDEOS                     = "(?i)^https?://[^/]+/videos/([A-Za-z0-9]+)$";
     private static final String   TYPE_VIDEOS_2                   = "(?i)^https?://[^/]+/videos/([a-z0-9\\-_]+)-(\\d+)$";
     private static final String   TYPE_VIDEOS_3                   = "(?i)^https?://[^/]+/videos/([a-z0-9\\-_]+)-([A-Za-z0-9]+)$";
+    private static final String   PROPERTY_USERNAME               = "username";
+    private static final String   PROPERTY_DATE                   = "date";
+    private static final String   PROPERTY_TAGS                   = "tags";
 
     private void setConfigElements() {
         String user_text;
@@ -305,6 +307,28 @@ public class XHamsterCom extends PluginForHost {
                 login(account, false);
             }
             br.getPage(link.getPluginPatternMatcher());
+            /* Set some Packagizer properties */
+            final String username = br.getRegex("class=\"entity-author-container__name\"[^>]*href=\"https?://[^/]+/users/([^<>\"]+)\"").getMatch(0);
+            final String datePublished = br.getRegex("\"datePublished\":\"(\\d{4}-\\d{2}-\\d{2})\"").getMatch(0);
+            if (username != null) {
+                link.setProperty(PROPERTY_USERNAME, username);
+            }
+            if (datePublished != null) {
+                link.setProperty(PROPERTY_DATE, datePublished);
+            }
+            final String[] tagsList = br.getRegex("<a class=\"categories-container__item\"[^>]*href=\"https?://[^/]+/tags/([^\"]+)\"").getColumn(0);
+            if (tagsList.length > 0) {
+                final StringBuilder sb = new StringBuilder();
+                int index = 0;
+                for (final String tag : tagsList) {
+                    sb.append(Encoding.htmlDecode(tag).trim());
+                    if (index < tagsList.length - 1) {
+                        sb.append(",");
+                    }
+                    index += 1;
+                }
+                link.setProperty(PROPERTY_TAGS, sb.toString());
+            }
             final int responsecode = br.getRequest().getHttpConnection().getResponseCode();
             if (responsecode == 423) {
                 if (br.containsHTML(">\\s*This (gallery|video) is visible (for|to) <")) {
@@ -764,7 +788,7 @@ public class XHamsterCom extends PluginForHost {
                 }
                 if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                     /* New way */
-                    final String videoID = this.getFID(link);
+                    final String videoID = getFID(link);
                     if (videoID == null) {
                         /* This should never happen */
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -792,7 +816,7 @@ public class XHamsterCom extends PluginForHost {
                     /* Old way */
                     br.postPage(br.getURL(), "password=" + Encoding.urlEncode(passCode));
                     if (isPasswordProtected()) {
-                        link.setProperty("pass", Property.NULL);
+                        link.setDownloadPassword(null);
                         throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                     }
                 }
@@ -837,7 +861,7 @@ public class XHamsterCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error");
             }
             if (passCode != null) {
-                link.setProperty("pass", passCode);
+                link.setDownloadPassword(passCode);
             }
             dl.startDownload();
         }

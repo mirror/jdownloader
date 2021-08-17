@@ -26,6 +26,12 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -47,12 +53,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubCom extends PluginForDecrypt {
@@ -733,7 +733,7 @@ public class PornHubCom extends PluginForDecrypt {
                 final boolean isLastItem = index == categories.length - 1;
                 categoriesCommaSeparated += categories[index];
                 if (!isLastItem) {
-                    categoriesCommaSeparated += ", ";
+                    categoriesCommaSeparated += ",";
                 }
             }
         }
@@ -779,11 +779,6 @@ public class PornHubCom extends PluginForDecrypt {
                         dl.setProperty("viewkey", viewkey);
                         dl.setProperty(jd.plugins.hoster.PornHubCom.PROPERT_FORMAT, format);
                         dl.setLinkID("pornhub://" + viewkey + "_" + format + "_" + quality);
-                        if (!StringUtils.isEmpty(username)) {
-                            html_filename += username + "_";
-                            /* This property is only for the user (packagizer) and not required anywhere in our host plugin! */
-                            dl.setProperty("username", username);
-                        }
                         if (StringUtils.equalsIgnoreCase(format, "hls")) {
                             html_filename += "hls_" + quality + "p.mp4";
                         } else {
@@ -795,12 +790,18 @@ public class PornHubCom extends PluginForDecrypt {
                             dl.setFinalFileName(html_filename);
                         }
                         dl.setProperty("decryptedfilename", html_filename);
-                        if (!StringUtils.isEmpty(uploadDate)) {
-                            dl.setProperty(jd.plugins.hoster.PornHubCom.PROPERT_DATE, uploadDate);
-                        }
-                        if (!StringUtils.isEmpty(categoriesCommaSeparated)) {
-                            /* Packagizer property */
-                            dl.setProperty(jd.plugins.hoster.PornHubCom.PROPERT_CATEGORIES_COMMA_SEPARATED, categoriesCommaSeparated);
+                        /* Set some Packagizer properties */
+                        {
+                            if (!StringUtils.isEmpty(username)) {
+                                html_filename += username + "_";
+                                dl.setProperty(jd.plugins.hoster.PornHubCom.PROPERTY_USERNAME, username);
+                            }
+                            if (!StringUtils.isEmpty(uploadDate)) {
+                                dl.setProperty(jd.plugins.hoster.PornHubCom.PROPERT_DATE, uploadDate);
+                            }
+                            if (!StringUtils.isEmpty(categoriesCommaSeparated)) {
+                                dl.setProperty(jd.plugins.hoster.PornHubCom.PROPERTY_CATEGORIES_COMMA_SEPARATED, categoriesCommaSeparated);
+                            }
                         }
                         dl.setContentUrl(parameter);
                         if (fastlinkcheck) {
