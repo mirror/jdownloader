@@ -22,6 +22,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.appwork.utils.DebugMode;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -40,9 +43,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.XvideosCom;
-
-import org.appwork.utils.DebugMode;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XvideosComProfile extends PluginForDecrypt {
@@ -106,7 +106,8 @@ public class XvideosComProfile extends PluginForDecrypt {
          * 2020-10-12: In general, we use the user-added domain but some are dead but the content might still be alive --> Use main plugin
          * domain for such cases
          */
-        for (final String deadDomain : XvideosCom.deadDomains) {
+        final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
+        for (final String deadDomain : ((jd.plugins.hoster.XvideosCom) plg).getDeadDomains()) {
             if (param.getCryptedUrl().contains(deadDomain)) {
                 param.setCryptedUrl(param.getCryptedUrl().replaceFirst(org.appwork.utils.Regex.escape(deadDomain) + "/", this.getHost() + "/"));
                 break;
@@ -117,7 +118,6 @@ public class XvideosComProfile extends PluginForDecrypt {
         br.addAllowedResponseCodes(new int[] { 400 });
         br.setFollowRedirects(true);
         Account account = AccountController.getInstance().getValidAccount(getHost());
-        final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
         if (account != null) {
             ((jd.plugins.hoster.XvideosCom) plg).login(this, account, false);
         }

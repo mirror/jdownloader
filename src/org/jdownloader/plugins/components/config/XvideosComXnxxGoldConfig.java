@@ -3,6 +3,6 @@ package org.jdownloader.plugins.components.config;
 import org.jdownloader.plugins.config.PluginHost;
 import org.jdownloader.plugins.config.Type;
 
-@PluginHost(host = "xvideos.com", type = Type.HOSTER)
-public interface XvideosComConfig extends XvideosComConfigCore {
+@PluginHost(host = "xnxx.gold", type = Type.HOSTER)
+public interface XvideosComXnxxGoldConfig extends XvideosComConfigCore {
 }

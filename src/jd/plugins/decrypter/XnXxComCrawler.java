@@ -19,13 +19,13 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.XnXxCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xnxx.com" }, urls = { "https?://[\\w\\.]*?xnxx\\.com/video-([a-z0-9\\-]+)(/[^/]+)?" })
 public class XnXxComCrawler extends PluginForDecrypt {
@@ -35,14 +35,13 @@ public class XnXxComCrawler extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        param.setCryptedUrl(XnXxCom.correctURL(param.getCryptedUrl()));
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
-        if (XnXxCom.isOffline(this.br)) {
+        if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* (Most of?) all content is hosted on xvideos.com and "double-embedded" on xnxx.com. */
-        final String finallink = this.br.getRegex("(https?://(?:www\\.)?xvideos\\.com/embedframe/\\d+)").getMatch(0);
+        final String finallink = this.br.getRegex("(https?://[^/]+/embedframe/\\d+)").getMatch(0);
         if (finallink == null) {
             final DownloadLink selfhosted = this.createDownloadlink(param.getCryptedUrl());
             selfhosted.setAvailable(true);
@@ -51,5 +50,9 @@ public class XnXxComCrawler extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(finallink));
         }
         return decryptedLinks;
+    }
+
+    public static final boolean isOffline(final Browser br) {
+        return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(Page not found|This page may be in preparation, please check back in a few minutes)");
     }
 }
