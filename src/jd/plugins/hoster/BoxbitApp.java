@@ -23,11 +23,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -73,16 +75,15 @@ public class BoxbitApp extends PluginForHost {
 
     private Browser prepBR(final Browser br) {
         br.setCookiesExclusive(true);
-        br.getHeaders().put("User-Agent", "JDownloader");
-        br.getHeaders().put("Accept", "application/json");
-        br.getHeaders().put("Content-Type", "application/json");
+        br.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, "JDownloader");
+        br.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT, "application/json");
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 422, 429 });
         return br;
     }
 
     private void setLoginHeader(final Browser br, final Account account) {
-        br.getHeaders().put("Authorization", "Bearer " + this.getLoginToken(account));
+        br.getHeaders().put(HTTPConstants.HEADER_REQUEST_AUTHORIZATION, "Bearer " + this.getLoginToken(account));
     }
 
     @Override
@@ -111,7 +112,7 @@ public class BoxbitApp extends PluginForHost {
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty)) {
             this.loginAPI(account, false);
             String passCode = link.getDownloadPassword();
-            if (passCode == null && link.isPasswordProtected()) {
+            if (link.isPasswordProtected() && passCode == null) {
                 passCode = getUserInput("Password?", link);
             }
             final Map<String, Object> postdata = new HashMap<String, Object>();
@@ -128,7 +129,7 @@ public class BoxbitApp extends PluginForHost {
             final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final String dllink = (String) entries.get("link");
             if (StringUtils.isEmpty(dllink)) {
-                handleErrors(this.br, account, link);
+                /* This should never happen */
                 mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, defaultMAXCHUNKS);
@@ -217,17 +218,20 @@ public class BoxbitApp extends PluginForHost {
             if (status == null) {
                 status = "";
             }
-            status += " | TokenValidity: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(this.getLoginTokenValidity(account));
+            status += "|TokenValidity: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(this.getLoginTokenValidity(account));
             ai.setStatus(status);
         }
         final ArrayList<String> supportedhostslist = new ArrayList<String>();
-        for (final Map<String, Object> hostInfo : hosts) {
-            final Map<String, Object> hostDetails = (Map<String, Object>) hostInfo.get("details");
-            final String host = (String) hostDetails.get("identifier");
-            if (hostDetails.get("status").toString().equalsIgnoreCase("working")) {
-                supportedhostslist.add(host);
-            } else {
-                logger.info("Skipping non working host: " + host);
+        /* Can be null for free accounts! */
+        if (hosts != null) {
+            for (final Map<String, Object> hostInfo : hosts) {
+                final Map<String, Object> hostDetails = (Map<String, Object>) hostInfo.get("details");
+                final String host = (String) hostDetails.get("identifier");
+                if (hostDetails.get("status").toString().equalsIgnoreCase("working")) {
+                    supportedhostslist.add(host);
+                } else {
+                    logger.info("Skipping non working host: " + host);
+                }
             }
         }
         ai.setMultiHostSupport(this, supportedhostslist);
@@ -279,17 +283,20 @@ public class BoxbitApp extends PluginForHost {
                         }
                     }
                     logger.info("Attempting token refresh");
-                    br.postPage(API_BASE + "/auth/refresh", "");
+                    /* Send empty POST request with existing token to get a fresh token */
+                    br.postPage(API_BASE + "/auth/refresh", new UrlQuery());
                     try {
                         this.handleErrors(this.br, account, getDownloadLink());
                         logger.info("Token refresh successful");
                         entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                        /* Store new token */
                         setAuthTokenData(account, (Map<String, Object>) entries.get("auth"));
+                        /* Set new auth header */
                         setLoginHeader(this.br, account);
                         return;
                     } catch (final PluginException tokenRefreshFailure) {
                         logger.warning("Token refresh failed");
-                        br.getHeaders().remove("Authorization");
+                        br.getHeaders().remove(HTTPConstants.HEADER_REQUEST_AUTHORIZATION);
                         /* Try full login as last-chance */
                     }
                 }
@@ -331,6 +338,7 @@ public class BoxbitApp extends PluginForHost {
         return account.getStringProperty(PROPERTY_userid);
     }
 
+    /** https://boxbit.readme.io/reference/user-filehost-list */
     private void accessUserInfo(final Browser br, final Account account) throws IOException {
         br.getPage(API_BASE + "/users/" + getUserID(account) + "/?with[]=subscription&with[]=current_subscription_filehosts&with[]=current_subscription_filehost_usages");
     }
@@ -342,7 +350,7 @@ public class BoxbitApp extends PluginForHost {
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final String message = (String) entries.get("message");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, message, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        } else if (br.getHttpConnection().getResponseCode() == 422) {
+        } else if (br.getHttpConnection().getResponseCode() == 422 || br.getHttpConnection().getResponseCode() == 429) {
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final String message = (String) entries.get("message");
             /* All possible error-keys go along with http response 422 except "busy_worker" --> 429 */
@@ -356,20 +364,16 @@ public class BoxbitApp extends PluginForHost {
                     mhm.putError(account, link, 5 * 60 * 1000l, message);
                 } else if (error.equals("wrong_password")) {
                     /* Missing or wrong password */
-                    link.setPasswordProtected(true);
+                    link.setPasswordProtected(true); // Enable this so next time we'll ask the user to enter the password
                     link.setDownloadPassword(null);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                 } else {
+                    /* Stuff we may know but purposely handle as generic error: blocked_ip, temporarily_unavailable, ip_address_not_br */
                     logger.info("Detected unknown/generic errorkey: " + error);
                 }
             }
             /* They also got "file_not_found" but we still don't trust such errors when multihosts return them! */
             /* No known error? Handle as generic one. */
-            mhm.handleErrorGeneric(account, link, message, 50);
-        } else if (br.getHttpConnection().getResponseCode() == 429) {
-            /* "busy_worker" --> Try again later */
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            final String message = (String) entries.get("message");
             mhm.handleErrorGeneric(account, link, message, 50);
         } else {
             /* No error */
