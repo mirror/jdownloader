@@ -1016,6 +1016,18 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         void setDashAudioBytesLoaded(long bytesLoaded);
     }
 
+    private YoutubeFinalLinkResource getYoutubeFinalLinkResource(final DownloadLink downloadLink, final String propertyKey) throws Exception {
+        YoutubeFinalLinkResource ret = downloadLink.getObjectProperty(propertyKey, YoutubeFinalLinkResource.TYPE_REF);
+        if (ret == null) {
+            requestFileInformation(downloadLink);
+            ret = downloadLink.getObjectProperty(propertyKey, YoutubeFinalLinkResource.TYPE_REF);
+            if (ret == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        return ret;
+    }
+
     private Boolean downloadDashStream(final DownloadLink downloadLink, final YoutubeProperties data, final boolean isVideoStream) throws Exception {
         final long totalSize = downloadLink.getDownloadSize();
         // VariantInfo urls = getUrlPair(downloadLink);
@@ -1024,28 +1036,14 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         // final String dashLoadedProperty;
         // final String dashFinishedProperty;
         final long chunkOffset;
-        YoutubeFinalLinkResource streamData = null;
+        final YoutubeFinalLinkResource streamData;
         if (isVideoStream) {
-            streamData = downloadLink.getObjectProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, YoutubeFinalLinkResource.TYPE_REF);
-            // if (streamData == null) {
-            // requestFileInformation(downloadLink);
-            // streamData = downloadLink.getObjectProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, YoutubeFinalLinkResource.TYPE_REF);
-            // if (streamData == null) {
-            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            // }
-            // }
+            streamData = getYoutubeFinalLinkResource(downloadLink, YoutubeHelper.YT_STREAM_DATA_VIDEO);
             dashName = getDashVideoFileName(downloadLink);
             dashChunksProperty = DASH_VIDEO_CHUNKS;
             chunkOffset = 0;
         } else {
-            streamData = downloadLink.getObjectProperty(YoutubeHelper.YT_STREAM_DATA_AUDIO, YoutubeFinalLinkResource.TYPE_REF);
-            if (streamData == null) {
-                requestFileInformation(downloadLink);
-                streamData = downloadLink.getObjectProperty(YoutubeHelper.YT_STREAM_DATA_AUDIO, YoutubeFinalLinkResource.TYPE_REF);
-                if (streamData == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
+            streamData = getYoutubeFinalLinkResource(downloadLink, YoutubeHelper.YT_STREAM_DATA_AUDIO);
             dashName = getDashAudioFileName(downloadLink);
             dashChunksProperty = DASH_AUDIO_CHUNKS;
             final AbstractVariant variant = getVariant(downloadLink);
@@ -1964,14 +1962,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             this.requestFileInformation(downloadLink);
             this.br.setDebug(true);
             // downloadLink.setInternalTmpFilenameAppend(fileName);
-            YoutubeFinalLinkResource sd = downloadLink.getObjectProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, YoutubeFinalLinkResource.TYPE_REF);
-            if (sd == null) {
-                requestFileInformation(downloadLink);
-                sd = downloadLink.getObjectProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, YoutubeFinalLinkResource.TYPE_REF);
-                if (sd == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
+            final YoutubeFinalLinkResource sd = getYoutubeFinalLinkResource(downloadLink, YoutubeHelper.YT_STREAM_DATA_VIDEO);
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, sd.getBaseUrl(), resume, getChunksPerStream(PluginJsonConfig.get(YoutubeConfig.class)));
             if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video") && !this.dl.getConnection().getContentType().startsWith("application")) {
                 try {
