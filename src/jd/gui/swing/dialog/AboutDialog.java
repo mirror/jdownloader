@@ -124,9 +124,9 @@ public class AboutDialog extends AbstractDialog<Integer> {
             if (file.isFile()) {
                 JButton btn = Factory.createButton(_GUI.T.jd_gui_swing_components_AboutDialog_license(), new AbstractIcon(IconKey.ICON_PREMIUM, 16), new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
-                        String license = JDIO.readFileToString(file);
+                        final String license = JDIO.readFileToString(file);
                         try {
-                            ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.jd_gui_swing_components_AboutDialog_license_title(), license, null, null, null) {
+                            final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.jd_gui_swing_components_AboutDialog_license_title(), license, null, null, null) {
                                 @Override
                                 protected boolean isResizable() {
                                     return true;
