@@ -334,6 +334,10 @@ public class ServusCom extends PluginForHost {
         HlsContainer hlsbest = null;
         switch (api) {
         case REDBULL_NEW:
+            final String assetType = (String) entries.get("assetType");
+            if (StringUtils.equalsIgnoreCase(assetType, "live")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Livestreams are not supported");
+            }
             final boolean usesHlsWithSplitVideoAudio = true; // https://svn.jdownloader.org/issues/84276
             if (usesHlsWithSplitVideoAudio) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported HLS with split video/audio");
