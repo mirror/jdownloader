@@ -11,25 +11,23 @@ import com.sun.jna.Native;
 import com.sun.jna.platform.win32.WinDef.HWND;
 
 public class JNAWindowsWindowManager extends WindowsWindowManager {
+    private final User32 instance;
+
     public JNAWindowsWindowManager() {
         // load library
-        User32 inst = User32.INSTANCE;
+        instance = User32.INSTANCE;
     }
 
     @Override
     public void setExtendedState(Frame w, final WindowExtendedState state) {
-        if (CrossSystem.getOS().isMinimum(OperatingSystem.WINDOWS_2000) && w.isVisible()) {
+        if (CrossSystem.getOS().isMinimum(OperatingSystem.WINDOWS_7) && w.isVisible()) {
             try {
                 switch (state) {
                 case ICONIFIED:
-                    // User32.INSTANCE.AnimateWindow(new HWND(Native.getComponentPointer(w)), 500, 0x00010000);
-                    User32.INSTANCE.CloseWindow(new HWND(Native.getComponentPointer(w)));
+                    instance.CloseWindow(new HWND(Native.getComponentPointer(w)));
                     return;
                 case NORMAL:
-                    User32.INSTANCE.ShowWindow(new HWND(Native.getComponentPointer(w)), User32.SHOW_WINDOW_SW_RESTORE);
-                    // int a = 0x00040000;
-                    // User32.INSTANCE.AnimateWindow(new HWND(Native.getComponentPointer(w)), 500, 0x00040000l | 0x00000004l);
-                    // System.out.println(Kernel32Util.formatMessageFromLastErrorCode(Native.getLastError()));
+                    instance.ShowWindow(new HWND(Native.getComponentPointer(w)), User32.SHOW_WINDOW_SW_RESTORE);
                     return;
                 default:
                     break;
@@ -39,10 +37,5 @@ public class JNAWindowsWindowManager extends WindowsWindowManager {
             }
         }
         super.setExtendedState(w, state);
-    }
-
-    @Override
-    protected void setExtendedState(Frame w, int frameExtendedState) {
-        super.setExtendedState(w, frameExtendedState);
     }
 }

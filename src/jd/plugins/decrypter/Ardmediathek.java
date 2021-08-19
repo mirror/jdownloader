@@ -27,6 +27,26 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.MediathekHelper;
+import jd.plugins.components.PluginJSonUtils;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Hash;
@@ -49,28 +69,8 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DecrypterRetryException;
-import jd.plugins.DecrypterRetryException.RetryReason;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.MediathekHelper;
-import jd.plugins.components.PluginJSonUtils;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "sandmann.de", "wdr.de", "sportschau.de", "wdrmaus.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "ndr.de" }, urls = { "https?://(?:[A-Z0-9]+\\.)?ardmediathek\\.de/.+", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/.*?\\.html", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html|https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js", "https?://(?:\\w+\\.)?sportschau\\.de/.*?\\.html", "https?://(?:www\\.)?wdrmaus\\.de/.+", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html",
-        "https?://(?:www\\.)?ndr\\.de/[^<>\"]+\\.html" })
+"https?://(?:www\\.)?ndr\\.de/[^<>\"]+\\.html" })
 public class Ardmediathek extends PluginForDecrypt {
     private static final String                 EXCEPTION_GEOBLOCKED                       = "EXCEPTION_GEOBLOCKED";
     /* Constants */
@@ -94,15 +94,15 @@ public class Ardmediathek extends PluginForDecrypt {
         heigth_to_bitrate.put("720", 3773000l);
         heigth_to_bitrate.put("1080", 6666000l);
     }
-    private String             subtitleLink   = null;
-    private String             parameter      = null;
-    private String             title          = null;
-    private String             show           = null;
-    private String             provider       = null;
-    private long               date_timestamp = -1;
-    private boolean            grabHLS        = false;
-    private String             contentID      = null;
-    private ArdConfigInterface cfg            = null;
+    private String                              subtitleLink                               = null;
+    private String                              parameter                                  = null;
+    private String                              title                                      = null;
+    private String                              show                                       = null;
+    private String                              provider                                   = null;
+    private long                                date_timestamp                             = -1;
+    private boolean                             grabHLS                                    = false;
+    private String                              contentID                                  = null;
+    private ArdConfigInterface                  cfg                                        = null;
 
     public Ardmediathek(final PluginWrapper wrapper) {
         super(wrapper);
@@ -554,15 +554,16 @@ public class Ardmediathek extends PluginForDecrypt {
             this.title = ardDocumentID;
             this.contentID = ardDocumentID;
         } else {
+            final URL url = new URL(this.parameter);
             requiresOldContentIDHandling = false;
             String ardBase64;
             final String pattern_player = ".+/player/([^/]+).*";
             if (parameter.matches(pattern_player)) {
                 /* E.g. URLs that are a little bit older */
-                ardBase64 = new Regex(this.parameter, pattern_player).getMatch(0);
+                ardBase64 = new Regex(url.getPath(), pattern_player).getMatch(0);
             } else {
                 /* New URLs */
-                ardBase64 = new Regex(this.parameter, "/([^/]+)/?$").getMatch(0);
+                ardBase64 = new Regex(url.getPath(), "/([^/]+)/?$").getMatch(0);
             }
             if (ardBase64 == null) {
                 /* This should never happen */
