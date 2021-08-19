@@ -66,8 +66,11 @@ public class Tf1Fr extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(410);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.canHandle(this.br.getURL())) {
+            /* E.g. individual episode of series is not available anymore --> Redirect to series overview */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         filename = br.getRegex("<meta name=\"name\" content=\"(.*?)\"").getMatch(0);
