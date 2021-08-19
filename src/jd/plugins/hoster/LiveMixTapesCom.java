@@ -15,10 +15,14 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -38,14 +42,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livemixtapes.com" }, urls = { "https?://((?:\\w+\\.)?livemixtapes\\.com/download(?:/mp3)?/\\d+/[a-z0-9\\-]+\\.html|club\\.livemixtapes\\.com/play/\\d+)" })
 public class LiveMixTapesCom extends antiDDoSForHost {
-    private static final String               CAPTCHATEXT        = "/captcha/captcha\\.gif\\?";
     private static final String               TYPE_REDIRECTLINK  = "https?://(www\\.)?livemixtap\\.es/[a-z0-9]+";
     private static final String               TYPE_DIRECTLINK    = "https?://club\\.livemixtapes\\.com/play/\\d+";
     private static final String               TYPE_ALBUM         = "https?://(?:www\\.)?livemixtapes\\.com/download/\\d+.*?";
@@ -86,11 +84,12 @@ public class LiveMixTapesCom extends antiDDoSForHost {
         }
         loadAntiCaptchaCookies(prepBr, host);
         prepBr.getHeaders().put("Accept-Encoding", "gzip, deflate, br");
-        prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.190 Safari/537.36");
+        prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36");
+        prepBr.setFollowRedirects(true);
         return super.prepBrowser(prepBr, host);
     }
 
-    protected void loadAntiCaptchaCookies(Browser prepBr, final String host) {
+    protected void loadAntiCaptchaCookies(final Browser prepBr, final String host) {
         synchronized (antiCaptchaCookies) {
             if (!antiCaptchaCookies.isEmpty()) {
                 for (final Map.Entry<String, Cookies> cookieEntry : antiCaptchaCookies.entrySet()) {
@@ -141,7 +140,7 @@ public class LiveMixTapesCom extends antiDDoSForHost {
         } else {
             getPage(link.getPluginPatternMatcher());
             if (isUserVerifyNeeded() && !isDownload) {
-                logger.info("Cannot do linkcheck because of captcha");
+                logger.info("Cannot do linkcheck because of antiddos captcha");
                 return AvailableStatus.UNCHECKABLE;
             }
             this.handleUserVerify();
@@ -177,7 +176,7 @@ public class LiveMixTapesCom extends antiDDoSForHost {
                     filename += ".mp3";
                 }
             }
-            /* Only set final filename if not e.g. set preeviously in crawler. */
+            /* Only set final filename if not e.g. set previously in crawler. */
             if (link.getFinalFileName() == null) {
                 link.setFinalFileName(filename);
             }
@@ -210,12 +209,11 @@ public class LiveMixTapesCom extends antiDDoSForHost {
                     throw new AccountRequiredException();
                 }
             }
-            final String timeRemaining = br.getRegex("TimeRemaining = (\\d+);").getMatch(0);
+            final String timeRemaining = br.getRegex("(?i)TimeRemaining\\s*=\\s*(\\d+);").getMatch(0);
             if (timeRemaining != null) {
                 link.getLinkStatus().setStatusText("Not yet released, cannot download");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             }
-            String timestamp = br.getRegex("name=\"timestamp\" value=\"(\\d+)\"").getMatch(0);
             Form dlform = br.getFormbyProperty("id", "downloadform");
             if (dlform == null) {
                 /* 2021-02-25: E.g. for single mp3 files */
@@ -225,77 +223,56 @@ public class LiveMixTapesCom extends antiDDoSForHost {
                 logger.warning("Failed to find dlform");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (dlform.hasInputFieldByName("timestamp")) {
-                timestamp = dlform.getInputFieldByName("timestamp").getValue();
-            }
-            if (br.containsHTML("<img src=\"[^\"]*?/captcha/captcha\\.gif\\?\\d+")) {
-                /* 2020-04-22: Browser will also check for a reCaptchaV2 (lol two captchas) but this seems to be skippable here. */
-                String captcha = br.getRegex("(/captcha/captcha\\.gif\\?\\d+)").getMatch(0);
-                String code = getCaptchaCode(captcha, link);
-                if (captcha == null || code == null || code.equals("")) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                dlform.put("code", Encoding.urlEncode(code));
-                // postPage(br, br.getURL(), "retries=0&timestamp=" + timestamp + "&code=" + code);
-                this.submitForm(dlform);
-                if (br.containsHTML("<img src=\"[^\"]*?/captcha/captcha\\.gif\\?\\d+")) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-            } else if (br.containsHTML("solvemedia\\.com/papi/")) {
-                /* 2020-04-22: This does not exist anymore??! */
-                if (timestamp == null) {
-                    logger.warning("Failed to find timestamp");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final String challengekey = br.getRegex("ACPuzzle\\.create\\(\\'(.*?)\\'").getMatch(0);
-                if (challengekey == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-                sm.setChallengeKey(challengekey);
-                final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                final String code = getCaptchaCode("solvemedia", cf, link);
-                final String chid = sm.getChallenge(code);
-                // Usually we have a waittime here but it can be skipped
-                // int waittime = 40;
-                // String wait =
-                // br.getRegex("<span id=\"counter\">(\\d+)</span>").getMatch(0);
-                // if (wait == null) wait =
-                // br.getRegex("wait: (\\d+)").getMatch(0);
-                // if (wait != null) {
-                // waittime = Integer.parseInt(wait);
-                // if (waittime > 1000) waittime = waittime / 1000;
-                // sleep(waittime * 1001, downloadLink);
-                // }
-                try {
-                    postPage(br, br.getURL(), "retries=0&timestamp=" + timestamp + "&adcopy_response=manual_challenge&adcopy_challenge=" + chid);
-                } catch (Exception e) {
-                }
-                if (br.containsHTML("solvemedia\\.com/papi/")) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-            } else if (dlform.containsHTML("g-recaptcha-response")) {
+            if (dlform.containsHTML("g-recaptcha-response")) {
                 /*
                  * 2021-02-26: TODO: Fix this! Why does it take us to the "download" page only without returning a downloadurl? I've failed
                  * to make this work...
                  */
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                if (StringUtils.isEmpty(dlform.getAction())) {
-                    dlform.setAction(br.getURL().replace("/mixtapes/", "/download/"));
+                if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                this.submitForm(dlform);
-                // final Form dlform2 = br.getFormbyProperty("id", "adfreedownload");
-                // dlform2.setAction(br.getURL().replace("/mixtapes/", "/download/"));
-                // final String recaptchaV2Response2 = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                // dlform2.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response2));
-                // br.setFollowRedirects(false);
-                // br.submitForm(dlform2);
-            }
-            dllink = br.getRedirectLocation();
-            if (dllink == null) {
-                logger.warning("Failed to find final downloadurl");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                // Usually we have a waittime here but it can be skipped
+                int attempt = 0;
+                do {
+                    attempt++;
+                    final String waitStr = br.getRegex("wait\\s*=\\s*(\\d+)").getMatch(0);
+                    if (waitStr == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    // if (StringUtils.isEmpty(dlform.getAction())) {
+                    // dlform.setAction(br.getURL().replace("/mixtapes/", "/download/"));
+                    // }
+                    br.getHeaders().put("Origin", "https://www." + this.getHost());
+                    int wait = Integer.parseInt(waitStr);
+                    if (wait > 1000) {
+                        wait = wait / 1000;
+                    }
+                    // sleep(wait * 1001, link);
+                    this.submitForm(dlform);
+                    dllink = br.getRedirectLocation();
+                    if (dllink != null) {
+                        break;
+                    } else if (attempt >= 3) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else {
+                        /* Retry: This may happen in browser too and will simply redirect to the previous page, no idea why though. */
+                        logger.info("Captcha failed on attempt: " + attempt);
+                        continue;
+                    }
+                    // final Form dlform2 = br.getFormbyProperty("id", "adfreedownload");
+                    // dlform2.setAction(br.getURL().replace("/mixtapes/", "/download/"));
+                    // final String recaptchaV2Response2 = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    // dlform2.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response2));
+                    // br.setFollowRedirects(false);
+                    // br.submitForm(dlform2);}
+                } while (true);
+                // dllink = br.getRedirectLocation();
+                // if (dllink == null) {
+                // logger.warning("Failed to find final downloadurl");
+                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                // }
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
@@ -327,31 +304,34 @@ public class LiveMixTapesCom extends antiDDoSForHost {
     }
 
     private void handleUserVerify() throws Exception {
-        if (isUserVerifyNeeded()) {
-            /* Handle login-captcha if required */
-            final DownloadLink dlinkbefore = this.getDownloadLink();
-            final DownloadLink dl_dummy;
-            if (dlinkbefore != null) {
-                dl_dummy = dlinkbefore;
-            } else {
-                /* E.g. captcha happens during accountcheck and not regular download. */
-                dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + br.getHost(), true);
-                this.setDownloadLink(dl_dummy);
+        synchronized (antiCaptchaCookies) {
+            if (isUserVerifyNeeded()) {
+                /* Handle login-captcha if required */
+                final DownloadLink dlinkbefore = this.getDownloadLink();
+                final DownloadLink dl_dummy;
+                if (dlinkbefore != null) {
+                    dl_dummy = dlinkbefore;
+                } else {
+                    /* E.g. captcha happens during accountcheck and not regular download. */
+                    dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + br.getHost(), true);
+                    this.setDownloadLink(dl_dummy);
+                }
+                Form captchaForm = br.getFormByInputFieldPropertyKeyValue("submit", "Submit");
+                if (captchaForm == null) {
+                    captchaForm = br.getForm(0);
+                }
+                if (captchaForm == null) {
+                    logger.warning("Failed to find captchaForm");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                if (dlinkbefore != null) {
+                    this.setDownloadLink(dlinkbefore);
+                }
+                captchaForm.put("g-recaptcha-response", recaptchaV2Response);
+                br.submitForm(captchaForm);
+                antiCaptchaCookies.put(this.getHost(), this.br.getCookies(this.getHost()));
             }
-            Form captchaForm = br.getFormByInputFieldPropertyKeyValue("submit", "Submit");
-            if (captchaForm == null) {
-                captchaForm = br.getForm(0);
-            }
-            if (captchaForm == null) {
-                logger.warning("Failed to find captchaForm");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-            if (dlinkbefore != null) {
-                this.setDownloadLink(dlinkbefore);
-            }
-            captchaForm.put("g-recaptcha-response", recaptchaV2Response);
-            br.submitForm(captchaForm);
         }
     }
 
@@ -385,14 +365,11 @@ public class LiveMixTapesCom extends antiDDoSForHost {
         /* First login, then availablecheck --> Avoids captchas in availablecheck! */
         login(account);
         requestFileInformation(link, true);
-        br.setFollowRedirects(true);
-        getPage(link.getPluginPatternMatcher());
         doFree(link, account);
     }
 
     public void login(final Account account) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
         // br.getPage(MAINPAGE);
         final Cookies cookies = account.loadCookies("");
         if (cookies != null) {
