@@ -125,6 +125,11 @@ public class ProSevenDe extends PluginForHost {
             /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        /* 2021-08-19 */
+        final boolean hostUsesDRMOnly = true;
+        if (hostUsesDRMOnly) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "DRM protected content");
+        }
         /* TODO: Maybe implement the current version of this request though this old one still works great. */
         /*
          * Request V2: http://vas.sim-technik.de/vas/live/v2/videos/<clipID>/sources/url?access_token=sat1gold&client_location=<currentURL
