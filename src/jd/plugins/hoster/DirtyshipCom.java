@@ -15,13 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -68,7 +68,12 @@ public class DirtyshipCom extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        return requestFileInformation(link, false);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+        final String filename = this.getFID(link).replace("-", " ");
+        link.setFinalFileName(filename + ".mp4");
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
@@ -77,45 +82,25 @@ public class DirtyshipCom extends antiDDoSForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = this.getFID(link).replace("-", " ");
+        /* Directurl is only valid one time! */
         dllink = br.getRegex("(http[^<>\"]+\\.mp4)").getMatch(0);
-        if (filename != null) {
-            filename = Encoding.htmlDecode(filename);
-            filename = filename.trim();
-            filename = encodeUnicode(filename);
-            String ext;
-            if (!StringUtils.isEmpty(dllink)) {
-                ext = getFileNameExtensionFromString(dllink, default_extension);
-                if (ext != null && !ext.matches("\\.(?:flv|mp4)")) {
-                    ext = default_extension;
-                }
-            } else {
-                ext = default_extension;
-            }
-            if (!filename.endsWith(ext)) {
-                filename += ext;
-            }
-            link.setFinalFileName(filename);
-        } else {
-            /* Fallback */
-            link.setName(this.getFID(link) + default_extension);
-        }
         if (StringUtils.isEmpty(dllink) && !br.containsHTML("class=\"video_player\"")) {
             /* E.g. now a video e.g. https://dirtyship.com/actors/ */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (!StringUtils.isEmpty(dllink)) {
-            dllink = dllink.replace("\\", "");
+        if (!StringUtils.isEmpty(dllink) && !isDownload) {
             URLConnectionAdapter con = null;
             try {
                 con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
                 if (con.getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
+                if (!this.looksLikeDownloadableContent(con)) {
                     server_issues = true;
                 } else {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
             } finally {
                 try {
@@ -129,20 +114,24 @@ public class DirtyshipCom extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {

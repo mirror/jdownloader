@@ -24,6 +24,14 @@ import java.util.Map;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -35,14 +43,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DoodstreamCom extends XFileSharingProBasic {
@@ -196,12 +196,8 @@ public class DoodstreamCom extends XFileSharingProBasic {
 
     @Override
     protected boolean isOffline(final DownloadLink link, final Browser br, final String html) {
-        boolean offline = super.isOffline(link, br, html);
-        if (!offline) {
-            /* 2020-10-05: Special: Empty "embed URL". */
-            offline = new Regex(html, "<iframe src=\"/e/\"").matches();
-        }
-        if (offline) {
+        /* 2021-08-20: Hoster is playing cat & mouse games by adding fake "file not found" texts */
+        if (new Regex(html, "<iframe src=\"/e/\"").matches()) {
             /* 2021-26-04 */
             // all videos are now
             // <h1>Not Found</h1>
@@ -210,9 +206,12 @@ public class DoodstreamCom extends XFileSharingProBasic {
                 return false;
             } else if (new Regex(html, "'(/cptr/.*?)'").getMatch(0) != null) {
                 return false;
+            } else {
+                return true;
             }
+        } else {
+            return false;
         }
-        return offline;
     }
 
     @Override

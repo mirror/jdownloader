@@ -784,11 +784,6 @@ public class PornHubCom extends PluginForDecrypt {
                         } else {
                             html_filename += quality + "p.mp4";
                         }
-                        if (prefer_server_filename && server_filename != null) {
-                            dl.setFinalFileName(server_filename);
-                        } else {
-                            dl.setFinalFileName(html_filename);
-                        }
                         dl.setProperty("decryptedfilename", html_filename);
                         /* Set some Packagizer properties */
                         {
@@ -802,6 +797,11 @@ public class PornHubCom extends PluginForDecrypt {
                             if (!StringUtils.isEmpty(categoriesCommaSeparated)) {
                                 dl.setProperty(jd.plugins.hoster.PornHubCom.PROPERTY_CATEGORIES_COMMA_SEPARATED, categoriesCommaSeparated);
                             }
+                        }
+                        if (prefer_server_filename && server_filename != null) {
+                            dl.setFinalFileName(server_filename);
+                        } else {
+                            dl.setFinalFileName(html_filename);
                         }
                         dl.setContentUrl(parameter);
                         if (fastlinkcheck) {
