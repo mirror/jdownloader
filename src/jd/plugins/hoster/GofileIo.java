@@ -20,14 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -43,6 +35,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/(?:\\?c=|d/)[A-Za-z0-9]+(?:#file=[a-f0-9]+)?" })
 public class GofileIo extends PluginForHost {
@@ -83,7 +83,7 @@ public class GofileIo extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        if (this.checkDirectLink(link, PROPERTY_DIRECTURL) != null) {
+        if (false && this.checkDirectLink(link, PROPERTY_DIRECTURL) != null) {
             logger.info("Availablecheck via directurl complete");
             return AvailableStatus.TRUE;
         }
@@ -96,7 +96,7 @@ public class GofileIo extends PluginForHost {
         /* 2020-08-20: Slow servers, timeouts will often occur --> Try a higher readtimeout */
         br.setReadTimeout(2 * 60 * 1000);
         final UrlQuery query = new UrlQuery();
-        query.add("folderId", folderID);
+        query.add("contentId", folderID);
         String passCode = null;
         boolean passwordCorrect = true;
         boolean passwordRequired = false;
@@ -111,7 +111,7 @@ public class GofileIo extends PluginForHost {
                 /* E.g. first try and password is available from when user added folder via crawler. */
                 query.addAndReplace("password", JDHash.getSHA256(link.getDownloadPassword()));
             }
-            final GetRequest req = br.createGetRequest("https://api." + this.getHost() + "/getFolder?" + query.toString());
+            final GetRequest req = br.createGetRequest("https://api." + this.getHost() + "/getContent?" + query.toString());
             req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://gofile.io"));
             req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://gofile.io"));
             brc.getPage(req);

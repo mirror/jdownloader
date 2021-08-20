@@ -32,7 +32,7 @@ public class GoFileIo extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String folderID = new Regex(parameter.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final UrlQuery query = new UrlQuery();
-        query.add("folderId", folderID);
+        query.add("contentId", folderID);
         String passCode = null;
         boolean passwordCorrect = true;
         boolean passwordRequired = false;
@@ -44,7 +44,7 @@ public class GoFileIo extends PluginForDecrypt {
                 passCode = getUserInput("Password?", parameter);
                 query.addAndReplace("password", JDHash.getSHA256(passCode));
             }
-            final GetRequest req = br.createGetRequest("https://api." + this.getHost() + "/getFolder?" + query.toString());
+            final GetRequest req = br.createGetRequest("https://api." + this.getHost() + "/getContent?" + query.toString());
             req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://gofile.io"));
             req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://gofile.io"));
             brc.getPage(req);
