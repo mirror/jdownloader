@@ -380,7 +380,6 @@ public class DrTuberCom extends PluginForHost {
             try {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
-                    br = new Browser();
                     prepBR(br);
                     br.setCookies(this.getHost(), cookies);
                     br.getPage("https://www." + this.getHost() + "/");
@@ -388,9 +387,10 @@ public class DrTuberCom extends PluginForHost {
                         /* Save new cookie timestamp */
                         br.setCookies(this.getHost(), cookies);
                         return;
+                    } else {
+                        br.clearCookies(br.getHost());
                     }
                 }
-                br = new Browser();
                 prepBR(br);
                 br.setFollowRedirects(false);
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");

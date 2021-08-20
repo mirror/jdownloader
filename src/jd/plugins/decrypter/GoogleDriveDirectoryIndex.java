@@ -26,6 +26,17 @@ import java.util.Map;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.FunctionObject;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -43,17 +54,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.FunctionObject;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
@@ -85,8 +85,9 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
     }
 
     /**
-     * Crawler plugin that can handle instances of this project: https://github.com/sawankumar/Google-Drive-Index </br> Be sure to add all
-     * domains to host plugin GoogleDriveDirectoryIndex.java too!
+     * Crawler plugin that can handle instances of this project:
+     * https://gitlab.com/ParveenBhadooOfficial/Google-Drive-Index/-/blob/master/README.md </br>
+     * Be sure to add all domains to host plugin GoogleDriveDirectoryIndex.java too!
      */
     public GoogleDriveDirectoryIndex(PluginWrapper wrapper) {
         super(wrapper);
@@ -164,16 +165,6 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
                 }
                 con = openAntiDDoSRequestConnection(br, br.createGetRequest(param.getCryptedUrl()));
             }
-            /* 2021-07-07: Removed the following lines of code in order to find out if they are still needed. */
-            // if (con.getResponseCode() == 405) {
-            // /* Fallback? 2021-05-19: Is this still required? */
-            // try {
-            // br.followConnection(true);
-            // } catch (IOException e) {
-            // logger.log(e);
-            // }
-            // con = openAntiDDoSRequestConnection(br, br.createGetRequest(param.getCryptedUrl()));
-            // }
             if (looksLikeDownloadableContent(con)) {
                 con.disconnect();
                 final DownloadLink direct = this.createDownloadlink(con.getURL().toString());
