@@ -17,18 +17,14 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -47,6 +43,17 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.FunctionObject;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
@@ -78,8 +85,8 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
     }
 
     /**
-     * Crawler plugin that can handle instances of this project: https://github.com/sawankumar/Google-Drive-Index </br>
-     * Be sure to add all domains to host plugin GoogleDriveDirectoryIndex.java too!
+     * Crawler plugin that can handle instances of this project: https://github.com/sawankumar/Google-Drive-Index </br> Be sure to add all
+     * domains to host plugin GoogleDriveDirectoryIndex.java too!
      */
     public GoogleDriveDirectoryIndex(PluginWrapper wrapper) {
         super(wrapper);
@@ -88,6 +95,26 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
     public int getMaxConcurrentProcessingInstances() {
         /* Without this we'll run into Cloudflare rate limits (error 500) */
         return 1;
+    }
+
+    private String decodeJSON(final String string) throws Exception {
+        if (string != null && string.matches("(?s)^\\s*\\{.*\\}\\s*$")) {
+            return string;
+        } else {
+            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
+            final ScriptEngine engine = manager.getEngineByName("javascript");
+            final Context jsContext = Context.enter();
+            try {
+                engine.eval(IO.readInputStreamToString(getClass().getResourceAsStream("/org/jdownloader/plugins/components/GoogleDriveDirectoryIndex.js")));
+                final Method atob = Encoding.class.getMethod("Base64Decode", new Class[] { String.class });
+                engine.put("atob", new FunctionObject("atob", atob, jsContext.initStandardObjects()));
+                engine.eval("var result=gdidecode(read(\"" + string + "\"));");
+                final String result = StringUtils.valueOfOrNull(engine.get("result"));
+                return result;
+            } finally {
+                Context.exit();
+            }
+        }
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -228,7 +255,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
         int page = 0;
         do {
             logger.info("Crawling page: " + (page + 1));
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(decodeJSON(br.toString()));
             final String nextPageToken = (String) entries.get("nextPageToken");
             final List<Object> ressourcelist;
             Object filesArray = JavaScriptEngineFactory.walkJson(entries, "data/files");
