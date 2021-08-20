@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sta.sh" }, urls = { "https?://(www\\.)?sta\\.sh/(zip/)?[a-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sta.sh" }, urls = { "https?://(?:www\\.)?sta\\.sh/(zip/)?[a-z0-9]+" })
 public class StaShDecrypter extends PluginForDecrypt {
     public StaShDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,7 +45,7 @@ public class StaShDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         if (parameter.matches(TYPE_ZIP)) {
-            final DownloadLink link = createDownloadlink(parameter.replace("sta.sh/", "stadecrypted.sh/"));
+            final DownloadLink link = createDownloadlink(parameter);
             link.setProperty("iszip", true);
             link.setProperty("directlink", parameter);
             decryptedLinks.add(link);
@@ -56,7 +56,7 @@ public class StaShDecrypter extends PluginForDecrypt {
         final boolean force_html_dl = cfg.getBooleanProperty(FORCEHTMLDOWNLOAD, false);
         final boolean linkid_as_filename = cfg.getBooleanProperty(USE_LINKID_AS_FILENAME, false);
         final String main_linkid = new Regex(parameter, "sta\\.sh/(.+)").getMatch(0);
-        final DownloadLink main = createDownloadlink(parameter.replace("sta.sh/", "stadecrypted.sh/"));
+        final DownloadLink main = createDownloadlink(parameter);
         if (parameter.matches(INVALIDLINKS)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -84,7 +84,7 @@ public class StaShDecrypter extends PluginForDecrypt {
                 final String url = singleLinkData[0];
                 final String linkid = new Regex(url, "sta\\.sh/(.+)").getMatch(0);
                 String name = Encoding.htmlDecode(singleLinkData[2]);
-                final DownloadLink dl = createDownloadlink(url.replace("sta.sh/", "stadecrypted.sh/"));
+                final DownloadLink dl = createDownloadlink(url);
                 /* Obey user setting */
                 if (linkid_as_filename) {
                     name = linkid;
@@ -111,14 +111,15 @@ public class StaShDecrypter extends PluginForDecrypt {
                 if (url.contains(linkid_general)) {
                     /* Fail-safe to prevent infinite loops! */
                     continue;
+                } else {
+                    decryptedLinks.add(this.createDownloadlink(url));
                 }
-                decryptedLinks.add(this.createDownloadlink(url));
             }
         }
         /* Download zip if it exists and user wants it. */
         final String zipLink = br.getRegex("\"(/zip/[a-z0-9]+)\"").getMatch(0);
         if (cfg.getBooleanProperty(DOWNLOAD_ZIP, false) && zipLink != null) {
-            final DownloadLink zip = createDownloadlink(parameter.replace("sta.sh/", "stadecrypted.sh/"));
+            final DownloadLink zip = createDownloadlink(parameter);
             zip.setProperty("iszip", true);
             zip.setProperty("directlink", zipLink);
             String zip_filename;
