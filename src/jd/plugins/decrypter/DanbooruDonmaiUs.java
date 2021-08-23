@@ -190,10 +190,9 @@ public class DanbooruDonmaiUs extends PluginForDecrypt {
                 // logger.info("Stopping because: Current page only contained " + entries_per_page_current + " of minimum " +
                 // min_entries_per_page + " items per page");
                 // break;
-                logger.info("Possibly reached end: Current page only contained " + entries_per_page_current + " of minimum " + min_entries_per_page + " items per page");
-            } else {
-                page_counter++;
+                logger.info("Maybe reached end: Current page only contained " + entries_per_page_current + " of minimum " + min_entries_per_page + " items per page");
             }
+            page_counter++;
         } while (!this.isAbort());
         return decryptedLinks;
     }
