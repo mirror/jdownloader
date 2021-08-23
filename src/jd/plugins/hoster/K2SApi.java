@@ -163,7 +163,8 @@ public abstract class K2SApi extends PluginForHost {
      * @return
      */
     protected boolean enforcesHTTPS() {
-        return false;
+        // 23.08.2021, SSL is enforced
+        return true;
     }
 
     @Override
@@ -242,7 +243,9 @@ public abstract class K2SApi extends PluginForHost {
      * @return
      */
     protected boolean userPrefersHTTPS() {
-        return PluginJsonConfig.get(this.getConfigInterface()).isEnableSSL();
+        // 23.08.2021, SSL is enforced
+        return true;
+        // return PluginJsonConfig.get(this.getConfigInterface()).isEnableSSL();
     }
 
     protected String getUseAPIPropertyID() {
@@ -282,8 +285,7 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     protected boolean isSecure() {
-        if (enforcesHTTPS() && userPrefersHTTPS()) {
-            // prevent bad setter from enforcing secure
+        if (enforcesHTTPS()) {
             return true;
         } else if (userPrefersHTTPS()) {
             return true;
@@ -874,7 +876,7 @@ public abstract class K2SApi extends PluginForHost {
         URLConnectionAdapter con = null;
         synchronized (REQUESTLOCK) {
             try {
-                if (!url.startsWith("http")) {
+                if (!StringUtils.startsWithCaseInsensitive(url, "http")) {
                     url = getApiUrl() + url;
                 }
                 con = ibr.openPostConnection(url, arg);
