@@ -154,9 +154,9 @@ public class DanbooruDonmaiUs extends PluginForDecrypt {
         fp.setName(Encoding.htmlDecode(tagsString).trim());
         final String url_part = parameter;
         int page_counter = 1;
-        int offset = 0;
         final int min_entries_per_page = 15;
         int entries_per_page_current = 0;
+        final ArrayList<String> dupes = new ArrayList<String>();
         do {
             if (page_counter > 1) {
                 this.br.getPage(url_part + "&page=" + page_counter);
@@ -168,18 +168,33 @@ public class DanbooruDonmaiUs extends PluginForDecrypt {
                 break;
             }
             entries_per_page_current = contentIDs.length;
+            boolean currentPageContainsNewItems = false;
             for (final String contentID : contentIDs) {
-                final String link = "http://" + this.getHost() + "/posts/" + contentID;
-                final DownloadLink dl = createDownloadlink(link);
-                dl.setAvailable(true);
-                dl.setName(contentID);
-                dl._setFilePackage(fp);
-                decryptedLinks.add(dl);
-                distribute(dl);
-                offset++;
+                if (!dupes.contains(contentID)) {
+                    dupes.add(contentID);
+                    final String link = "http://" + this.getHost() + "/posts/" + contentID;
+                    final DownloadLink dl = createDownloadlink(link);
+                    dl.setAvailable(true);
+                    dl.setName(contentID);
+                    dl._setFilePackage(fp);
+                    decryptedLinks.add(dl);
+                    distribute(dl);
+                    currentPageContainsNewItems = true;
+                }
             }
-            page_counter++;
-        } while (!this.isAbort() && entries_per_page_current >= min_entries_per_page);
+            if (!currentPageContainsNewItems) {
+                logger.info("Stopping because: Current page doesn't contain any new items");
+                break;
+            } else if (entries_per_page_current < min_entries_per_page) {
+                /* 2021-08-23: Ignore this and crawl until we don't find new items anymore. */
+                // logger.info("Stopping because: Current page only contained " + entries_per_page_current + " of minimum " +
+                // min_entries_per_page + " items per page");
+                // break;
+                logger.info("Possibly reached end: Current page only contained " + entries_per_page_current + " of minimum " + min_entries_per_page + " items per page");
+            } else {
+                page_counter++;
+            }
+        } while (!this.isAbort());
         return decryptedLinks;
     }
 
