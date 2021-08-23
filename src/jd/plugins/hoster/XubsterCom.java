@@ -18,10 +18,13 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -120,6 +123,34 @@ public class XubsterCom extends XFileSharingProBasic {
             if (handleRecaptchaV2(link, captchaForm)) {
                 link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
             }
+        } else if (StringUtils.containsIgnoreCase(getCorrectBR(br), "/captchas/")) {
+            /* 2021-08-23: Special */
+            logger.info("Detected captcha method \"Standard captcha\" for this host");
+            final String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), "");
+            String captchaurl = null;
+            if (sitelinks == null || sitelinks.length == 0) {
+                logger.warning("Standard captcha captchahandling broken!");
+                checkErrorsLastResort(br, null);
+            }
+            for (final String linkTmp : sitelinks) {
+                if (linkTmp.contains("/captchas/")) {
+                    captchaurl = linkTmp;
+                    break;
+                }
+            }
+            if (StringUtils.isEmpty(captchaurl)) {
+                /* Fallback e.g. for relative URLs (e.g. subyshare.com [bad example, needs special handling anways!]) */
+                captchaurl = new Regex(getCorrectBR(br), "(/captchas/[a-z0-9]+\\.jpg)").getMatch(0);
+            }
+            if (captchaurl == null) {
+                logger.warning("Standard captcha captchahandling broken2!");
+                checkErrorsLastResort(br, null);
+            }
+            /* 2021-08-23: Special: Their captchas are different from the normal XFS captchas and we cannot auto-recognize them. */
+            String code = getCaptchaCode("xfilesharingprobasic_special", captchaurl, link);
+            captchaForm.put("code", code);
+            logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
+            link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
         } else {
             super.handleCaptcha(link, captchaForm);
         }
