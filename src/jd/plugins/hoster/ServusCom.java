@@ -26,6 +26,14 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.requests.GetRequest;
@@ -38,14 +46,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ServusCom extends PluginForHost {
@@ -334,16 +334,31 @@ public class ServusCom extends PluginForHost {
         HlsContainer hlsbest = null;
         switch (api) {
         case REDBULL_NEW:
+            hlsMaster = (String) entries.get("videoUrl");
             final String assetType = (String) entries.get("assetType");
-            if (StringUtils.equalsIgnoreCase(assetType, "live")) {
-                // TODO: check for real live type! once the stream was recorded, it still remains live but no longer is live
+            /*
+             * Past live-streams can be available as normal/recorded streams so only throw exceptions if additionally, no streaming-URL is
+             * available!
+             */
+            if (StringUtils.equalsIgnoreCase(assetType, "live") && StringUtils.isEmpty(hlsMaster)) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Livestreams are not supported");
+            }
+            final ArrayList<String> playabilityErrors = (ArrayList<String>) entries.get("playabilityErrors");
+            if (playabilityErrors != null && !playabilityErrors.isEmpty()) {
+                for (final String playabilityError : playabilityErrors) {
+                    if (playabilityError.equals("NOT_YET_AVAILABLE")) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Stream is not yet available");
+                    } else {
+                        logger.info("Unknown playabilityError:" + playabilityError);
+                    }
+                }
+                /* Unknown playabilityError */
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Stream is not playable: " + playabilityErrors.get(0));
             }
             final boolean usesHlsWithSplitVideoAudio = true; // https://svn.jdownloader.org/issues/84276
             if (usesHlsWithSplitVideoAudio) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported HLS with split video/audio");
             }
-            hlsMaster = (String) entries.get("videoUrl");
             br.getPage(hlsMaster);
             hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
             break;
