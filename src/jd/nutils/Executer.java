@@ -21,12 +21,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.logging.Logger;
 
 import org.appwork.utils.processes.ProcessBuilderFactory;
 
 public class Executer extends Thread implements Runnable {
-    class StreamObserver extends Thread implements Runnable {
+    private class StreamObserver extends Thread implements Runnable {
         private final DynByteBuffer dynbuf;
         private volatile boolean    started;
         /**
@@ -42,11 +43,13 @@ public class Executer extends Thread implements Runnable {
         private volatile boolean    isClosed          = false;
         private final Object        LOCK              = new Object();
         private final Process       process;
+        private final int           type;
 
         public StreamObserver(Process process, final InputStream stream, final DynByteBuffer buffer) {
             this.process = process;
             this.stream = stream;
             this.dynbuf = buffer;
+            this.type = errorStreamBuffer == buffer ? Executer.LISTENER_ERRORSTREAM : Executer.LISTENER_STDSTREAM;
         }
 
         /**
@@ -104,8 +107,9 @@ public class Executer extends Thread implements Runnable {
                     this.dynbuf.put(buffer, read);
                     if (buffer[0] == '\b' || buffer[0] == '\r' || buffer[0] == '\n') {
                         return i;
+                    } else {
+                        Executer.this.fireEvent(this.dynbuf, read, type);
                     }
-                    Executer.this.fireEvent(this.dynbuf, read, this == Executer.this.sbeObserver ? Executer.LISTENER_ERRORSTREAM : Executer.LISTENER_STDSTREAM);
                 } else {
                     Thread.sleep(100);
                     waitFlag = true;
@@ -141,9 +145,8 @@ public class Executer extends Thread implements Runnable {
         @Override
         public void run() {
             this.started = true;
-            int num;
             try {
-                Executer.this.fireEvent(this.dynbuf, 0, this == Executer.this.sbeObserver ? Executer.LISTENER_ERRORSTREAM : Executer.LISTENER_STDSTREAM);
+                Executer.this.fireEvent(this.dynbuf, 0, type);
                 /* waitloop until we got interrupt request or data to read */
                 /* to prevent reader.available always returning 0! */
                 int x = 0;
@@ -161,21 +164,27 @@ public class Executer extends Thread implements Runnable {
                 synchronized (this.LOCK) {
                     this.idle = false;
                 }
+                String codePage = Executer.this.getCodepage();
                 while (!this.endOfFileReceived) {
-                    num = this.readLine();
-                    String line;
-                    try {
-                        line = new String(this.dynbuf.getLast(num), Executer.this.codepage).trim();
-                    } catch (final UnsupportedEncodingException e) {
-                        e.printStackTrace();
-                        /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
-                        line = new String(this.dynbuf.getLast(num)).trim();
+                    final int num = this.readLine();
+                    final byte[] lastNumBytes = this.dynbuf.getLast(num);
+                    String line = null;
+                    if (codePage != null) {
+                        try {
+                            line = new String(lastNumBytes, codePage).trim();
+                        } catch (final UnsupportedEncodingException e) {
+                            e.printStackTrace();
+                            codePage = null;
+                        }
+                    }
+                    if (line == null) {
+                        line = new String(lastNumBytes).trim();
                     }
                     if (line.length() > 0) {
                         if (Executer.this.isDebug()) {
                             System.out.println(this + ": " + line + "");
                         }
-                        Executer.this.fireEvent(line, this.dynbuf, this == Executer.this.sbeObserver ? Executer.LISTENER_ERRORSTREAM : Executer.LISTENER_STDSTREAM);
+                        Executer.this.fireEvent(line, this.dynbuf, type);
                     }
                 }
             } catch (final IOException e) {
@@ -193,24 +202,25 @@ public class Executer extends Thread implements Runnable {
         }
     }
 
-    public static final String CODEPAGE = Executer.isWindows() ? "ISO-8859-1" : "UTF-8";
-
     /*
      * We use our own method, to avoid usage of apwork utils. we need to keep restarter.jar free from wau
      */
     private static boolean isWindows() {
-        final String os = System.getProperty("os.name").toLowerCase();
-        if (os.contains("windows")) {
-            return true;
-        } else if (os.contains("nt")) {
-            return true;
+        final String osName = System.getProperty("os.name");
+        if (osName != null) {
+            final String os = osName.toLowerCase(Locale.ENGLISH);
+            if (os.contains("windows")) {
+                return true;
+            } else if (os.contains("nt")) {
+                return true;
+            }
         }
         return false;
     }
 
     private boolean                               debug                = true;
     private Logger                                logger;
-    private String                                codepage             = Executer.CODEPAGE;
+    private String                                codepage             = null;
     public static int                             LISTENER_ERRORSTREAM = 1;
     public static int                             LISTENER_STDSTREAM   = 1 << 1;
     private String                                command;
@@ -226,7 +236,6 @@ public class Executer extends Thread implements Runnable {
     private Process                               process;
     private StreamObserver                        sbeObserver;
     private StreamObserver                        sboObserver;
-    private OutputStream                          outputStream         = null;
     private Exception                             exception            = null;
 
     public Executer(final String command) {
@@ -242,11 +251,10 @@ public class Executer extends Thread implements Runnable {
     }
 
     public void addParameters(final String[] par) {
-        if (par == null) {
-            return;
-        }
-        for (final String p : par) {
-            this.parameter.add(p);
+        if (par != null && par.length > 0) {
+            for (final String p : par) {
+                this.parameter.add(p);
+            }
         }
     }
 
@@ -261,17 +269,16 @@ public class Executer extends Thread implements Runnable {
     }
 
     private void fireEvent(final DynByteBuffer buffer, final int read, final int flag) {
-        if (this.isInterrupted()) {
-            return;
-        }
-        if ((flag & Executer.LISTENER_STDSTREAM) > 0) {
-            for (final ProcessListener listener : this.listener) {
-                listener.onBufferChanged(this, buffer, read);
+        if (!this.isInterrupted()) {
+            if ((flag & Executer.LISTENER_STDSTREAM) > 0) {
+                for (final ProcessListener listener : this.listener) {
+                    listener.onBufferChanged(this, buffer, read);
+                }
             }
-        }
-        if ((flag & Executer.LISTENER_ERRORSTREAM) > 0) {
-            for (final ProcessListener elistener : this.elistener) {
-                elistener.onBufferChanged(this, buffer, read);
+            if ((flag & Executer.LISTENER_ERRORSTREAM) > 0) {
+                for (final ProcessListener elistener : this.elistener) {
+                    elistener.onBufferChanged(this, buffer, read);
+                }
             }
         }
     }
@@ -290,7 +297,12 @@ public class Executer extends Thread implements Runnable {
     }
 
     public String getCodepage() {
-        return this.codepage;
+        final String codepage = this.codepage;
+        if (codepage == null) {
+            return isWindows() ? "ISO-8859-1" : "UTF-8";
+        } else {
+            return codepage;
+        }
     }
 
     public String getCommand() {
@@ -298,7 +310,7 @@ public class Executer extends Thread implements Runnable {
     }
 
     public String getErrorStream() {
-        return this.errorStreamBuffer.toString(this.codepage);
+        return this.errorStreamBuffer.toString(this.getCodepage());
     }
 
     public DynByteBuffer getErrorStreamBuffer() {
@@ -322,7 +334,7 @@ public class Executer extends Thread implements Runnable {
     }
 
     public String getOutputStream() {
-        return this.inputStreamBuffer.toString(this.codepage);
+        return this.inputStreamBuffer.toString(this.getCodepage());
     }
 
     public java.util.List<String> getParameter() {
@@ -374,12 +386,17 @@ public class Executer extends Thread implements Runnable {
         }
     }
 
+    private void log(final String message) {
+        final Logger logger = getLogger();
+        if (logger != null) {
+            logger.severe(message);
+        }
+    }
+
     @Override
     public void run() {
         if (this.command == null || this.command.trim().length() == 0) {
-            if (this.logger != null) {
-                this.logger.severe("Execute Parameter error: No Command");
-            }
+            log("Execute Parameter error: No Command");
             return;
         }
         final java.util.List<String> params = new ArrayList<String>();
@@ -391,9 +408,7 @@ public class Executer extends Thread implements Runnable {
                 out.append(p);
                 out.append(' ');
             }
-            if (this.logger != null) {
-                this.logger.info("Execute: " + out + " in " + this.runIn);
-            }
+            log("Execute: " + out + " in " + this.runIn);
         }
         final ProcessBuilder pb = ProcessBuilderFactory.create(params.toArray(new String[] {}));
         if (this.runIn != null && this.runIn.length() > 0) {
@@ -405,25 +420,24 @@ public class Executer extends Thread implements Runnable {
                     // File(params.get(0)).getParentFile());
                     pb.directory(new File(params.get(0)).getParentFile());
                 } else {
-                    if (this.logger != null) {
-                        this.logger.severe("Working directory " + this.runIn + " does not exist!");
-                    }
+                    log("Working directory " + this.runIn + " does not exist!");
                 }
             }
         }
+        final Thread timeoutThread;
         try {
             this.process = pb.start();
             if (this.waitTimeout == 0) {
+                timeoutThread = null;
                 return;
             }
-            this.outputStream = this.process.getOutputStream();
+            final OutputStream outputStream = this.process.getOutputStream();
             this.sbeObserver = new StreamObserver(process, this.process.getErrorStream(), this.errorStreamBuffer);
             this.sbeObserver.setName(this.getName() + " ERRstreamobserver");
             this.sboObserver = new StreamObserver(process, this.process.getInputStream(), this.inputStreamBuffer);
             this.sboObserver.setName(this.getName() + " STDstreamobserver");
             this.sbeObserver.start();
             this.sboObserver.start();
-            Thread timeoutThread = null;
             if (this.waitTimeout > 0) {
                 timeoutThread = new Thread() {
                     @Override
@@ -431,69 +445,66 @@ public class Executer extends Thread implements Runnable {
                         try {
                             Thread.sleep(Executer.this.waitTimeout * 1000);
                         } catch (final InterruptedException e) {
+                        } finally {
+                            // interrupt on timeout. this handles and timeout like
+                            // an external interrupt
+                            Executer.this.interrupt();
                         }
-                        // interrupt on timeout. this handles and timeout like
-                        // an external interrupt
-                        Executer.this.interrupt();
                     }
                 };
                 timeoutThread.start();
+            } else {
+                timeoutThread = null;
             }
             try {
                 this.process.waitFor();
                 this.exitValue = this.process.exitValue();
-            } catch (final InterruptedException e1) {
+            } catch (final InterruptedException e) {
                 this.process.destroy();
                 this.gotInterrupted = true;
+                e.printStackTrace();
             } catch (final Exception e) {
                 e.printStackTrace();
             } finally {
                 /* close outputstream for good */
                 try {
-                    this.outputStream.close();
+                    outputStream.close();
                 } catch (Throwable e) {
                 }
-            }
-            if (this.logger != null) {
-                this.logger.finer("Process returned");
+                log("Process returned");
             }
             // stream did not return -1 yet, and so the observer sill still
             // waiting for data. we interrupt him
             if (this.sboObserver != null && this.sboObserver.isIdle()) {
-                if (this.logger != null) {
-                    this.logger.finer("sbo idle - interrupt");
-                }
                 this.sboObserver.requestInterrupt();
+                log("sbo idle - interrupt");
             }
             if (this.sbeObserver != null && this.sbeObserver.isIdle()) {
-                if (this.logger != null) {
-                    this.logger.finer("sbe idle - interrupt");
-                }
                 this.sbeObserver.requestInterrupt();
+                log("sbe idle - interrupt");
             }
             final long returnTime = System.currentTimeMillis();
             // must be called to clear interrupt flag
             Thread.interrupted();
-            while (this.sbeObserver != null && this.sbeObserver.isAlive() || this.sboObserver != null && this.sboObserver.isAlive()) {
+            while ((this.sbeObserver != null && this.sbeObserver.isAlive()) || (this.sboObserver != null && this.sboObserver.isAlive())) {
                 Thread.sleep(50);
                 if (System.currentTimeMillis() - returnTime > 60000) {
-                    if (this.logger != null) {
-                        this.logger.severe("Executer Error. REPORT THIS BUG INCL. THIS LOG to jd support");
+                    log("Executer Error. REPORT THIS BUG INCL. THIS LOG to jd support");
+                    if (sboObserver != null) {
+                        this.sboObserver.requestInterrupt();
                     }
-                    this.sboObserver.requestInterrupt();
-                    this.sbeObserver.requestInterrupt();
+                    if (sbeObserver != null) {
+                        this.sbeObserver.requestInterrupt();
+                    }
                     break;
                 }
             }
             if (timeoutThread != null) {
                 timeoutThread.interrupt();
             }
-            if (this.logger != null) {
-                this.logger.finer("Stream observer closed");
-            }
-        } catch (final IOException e1) {
-            this.exception = e1;
-            return;
+            log("Stream observer closed");
+        } catch (final IOException e) {
+            this.exception = e;
         } catch (final InterruptedException e) {
             this.exception = e;
         }
@@ -512,7 +523,9 @@ public class Executer extends Thread implements Runnable {
     }
 
     public void setLogger(final Logger logger) {
-        this.logger = logger;
+        if (this.logger == null || logger != null) {
+            this.logger = logger;
+        }
     }
 
     public void setParameter(final java.util.List<String> parameter) {
@@ -534,21 +547,6 @@ public class Executer extends Thread implements Runnable {
             } catch (final InterruptedException e) {
                 e.printStackTrace();
             }
-        }
-    }
-
-    public void writetoOutputStream(String data) {
-        if (data == null || data.length() == 0) {
-            data = "";
-        }
-        try {
-            this.outputStream.write(data.getBytes());
-            this.outputStream.write("\n".getBytes());
-            if (this.isDebug()) {
-                System.out.println("Out>" + data);
-            }
-            this.outputStream.flush();
-        } catch (final IOException e) {
         }
     }
 }
