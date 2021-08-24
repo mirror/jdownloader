@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
@@ -67,6 +68,7 @@ public class PornHubCom extends PluginForDecrypt {
     }
 
     final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    @Deprecated
     private String                parameter      = null;
     private static final String   DOMAIN         = "pornhub.com";
 
@@ -119,12 +121,13 @@ public class PornHubCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         try {
             parameter = jd.plugins.hoster.PornHubCom.correctAddedURL(param.toString());
-        } catch (PluginException e) {
-            logger.log(e);
-            // keep pornhub <->pornhubpremium
+        } catch (final PluginException ignore) {
+            logger.log(ignore);
+            /* keep pornhub.com and pornhubpremium.com but remove country-specific subdomains. */
             parameter = param.toString().replaceFirst("^https?://(?:www\\.|[a-z]{2}\\.)?pornhub\\.(?:com|org)/", "https://www.pornhub.com/");
             parameter = parameter.replaceFirst("^https?://(?:www\\.|[a-z]{2}\\.)?pornhubpremium\\.(?:com|org)/", "https://www.pornhubpremium.com/");
         }
+        param.setCryptedUrl(parameter);
         br.setFollowRedirects(true);
         jd.plugins.hoster.PornHubCom.prepBr(br);
         Account account = AccountController.getInstance().getValidAccount(getHost());
@@ -139,16 +142,87 @@ public class PornHubCom extends PluginForDecrypt {
         if (jd.plugins.hoster.PornHubCom.requiresPremiumAccount(parameter) && (account == null || account.getType() != AccountType.PREMIUM)) {
             throw new AccountRequiredException();
         }
-        jd.plugins.hoster.PornHubCom.getFirstPageWithAccount(this, account, br, parameter);
+        final boolean ret;
+        if (parameter.matches("(?i).*/playlist/.*")) {
+            jd.plugins.hoster.PornHubCom.getFirstPageWithAccount(this, account, br, parameter);
+            handleErrorsAndCaptcha(this.br, account);
+            ret = crawlAllVideosOfAPlaylist(account);
+        } else if (parameter.matches("(?i).*/gifs.*")) {
+            jd.plugins.hoster.PornHubCom.getFirstPageWithAccount(this, account, br, parameter);
+            handleErrorsAndCaptcha(this.br, account);
+            ret = crawlAllGifsOfAUser(account);
+        } else if (parameter.matches("(?i).*/model/.*")) {
+            jd.plugins.hoster.PornHubCom.getFirstPageWithAccount(this, account, br, parameter);
+            handleErrorsAndCaptcha(this.br, account);
+            final String model = new Regex(parameter, "/model/([^/]+)").getMatch(0);
+            final String mode = new Regex(parameter, "/model/[^/]+/(.+)").getMatch(0);
+            /* Main profile URL --> Assume user wants to have all videos of that profile */
+            logger.info("Model:" + model + "|Mode:" + mode);
+            if (StringUtils.isEmpty(mode)) {
+                final String pages[] = br.getRegex("(/model/" + Pattern.quote(model) + "/(?:videos|gifs))").getColumn(0);
+                if (pages != null && pages.length > 0) {
+                    for (final String page : new HashSet<String>(Arrays.asList(pages))) {
+                        decryptedLinks.add(createDownloadlink(br.getURL(page).toString()));
+                    }
+                    ret = true;
+                } else {
+                    ret = crawlAllVideosOf(br, account, new HashSet<String>());
+                }
+            } else {
+                ret = crawlAllVideosOf(br, account, new HashSet<String>());
+            }
+        } else if (parameter.matches("(?i).*/pornstar/.*")) {
+            jd.plugins.hoster.PornHubCom.getFirstPageWithAccount(this, account, br, parameter);
+            handleErrorsAndCaptcha(this.br, account);
+            final String pornstar = new Regex(parameter, "/pornstar/([^/]+)").getMatch(0);
+            final String mode = new Regex(parameter, "/pornstar/[^/]+/(.+)").getMatch(0);
+            /* Main profile URL --> Assume user wants to have all videos of that profile */
+            /* Main profile URL --> Assume user wants to have all videos of that profile */
+            logger.info("Pornstar:" + pornstar + "|Mode:" + mode);
+            if (StringUtils.isEmpty(mode)) {
+                final String pages[] = br.getRegex("(/pornstar/" + Pattern.quote(pornstar) + "/(?:videos|gifs))").getColumn(0);
+                if (pages != null && pages.length > 0) {
+                    for (final String page : new HashSet<String>(Arrays.asList(pages))) {
+                        decryptedLinks.add(createDownloadlink(br.getURL(page).toString()));
+                    }
+                    ret = true;
+                } else {
+                    ret = crawlAllVideosOf(br, account, new HashSet<String>());
+                }
+            } else {
+                ret = crawlAllVideosOf(br, account, new HashSet<String>());
+            }
+        } else if (parameter.matches("(?i).*/(?:users|channels).*")) {
+            if (new Regex(br.getURL(), "/(model|pornstar)/").matches()) { // Handle /users/ that has been switched to model|pornstar
+                logger.info("Users->Model|pornstar");
+                jd.plugins.hoster.PornHubCom.getFirstPageWithAccount(this, account, br, parameter);
+                handleErrorsAndCaptcha(this.br, account);
+                ret = crawlAllVideosOf(br, account, new HashSet<String>());
+            } else {
+                logger.info("Users / Channels");
+                ret = crawlAllVideosOfAUser(param, account);
+            }
+        } else {
+            logger.info("Single Video");
+            jd.plugins.hoster.PornHubCom.getFirstPageWithAccount(this, account, br, parameter);
+            handleErrorsAndCaptcha(this.br, account);
+            return crawlSingleVideo(account);
+        }
+        if (ret == false && decryptedLinks.isEmpty()) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            return decryptedLinks;
+        }
+    }
+
+    private void handleErrorsAndCaptcha(final Browser br, final Account account) throws Exception {
         if (StringUtils.containsIgnoreCase(br.getURL(), "/premium/login")) {
             logger.info("Debug info: premium required: " + parameter);
             throw new AccountRequiredException();
-        }
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Offline because 404");
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
-        } else if (br.containsHTML("<h2>Upgrade now<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)<h2>Upgrade now<")) {
             logger.info("Offline because premiumonly");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
@@ -171,67 +245,6 @@ public class PornHubCom extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        final boolean ret;
-        if (parameter.matches("(?i).*/playlist/.*")) {
-            logger.info("PlayList");
-            ret = decryptAllVideosOfAPlaylist(account);
-        } else if (parameter.matches("(?i).*/gifs.*")) {
-            logger.info("Gif");
-            ret = decryptAllGifsOfAUser(account);
-        } else if (parameter.matches("(?i).*/model/.*")) {
-            final String model = new Regex(parameter, "/model/([^/]+)").getMatch(0);
-            final String mode = new Regex(parameter, "/model/[^/]+/(.+)").getMatch(0);
-            /* Main profile URL --> Assume user wants to have all videos of that profile */
-            logger.info("Model:" + model + "|Mode:" + mode);
-            if (StringUtils.isEmpty(mode)) {
-                final String pages[] = br.getRegex("(/model/" + Pattern.quote(model) + "/(?:videos|gifs))").getColumn(0);
-                if (pages != null && pages.length > 0) {
-                    for (final String page : new HashSet<String>(Arrays.asList(pages))) {
-                        decryptedLinks.add(createDownloadlink(br.getURL(page).toString()));
-                    }
-                    ret = true;
-                } else {
-                    ret = decryptAllVideosOf(br, account, new HashSet<String>());
-                }
-            } else {
-                ret = decryptAllVideosOf(br, account, new HashSet<String>());
-            }
-        } else if (parameter.matches("(?i).*/pornstar/.*")) {
-            final String pornstar = new Regex(parameter, "/pornstar/([^/]+)").getMatch(0);
-            final String mode = new Regex(parameter, "/pornstar/[^/]+/(.+)").getMatch(0);
-            /* Main profile URL --> Assume user wants to have all videos of that profile */
-            /* Main profile URL --> Assume user wants to have all videos of that profile */
-            logger.info("Pornstar:" + pornstar + "|Mode:" + mode);
-            if (StringUtils.isEmpty(mode)) {
-                final String pages[] = br.getRegex("(/pornstar/" + Pattern.quote(pornstar) + "/(?:videos|gifs))").getColumn(0);
-                if (pages != null && pages.length > 0) {
-                    for (final String page : new HashSet<String>(Arrays.asList(pages))) {
-                        decryptedLinks.add(createDownloadlink(br.getURL(page).toString()));
-                    }
-                    ret = true;
-                } else {
-                    ret = decryptAllVideosOf(br, account, new HashSet<String>());
-                }
-            } else {
-                ret = decryptAllVideosOf(br, account, new HashSet<String>());
-            }
-        } else if (parameter.matches("(?i).*/(?:users|channels).*")) {
-            if (new Regex(br.getURL(), "/(model|pornstar)/").matches()) { // Handle /users/ that has been switched to model|pornstar
-                logger.info("Users->Model|pornstar");
-                ret = decryptAllVideosOf(br, account, new HashSet<String>());
-            } else {
-                logger.info("Users / Channels");
-                ret = decryptAllVideosOfAUser(account);
-            }
-        } else {
-            logger.info("Video");
-            return decryptSingleVideo(account);
-        }
-        if (ret == false && decryptedLinks.isEmpty()) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
-            return decryptedLinks;
-        }
     }
 
     private String getLinkDomain(Browser br, Account account) {
@@ -249,7 +262,7 @@ public class PornHubCom extends PluginForDecrypt {
     }
 
     /** Handles pornhub.com/bla/(model|pornstar)/bla */
-    private boolean decryptAllVideosOf(Browser br, Account account, Set<String> dupes) throws Exception {
+    private boolean crawlAllVideosOf(Browser br, Account account, Set<String> dupes) throws Exception {
         if (isOfflineGeneral(br)) {
             decryptedLinks.add(createOfflinelink(parameter));
             return true;
@@ -275,19 +288,19 @@ public class PornHubCom extends PluginForDecrypt {
                     if (br.containsHTML(Pattern.quote(new URL(br.getURL() + "/paid").getPath()))) {
                         final Browser brc = br.cloneBrowser();
                         jd.plugins.hoster.PornHubCom.getPage(brc, brc.createGetRequest(br.getURL() + "/paid"));
-                        decryptAllVideosOf(brc, account, dupes);
+                        crawlAllVideosOf(brc, account, dupes);
                     }
                     if (br.containsHTML(Pattern.quote(new URL(br.getURL() + "/premium").getPath()))) {
                         final Browser brc = br.cloneBrowser();
                         jd.plugins.hoster.PornHubCom.getPage(brc, brc.createGetRequest(br.getURL() + "/premium"));
-                        decryptAllVideosOf(brc, account, dupes);
+                        crawlAllVideosOf(brc, account, dupes);
                     }
                 }
                 final String fanVideosSection = findVideoSection(br, "fanVideosSection");// /videos/fanonly
                 if (false && fanVideosSection != null) {
                     final Browser brc = br.cloneBrowser();
                     jd.plugins.hoster.PornHubCom.getPage(brc, brc.createGetRequest(br.getURL() + "/fanonly"));
-                    decryptAllVideosOf(brc.cloneBrowser(), account, dupes);
+                    crawlAllVideosOf(brc.cloneBrowser(), account, dupes);
                 }
             }
             for (final String section : new String[] { "moreData", "mostRecentVideosSection", "pornstarsVideoSection" }) {
@@ -370,78 +383,107 @@ public class PornHubCom extends PluginForDecrypt {
         return br.getRegex("(<ul[^>]*(?:class\\s*=\\s*\"videos[^>]*id\\s*=\\s*\"" + section + "\"|[^>]*id\\s*=\\s*\"" + section + "\"[^>]*class\\s*=\\s*\"videos[^>]).*?)(<ul\\s*class\\s*=\\s*\"videos|</ul>)").getMatch(0);
     }
 
-    private boolean decryptAllVideosOfAUser(final Account account) throws Exception {
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return true;
+    private static final String TYPE_PORNSTAR_VIDEOS_UPLOAD = "(?i)https?://[^/]+/pornstar/([^/]+)/videos/upload$";
+    private static final String TYPE_PORNSTAR_VIDEOS        = "(?i)https?://[^/]+/pornstar/([^/]+)/videos/?$";
+    private static final String TYPE_MODEL_VIDEOS           = "(?i)https?://[^/]+/model/([^/]+)/videos/?$";
+    private static final String TYPE_USER_FAVORITES         = "(?i)https?://[^/]+/users/([^/]+)/videos(/?|/favorites/?)$";
+    private static final String TYPE_USER_VIDEOS_PUBLIC     = "(?i)https?://[^/]+/users/([^/]+)/videos/public$";
+    private static final String TYPE_CHANNEL_VIDEOS         = "(?i)https?://[^/]+/channels/([^/]+)(/?|/videos/?)$";
+
+    private boolean crawlAllVideosOfAUser(final CryptedLink param, final Account account) throws Exception {
+        /* 2021-08-24: At this moment we never try to find the real/"nice" username - we always use the one that's in our URL. */
+        // String username = null;
+        String galleryname;
+        if (param.getCryptedUrl().matches(TYPE_PORNSTAR_VIDEOS_UPLOAD)) {
+            galleryname = "Uploads";
+        } else if (param.getCryptedUrl().matches(TYPE_PORNSTAR_VIDEOS)) {
+            galleryname = "Upload Videos";
+        } else if (param.getCryptedUrl().matches(TYPE_MODEL_VIDEOS)) {
+            galleryname = "Upload Videos";
+        } else if (param.getCryptedUrl().matches(TYPE_USER_FAVORITES)) {
+            galleryname = "Favorites";
+        } else if (param.getCryptedUrl().matches(TYPE_USER_VIDEOS_PUBLIC)) {
+            galleryname = "Public Videos";
+        } else if (param.getCryptedUrl().matches(TYPE_CHANNEL_VIDEOS)) {
+            if (!param.getCryptedUrl().endsWith("/videos") && !param.getCryptedUrl().endsWith("/")) {
+                param.setCryptedUrl(param.getCryptedUrl() + "/videos");
+            }
+            galleryname = "Channel Uploads";
+        } else {
+            galleryname = null;
+        }
+        /* Only access page if it hasn't been accessed before */
+        jd.plugins.hoster.PornHubCom.getFirstPageWithAccount(this, account, this.br, param.getCryptedUrl());
+        handleErrorsAndCaptcha(this.br, account);
+        jd.plugins.hoster.PornHubCom.getPage(br, param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?)>\\s*There are no videos\\.\\.\\.<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String totalNumberofItemsText;
+        /* 2021-08-24: E.g. given for "users/username/videos(/favorites)?" */
+        final String totalNumberofItems = br.getRegex("class=\"totalSpan\">(\\d+)</span>").getMatch(0);
+        if (totalNumberofItems != null) {
+            totalNumberofItemsText = totalNumberofItems;
+        } else {
+            totalNumberofItemsText = "Unknown";
+        }
+        final String seeAllURL = br.getRegex("(" + Regex.escape(br._getURL().getPath()) + "/[^\"]+)\" class=\"seeAllButton greyButton float-right\">").getMatch(0);
+        if (seeAllURL != null) {
+            /**
+             * E.g. users/bla/videos --> /users/bla/videos/favorites </br>
+             * Without this we might only see some of all items and no pagination which is needed to be able to find all items.
+             */
+            logger.info("Found seeAllURL: " + seeAllURL);
+            jd.plugins.hoster.PornHubCom.getPage(br, seeAllURL);
         }
         FilePackage fp = null;
-        // TODO: better check for user[channel]/model/pornstar and handle all possible cases
-        if (parameter.matches("(?i).*/pornstar/[^/]+/videos/upload")) {
-            jd.plugins.hoster.PornHubCom.getPage(br, parameter);
-            final String user = getUser(br);
-            if (user != null) {
-                fp = FilePackage.getInstance();
-                fp.setName("Videos uploaded by " + user);
-            }
-        } else if (parameter.matches("(?i).*/pornstar/[^/]+/videos/?")) {
-            jd.plugins.hoster.PornHubCom.getPage(br, parameter);
-            final String user = getUser(br);
-            if (user != null) {
-                fp = FilePackage.getInstance();
-                fp.setName(user + " - Upload Videos");
-            }
-        } else if (parameter.matches("(?i).*/model/[^/]+/videos/?")) {
-            jd.plugins.hoster.PornHubCom.getPage(br, parameter);
-            final String user = getUser(br);
-            if (user != null) {
-                fp = FilePackage.getInstance();
-                fp.setName(user + " - Upload Videos");
-            }
-        } else if (parameter.matches("(?i).*/users/[^/]*/?(videos/?)?")) {
-            jd.plugins.hoster.PornHubCom.getPage(br, new Regex(parameter, "(.*/users/[^/]*)").getMatch(0) + "/videos/public");
-            final String user = getUser(br);
-            if (user != null) {
-                fp = FilePackage.getInstance();
-                fp.setName(user + "'s Public Videos");
-            }
-        } else if (parameter.matches("(?i).*/channels/.+")) {
-            if (!parameter.endsWith("/videos") && !parameter.endsWith("/")) {
-                parameter += "/videos";
-            }
-            jd.plugins.hoster.PornHubCom.getPage(br, parameter);
-            final String user = getUser(br);
-            if (user != null) {
-                fp = FilePackage.getInstance();
-                fp.setName(user + " Channel Uploads");
-            }
-        } else {
-            jd.plugins.hoster.PornHubCom.getPage(br, parameter);
+        final String username_url = getUsernameFromURL(br.getURL());
+        if (username_url != null && galleryname != null) {
+            fp = FilePackage.getInstance();
+            fp.setName(username_url + " - " + galleryname);
+        } else if (username_url != null) {
+            fp = FilePackage.getInstance();
+            fp.setName(username_url);
         }
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">There are no videos\\.\\.\\.<")) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return true;
-        }
-        // final String username = new Regex(parameter, "users/([^/]+)/").getMatch(0);
         int page = 1;
         int max_entries_per_page = 40;
-        int links_found_in_this_page;
         final Set<String> dupes = new HashSet<String>();
         String publicVideosHTMLSnippet = null;
         String base_url = null;
         boolean ret = false;
         do {
-            boolean htmlSource = true;
+            boolean htmlSourceNeedsFiltering = true;
             if (page > 1) {
                 // jd.plugins.hoster.PornHubCom.getPage(br, "/users/" + username + "/videos/public/ajax?o=mr&page=" + page);
                 // br.postPage(parameter + "/ajax?o=mr&page=" + page, "");
                 /* e.g. different handling for '/model/' URLs */
-                String nextpage_url = br.getRegex("class=\"page_next\"><a href=\"(/[^\"]+\\?page=\\d+)\"").getMatch(0);
-                if (nextpage_url == null) {
+                final String nextpage_url_old = br.getRegex("class=\"page_next\"><a href=\"(/[^\"]+\\?page=\\d+)\"").getMatch(0);
+                final Regex nextpageAjaxRegEx = br.getRegex("onclick=\"loadMoreData\\(\\'(/users/[^<>\"\\']+)',\\s*'(\\d+)',\\s*'\\d+'\\)");
+                final String nextpage_url;
+                if (nextpage_url_old != null) {
+                    /* Old handling */
+                    nextpage_url = nextpage_url_old;
+                    logger.info("Auto-found nextpage_url via old handling: " + nextpage_url);
+                } else if (nextpageAjaxRegEx.matches()) {
+                    /* New ajax handling */
+                    /* Additional fail-safe */
+                    final String nextPageStr = nextpageAjaxRegEx.getMatch(1);
+                    if (!nextPageStr.equalsIgnoreCase(Integer.toString(page))) {
+                        logger.warning("Expected nextPage: " + page + " | Found nextPage: " + nextPageStr);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final UrlQuery nextpageAjaxQuery = UrlQuery.parse(nextpageAjaxRegEx.getMatch(0));
+                    nextpageAjaxQuery.addAndReplace("page", nextPageStr);
+                    nextpage_url = nextpageAjaxQuery.toString();
+                    htmlSourceNeedsFiltering = false;
+                    logger.info("Auto-found nextpage_url via ajax handling: " + nextpage_url);
+                } else {
+                    /* Ajax fallback handling */
                     nextpage_url = base_url + "/ajax?o=mr&page=" + page;
+                    logger.info("Custom build nextpage_url: " + nextpage_url);
                     br.getHeaders().put("Accept", "*/*");
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    htmlSource = false;
+                    htmlSourceNeedsFiltering = false;
                 }
                 jd.plugins.hoster.PornHubCom.getPage(br, br.createPostRequest(nextpage_url, ""));
                 if (br.getHttpConnection().getResponseCode() == 404) {
@@ -451,7 +493,7 @@ public class PornHubCom extends PluginForDecrypt {
                 /* Set this on first loop */
                 base_url = br.getURL();
             }
-            if (htmlSource) {
+            if (htmlSourceNeedsFiltering) {
                 /* only parse videos of the user/pornstar/channel, avoid catching unrelated content e.g. 'related' videos */
                 if (parameter.contains("/pornstar/") || parameter.contains("/model/")) {
                     publicVideosHTMLSnippet = br.getRegex("(class=\"videoUList[^\"]*?\".*?</section>)").getMatch(0);
@@ -462,6 +504,9 @@ public class PornHubCom extends PluginForDecrypt {
                     // publicVideosHTMLSnippet = br.getRegex("(>public Videos<.+?(>Load More<|</section>))").getMatch(0);
                     publicVideosHTMLSnippet = br.getRegex("(class=\"videoUList[^\"]*?\".*?</section>)").getMatch(0);
                 }
+                if (publicVideosHTMLSnippet != null) {
+                    logger.info("publicVideosHTMLSnippet: " + publicVideosHTMLSnippet); // For debugging
+                }
             } else {
                 /* Pagination result --> Ideal as a source as it only contains the content we need */
                 publicVideosHTMLSnippet = br.toString();
@@ -469,7 +514,6 @@ public class PornHubCom extends PluginForDecrypt {
             if (publicVideosHTMLSnippet == null) {
                 throw new DecrypterException("Decrypter broken for link: " + parameter);
             }
-            logger.info("publicVideos: " + publicVideosHTMLSnippet); // For debugging
             final String[] viewkeys = new Regex(publicVideosHTMLSnippet, "(?:_|-)vkey\\s*=\\s*\"([a-z0-9]+)\"").getColumn(0);
             if (viewkeys == null || viewkeys.length == 0) {
                 break;
@@ -488,19 +532,23 @@ public class PornHubCom extends PluginForDecrypt {
                     }
                 }
             }
-            logger.info("Links found in page " + page + ": " + viewkeys.length);
-            links_found_in_this_page = viewkeys.length;
-            page++;
-        } while (!this.isAbort() && links_found_in_this_page >= max_entries_per_page);
+            logger.info("Links found on current page " + page + ": " + viewkeys.length + " | Found: " + decryptedLinks.size() + " of " + totalNumberofItemsText);
+            if (viewkeys.length < max_entries_per_page) {
+                logger.info("Stopping because: Current page contains less items than: " + max_entries_per_page);
+                break;
+            } else {
+                page++;
+            }
+        } while (!this.isAbort());
         return ret;
     }
 
-    private String getUser(final Browser br) {
-        final String ret = new Regex(br.getURL(), "/(?:users|model|pornstar|channels)/([^/]+)").getMatch(0);
+    private static String getUsernameFromURL(final String url) {
+        final String ret = new Regex(url, "(?i)/(?:users|model|pornstar|channels)/([^/]+)").getMatch(0);
         return ret;
     }
 
-    private boolean decryptAllGifsOfAUser(final Account account) throws Exception {
+    private boolean crawlAllGifsOfAUser(final Account account) throws Exception {
         final boolean webm = SubConfiguration.getConfig(DOMAIN).getBooleanProperty(jd.plugins.hoster.PornHubCom.GIFS_WEBM, true);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(createOfflinelink(parameter));
@@ -513,7 +561,7 @@ public class PornHubCom extends PluginForDecrypt {
             if (!br.getURL().matches("(?i).+/gifs/public")) {
                 jd.plugins.hoster.PornHubCom.getPage(br, br.getURL() + "/gifs/public");
             }
-            final String user = getUser(br);
+            final String user = getUsernameFromURL(br.getURL());
             if (user != null) {
                 fp = FilePackage.getInstance();
                 fp.setName(user + "'s GIFs");
@@ -524,7 +572,7 @@ public class PornHubCom extends PluginForDecrypt {
             if (!br.getURL().matches("(?i).+/gifs/video")) {
                 jd.plugins.hoster.PornHubCom.getPage(br, br.getURL() + "/gifs/video");
             }
-            final String user = getUser(br);
+            final String user = getUsernameFromURL(br.getURL());
             if (user != null) {
                 fp = FilePackage.getInstance();
                 fp.setName("GIFs From " + user + "'s Videos");
@@ -535,7 +583,7 @@ public class PornHubCom extends PluginForDecrypt {
             if (!br.getURL().matches("(?i).+/gifs/from_videos") || !br.getURL().matches("(?i).+/gifs/video")) {
                 jd.plugins.hoster.PornHubCom.getPage(br, br.getURL() + "/gifs/video");
             }
-            final String user = getUser(br);
+            final String user = getUsernameFromURL(br.getURL());
             if (user != null) {
                 fp = FilePackage.getInstance();
                 fp.setName("GIFs From " + user + "'s Videos");
@@ -600,14 +648,14 @@ public class PornHubCom extends PluginForDecrypt {
                     }
                 }
             }
-            logger.info("Links found in page " + page + ": " + items.length);
+            logger.info("Links found in page " + page + ": " + items.length + " | Total: " + decryptedLinks.size());
             links_found_in_this_page = items.length;
             page++;
         } while (links_found_in_this_page >= max_entries_per_page);
         return ret;
     }
 
-    private boolean decryptAllVideosOfAPlaylist(final Account account) throws Exception {
+    private boolean crawlAllVideosOfAPlaylist(final Account account) throws Exception {
         int page = 1;
         int addedItems = 0;
         int foundItems = 0;
@@ -667,7 +715,7 @@ public class PornHubCom extends PluginForDecrypt {
         return true;
     }
 
-    private ArrayList<DownloadLink> decryptSingleVideo(final Account account) throws Exception {
+    private ArrayList<DownloadLink> crawlSingleVideo(final Account account) throws Exception {
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
         final boolean bestonly = cfg.getBooleanProperty(jd.plugins.hoster.PornHubCom.BEST_ONLY, false);
         final boolean bestselectiononly = cfg.getBooleanProperty(jd.plugins.hoster.PornHubCom.BEST_SELECTION_ONLY, false);
@@ -880,14 +928,10 @@ public class PornHubCom extends PluginForDecrypt {
         return 2;// seems they try to block crawling
     }
 
-    /**
-     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
-     */
     public boolean isProxyRotationEnabledForLinkCrawler() {
         return false;
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
