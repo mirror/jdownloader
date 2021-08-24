@@ -416,7 +416,7 @@ public class PornHubCom extends PluginForDecrypt {
         jd.plugins.hoster.PornHubCom.getFirstPageWithAccount(this, account, this.br, param.getCryptedUrl());
         handleErrorsAndCaptcha(this.br, account);
         jd.plugins.hoster.PornHubCom.getPage(br, param.getCryptedUrl());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?)>\\s*There are no videos\\.\\.\\.<")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*There are no videos\\.\\.\\.<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String totalNumberofItemsText;
