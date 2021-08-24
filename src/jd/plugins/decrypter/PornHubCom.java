@@ -26,13 +26,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -54,6 +47,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubCom extends PluginForDecrypt {
@@ -393,7 +393,7 @@ public class PornHubCom extends PluginForDecrypt {
     private boolean crawlAllVideosOfAUser(final CryptedLink param, final Account account) throws Exception {
         /* 2021-08-24: At this moment we never try to find the real/"nice" username - we always use the one that's in our URL. */
         // String username = null;
-        String galleryname;
+        final String galleryname;
         if (param.getCryptedUrl().matches(TYPE_PORNSTAR_VIDEOS_UPLOAD)) {
             galleryname = "Uploads";
         } else if (param.getCryptedUrl().matches(TYPE_PORNSTAR_VIDEOS)) {
@@ -419,9 +419,9 @@ public class PornHubCom extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*There are no videos\\.\\.\\.<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String totalNumberofItemsText;
         /* 2021-08-24: E.g. given for "users/username/videos(/favorites)?" */
         final String totalNumberofItems = br.getRegex("class=\"totalSpan\">(\\d+)</span>").getMatch(0);
+        final String totalNumberofItemsText;
         if (totalNumberofItems != null) {
             totalNumberofItemsText = totalNumberofItems;
         } else {
@@ -430,20 +430,25 @@ public class PornHubCom extends PluginForDecrypt {
         final String seeAllURL = br.getRegex("(" + Regex.escape(br._getURL().getPath()) + "/[^\"]+)\" class=\"seeAllButton greyButton float-right\">").getMatch(0);
         if (seeAllURL != null) {
             /**
-             * E.g. users/bla/videos --> /users/bla/videos/favorites </br>
-             * Without this we might only see some of all items and no pagination which is needed to be able to find all items.
+             * E.g. users/bla/videos --> /users/bla/videos/favorites </br> Without this we might only see some of all items and no
+             * pagination which is needed to be able to find all items.
              */
             logger.info("Found seeAllURL: " + seeAllURL);
             jd.plugins.hoster.PornHubCom.getPage(br, seeAllURL);
         }
-        FilePackage fp = null;
-        final String username_url = getUsernameFromURL(br.getURL());
+        final FilePackage fp;
+        final String username_url = getUsernameFromURL(br);
         if (username_url != null && galleryname != null) {
             fp = FilePackage.getInstance();
             fp.setName(username_url + " - " + galleryname);
         } else if (username_url != null) {
             fp = FilePackage.getInstance();
             fp.setName(username_url);
+        } else if (galleryname != null) {
+            fp = FilePackage.getInstance();
+            fp.setName(galleryname);
+        } else {
+            fp = null;
         }
         int page = 1;
         int max_entries_per_page = 40;
@@ -543,8 +548,8 @@ public class PornHubCom extends PluginForDecrypt {
         return ret;
     }
 
-    private static String getUsernameFromURL(final String url) {
-        final String ret = new Regex(url, "(?i)/(?:users|model|pornstar|channels)/([^/]+)").getMatch(0);
+    private static String getUsernameFromURL(final Browser br) {
+        final String ret = new Regex(br.getURL(), "(?i)/(?:users|model|pornstar|channels)/([^/]+)").getMatch(0);
         return ret;
     }
 
@@ -561,7 +566,7 @@ public class PornHubCom extends PluginForDecrypt {
             if (!br.getURL().matches("(?i).+/gifs/public")) {
                 jd.plugins.hoster.PornHubCom.getPage(br, br.getURL() + "/gifs/public");
             }
-            final String user = getUsernameFromURL(br.getURL());
+            final String user = getUsernameFromURL(br);
             if (user != null) {
                 fp = FilePackage.getInstance();
                 fp.setName(user + "'s GIFs");
@@ -572,7 +577,7 @@ public class PornHubCom extends PluginForDecrypt {
             if (!br.getURL().matches("(?i).+/gifs/video")) {
                 jd.plugins.hoster.PornHubCom.getPage(br, br.getURL() + "/gifs/video");
             }
-            final String user = getUsernameFromURL(br.getURL());
+            final String user = getUsernameFromURL(br);
             if (user != null) {
                 fp = FilePackage.getInstance();
                 fp.setName("GIFs From " + user + "'s Videos");
@@ -583,7 +588,7 @@ public class PornHubCom extends PluginForDecrypt {
             if (!br.getURL().matches("(?i).+/gifs/from_videos") || !br.getURL().matches("(?i).+/gifs/video")) {
                 jd.plugins.hoster.PornHubCom.getPage(br, br.getURL() + "/gifs/video");
             }
-            final String user = getUsernameFromURL(br.getURL());
+            final String user = getUsernameFromURL(br);
             if (user != null) {
                 fp = FilePackage.getInstance();
                 fp.setName("GIFs From " + user + "'s Videos");
