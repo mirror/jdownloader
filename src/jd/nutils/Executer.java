@@ -167,24 +167,28 @@ public class Executer extends Thread implements Runnable {
                 String codePage = Executer.this.getCodepage();
                 while (!this.endOfFileReceived) {
                     final int num = this.readLine();
-                    final byte[] lastNumBytes = this.dynbuf.getLast(num);
-                    String line = null;
-                    if (codePage != null) {
-                        try {
-                            line = new String(lastNumBytes, codePage).trim();
-                        } catch (final UnsupportedEncodingException e) {
-                            e.printStackTrace();
-                            codePage = null;
+                    if (num == -1) {
+                        continue;
+                    } else {
+                        final byte[] lastNumBytes = this.dynbuf.getLast(num);
+                        String line = null;
+                        if (codePage != null) {
+                            try {
+                                line = new String(lastNumBytes, codePage).trim();
+                            } catch (final UnsupportedEncodingException e) {
+                                e.printStackTrace();
+                                codePage = null;
+                            }
                         }
-                    }
-                    if (line == null) {
-                        line = new String(lastNumBytes).trim();
-                    }
-                    if (line.length() > 0) {
-                        if (Executer.this.isDebug()) {
-                            System.out.println(this + ": " + line + "");
+                        if (line == null) {
+                            line = new String(lastNumBytes).trim();
                         }
-                        Executer.this.fireEvent(line, this.dynbuf, type);
+                        if (line.length() > 0) {
+                            if (Executer.this.isDebug()) {
+                                System.out.println(this + ": " + line + "");
+                            }
+                            Executer.this.fireEvent(line, this.dynbuf, type);
+                        }
                     }
                 }
             } catch (final IOException e) {
