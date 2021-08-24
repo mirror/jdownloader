@@ -339,12 +339,12 @@ public class DanbooruDonmaiUs extends PluginForHost {
                     String message = "Hello dear Danbooru user";
                     message += "\r\nIn order to use an account of this service in JDownloader, you need to follow these instructions:";
                     message += "\r\n1. Open the following page in your browser and login if you haven't already: danbooru.donmai.us/profile";
-                    message += "\r\n2. Click on 'Add' (top right corner) to add a new API key if you haven't created one already.";
+                    message += "\r\n2. See 'API Key' -> Click on 'View' --> Click on 'Add' (top right corner) to add a new API key if you haven't created one already.";
                     message += "\r\nEnter an API key name of your choice and leave the 'IP Addresses' field blank unless you know what you're doing.";
-                    message += "\r\nIf you care about account security, select the following permissions only: 'users:profile', 'posts:show' and 'posts:index'.";
+                    message += "\r\nIf you care about account security, select only the following lines under 'Permissions': 'posts:index', 'posts:show', 'users:profile'.";
                     message += "\r\n3. Close this message and try add your account to JD again: This time put your Danbooru username into the username field and apikey into the password field.";
                     final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                    dialog.setTimeout(3 * 60 * 1000);
+                    dialog.setTimeout(5 * 60 * 1000);
                     /* 2021-04-19: I've decided no to auto-open this URL! */
                     // final String profileURL = "https://danbooru.donmai.us/profile";
                     // if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {

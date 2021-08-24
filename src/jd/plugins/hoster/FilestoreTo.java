@@ -17,7 +17,10 @@ package jd.plugins.hoster;
 
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Pattern;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -36,10 +39,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestore.to" }, urls = { "http://(www\\.)?filestore\\.to/\\?d=[A-Z0-9]+" })
 public class FilestoreTo extends PluginForHost {
@@ -215,8 +214,15 @@ public class FilestoreTo extends PluginForHost {
     }
 
     private void download(final DownloadLink link, final Account account, final boolean resume, int maxChunks) throws Exception {
-        if (br.containsHTML(Pattern.quote(">Der Download ist nicht bereit !</span><br />Die Datei wird noch auf die Server verteilt.<br />Bitte versuche es in ein paar Minuten erneut.<"))) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
+        final String errorMsg = br.getRegex("class=\"alert alert-danger page-alert mb-2\">\\s*<strong>([^<>]+)</strong>").getMatch(0);
+        if (errorMsg != null) {
+            /* Check if we should retry */
+            if (errorMsg.matches("Datei noch nicht bereit")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg, 5 * 60 * 1000l);
+            } else {
+                /* Unknown error: Display to user but do not retry */
+                throw new PluginException(LinkStatus.ERROR_FATAL, errorMsg);
+            }
         }
         // form 1
         Form f = br.getFormByRegex(">Download</button>");
