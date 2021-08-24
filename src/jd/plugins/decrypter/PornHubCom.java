@@ -779,6 +779,9 @@ public class PornHubCom extends PluginForDecrypt {
                         dl.setProperty("viewkey", viewkey);
                         dl.setProperty(jd.plugins.hoster.PornHubCom.PROPERT_FORMAT, format);
                         dl.setLinkID("pornhub://" + viewkey + "_" + format + "_" + quality);
+                        if (!StringUtils.isEmpty(username)) {
+                            html_filename = username + "_" + html_filename;
+                        }
                         if (StringUtils.equalsIgnoreCase(format, "hls")) {
                             html_filename += "hls_" + quality + "p.mp4";
                         } else {
@@ -788,7 +791,6 @@ public class PornHubCom extends PluginForDecrypt {
                         /* Set some Packagizer properties */
                         {
                             if (!StringUtils.isEmpty(username)) {
-                                html_filename += username + "_";
                                 dl.setProperty(jd.plugins.hoster.PornHubCom.PROPERTY_USERNAME, username);
                             }
                             if (!StringUtils.isEmpty(uploadDate)) {

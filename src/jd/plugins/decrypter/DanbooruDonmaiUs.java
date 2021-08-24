@@ -99,7 +99,7 @@ public class DanbooruDonmaiUs extends PluginForDecrypt {
             final List<Object> ressourcelist = (List<Object>) apiResponse;
             if (ressourcelist.size() == 0) {
                 if (page == 1) {
-                    logger.info("Failed to find any items that match users' search queries");
+                    logger.info("Stopping because: Failed to find any items that match users' search queries");
                     break;
                 } else {
                     /* Rare case but this can happen */
@@ -107,21 +107,28 @@ public class DanbooruDonmaiUs extends PluginForDecrypt {
                     break;
                 }
             }
+            int index = -1;
             boolean pageContainsNewItems = false;
             for (final Object postO : ressourcelist) {
+                index += 1;
                 final Map<String, Object> entries = (Map<String, Object>) postO;
-                final long postID = ((Number) entries.get("id")).longValue();
-                if (dupes.contains(postID)) {
+                final Object idO = entries.get("id");
+                if (idO == null) {
+                    /* 2021-08-24: This may sometimes happen. Possible API bug. */
+                    logger.warning("Possible API bug: Found item without id: Page: " + page + " | Index: " + index);
                     continue;
                 }
-                pageContainsNewItems = true;
-                dupes.add(postID);
-                final DownloadLink dl = this.createDownloadlink("https://" + this.getHost() + "/posts/" + postID);
-                jd.plugins.hoster.DanbooruDonmaiUs.parseFileInformationAPI(dl, entries);
-                dl.setAvailable(true);
-                dl._setFilePackage(fp);
-                distribute(dl);
-                decryptedLinks.add(dl);
+                final long postID = ((Number) idO).longValue();
+                if (!dupes.contains(postID)) {
+                    pageContainsNewItems = true;
+                    dupes.add(postID);
+                    final DownloadLink dl = this.createDownloadlink("https://" + this.getHost() + "/posts/" + postID);
+                    jd.plugins.hoster.DanbooruDonmaiUs.parseFileInformationAPI(dl, entries);
+                    dl.setAvailable(true);
+                    dl._setFilePackage(fp);
+                    distribute(dl);
+                    decryptedLinks.add(dl);
+                }
             }
             /* Check for stop conditions */
             if (!pageContainsNewItems) {
@@ -134,6 +141,7 @@ public class DanbooruDonmaiUs extends PluginForDecrypt {
                 page++;
             }
         } while (!this.isAbort());
+        logger.info("Total numbero found items: " + decryptedLinks.size());
         return decryptedLinks;
     }
 
