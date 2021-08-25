@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.Regex;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -28,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "freefuckvidz.com" }, urls = { "http://(www\\.)?freefuckvidz\\.com/free\\-porn/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "freefuckvidz.com" }, urls = { "https?://(?:www\\.)?freefuckvidz\\.com/free\\-porn/(\\d+)" })
 public class FreeFuckVidzCom extends PluginForHost {
     public FreeFuckVidzCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,20 +43,40 @@ public class FreeFuckVidzCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.freefuckvidz.com/dmca.html";
+        return "https://www.freefuckvidz.com/dmca.html";
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link) + ".mp4");
+        }
         dllink = null;
         free_limit_reached = false;
         this.setBrowserExclusive();
         br.setCookiesExclusive(true);
         br.setFollowRedirects(true);
         this.br.setAllowedResponseCodes(410);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 410 || br.containsHTML(">Removed from Free Fuck") || !br.getURL().startsWith("http://www.freefuckvidz")) {
+        br.getPage(link.getDownloadURL());
+        if (br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 410 || br.containsHTML("(?i)>\\s*Removed from Free Fuck")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.canHandle(br.getURL())) {
+            /* E.g. redirect to some advertising website. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<div class=\"content player clearfix\"><h1>([^<>\"]*?)</h1>").getMatch(0);
@@ -76,7 +98,7 @@ public class FreeFuckVidzCom extends PluginForHost {
         }
         filename = filename.trim();
         final String ext = ".mp4";
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         if (dllink != null && availablestatus_check_filesize) {
             dllink = Encoding.htmlDecode(dllink);
             Browser br2 = br.cloneBrowser();
@@ -89,8 +111,10 @@ public class FreeFuckVidzCom extends PluginForHost {
                     free_limit_reached = true;
                     return AvailableStatus.TRUE;
                 }
-                if (!con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -104,25 +128,33 @@ public class FreeFuckVidzCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private void getLink(String quality) {
+    private void getLink(final String quality) {
         dllink = br.getRegex("\"" + quality + "\",url:\"(http[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            /* 2021-08-25 */
+            dllink = br.getRegex("\"" + quality + "\":\"(http[^<>\"]*?)\"").getMatch(0);
+        }
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (free_limit_reached) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 401) {
                 free_limit_reached = true;
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

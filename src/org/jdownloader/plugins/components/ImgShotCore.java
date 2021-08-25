@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -15,8 +17,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class ImgShotCore extends antiDDoSForHost {
@@ -97,16 +97,19 @@ public class ImgShotCore extends antiDDoSForHost {
     }
 
     /**
-     * Override to disable filesize-check! </br> default = true
+     * Override to disable filesize-check! </br>
+     * default = true
      */
     protected boolean checkFilesize() {
         return true;
     }
 
     /**
-     * Enforce official download via "dlimg.php"? </br> A lot of hosts have it enabled although they do not display a download button on
-     * their website! </br> default = true </br> Example official download supported but broken serverside: imagedecode.com, imageteam.org
-     * </br> Example official download working fine: imgwallet.com, damimage.com, imgadult.com, imgtornado.com, acidimg.com
+     * Enforce official download via "dlimg.php"? </br>
+     * A lot of hosts have it enabled although they do not display a download button on their website! </br>
+     * default = true </br>
+     * Example official download supported but broken serverside: imagedecode.com, imageteam.org </br>
+     * Example official download working fine: imgwallet.com, damimage.com, imgadult.com, imgtornado.com, acidimg.com
      */
     protected boolean enforceOfficialDownloadURL() {
         return true;
@@ -130,6 +133,10 @@ public class ImgShotCore extends antiDDoSForHost {
     }
 
     protected AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+        if (!link.isNameSet()) {
+            /* Set fallback filename -> We know all content is image content. */
+            link.setName(this.getFID(link) + ".jpg");
+        }
         br.setFollowRedirects(true);
         this.setBrowserExclusive();
         /* TODO: Check whether or not we need a random User-Agent */
@@ -154,10 +161,13 @@ public class ImgShotCore extends antiDDoSForHost {
                 URLConnectionAdapter con = null;
                 try {
                     con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
-                    if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                        // server_issues = true;
+                    connectionErrorhandling(con);
+                    if (!this.looksLikeDownloadableContent(con)) {
+                        return AvailableStatus.UNCHECKABLE;
                     } else {
-                        link.setDownloadSize(con.getLongContentLength());
+                        if (con.getCompleteContentLength() > 0) {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                         /*
                          * Set filename with correct extension. Most content will be .jpg but sometimes there will be .png and .gif as well.
                          */
@@ -250,7 +260,7 @@ public class ImgShotCore extends antiDDoSForHost {
                 } else {
                     con = openAntiDDoSRequestConnection(brc, br.createHeadRequest(dllink));
                 }
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
+                if (!this.looksLikeDownloadableContent(con)) {
                     // server_issues = true;
                     dllink = null;
                     this.dl = null;
@@ -258,7 +268,9 @@ public class ImgShotCore extends antiDDoSForHost {
                     logger.info("Official downloadlink does NOT work");
                 } else {
                     logger.info("Official downloadlink works");
-                    link.setVerifiedFileSize(con.getLongContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                     if (filename != null) {
                         /*
                          * Set filename with correct extension. Most content will be .jpg but sometimes there will be .png and .gif as well.
@@ -304,13 +316,14 @@ public class ImgShotCore extends antiDDoSForHost {
         if (dl == null) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.supportsResume(), this.maxChunks());
         }
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        connectionErrorhandling(dl.getConnection());
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
             }
-            br.followConnection();
+            connectionErrorhandling(dl.getConnection());
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {
@@ -318,6 +331,20 @@ public class ImgShotCore extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void connectionErrorhandling(final URLConnectionAdapter con) throws PluginException {
+        if (con.getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+        } else if (con.getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        } else if (con.getURL().toString().contains("/noimage.php")) {
+            /* 2021-08-25: E.g. official download is available via downloadbutton --> /dlimg.php --> But download fails nevertheless */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download broken", 60 * 60 * 1000l);
+        } else if (con.getURL().toString().contains("/randomImage.php")) {
+            /* 2021-08-25: Broken upload redirecting to random images */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     @Override
