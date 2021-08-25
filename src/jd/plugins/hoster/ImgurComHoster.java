@@ -205,42 +205,14 @@ public class ImgurComHoster extends PluginForHost {
                 /* Website mode */
                 prepBRWebsite(this.br);
                 getPage(this.br, "https://" + this.getHost() + "/" + imgUID);
-                if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("oembed\\.json")) {
+                if (isOfflineWebsite(br)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                // String title = br.getRegex("property=\"og:title\" data-react-helmet=\"true\" content=\"([^<>\"]+)\"").getMatch(0);
-                String title = br.getRegex("link rel=\"alternate\" type=\"application/json\\+oembed\"[^>]*title=\"([^\"]*?)( - Imgur)?\"").getMatch(0);
-                if (br.containsHTML("(?i)i\\.imgur\\.com/" + this.imgUID + "\\.gifv")) {
-                    /* gif/mp4 content */
-                    if (userPrefersMp4()) {
-                        this.dllink = ImgurComGallery.getURLMp4Download(this.imgUID);
-                    } else {
-                        this.dllink = ImgurComGallery.getURLGifDownload(this.imgUID);
-                    }
-                } else {
-                    this.dllink = br.getRegex("property=\"og:image\"[^>]*content=\"(https://[^<>\"]+)\"").getMatch(0);
-                }
-                if (this.dllink != null) {
-                    /* 2020-10-08: Remove all arguments e.g. "?fb" - they would often alter the resolution/quality! */
-                    final String removeme = new Regex(this.dllink, "(\\?.+)").getMatch(0);
-                    if (removeme != null) {
-                        this.dllink = this.dllink.replace(removeme, "");
-                    }
-                    /* Save new directurl */
-                    link.setProperty(PROPERTY_DOWNLOADLINK_DIRECT_URL, dllink);
-                }
-                if (!StringUtils.isEmpty(title) && !title.equalsIgnoreCase("imgur.com") && !title.matches(".*Imgur: The magic of the Internet.*")) {
-                    title = title.trim();
-                    final String removeme = new Regex(title, "( - [A-Za-z0-9]+ on Imgur)").getMatch(0);
-                    if (removeme != null) {
-                        title = title.replace(removeme, "");
-                    }
-                    link.setProperty(PROPERTY_DOWNLOADLINK_TITLE, title);
-                }
+                websiteParseAndSetData(link);
             }
         }
         /**
-         * 2021-08-11: Don't do this anymore! Not all items are officially downloadable! This can result in: </br>
+         * 2021-08-11: Don't do this anymore! Not all items are officially downloadable! Most of all times this will result in: </br>
          * {"data":{"error":"Imgur is temporarily over capacity. Please try again later."},"success":false,"status":500}
          */
         // if (StringUtils.isEmpty(this.dllink)) {
@@ -270,6 +242,48 @@ public class ImgurComHoster extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    public void websiteParseAndSetData(final DownloadLink link) {
+        // String title = br.getRegex("property=\"og:title\" data-react-helmet=\"true\" content=\"([^<>\"]+)\"").getMatch(0);
+        String title = br.getRegex("link rel=\"alternate\" type=\"application/json\\+oembed\"[^>]*title=\"([^\"]*?)( - Imgur)?\"").getMatch(0);
+        if (br.containsHTML("(?i)i\\.imgur\\.com/" + this.imgUID + "\\.gifv")) {
+            /* gif/mp4 content */
+            if (userPrefersMp4()) {
+                this.dllink = ImgurComGallery.getURLMp4Download(this.imgUID);
+            } else {
+                this.dllink = ImgurComGallery.getURLGifDownload(this.imgUID);
+            }
+        } else {
+            this.dllink = br.getRegex("property=\"og:image\"[^>]*content=\"(https://[^<>\"]+)\"").getMatch(0);
+        }
+        if (this.dllink != null) {
+            /* 2020-10-08: Remove all arguments e.g. "?fb" - they would often alter the resolution/quality! */
+            final String removeme = new Regex(this.dllink, "(\\?.+)").getMatch(0);
+            if (removeme != null) {
+                this.dllink = this.dllink.replace(removeme, "");
+            }
+            /* Save new directurl */
+            link.setProperty(PROPERTY_DOWNLOADLINK_DIRECT_URL, dllink);
+        }
+        if (!StringUtils.isEmpty(title) && !title.equalsIgnoreCase("imgur.com") && !title.matches(".*Imgur: The magic of the Internet.*")) {
+            title = Encoding.htmlDecode(title).trim();
+            final String removeme = new Regex(title, "( - [A-Za-z0-9]+ on Imgur)").getMatch(0);
+            if (removeme != null) {
+                title = title.replace(removeme, "");
+            }
+            link.setProperty(PROPERTY_DOWNLOADLINK_TITLE, title);
+        }
+    }
+
+    public static final boolean isOfflineWebsite(final Browser br) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        } else if (!br.containsHTML("oembed\\.json")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private void checkConnectionAndSetFinalFilename(final DownloadLink link, final URLConnectionAdapter con) throws Exception {
@@ -949,7 +963,7 @@ public class ImgurComHoster extends PluginForHost {
     }
 
     public static String getFiletype(final DownloadLink dl) {
-        final String ret = dl.getStringProperty(PROPERTY_DOWNLOADLINK_FILETYPE, null);
+        final String ret = dl.getStringProperty(PROPERTY_DOWNLOADLINK_FILETYPE);
         final String storedDirectURL = dl.getStringProperty(PROPERTY_DOWNLOADLINK_DIRECT_URL);
         if (ret != null) {
             final String image = new Regex(ret, "images/(.+)").getMatch(0);
@@ -960,19 +974,34 @@ public class ImgurComHoster extends PluginForHost {
                     return image;
                 }
             }
-            final String video = new Regex(ret, "video/(.+)").getMatch(0);
-            if (video != null) {
-                return video;
-            }
-            if (StringUtils.equals("jpeg", ret)) {
+            final String videoExt = new Regex(ret, "video/(.+)").getMatch(0);
+            if (videoExt != null) {
+                return getCorrectedFileExtension(videoExt);
+            } else if (StringUtils.equals("jpeg", ret)) {
                 return "jpg";
             } else {
-                return ret;
+                return getCorrectedFileExtension(ret);
             }
         } else if (storedDirectURL != null && storedDirectURL.matches(ImgurComGallery.type_single_direct)) {
-            return Plugin.getFileNameExtensionFromURL(storedDirectURL).replace(".", "");
+            final String extByURL = Plugin.getFileNameExtensionFromURL(storedDirectURL).replace(".", "");
+            return getCorrectedFileExtension(extByURL);
         }
         return null;
+    }
+
+    /** Returns back either given extension or gif/mp4 based on user selection if given filetype is gif or mp4. */
+    public static String getCorrectedFileExtension(final String ext) {
+        if (ext == null) {
+            return null;
+        } else if (ext.matches("(?i)(gif|mp4)")) {
+            if (userPrefersMp4()) {
+                return "mp4";
+            } else {
+                return "gif";
+            }
+        } else {
+            return ext;
+        }
     }
 
     public static boolean userPrefersMp4() {

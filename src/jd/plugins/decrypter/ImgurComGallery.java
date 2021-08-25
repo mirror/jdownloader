@@ -22,6 +22,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -43,14 +51,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.ImgurComHoster;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /*Only accept single-imag URLs with an LID-length or either 5 OR 7 - everything else are invalid links or thumbnails*/
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -241,16 +241,19 @@ public class ImgurComGallery extends PluginForDecrypt {
         return dl;
     }
 
-    /** Crawls json results of gallery- and album API calls */
-    private void apiCrawlJsonMultipleItems(Map<String, Object> data) throws DecrypterException, ParseException {
+    /**
+     * Crawls json results of gallery- and album API calls
+     *
+     * @throws PluginException
+     */
+    private void apiCrawlJsonMultipleItems(Map<String, Object> data) throws DecrypterException, ParseException, PluginException {
         apiCrawlJsonMultipleItems(data, 0);
     }
 
-    private void apiCrawlJsonMultipleItems(Map<String, Object> data, final int index) throws DecrypterException, ParseException {
+    private void apiCrawlJsonMultipleItems(Map<String, Object> data, final int index) throws DecrypterException, ParseException, PluginException {
         final long status = JavaScriptEngineFactory.toLong(data.get("status"), 200);
         if (status == 404) {
-            decryptedLinks.addAll(createOfflineLink(parameter));
-            return;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.author = (String) data.get("account_url");
         final String galleryTitle = (String) data.get("title");
@@ -417,7 +420,7 @@ public class ImgurComGallery extends PluginForDecrypt {
         } while (!isAbort());
         if (decryptedLinks.isEmpty()) {
             /* Probably offline */
-            this.decryptedLinks.add(this.createOfflinelink(this.parameter));
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 
@@ -442,8 +445,7 @@ public class ImgurComGallery extends PluginForDecrypt {
             count = 0;
             br.getPage(ImgurComHoster.getAPIBaseWithVersion() + "/gallery/r/" + subredditName + "/page/" + page);
             if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
-                this.decryptedLinks.add(this.createOfflinelink(this.parameter));
-                return;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             Object images = entries.get("data");
@@ -484,8 +486,7 @@ public class ImgurComGallery extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(this.parameter));
-            return;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String postTitle = new Regex(parameter, type_subreddit_single_post).getMatch(0);
         fp = FilePackage.getInstance();
@@ -545,7 +546,7 @@ public class ImgurComGallery extends PluginForDecrypt {
         }
         if (decryptedLinks.isEmpty()) {
             /* Probably offline */
-            this.decryptedLinks.add(this.createOfflinelink(this.parameter));
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 
@@ -558,31 +559,45 @@ public class ImgurComGallery extends PluginForDecrypt {
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        this.fp = FilePackage.getInstance();
         final Browser brc = br.cloneBrowser();
         brc.setFollowRedirects(true);
         brc.getPage(parameter);
-        this.fp.setName(siteGetPackagenameForGalleryAndAlbum(brc, albumID));
+        if (ImgurComHoster.isOfflineWebsite(brc)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.br.getPage("https://" + this.getHost() + "/ajaxalbums/getimages/" + albumID + "/hit.json?all=true");
         /* 2020-09-29: Returns the following response on invalid albumID: {"data":[],"success":true,"status":200} */
         Map<String, Object> entries = JSonStorage.restoreFromString(this.br.toString(), TypeRef.HASHMAP);
         this.author = (String) entries.get("author");
         final Object dataO = entries.get("data");
         if (!(dataO instanceof Map)) {
-            /* 2020-10-06: Offline content e.g.: {"data":[],"success":true,"status":200} */
-            this.decryptedLinks.add(this.createOfflinelink(this.parameter));
-            return;
+            /**
+             * 2020-10-06: Offline content or single item e.g.: {"data":[],"success":true,"status":200} </br>
+             * We've checked for offline already so let's just add it as a single item.
+             */
+            final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
+            plg.setBrowser(brc);
+            final DownloadLink single = this.createDownloadlink("https://" + this.getHost() + "/download/" + albumID);
+            ((jd.plugins.hoster.ImgurComHoster) plg).websiteParseAndSetData(single);
+            final String tempFilename = ImgurComHoster.getFormattedFilename(single);
+            if (tempFilename != null) {
+                single.setName(tempFilename);
+            }
+            single.setAvailable(true);
+            this.decryptedLinks.add(single);
+        } else {
+            this.fp = FilePackage.getInstance();
+            this.fp.setName(siteGetPackagenameForGalleryAndAlbum(brc, albumID));
+            entries = (Map<String, Object>) dataO;
+            this.websiteCrawlJsonMultipleItems(entries);
         }
-        entries = (Map<String, Object>) dataO;
-        this.websiteCrawlJsonMultipleItems(entries);
     }
 
     private void apiCrawlAlbum() throws Exception {
         prepareAPIUsage();
         br.getPage(ImgurComHoster.getAPIBaseWithVersion() + "/album/" + itemID);
         if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
-            this.decryptedLinks.add(this.createOfflinelink(this.parameter));
-            return;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         entries = (Map<String, Object>) entries.get("data");
@@ -594,8 +609,7 @@ public class ImgurComGallery extends PluginForDecrypt {
         /* In loggedIN state, "mature" param would naturally be obtained by users' account setting but we always want to get all images. */
         br.getPage(ImgurComHoster.getAPIBaseWithVersion() + "/gallery/" + itemID + "?mature=true");
         if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
-            this.decryptedLinks.add(this.createOfflinelink(this.parameter));
-            return;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         entries = (Map<String, Object>) entries.get("data");
@@ -639,7 +653,7 @@ public class ImgurComGallery extends PluginForDecrypt {
         } while (!this.isAbort());
     }
 
-    private void siteCrawlGallery() throws DecrypterException, ParseException, IOException {
+    private void siteCrawlGallery() throws DecrypterException, ParseException, IOException, PluginException {
         final String galleryID = new Regex(this.parameter, type_gallery).getMatch(0);
         this.fp = FilePackage.getInstance();
         final Browser brc = br.cloneBrowser();
@@ -655,8 +669,7 @@ public class ImgurComGallery extends PluginForDecrypt {
              * {"data":{"error":"Invalid gallery hash XXXX for gallery: main","request":"\/gallery\/XXXX\/album_images\/hit.json","method":
              * "GET"},"success":false,"status":404}
              */
-            this.decryptedLinks.add(this.createOfflinelink(this.parameter));
-            return;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!(dataO instanceof Map)) {
             /* Very rare case: Single image and not a gallery: {"data":[],"success":true,"status":200} */
             this.decryptedLinks.add(this.createDownloadlink(this.getHostpluginurl(this.itemID)));
@@ -802,16 +815,6 @@ public class ImgurComGallery extends PluginForDecrypt {
         br.setLoadLimit(br.getLoadLimit() * 2);
         ImgurComHoster.prepBRWebsite(br);
         return br;
-    }
-
-    private ArrayList<DownloadLink> createOfflineLink(final String link) {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final DownloadLink offline = this.createDownloadlink(link);
-        if (itemID != null) {
-            offline.setFinalFileName(itemID);
-        }
-        decryptedLinks.add(offline);
-        return decryptedLinks;
     }
 
     /** 2020-10-01: Use this in case they shut off all of the old website methods. */
