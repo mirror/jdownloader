@@ -33,6 +33,7 @@ public class PornCom extends PluginForDecrypt {
 
     /* DEV NOTES */
     /* Porn_plugin */
+    /* Similar websites: porn.com, fucktube.com */
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();

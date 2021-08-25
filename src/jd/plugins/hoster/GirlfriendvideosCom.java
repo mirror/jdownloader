@@ -13,15 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -32,13 +29,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "girlfriendvideos.com" }, urls = { "http://(www\\.)?girlfriendvideos\\.com/members/[a-z]/[a-z0-9\\-_]+/\\d+\\.php" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "girlfriendvideos.com" }, urls = { "http?://(?:www\\.)?girlfriendvideos\\.com/members/[a-z]/[a-z0-9\\-_]+/(\\d+)\\.php" })
 public class GirlfriendvideosCom extends PluginForHost {
-
     public GirlfriendvideosCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     /* Porn_plugin */
 
@@ -49,96 +44,67 @@ public class GirlfriendvideosCom extends PluginForHost {
         return "http://girlfriendvideos.com/help.php";
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link) + ".mp4");
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(link.getDownloadURL());
         if (!br.getURL().contains("/members/") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("This video has been removed")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // String filename = br.getRegex("<title>Girlfriend Videos \\- ([^<>\"]*?)</title>").getMatch(0); -> Free User-Submitted ...
-        String filename = br.getRegex("<font size=\"5\"><b>([^<>\"]*?)<").getMatch(0);
-        /* Avoid rtmp streams */
-        dllink = checkDirectLink(downloadLink, "directlink");
+        String filename = br.getRegex("\"name\"\\s*:\\s*\"([^\"]+)\"").getMatch(0);
         if (dllink == null) {
             if (br.containsHTML("file=[a-z]/[a-z0-9\\-_]+/\\d+\\.flv\"")) {
-                dllink = "http://girlfriendvideos.com/videos/" + new Regex(downloadLink.getDownloadURL(), "members/([a-z]/[a-z0-9\\-_]+/\\d+)").getMatch(0) + ".flv";
+                dllink = "http://" + this.getHost() + "/videos/" + new Regex(link.getDownloadURL(), "members/([a-z]/[a-z0-9\\-_]+/\\d+)").getMatch(0) + ".flv";
             } else {
                 dllink = br.getRegex("\"(/videos/[a-z]/[a-z0-9\\-_]+/\\d+\\.mp4)").getMatch(0);
                 if (dllink != null) {
-                    dllink = "http://girlfriendvideos.com" + dllink;
+                    dllink = "http://" + this.getHost() + dllink;
                 }
             }
         }
-        if (filename == null || dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = Encoding.htmlDecode(dllink);
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
-        downloadLink.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            try {
-                con = br2.openGetConnection(dllink);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename);
+            filename = filename.trim();
+            filename = encodeUnicode(filename);
+            final String ext = getFileNameExtensionFromString(dllink, ".mp4");
+            if (!filename.endsWith(ext)) {
+                filename += ext;
             }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            downloadLink.setProperty("directlink", dllink);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
+            link.setFinalFileName(filename);
         }
-    }
-
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
+            final Browser br2 = br.cloneBrowser();
+            br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                final Browser br2 = br.cloneBrowser();
-                con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
             } finally {
                 try {
                     con.disconnect();
@@ -146,7 +112,27 @@ public class GirlfriendvideosCom extends PluginForHost {
                 }
             }
         }
-        return dllink;
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
