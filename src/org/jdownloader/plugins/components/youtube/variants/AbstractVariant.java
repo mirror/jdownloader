@@ -180,6 +180,30 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
         return baseVariant;
     }
 
+    public String getVariantDetails() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append(this.toString());
+        sb.append("[");
+        final FileContainer container = getContainer();
+        if (container != null) {
+            sb.append("%Container:").append(container.name());
+        }
+        final YoutubeITAG video = getiTagVideo();
+        if (video != null) {
+            sb.append("%Video:").append(video.name()).append("(").append(video.getITAG()).append(")");
+        }
+        final YoutubeITAG audio = getiTagAudioOrVideoItagEquivalent();
+        if (audio != null) {
+            sb.append("%Audio:").append(audio.name()).append("(").append(audio.getITAG()).append(")");
+        }
+        final YoutubeITAG data = getiTagData();
+        if (data != null) {
+            sb.append("%Data:").append(data.name()).append("(").append(data.getITAG()).append(")");
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
     @Override
     public int hashCode() {
         return _getUniqueId().hashCode();

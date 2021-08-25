@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.nutils;
 
 import java.io.IOException;
@@ -26,7 +25,6 @@ import java.nio.ByteBuffer;
 import org.jdownloader.logging.LogController;
 
 public class DynByteBuffer {
-
     private ByteBuffer buffer;
 
     public DynByteBuffer(int l) {
@@ -62,7 +60,6 @@ public class DynByteBuffer {
     }
 
     public String toString(String codepage) {
-
         try {
             return new String(this.getLast(buffer.position()), codepage);
         } catch (UnsupportedEncodingException e) {
@@ -113,10 +110,10 @@ public class DynByteBuffer {
     }
 
     public byte[] getLast(int num) {
-        int posi = buffer.position();
+        final int posi = buffer.position();
         num = Math.min(posi, num);
         buffer.position(posi - num);
-        byte[] b = new byte[num];
+        final byte[] b = new byte[num];
         buffer.get(b);
         buffer.position(posi);
         return b;
@@ -156,5 +153,4 @@ public class DynByteBuffer {
             }
         };
     }
-
 }

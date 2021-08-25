@@ -72,6 +72,9 @@ public class ClipDataCache {
     private static CachedClipData getInternal(YoutubeHelper helper, YoutubeClipData vid) throws Exception {
         synchronized (LOCK) {
             final String cachedID = vid.videoID;
+            if (StringUtils.isEmpty(cachedID)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             CachedClipData cachedData = get(cachedID);
             final List<HTTPProxy> proxyListNew = helper.getBr().selectProxies(new URL("https://youtube.com"));
             if (cachedData != null) {

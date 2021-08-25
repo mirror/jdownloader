@@ -5,6 +5,7 @@ import java.io.IOException;
 
 import jd.http.Browser;
 import jd.http.Request;
+import jd.http.requests.HeadRequest;
 
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.extensions.eventscripter.EnvironmentException;
@@ -138,6 +139,15 @@ public class BrowserSandBox {
     public String getPage(final String url) throws EnvironmentException {
         try {
             return br.getPage(url);
+        } catch (IOException e) {
+            throw new EnvironmentException(e);
+        }
+    }
+
+    public String headPage(final String url) throws EnvironmentException {
+        try {
+            final HeadRequest headRequest = br.createHeadRequest(url);
+            return br.getPage(headRequest);
         } catch (IOException e) {
             throw new EnvironmentException(e);
         }

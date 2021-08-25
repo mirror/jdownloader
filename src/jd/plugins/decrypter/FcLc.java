@@ -21,10 +21,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -39,9 +35,13 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FcLc extends antiDDoSForDecrypt {
-    private static final String[]     domains                    = { "fc.lc", "fcc.lc", "short.fc-lc.com", "short.articlix.com" };
+    private static final String[]     domains                    = { "fc.lc", "fcc.lc", "short.fc-lc.com", "short.articlix.com", "fc-lc.com" };
     /** List of services for which waittime is skippable. */
     private static final List<String> domains_waittime_skippable = Arrays.asList(new String[] { "fcc.lc" });
     // /** List of services for which captcha is skippable or not required. */
@@ -172,10 +172,10 @@ public class FcLc extends antiDDoSForDecrypt {
         }
         /* 2020-07-06: E.g. fc.lc, fcc.lc */
         Form beforeCaptcha2 = br.getFormbyKey("ad_form_data");
-        if (br.getHost().equals("fc.lc") && beforeCaptcha2 != null) {
+        if ((br.getHost().equalsIgnoreCase("fc.lc") || br.getHost().equalsIgnoreCase("fc-lc.com")) && beforeCaptcha2 != null) {
             logger.info("Sending Form beforeCaptcha2");
-            if (beforeCaptcha2.containsHTML("recaptcha")) {
-                /* 2021-05-07: Can contain invisible reCaptchaV2 */
+            if (beforeCaptcha2.containsHTML("recaptcha") && br.getHost().equalsIgnoreCase("fc.lc")) {
+                /* 2021-05-07: Can contain invisible reCaptchaV2 but not every domain has recaptcha js! */
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
                 beforeCaptcha2.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             }
