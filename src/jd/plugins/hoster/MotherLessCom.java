@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -24,6 +27,7 @@ import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -35,9 +39,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "motherless.com" }, urls = { "https?://(?:www\\.|members\\.)?(?:motherless\\.com/(?:movies|thumbs).*|(?:premium)?motherlesspictures(?:media)?\\.com/[a-zA-Z0-9/\\.]+|motherlessvideos\\.com/[a-zA-Z0-9/\\.]+)" })
 public class MotherLessCom extends PluginForHost {
@@ -313,20 +314,61 @@ public class MotherLessCom extends PluginForHost {
         AccountInfo ai = new AccountInfo();
         login(account, true);
         account.setType(AccountType.FREE);
-        ai.setStatus("Registered (free) User");
         return ai;
     }
 
     private void login(final Account account, final boolean validateCookies) throws Exception {
         /* TODO: Add cookie handling -> Re-load cookies and check validity */
-        this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", ua);
-        br.postPage("https://" + this.getHost() + "/login", "remember_me=1&__remember_me=0&botcheck=no+bots%21&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-        if (br.getCookie("http://motherless.com/", "_auth", Cookies.NOTDELETEDPATTERN) == null) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        /* 2021-08-26: Don#t use random User-Agent anymore when logging in. */
+        // br.getHeaders().put("User-Agent", ua);
+        synchronized (account) {
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                br.setCookies(cookies);
+                if (!validateCookies) {
+                    logger.info("Trust cookies without checking");
+                    return;
+                } else {
+                    /* TODO */
+                    br.getPage("https://" + this.getHost() + "/");
+                    if (this.isLoggedIN(br)) {
+                        logger.info("Successfully loggedin via cookies");
+                        /* Update cookies */
+                        account.saveCookies(this.br.getCookies(br.getHost()), "");
+                        return;
+                    } else {
+                        logger.info("Cookie login failed");
+                        br.clearCookies(br.getHost());
+                    }
+                }
+            }
+            logger.info("Performing full login");
+            br.getPage("https://" + this.getHost() + "/login");
+            final Form loginform = br.getFormbyProperty("id", "motherless-login-modal-form");
+            if (loginform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            loginform.put("username", Encoding.urlEncode(account.getUser()));
+            loginform.put("password", Encoding.urlEncode(account.getPass()));
+            if (loginform.hasInputFieldByName("botcheck")) {
+                loginform.put("botcheck", "no+bots%21");
+            }
+            loginform.put("remember_me", "1");
+            loginform.put("__remember_me", "0");
+            br.submitForm(loginform);
+            // br.postPage("https://" + this.getHost() + "/login", "remember_me=1&__remember_me=0&botcheck=no+bots%21&username=" +
+            // Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            if (!isLoggedIN(this.br)) {
+                account.clearCookies("");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            account.saveCookies(this.br.getCookies(br.getHost()), "");
         }
-        account.saveCookies(this.br.getCookies(br.getHost()), "");
+    }
+
+    private boolean isLoggedIN(final Browser br) {
+        return br.containsHTML("") && br.getCookie("http://motherless.com/", "_auth", Cookies.NOTDELETEDPATTERN) != null;
     }
 
     public String getAGBLink() {
