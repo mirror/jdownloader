@@ -196,7 +196,10 @@ public class DoodstreamCom extends XFileSharingProBasic {
 
     @Override
     protected boolean isOffline(final DownloadLink link, final Browser br, final String html) {
-        /* 2021-08-20: Hoster is playing cat & mouse games by adding fake "file not found" texts */
+        /**
+         * 2021-08-20: Hoster is playing cat & mouse games by adding fake "file not found" texts. </br>
+         * An empty embed iframe is a sign that the item is offline.
+         */
         if (new Regex(html, "<iframe src=\"/e/\"").matches()) {
             /* 2021-26-04 */
             // all videos are now
@@ -209,6 +212,11 @@ public class DoodstreamCom extends XFileSharingProBasic {
             } else {
                 return true;
             }
+        } else if (br.containsHTML("(?i)<h1>\\s*Oops\\! Sorry\\s*</h1>\\s*<p>\\s*File you are looking for is not found")) {
+            /* 2021-08-26 */
+            return true;
+        } else if (br.containsHTML("(?i)<h1>\\s*Not Found\\s*</h1>\\s*<p>\\s*video you are looking for is not found") && !br.containsHTML("</video>")) {
+            return true;
         } else {
             return false;
         }
