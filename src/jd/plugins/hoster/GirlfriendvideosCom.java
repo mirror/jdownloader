@@ -95,7 +95,9 @@ public class GirlfriendvideosCom extends PluginForHost {
             }
             link.setFinalFileName(filename);
         }
-        if (dllink != null && !isDownload) {
+        /* 2021-08-26: Server will return wrong information when checking a lot of URLs at the same time --> Disabled filesize check. */
+        final boolean allowFilesizeCheck = false;
+        if (dllink != null && !isDownload && allowFilesizeCheck) {
             final Browser br2 = br.cloneBrowser();
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;

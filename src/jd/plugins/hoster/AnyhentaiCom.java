@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.Regex;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -27,9 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anyhentai.com" }, urls = { "https?://\\w+\\.anyhentai\\.com/.*\\.mp4.*" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anyhentai.com" }, urls = { "https?://\\w+\\.anyhentai\\.com/([^/]+)\\.mp4(?:\\?.*)?" })
 public class AnyhentaiCom extends PluginForHost {
-    private String dllink            = null;
     private String customFavIconHost = null;
 
     public AnyhentaiCom(PluginWrapper wrapper) {
@@ -46,24 +47,46 @@ public class AnyhentaiCom extends PluginForHost {
         return -1;
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     /** 2021-03-10: Small helper plugin so JD can handle directURLs of this CDN. */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        final String fid = this.getFID(link);
+        if (!link.isNameSet() && fid != null) {
+            link.setName(fid + ".mp4");
+        }
         this.setBrowserExclusive();
         /*
          * To process anyhentai media link from javhub and highporn with reference.
          */
-        dllink = link.getPluginPatternMatcher(); // The link is the final downloadlink
         prepBrDownload(this.br);
         URLConnectionAdapter con = null;
         try {
-            con = br.openHeadConnection(dllink);
-            if (this.looksLikeDownloadableContent(con)) {
+            con = br.openHeadConnection(link.getPluginPatternMatcher());
+            try {
+                connectionErrorhandling(con);
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                    return AvailableStatus.FALSE;
+                } else {
+                    /* Ignore error. E.g. error 503 too many connections --> Still we know that the file is online! */
+                }
             }
         } finally {
             try {
@@ -76,28 +99,34 @@ public class AnyhentaiCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
         prepBrDownload(this.br);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        this.dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 1);
+        this.connectionErrorhandling(this.dl.getConnection());
+        this.dl.startDownload();
+    }
+
+    private void connectionErrorhandling(final URLConnectionAdapter con) throws PluginException {
+        if (con.getResponseCode() == 503) {
+            /*
+             * 2021-08-26: Users commonly get these directURLs via VideoDownloadHelper but this website has a very strict connection limit
+             * of 1 per video so as long as the video is playing in the users' browser, we will get a 503 response in JD.
+             */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many connections: Close the video player in your browser to be able to download this item", 3 * 60 * 1000l);
+        } else if (!this.looksLikeDownloadableContent(con)) {
+            /* Typically error 404. */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        dl.startDownload();
     }
 
     private void prepBrDownload(final Browser br) {
         br.setFollowRedirects(true);
+        /* Required else we won't be able to download/stream the content and will get an error 400. */
         br.getHeaders().put("Referer", "https://javhub.net");
     }
 
     public String getCustomFavIconURL(final DownloadLink link) {
         if (link != null) {
-            final String domain = Browser.getHost(link.getDownloadURL(), true);
+            final String domain = Browser.getHost(link.getPluginPatternMatcher(), true);
             if (domain != null) {
                 return domain;
             }
