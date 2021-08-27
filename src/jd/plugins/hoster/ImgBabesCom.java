@@ -172,16 +172,6 @@ public class ImgBabesCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected String getFUID(final String url, URL_TYPE type) {
-        // if (url != null && url.matches(type_special)) {
-        // return new Regex(url, type_special).getMatch(0);
-        // } else {
-        // return super.getFUID(url, type);
-        // }
-        return super.getFUID(url, type);
-    }
-
-    @Override
     public String getFUIDFromURL(final DownloadLink link) {
         if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches(type_special)) {
             return new Regex(link.getPluginPatternMatcher(), type_special).getMatch(0);

@@ -21,14 +21,20 @@ import java.util.ArrayList;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangaeden.com" }, urls = { "https?://(www\\.)?mangaeden\\.com/(?:[a-z]{2}/)?[a-z0-9\\-]+/[a-z0-9\\-]+/\\d+(?:\\.\\d+)?/1/" })
 public class MangaEdenCom extends antiDDoSForDecrypt {
@@ -44,24 +50,28 @@ public class MangaEdenCom extends antiDDoSForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final ArrayList<String> cryptedLinks = new ArrayList<String>();
+        final ArrayList<String> pageURLs = new ArrayList<String>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 503 });
+        /* Login whenever possible as some content can only be accessed via account. */
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account != null) {
+            final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
+            ((jd.plugins.hoster.MangaedenCom) plg).login(account, false);
+        }
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("404 NOT FOUND")) {
-            logger.info("Link offline: " + parameter);
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection().getResponseCode() == 503) {
             logger.info("Too many requests - try again later");
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
-        }
-        if (br.containsHTML("Isn't Out!<")) {
-            logger.info("Link offline (next chapter isn't out yet): " + parameter);
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        } else if (br.containsHTML("(?i)Isn't Out\\!\\s*<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getURL().matches("(?i)https?://[^/]+/[^/]+/login/?$")) {
+            /* Account required to access content. */
+            throw new AccountRequiredException();
         }
         final String thisLinkpart = new Regex(br.getURL(), "mangaeden\\.com(/.*?)1/$").getMatch(0);
         String fpName = br.getRegex("<title>\\s*([^<>\"]*?)(?:\\s*-\\s*page \\d+)?\\s*-\\s*(?:Read Manga Online Free|Manga Eden)").getMatch(0);
@@ -72,19 +82,17 @@ public class MangaEdenCom extends antiDDoSForDecrypt {
         }
         fpName = Encoding.htmlDecode(fpName.trim()).replace("\n", "");
         for (final String currentPage : pages) {
-            if (!cryptedLinks.contains(currentPage)) {
-                cryptedLinks.add(currentPage);
+            if (!pageURLs.contains(currentPage)) {
+                pageURLs.add(currentPage);
             }
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
         // decrypt all pages
-        final DecimalFormat df = new DecimalFormat(cryptedLinks.size() < 100 ? "00" : "000");
+        final DecimalFormat df = new DecimalFormat(pageURLs.size() < 100 ? "00" : "000");
         int counter = 1;
-        for (final String currentPage : cryptedLinks) {
-            if (isAbort()) {
-                break;
-            }
+        for (final String currentPage : pageURLs) {
+            logger.info("Working on item " + counter + "/" + pageURLs.size());
             if (!br.getURL().endsWith(currentPage)) {
                 getPage(currentPage);
             }
@@ -93,9 +101,12 @@ public class MangaEdenCom extends antiDDoSForDecrypt {
             dd.setAvailable(true);
             dd.setFinalFileName(fpName + "_" + df.format(counter) + getFileNameExtensionFromString(decryptedlink, ".jpg"));
             fp.add(dd);
-            distribute(dd);
             decryptedLinks.add(dd);
+            distribute(dd);
             counter++;
+            if (isAbort()) {
+                break;
+            }
         }
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
@@ -113,8 +124,7 @@ public class MangaEdenCom extends antiDDoSForDecrypt {
         return finallink;
     }
 
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
         return false;
     }
 }
