@@ -21,7 +21,7 @@ public class WindowsRestarter extends Restarter {
                     try {
                         final String binaryHash = Hash.getMD5(restartBinary);
                         if ("a08b3424355c839138f326c06a964b9e".equals(binaryHash)) {
-                            getLogger().info("Workaround: found locking binary " + binaryHash);
+                            getLogger().info("Workaround: found locking binary: " + binaryHash);
                             continue;
                         }
                     } catch (final Throwable e) {
