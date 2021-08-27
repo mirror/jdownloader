@@ -245,7 +245,7 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.appwork.utils.net.httpserver.handler.HttpRequestHandler#onGetRequest(org.appwork.utils.net.httpserver.requests.GetRequest,
      * org.appwork.utils.net.httpserver.responses.HttpResponse)
      */
@@ -353,25 +353,36 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
                                 return BrowserReference.this.getLogger();
                             }
                         };
+                        try {
+                            final int delay = Math.max(0, config.getAutoClickDelay());
+                            if (delay > 0) {
+                                getLogger().info("Delay AutoClick:" + delay);
+                                Thread.sleep(delay);
+                            }
+                        } catch (InterruptedException e) {
+                            getLogger().log(e);
+                        }
                         if (CrossSystem.isUnix()) {
                             // new Robot().createScreenCapture may crash the VM, auto disable before to avoid crashing again and again...
                             config.setAutoClickEnabled(false);
                             config._getStorageHandler().write();
                         }
-                        final int eleft = (int) Double.parseDouble(request.getParameterbyKey("eleft"));
-                        final int etop = (int) Double.parseDouble(request.getParameterbyKey("etop"));
-                        final int ew = (int) Double.parseDouble(request.getParameterbyKey("ew"));
-                        final int eh = (int) Double.parseDouble(request.getParameterbyKey("eh"));
-                        final Rectangle elementBounds = new Rectangle(eleft, etop, ew, eh);
-                        getLogger().info("Rectangle:" + elementBounds);
-                        final BrowserViewport viewport = challenge.getBrowserViewport(browserWindow, elementBounds);
-                        if (viewport != null) {
-                            viewport.onLoaded();
+                        try {
+                            final int eleft = (int) Double.parseDouble(request.getParameterbyKey("eleft"));
+                            final int etop = (int) Double.parseDouble(request.getParameterbyKey("etop"));
+                            final int ew = (int) Double.parseDouble(request.getParameterbyKey("ew"));
+                            final int eh = (int) Double.parseDouble(request.getParameterbyKey("eh"));
+                            final Rectangle elementBounds = new Rectangle(eleft, etop, ew, eh);
+                            getLogger().info("Rectangle:" + elementBounds);
+                            final BrowserViewport viewport = challenge.getBrowserViewport(browserWindow, elementBounds);
+                            if (viewport != null) {
+                                viewport.onLoaded();
+                            }
+                        } finally {
+                            config.setAutoClickEnabled(true);
                         }
                     } catch (Throwable e) {
                         getLogger().log(e);
-                    } finally {
-                        config.setAutoClickEnabled(true);
                     }
                     response.getOutputStream(true).write("Thanks".getBytes("UTF-8"));
                 }

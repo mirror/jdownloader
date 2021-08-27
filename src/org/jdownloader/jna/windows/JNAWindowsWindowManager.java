@@ -20,7 +20,7 @@ public class JNAWindowsWindowManager extends WindowsWindowManager {
 
     @Override
     public void setExtendedState(Frame w, final WindowExtendedState state) {
-        if (CrossSystem.getOS().isMinimum(OperatingSystem.WINDOWS_7) && w.isVisible()) {
+        if (CrossSystem.getOS().isMinimum(OperatingSystem.WINDOWS_XP) && w.isVisible()) {
             try {
                 switch (state) {
                 case ICONIFIED:

@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.controlling.linkcrawler.CheckableLink;
@@ -88,17 +89,106 @@ public class Ftp extends PluginForHost {
         return false;
     }
 
-    private void connect(SimpleFTP ftp, final DownloadLink downloadLink, URL url) throws Exception {
+    private void connect(SimpleFTP ftp, final Account account, final DownloadLink downloadLink, URL url) throws Exception {
         try {
             ftp.connect(url);
         } catch (IOException e) {
-            final Integer limit = ftp.getConnectionLimitByException(e);
+            Integer limit = ftp.getConnectionLimitByException(e);
             if (limit != null) {
-                downloadLink.setProperty("MAX_FTP_CONNECTIONS", Math.max(1, limit.intValue()));
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Connection limit reached", 60 * 1000l, e);
+                limit = setMaxRunning(account, downloadLink, limit);
+                if (limit > 0) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Connection limit reached:" + limit, 60 * 1000l, e);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Connection limit reached", 5 * 60 * 1000l, e);
+                }
             } else {
                 throw e;
             }
+        }
+    }
+
+    private static WeakHashMap<DomainInfo, AtomicInteger> freeRunning = new WeakHashMap<DomainInfo, AtomicInteger>();
+    private static WeakHashMap<DomainInfo, Integer>       maxRunning  = new WeakHashMap<DomainInfo, Integer>();
+
+    protected int setMaxRunning(final Account account, final DownloadLink link, final Integer limit) {
+        final DomainInfo domainInfo = link.getDomainInfo();
+        synchronized (maxRunning) {
+            if (limit == null) {
+                link.removeProperty(MAX_FTP_CONNECTIONS);
+                maxRunning.remove(domainInfo);
+                return -1;
+            } else if (limit > 0) {
+                link.setProperty(MAX_FTP_CONNECTIONS, limit);
+                maxRunning.put(domainInfo, limit);
+                logger.info("setMaxRunning:" + domainInfo + "=" + limit);
+                return limit;
+            } else {
+                final int running = getFreeRunning(account, link).get();
+                if (running > 0) {
+                    maxRunning.put(domainInfo, running);
+                    logger.info("setMaxRunning:" + domainInfo + "~" + running);
+                    return running;
+                } else {
+                    return -1;
+                }
+            }
+        }
+    }
+
+    protected int getMaxRunning(final Account account, final DownloadLink link) {
+        final DomainInfo domainInfo = link.getDomainInfo();
+        synchronized (maxRunning) {
+            Integer ret = maxRunning.get(domainInfo);
+            if (ret == null) {
+                ret = link.getIntegerProperty(MAX_FTP_CONNECTIONS, -1);
+            }
+            if (ret != null && ret.intValue() > 0) {
+                return ret.intValue();
+            } else {
+                return -1;
+            }
+        }
+    }
+
+    protected AtomicInteger getFreeRunning(final Account account, final DownloadLink link) {
+        final DomainInfo domainInfo = link.getDomainInfo();
+        synchronized (freeRunning) {
+            AtomicInteger ret = freeRunning.get(domainInfo);
+            if (ret == null) {
+                ret = new AtomicInteger(0);
+                freeRunning.put(domainInfo, ret);
+            }
+            return ret;
+        }
+    }
+
+    @Override
+    protected int getMaxSimultanDownload(DownloadLink link, Account account) {
+        if (link != null) {
+            int max = getMaxRunning(account, link);
+            if (max <= 0) {
+                max = getMaxSimultanFreeDownloadNum();
+            }
+            final int running = getFreeRunning(account, link).get();
+            final int ret = Math.min(running + 1, max);
+            return ret;
+        } else {
+            return super.getMaxSimultanDownload(link, account);
+        }
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 20;
+    }
+
+    protected void controlMaxFreeDownloads(final Account account, final DownloadLink link, final int num) {
+        final AtomicInteger freeRunning = getFreeRunning(account, link);
+        synchronized (freeRunning) {
+            final int before = freeRunning.get();
+            final int after = before + num;
+            freeRunning.set(after);
+            logger.info("freeRunning(" + link.getName() + ")|max:" + getMaxSimultanDownload(link, account) + "|before:" + before + "|after:" + after + "|num:" + num);
         }
     }
 
@@ -146,16 +236,23 @@ public class Ftp extends PluginForHost {
         };
     }
 
-    public void download(String downloadUrl, final DownloadLink downloadLink, boolean throwException) throws Exception {
+    public void download(String downloadUrl, final Account account, final DownloadLink downloadLink, boolean throwException) throws Exception {
         final URL url = new URL(downloadUrl);
         final SimpleFTP ftp = createSimpleFTP(url);
         try {
             /* cut off all ?xyz at the end */
             final String filePath = new Regex(downloadUrl, "://[^/]+/(.+?)(\\?|$)").getMatch(0);
-            connect(ftp, downloadLink, url);
+            connect(ftp, account, downloadLink, url);
             final String downloadFilePath = checkFile(ftp, downloadLink, filePath);
             dl = new SimpleFTPDownloadInterface(ftp, downloadLink, downloadFilePath);
-            dl.startDownload();
+            try {
+                /* add a download slot */
+                controlMaxFreeDownloads(account, downloadLink, +1);
+                dl.startDownload();
+            } finally {
+                /* add a download slot */
+                controlMaxFreeDownloads(account, downloadLink, -1);
+            }
         } catch (HTTPProxyException e) {
             ProxyController.getInstance().reportHTTPProxyException(ftp.getProxy(), url, e);
             throw e;
@@ -272,33 +369,7 @@ public class Ftp extends PluginForHost {
         return "http://jdownloader.org";
     }
 
-    private final String                            MAX_FTP_CONNECTIONS    = "MAX_FTP_CONNECTIONS";
-    private static WeakHashMap<DomainInfo, Integer> MAX_FTP_CONNECTION_MAP = new WeakHashMap<DomainInfo, Integer>();
-
-    @Override
-    protected int getMaxSimultanDownload(DownloadLink link, Account account) {
-        if (link != null) {
-            synchronized (MAX_FTP_CONNECTION_MAP) {
-                final Integer ret = MAX_FTP_CONNECTION_MAP.get(link.getDomainInfo());
-                if (ret != null) {
-                    return ret;
-                }
-            }
-            final int max = link.getIntegerProperty(MAX_FTP_CONNECTIONS, -1);
-            if (max >= 1) {
-                synchronized (MAX_FTP_CONNECTION_MAP) {
-                    MAX_FTP_CONNECTION_MAP.put(link.getDomainInfo(), max);
-                }
-                return max;
-            }
-        }
-        return super.getMaxSimultanDownload(link, account);
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 20;
-    }
+    public static final String MAX_FTP_CONNECTIONS = "MAX_FTP_CONNECTIONS";
 
     @Override
     protected boolean supportsUpdateDownloadLink(CheckableLink checkableLink) {
@@ -307,7 +378,7 @@ public class Ftp extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        download(downloadLink.getDownloadURL(), downloadLink, false);
+        download(downloadLink.getDownloadURL(), null, downloadLink, false);
     }
 
     @Override
@@ -317,7 +388,7 @@ public class Ftp extends PluginForHost {
         try {
             /* cut off all ?xyz at the end */
             final String filePath = new Regex(downloadLink.getDownloadURL(), "://[^/]+/(.+?)(\\?|$)").getMatch(0);
-            connect(ftp, downloadLink, url);
+            connect(ftp, null, downloadLink, url);
             checkFile(ftp, downloadLink, filePath);
             return AvailableStatus.TRUE;
         } catch (HTTPProxyException e) {
@@ -353,9 +424,7 @@ public class Ftp extends PluginForHost {
     public void resetDownloadlink(final DownloadLink link) {
         link.setProperty("RESUME", true);
         link.removeProperty(MAX_FTP_CONNECTIONS);
-        synchronized (MAX_FTP_CONNECTION_MAP) {
-            MAX_FTP_CONNECTION_MAP.remove(link.getDomainInfo());
-        }
+        setMaxRunning(null, link, null);
     }
 
     @Override

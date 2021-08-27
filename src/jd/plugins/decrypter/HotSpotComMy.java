@@ -19,7 +19,7 @@ import org.appwork.utils.Regex;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hotspot.com.my" }, urls = { "https?://(www\\.)?hotspot\\.com\\.my/newsvideo/(\\d+)/(\\d+)/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xuan.com.my" }, urls = { "https?://(www\\.)?xuan\\.com\\.my/.*?/[^/]+-\\d+" })
 public class HotSpotComMy extends antiDDoSForDecrypt {
     public HotSpotComMy(PluginWrapper wrapper) {
         super(wrapper);
@@ -28,8 +28,8 @@ public class HotSpotComMy extends antiDDoSForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         br.setCurrentURL(parameter.getCryptedUrl());
-        final String videoID = new Regex(parameter.getCryptedUrl(), "/\\d+/(\\d+)").getMatch(0);
-        final String urlCoded = new Regex(parameter.getCryptedUrl(), "/\\d+/\\d+/(.+)").getMatch(0);
+        final String videoID = new Regex(parameter.getCryptedUrl(), "-(\\d+)$").getMatch(0);
+        final String urlCoded = new Regex(parameter.getCryptedUrl(), "/([^/]+)-\\d+$").getMatch(0);
         getPage("https://api.vod.astro.com.my/rest/media/" + videoID + "/smil?output=json&key=hotspot&applicationalias=JWPlayer&callback=AP.AP" + System.currentTimeMillis());
         final String jsonString = br.toString().replaceFirst("AP\\.AP\\d+\\(", "").replaceFirst("\\)$", "");
         final Map<String, Object> map = JSonStorage.restoreFromString(jsonString, TypeRef.HASHMAP);
@@ -45,6 +45,9 @@ public class HotSpotComMy extends antiDDoSForDecrypt {
                 name = null;
             }
             final ArrayList<DownloadLink> ret = GenericM3u8Decrypter.parseM3U8(this, parameter.getCryptedUrl(), br, parameter.getCryptedUrl(), null, null, name);
+            for (DownloadLink link : ret) {
+                link.setContentUrl(parameter.getCryptedUrl());
+            }
             if (name != null) {
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(name);

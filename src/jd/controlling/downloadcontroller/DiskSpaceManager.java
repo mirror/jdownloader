@@ -11,6 +11,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.os.hardware.HardwareType;
 import org.appwork.utils.os.hardware.HardwareTypeInterface;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
 
 public class DiskSpaceManager {
@@ -95,6 +96,48 @@ public class DiskSpaceManager {
                     return handle(checker, DISKSPACERESERVATIONRESULT.OK, requestedDiskSpace);
                 }
             }
+        }
+    }
+
+    public synchronized long getReservedDiskSpace(final File path, final Object requestor) {
+        final DiskSpaceReservation reservation = new DiskSpaceReservation() {
+            @Override
+            public Object getOwner() {
+                return null;
+            }
+
+            @Override
+            public LogInterface getLogger() {
+                return LogController.CL(true);
+            }
+
+            @Override
+            public File getDestination() {
+                return path;
+            }
+
+            @Override
+            public long getSize() {
+                return 0;
+            }
+        };
+        final DiskSpaceChecker checker;
+        if (JVMVersion.isMinimum(JVMVersion.JAVA_1_7)) {
+            checker = new DiskSpaceChecker17(reservation, requestor);
+        } else {
+            checker = new DiskSpaceChecker(reservation, requestor);
+        }
+        final String bestRootMatch = checker.getRoot();
+        if (bestRootMatch == null || (!new File(bestRootMatch).isDirectory() && !new File(bestRootMatch).equals(reservation.getDestination()))) {
+            return -1;
+        } else {
+            long requestedDiskSpace = Math.max(0, reservation.getSize());
+            for (final DiskSpaceChecker reservedDiskSpace : reservations) {
+                if (reservedDiskSpace.isSameRoot(checker)) {
+                    requestedDiskSpace += Math.max(0, reservedDiskSpace.getSize());
+                }
+            }
+            return requestedDiskSpace;
         }
     }
 

@@ -27,20 +27,22 @@ public class GuiUtils {
     }
 
     public static void flashWindow(final Window window, boolean flashTray) {
-        if (lib != null && CrossSystem.isWindows() && CrossSystem.getOS().isMinimum(OperatingSystem.WINDOWS_7)) {
-            System.out.println("Flash: " + flashTray);
-            final User32.FLASHWINFO flash = new User32.FLASHWINFO();
-            final HWND hwnd = new HWND(Native.getComponentPointer(window));
-            flash.hWnd = hwnd;
-            flash.uCount = 100;
-            flash.dwTimeout = 1000;
-            if (flashTray) {
-                flash.dwFlags = User32.FLASHW_TIMERNOFG | User32.FLASHW_ALL;
-            } else {
-                flash.dwFlags = User32.FLASHW_STOP;
+        if (CrossSystem.getOS().isMinimum(OperatingSystem.WINDOWS_XP)) {
+            if (lib != null) {
+                System.out.println("Flash: " + flashTray);
+                final User32.FLASHWINFO flash = new User32.FLASHWINFO();
+                final HWND hwnd = new HWND(Native.getComponentPointer(window));
+                flash.hWnd = hwnd;
+                flash.uCount = 100;
+                flash.dwTimeout = 1000;
+                if (flashTray) {
+                    flash.dwFlags = User32.FLASHW_TIMERNOFG | User32.FLASHW_ALL;
+                } else {
+                    flash.dwFlags = User32.FLASHW_STOP;
+                }
+                flash.cbSize = flash.size();
+                lib.FlashWindowEx(flash);
             }
-            flash.cbSize = flash.size();
-            lib.FlashWindowEx(flash);
         } else if (CrossSystem.isMac()) {
             final com.apple.eawt.Application application = com.apple.eawt.Application.getApplication();
             if (application != null) {

@@ -3,6 +3,7 @@ package org.jdownloader.extensions.eventscripter.sandboxobjects;
 import java.io.File;
 import java.io.IOException;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.LinkInfo;
 
 import org.appwork.utils.Files;
@@ -148,6 +149,24 @@ public class FilePathSandbox {
         return ret;
     }
 
+    public long getFreeDiskSpace() {
+        final File file = getFile();
+        if (file == null) {
+            return 0;
+        } else {
+            return Files.getUsableSpace(file);
+        }
+    }
+
+    public long getReservedDiskSpace() {
+        final File file = getFile();
+        if (file == null) {
+            return 0;
+        } else {
+            return DownloadWatchDog.getInstance().getSession().getDiskSpaceManager().getReservedDiskSpace(file, this);
+        }
+    }
+
     public LinkInfoSandbox getLinkInfo() {
         final File file = getFile();
         if (file == null) {
@@ -217,7 +236,7 @@ public class FilePathSandbox {
         return file.getAbsolutePath();
     }
 
-    private File getFile() {
+    protected File getFile() {
         return file;
     }
 
