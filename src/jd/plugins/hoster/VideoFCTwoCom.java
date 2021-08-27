@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
@@ -278,69 +279,88 @@ public class VideoFCTwoCom extends PluginForHost {
             final boolean useAltLogin = false;
             final Form loginform;
             if (useAltLogin) {
-                br.getPage("https://video.fc2.com/");
-                br.getPage("https://secure.id.fc2.com/?done=video&switch_language=en");
-                /* 2020-12-18: Typically a redirect to: https://fc2.com/en/login.php?ref=video */
-                final String redirect = br.getRegex("http-equiv=\"Refresh\" content=\"\\d+; url=(https?://[^<>\"]+)\"").getMatch(0);
-                if (redirect != null) {
-                    br.getPage(redirect);
-                }
+                // br.getPage("https://video.fc2.com/");
+                /* 2020-12-18: Typically this will redirect to: https://fc2.com/en/login.php?ref=video */
+                // br.getPage("https://secure.id.fc2.com/?done=video&switch_language=en");
+                // final String redirect = br.getRegex("http-equiv=\"Refresh\" content=\"\\d+; url=(https?://[^<>\"]+)\"").getMatch(0);
+                // if (redirect != null) {
+                // br.getPage(redirect);
+                // }
+                br.getPage("https://fc2.com/en/login.php?ref=video");
                 loginform = br.getFormbyProperty("name", "form_login");
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 loginform.put("email", Encoding.urlEncode(account.getUser()));
                 loginform.put("pass", Encoding.urlEncode(account.getPass()));
-                // loginform.put("Submit.x", new Random().nextInt(100) + "");
-                // loginform.put("Submit.y", new Random().nextInt(100) + "");
-                // loginform.put("image.x", new Random().nextInt(100) + "");
-                // loginform.put("image.y", new Random().nextInt(100) + "");
-                loginform.remove("image");
+                if (loginform.hasInputFieldByName("image")) {
+                    // loginform.put("Submit.x", new Random().nextInt(100) + "");
+                    // loginform.put("Submit.y", new Random().nextInt(100) + "");
+                    loginform.put("image.x", new Random().nextInt(100) + "");
+                    loginform.put("image.y", new Random().nextInt(100) + "");
+                    loginform.remove("image");
+                }
+                /* Make sure cookies are valid for as long as possible. */
+                loginform.put("keep_login", "1");
+                final boolean skipCaptcha = loginform.hasInputFieldByName("recaptchaep");
+                if (loginform.hasInputFieldByName("recaptcha") && !skipCaptcha) {
+                    final DownloadLink dlinkbefore = this.getDownloadLink();
+                    try {
+                        final DownloadLink dl_dummy;
+                        if (dlinkbefore != null) {
+                            dl_dummy = dlinkbefore;
+                        } else {
+                            dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                            this.setDownloadLink(dl_dummy);
+                        }
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        loginform.put("recaptchaep", Encoding.urlEncode(recaptchaV2Response));
+                    } finally {
+                        this.setDownloadLink(dlinkbefore);
+                    }
+                }
             } else {
                 /* 2021-08-06 */
                 br.getHeaders().put("Referer", "https://video.fc2.com/");
-                br.getPage("https://secure.id.fc2.com/index.php?mode=login");
+                br.getPage("https://secure.id.fc2.com/index.php?mode=login&switch_language=en&done=video");
                 loginform = br.getFormbyProperty("name", "form_login");
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 loginform.put("email", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
-            }
-            /* Make sure cookies are valid for as long as possible. */
-            loginform.put("keep_login", "1");
-            if (loginform.hasInputFieldByName("recaptcha")) {
-                final DownloadLink dlinkbefore = this.getDownloadLink();
-                try {
-                    final DownloadLink dl_dummy;
-                    if (dlinkbefore != null) {
-                        dl_dummy = dlinkbefore;
-                    } else {
-                        dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
-                        this.setDownloadLink(dl_dummy);
-                    }
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    if (loginform.hasInputFieldByName("recaptchaep")) {
-                        /* https://secure.id.fc2.com/?done=video&switch_language=en */
-                        loginform.put("recaptchaep", Encoding.urlEncode(recaptchaV2Response));
-                    } else {
-                        /* https://secure.id.fc2.com/index.php?mode=login */
+                /* Make sure cookies are valid for as long as possible. */
+                loginform.put("keep_login", "1");
+                loginform.remove("Submit");
+                if (loginform.hasInputFieldByName("recaptcha")) {
+                    final DownloadLink dlinkbefore = this.getDownloadLink();
+                    try {
+                        final DownloadLink dl_dummy;
+                        if (dlinkbefore != null) {
+                            dl_dummy = dlinkbefore;
+                        } else {
+                            dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                            this.setDownloadLink(dl_dummy);
+                        }
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                         loginform.put("recaptcha", Encoding.urlEncode(recaptchaV2Response));
+                    } finally {
+                        this.setDownloadLink(dlinkbefore);
                     }
-                } finally {
-                    this.setDownloadLink(dlinkbefore);
                 }
             }
             br.setFollowRedirects(false);
             br.submitForm(loginform);
-            {
-                /* 2021-01-04: Small workaround for bad redirect to wrong page on 2FA login required */
-                final boolean required2FALogin = br.getRedirectLocation() != null && br.getRedirectLocation().contains("login_authentication.php");
-                br.followRedirect();
-                br.setFollowRedirects(true);
-                if (!br.getURL().contains("login_authentication.php") && required2FALogin) {
-                    br.getPage("https://secure.id.fc2.com/login_authentication.php");
-                }
+            /* 2021-01-04: Small workaround for bad redirect to wrong page on 2FA login required */
+            final boolean required2FALogin = br.getRedirectLocation() != null && br.getRedirectLocation().contains("login_authentication.php");
+            br.setFollowRedirects(true);
+            br.followRedirect();
+            if (br.getURL().contains("error=1")) {
+                /* Login failed */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            if (!br.getURL().contains("login_authentication.php") && required2FALogin) {
+                br.getPage("https://secure.id.fc2.com/login_authentication.php");
             }
             /*
              * TODO: 2020-12-17: Check 2FA login handling below as it is untested.
