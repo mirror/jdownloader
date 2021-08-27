@@ -13,6 +13,13 @@ public interface BrowserCaptchaSolverConfig extends ChallengeSolverConfig {
 
     void setAutoClickEnabled(boolean b);
 
+    @DefaultIntValue(500)
+    @DescriptionForConfigEntry("Delay to auto click the recaptcha challenge in milliseconds")
+    @AboutConfig
+    int getAutoClickDelay();
+
+    void setAutoClickDelay(int delay);
+
     @AboutConfig
     @DefaultBooleanValue(true)
     boolean isAutoOpenBrowserEnabled();

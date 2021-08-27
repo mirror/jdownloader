@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.Regex;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -28,6 +26,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anyhentai.com" }, urls = { "https?://\\w+\\.anyhentai\\.com/([^/]+)\\.mp4(?:\\?.*)?" })
 public class AnyhentaiCom extends PluginForHost {
@@ -77,14 +77,15 @@ public class AnyhentaiCom extends PluginForHost {
         try {
             con = br.openHeadConnection(link.getPluginPatternMatcher());
             try {
-                connectionErrorhandling(con);
+                connectionErrorhandling(br, con);
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
-                    return AvailableStatus.FALSE;
+                    throw e;
                 } else {
+                    logger.log(e);
                     /* Ignore error. E.g. error 503 too many connections --> Still we know that the file is online! */
                 }
             }
@@ -101,11 +102,11 @@ public class AnyhentaiCom extends PluginForHost {
     public void handleFree(final DownloadLink link) throws Exception {
         prepBrDownload(this.br);
         this.dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 1);
-        this.connectionErrorhandling(this.dl.getConnection());
+        this.connectionErrorhandling(br, this.dl.getConnection());
         this.dl.startDownload();
     }
 
-    private void connectionErrorhandling(final URLConnectionAdapter con) throws PluginException {
+    private void connectionErrorhandling(final Browser br, final URLConnectionAdapter con) throws PluginException {
         if (con.getResponseCode() == 503) {
             /*
              * 2021-08-26: Users commonly get these directURLs via VideoDownloadHelper but this website has a very strict connection limit
@@ -113,6 +114,11 @@ public class AnyhentaiCom extends PluginForHost {
              */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many connections: Close the video player in your browser to be able to download this item", 3 * 60 * 1000l);
         } else if (!this.looksLikeDownloadableContent(con)) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             /* Typically error 404. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -133,8 +139,9 @@ public class AnyhentaiCom extends PluginForHost {
         }
         if (this.customFavIconHost != null) {
             return this.customFavIconHost;
+        } else {
+            return null;
         }
-        return null;
     }
 
     @Override

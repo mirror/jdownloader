@@ -28,6 +28,8 @@ import jd.nutils.SimpleFTP.SimpleFTPListEntry;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
@@ -54,7 +56,7 @@ public class Ftp extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink cLink, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink cLink, ProgressController progress) throws Exception {
         final String lockHost = Browser.getHost(cLink.getCryptedUrl());
         final Set<Thread> hostLocks;
         synchronized (LOCKS) {
@@ -65,32 +67,37 @@ public class Ftp extends PluginForDecrypt {
             }
             hostLocks = tmp;
         }
+        int retryCounter = 0;
         final Thread thread = Thread.currentThread();
         while (true) {
             try {
-                int limit = -1;
                 while (true) {
+                    final int maxConcurrent;
                     synchronized (LIMITS) {
-                        final Integer l = LIMITS.get(lockHost);
-                        if (l == null) {
-                            limit = -1;
+                        final Integer setLimit = LIMITS.get(lockHost);
+                        if (LIMITS.containsKey(lockHost)) {
+                            if (setLimit == null) {
+                                maxConcurrent = 1;
+                            } else {
+                                maxConcurrent = Math.max(1, setLimit.intValue());
+                            }
                         } else {
-                            limit = l;
+                            break;
                         }
                     }
                     synchronized (hostLocks) {
-                        if (isAbort()) {
+                        if (isAbort() || retryCounter++ > 10) {
                             throw new InterruptedException();
-                        } else if (limit == -1 || hostLocks.size() < limit) {
+                        } else if (hostLocks.size() < maxConcurrent) {
                             hostLocks.add(thread);
                             break;
-                        } else if (hostLocks.size() > limit) {
+                        } else if (hostLocks.size() > maxConcurrent) {
                             hostLocks.wait(5000);
                         }
                     }
                 }
                 try {
-                    return internalDecryptIt(cLink, progress, limit);
+                    return internalDecryptIt(cLink, progress);
                 } catch (WTFException e) {
                     logger.log(e);
                     if (StringUtils.startsWithCaseInsensitive(e.getMessage(), "retry")) {
@@ -98,6 +105,12 @@ public class Ftp extends PluginForDecrypt {
                     } else {
                         throw e;
                     }
+                }
+            } catch (InterruptedException e) {
+                if (retryCounter > 10 || (retryCounter > 0 && isAbort())) {
+                    throw new DecrypterRetryException(RetryReason.HOST, "Too many concurrent connections! Try again later");
+                } else {
+                    throw e;
                 }
             } finally {
                 synchronized (hostLocks) {
@@ -108,17 +121,22 @@ public class Ftp extends PluginForDecrypt {
         }
     }
 
-    private ArrayList<DownloadLink> internalDecryptIt(final CryptedLink cLink, ProgressController progress, final int maxFTPConnections) throws Exception {
+    private ArrayList<DownloadLink> internalDecryptIt(final CryptedLink cLink, ProgressController progress) throws Exception {
+        final URL url = new URL(cLink.getCryptedUrl());
+        final String lockHost = Browser.getHost(url);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>() {
             @Override
             public boolean add(final DownloadLink link) {
-                if (maxFTPConnections >= 1) {
-                    link.setProperty("MAX_FTP_CONNECTIONS", maxFTPConnections);
+                final Integer maxFTPConnections;
+                synchronized (LIMITS) {
+                    maxFTPConnections = LIMITS.get(lockHost);
+                }
+                if (maxFTPConnections != null && maxFTPConnections.intValue() > 0) {
+                    link.setProperty(jd.plugins.hoster.Ftp.MAX_FTP_CONNECTIONS, maxFTPConnections);
                 }
                 return super.add(link);
             }
         };
-        final URL url = new URL(cLink.getCryptedUrl());
         final List<HTTPProxy> proxies = selectProxies(url);
         final HTTPProxy proxy = proxies.get(0);
         final SimpleFTP ftp = new SimpleFTP(proxy, logger) {
@@ -151,11 +169,9 @@ public class Ftp extends PluginForDecrypt {
             } catch (IOException e) {
                 logger.log(e);
                 final Integer limit = ftp.getConnectionLimitByException(e);
-                if (limit != null && maxFTPConnections == -1) {
-                    final String lockHost = Browser.getHost(url);
-                    final int maxConcurrency = Math.max(1, limit);
+                if (limit != null) {
                     synchronized (LIMITS) {
-                        LIMITS.put(lockHost, maxConcurrency);
+                        LIMITS.put(lockHost, limit);
                     }
                     getCrawler().addSequentialLockObject(new LinkCrawlerLock() {
                         @Override
@@ -168,7 +184,26 @@ public class Ftp extends PluginForDecrypt {
 
                         @Override
                         public String toString() {
-                            return pluginID + "|" + host + "|" + maxConcurrency;
+                            return pluginID + "|" + host + "|" + limit;
+                        }
+
+                        @Override
+                        public boolean equals(Object obj) {
+                            if (obj == null) {
+                                return false;
+                            } else if (obj == this) {
+                                return true;
+                            } else if (obj instanceof LinkCrawlerLock) {
+                                final LinkCrawlerLock other = (LinkCrawlerLock) obj;
+                                return StringUtils.equals(toString(), other.toString());
+                            } else {
+                                return false;
+                            }
+                        }
+
+                        @Override
+                        public int hashCode() {
+                            return host.hashCode();
                         }
 
                         @Override
