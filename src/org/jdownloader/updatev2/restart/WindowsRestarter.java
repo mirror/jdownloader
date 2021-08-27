@@ -11,7 +11,6 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.updatev2.RestartController;
 
 public class WindowsRestarter extends Restarter {
-
     @Override
     protected List<String> getApplicationStartCommands(File root) {
         if (!Application.isHeadless()) {
@@ -19,7 +18,6 @@ public class WindowsRestarter extends Restarter {
             for (final String binaryPath : binaryPaths) {
                 final File restartBinary = new File(root, binaryPath);
                 if (restartBinary.exists() && restartBinary.isFile()) {
-                    getLogger().info("Found binary: " + restartBinary + " for restart");
                     try {
                         final String binaryHash = Hash.getMD5(restartBinary);
                         if ("a08b3424355c839138f326c06a964b9e".equals(binaryHash)) {
@@ -29,6 +27,7 @@ public class WindowsRestarter extends Restarter {
                     } catch (final Throwable e) {
                         getLogger().log(e);
                     }
+                    getLogger().info("Found binary: " + restartBinary + " for restart");
                     final ArrayList<String> ret = new ArrayList<String>();
                     ret.add(restartBinary.getAbsolutePath());
                     return ret;
@@ -65,7 +64,5 @@ public class WindowsRestarter extends Restarter {
             jvmParameter.add("JDownloader.jar");
         }
         return jvmParameter;
-
     }
-
 }
