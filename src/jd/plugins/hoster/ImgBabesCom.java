@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,6 +39,8 @@ public class ImgBabesCom extends XFileSharingProBasic {
         this.enablePremium(super.getPurchasePremiumURL());
     }
 
+    private static String type_special = "https?://[^/]+/f/([a-z0-9]+)/([^/]+)\\.html";
+
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
@@ -51,6 +55,18 @@ public class ImgBabesCom extends XFileSharingProBasic {
         return ret;
     }
 
+    public static final String getDefaultAnnotationPatternPartImgbabes() {
+        return "(" + XFileSharingProBasic.getDefaultAnnotationPatternPart() + "|/f/[a-z0-9]{10,12}/[^/+]+\\.html)";
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + ImgBabesCom.getDefaultAnnotationPatternPartImgbabes());
+        }
+        return ret.toArray(new String[0]);
+    }
+
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
     }
@@ -61,7 +77,7 @@ public class ImgBabesCom extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+        return ImgBabesCom.buildAnnotationUrls(getPluginDomains());
     }
 
     @Override
@@ -118,6 +134,16 @@ public class ImgBabesCom extends XFileSharingProBasic {
     }
 
     @Override
+    protected boolean supports_availablecheck_filename_abuse() {
+        return false;
+    }
+
+    @Override
+    protected boolean supports_availablecheck_alt() {
+        return false;
+    }
+
+    @Override
     public Form findImageForm(final Browser br) {
         /* 2020-10-22: Special */
         Form imghost_next_form = super.findImageForm(br);
@@ -143,5 +169,46 @@ public class ImgBabesCom extends XFileSharingProBasic {
             dllink = super.getDllinkImagehost(src);
         }
         return dllink;
+    }
+
+    @Override
+    protected String getFUID(final String url, URL_TYPE type) {
+        // if (url != null && url.matches(type_special)) {
+        // return new Regex(url, type_special).getMatch(0);
+        // } else {
+        // return super.getFUID(url, type);
+        // }
+        return super.getFUID(url, type);
+    }
+
+    @Override
+    public String getFUIDFromURL(final DownloadLink link) {
+        if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches(type_special)) {
+            return new Regex(link.getPluginPatternMatcher(), type_special).getMatch(0);
+        } else {
+            return super.getFUIDFromURL(link);
+        }
+    }
+
+    @Override
+    protected String buildURLPath(DownloadLink link, final String fuid, URL_TYPE type) {
+        if (link.getPluginPatternMatcher().matches(type_special)) {
+            try {
+                return new URL(link.getPluginPatternMatcher()).getPath();
+            } catch (final MalformedURLException e) {
+                return null;
+            }
+        } else {
+            return super.buildURLPath(link, fuid, type);
+        }
+    }
+
+    @Override
+    public String getFilenameFromURL(final DownloadLink dl) {
+        if (dl.getPluginPatternMatcher() != null && dl.getPluginPatternMatcher().matches(type_special)) {
+            return new Regex(dl.getPluginPatternMatcher(), type_special).getMatch(1);
+        } else {
+            return super.getFilenameFromURL(dl);
+        }
     }
 }

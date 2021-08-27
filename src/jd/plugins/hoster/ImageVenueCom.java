@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
@@ -27,9 +30,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagevenue.com" }, urls = { "https?://(?:www\\.)?img[0-9]+\\.imagevenue\\.com/img\\.php\\?(loc=[^&]+\\&)?image=.{4,300}|https?://(?:www\\.)?imagevenue\\.com/view/o/\\?i=[^\\&]+\\&h=[^\\&]+" })
 public class ImageVenueCom extends PluginForHost {
@@ -106,7 +106,10 @@ public class ImageVenueCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br.openHeadConnection(dllink);
-            if (!con.isOK() || StringUtils.containsIgnoreCase(con.getContentType(), "text")) {
+            if (!this.looksLikeDownloadableContent(con)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (con.getCompleteContentLength() == 14396) {
+                /* 2021-08-27: Special "404 not image unavailable" dummy picture. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 final long size = con.getCompleteContentLength();
@@ -126,13 +129,13 @@ public class ImageVenueCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
