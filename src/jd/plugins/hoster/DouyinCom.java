@@ -115,12 +115,11 @@ public class DouyinCom extends PluginForHost {
         String json = br.getRegex("<script id=\"RENDER_DATA\" type=\"application/json\">(.*?)<").getMatch(0);
         json = Encoding.htmlDecode(json);
         Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-        entries = (Map<String, Object>) entries.get("C_14");
-        final Object aweme = entries.get("aweme");
+        final Map<String, Object> aweme = (Map<String, Object>) findAwemeMap(entries);
         if (aweme == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> videoInfo = (Map<String, Object>) ((Map<String, Object>) aweme).get("detail");
+        final Map<String, Object> videoInfo = (Map<String, Object>) aweme.get("detail");
         /* 2021-08-13: This can contain an "official" download-URL but it seems like the quality is really bad andspeed is very limited. */
         // final Map<String, Object> download = (Map<String, Object>) videoInfo.get("download");
         final Map<String, Object> video = (Map<String, Object>) videoInfo.get("video");
@@ -154,6 +153,41 @@ public class DouyinCom extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    /** Recursive function to find photoMap inside json. */
+    private Object findAwemeMap(final Object o) {
+        if (o instanceof Map) {
+            final Map<String, Object> entrymap = (Map<String, Object>) o;
+            if (entrymap.containsKey("statusCode") && entrymap.containsKey("detail")) {
+                return entrymap;
+            } else {
+                for (final Map.Entry<String, Object> cookieEntry : entrymap.entrySet()) {
+                    // final String key = cookieEntry.getKey();
+                    final Object value = cookieEntry.getValue();
+                    if (value instanceof List || value instanceof Map) {
+                        final Object video = findAwemeMap(value);
+                        if (video != null) {
+                            return video;
+                        }
+                    }
+                }
+            }
+            return null;
+        } else if (o instanceof List) {
+            final List<Object> array = (List) o;
+            for (final Object arrayo : array) {
+                if (arrayo instanceof List || arrayo instanceof Map) {
+                    final Object video = findAwemeMap(arrayo);
+                    if (video != null) {
+                        return video;
+                    }
+                }
+            }
+            return null;
+        } else {
+            return null;
+        }
     }
 
     @Override
