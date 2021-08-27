@@ -55,16 +55,15 @@ public class FlickrCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String     MAINPAGE                 = "http://flickr.com/";
     private static final String     NICE_HOST                = "flickr.com";
-    private static final String     TYPE_FAVORITES           = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/favorites(/.+)?";
-    private static final String     TYPE_GROUPS              = "https?://(www\\.)?flickr\\.com/groups/[^<>\"/]+([^<>\"]+)?";
-    private static final String     TYPE_SET_SINGLE          = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/(?:sets|albums)/\\d+/?";
-    private static final String     TYPE_GALLERY             = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/galleries/\\d+/?";
+    private static final String     TYPE_FAVORITES           = "https?://[^/]+/photos/[^<>\"/]+/favorites(/.+)?";
+    private static final String     TYPE_GROUPS              = "https?://[^/]+/groups/[^<>\"/]+([^<>\"]+)?";
+    private static final String     TYPE_SET_SINGLE          = "https?://[^/]+/photos/[^<>\"/]+/(?:sets|albums)/\\d+/?";
+    private static final String     TYPE_GALLERY             = "https?://[^/]+/photos/[^<>\"/]+/galleries/\\d+/?";
     private static final String     TYPE_SETS_OF_USER_ALL    = ".+/(?:albums|sets)/?$";
-    private static final String     TYPE_SINGLE_PHOTO        = "https?://(www\\.)?flickr\\.com/photos/(?!tags/)[^<>\"/]+/\\d+.+";
-    private static final String     TYPE_PHOTO               = "https?://(www\\.)?flickr\\.com/photos/.*?";
-    private static final String     INVALIDLINKS             = "https?://(www\\.)?flickr\\.com/(photos/(me|upload|tags.*?)|groups/[^<>\"/]+/rules|groups/[^<>\"/]+/discuss.*?)";
+    private static final String     TYPE_SINGLE_PHOTO        = "https?://[^/]+/photos/(?!tags/)[^<>\"/]+/\\d+.+";
+    private static final String     TYPE_PHOTO               = "https?://[^/]+/photos/.*?";
+    private static final String     INVALIDLINKS             = "https?://[^/]+/(photos/(me|upload|tags.*?)|groups/[^<>\"/]+/rules|groups/[^<>\"/]+/discuss.*?)";
     private static final String     EXCEPTION_LINKOFFLINE    = "EXCEPTION_LINKOFFLINE";
     private static final String     api_format               = "json";
     private static final int        api_max_entries_per_page = 500;
@@ -85,15 +84,15 @@ public class FlickrCom extends PluginForDecrypt {
         br = new Browser();
         br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
         br.setFollowRedirects(true);
-        br.setCookie(MAINPAGE, "localization", "en-us%3Bus%3Bde");
-        br.setCookie(MAINPAGE, "fldetectedlang", "en-us");
+        br.setCookie(this.getHost(), "localization", "en-us%3Bus%3Bde");
+        br.setCookie(this.getHost(), "fldetectedlang", "en-us");
         br.setLoadLimit(br.getLoadLimit() * 2);
         parameter = correctParameter(param.toString());
         username = new Regex(parameter, "(?:photos|groups)/([^<>\"/]+)").getMatch(0);
         try {
             /* Check if link is for hosterplugin */
             if (parameter.matches(TYPE_SINGLE_PHOTO)) {
-                final DownloadLink dl = createDownloadlink(parameter.replace("flickr.com/", "flickrdecrypted.com/").replace("https://", "http://"));
+                final DownloadLink dl = createDownloadlink(parameter);
                 dl.setContentUrl(parameter);
                 decryptedLinks.add(dl);
                 return decryptedLinks;
@@ -155,7 +154,7 @@ public class FlickrCom extends PluginForDecrypt {
      */
     private void api_handleAPI() throws Exception {
         /* TODO: Fix csrf handling to make requests as logged-in user possible. */
-        br.clearCookies(MAINPAGE);
+        br.clearCookies(this.getHost());
         String fpName = null;
         api_apikey = getPublicAPIKey(this.br);
         if (api_apikey == null) {
@@ -284,7 +283,7 @@ public class FlickrCom extends PluginForDecrypt {
                 }
                 title = encodeUnicode(title);
                 String description = new Regex(jsonentry, "\"description\":\\{\"_content\":\"(.+)\"\\}").getMatch(0);
-                final DownloadLink fina = createDownloadlink("http://www.flickrdecrypted.com/photos/" + owner + "/" + photo_id);
+                final DownloadLink fina = createDownloadlink("https://www.flickr.com/photos/" + owner + "/" + photo_id);
                 if (description != null) {
                     try {
                         description = Encoding.htmlDecode(description);
@@ -634,7 +633,7 @@ public class FlickrCom extends PluginForDecrypt {
                  * better filenames right after the decryption process.
                  */
                 final String url = "https://www.flickr.com/photos/" + pathAlias + "/" + pic_id;
-                final DownloadLink fina = createDownloadlink(url.replace("flickr.com/", "flickrdecrypted.com/"));
+                final DownloadLink fina = createDownloadlink(url);
                 final String extension;
                 if ("video".equalsIgnoreCase(media)) {
                     fina.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
