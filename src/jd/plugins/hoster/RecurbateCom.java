@@ -120,6 +120,9 @@ public class RecurbateCom extends antiDDoSForHost {
             if (token == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            br.setCookie(br.getHost(), "im18", "true");
+            br.setCookie(br.getHost(), "im18_ets", Long.toString(System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000));
+            br.setCookie(br.getHost(), "im18_its", Long.toString(System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000));
             final Browser brc = br.cloneBrowser();
             brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             brc.getHeaders().put("Accept", "*/*");
@@ -130,8 +133,11 @@ public class RecurbateCom extends antiDDoSForHost {
             if (brc.toString().equalsIgnoreCase("shall_signin")) {
                 /* Free users can watch one video per IP per X time */
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+            } else if (brc.toString().equalsIgnoreCase("shall_subscribe")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily downloadlimit reached", 60 * 60 * 1000l);
             }
-            final String dllink = br.getRegex("<source src=\"(https?://[^\"]+)\"[^>]*type=\"video/mp4\" />").getMatch(0);
+            /* 2021-08-30: TODO: This will always lead to error 410 -> Check what's missing */
+            final String dllink = brc.getRegex("<source src=\"(https?://[^\"]+)\"[^>]*type=\"video/mp4\" />").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
