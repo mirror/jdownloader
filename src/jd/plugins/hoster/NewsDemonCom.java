@@ -22,12 +22,12 @@ import jd.plugins.PluginException;
 public class NewsDemonCom extends UseNet {
     public NewsDemonCom(PluginWrapper wrapper) {
         super(wrapper);
-        enablePremium("https://www.newsdemon.com/usenet-access.php");
+        enablePremium("https://members.newsdemon.com/usenet-access.php");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.newsdemon.com/terms.php";
+        return "https://www.newsdemon.com/terms";
     }
 
     public static interface NewsDemonComConfigInterface extends UsenetAccountConfigInterface {
@@ -43,7 +43,7 @@ public class NewsDemonCom extends UseNet {
             Form login = null;
             if (cookies != null) {
                 br.setCookies(getHost(), cookies);
-                br.getPage("https://www.newsdemon.com/members/index.php");
+                br.getPage("https://members." + this.getHost() + "/members/index.php");
                 login = br.getFormbyActionRegex("/login.php");
                 if (login != null) {
                     br.getCookies(getHost()).clear();
@@ -51,11 +51,11 @@ public class NewsDemonCom extends UseNet {
                     br.getCookies(getHost()).clear();
                 }
             }
-            if (!br.containsHTML("/logout.php")) {
+            if (!br.containsHTML("/logout\\.php")) {
                 account.clearCookies("");
                 final String userName = account.getUser();
-                br.getPage("https://www.newsdemon.com/members/memlogin.php");
-                login = br.getFormbyActionRegex("/login.php");
+                br.getPage("https://members." + this.getHost() + "/members/memlogin.php");
+                login = br.getFormbyActionRegex("/login\\.php");
                 if (login == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }

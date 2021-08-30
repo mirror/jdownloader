@@ -64,8 +64,8 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "mylust.com" });
         ret.add(new String[] { "yourporngod.com" });
         ret.add(new String[] { "everydayporn.co" });
-        ret.add(new String[] { "dato.porn" });
-        ret.add(new String[] { "camhub.world" });
+        ret.add(new String[] { "datoporn.com", "dato.porn" });
+        ret.add(new String[] { "camhub.cc", "camhub.world" });
         ret.add(new String[] { "upornia.com" });
         ret.add(new String[] { "finevids.xxx" });
         ret.add(new String[] { "vr.pornhat.com" });

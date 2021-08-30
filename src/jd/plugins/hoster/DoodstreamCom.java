@@ -215,7 +215,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
         } else if (br.containsHTML("(?i)<h1>\\s*Oops\\! Sorry\\s*</h1>\\s*<p>\\s*File you are looking for is not found")) {
             /* 2021-08-26 */
             return true;
-        } else if (br.containsHTML("(?i)<h1>\\s*Not Found\\s*</h1>\\s*<p>\\s*video you are looking for is not found") && !br.containsHTML("</video>")) {
+        } else if (br.containsHTML("(?i)<h1>\\s*Not Found\\s*</h1>\\s*<p>\\s*video you are looking for is not found") && link.getPluginPatternMatcher().matches(TYPE_STREAM) && !br.containsHTML("</video>")) {
             return true;
         } else {
             return false;

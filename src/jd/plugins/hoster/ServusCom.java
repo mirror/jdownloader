@@ -348,6 +348,10 @@ public class ServusCom extends PluginForHost {
                 for (final String playabilityError : playabilityErrors) {
                     if (playabilityError.equals("NOT_YET_AVAILABLE")) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Stream is not yet available");
+                    } else if (playabilityError.equals("DATE_RANGE_UNKNOWN")) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Content expired and is not playable anymore");
+                    } else if (playabilityError.equals("FSK_BLOCKED")) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Age restricted content");
                     } else {
                         logger.info("Unknown playabilityError:" + playabilityError);
                     }
