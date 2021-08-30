@@ -15,19 +15,26 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.plugins.Account.AccountType;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -72,19 +79,12 @@ public class RarbgTo extends antiDDoSForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = false;
-    private static final int     FREE_MAXCHUNKS    = 1;
-    private static final int     FREE_MAXDOWNLOADS = 1;
+    private static final boolean              FREE_RESUME        = false;
+    private static final int                  FREE_MAXCHUNKS     = 1;
+    /* 2021-08-30: Only increase this after updating max. simultaneous downloads handling to start one download after another! */
+    private static final int                  FREE_MAXDOWNLOADS  = 1;
+    protected static HashMap<String, Cookies> antiCaptchaCookies = new HashMap<String, Cookies>();
 
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    //
-    // /* don't touch the following! */
-    // private static AtomicInteger maxPrem = new AtomicInteger(1);
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
@@ -106,8 +106,9 @@ public class RarbgTo extends antiDDoSForHost {
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+        loadAntiCaptchaCookies(this.br, this.getHost());
         br.setFollowRedirects(true);
-        if (!isDownload) {
+        if (!link.isNameSet()) {
             /* Avoid triggering their spam protection! Also all added URLs are usually online! */
             link.setName(this.getFID(link) + ".torrent");
             return AvailableStatus.TRUE;
@@ -115,82 +116,165 @@ public class RarbgTo extends antiDDoSForHost {
         getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*No such torrent")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.getURL().contains("threat_defence.php")) {
-            /* 2019-01-04: TODO: Maybe add support for this (redirect + simple captcha) */
-            // final String js_sk = br.getRegex("var value_sk\\s*=\\s*'([a-z0-9]+)';").getMatch(0);
-            // final String js_c = br.getRegex("var value_c\\s*=\\s*'([0-9]+)';").getMatch(0);
-            // final String js_i = br.getRegex("var value_i\\s*=\\s*'([0-9]+)';").getMatch(0);
-            // if (js_sk != null) {
-            // br.setCookie(br.getURL(), "sk", js_sk);
-            // }
-            // final String continueURL = br.getRegex("(/threat_defence\\.php\\?defence=nojc\\&r=\\d+)").getMatch(0);
-            // if (continueURL != null) {
-            // this.getPage(continueURL);
-            // }
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Anti-spam was triggered", 30 * 60 * 1000l);
+        } else if (isThreadDefenceActive(this.br)) {
+            /* Do not handle their anti bot protection during linkcheck as it may require the user to solve a captcha. */
+            // this.handleThreadDefence(link, this.br);
+            return AvailableStatus.UNCHECKABLE;
         }
-        boolean setFinalFilename = true;
         String filename = br.getRegex("\\&f=([^<>\"]+)").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            /* Fallback */
-            filename = this.getFID(link);
-            setFinalFilename = false;
-        }
-        if (!filename.endsWith(".torrent")) {
-            filename += ".torrent";
-        }
-        filename = Encoding.htmlDecode(filename).trim();
-        if (setFinalFilename) {
+        if (filename != null) {
+            if (!filename.endsWith(".torrent")) {
+                filename += ".torrent";
+            }
+            filename = Encoding.htmlDecode(filename).trim();
             link.setFinalFileName(filename);
-        } else {
-            link.setName(filename);
         }
         return AvailableStatus.TRUE;
+    }
+
+    protected void loadAntiCaptchaCookies(final Browser prepBr, final String host) {
+        synchronized (antiCaptchaCookies) {
+            if (!antiCaptchaCookies.isEmpty()) {
+                for (final Map.Entry<String, Cookies> cookieEntry : antiCaptchaCookies.entrySet()) {
+                    final String key = cookieEntry.getKey();
+                    if (key != null && key.equals(host)) {
+                        try {
+                            prepBr.setCookies(key, cookieEntry.getValue(), false);
+                        } catch (final Throwable e) {
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean isThreadDefenceActive(final Browser br) {
+        return br.getURL().contains("threat_defence.php");
+    }
+
+    /**
+     * Handles their anti bot protection.
+     *
+     * @throws Exception
+     */
+    private void handleThreadDefence(final DownloadLink link, final Browser br) throws Exception {
+        synchronized (antiCaptchaCookies) {
+            if (isThreadDefenceActive(br)) {
+                if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    /* 2021-08-30: Make this fail in stable as it is not yet working! */
+                    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Anti-spam was triggered", 30 * 60 * 1000l);
+                }
+                boolean hasSolvedAtLeastOneChallenge = false;
+                if (br.containsHTML("/threat_defence_ajax\\.php\\?sk=")) {
+                    final String sk = br.getRegex("var value_sk = '([a-z0-9]+)';").getMatch(0);
+                    final String cid = br.getRegex("var value_c = '(\\d+)';").getMatch(0);
+                    final String i = br.getRegex("var value_i = '(\\d+)';").getMatch(0);
+                    final String r = br.getRegex("/threat_defence_ajax\\.php\\?sk=[^\"]+\\&r=(\\d+)'").getMatch(0);
+                    final String r2 = br.getRegex("/threat_defence\\.php\\?defence=2[^>]+\\&r=(\\d+)").getMatch(0);
+                    if (sk == null || cid == null || i == null || r == null || r2 == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final UrlQuery query = new UrlQuery();
+                    query.add("sk", sk);
+                    query.add("cid", cid);
+                    query.add("i", i);
+                    query.add("r", r);
+                    query.add("_", Long.toString(System.currentTimeMillis()));
+                    /* This will return an empty page */
+                    br.getPage("/threat_defence_ajax.php?" + query.toString());
+                    /* This request will either complete the challenge or ask for a captcha. */
+                    this.sleep(5500l, link); // mimic browser wait
+                    br.getPage("/threat_defence.php?defence=2&sk=" + sk + "&cid=" + cid + "&i=" + i + "&ref_cookie=rarbg.to&r=" + r2);
+                    hasSolvedAtLeastOneChallenge = true;
+                }
+                final Form captchaForm = br.getFormbyActionRegex(".*/threat_defence\\.php");
+                if (captchaForm != null) {
+                    final String captchaURL = br.getRegex("(/threat_captcha\\.php\\?[^<>\"]+)").getMatch(0);
+                    if (captchaURL == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final String code = this.getCaptchaCode(captchaURL, link);
+                    if (code == null || !code.matches("(?i)[a-z0-9]{5}")) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA, "Invalid captcha format");
+                    }
+                    captchaForm.put("solve_string", code.toUpperCase(Locale.ENGLISH));
+                    br.setFollowRedirects(false);
+                    br.submitForm(captchaForm);
+                    final String redirect = br.getRedirectLocation();
+                    if (br.containsHTML("(?i)>\\s*Wrong captcha entered")) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    } else if (redirect == null) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Anti bot protection captcha handling redirect missing");
+                    } else if (!redirect.matches("https?://[^/]+/torrents\\.php\\?r=\\d+")) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Anti bot protection captcha handling invalid redirect: " + redirect);
+                    } else {
+                        logger.info("Successfully passed captcha challenge");
+                        /* TODO: Something is missing here! It is redirecting us back to thread_defence.php! Maybe a missing cookie? */
+                        br.setFollowRedirects(true);
+                        br.getPage(redirect);
+                        hasSolvedAtLeastOneChallenge = true;
+                    }
+                }
+                if (!hasSolvedAtLeastOneChallenge) {
+                    /* This should never happen */
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Anti bot protection handling failure");
+                } else if (isThreadDefenceActive(br)) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Failed to pass bot protection", 30 * 60 * 1000l);
+                } else {
+                    logger.info("Successfully passed bot protection --> URL: " + br.toString());
+                    /* Save new cookies to prevent future anti bot challenges */
+                    antiCaptchaCookies.put(this.getHost(), this.br.getCookies(this.getHost()));
+                }
+            }
+        }
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link, true);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
-    }
-
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        final String directlinkproperty = "free_directlink";
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
+            this.handleThreadDefence(link, this.br);
             dllink = br.getRegex("(/download\\.php[^<>\"]+)").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
+                if (!this.looksLikeDownloadableContent(con)) {
+                    link.removeProperty(property);
                     dllink = null;
                 }
             } catch (final Exception e) {
                 logger.log(e);
-                downloadLink.setProperty(property, Property.NULL);
+                link.setProperty(property, Property.NULL);
                 dllink = null;
             } finally {
                 if (con != null) {
@@ -202,16 +286,7 @@ public class RarbgTo extends antiDDoSForHost {
     }
 
     @Override
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (acc.getType() == AccountType.FREE) {
-            /* Free accounts can have captchas */
-            return true;
-        }
-        /* Premium accounts do not have captchas */
+    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
         return false;
     }
 
