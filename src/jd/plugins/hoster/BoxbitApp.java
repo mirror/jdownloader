@@ -218,19 +218,25 @@ public class BoxbitApp extends PluginForHost {
             if (status == null) {
                 status = "";
             }
-            status += "|TokenValidity: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(this.getLoginTokenValidity(account));
+            status += " | TokenValidity: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(this.getLoginTokenValidity(account));
             ai.setStatus(status);
         }
         final ArrayList<String> supportedhostslist = new ArrayList<String>();
         /* Can be null for free accounts! */
         if (hosts != null) {
+            br.getPage(API_BASE + "/filehosts/domains");
+            /* Contains mapping e.g. "uploaded" --> [uploaded.net, uploaded.to, ul.to] */
+            final Map<String, Object> hostMapping = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             for (final Map<String, Object> hostInfo : hosts) {
                 final Map<String, Object> hostDetails = (Map<String, Object>) hostInfo.get("details");
-                final String host = (String) hostDetails.get("identifier");
+                final String hostIdentifier = (String) hostDetails.get("identifier");
                 if (hostDetails.get("status").toString().equalsIgnoreCase("working")) {
-                    supportedhostslist.add(host);
+                    final List<String> fullDomains = (List<String>) hostMapping.get(hostIdentifier);
+                    for (final String fullDomain : fullDomains) {
+                        supportedhostslist.add(fullDomain);
+                    }
                 } else {
-                    logger.info("Skipping non working host: " + host);
+                    logger.info("Skipping non working host: " + hostIdentifier);
                 }
             }
         }
