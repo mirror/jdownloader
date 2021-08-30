@@ -181,4 +181,34 @@ public class VuploadCom extends XFileSharingProBasic {
             }
         }
     }
+
+    @Override
+    protected String getDllinkVideohost(final String src) {
+        /* 2021-08-30: Special as upper handling may fail to pick the highest quality in this case. */
+        String dllink = null;
+        final String[] specialPreferredQuals = new String[] { "1080", "720" };
+        for (final String quality : specialPreferredQuals) {
+            dllink = new Regex(src, quality + "p  <span class='vup-hd-quality-badge'></span>\",sources:\\[\\{src:\"(https?://[^\"]+)").getMatch(0);
+            if (dllink != null) {
+                break;
+            }
+        }
+        if (dllink != null) {
+            return dllink;
+        } else {
+            /* Fallback to upper handling */
+            return super.getDllinkVideohost(src);
+        }
+    }
+
+    @Override
+    public String[] scanInfo(final String[] fileInfo) {
+        /* 2021-08-30: Special */
+        super.scanInfo(fileInfo);
+        final String betterFilename = br.getRegex("<h1 class=\"video-title\"[^>]*>(.*?)</h1>").getMatch(0);
+        if (betterFilename != null) {
+            fileInfo[0] = betterFilename;
+        }
+        return fileInfo;
+    }
 }
