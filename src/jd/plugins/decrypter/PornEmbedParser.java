@@ -850,7 +850,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-        externID = br.getRegex("(https?://(?:www\\.)?camhub\\.world/embed/\\d+)").getMatch(0);
+        externID = br.getRegex("(https?://(?:www\\.)?camhub\\.(?:world|cc)/embed/\\d+)").getMatch(0);
         if (externID != null) {
             final DownloadLink dl = this.createDownloadlink(externID);
             /* Filename is good to have but not necessarily required, */
