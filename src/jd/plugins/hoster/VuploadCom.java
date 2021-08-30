@@ -209,6 +209,11 @@ public class VuploadCom extends XFileSharingProBasic {
         if (betterFilename != null) {
             fileInfo[0] = betterFilename;
         }
+        /* Upper handling may pickup the lower filesize so let's check if an HD filesize is available. */
+        final String filesizeHD = br.getRegex("class=\"fad fa-save\"[^>]*></i>(\\d+[^<>\"]+) \\(HD\\)\\s*</div>").getMatch(0);
+        if (filesizeHD != null) {
+            fileInfo[1] = filesizeHD;
+        }
         return fileInfo;
     }
 }
