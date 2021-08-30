@@ -26,8 +26,10 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -52,7 +54,6 @@ public class DouyinCom extends PluginForHost {
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
-    private boolean              server_issues     = false;
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -105,33 +106,76 @@ public class DouyinCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         dllink = null;
-        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String dateFormatted;
+        String username;
+        /* 2021-08-30: Try to use API in an attempt to get around potential website captchas. */
+        final boolean useAPI = true;
+        if (useAPI) {
+            final Browser brc = br.cloneBrowser();
+            /* https://github.com/missuo/DouyinParsing */
+            brc.getHeaders().put("Accept", "application/json");
+            brc.getPage("https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=" + this.getFID(link));
+            // if (brc.getHttpConnection().getResponseCode() == 404) {
+            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // }
+            Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+            final List<Object> results = (List<Object>) entries.get("item_list");
+            /* List is empty --> Video must be offline */
+            if (results.isEmpty()) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final Map<String, Object> videoInfo = (Map<String, Object>) results.get(0);
+            {
+                final Map<String, Object> shareInfo = (Map<String, Object>) videoInfo.get("share_info");
+                final String description = (String) shareInfo.get("share_weibo_desc");
+                if (!StringUtils.isEmpty(description) && link.getComment() == null) {
+                    link.setComment(description);
+                }
+            }
+            {
+                final Map<String, Object> author = (Map<String, Object>) videoInfo.get("author");
+                username = (String) author.get("nickname");
+            }
+            final long createTime = ((Number) videoInfo.get("create_time")).longValue();
+            dateFormatted = new SimpleDateFormat("yyyy-MM-dd").format(new Date(createTime * 1000));
+            final Map<String, Object> video = (Map<String, Object>) videoInfo.get("video");
+            this.dllink = (String) JavaScriptEngineFactory.walkJson(video, "play_addr/url_list/{0}");
+        } else {
+            br.getPage(link.getPluginPatternMatcher());
+            if (isBotProtectionActive(this.br)) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Captcha-blocked");
+            } else if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (!br.containsHTML("/video/" + this.getFID(link))) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (!this.canHandle(this.br.getURL())) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            String json = br.getRegex("<script id=\"RENDER_DATA\" type=\"application/json\">(.*?)<").getMatch(0);
+            json = Encoding.htmlDecode(json);
+            Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            final Map<String, Object> aweme = (Map<String, Object>) findAwemeMap(entries);
+            if (aweme == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final Map<String, Object> videoInfo = (Map<String, Object>) aweme.get("detail");
+            /*
+             * 2021-08-13: This can contain an "official" download-URL but it seems like the quality is really bad andspeed is very limited.
+             */
+            // final Map<String, Object> download = (Map<String, Object>) videoInfo.get("download");
+            final Map<String, Object> video = (Map<String, Object>) videoInfo.get("video");
+            final Map<String, Object> authorInfo = (Map<String, Object>) videoInfo.get("authorInfo");
+            username = (String) authorInfo.get("nickname");
+            final long createTime = ((Number) videoInfo.get("createTime")).longValue();
+            final String description = (String) videoInfo.get("desc");
+            if (!StringUtils.isEmpty(description) && link.getComment() == null) {
+                link.setComment(description);
+            }
+            dateFormatted = new SimpleDateFormat("yyyy-MM-dd").format(new Date(createTime * 1000));
+            this.dllink = (String) video.get("playApi");
         }
-        String json = br.getRegex("<script id=\"RENDER_DATA\" type=\"application/json\">(.*?)<").getMatch(0);
-        json = Encoding.htmlDecode(json);
-        Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-        final Map<String, Object> aweme = (Map<String, Object>) findAwemeMap(entries);
-        if (aweme == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final Map<String, Object> videoInfo = (Map<String, Object>) aweme.get("detail");
-        /* 2021-08-13: This can contain an "official" download-URL but it seems like the quality is really bad andspeed is very limited. */
-        // final Map<String, Object> download = (Map<String, Object>) videoInfo.get("download");
-        final Map<String, Object> video = (Map<String, Object>) videoInfo.get("video");
-        final Map<String, Object> authorInfo = (Map<String, Object>) videoInfo.get("authorInfo");
-        final String username = (String) authorInfo.get("nickname");
-        final long createTime = ((Number) videoInfo.get("createTime")).longValue();
-        final String description = (String) videoInfo.get("desc");
-        if (!StringUtils.isEmpty(description) && link.getComment() == null) {
-            link.setComment(description);
-        }
-        final String dateFormatted = new SimpleDateFormat("yyyy-MM-dd").format(new Date(createTime * 1000));
-        this.dllink = (String) video.get("playApi");
         link.setFinalFileName(dateFormatted + "_" + username + "_" + this.getFID(link) + ".mp4");
         if (!StringUtils.isEmpty(dllink) && !isDownload) {
             URLConnectionAdapter con = null;
@@ -139,7 +183,7 @@ public class DouyinCom extends PluginForHost {
                 /* 2021-08-13: Server doesn't accept HEAD-request and final downloadurl is only valid once! */
                 con = this.br.openGetConnection(this.dllink);
                 if (!this.looksLikeDownloadableContent(con)) {
-                    server_issues = true;
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - video broken?");
                 } else {
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
@@ -153,6 +197,11 @@ public class DouyinCom extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private static boolean isBotProtectionActive(final Browser br) {
+        /* 2021-08-30: This may happen for some users. Captcha required --> Trying again with another IP may or may not help. */
+        return br.containsHTML("window\\.TTGCaptcha\\.init");
     }
 
     /** Recursive function to find photoMap inside json. */
@@ -193,9 +242,7 @@ public class DouyinCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link, true);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink)) {
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
@@ -210,7 +257,7 @@ public class DouyinCom extends PluginForHost {
             } catch (final IOException e) {
                 logger.log(e);
             }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - video broken?");
         }
         dl.startDownload();
     }
