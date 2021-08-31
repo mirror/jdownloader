@@ -32,7 +32,7 @@ public class BteTo extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // This is a modified CMS site
+    /* This is a modified CMS site */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
@@ -45,34 +45,42 @@ public class BteTo extends PluginForDecrypt {
                 return null;
             }
             decryptedLinks.add(this.createDownloadlink(finallink));
-            return decryptedLinks;
-        }
-        br.setFollowRedirects(true);
-        br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Es existiert kein Eintrag mit der ID")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
-        String fpName = br.getRegex("<title>Byte\\.to \\-([^<>\"]*?)</title>").getMatch(0);
-        if (fpName == null) {
-            fpName = br.getRegex("<TITLE>\\s*(.*?)</TITLE>").getMatch(0);
-        }
-        final String[] links = br.getRegex("<A HREF=\"(https?[^<>\"]*?)\"").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        for (String singleLink : links) {
-            singleLink = singleLink.replace("http://www.dereferer.org/?", "");
-            singleLink = Encoding.htmlDecode(singleLink);
-            if (!singleLink.matches("https?://(www\\.)?byte\\.to/category/[A-Za-z0-9\\-]+/[A-Za-z0-9\\-]+\\.html")) {
-                decryptedLinks.add(createDownloadlink(singleLink));
+        } else {
+            br.setFollowRedirects(true);
+            br.getPage(parameter);
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*Es existiert kein Eintrag mit der ID")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
             }
-        }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            String fpName = br.getRegex("<title>Byte\\.to \\-([^<>\"]*?)</title>").getMatch(0);
+            if (fpName == null) {
+                fpName = br.getRegex("<TITLE>\\s*(?:byte\\.to)?(.*?)</TITLE>").getMatch(0);
+            }
+            final String[] links = br.getRegex("<A HREF=\"(https?[^<>\"]*?)\"").getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (String singleLink : links) {
+                singleLink = singleLink.replace("http://www.dereferer.org/?", "");
+                singleLink = Encoding.htmlDecode(singleLink);
+                if (!this.canHandle(singleLink)) {
+                    decryptedLinks.add(createDownloadlink(singleLink));
+                }
+            }
+            /* 2021-08-31: New */
+            final String[] redirectIDs = br.getRegex("/widgets/button\\.php\\?([a-zA-Z0-9_/\\+\\=\\-%]+)").getColumn(0);
+            for (String redirectID : redirectIDs) {
+                if (redirectID.contains("%")) {
+                    redirectID = Encoding.htmlDecode(redirectID);
+                }
+                decryptedLinks.add(this.createDownloadlink("https://" + this.getHost() + "/go.php?hash=" + redirectID));
+            }
+            if (fpName != null) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName).trim());
+                fp.addLinks(decryptedLinks);
+            }
         }
         return decryptedLinks;
     }
