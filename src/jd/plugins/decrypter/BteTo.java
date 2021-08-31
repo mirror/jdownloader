@@ -24,9 +24,11 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "byte.to" }, urls = { "https?://(?:www\\.)?byte\\.to/(?:category/[A-Za-z0-9\\-]+/[A-Za-z0-9\\-]+\\.html|\\?id=\\d+)|https?://byte\\.to/go\\.php\\?hash=.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "byte.to" }, urls = { "https?://(?:www\\.)?byte\\.to/(?:category/[A-Za-z0-9\\-/]+-\\d+\\.html|\\?id=\\d+)|https?://byte\\.to/go\\.php\\?hash=.+" })
 public class BteTo extends PluginForDecrypt {
     public BteTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,26 +51,12 @@ public class BteTo extends PluginForDecrypt {
             br.setFollowRedirects(true);
             br.getPage(parameter);
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*Es existiert kein Eintrag mit der ID")) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String fpName = br.getRegex("<title>Byte\\.to \\-([^<>\"]*?)</title>").getMatch(0);
             if (fpName == null) {
                 fpName = br.getRegex("<TITLE>\\s*(?:byte\\.to)?(.*?)</TITLE>").getMatch(0);
             }
-            final String[] links = br.getRegex("<A HREF=\"(https?[^<>\"]*?)\"").getColumn(0);
-            if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            for (String singleLink : links) {
-                singleLink = singleLink.replace("http://www.dereferer.org/?", "");
-                singleLink = Encoding.htmlDecode(singleLink);
-                if (!this.canHandle(singleLink)) {
-                    decryptedLinks.add(createDownloadlink(singleLink));
-                }
-            }
-            /* 2021-08-31: New */
             final String[] redirectIDs = br.getRegex("/widgets/button\\.php\\?([a-zA-Z0-9_/\\+\\=\\-%]+)").getColumn(0);
             for (String redirectID : redirectIDs) {
                 if (redirectID.contains("%")) {
