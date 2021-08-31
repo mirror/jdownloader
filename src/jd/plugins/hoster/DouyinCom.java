@@ -25,7 +25,8 @@ import java.util.Map;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.config.DouyinComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -49,11 +50,12 @@ public class DouyinCom extends PluginForHost {
     // Tags: tiktok.com China (chinese tiktok pendant)
 
     /* Connection stuff */
-    private static final boolean free_resume       = true;
+    private static final boolean free_resume        = true;
     /* 2021-08-13: Chunks possible but disabled in order to prevent a lot of http requests. */
-    private static final int     free_maxchunks    = 1;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
+    private static final int     free_maxchunks     = 1;
+    private static final int     free_maxdownloads  = -1;
+    private String               dllink             = null;
+    private static final String  PROPERTY_DIRECTURL = "directurl";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -104,15 +106,23 @@ public class DouyinCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
-        dllink = null;
+        if (!link.isNameSet()) {
+            /* Set fallback name */
+            link.setName(this.getFID(link) + ".mp4");
+        }
+        if (!isDownload && this.checkDirectLink(link) != null) {
+            logger.info("Availablecheck via directurl succeeded");
+            return AvailableStatus.TRUE;
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String dateFormatted;
         String username;
-        /* 2021-08-30: Try to use API in an attempt to get around potential website captchas. */
-        final boolean useAPI = true;
-        if (useAPI) {
+        /*
+         * 2021-08-30: API might get around website captchas but according to users, videos via API come with watermark but not via website
+         * (I guess website provides multiple formats while API only provides one).
+         */
+        if (PluginJsonConfig.get(DouyinComConfig.class).isUseAPI()) {
             final Browser brc = br.cloneBrowser();
             /* https://github.com/missuo/DouyinParsing */
             brc.getHeaders().put("Accept", "application/json");
@@ -188,6 +198,7 @@ public class DouyinCom extends PluginForHost {
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
+                    link.setProperty(getDirecturlProperty(), con.getURL().toString());
                 }
             } finally {
                 try {
@@ -197,6 +208,35 @@ public class DouyinCom extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String checkDirectLink(final DownloadLink link) {
+        final String property = this.getDirecturlProperty();
+        String dllink = link.getStringProperty(property);
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    return dllink;
+                } else {
+                    throw new IOException();
+                }
+            } catch (final Exception e) {
+                logger.log(e);
+                return null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
+            }
+        }
+        return null;
     }
 
     private static boolean isBotProtectionActive(final Browser br) {
@@ -241,25 +281,56 @@ public class DouyinCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link, true);
-        if (StringUtils.isEmpty(dllink)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        if (!attemptStoredDownloadurlDownload(link)) {
+            requestFileInformation(link, true);
+            if (StringUtils.isEmpty(dllink)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - video broken?");
             }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - video broken?");
+            link.setProperty(getDirecturlProperty(), dl.getConnection().getURL().toString());
         }
         dl.startDownload();
+    }
+
+    private String getDirecturlProperty() {
+        return PROPERTY_DIRECTURL + "_" + Boolean.toString(PluginJsonConfig.get(DouyinComConfig.class).isUseAPI());
+    }
+
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link) throws Exception {
+        final String url = link.getStringProperty(getDirecturlProperty());
+        if (StringUtils.isEmpty(url)) {
+            return false;
+        }
+        try {
+            final Browser brc = br.cloneBrowser();
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, free_resume, free_maxchunks);
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                return true;
+            } else {
+                brc.followConnection(true);
+                throw new IOException();
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+            try {
+                dl.getConnection().disconnect();
+            } catch (Throwable ignore) {
+            }
+            return false;
+        }
     }
 
     @Override
@@ -277,5 +348,10 @@ public class DouyinCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    public Class<? extends DouyinComConfig> getConfigInterface() {
+        return DouyinComConfig.class;
     }
 }
