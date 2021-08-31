@@ -22,6 +22,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.DouyinComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -33,13 +40,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.DouyinComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DouyinCom extends PluginForHost {
@@ -172,7 +172,8 @@ public class DouyinCom extends PluginForHost {
             }
             final Map<String, Object> videoInfo = (Map<String, Object>) aweme.get("detail");
             /*
-             * 2021-08-13: This can contain an "official" download-URL but it seems like the quality is really bad andspeed is very limited.
+             * 2021-08-13: This can contain an "official" download-URL but it seems like the quality is really bad and speed is very
+             * limited.
              */
             // final Map<String, Object> download = (Map<String, Object>) videoInfo.get("download");
             final Map<String, Object> video = (Map<String, Object>) videoInfo.get("video");
@@ -205,6 +206,7 @@ public class DouyinCom extends PluginForHost {
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
+                    /* This final (temporary) downloadurl can be checked using HEAD requests! */
                     link.setProperty(getDirecturlProperty(), con.getURL().toString());
                 }
             } finally {
