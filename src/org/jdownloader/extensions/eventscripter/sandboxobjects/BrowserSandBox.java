@@ -2,6 +2,8 @@ package org.jdownloader.extensions.eventscripter.sandboxobjects;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 import jd.http.Browser;
 import jd.http.Request;
@@ -60,6 +62,11 @@ public class BrowserSandBox {
 
     public void setHeader(String field, String value) {
         br.setHeader(field, value);
+    }
+
+    public Map<String, List<String>> getResponseHeaders() {
+        final Request request = br.getRequest();
+        return request != null ? request.getResponseHeaders() : null;
     }
 
     public String getResponseHeader(String field) {

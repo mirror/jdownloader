@@ -22,13 +22,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.DouyinComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -41,14 +34,21 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.DouyinComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DouyinCom extends PluginForHost {
     public DouyinCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     // Tags: tiktok.com China (chinese tiktok pendant)
-
     /* Connection stuff */
     private static final boolean free_resume        = true;
     /* 2021-08-13: Chunks possible but disabled in order to prevent a lot of http requests. */
@@ -190,9 +190,16 @@ public class DouyinCom extends PluginForHost {
         if (!StringUtils.isEmpty(dllink) && !isDownload) {
             URLConnectionAdapter con = null;
             try {
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
                 /* 2021-08-13: Server doesn't accept HEAD-request and final downloadurl is only valid once! */
-                con = this.br.openGetConnection(this.dllink);
+                con = br2.openGetConnection(this.dllink);
                 if (!this.looksLikeDownloadableContent(con)) {
+                    try {
+                        br2.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - video broken?");
                 } else {
                     if (con.getCompleteContentLength() > 0) {
@@ -288,17 +295,18 @@ public class DouyinCom extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                }
                 try {
                     br.followConnection(true);
                 } catch (final IOException e) {
                     logger.log(e);
                 }
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - video broken?");
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - video broken?");
+                }
             }
             link.setProperty(getDirecturlProperty(), dl.getConnection().getURL().toString());
         }

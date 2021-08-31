@@ -136,11 +136,17 @@ public class Ftp extends PluginForHost {
     }
 
     protected int getMaxRunning(final Account account, final DownloadLink link) {
+        final boolean logging = Thread.currentThread().equals(link.getDownloadLinkController());
         final DomainInfo domainInfo = link.getDomainInfo();
         synchronized (maxRunning) {
             Integer ret = maxRunning.get(domainInfo);
             if (ret == null) {
                 ret = link.getIntegerProperty(MAX_FTP_CONNECTIONS, -1);
+                if (logging) {
+                    logger.info("getMaxRunning:" + domainInfo + ":link:" + ret);
+                }
+            } else if (logging) {
+                logger.info("getMaxRunning:" + domainInfo + ":map:" + ret);
             }
             if (ret != null && ret.intValue() > 0) {
                 return ret.intValue();
@@ -188,7 +194,7 @@ public class Ftp extends PluginForHost {
             final int before = freeRunning.get();
             final int after = before + num;
             freeRunning.set(after);
-            logger.info("freeRunning(" + link.getName() + ")|max:" + getMaxSimultanDownload(link, account) + "|before:" + before + "|after:" + after + "|num:" + num);
+            logger.info("freeRunning(" + link.getDomainInfo() + ")|max:" + getMaxSimultanDownload(link, account) + "|before:" + before + "|after:" + after + "|num:" + num);
         }
     }
 
