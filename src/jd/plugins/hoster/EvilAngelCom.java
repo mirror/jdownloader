@@ -20,6 +20,21 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashMap;
 
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.EvilangelComConfig;
+import org.jdownloader.plugins.components.config.EvilangelComConfig.Quality;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -37,21 +52,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.EvilangelComConfig;
-import org.jdownloader.plugins.components.config.EvilangelComConfig.Quality;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "evilangel.com", "evilangelnetwork.com" }, urls = { "https?://members\\.evilangel.com/(?:[a-z]{2}/)?[A-Za-z0-9\\-_]+/(?:download/\\d+/\\d+p/mp4|film/\\d+)|https?://(?:www\\.|members\\.)?evilangel\\.com/[a-z]{2}/video/[A-Za-z0-9\\-]+/[A-Za-z0-9\\-]+/\\d+", "https?://members\\.evilangelnetwork\\.com/[a-z]{2}/video/[A-Za-z0-9\\-_]+/\\d+" })
 public class EvilAngelCom extends antiDDoSForHost {
@@ -426,7 +426,7 @@ public class EvilAngelCom extends antiDDoSForHost {
                 }
                 br.setFollowRedirects(true);
                 getPage(br, getpage);
-                if (br.containsHTML(">We are experiencing some problems\\!<")) {
+                if (br.containsHTML("(?i)>We are experiencing some problems\\!<")) {
                     final AccountInfo ai = new AccountInfo();
                     ai.setStatus("Your IP is banned. Please re-connect to get a new IP to be able to log-in!");
                     account.setAccountInfo(ai);
@@ -476,7 +476,7 @@ public class EvilAngelCom extends antiDDoSForHost {
                 login.remove("rememberme");
                 login.put("rememberme", "1");
                 submitForm(login);
-                if (br.containsHTML(">Your account is deactivated for abuse")) {
+                if (br.containsHTML("(?i)>\\s*Your account is deactivated for abuse")) {
                     final AccountInfo ai = new AccountInfo();
                     ai.setStatus("Your account is deactivated for abuse. Please re-activate it to use it in JDownloader.");
                     account.setAccountInfo(ai);
@@ -546,7 +546,7 @@ public class EvilAngelCom extends antiDDoSForHost {
             throw e;
         }
         final String subscriptionStatus = PluginJSonUtils.getJson(br, "subscriptionStatus");
-        if (br.containsHTML(">Your membership has expired") || br.getURL().contains("/reactivate") || "expired".equalsIgnoreCase(subscriptionStatus)) {
+        if (br.containsHTML("(?i)>\\s*Your membership has expired") || br.getURL().contains("/reactivate") || "expired".equalsIgnoreCase(subscriptionStatus)) {
             /* 2018-04-25 */
             ai.setExpired(true);
             ai.setTrafficLeft(0);
