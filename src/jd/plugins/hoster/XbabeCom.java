@@ -15,28 +15,29 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class KernelVideoSharingComV2HostsDefault3 extends KernelVideoSharingComV2 {
-    public KernelVideoSharingComV2HostsDefault3(final PluginWrapper wrapper) {
+public class XbabeCom extends KernelVideoSharingComV2 {
+    public XbabeCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "shameless.com" });
-        ret.add(new String[] { "bravotube.net" });
-        ret.add(new String[] { "hellporno.com" });
-        ret.add(new String[] { "alphaporno.com" });
-        ret.add(new String[] { "upskirt.tv" });
+        ret.add(new String[] { "xbabe.com" });
         return ret;
     }
 
@@ -64,5 +65,37 @@ public class KernelVideoSharingComV2HostsDefault3 extends KernelVideoSharingComV
             return null;
         }
         return "https://www." + this.getHost() + "/videos/" + urlTitle + "/";
+    }
+
+    @Override
+    protected String getDllink(final Browser br) throws PluginException, IOException {
+        /* 2021-09-01: Workaround as upper handling picks up preview-clips instead of the full videos. */
+        final HashMap<Integer, String> qualityMap = new HashMap<Integer, String>();
+        final String[] htmls = br.getRegex("(<source[^>]*src=.*?[^>]*type=\"video/mp4\"[^>]*>)").getColumn(0);
+        for (final String html : htmls) {
+            final String url = new Regex(html, "src=\"(http[^\"]+)").getMatch(0);
+            if (url == null) {
+                continue;
+            }
+            int width = -1;
+            String widthStr = new Regex(html, "title=\"(\\d+)p\"").getMatch(0);
+            if (widthStr == null) {
+                widthStr = new Regex(url, "(\\d+)p\\.mp4").getMatch(0);
+            }
+            if (widthStr == null && html.contains("data-fluid-hd")) {
+                /* Fallback */
+                width = 720;
+            } else if (widthStr != null) {
+                width = Integer.parseInt(widthStr);
+            }
+            qualityMap.put(width, url);
+        }
+        String dllink = this.handleQualitySelection(qualityMap);
+        if (dllink != null) {
+            return dllink;
+        } else {
+            /* Fallback to upper handling */
+            return super.getDllink(br);
+        }
     }
 }

@@ -1135,7 +1135,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /** Returns user preferred quality inside given quality map. Returns best, if user selection is not present in map. */
-    private String handleQualitySelection(final HashMap<Integer, String> qualityMap) {
+    protected String handleQualitySelection(final HashMap<Integer, String> qualityMap) {
         if (qualityMap.isEmpty()) {
             return null;
         }
