@@ -44,8 +44,8 @@ public class RecurbateCom extends antiDDoSForHost {
 
     /* Connection stuff */
     private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
+    private static final int     free_maxchunks    = -2;
+    private static final int     free_maxdownloads = 1;
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -113,9 +113,9 @@ public class RecurbateCom extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
         final String directurlproperty = "directlink";
         if (!this.attemptStoredDownloadurlDownload(link, directurlproperty, free_resume, free_maxchunks)) {
+            requestFileInformation(link);
             final String token = br.getRegex("data-token=\"([a-f0-9]{64})\"").getMatch(0);
             if (token == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -131,12 +131,11 @@ public class RecurbateCom extends antiDDoSForHost {
             query.add("token", token);
             brc.getPage("/api/get.php?" + query.toString());
             if (brc.toString().equalsIgnoreCase("shall_signin")) {
-                /* Free users can watch one video per IP per X time */
+                /* Free users can watch one video per IP per X time. */
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
             } else if (brc.toString().equalsIgnoreCase("shall_subscribe")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily downloadlimit reached", 60 * 60 * 1000l);
             }
-            /* 2021-08-30: TODO: This will always lead to error 410 -> Check what's missing */
             final String dllink = brc.getRegex("<source src=\"(https?://[^\"]+)\"[^>]*type=\"video/mp4\" />").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -155,6 +154,10 @@ public class RecurbateCom extends antiDDoSForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
             }
+            /*
+             * 2021-09-01: Save to re-use later. This URL is valid for some minutes only but allows resume + chunkload (up to 3 connections
+             * - we allow max. 2.).
+             */
             link.setProperty(directurlproperty, dl.getConnection().getURL().toString());
         }
         dl.startDownload();
