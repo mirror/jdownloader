@@ -37,6 +37,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "analacrobats.com" }, urls = { "https?://members\\.analacrobats\\.com/(?:en/)?[^/]+/scene/\\d+" })
+@Deprecated // 2021-09-01: TODO: Rewrite to use EvilangelCore!
 public class AnalacrobatsCom extends antiDDoSForHost {
     public AnalacrobatsCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -62,7 +63,6 @@ public class AnalacrobatsCom extends antiDDoSForHost {
     public static final String   LOGIN_PAGE                   = "http://members.analacrobats.com/en";
     private static final String  HTML_ACCOUNTNEEDED           = "class=\"alertTitle\"";
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
@@ -139,7 +139,7 @@ public class AnalacrobatsCom extends antiDDoSForHost {
         doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         /* Premiumonly */
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
