@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,13 +23,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -170,19 +171,19 @@ public class RarbgTo extends PluginForHost {
      */
     private void handleThreadDefence(final DownloadLink link, final Browser br) throws Exception {
         synchronized (antiCaptchaCookies) {
-            if (isThreadDefenceActive(br)) {
-                logger.info("Entering thread_defence handling");
-                if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                    /* 2021-08-30: Make this fail in stable as it is not yet working! */
-                    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Anti-spam was triggered", 30 * 60 * 1000l);
-                }
-                int numberofCompletedChallenges = 0;
+            int globalAttempts = 0;
+            int captchaAttempt = 0;
+            final int maxCaptchaAttempts = 3;
+            while (isThreadDefenceActive(br) && globalAttempts <= maxCaptchaAttempts) {
+                globalAttempts += 1;
+                logger.info("Entering thread_defence handling round " + globalAttempts);
+                int numberofCompletedChallengesInThisRun = 0;
+                boolean executedFirstHandlingOnce = false;
                 if (br.containsHTML("/threat_defence_ajax\\.php\\?sk=")) {
                     int attemptNumber = 0;
                     do {
                         attemptNumber += 1;
-                        logger.info("Challenge attempt: " + 0);
+                        logger.info("First challenge attempt: " + 0);
                         final String sk = br.getRegex("var value_sk = '([a-z0-9]+)';").getMatch(0);
                         final String cid = br.getRegex("var value_c = '(\\d+)';").getMatch(0);
                         final String i = br.getRegex("var value_i = '(\\d+)';").getMatch(0);
@@ -192,8 +193,7 @@ public class RarbgTo extends PluginForHost {
                         /* Check if we found all required data and are allowed to try the current challenge by attemptNumber. */
                         if (sk == null || cid == null || i == null || r == null || r2 == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        } else if (!br.getURL().contains("defence=" + attemptNumber) && !br.containsHTML("defence=" + attemptNumber)) {
-                            /* Fail-safe: Wrong defence number -> Should never happen */
+                        } else if (!br.getURL().contains("defence=") && !br.containsHTML("defence=")) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         if (br.containsHTML(org.appwork.utils.Regex.escape("document.cookie = name+\"=\"+value_sk"))) {
@@ -226,109 +226,90 @@ public class RarbgTo extends PluginForHost {
                             this.sleep(5500l, link);
                         }
                         /* This request will either complete the challenge or ask for a captcha. */
-                        br.getPage("/threat_defence.php?defence=" + attemptNumber + "&sk=" + sk + "&cid=" + cid + "&i=" + i + "&ref_cookie=rarbg.to&r=" + r2);
+                        br.getPage("/threat_defence.php?defence=2&sk=" + sk + "&cid=" + cid + "&i=" + i + "&ref_cookie=rarbg.to&r=" + r2);
                         /**
-                         * <b>There is something wrong with your browser!</b><br/>
+                         * The following may happen on first attempt if no cookies are present at all: </br>
+                         * "<b>There is something wrong with your browser!</b><br/>
                          * Most likely you dont have javascript or cookies enabled<br/>
-                         * <a href="/threat_defence.php?defence=1">Click here</a> to retry verifying your browser
+                         * <a href="/threat_defence.php?defence=1">Click here</a> to retry verifying your browser"
                          */
-                        /* This should never happen! */
                         final String failureURL = br.getRegex("(?i)<a href=\"(/threat_defence\\.php\\?defence=1)\">Click here</a> to retry verifying your browser").getMatch(0);
-                        final boolean requiresAnotherRun = br.containsHTML("defence=" + (attemptNumber + 1));
-                        if (requiresAnotherRun) {
-                            /**
-                             * This is allowed to happen on the first attempt if no cookies were present at all before. </br>
-                             * Browser will go through this challenge again via "defence=2", set a new "sk" cookie and then progress to
-                             * captcha.
-                             */
-                            if (attemptNumber == 1) {
-                                logger.warning("Failed to solve first challenge --> Trying second");
-                                numberofCompletedChallenges += 1;
-                                continue;
-                            } else {
-                                /* Do not allow more than 2 runs */
+                        if (failureURL != null) {
+                            if (executedFirstHandlingOnce) {
+                                /* This is supposed to happen only once per global run! */
+                                logger.warning("Failure of first run re-occured");
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            } else {
+                                logger.info("Retry challenge via: " + failureURL);
+                                /* This will redirect back to "/...defence=1" */
+                                br.getPage(failureURL);
+                                executedFirstHandlingOnce = true;
+                                continue;
                             }
-                        } else if (failureURL != null) {
-                            /* E.g. we did not wait long enough or */
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         } else {
                             /* Assume that we've solved the challenge successfully */
-                            logger.info("Successfully solved challenge on attemptNumber: " + attemptNumber);
-                            numberofCompletedChallenges += 1;
+                            logger.info("Successfully solved first challenge on attemptNumber: " + attemptNumber);
+                            numberofCompletedChallengesInThisRun += 1;
                             break;
                         }
                     } while (true);
                 }
                 final Form captchaForm = getCaptchaForm(br);
                 if (captchaForm != null) {
-                    /**
-                     * 2021-08-31: I even attempted to add captcha retries here but it requires the above handling to be executed again once
-                     * and it only saves a few seconds: </br>
-                     * Waittime on wrong captcha with retry handling: 3500 + 5500 ms = 9000ms </br>
-                     * Waittime on wrong captcha without retry handling (= Exception handling): 5500ms + 5500ms = 11000ms
-                     */
-                    int captchaAttempt = 0;
-                    // final int maxCaptchaAttempts = 3;
-                    final int maxCaptchaAttempts = 1;
-                    do {
-                        captchaAttempt += 1;
-                        logger.info("Captcha challenge attempt: " + captchaAttempt);
-                        final String captchaURL = br.getRegex("(/threat_captcha\\.php\\?[^<>\"]+)").getMatch(0);
-                        if (captchaURL == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        final String code = this.getCaptchaCode(captchaURL, link);
-                        if (code == null || !code.matches("(?i)[a-z0-9]{5}")) {
-                            if (captchaAttempt < maxCaptchaAttempts) {
-                                logger.info("Invalid captcha format");
-                                continue;
-                            } else {
-                                throw new PluginException(LinkStatus.ERROR_CAPTCHA, "Invalid captcha format");
-                            }
-                        }
-                        captchaForm.put("solve_string", code.toUpperCase(Locale.ENGLISH));
-                        br.setFollowRedirects(false);
-                        br.submitForm(captchaForm);
-                        /* Typically we get redirected to: /torrents\\.php\\?r=\\d+ --> We'll have to call our target URL again then. */
-                        final String redirect = br.getRedirectLocation();
-                        if (br.containsHTML("(?i)>\\s*Wrong captcha entered")) {
-                            br.setFollowRedirects(true);
-                            if (captchaAttempt < maxCaptchaAttempts) {
-                                logger.info("Wrong captcha --> Retry");
-                                /* Usually "/threat_defence.php" */
-                                final Regex captchaRetryInfo = br.getRegex("window\\.location\\.href\\s*=\\s*\"(/[^\"]+)\";\\s*\\},\\s*(\\d+)\\);");
-                                final String url = captchaRetryInfo.getMatch(0);
-                                final String retryWaitMillisStr = captchaRetryInfo.getMatch(1);
-                                if (url == null || captchaRetryInfo == null) {
-                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                                }
-                                this.sleep(Long.parseLong(retryWaitMillisStr), link);
-                                br.getPage(url);
-                                continue;
-                            } else {
-                                /* Too many wrong captcha attempts */
-                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                            }
-                        } else if (redirect == null) {
-                            /* This should never happen */
-                            throw new PluginException(LinkStatus.ERROR_FATAL, "Anti bot protection captcha handling redirect missing");
+                    captchaAttempt += 1;
+                    logger.info("Second challenge (captcha) attempt: " + captchaAttempt);
+                    final String captchaURL = br.getRegex("(/threat_captcha\\.php\\?[^<>\"]+)").getMatch(0);
+                    if (captchaURL == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    /* Download captcha because URL is only valid once but we may want to ask the user multiple times. */
+                    final File captchaImage = downloadCaptcha(captchaURL, getLocalCaptchaFile());
+                    /* Request captcha answer of user and verify input. */
+                    String code;
+                    while (true) {
+                        code = this.getCaptchaCode(captchaImage, link);
+                        if (this.isAbort()) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        } else if (code == null || !code.matches("(?i)[a-z0-9]{5}")) {
+                            logger.info("Invalid captcha format");
+                            continue;
                         } else {
-                            logger.info("Successfully passed captcha challenge");
-                            br.setFollowRedirects(true);
-                            br.getPage(redirect);
-                            /* Check one last time just to make sure we did it! */
-                            if (isThreadDefenceActive(br)) {
-                                throw new PluginException(LinkStatus.ERROR_FATAL, "Anti bot protection captcha handling failed after captcha");
-                            } else {
-                                numberofCompletedChallenges += 1;
-                                break;
-                            }
+                            break;
                         }
-                    } while (true);
+                    }
+                    captchaForm.put("solve_string", code.toUpperCase(Locale.ENGLISH));
+                    /* Typically this will redirect us to: /torrents\\.php\\?r=\\d+ */
+                    br.submitForm(captchaForm);
+                    if (br.containsHTML("(?i)>\\s*Wrong captcha entered")) {
+                        br.setFollowRedirects(true);
+                        if (captchaAttempt >= maxCaptchaAttempts) {
+                            /* Too many wrong captcha attempts */
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        } else {
+                            logger.info("Wrong captcha --> Retry");
+                            /* Usually "/threat_defence.php" */
+                            final Regex captchaRetryInfo = br.getRegex("window\\.location\\.href\\s*=\\s*\"(/[^\"]+)\";\\s*\\},\\s*(\\d+)\\);");
+                            final String url = captchaRetryInfo.getMatch(0);
+                            final String retryWaitMillisStr = captchaRetryInfo.getMatch(1);
+                            if (url == null || captchaRetryInfo == null) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                            this.sleep(Long.parseLong(retryWaitMillisStr), link);
+                            br.getPage(url);
+                            continue;
+                        }
+                    } else {
+                        logger.info("Successfully passed captcha challenge");
+                        /* Check one last time just to make sure we did it! */
+                        if (isThreadDefenceActive(br)) {
+                            throw new PluginException(LinkStatus.ERROR_FATAL, "Anti bot protection captcha handling failed after captcha");
+                        } else {
+                            numberofCompletedChallengesInThisRun += 1;
+                        }
+                    }
                 }
-                logger.info("Number of solved challenges: " + numberofCompletedChallenges);
-                if (numberofCompletedChallenges == 0) {
+                logger.info("Number of solved challenges: " + numberofCompletedChallengesInThisRun);
+                if (numberofCompletedChallengesInThisRun == 0) {
                     /* This should never happen */
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Anti bot protection handling failure");
                 } else if (isThreadDefenceActive(br)) {
@@ -350,9 +331,27 @@ public class RarbgTo extends PluginForHost {
                     }
                     /* Save new cookies to prevent future anti bot challenges */
                     antiCaptchaCookies.put(this.getHost(), this.br.getCookies(this.getHost()));
+                    break;
                 }
             }
         }
+    }
+
+    private File downloadCaptcha(final String captchaURL, final File captchaFile) throws Exception {
+        URLConnectionAdapter con = null;
+        final Browser brc = this.br.cloneBrowser();
+        try {
+            Browser.download(captchaFile, con = brc.openGetConnection(captchaURL));
+        } catch (IOException e) {
+            captchaFile.delete();
+            throw e;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+        return captchaFile;
     }
 
     private Form getCaptchaForm(final Browser br) {
