@@ -18,8 +18,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.LinkedHashMap;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -27,10 +29,10 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.config.EvilangelComConfig;
 import org.jdownloader.plugins.components.config.EvilangelComConfig.Quality;
-import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -45,31 +47,25 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "evilangel.com", "evilangelnetwork.com" }, urls = { "https?://members\\.evilangel.com/(?:[a-z]{2}/)?[A-Za-z0-9\\-_]+/(?:download/\\d+/\\d+p/mp4|film/\\d+)|https?://(?:www\\.|members\\.)?evilangel\\.com/[a-z]{2}/video/[A-Za-z0-9\\-]+/[A-Za-z0-9\\-]+/\\d+", "https?://members\\.evilangelnetwork\\.com/[a-z]{2}/video/[A-Za-z0-9\\-_]+/\\d+" })
-@Deprecated // 2021-09-01: TODO: Rewrite to use EvilangelCore!
-public class EvilAngelCom extends antiDDoSForHost {
-    public EvilAngelCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+public class EvilangelCore extends PluginForHost {
+    public EvilangelCore(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.evilangel.com/en/join");
     }
 
-    @Override
-    protected Browser prepBrowser(final Browser prepBr, final String host) {
-        if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
-            prepBr.setCookiesExclusive(true);
-            super.prepBrowser(prepBr, host);
-            /* define custom browser headers and language settings */
-            prepBr.setCookie(host, "enterSite", "en");
-            prepBr.setFollowRedirects(true);
-        }
-        return prepBr;
+    protected Browser prepBrowser(final Browser br) {
+        /* Define custom browser headers and language settings */
+        br.setCookie(this.getHost(), "enterSite", "en");
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -88,59 +84,38 @@ public class EvilAngelCom extends antiDDoSForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.evilangel.com/en/terms";
+        /* All websites using this script will usually link to this support portal. */
+        return "http://www.famesupport.com/";
     }
 
-    private String              dllink                     = null;
-    private boolean             server_issues              = false;
-    public static final long    trust_cookie_age           = 300000l;
-    private static final String HTML_LOGGEDIN              = "id=\"headerLinkLogout\"";
-    public static final String  LOGIN_PAGE                 = "https://www.evilangel.com/en/login/";
-    private static final String URL_EVILANGEL_FILM         = "https?://members\\.evilangel.com/[a-z]{2}/([A-Za-z0-9\\-_]+)/film/(\\d+)";
-    private static final String URL_EVILANGEL_FREE_TRAILER = "https?://(?:www\\.)?evilangel\\.com/[a-z]{2}/video/([A-Za-z0-9\\-]+)/(\\d+)";
-    private static final String URL_EVILANGELNETWORK_VIDEO = "https?://members\\.[^/]+/[a-z]{2}/video/([A-Za-z0-9\\-_]+)(?:/[A-Za-z0-9\\-_]+)?/(\\d+)";
+    private String              dllink                                 = null;
+    private static final String URL_EVILANGEL_FILM                     = "https?://members\\.evilangel.com/[a-z]{2}/([A-Za-z0-9\\-_]+)/film/(\\d+)";
+    private static final String URL_EVILANGEL_FREE_TRAILER             = "https?://(?:www\\.)?evilangel\\.com/[a-z]{2}/video/([A-Za-z0-9\\-]+)/(\\d+)";
+    private static final String URL_VIDEO                              = "https?://members\\.[^/]+/[a-z]{2}/video/([A-Za-z0-9\\-_]+)(?:/[A-Za-z0-9\\-_]+)?/(\\d+)";
+    private static final String PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIN = "has_used_cookie_login";
 
     public boolean isProxyRotationEnabledForLinkChecker() {
         return false;
     }
 
-    private String getURLTitle(final DownloadLink link) {
-        final String fileID = getFID(link);
-        String url_filename;
-        if (link.getPluginPatternMatcher().matches(URL_EVILANGEL_FILM)) {
-            url_filename = new Regex(link.getPluginPatternMatcher(), URL_EVILANGEL_FILM).getMatch(0);
-        } else if (link.getPluginPatternMatcher().matches(URL_EVILANGEL_FREE_TRAILER)) {
-            url_filename = new Regex(link.getPluginPatternMatcher(), URL_EVILANGEL_FREE_TRAILER).getMatch(0);
-        } else {
-            url_filename = new Regex(link.getPluginPatternMatcher(), URL_EVILANGELNETWORK_VIDEO).getMatch(0);
-        }
-        url_filename = fileID + "_" + url_filename;
-        return url_filename;
-    }
-
-    /**
-     * NOTE: While making the plugin, the testaccount was banned temporarily and we didn't get new password/username from the user->Plugin
-     * isn't 100% done yet! http://svn.jdownloader.org/issues/6793
-     */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
-        return this.requestFileInformation(link, account);
+        return this.requestFileInformation(link, account, false);
     }
 
-    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         if (!link.isNameSet()) {
             link.setName(getURLTitle(link) + ".mp4");
         }
         this.dllink = null;
-        server_issues = false;
         this.setBrowserExclusive();
         final String fileID = this.getFID(link);
         String filename = null;
         final String host = Browser.getHost(link.getPluginPatternMatcher(), true);
         if (link.getPluginPatternMatcher().matches(URL_EVILANGEL_FREE_TRAILER) && !host.contains("members.")) {
             /* Free (trailer) download */
-            getPage(link.getPluginPatternMatcher());
+            br.getPage(link.getPluginPatternMatcher());
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -148,8 +123,8 @@ public class EvilAngelCom extends antiDDoSForHost {
             String server = null;
             if (jsonPlayer != null) {
                 try {
-                    LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(jsonPlayer);
-                    entries = (LinkedHashMap<String, Object>) entries.get("playerOptions");
+                    Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(jsonPlayer);
+                    entries = (Map<String, Object>) entries.get("playerOptions");
                     server = (String) entries.get("host");
                     final String sceneTitle = (String) entries.get("sceneTitle");
                     if (!StringUtils.isEmpty(sceneTitle)) {
@@ -188,7 +163,7 @@ public class EvilAngelCom extends antiDDoSForHost {
                         }
                         link.setFinalFileName(filename);
                     } else {
-                        server_issues = true;
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - broken video?");
                     }
                 } finally {
                     try {
@@ -197,18 +172,18 @@ public class EvilAngelCom extends antiDDoSForHost {
                     }
                 }
             }
-        } else if (account != null) {
-            loginEvilAngelNetwork(account, false, LOGIN_PAGE, HTML_LOGGEDIN);
+        } else {
+            if (account == null) {
+                throw new AccountRequiredException();
+            }
+            login(account, false);
             if (link.getPluginPatternMatcher().matches(URL_EVILANGEL_FILM)) {
-                getPage(link.getPluginPatternMatcher());
+                br.getPage(link.getPluginPatternMatcher());
                 if (this.br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                filename = getVideoTitle();
-                if (filename == null) {
-                    /* Fallback */
-                    filename = this.getURLTitle(link);
-                }
+                /* 2021-09-01: Use title from URL as this should be just fine. */
+                filename = getURLTitle(link);
                 filename = Encoding.htmlDecode(filename.trim());
                 dllink = getDllink(this.br);
                 if (dllink == null) {
@@ -216,58 +191,53 @@ public class EvilAngelCom extends antiDDoSForHost {
                 }
                 dllink = "http://members.evilangel.com" + dllink;
                 final String quality = new Regex(dllink, "(\\d+p)").getMatch(0);
-                if (quality == null) {
-                    filename += ".mp4";
-                } else {
-                    filename = filename + "-" + quality + ".mp4";
+                if (quality != null) {
+                    filename = filename + "-" + quality;
                 }
-            } else if (link.getPluginPatternMatcher().matches(URL_EVILANGELNETWORK_VIDEO)) {
-                getPage(link.getPluginPatternMatcher());
+            } else if (link.getPluginPatternMatcher().matches(URL_VIDEO)) {
+                br.getPage(link.getPluginPatternMatcher());
                 if (this.br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                filename = getVideoTitle();
-                if (filename == null) {
-                    /* Fallback */
-                    filename = this.getURLTitle(link);
-                }
+                /* 2021-09-01: Use title from URL as this should be just fine. */
+                filename = getURLTitle(link);
                 filename = Encoding.htmlDecode(filename.trim());
                 dllink = getDllink(this.br);
-                if (dllink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                dllink = "https://" + this.br.getHost(true) + dllink;
-                final String quality = new Regex(dllink, "(\\d+p)").getMatch(0);
-                if (quality == null) {
-                    filename += ".mp4";
-                } else {
-                    filename = filename + "-" + quality + ".mp4";
+                if (dllink != null) {
+                    final String quality = new Regex(dllink, "(\\d+p)").getMatch(0);
+                    if (quality != null) {
+                        filename = filename + "-" + quality;
+                    }
                 }
             } else {
                 dllink = link.getPluginPatternMatcher();
             }
-            URLConnectionAdapter con = null;
-            try {
-                final Browser brc = br.cloneBrowser();
-                brc.setFollowRedirects(true);
-                con = brc.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
-                } else {
-                    server_issues = true;
-                }
-            } finally {
+            if (!isDownload && dllink != null && !dllink.contains(".m3u8")) {
+                URLConnectionAdapter con = null;
                 try {
-                    con.disconnect();
-                } catch (Throwable e) {
+                    final Browser brc = br.cloneBrowser();
+                    brc.setFollowRedirects(true);
+                    con = brc.openHeadConnection(dllink);
+                    if (this.looksLikeDownloadableContent(con)) {
+                        if (con.getCompleteContentLength() > 0) {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
+                        link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - broken video?");
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (Throwable e) {
+                    }
+                }
+            } else {
+                if (filename != null) {
+                    filename = applyFilenameExtension(filename, ".mp4");
+                    link.setFinalFileName(filename);
                 }
             }
-        } else {
-            link.getLinkStatus().setStatusText("Links can only be checked and downloaded via account!");
-            return AvailableStatus.UNCHECKABLE;
         }
         return AvailableStatus.TRUE;
     }
@@ -316,22 +286,38 @@ public class EvilAngelCom extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
+        requestFileInformation(link, null, true);
         if (!isFreeDownloadable(link)) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            throw new AccountRequiredException();
         }
         handleDownload(link);
     }
 
-    private String getVideoTitle() {
-        String title = br.getRegex("<h1 class=\"title\">([^<>\"]*?)</h1>").getMatch(0);
-        if (title == null) {
-            title = br.getRegex("<h1 class=\"h1_title\">([^<>\"]*?)</h1>").getMatch(0);
-            if (title == null) {
-                title = br.getRegex("<h2 class=\"h2_title\">([^<>\"]*?)</h2>").getMatch(0);
+    protected String getURLTitle(final DownloadLink link) {
+        final String fileID = getFID(link);
+        String url_title;
+        if (link.getPluginPatternMatcher().matches(URL_EVILANGEL_FILM)) {
+            url_title = new Regex(link.getPluginPatternMatcher(), URL_EVILANGEL_FILM).getMatch(0).replace("-", " ");
+        } else if (link.getPluginPatternMatcher().matches(URL_EVILANGEL_FREE_TRAILER)) {
+            url_title = new Regex(link.getPluginPatternMatcher(), URL_EVILANGEL_FREE_TRAILER).getMatch(0).replace("-", "");
+        } else {
+            final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), URL_VIDEO);
+            /* Sometimes author/studio + title is given and sometimes title(=param1) only. */
+            final String param1 = urlinfo.getMatch(0);
+            final String param2 = urlinfo.getMatch(0);
+            if (param1 != null && param2 != null) {
+                url_title = param1.replace("-", " ") + " - " + param2.replace("-", " ");
+            } else {
+                url_title = param1.replace("-", " ");
             }
         }
-        return title;
+        if (url_title != null) {
+            url_title = fileID + "_" + url_title;
+            return url_title;
+        } else {
+            /* Developer error --> URL structure is unsupported */
+            return null;
+        }
     }
 
     /** Find preferred quality downloadurl */
@@ -342,29 +328,44 @@ public class EvilAngelCom extends antiDDoSForHost {
             logger.info("User has selected BEST quality");
         } else {
             logger.info("User has selected quality: " + preferredQualityStr);
-            dllink = this.findDesiredQuality(br, preferredQualityStr);
-            if (dllink != null) {
-                logger.info("Found user preferred quality");
-                return dllink;
-            } else {
-                logger.info("Failed to find user selected quality --> Fallback to BEST handling");
-            }
         }
-        if (dllink == null) {
-            final String[] qualities = { "2160p", "1080p", "720p", "540p", "480p", "240p", "160p" };
-            for (final String qualityStr : qualities) {
-                dllink = this.findDesiredQuality(br, qualityStr);
-                if (dllink != null) {
-                    return dllink;
+        /*
+         * Users have to buy an extra package to get download buttons (official downloads). For now we'll just always download the streams
+         * as this should work fine for all premium accounts.
+         */
+        final String json = br.getRegex("window\\.defaultStateScene\\s*=\\s*(\\{.+\\});").getMatch(0);
+        final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+        final Map<String, Object> videoInfo = (Map<String, Object>) entries.get(this.getFID(getDownloadLink()));
+        final Map<String, Object> qualityMap = (Map<String, Object>) videoInfo.get("videos");
+        final String[] knownQualities = { "2160p", "1080p", "720p", "540p", "480p", "240p", "160p" };
+        boolean foundSelectedquality = false;
+        for (final String knownQuality : knownQualities) {
+            if (qualityMap.containsKey(knownQuality)) {
+                dllink = (String) qualityMap.get(knownQuality);
+                if (preferredQualityStr == null) {
+                    /* User prefers BEST quality */
+                    foundSelectedquality = true;
+                    break;
+                } else if (knownQuality.equals(preferredQualityStr)) {
+                    foundSelectedquality = true;
+                    break;
                 }
             }
         }
-        return null;
+        if (!StringUtils.isEmpty(dllink)) {
+            if (foundSelectedquality) {
+                logger.info("Found user selected quality");
+            } else {
+                logger.info("Failed to find user selected quality --> Using fallback");
+            }
+            return dllink;
+        } else {
+            return null;
+        }
     }
-
-    private String findDesiredQuality(final Browser br, final String qualityStr) {
-        return br.getRegex("\"(/[^\"]*/download/\\d+/" + qualityStr + "[^\"]*)\"").getMatch(0);
-    }
+    // private String findDesiredQuality(final Browser br, final String qualityStr) {
+    // return br.getRegex("\"(/[^\"]*/download/\\d+/" + qualityStr + "[^\"]*)\"").getMatch(0);
+    // }
 
     /** Find highest quality trailer downloadurl (sometimes higher quality than what website player is using) */
     public static String getDllinkTrailer(final Browser br) {
@@ -380,34 +381,25 @@ public class EvilAngelCom extends antiDDoSForHost {
         return dllink;
     }
 
-    /** Function can be used for all evilangel type of networks/websites. */
-    public void loginEvilAngelNetwork(final Account account, final boolean verifyCookies, String getpage, final String html_loggedin) throws Exception {
+    public void login(final Account account, final boolean verifyCookies) throws Exception {
         synchronized (account) {
             try {
                 final String host_account = account.getHoster();
-                final String url_main = "http://" + host_account + "/";
-                final boolean cookieLoginOnly = true;
                 final Cookies cookies = account.loadCookies("");
                 final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
-                if (cookieLoginOnly && userCookies == null) {
+                if (allowCookieLoginOnly() && userCookies == null) {
                     showCookieLoginInformation();
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                if (host_account.equals("evilangelnetwork.com")) {
-                    getpage = "https://www.evilangelnetwork.com/en/login";
-                } else if (host_account.equalsIgnoreCase("evilangel.com")) {
-                    getpage = "https://www.evilangel.com/en/login";
-                } else {
-                    /* getpage must have already been set via parameter */
-                }
                 if (cookies != null) {
                     br.setCookies(host_account, cookies);
-                    getPage(br, getpage);
-                    if (this.isLoggedIn(html_loggedin)) {
+                    br.getPage(getNamespaceMembersMain());
+                    if (this.isLoggedIn(br)) {
                         /* Cookie login successful */
                         logger.info("Cookie login successful");
                         /* Update cookies */
                         account.saveCookies(br.getCookies(host_account), "");
+                        account.setProperty(PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIN, true);
                         return;
                     } else {
                         if (userCookies != null) {
@@ -419,81 +411,72 @@ public class EvilAngelCom extends antiDDoSForHost {
                     }
                 } else if (userCookies != null) {
                     br.setCookies(userCookies);
-                    getPage(br, getpage);
-                    if (this.isLoggedIn(html_loggedin)) {
+                    br.getPage(getNamespaceMembersMain());
+                    if (this.isLoggedIn(br)) {
                         /* Cookie login successful */
                         logger.info("User cookie login successful");
                         account.saveCookies(br.getCookies(host_account), "");
+                        account.setProperty(PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIN, true);
                         return;
                     } else {
-                        br.clearAll();
                         showCookieLoginInformation();
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 br.setFollowRedirects(true);
-                getPage(br, getpage);
+                br.getPage(getNamespaceLogin());
                 if (br.containsHTML("(?i)>We are experiencing some problems\\!<")) {
-                    final AccountInfo ai = new AccountInfo();
-                    ai.setStatus("Your IP is banned. Please re-connect to get a new IP to be able to log-in!");
-                    account.setAccountInfo(ai);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your IP is banned. Please re-connect to get a new IP to be able to log-in!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 final Form login = br.getFormbyProperty("id", "loginForm");
                 if (login == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final boolean fillTimeFalues = true;
-                {
-                    if (fillTimeFalues) {
-                        final Date d = new Date();
-                        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd");
-                        final String date = sd.format(d);
-                        sd = new SimpleDateFormat("k:mm");
-                        final String time = sd.format(d);
-                        final String timedatestring = date + " " + time;
-                        br.setCookie(url_main, "mDateTime", Encoding.urlEncode(timedatestring));
-                        br.setCookie(url_main, "mOffset", "2");
-                        br.setCookie(url_main, "origin", "promo");
-                        br.setCookie(url_main, "timestamp", Long.toString(System.currentTimeMillis()));
-                    } else {
-                    }
+                if (fillTimeFalues) {
+                    final Date d = new Date();
+                    SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd");
+                    final String date = sd.format(d);
+                    sd = new SimpleDateFormat("k:mm");
+                    final String time = sd.format(d);
+                    final String timedatestring = date + " " + time;
+                    br.setCookie(this.getHost(), "mDateTime", Encoding.urlEncode(timedatestring));
+                    br.setCookie(this.getHost(), "mOffset", "2");
+                    br.setCookie(this.getHost(), "origin", "promo");
+                    br.setCookie(this.getHost(), "timestamp", Long.toString(System.currentTimeMillis()));
+                    /* 2021-09-01: Some tests for adulttime.com */
+                    br.setCookie(this.getHost(), "loginLander", "/en");
+                    br.setCookie(this.getHost(), "_hjIncludedInSessionSample", "0");
+                } else {
                 }
                 // login.setAction("/en/login");
                 login.put("username", Encoding.urlEncode(account.getUser()));
                 login.put("password", Encoding.urlEncode(account.getPass()));
                 if (login.containsHTML("g-recaptcha")) {
                     // recaptchav2
-                    final DownloadLink orig = this.getDownloadLink();
-                    try {
-                        final DownloadLink dummyLink = new DownloadLink(this, "Account Login!", getHost(), getHost(), true);
-                        this.setDownloadLink(dummyLink);
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br) {
-                            @Override
-                            public String getSiteKey() {
-                                return getSiteKey(login.getHtmlCode());
-                            }
-                        }.getToken();
-                        login.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                    } finally {
-                        this.setDownloadLink(orig);
-                    }
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br) {
+                        @Override
+                        public String getSiteKey() {
+                            return getSiteKey(login.getHtmlCode());
+                        }
+                    }.getToken();
+                    login.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 }
                 login.remove("submit");
-                login.remove("rememberme");
+                /* 2021-09-01: Form may contain "rememberme" two times with value "0" AND "1"! Same via browser! */
                 login.put("rememberme", "1");
-                submitForm(login);
+                br.submitForm(login);
+                /* TODO: 2021-09-01: Add support for 2FA login (security code gets sent via mail) */
                 if (br.containsHTML("(?i)>\\s*Your account is deactivated for abuse")) {
-                    final AccountInfo ai = new AccountInfo();
-                    ai.setStatus("Your account is deactivated for abuse. Please re-activate it to use it in JDownloader.");
-                    account.setAccountInfo(ai);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account is deactivated for abuse. Please re-activate it to use it in JDownloader.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 if (br.getURL().contains("/reactivate")) {
+                    /* TODO: Expired free account(?) */
                 }
-                if (!isLoggedIn(html_loggedin)) {
+                if (!isLoggedIn(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
+                account.removeProperty(PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIN);
                 account.saveCookies(br.getCookies(host_account), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
@@ -502,7 +485,29 @@ public class EvilAngelCom extends antiDDoSForHost {
         }
     }
 
-    private static Thread showCookieLoginInformation() {
+    protected boolean hasUsedCookieLogin(final Account account) {
+        return this.allowCookieLoginOnly() || account.getBooleanProperty(PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIN, false);
+    }
+
+    /** TODO: Add functionality. */
+    protected boolean accountAllowsOfficialDownloads(final Account account) {
+        return false;
+    }
+
+    protected boolean allowCookieLoginOnly() {
+        return false;
+    }
+
+    protected String getNamespaceMembersMain() {
+        return "https://members." + this.getHost() + "/en";
+    }
+
+    protected String getNamespaceLogin() {
+        return "https://freetour." + this.getHost() + "/en/login";
+    }
+
+    private Thread showCookieLoginInformation() {
+        final String host = this.getHost();
         final Thread thread = new Thread() {
             public void run() {
                 try {
@@ -511,12 +516,12 @@ public class EvilAngelCom extends antiDDoSForHost {
                     final String title;
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         title = "Cookie Login";
-                        message += "Hallo liebe(r) Evilangel NutzerIn\r\n";
+                        message += "Hallo liebe(r) " + host + " NutzerIn\r\n";
                         message += "Um einen Account dieses Anbieters in JDownloader verwenden zu können, beachte bitte die folgenden Schritte:\r\n";
                         message += help_article_url;
                     } else {
                         title = "Cookie Login";
-                        message += "Hello dear user\r\n";
+                        message += "Hello dear " + host + " user\r\n";
                         message += "In order to use an account of this service in JDownloader, you need to follow these instructions:\r\n";
                         message += help_article_url;
                     }
@@ -537,63 +542,70 @@ public class EvilAngelCom extends antiDDoSForHost {
         return thread;
     }
 
-    private boolean isLoggedIn(String html_loggedin) {
-        final boolean loggedIN_html = br.containsHTML(">Wrong username or password provided. Please try again\\\\.<") && (html_loggedin == null || br.containsHTML(html_loggedin));
-        final boolean loggedINCookie = br.getCookie(br.getHost(), "autologin_userid", Cookies.NOTDELETEDPATTERN) != null;
+    private boolean isLoggedIn(final Browser br) {
+        final boolean loggedIN_html = br.containsHTML("\"siteSection\":\"members\"");
+        final boolean loggedINCookie = br.getCookie(br.getHost(), "autologin_userid", Cookies.NOTDELETEDPATTERN) != null && br.getCookie(br.getHost(), "autologin_hash", Cookies.NOTDELETEDPATTERN) != null;
         return loggedIN_html || loggedINCookie;
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = account.getAccountInfo() != null ? account.getAccountInfo() : new AccountInfo();
-        try {
-            /* Prevent direct login to prevent login captcha whenever possible */
-            loginEvilAngelNetwork(account, true, LOGIN_PAGE, null);
-        } catch (final PluginException e) {
-            throw e;
-        }
-        final String subscriptionStatus = PluginJSonUtils.getJson(br, "subscriptionStatus");
-        if (br.containsHTML("(?i)>\\s*Your membership has expired") || br.getURL().contains("/reactivate") || "expired".equalsIgnoreCase(subscriptionStatus)) {
-            /* 2018-04-25 */
+        login(account, true);
+        final String json = br.getRegex("window\\.context\\s*=\\s*(\\{.+\\});\\s+").getMatch(0);
+        final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+        final Map<String, Object> user = (Map<String, Object>) entries.get("user");
+        /* TODO: Add support for "expirationDate" along with "scheduledCancelDate" whenever a test account with such a date is available. */
+        if ((Boolean) user.get("isExpired")) {
             ai.setExpired(true);
-            ai.setTrafficLeft(0);
-            account.setAccountInfo(ai);
             account.setType(AccountType.FREE);
         } else {
             ai.setUnlimitedTraffic();
             account.setType(AccountType.PREMIUM);
+        }
+        /* Try to set unique string as username when cookie login was used */
+        final String email = (String) user.get("email");
+        final String username = (String) user.get("username");
+        if (hasUsedCookieLogin(account) && !StringUtils.isEmpty(email) && account.getUser().contains("@")) {
+            account.setUser(email);
+        } else if (hasUsedCookieLogin(account) && !StringUtils.isEmpty(username)) {
+            account.setUser(username);
         }
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, account, true);
         handleDownload(link);
     }
 
     private void handleDownload(final DownloadLink link) throws Exception {
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink)) {
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
+        if (dllink.contains(".m3u8")) {
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, this.dllink);
+            dl.startDownload();
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     @Override
@@ -615,12 +627,12 @@ public class EvilAngelCom extends antiDDoSForHost {
     }
 
     public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
-        /* No captchas at all */
+        /* No captchas at all apart from maybe login captchas. */
         return false;
     }
 
     @Override
-    public Class<? extends PluginConfigInterface> getConfigInterface() {
-        return EvilangelComConfig.class;
+    public Class<? extends EvilangelCoreConfig> getConfigInterface() {
+        return null;
     }
 }

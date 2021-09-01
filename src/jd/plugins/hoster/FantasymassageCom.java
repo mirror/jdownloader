@@ -37,6 +37,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fantasymassage.com" }, urls = { "https?://fantasymassagedecrypted.+" })
+@Deprecated // 2021-09-01: TODO: Rewrite to use EvilangelCore!
 public class FantasymassageCom extends PluginForHost {
     public FantasymassageCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -72,7 +73,6 @@ public class FantasymassageCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceAll("http(s?)://[a-z0-9]+decrypted", "http$1://"));
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
