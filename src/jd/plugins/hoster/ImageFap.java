@@ -22,10 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.ReflectionUtils;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -46,6 +42,10 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.ReflectionUtils;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagefap.com" }, urls = { "https?://(www\\.)?imagefap.com/(imagedecrypted/\\d+|video\\.php\\?vid=\\d+)" })
 public class ImageFap extends PluginForHost {
@@ -207,15 +207,10 @@ public class ImageFap extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(>The image you are trying to access does not exist|<title> \\(Picture 1\\) uploaded by  on ImageFap\\.com</title>)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String picture_name = link.getStringProperty("original_filename");
-            if (picture_name == null) {
-                picture_name = br.getRegex("<title>(.*?) in gallery").getMatch(0);
-                if (picture_name == null) {
-                    picture_name = br.getRegex("<title>(.*?) uploaded by").getMatch(0);
-                    if (picture_name == null) {
-                        picture_name = br.getRegex("<title>(.*?) Porn Pic").getMatch(0);
-                    }
-                }
+            final String picture_name = br.getRegex("<title>\\s*(.*?)\\s*(in gallery|uploaded by|Porn Pic)").getMatch(0);
+            if (StringUtils.isNotEmpty(picture_name)) {
+                link.setProperty("original_filename", picture_name);
+                link.removeProperty("incomplete_filename");
             }
             String galleryName = getGalleryName(link);
             String username = link.getStringProperty("directusername");
@@ -241,7 +236,6 @@ public class ImageFap extends PluginForHost {
             }
             link.setProperty("galleryname", galleryName);
             link.setProperty("directusername", username);
-            link.setProperty("original_filename", picture_name);
             link.setFinalFileName(getFormattedFilename(link));
             /* Only set filepackage if not set yet */
             try {
@@ -382,7 +376,7 @@ public class ImageFap extends PluginForHost {
             br.getPage(request);
             if (br.getHttpConnection().getResponseCode() == 429) {
                 /*
-                 *
+                 * 
                  * 100 requests per 1 min 200 requests per 5 min 1000 requests per 1 hour
                  */
                 /* 2020-09-22: Most likely they will allow a retry after one hour. */
@@ -440,9 +434,14 @@ public class ImageFap extends PluginForHost {
     public static String getFormattedFilename(final DownloadLink link) throws ParseException {
         final SubConfiguration cfg = SubConfiguration.getConfig("imagefap.com");
         final String username = link.getStringProperty("directusername", "-");
-        final String original_filename = link.getStringProperty("original_filename", null);
-        final String galleryname = link.getStringProperty("galleryname", null);
+        String filename = link.getStringProperty("original_filename", null);
+        if (filename == null) {
+            filename = link.getStringProperty("incomplete_filename", "unknown");
+        }
+        final String galleryname = link.getStringProperty("galleryname", "");
         final String orderid = link.getStringProperty("orderid", "-");
+        final long galleryID = link.getLongProperty("galleryID", -1);
+        final long photoID = link.getLongProperty("photoID", -1);
         /* Date: Maybe add this in the future, if requested by a user. */
         // final long date = getLongProperty(downloadLink, "originaldate", 0l);
         // String formattedDate = null;
@@ -473,8 +472,10 @@ public class ImageFap extends PluginForHost {
         }
         formattedFilename = formattedFilename.replace("*orderid*", orderid);
         formattedFilename = formattedFilename.replace("*username*", username);
+        formattedFilename = formattedFilename.replace("*galleryID*", galleryID == -1 ? "" : String.valueOf(galleryID));
+        formattedFilename = formattedFilename.replace("*photoID*", photoID == -1 ? "" : String.valueOf(photoID));
         formattedFilename = formattedFilename.replace("*galleryname*", galleryname);
-        formattedFilename = formattedFilename.replace("*title*", original_filename);
+        formattedFilename = formattedFilename.replace("*title*", filename);
         return formattedFilename;
     }
 
@@ -482,14 +483,14 @@ public class ImageFap extends PluginForHost {
                                                   {
                                                       put("SETTING_FORCE_RECONNECT_ON_RATELIMIT", "Reconnect if rate limit is reached and captcha is required?");
                                                       put("LABEL_FILENAME", "Define custom filename for pictures:");
-                                                      put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Original title of the picture including file extension\r\n*galleryname* = Name of the gallery in which the picture is listed\r\n*orderid* = Position of the picture in a gallery e.g. '0001'");
+                                                      put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Original title of the picture including file extension\r\n*galleryname* = Name of the gallery in which the picture is listed\r\n*orderid* = Position of the picture in a gallery e.g. '0001'\r\n*photoID* = id of the image\r\n*galleryID* = id of the gallery");
                                                   }
                                               };
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
                                                   {
                                                       put("SETTING_FORCE_RECONNECT_ON_RATELIMIT", "Führe einen Reconnect durch, wenn das Rate-Limit erreicht ist und ein Captcha benötigt wird?");
                                                       put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens für Bilder an:");
-                                                      put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der den Inhalt veröffentlicht hat \r\n*title* = Originaler Dateiname mitsamt Dateiendung\r\n*galleryname* = Name der Gallerie, in der sich das Bild befand\r\n*orderid* = Position des Bildes in einer Gallerie z.B. '0001'");
+                                                      put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der den Inhalt veröffentlicht hat \r\n*title* = Originaler Dateiname mitsamt Dateiendung\r\n*galleryname* = Name der Gallerie, in der sich das Bild befand\r\n*orderid* = Position des Bildes in einer Gallerie z.B. '0001'\r\n*photoID* = id des Bildes\r\n*galleryID* = id der Gallery");
                                                   }
                                               };
 
