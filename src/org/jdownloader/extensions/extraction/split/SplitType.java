@@ -138,11 +138,7 @@ public enum SplitType {
 
         @Override
         public int getPartNumber(String partNumberString) {
-            if (partNumberString != null && partNumberString.matches("(?i)^(js|xz|db|aac|zip|rar|bmp|torrent)$")) {
-                return -1;
-            } else {
-                return parseIndex(partNumberString);
-            }
+            return parseIndex(partNumberString);
         }
 
         @Override
