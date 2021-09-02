@@ -16,10 +16,10 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -38,11 +38,13 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -64,7 +66,6 @@ public class FlickrCom extends PluginForDecrypt {
     private static final String     TYPE_SINGLE_PHOTO        = "https?://[^/]+/photos/(?!tags/)[^<>\"/]+/\\d+.+";
     private static final String     TYPE_PHOTO               = "https?://[^/]+/photos/.*?";
     private static final String     INVALIDLINKS             = "https?://[^/]+/(photos/(me|upload|tags.*?)|groups/[^<>\"/]+/rules|groups/[^<>\"/]+/discuss.*?)";
-    private static final String     EXCEPTION_LINKOFFLINE    = "EXCEPTION_LINKOFFLINE";
     private static final String     api_format               = "json";
     private static final int        api_max_entries_per_page = 500;
     private ArrayList<DownloadLink> decryptedLinks           = new ArrayList<DownloadLink>();
@@ -89,39 +90,25 @@ public class FlickrCom extends PluginForDecrypt {
         br.setLoadLimit(br.getLoadLimit() * 2);
         parameter = correctParameter(param.toString());
         username = new Regex(parameter, "(?:photos|groups)/([^<>\"/]+)").getMatch(0);
-        try {
-            /* Check if link is for hosterplugin */
-            if (parameter.matches(TYPE_SINGLE_PHOTO)) {
-                final DownloadLink dl = createDownloadlink(parameter);
-                dl.setContentUrl(parameter);
-                decryptedLinks.add(dl);
-                return decryptedLinks;
-            }
-            if (parameter.matches(INVALIDLINKS) || parameter.equals("https://www.flickr.com/photos/groups/") || parameter.contains("/map")) {
-                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-            }
-            /* Login is not always needed but we force it to get all pictures */
-            this.loggedin = getUserLogin();
-            if (!this.loggedin) {
-                logger.info("Login failed or no accounts active/existing -> Continuing without account");
-            }
-            if (parameter.matches(TYPE_FAVORITES) || loggedin) {
-                site_handleSite();
-            } else {
-                api_handleAPI();
-            }
-        } catch (final DecrypterException e) {
-            logger.log(e);
-            if (e.getMessage().equals(EXCEPTION_LINKOFFLINE)) {
-                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-                offline.setContentUrl(parameter);
-                offline.setFinalFileName(new Regex(parameter, "flickr\\.com/(.+)").getMatch(0));
-                offline.setAvailable(false);
-                offline.setProperty("offline", true);
-                decryptedLinks.add(offline);
-                return decryptedLinks;
-            }
-            throw e;
+        /* Check if link is for hosterplugin */
+        if (parameter.matches(TYPE_SINGLE_PHOTO)) {
+            final DownloadLink dl = createDownloadlink(parameter);
+            dl.setContentUrl(parameter);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        if (parameter.matches(INVALIDLINKS) || parameter.equals("https://www.flickr.com/photos/groups/") || parameter.contains("/map")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /* Login is not always needed but we force it to get all pictures */
+        this.loggedin = getUserLogin();
+        if (!this.loggedin) {
+            logger.info("Login failed or no accounts active/existing -> Continuing without account");
+        }
+        if (parameter.matches(TYPE_FAVORITES) || loggedin) {
+            site_handleSite();
+        } else {
+            api_handleAPI();
         }
         return decryptedLinks;
     }
@@ -258,6 +245,8 @@ public class FlickrCom extends PluginForDecrypt {
         fp.setName(fpName);
         final int totalimgs = Integer.parseInt(PluginJSonUtils.getJsonValue(br, "total"));
         final int totalpages = Integer.parseInt(PluginJSonUtils.getJsonValue(br, "pages"));
+        int imagePosition = 0;
+        final DecimalFormat df = new DecimalFormat(String.valueOf(totalimgs).replaceAll("\\d", "0"));
         for (int i = 1; i <= totalpages; i++) {
             logger.info("Progress: Page " + i + " of " + totalpages + " || Images: " + decryptedLinks.size() + " of " + totalimgs);
             if (i > 1) {
@@ -266,6 +255,7 @@ public class FlickrCom extends PluginForDecrypt {
             final String jsontext = br.getRegex("\"photo\":\\[(\\{.*?\\})\\]").getMatch(0);
             final String[] jsonarray = jsontext.split("\\},\\{");
             for (final String jsonentry : jsonarray) {
+                imagePosition += 1;
                 String owner = null;
                 /* E.g. in a set, all pictures got the same owner so the "owner" key is not available here. */
                 if (forcedOwner != null) {
@@ -278,8 +268,7 @@ public class FlickrCom extends PluginForDecrypt {
                 final String dateadded = PluginJSonUtils.getJsonValue(jsonentry, "dateadded");
                 if (owner == null || photo_id == null || title == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
-                    decryptedLinks = null;
-                    return;
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 title = encodeUnicode(title);
                 String description = new Regex(jsonentry, "\"description\":\\{\"_content\":\"(.+)\"\\}").getMatch(0);
@@ -298,9 +287,6 @@ public class FlickrCom extends PluginForDecrypt {
                     contenturl = "https://www.flickr.com/photos/" + owner + "/" + photo_id;
                 }
                 fina.setContentUrl(contenturl);
-                if (title.equals("")) {
-                    title = null;
-                }
                 final String media = PluginJSonUtils.getJsonValue(jsonentry, "media");
                 final String extension;
                 if ("video".equalsIgnoreCase(media)) {
@@ -310,22 +296,23 @@ public class FlickrCom extends PluginForDecrypt {
                     fina.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPEG);
                     extension = ".jpg";
                 }
-                final String decryptedfilename = username + "_" + photo_id + (title != null ? "_" + title : jd.plugins.hoster.FlickrCom.getCustomStringForEmptyTags()) + extension;
+                final String decryptedfilename = username + "_" + photo_id + (!StringUtils.isEmpty(title) ? "_" + title : jd.plugins.hoster.FlickrCom.getCustomStringForEmptyTags()) + extension;
                 fina.setProperty("decryptedfilename", decryptedfilename);
-                fina.setProperty("photo_id", photo_id);
+                fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_PHOTO_ID, photo_id);
                 if (setID != null) {
                     fina.setProperty("set_id", setID);
                 }
-                fina.setProperty("media", media);
+                fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_MEDIA_TYPE, media);
                 fina.setProperty("owner", owner);
-                fina.setProperty("username", username);
-                if (dateadded != null) {
-                    fina.setProperty("dateadded", Long.parseLong(dateadded) * 1000);
+                fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME, username);
+                if (!StringUtils.isEmpty(dateadded)) {
+                    fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_DATE, Long.parseLong(dateadded) * 1000);
                 }
-                if (title != null) {
-                    fina.setProperty("title", title);
+                if (!StringUtils.isEmpty(title)) {
+                    fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_TITLE, title);
                 }
                 fina.setProperty("ext", extension);
+                fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_ORDER_ID, df.format(imagePosition));
                 fina.setLinkID("flickrcom_" + username + "_" + photo_id + (setID != null ? setID : ""));
                 final String formattedFilename = getFormattedFilename(fina);
                 fina.setName(formattedFilename);
@@ -345,7 +332,7 @@ public class FlickrCom extends PluginForDecrypt {
         return jd.plugins.hoster.FlickrCom.getFormattedFilename(dl);
     }
 
-    private void apiGetSetsOfUser() throws IOException, DecrypterException, InterruptedException {
+    private void apiGetSetsOfUser() throws IOException, DecrypterException, InterruptedException, PluginException {
         final String nsid = get_NSID(null);
         if (nsid == null) {
             throw new DecrypterException("Decrypter broken for link: " + parameter);
@@ -375,7 +362,7 @@ public class FlickrCom extends PluginForDecrypt {
         }
     }
 
-    private String get_NSID(String username) throws IOException, DecrypterException, InterruptedException {
+    private String get_NSID(String username) throws IOException, DecrypterException, InterruptedException, PluginException {
         String nsid;
         if (username == null) {
             username = this.username;
@@ -394,8 +381,9 @@ public class FlickrCom extends PluginForDecrypt {
      * (API) Function to find the nsid of a user.
      *
      * @throws InterruptedException
+     * @throws PluginException
      */
-    private String apiLookupUser(String username) throws IOException, DecrypterException, InterruptedException {
+    private String apiLookupUser(String username) throws IOException, DecrypterException, InterruptedException, PluginException {
         if (username == null) {
             username = this.username;
         }
@@ -406,7 +394,7 @@ public class FlickrCom extends PluginForDecrypt {
 
     private static Object LOCK = new Object();
 
-    private void api_getPage(final String url) throws IOException, DecrypterException, InterruptedException {
+    private void api_getPage(final String url) throws IOException, DecrypterException, InterruptedException, PluginException {
         synchronized (LOCK) {
             final URLConnectionAdapter con = br.openGetConnection(url);
             try {
@@ -444,7 +432,7 @@ public class FlickrCom extends PluginForDecrypt {
     }
 
     /* Handles most of the possible API errorcodes - most of them should never happen. */
-    private void handleAPIErrors(final Browser br) throws DecrypterException {
+    private void handleAPIErrors(final Browser br) throws DecrypterException, PluginException {
         String statusMessage = null;
         try {
             switch (statuscode) {
@@ -453,10 +441,10 @@ public class FlickrCom extends PluginForDecrypt {
                 break;
             case 1:
                 statusMessage = "Group/user/photo not found - possibly invalid nsid";
-                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             case 2:
                 statusMessage = "No user specified or permission denied";
-                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             case 98:
                 statusMessage = "Login failed";
                 throw new DecrypterException("API_LOGIN_FAILED");
@@ -517,13 +505,12 @@ public class FlickrCom extends PluginForDecrypt {
         String fpName;
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if ((br.containsHTML("class=\"ThinCase Interst\"") || br.getURL().contains("/login.yahoo.com/")) && !this.loggedin) {
-            logger.info("Account needed to decrypt this link: " + parameter);
-            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            throw new AccountRequiredException();
         } else if (parameter.matches(TYPE_FAVORITES) && br.containsHTML("id=\"no\\-faves\"")) {
             /* Favourite link but user has no favourites */
-            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Some stuff which is different from link to link
         String picCount = br.getRegex("\"total\":(\")?(\\d+)").getMatch(1);
@@ -572,16 +559,16 @@ public class FlickrCom extends PluginForDecrypt {
                 /* This should never happen but if we found links before, lets return them. */
                 break;
             }
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-            ArrayList<Object> resourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "favorite-models/{0}/photoPageList/_data");
+            Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+            List<Object> resourcelist = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "favorite-models/{0}/photoPageList/_data");
             if (resourcelist == null) {
-                resourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "main/favorite-models/{0}/photoPageList/_data");
+                resourcelist = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "main/favorite-models/{0}/photoPageList/_data");
             }
             int resourcelistCount = 0;
-            LinkedHashMap<String, Object> lastOwner = null;
-            final List<LinkedHashMap<String, Object>> knownOwner = new ArrayList<LinkedHashMap<String, Object>>();
+            Map<String, Object> lastOwner = null;
+            final ArrayList<Map<String, Object>> knownOwner = new ArrayList<Map<String, Object>>();
             for (final Object pico : resourcelist) {
-                LinkedHashMap<String, Object> entry = (LinkedHashMap<String, Object>) pico;
+                Map<String, Object> entry = (Map<String, Object>) pico;
                 if (entry == null) {
                     continue;
                 }
@@ -593,9 +580,9 @@ public class FlickrCom extends PluginForDecrypt {
                 if (title == null) {
                     title = "";
                 }
-                final LinkedHashMap<String, Object> owner;
+                final Map<String, Object> owner;
                 if (entry.get("owner") instanceof Map) {
-                    owner = (LinkedHashMap<String, Object>) entry.get("owner");
+                    owner = (Map<String, Object>) entry.get("owner");
                 } else if (entry.get("owner").toString().startsWith("~")) {
                     final int index = Integer.parseInt(entry.get("owner").toString().substring(1));
                     if (knownOwner.size() > index) {
@@ -626,6 +613,8 @@ public class FlickrCom extends PluginForDecrypt {
                     }
                 }
                 if (pic_id == null || pathAlias == null) {
+                    /* Skip invalid items */
+                    logger.warning("Found invalid json object");
                     continue;
                 }
                 /*
@@ -644,11 +633,11 @@ public class FlickrCom extends PluginForDecrypt {
                 }
                 final String decryptedfilename = title == null ? null : (Encoding.htmlDecode(title) + extension);
                 fina.setProperty("decryptedfilename", decryptedfilename);
-                fina.setProperty("media", media);
+                fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_MEDIA_TYPE, media);
                 fina.setProperty("ext", extension);
-                fina.setProperty("username", pathAlias);
-                fina.setProperty("photo_id", pic_id);
-                fina.setProperty("title", title);
+                fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME, pathAlias);
+                fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_PHOTO_ID, pic_id);
+                fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_TITLE, title);
                 final String formattedFilename = getFormattedFilename(fina);
                 fina.setName(formattedFilename);
                 fina.setAvailable(true);
@@ -720,14 +709,10 @@ public class FlickrCom extends PluginForDecrypt {
         }
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
 
-    /**
-     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
-     */
     public boolean isProxyRotationEnabledForLinkCrawler() {
         return false;
     }
