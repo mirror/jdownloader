@@ -22,7 +22,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -60,7 +60,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(?:www\\.)?flickr\\.com/photos/(?!tags/)[^<>\"/]+/(\\d+)(?:/in/album-\\d+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(?:www\\.)?flickr\\.com/photos/(?!tags/)([^<>\"/]+)/(\\d+)(?:/in/album-\\d+)?" })
 public class FlickrCom extends PluginForHost {
     public FlickrCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -77,11 +77,15 @@ public class FlickrCom extends PluginForHost {
     private static final String CUSTOM_DATE                             = "CUSTOM_DATE";
     private static final String CUSTOM_FILENAME                         = "CUSTOM_FILENAME";
     private static final String CUSTOM_FILENAME_EMPTY_TAG_STRING        = "CUSTOM_FILENAME_EMPTY_TAG_STRING";
-    private static final String PROPERTY_USERNAME                       = "username";
+    public static final String  PROPERTY_EXT                            = "ext";
+    public static final String  PROPERTY_USERNAME                       = "username";
+    public static final String  PROPERTY_PHOTO_ID                       = "photo_id";
+    public static final String  PROPERTY_DATE                           = "date";
+    public static final String  PROPERTY_TITLE                          = "title";
+    public static final String  PROPERTY_ORDER_ID                       = "order_id";
+    public static final String  PROPERTY_MEDIA_TYPE                     = "media";
     private static final String PROPERTY_SETTING_PREFER_SERVER_FILENAME = "prefer_server_filename";
     private String              dllink                                  = null;
-    private String              user                                    = null;
-    private String              id                                      = null;
 
     /* Max 2000 requests per hour */
     @Override
@@ -107,8 +111,12 @@ public class FlickrCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    private String getPhotoURL(final DownloadLink link) throws PluginException {
-        final String ret = new Regex(link.getPluginPatternMatcher(), "(https?://[^/]+/photos/[^<>\"/]+/\\d+)").getMatch(0);
+    private String getUsername(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+    }
+
+    private String getPhotoURLWithoutAlbumInfo(final DownloadLink link) throws PluginException {
+        final String ret = new Regex(link.getPluginPatternMatcher(), "(?i)(https?://[^/]+/photos/[^<>\"/]+/\\d+)").getMatch(0);
         if (ret == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
@@ -143,11 +151,9 @@ public class FlickrCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         correctDownloadLink(link);
-        final String photoURL = getPhotoURL(link);
-        id = new Regex(photoURL, "(\\d+)$").getMatch(0);
-        user = new Regex(photoURL, "flickr\\.com/photos/([^<>\"/]+)/").getMatch(0);
+        final String photoURL = getPhotoURLWithoutAlbumInfo(link);
         /* Needed for custom filenames! */
-        link.setProperty(PROPERTY_USERNAME, user);
+        link.setProperty(PROPERTY_USERNAME, this.getUsername(link));
         br.clearCookies(this.getHost());
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
@@ -191,9 +197,9 @@ public class FlickrCom extends PluginForHost {
             if (api_key == null || secret == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            apibr.getPage("https://api.flickr.com/services/rest?photo_id=" + id + "&secret=" + secret + "&method=flickr.video.getStreamInfo&csrf=&api_key=" + api_key + "&format=json&hermes=1&hermesClient=1&reqId=&nojsoncallback=1");
+            apibr.getPage("https://api.flickr.com/services/rest?photo_id=" + getFID(link) + "&secret=" + secret + "&method=flickr.video.getStreamInfo&csrf=&api_key=" + api_key + "&format=json&hermes=1&hermesClient=1&reqId=&nojsoncallback=1");
             Map<String, Object> entries = JSonStorage.restoreFromString(apibr.toString(), TypeRef.HASHMAP);
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "streams/stream");
+            final List<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "streams/stream");
             for (final Object streamO : ressourcelist) {
                 entries = (Map<String, Object>) streamO;
                 if (entries.get("type") instanceof String) {
@@ -216,10 +222,10 @@ public class FlickrCom extends PluginForHost {
             }
             filename += videoExt;
             /* Needed for custom filenames! */
-            link.setProperty("ext", videoExt);
+            link.setProperty(PROPERTY_EXT, videoExt);
         } else {
             br.getPage(photoURL + "/in/photostream");
-            dllink = getFinalLink();
+            dllink = getFinalLink(link);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -231,7 +237,7 @@ public class FlickrCom extends PluginForHost {
                 filename = filename + ext;
             }
             /* Needed for custom filenames! */
-            link.setProperty("photo_id", id);
+            link.setProperty(PROPERTY_PHOTO_ID, getFID(link));
         }
         /* Needed for custom filenames! */
         final String uploadedDate = PluginJSonUtils.getJsonValue(br, "datePosted");
@@ -296,7 +302,7 @@ public class FlickrCom extends PluginForHost {
         } else if (dl.startDownload()) {
             /*
              * 2016-08-19: Detect "TZemporarily unavailable" message inside downloaded picture via md5 hash of the file:
-             * https://board.jdownloader.org/showthread.php?t=70487"
+             * https://board.jdownloader.org/showthread.php?t=70487
              */
             boolean isTempUnavailable = false;
             try {
@@ -308,7 +314,7 @@ public class FlickrCom extends PluginForHost {
                 link.setDownloadCurrent(0);
                 /* Size unknown */
                 link.setDownloadSize(0);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken image?");
             }
         }
     }
@@ -337,7 +343,7 @@ public class FlickrCom extends PluginForHost {
         if (dl.getConnection().getURL().toString().contains("/photo_unavailable.gif")) {
             dl.getConnection().disconnect();
             /* Same as check below */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken image?");
         } else if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
@@ -418,7 +424,7 @@ public class FlickrCom extends PluginForHost {
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    private String getFinalLink() throws Exception {
+    private String getFinalLink(final DownloadLink link) throws Exception {
         String finallink = null;
         final String[] sizes = { "6k", "5k", "4k", "3k", "o", "k", "h", "l", "c", "z", "m", "n", "s", "t", "q", "sq" };
         String picSource;
@@ -426,20 +432,22 @@ public class FlickrCom extends PluginForHost {
         picSource = br.getRegex("main\":(\\{\"photo-models\".*?),\\s+auth: auth,").getMatch(0);
         if (picSource != null) {
             /* json handling */
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(picSource);
+            Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(picSource);
             final ArrayList<Object> photo_models = (ArrayList) entries.get("photo-models");
-            final LinkedHashMap<String, Object> photo_data = (LinkedHashMap<String, Object>) photo_models.get(0);
-            final LinkedHashMap<String, Object> photo_sizes = (LinkedHashMap<String, Object>) photo_data.get("sizes");
+            final Map<String, Object> photo_data = (Map<String, Object>) photo_models.get(0);
+            final Map<String, Object> photo_sizes = (Map<String, Object>) photo_data.get("sizes");
             final Iterator<Entry<String, Object>> iterator = photo_sizes.entrySet().iterator();
             long maxWidth = -1;
+            String selectedQualityName = null;
             while (iterator.hasNext()) {
                 final Entry<String, Object> entry = iterator.next();
-                entries = (LinkedHashMap<String, Object>) entry.getValue();
+                entries = (Map<String, Object>) entry.getValue();
                 final String url = (String) entries.get("url");
                 final String qualityName = entry.getKey();
                 final long width = JavaScriptEngineFactory.toLong(entries.get("width"), 0);
                 if (width > maxWidth && !StringUtils.isEmpty(url)) {
                     logger.info("Current best quality = " + qualityName + " with width of: " + width);
+                    selectedQualityName = qualityName;
                     maxWidth = width;
                     if (url.startsWith("http")) {
                         finallink = url;
@@ -448,12 +456,15 @@ public class FlickrCom extends PluginForHost {
                     }
                 }
             }
+            if (finallink != null) {
+                logger.info("Selected best quality quality: " + selectedQualityName + " | width: " + maxWidth);
+            }
         } else {
             /* Site handling */
             /*
              * Fast way to get finallink via site as we always try to access the "o" (original) quality. Page might be redirected!
              */
-            br.getPage("https://www.flickr.com/photos/" + user + "/" + id + "/sizes/o");
+            br.getPage("https://www.flickr.com/photos/" + getUsername(link) + "/" + getFID(link) + "/sizes/o");
             if (br.getURL().contains("sizes/o")) { // Not redirected
                 finallink = br.getRegex("<a href=\"([^<>\"]+)\">\\s*(Dieses Foto im Originalformat|Download the Original)").getMatch(0);
             }
@@ -478,7 +489,7 @@ public class FlickrCom extends PluginForHost {
     }
 
     private String getFilename(final DownloadLink dl) throws PluginException {
-        final String photoURL = getPhotoURL(dl);
+        final String photoURL = getPhotoURLWithoutAlbumInfo(dl);
         final String photo_id = new Regex(photoURL, "(\\d+)$").getMatch(0);
         String filename = dl.getStringProperty("decryptedfilename", null);
         if (filename == null) {
@@ -515,31 +526,30 @@ public class FlickrCom extends PluginForHost {
                 if (ext == null) {
                     filename = photo_id + "_" + filename;
                 } else {
-                    if (!StringUtils.equalsIgnoreCase(dl.getStringProperty("ext", defaultPhotoExt), "." + ext.name())) {
-                        dl.setProperty("ext", "." + ext.name().toLowerCase(Locale.ENGLISH));
+                    if (!StringUtils.equalsIgnoreCase(dl.getStringProperty(PROPERTY_EXT, defaultPhotoExt), "." + ext.name())) {
+                        dl.setProperty(PROPERTY_EXT, "." + ext.name().toLowerCase(Locale.ENGLISH));
                     }
                     filename = Files.getFileNameWithoutExtension(filename);
                 }
             }
             /* Required for custom filenames! */
-            if (dl.getStringProperty("title", null) == null) {
-                dl.setProperty("title", filename);
-            }
+            dl.setProperty(PROPERTY_TITLE, filename);
         }
         return filename;
     }
 
     @SuppressWarnings("deprecation")
-    public static String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
+    public static String getFormattedFilename(final DownloadLink link) throws ParseException {
         String formattedFilename = null;
         final SubConfiguration cfg = SubConfiguration.getConfig("flickr.com");
         final String customStringForEmptyTags = getCustomStringForEmptyTags();
         final String owner = cfg.getStringProperty("owner", customStringForEmptyTags);
-        final String site_title = downloadLink.getStringProperty("title", customStringForEmptyTags);
-        final String ext = downloadLink.getStringProperty("ext", defaultPhotoExt);
-        final String username = downloadLink.getStringProperty("username", customStringForEmptyTags);
-        final String photo_id = downloadLink.getStringProperty("photo_id", customStringForEmptyTags);
-        final long date = downloadLink.getLongProperty("dateadded", 0l);
+        final String site_title = link.getStringProperty(PROPERTY_TITLE, customStringForEmptyTags);
+        final String ext = link.getStringProperty(PROPERTY_EXT, defaultPhotoExt);
+        final String username = link.getStringProperty(PROPERTY_USERNAME, customStringForEmptyTags);
+        final String photo_id = link.getStringProperty(PROPERTY_PHOTO_ID, customStringForEmptyTags);
+        final String order_id = link.getStringProperty(PROPERTY_ORDER_ID, customStringForEmptyTags);
+        final long date = link.getLongProperty(PROPERTY_DATE, 0);
         String formattedDate = null;
         final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, defaultCustomDate);
         Date theDate = new Date(date);
@@ -562,6 +572,7 @@ public class FlickrCom extends PluginForHost {
             formattedFilename = defaultCustomFilename;
         }
         formattedFilename = formattedFilename.replace("*photo_id*", photo_id);
+        formattedFilename = formattedFilename.replace("*order_id*", order_id);
         formattedFilename = formattedFilename.replace("*date*", formattedDate);
         formattedFilename = formattedFilename.replace("*extension*", ext);
         formattedFilename = formattedFilename.replace("*username*", username);
@@ -610,6 +621,7 @@ public class FlickrCom extends PluginForHost {
         sbtags.append("*date* = ate when the photo was uploaded - custom date format will be used here\r\n");
         sbtags.append("*title* = Title of the photo\r\n");
         sbtags.append("*extension* = Extension of the photo - usually '.jpg'");
+        sbtags.append("*order_id* = Position of image if it was part of a crawled gallery/user-profile");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sbtags.toString()));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_EMPTY_TAG_STRING, "Char which will be used for empty tags (e.g. missing data):").setDefaultValue(defaultCustomStringForEmptyTags).setEnabledCondidtion(preferServerFilenames, false));
     }
