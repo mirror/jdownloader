@@ -1654,8 +1654,17 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     }
                 }, null);
                 final String videoStreamPath = getVideoStreamPath(downloadLink);
-                if (videoStreamPath != null && new File(videoStreamPath).exists()) {
-                    data.setDashVideoFinished(true);
+                final File videoStreamFile = videoStreamPath != null ? new File(videoStreamPath) : null;
+                final Boolean videoStreamLoaded;
+                if (videoStreamFile != null) {
+                    if (videoStreamFile.isFile() && videoStreamFile.length() > 0) {
+                        data.setDashVideoFinished(true);
+                        videoStreamLoaded = true;
+                    } else {
+                        videoStreamLoaded = false;
+                    }
+                } else {
+                    videoStreamLoaded = null;
                 }
                 final AbstractVariant variant = getVariant(downloadLink);
                 boolean loadVideo = !data.isDashVideoFinished();
@@ -1663,7 +1672,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     /* Skip video if just audio should be downloaded */
                     loadVideo = false;
                 } else {
-                    loadVideo |= (videoStreamPath != null && !(new File(videoStreamPath).isFile() && new File(videoStreamPath).length() > 0));
+                    loadVideo |= Boolean.FALSE.equals(videoStreamLoaded);
                 }
                 if (loadVideo) {
                     /* videoStream not finished yet, resume/download it */
@@ -1676,11 +1685,20 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 }
                 /* videoStream is finished */
                 final String audioStreamPath = getAudioStreamPath(downloadLink);
-                if (audioStreamPath != null && new File(audioStreamPath).exists()) {
-                    data.setDashAudioFinished(true);
+                final File audioStreamFile = audioStreamPath != null ? new File(audioStreamPath) : null;
+                final Boolean audioStreamLoaded;
+                if (audioStreamFile != null && audioStreamFile.isFile()) {
+                    if (audioStreamFile.isFile() && audioStreamFile.length() > 0) {
+                        audioStreamLoaded = true;
+                        data.setDashAudioFinished(true);
+                    } else {
+                        audioStreamLoaded = false;
+                    }
+                } else {
+                    audioStreamLoaded = null;
                 }
                 boolean loadAudio = !data.isDashAudioFinished();
-                loadAudio |= (audioStreamPath != null && !(new File(audioStreamPath).isFile() && new File(audioStreamPath).length() > 0));
+                loadAudio |= Boolean.FALSE.equals(audioStreamLoaded);
                 if (loadAudio) {
                     /* audioStream not finished yet, resume/download it */
                     final Boolean ret = downloadDashStream(downloadLink, data, false);
@@ -1690,22 +1708,22 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
-                if (new File(audioStreamPath).exists() && !new File(downloadLink.getFileOutput()).exists()) {
+                if (audioStreamFile != null && audioStreamFile.isFile() && !new File(downloadLink.getFileOutput()).exists()) {
                     downloadLink.setAvailable(true);
                     final FFmpeg ffmpeg = getFFmpeg(br.cloneBrowser(), downloadLink);
                     /* audioStream also finished */
                     /* Do we need an exception here? If a Video is downloaded it is always finished before the audio part. TheCrap */
-                    if (videoStreamPath != null && new File(videoStreamPath).exists()) {
+                    if (videoStreamFile != null && videoStreamFile.isFile()) {
+                        boolean deleteFlag = false;
                         final FFMpegProgress progress = new FFMpegProgress();
-                        progress.setProgressSource(this);
                         try {
+                            progress.setProgressSource(this);
                             downloadLink.addPluginProgress(progress);
                             switch (variant.getContainer()) {
                             case WEBM:
                                 if (ffmpeg.muxToWebm(progress, downloadLink.getFileOutput(), videoStreamPath, audioStreamPath)) {
                                     downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                                    new File(videoStreamPath).delete();
-                                    new File(audioStreamPath).delete();
+                                    deleteFlag = true;
                                 } else {
                                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
                                 }
@@ -1713,8 +1731,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                             case MKV:
                                 if (ffmpeg.muxToMkv(progress, downloadLink.getFileOutput(), videoStreamPath, audioStreamPath)) {
                                     downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                                    new File(videoStreamPath).delete();
-                                    new File(audioStreamPath).delete();
+                                    deleteFlag = true;
                                 } else {
                                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
                                 }
@@ -1723,8 +1740,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                             default:
                                 if (ffmpeg.muxToMp4(progress, downloadLink.getFileOutput(), videoStreamPath, audioStreamPath)) {
                                     downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                                    new File(videoStreamPath).delete();
-                                    new File(audioStreamPath).delete();
+                                    deleteFlag = true;
                                 } else {
                                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
                                 }
@@ -1741,54 +1757,62 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                             }
                         } finally {
                             downloadLink.removePluginProgress(progress);
+                            if (deleteFlag) {
+                                if (videoStreamFile != null) {
+                                    videoStreamFile.delete();
+                                }
+                                if (audioStreamFile != null) {
+                                    audioStreamFile.delete();
+                                }
+                            }
                         }
                     } else {
-                        // YoutubeVariant ytVariant = (variant instanceof YoutubeCustomConvertVariant) ? ((YoutubeCustomConvertVariant)
-                        // variant).getSource() : (YoutubeVariant) variant;
-                        switch (variant.getContainer()) {
-                        case AAC:
-                            FFMpegProgress progress = new FFMpegProgress();
+                        boolean deleteFlag = false;
+                        final FFMpegProgress progress = new FFMpegProgress();
+                        try {
                             progress.setProgressSource(this);
-                            try {
-                                downloadLink.addPluginProgress(progress);
+                            downloadLink.addPluginProgress(progress);
+                            switch (variant.getContainer()) {
+                            case AAC:
                                 if (ffmpeg.generateAac(progress, downloadLink.getFileOutput(), audioStreamPath)) {
                                     downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                                    new File(audioStreamPath).delete();
+                                    deleteFlag = true;
                                 } else {
                                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
                                 }
-                            } finally {
-                                downloadLink.removePluginProgress(progress);
-                            }
-                            break;
-                        case M4A:
-                            progress = new FFMpegProgress();
-                            progress.setProgressSource(this);
-                            try {
-                                downloadLink.addPluginProgress(progress);
+                                break;
+                            case M4A:
                                 if (ffmpeg.generateM4a(progress, downloadLink.getFileOutput(), audioStreamPath)) {
                                     downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                                    new File(audioStreamPath).delete();
+                                    deleteFlag = true;
                                 } else {
                                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
                                 }
-                            } finally {
-                                downloadLink.removePluginProgress(progress);
-                            }
-                            break;
-                        case OGG:
-                            progress = new FFMpegProgress();
-                            progress.setProgressSource(this);
-                            try {
-                                downloadLink.addPluginProgress(progress);
+                                break;
+                            case OGG:
                                 if (ffmpeg.generateOggAudio(progress, downloadLink.getFileOutput(), audioStreamPath)) {
                                     downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                                    new File(audioStreamPath).delete();
+                                    deleteFlag = true;
                                 } else {
                                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
                                 }
-                            } finally {
-                                downloadLink.removePluginProgress(progress);
+                            }
+                        } catch (FFMpegException e) {
+                            if (FFMpegException.ERROR.DISK_FULL.equals(e.getError())) {
+                                final File incomplete = new File(downloadLink.getFileOutput());
+                                if (incomplete.isFile()) {
+                                    incomplete.delete();
+                                }
+                                throw new SkipReasonException(SkipReason.DISK_FULL, e);
+                            } else {
+                                throw e;
+                            }
+                        } finally {
+                            downloadLink.removePluginProgress(progress);
+                            if (deleteFlag) {
+                                if (audioStreamFile != null) {
+                                    audioStreamFile.delete();
+                                }
                             }
                         }
                     }

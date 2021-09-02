@@ -70,7 +70,7 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "sandmann.de", "wdr.de", "sportschau.de", "wdrmaus.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "ndr.de" }, urls = { "https?://(?:[A-Z0-9]+\\.)?ardmediathek\\.de/.+", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/.*?\\.html", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html|https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js", "https?://(?:\\w+\\.)?sportschau\\.de/.*?\\.html", "https?://(?:www\\.)?wdrmaus\\.de/.+", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html",
-"https?://(?:www\\.)?ndr\\.de/[^<>\"]+\\.html" })
+        "https?://(?:www\\.)?ndr\\.de/[^<>\"]+\\.html" })
 public class Ardmediathek extends PluginForDecrypt {
     private static final String                 EXCEPTION_GEOBLOCKED                       = "EXCEPTION_GEOBLOCKED";
     /* Constants */
@@ -1117,6 +1117,10 @@ public class Ardmediathek extends PluginForDecrypt {
             if (StringUtils.isEmpty(http_url)) {
                 /* E.g. daserste.de */
                 http_url = getXML(stream, "fileName");
+                if (StringUtils.isEmpty(http_url)) {
+                    /* hls master fallback, eg livestreams */
+                    http_url = getXML(stream, "adaptiveHttpStreamingRedirectorUrl");
+                }
             }
             /* E.g. daserste.de */
             String filesize = getXML(stream, "size");
@@ -1144,7 +1148,7 @@ public class Ardmediathek extends PluginForDecrypt {
                 width = Integer.parseInt(resInfo[0]);
                 height = Integer.parseInt(resInfo[1]);
             }
-            if (StringUtils.isEmpty(http_url) || isUnsupportedProtocolDasersteVideo(http_url) || !http_url.startsWith("http")) {
+            if (StringUtils.isEmpty(http_url) || isUnsupportedProtocolDasersteVideo(http_url)) {
                 continue;
             }
             if (http_url.contains(".m3u8")) {
@@ -1420,8 +1424,8 @@ public class Ardmediathek extends PluginForDecrypt {
     }
 
     private boolean isUnsupportedProtocolDasersteVideo(final String directlink) {
-        final boolean isHTTPUrl = directlink == null || !directlink.startsWith("http") || directlink.endsWith("manifest.f4m");
-        return isHTTPUrl;
+        final boolean isUnsupported = directlink == null || !StringUtils.startsWithCaseInsensitive(directlink, "http") || StringUtils.endsWithCaseInsensitive(directlink, "manifest.f4m");
+        return isUnsupported;
     }
 
     private HashMap<String, DownloadLink> findBESTInsideGivenMap(final HashMap<String, DownloadLink> map_with_all_qualities) {

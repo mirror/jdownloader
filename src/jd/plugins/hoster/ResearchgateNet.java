@@ -88,7 +88,15 @@ public class ResearchgateNet extends PluginForHost {
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
-        return AvailableStatus.TRUE;
+        if (StringUtils.isEmpty(dllink)) {
+            if (br.containsHTML("=su_requestFulltext")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Request full-text PDF");
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } else {
+            return AvailableStatus.TRUE;
+        }
     }
 
     @Override

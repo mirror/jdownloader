@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.logging.Logger;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 
 public class Executer extends Thread implements Runnable {
@@ -404,29 +405,31 @@ public class Executer extends Thread implements Runnable {
             return;
         }
         final java.util.List<String> params = new ArrayList<String>();
-        params.add(this.command);
-        params.addAll(this.parameter);
+        params.add(this.getCommand());
+        params.addAll(this.getParameter());
+        final ProcessBuilder pb = ProcessBuilderFactory.create(params.toArray(new String[] {}));
+        String runIn = getRunin();
+        File check = StringUtils.isNotEmpty(runIn) ? new File(runIn) : null;
+        if (check == null || !check.exists()) {
+            check = new File(params.get(0)).getParentFile();
+        }
+        if (check != null && check.exists()) {
+            if (check.isFile()) {
+                check = check.getParentFile();
+            }
+            runIn = check.getAbsolutePath();
+            pb.directory(check);
+        } else {
+            log("Working directory " + runIn + " does not exist!");
+            runIn = null;
+        }
         if (this.isDebug()) {
             final StringBuilder out = new StringBuilder();
             for (final String p : params) {
                 out.append(p);
                 out.append(' ');
             }
-            log("Execute: " + out + " in " + this.runIn);
-        }
-        final ProcessBuilder pb = ProcessBuilderFactory.create(params.toArray(new String[] {}));
-        if (this.runIn != null && this.runIn.length() > 0) {
-            if (new File(this.runIn).exists()) {
-                pb.directory(new File(this.runIn));
-            } else {
-                if (new File(params.get(0)).getParentFile().exists()) {
-                    // logger.info("Run in: " + new
-                    // File(params.get(0)).getParentFile());
-                    pb.directory(new File(params.get(0)).getParentFile());
-                } else {
-                    log("Working directory " + this.runIn + " does not exist!");
-                }
-            }
+            log("Execute: " + out + " in " + (runIn != null ? runIn : "default"));
         }
         final Thread timeoutThread;
         try {

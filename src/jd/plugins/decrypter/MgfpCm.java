@@ -20,9 +20,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -36,6 +33,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "https?://(www\\.)?imagefap\\.com/(gallery\\.php\\?p?gid=.+|gallery/.+|pictures/\\d+/.*|photo/\\d+|organizer/\\d+|(usergallery|showfavorites)\\.php\\?userid=\\d+(&folderid=-?\\d+)?)" })
 public class MgfpCm extends PluginForDecrypt {
@@ -237,6 +236,10 @@ public class MgfpCm extends PluginForDecrypt {
             int counter = 1;
             DecimalFormat df = new DecimalFormat("0000");
             final HashSet<String> incompleteOriginalFilenameWorkaround = new HashSet<String>();
+            if (gid == null) {
+                gid = br.getRegex("\"galleryid_input\"\\s*value\\s*=\\s*\"(\\d+)").getMatch(0);
+            }
+            final Long galleryID = StringUtils.isNotEmpty(gid) ? Long.parseLong(gid) : null;
             for (final String page : allPages) {
                 if (!page.equals("0")) {
                     getPage(this.br, parameter + "&page=" + page);
@@ -254,16 +257,20 @@ public class MgfpCm extends PluginForDecrypt {
                         if (!incompleteOriginalFilenameWorkaround.add(original_filename) || original_filename.matches(".*[\\.]{2,}$")) {
                             // some filenames are incomplete and end with ...
                             // this workaround removes ... and adds orderID
-                            original_filename = original_filename.replaceFirst("([\\.]{2,})$", "") + "_" + orderID;
-                            link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPEG);
+                            original_filename = original_filename.replaceFirst("([\\.]{2,})$", "") + "_" + orderID + ".jpg";
+                            link.setProperty("incomplete_filename", original_filename);
+                        } else {
+                            link.setProperty("original_filename", original_filename);
                         }
                         link.setContentUrl("https://www." + this.getHost() + "/photo/" + photoID + "/");
                         link.setProperty("orderid", orderID);
                         /* Set Packagizer property */
                         link.setProperty("photoID", Long.parseLong(photoID));
+                        if (galleryID != null) {
+                            link.setProperty("galleryID", galleryID);
+                        }
                         link.setProperty("galleryname", galleryName);
                         link.setProperty("directusername", authorsName);
-                        link.setProperty("original_filename", original_filename);
                         link.setName(jd.plugins.hoster.ImageFap.getFormattedFilename(link));
                         link.setAvailable(true);
                         decryptedLinks.add(link);
@@ -276,7 +283,6 @@ public class MgfpCm extends PluginForDecrypt {
             }
             // Finally set the packagename even if its set again in the linkgrabber
             // available check of the imagefap hosterplugin
-            final String galleryID = br.getRegex("\"galleryid_input\"\\s*value\\s*=\\s*\"(\\d+)").getMatch(0);
             FilePackage fp = FilePackage.getInstance();
             if (galleryID != null) {
                 fp.setName(authorsName + " - " + galleryName + " - " + galleryID);
