@@ -967,10 +967,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-        // 2017-07-09 vshare.io
-        if (handleExtern("xxxssl.com", processAll, decryptedLinks)) {
-            return decryptedLinks;
-        }
         // 2018-06-25 rapidvideo.com
         externID = br.getRegex("(?:\\'|\")(https?://(?:www\\.)?rapidvideo.com/e/[A-Z0-9]+/?)(?:\\'|\")").getMatch(0);
         if (externID != null) {

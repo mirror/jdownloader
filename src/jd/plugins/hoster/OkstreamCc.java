@@ -20,7 +20,11 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -28,9 +32,6 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OkstreamCc extends XFileSharingProBasic {
@@ -181,6 +182,22 @@ public class OkstreamCc extends XFileSharingProBasic {
                 this.checkErrorsLastResort(br, account);
             }
             handleDownload(link, account, dllink, null);
+        }
+    }
+
+    @Override
+    protected boolean supports_availablecheck_filename_abuse() {
+        /* 2021-09-02: Unsupported */
+        return false;
+    }
+
+    @Override
+    protected boolean isOffline(final DownloadLink link, final Browser br, final String correctedBR) {
+        if (br.containsHTML("(?i)(404 Not Found\\s*</h2>|404 Not found</title>)")) {
+            /* 2021-09-02 */
+            return true;
+        } else {
+            return super.isOffline(link, br, correctedBR);
         }
     }
 }

@@ -23,7 +23,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "perfectgirls.net", "perfektdamen.co" }, urls = { "http://([a-z]+\\.)?(perfectgirls\\.net/\\d+/|(www|wwr|ipad|m)\\.perfectgirls\\.net/gal/\\d+/.{0,1})", "https?://(?:www\\.)?perfektdamen\\.co/gal/\\d+/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "perfectgirls.net", "perfektdamen.co" }, urls = { "https?://([a-z]+\\.)?(perfectgirls\\.net/\\d+/|(www|wwr|ipad|m)\\.perfectgirls\\.net/gal/\\d+/[A-Za-z0-9\\-_]+)", "https?://(?:www\\.)?perfektdamen\\.co/gal/\\d+/[A-Za-z0-9\\-_]+" })
 public class PerfectGirlsNet extends PornEmbedParser {
     public PerfectGirlsNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,7 +45,7 @@ public class PerfectGirlsNet extends PornEmbedParser {
                 return decryptedLinks;
             }
         }
-        final DownloadLink main = createDownloadlink(parameter.replace("perfectgirls.net/", "perfectgirlsdecrypted.net/"));
+        final DownloadLink main = createDownloadlink(parameter);
         if (br.containsHTML("src=\"http://(www\\.)?dachix\\.com/flashplayer/flvplayer\\.swf\"|\"http://(www\\.)?deviantclip\\.com/flashplayer/flvplayer\\.swf\"|thumbs/misc/not_available\\.gif")) {
             main.setAvailable(false);
             main.setProperty("offline", true);
@@ -57,8 +57,7 @@ public class PerfectGirlsNet extends PornEmbedParser {
         return decryptedLinks;
     }
 
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
         return false;
     }
 }
