@@ -82,9 +82,11 @@ public enum SplitType {
     },
     /**
      * Multipart Unix-Split Archive (.aa, .ab ...), aa-zz , different(minimum two) suffix length supported
+     *
+     * maximum 4 length = 456975 parts
      */
     UNIX_SPLIT {
-        private final Pattern pattern = Pattern.compile("(?i)(.*)\\.((?-i)[a-z]{2,})$");
+        private final Pattern pattern = Pattern.compile("(?i)(.*)\\.((?-i)[a-z]{2,4})$");
 
         private int parseIndex(final String index) {
             final int length = index.length();
@@ -114,7 +116,7 @@ public enum SplitType {
 
         @Override
         protected String buildIDPattern(String[] matches) {
-            return "\\.(?-i)[a-z]{2,}";
+            return "\\.(?-i)[a-z]{2,4}";
         }
 
         @Override
@@ -136,7 +138,11 @@ public enum SplitType {
 
         @Override
         public int getPartNumber(String partNumberString) {
-            return parseIndex(partNumberString);
+            if (partNumberString != null && partNumberString.matches("(?i)^(js|xz|db|aac|zip|rar|bmp|torrent)$")) {
+                return -1;
+            } else {
+                return parseIndex(partNumberString);
+            }
         }
 
         @Override
