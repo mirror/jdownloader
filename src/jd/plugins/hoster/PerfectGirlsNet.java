@@ -15,6 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
+import org.appwork.utils.Regex;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -26,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "perfectgirls.net" }, urls = { "http://([a-z]+\\.)?perfectgirlsdecrypted\\.net/(?:gal/)?\\d+/.{0,1}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "perfectgirls.net" }, urls = { "https?://(?:[a-z]+\\.)?perfectgirls\\.net/(?:gal/)?(\\d+)(/([A-Za-z0-9\\-_]+))?" })
 public class PerfectGirlsNet extends PluginForHost {
     public PerfectGirlsNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,31 +43,37 @@ public class PerfectGirlsNet extends PluginForHost {
         return "http://www.perfectgirls.net/";
     }
 
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("perfectgirlsdecrypted.net/", "perfectgirls.net/"));
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
     }
 
-    @SuppressWarnings("deprecation")
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        if (downloadLink.getBooleanProperty("offline", false)) {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("No htmlCode read|src=\"http://(www\\.)?dachix\\.com/flashplayer/flvplayer\\.swf\"|\"http://(www\\.)?deviantclip\\.com/flashplayer/flvplayer\\.swf\"|thumbs/misc/not_available\\.gif")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?) ::: PERFECT GIRLS</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("").getMatch(0);
-        }
-        String[] reses = { "720", "480", "360" };
+        String[] reses = { "1080", "720", "480", "360" };
         for (String res : reses) {
             dllink = br.getRegex("<source src=\"([^<>\"]+)\" res=\"" + res + "\"").getMatch(0);
             if (dllink != null) {
-                checkDllink(downloadLink, dllink);
+                checkDllink(link, dllink);
             }
             if (dllink != null) {
                 break;
@@ -78,7 +88,7 @@ public class PerfectGirlsNet extends PluginForHost {
         }
         filename = filename.trim();
         final String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         return AvailableStatus.TRUE;
     }
 
@@ -88,8 +98,10 @@ public class PerfectGirlsNet extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openHeadConnection(flink);
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
+            if (this.looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
                 dllink = flink;
             } else {
                 dllink = null;
@@ -105,11 +117,15 @@ public class PerfectGirlsNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

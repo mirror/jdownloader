@@ -22,31 +22,29 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xxxssl.com" }, urls = { "https?://(?:\\w+\\.)?xxxssl\\.com/embed_cdn\\.php\\?video=[^<>]+" })
-public class XxxSslCom extends PornEmbedParser {
-
-    public XxxSslCom(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "buckler.link" }, urls = { "https?://(?:www\\.)?buckler\\.link/[A-Za-z0-9]+" })
+public class BucklerLink extends PluginForDecrypt {
+    public BucklerLink(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    /** Attention: This website GEO-blocks all traffic except from italy! */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // they have http player as sourceURL and hls sourceURL_HLS
-        final String source = br.getRegex("var sourceURL\\s*=\\s*\"(.*?)\"").getMatch(0);
-        final String sourceHLS = br.getRegex("var sourceURL_HLS\\s*=\\s*\"(.*?)\"").getMatch(0);
-        if (source != null) {
-            decryptedLinks.add(createDownloadlink("directhttp://" + source));
-        } else if (sourceHLS != null) {
-            decryptedLinks.add(createDownloadlink(sourceHLS));
+        final String finallink = this.br.getRegex("\"([^\"]+)\"\\)\\.html\\(\"Continue\"\\)").getMatch(0);
+        if (finallink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
     }
-
 }
