@@ -20,22 +20,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.config.EvilangelComConfig;
-import org.jdownloader.plugins.components.config.EvilangelComConfig.Quality;
-import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -55,8 +39,24 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.EvilangelComConfig;
+import org.jdownloader.plugins.components.config.EvilangelComConfig.Quality;
+import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class EvilangelCore extends PluginForHost {
+public abstract class EvilangelCore extends PluginForHost {
     public EvilangelCore(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -363,10 +363,10 @@ public class EvilangelCore extends PluginForHost {
             return null;
         }
     }
+
     // private String findDesiredQuality(final Browser br, final String qualityStr) {
     // return br.getRegex("\"(/[^\"]*/download/\\d+/" + qualityStr + "[^\"]*)\"").getMatch(0);
     // }
-
     /** Find highest quality trailer downloadurl (sometimes higher quality than what website player is using) */
     public static String getDllinkTrailer(final Browser br) {
         String dllink = null;
