@@ -61,22 +61,22 @@ public class UseNetEwekaNl extends UseNet {
             /* Fallback */
             account.setMaxSimultanDownloads(8);
         }
-        String userName = br.getRegex("name=\"username\" value=\"([^<>\"]+)\"").getMatch(0);
-        if (userName == null) {
-            /* Final fallback */
-            userName = account.getUser();
-        }
-        if (userName == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String userNameHTML = br.getRegex("name=\"username\" value=\"([^<>\"]+)\"").getMatch(0);
+        final String username;
+        if (userNameHTML != null) {
+            username = userNameHTML;
+        } else {
+            /* Fallback: Use user entered username as Usenet username */
+            username = account.getUser();
         }
         /*
          * When using cookie login user can enter whatever he wants into username field but we try to have unique usernames so user cannot
          * add same account twice.
          */
-        if (account.hasProperty(PROPERTY_USED_COOKIE_LOGIN)) {
-            account.setUser(userName);
+        if (account.hasProperty(PROPERTY_USED_COOKIE_LOGIN) && userNameHTML != null) {
+            account.setUser(userNameHTML);
         }
-        account.setProperty(USENET_USERNAME, userName);
+        account.setProperty(USENET_USERNAME, username);
         String validUntil = br.getRegex("<td><b>Valid until</b></td>.*?<td.*?>\\s*?(\\d{2}-\\d{2}-\\d{4} \\d{2}:\\d{2})").getMatch(0);
         if (validUntil == null) {
             /* 2020-01-21 */
