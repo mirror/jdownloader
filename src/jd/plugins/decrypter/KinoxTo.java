@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import static java.lang.String.format;
 
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -99,17 +100,17 @@ public class KinoxTo extends antiDDoSForDecrypt {
                     br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     getPage(br2, "/aGET/MirrorByEpisode/?Addr=" + addr_id + "&SeriesID=" + series_id + "&Season=" + season_number + "&Episode=" + episode);
                     /* Crawl Episode --> Find mirrors */
-                    decryptMirrors(decryptedLinks, br2, fpName, season_number, episode);
+                    decryptMirrors(param, decryptedLinks, br2, fpName, season_number, episode);
                 }
             }
         } else {
             /* Crawl all Mirrors of a movie */
-            decryptMirrors(decryptedLinks, br2, fpName, null, null);
+            decryptMirrors(param, decryptedLinks, br2, fpName, null, null);
         }
         return decryptedLinks;
     }
 
-    private void decryptMirrors(List<DownloadLink> decryptedLinks, Browser br2, String fpName, final String season_number, final String episode) throws Exception {
+    private void decryptMirrors(CryptedLink param, List<DownloadLink> decryptedLinks, Browser br2, String fpName, final String season_number, final String episode) throws Exception {
         final String[] mirrors = br2.getRegex("(<li id=\"Hoster_\\d+\".*?</div></li>)").getColumn(0);
         if (mirrors == null || mirrors.length == 0) {
             getLogger().info("No mirrors found.");
@@ -151,7 +152,12 @@ public class KinoxTo extends antiDDoSForDecrypt {
             }
             final Browser br3 = br.cloneBrowser();
             br3.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            getPage(br3, geturl);
+            try {
+                getPage(br3, geturl);
+            } catch (IOException e) {
+                sleep(2000, param);
+                getPage(br3, geturl);
+            }
             String finallink = PluginJSonUtils.getJson(br3, "Stream");
             if (finallink == null) {
                 getLogger().info("Unable to determine a link for mirror.");

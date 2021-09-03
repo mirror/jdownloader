@@ -17,14 +17,14 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.plugins.components.abstractSafeLinking;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+
+import org.jdownloader.plugins.components.abstractSafeLinking;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kprotector.com", "keeplinks.org" }, urls = { "https?://(?:www\\.)?kprotector\\.com/(p\\d*|d)/[a-z0-9]+", "https?://(?:www\\.)?keeplinks\\.(me|eu|co|org)/(p\\d*|d)/[a-z0-9]+" })
 public class KeepLinksMe extends abstractSafeLinking {
@@ -56,22 +56,22 @@ public class KeepLinksMe extends abstractSafeLinking {
     protected boolean supportsHTTPS() {
         if (getHost().contains("keeplinks.org")) {
             return true;
-        }
-        if ("kprotector.com".equals(getHost())) {
+        } else if ("kprotector.com".equals(getHost())) {
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     @Override
     protected boolean enforcesHTTPS() {
         if (getHost().contains("keeplinks.org")) {
             return true;
-        }
-        if ("kprotector.com".equals(getHost())) {
+        } else if ("kprotector.com".equals(getHost())) {
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     @Override
@@ -89,16 +89,18 @@ public class KeepLinksMe extends abstractSafeLinking {
     protected String regexCaptchaFancy() {
         if ("kprotector.com".equals(getHost())) {
             return "class=\"ajax-fc-container\"";
+        } else {
+            return super.regexCaptchaFancy();
         }
-        return super.regexCaptchaFancy();
     }
 
     @Override
     protected String getCaptchaFancyInputfieldName() {
         if ("kprotector.com".equals(getHost())) {
             return "captcha";
+        } else {
+            return super.getCaptchaFancyInputfieldName();
         }
-        return super.getCaptchaFancyInputfieldName();
     }
 
     @Override
@@ -125,32 +127,36 @@ public class KeepLinksMe extends abstractSafeLinking {
     protected String regexContainerDlc() {
         if ("kprotector.com".equals(getHost())) {
             return "/download/" + uid + "/dlc";
+        } else {
+            return super.regexContainerDlc();
         }
-        return super.regexContainerDlc();
     }
 
     @Override
     protected String regexContainerCcf() {
         if ("kprotector.com".equals(getHost())) {
             return "/download/" + uid + "/ccf";
+        } else {
+            return super.regexContainerCcf();
         }
-        return super.regexContainerCcf();
     }
 
     @Override
     protected String regexContainerRsdf() {
         if ("kprotector.com".equals(getHost())) {
             return "/download/" + uid + "/rsdf";
+        } else {
+            return super.regexContainerRsdf();
         }
-        return super.regexContainerRsdf();
     }
 
     @Override
     protected String regexContainer(final String format) {
         if ("kprotector.com".equals(getHost())) {
             return "\"(https?://[^/]*" + regexSupportedDomains() + format + ")";
+        } else {
+            return super.regexContainer(format);
         }
-        return super.regexContainer(format);
     }
 
     @Override

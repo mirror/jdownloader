@@ -19,11 +19,6 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hds.HDSDownloader;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hds.HDSContainer;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -45,6 +40,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hds.HDSContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvid.com", "playvids.com", "pornflip.com" }, urls = { "http://playviddecrypted\\.com/\\d+", "http://playviddecrypted\\.com/\\d+", "http://playviddecrypted\\.com/\\d+" })
 public class PlayVidCom extends PluginForHost {
@@ -147,59 +147,59 @@ public class PlayVidCom extends PluginForHost {
         final String qualityvalue = link.getStringProperty("qualityvalue");
         if (qualityvalue == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (StringUtils.containsIgnoreCase(qualityvalue, "hds_")) {
-            final HDSContainer container = HDSContainer.read(link);
-            if (container == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else {
-                br.setFollowRedirects(true);
-                br.getPage(link.getStringProperty("mainlink", null).replace("http://", "https://"));
-                final LinkedHashMap<String, String> foundQualities = getQualities(br);
-                final String f4m = foundQualities.get(qualityvalue);
-                if (f4m == null) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                br.getPage(f4m);
-                br.followRedirect();
-                final List<HDSContainer> all = HDSContainer.getHDSQualities(br);
-                if (all == null) {
+        } else if (StringUtils.containsIgnoreCase(qualityvalue, "hds_")) {
+                final HDSContainer container = HDSContainer.read(link);
+                if (container == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
-                    final HDSContainer hit = HDSContainer.getBestMatchingContainer(all, container);
-                    if (hit == null) {
+                    br.setFollowRedirects(true);
+                    br.getPage(link.getStringProperty("mainlink", null).replace("http://", "https://"));
+                    final LinkedHashMap<String, String> foundQualities = getQualities(br);
+                    final String f4m = foundQualities.get(qualityvalue);
+                    if (f4m == null) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    br.getPage(f4m);
+                    br.followRedirect();
+                    final List<HDSContainer> all = HDSContainer.getHDSQualities(br);
+                    if (all == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     } else {
-                        hit.write(link);
-                        final HDSDownloader dl = new HDSDownloader(link, br, hit.getFragmentURL());
-                        this.dl = dl;
-                        dl.setEstimatedDuration(hit.getDuration());
+                        final HDSContainer hit = HDSContainer.getBestMatchingContainer(all, container);
+                        if (hit == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        } else {
+                            hit.write(link);
+                            final HDSDownloader dl = new HDSDownloader(link, br, hit.getFragmentURL());
+                            this.dl = dl;
+                            dl.setEstimatedDuration(hit.getDuration());
+                        }
                     }
+                    dl.startDownload();
                 }
-            }
-        } else if (StringUtils.containsIgnoreCase(dllink, ".m3u8")) {
-            /* HLS download */
-            checkFFmpeg(link, "Download a HLS Stream");
-            dl = new HLSDownloader(link, br, dllink);
-            dl.startDownload();
-        } else {
-            if (quality_720.equals(qualityvalue) && account == null) {
-                /* Should never happen! */
-                logger.info("User is not logged in but tries to download a quality which needs login");
-                throw new AccountRequiredException();
+            } else if (StringUtils.containsIgnoreCase(dllink, ".m3u8")) {
+                /* HLS download */
+                checkFFmpeg(link, "Download a HLS Stream");
+                dl = new HLSDownloader(link, br, dllink);
+                dl.startDownload();
             } else {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-                if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                    try {
-                        br.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
+                if (quality_720.equals(qualityvalue) && account == null) {
+                    /* Should never happen! */
+                    logger.info("User is not logged in but tries to download a quality which needs login");
+                    throw new AccountRequiredException();
+                } else {
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+                    if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                        try {
+                            br.followConnection(true);
+                        } catch (final IOException e) {
+                            logger.log(e);
+                        }
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                dl.startDownload();
             }
-        }
-        dl.startDownload();
     }
 
     public static final boolean isOffline(final Browser br) {
