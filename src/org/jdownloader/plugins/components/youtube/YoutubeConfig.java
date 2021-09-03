@@ -391,6 +391,13 @@ public interface YoutubeConfig extends PluginConfigInterface {
     @AboutConfig
     boolean isExternMultimediaToolUsageEnabled();
 
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Disable this if you do not want to mux new DASH Format. This will result in seperate audio/video streams.")
+    @AboutConfig
+    boolean isDASHMuxingEnabled();
+
+    void setDASHMuxingEnabled(boolean b);
+
     @DefaultBooleanValue(false)
     @Deprecated
     /**
