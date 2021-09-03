@@ -133,6 +133,7 @@ import org.jdownloader.plugins.components.youtube.keepForCompatibility.SubtitleV
 import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
 import org.jdownloader.plugins.components.youtube.variants.AudioVariant;
 import org.jdownloader.plugins.components.youtube.variants.DownloadType;
+import org.jdownloader.plugins.components.youtube.variants.FileContainer;
 import org.jdownloader.plugins.components.youtube.variants.SubtitleVariant;
 import org.jdownloader.plugins.components.youtube.variants.SubtitleVariantInfo;
 import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
@@ -1710,108 +1711,140 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 }
                 if (audioStreamFile != null && audioStreamFile.isFile() && !new File(downloadLink.getFileOutput()).exists()) {
                     downloadLink.setAvailable(true);
-                    final FFmpeg ffmpeg = getFFmpeg(br.cloneBrowser(), downloadLink);
-                    /* audioStream also finished */
-                    /* Do we need an exception here? If a Video is downloaded it is always finished before the audio part. TheCrap */
-                    if (videoStreamFile != null && videoStreamFile.isFile()) {
-                        boolean deleteFlag = false;
-                        final FFMpegProgress progress = new FFMpegProgress();
-                        try {
-                            progress.setProgressSource(this);
-                            downloadLink.addPluginProgress(progress);
-                            switch (variant.getContainer()) {
-                            case WEBM:
-                                if (ffmpeg.muxToWebm(progress, downloadLink.getFileOutput(), videoStreamPath, audioStreamPath)) {
-                                    downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                                    deleteFlag = true;
-                                } else {
-                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
-                                }
-                                break;
-                            case MKV:
-                                if (ffmpeg.muxToMkv(progress, downloadLink.getFileOutput(), videoStreamPath, audioStreamPath)) {
-                                    downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                                    deleteFlag = true;
-                                } else {
-                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
-                                }
-                                break;
-                            case MP4:
-                            default:
-                                if (ffmpeg.muxToMp4(progress, downloadLink.getFileOutput(), videoStreamPath, audioStreamPath)) {
-                                    downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                                    deleteFlag = true;
-                                } else {
-                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
-                                }
-                            }
-                        } catch (FFMpegException e) {
-                            if (FFMpegException.ERROR.DISK_FULL.equals(e.getError())) {
-                                final File incomplete = new File(downloadLink.getFileOutput());
-                                if (incomplete.isFile()) {
-                                    incomplete.delete();
-                                }
-                                throw new SkipReasonException(SkipReason.DISK_FULL, e);
+                    if (!PluginJsonConfig.get(YoutubeConfig.class).isDASHMuxingEnabled()) {
+                        boolean finishedFlag = false;
+                        if (videoStreamFile != null && videoStreamFile.isFile() && videoStreamFile.length() > 0) {
+                            final FileContainer extension = FileContainer.getVideoContainer(variant.getiTagVideo(), variant.getiTagAudioOrVideoItagEquivalent());
+                            final File dest = new File(downloadLink.getFileOutput() + "." + extension.getExtension());
+                            final boolean renameResult = videoStreamFile.renameTo(dest);
+                            logger.info("Rename:" + videoStreamFile + "->" + dest + "|" + renameResult);
+                            if (!renameResult) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             } else {
-                                throw e;
-                            }
-                        } finally {
-                            downloadLink.removePluginProgress(progress);
-                            if (deleteFlag) {
-                                if (videoStreamFile != null) {
-                                    videoStreamFile.delete();
-                                }
-                                if (audioStreamFile != null) {
-                                    audioStreamFile.delete();
-                                }
+                                finishedFlag = true;
                             }
                         }
-                    } else {
-                        boolean deleteFlag = false;
-                        final FFMpegProgress progress = new FFMpegProgress();
-                        try {
-                            progress.setProgressSource(this);
-                            downloadLink.addPluginProgress(progress);
-                            switch (variant.getContainer()) {
-                            case AAC:
-                                if (ffmpeg.generateAac(progress, downloadLink.getFileOutput(), audioStreamPath)) {
-                                    downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                                    deleteFlag = true;
-                                } else {
-                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
-                                }
-                                break;
-                            case M4A:
-                                if (ffmpeg.generateM4a(progress, downloadLink.getFileOutput(), audioStreamPath)) {
-                                    downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                                    deleteFlag = true;
-                                } else {
-                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
-                                }
-                                break;
-                            case OGG:
-                                if (ffmpeg.generateOggAudio(progress, downloadLink.getFileOutput(), audioStreamPath)) {
-                                    downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                                    deleteFlag = true;
-                                } else {
-                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
-                                }
-                            }
-                        } catch (FFMpegException e) {
-                            if (FFMpegException.ERROR.DISK_FULL.equals(e.getError())) {
-                                final File incomplete = new File(downloadLink.getFileOutput());
-                                if (incomplete.isFile()) {
-                                    incomplete.delete();
-                                }
-                                throw new SkipReasonException(SkipReason.DISK_FULL, e);
+                        if (audioStreamFile != null && audioStreamFile.isFile() && audioStreamFile.length() > 0) {
+                            final FileContainer extension = FileContainer.getAudioContainer(variant.getiTagVideo(), variant.getiTagAudioOrVideoItagEquivalent());
+                            final File dest = new File(downloadLink.getFileOutput() + "." + extension.getExtension());
+                            final boolean renameResult = audioStreamFile.renameTo(dest);
+                            logger.info("Rename:" + audioStreamFile + "->" + dest + "|" + renameResult);
+                            if (!renameResult) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             } else {
-                                throw e;
+                                finishedFlag = true;
                             }
-                        } finally {
-                            downloadLink.removePluginProgress(progress);
-                            if (deleteFlag) {
-                                if (audioStreamFile != null) {
-                                    audioStreamFile.delete();
+                        }
+                        if (finishedFlag) {
+                            downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
+                            return;
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                    } else {
+                        final FFmpeg ffmpeg = getFFmpeg(br.cloneBrowser(), downloadLink);
+                        /* audioStream also finished */
+                        /* Do we need an exception here? If a Video is downloaded it is always finished before the audio part. TheCrap */
+                        if (videoStreamFile != null && videoStreamFile.isFile()) {
+                            boolean deleteFlag = false;
+                            final FFMpegProgress progress = new FFMpegProgress();
+                            try {
+                                progress.setProgressSource(this);
+                                downloadLink.addPluginProgress(progress);
+                                switch (variant.getContainer()) {
+                                case WEBM:
+                                    if (ffmpeg.muxToWebm(progress, downloadLink.getFileOutput(), videoStreamPath, audioStreamPath)) {
+                                        downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
+                                        deleteFlag = true;
+                                    } else {
+                                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
+                                    }
+                                    break;
+                                case MKV:
+                                    if (ffmpeg.muxToMkv(progress, downloadLink.getFileOutput(), videoStreamPath, audioStreamPath)) {
+                                        downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
+                                        deleteFlag = true;
+                                    } else {
+                                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
+                                    }
+                                    break;
+                                case MP4:
+                                default:
+                                    if (ffmpeg.muxToMp4(progress, downloadLink.getFileOutput(), videoStreamPath, audioStreamPath)) {
+                                        downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
+                                        deleteFlag = true;
+                                    } else {
+                                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
+                                    }
+                                }
+                            } catch (FFMpegException e) {
+                                if (FFMpegException.ERROR.DISK_FULL.equals(e.getError())) {
+                                    final File incomplete = new File(downloadLink.getFileOutput());
+                                    if (incomplete.isFile()) {
+                                        incomplete.delete();
+                                    }
+                                    throw new SkipReasonException(SkipReason.DISK_FULL, e);
+                                } else {
+                                    throw e;
+                                }
+                            } finally {
+                                downloadLink.removePluginProgress(progress);
+                                if (deleteFlag) {
+                                    if (videoStreamFile != null) {
+                                        videoStreamFile.delete();
+                                    }
+                                    if (audioStreamFile != null) {
+                                        audioStreamFile.delete();
+                                    }
+                                }
+                            }
+                        } else {
+                            boolean deleteFlag = false;
+                            final FFMpegProgress progress = new FFMpegProgress();
+                            try {
+                                progress.setProgressSource(this);
+                                downloadLink.addPluginProgress(progress);
+                                switch (variant.getContainer()) {
+                                case AAC:
+                                    if (ffmpeg.generateAac(progress, downloadLink.getFileOutput(), audioStreamPath)) {
+                                        downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
+                                        deleteFlag = true;
+                                    } else {
+                                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
+                                    }
+                                    break;
+                                case M4A:
+                                    if (ffmpeg.generateM4a(progress, downloadLink.getFileOutput(), audioStreamPath)) {
+                                        downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
+                                        deleteFlag = true;
+                                    } else {
+                                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
+                                    }
+                                    break;
+                                case OGG:
+                                    if (ffmpeg.generateOggAudio(progress, downloadLink.getFileOutput(), audioStreamPath)) {
+                                        downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
+                                        deleteFlag = true;
+                                    } else {
+                                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
+                                    }
+                                }
+                            } catch (FFMpegException e) {
+                                if (FFMpegException.ERROR.DISK_FULL.equals(e.getError())) {
+                                    final File incomplete = new File(downloadLink.getFileOutput());
+                                    if (incomplete.isFile()) {
+                                        incomplete.delete();
+                                    }
+                                    throw new SkipReasonException(SkipReason.DISK_FULL, e);
+                                } else {
+                                    throw e;
+                                }
+                            } finally {
+                                downloadLink.removePluginProgress(progress);
+                                if (deleteFlag) {
+                                    if (audioStreamFile != null) {
+                                        audioStreamFile.delete();
+                                    }
                                 }
                             }
                         }
