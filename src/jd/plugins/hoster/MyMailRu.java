@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -98,6 +97,8 @@ public class MyMailRu extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
+        // age check
+        br.setCookie(getHost(), "ero_accept", "1");
         if (link.getDownloadURL().matches(TYPE_VIDEO_ALL)) {
             /* Video download. */
             br.setFollowRedirects(true);
@@ -162,11 +163,15 @@ public class MyMailRu extends PluginForHost {
             }
             URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(DLLINK);
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(DLLINK);
                 if (con.getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
+                } else if (looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    }
                     link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
                 } else {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error");
@@ -188,7 +193,7 @@ public class MyMailRu extends PluginForHost {
             }
             for (int i = 1; i <= 2; i++) {
                 if (i == 1) {
-                    DLLINK = br.getRegex("data\\-filedimageurl=\"(http://[^<>\"]+\\-" + fid + "[^<>\"]*?)\"").getMatch(0);
+                    DLLINK = br.getRegex("data\\-filedimageurl\\s*=\\s*\"(https?://[^<>\"]+\\-" + fid + "[^<>\"]*?)\"").getMatch(0);
                 }
                 // if (DLLINK == null) DLLINK = "http://content.foto.mail.ru/" + linkInfo.getMatch(0) + "/" + linkInfo.getMatch(1) + "/" +
                 // linkInfo.getMatch(2) + "/i-" + linkInfo.getMatch(3) + link.getStringProperty("ext", null);
@@ -197,17 +202,31 @@ public class MyMailRu extends PluginForHost {
                 }
                 URLConnectionAdapter con = null;
                 try {
-                    con = br.openGetConnection(DLLINK);
+                    final Browser br2 = br.cloneBrowser();
+                    br2.setFollowRedirects(true);
+                    con = br2.openGetConnection(DLLINK);
                     if (con.getResponseCode() == 500) {
+                        try {
+                            br2.followConnection(true);
+                        } catch (final IOException e) {
+                            logger.log(e);
+                        }
                         logger.info("High quality link is invalid, using normal link...");
                         DLLINK = null;
                         continue;
                     }
-                    if (!con.getContentType().contains("html")) {
-                        link.setDownloadSize(con.getLongContentLength());
+                    if (looksLikeDownloadableContent(con)) {
+                        if (con.getCompleteContentLength() > 0) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        }
                         link.setFinalFileName(fid + link.getStringProperty("ext", null));
                         break;
                     } else {
+                        try {
+                            br2.followConnection(true);
+                        } catch (final IOException e) {
+                            logger.log(e);
+                        }
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                 } finally {
@@ -228,14 +247,7 @@ public class MyMailRu extends PluginForHost {
         requestFileInformation(link);
         if (link.getDownloadURL().matches(TYPE_VIDEO_ALL)) {
             if (br.containsHTML(html_private)) {
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Private video! This can only be downloaded by authorized users and the owner.");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Private video! This can only be downloaded by authorized users and the owner.", PluginException.VALUE_ID_PREMIUM_ONLY);
             }
             maxChunks = 0;
         }
@@ -249,7 +261,12 @@ public class MyMailRu extends PluginForHost {
         // More chunks possible but not needed because we're only downloading
         // pictures here
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, resume, maxChunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 416) {
                 if (link.getBooleanProperty("noresume", false)) {
                     link.setProperty("noresume", Boolean.valueOf(false));
@@ -259,20 +276,19 @@ public class MyMailRu extends PluginForHost {
                 link.setChunksProgress(null);
                 link.setProperty("noresume", Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Resume failed");
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // fixFilename(downloadLink);
         dl.startDownload();
     }
 
     private static final String MAINPAGE = "http://my.mail.ru";
-    private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
     public static void login(final Browser br, final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
@@ -311,7 +327,9 @@ public class MyMailRu extends PluginForHost {
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.setProperty("cookies", Property.NULL);
+                }
                 throw e;
             }
         }
@@ -320,11 +338,7 @@ public class MyMailRu extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(br, account, true);
-        } catch (PluginException e) {
-            return ai;
-        }
+        login(br, account, true);
         ai.setUnlimitedTraffic();
         ai.setStatus("Registered (free) User");
         return ai;
@@ -340,8 +354,12 @@ public class MyMailRu extends PluginForHost {
         // More chunks possible but not needed because we're only downloading
         // pictures here
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         fixFilename(link);
@@ -372,7 +390,7 @@ public class MyMailRu extends PluginForHost {
     @SuppressWarnings("unused")
     private String generateVideoUrl_old(final DownloadLink dl) throws IOException {
         final Regex urlparts = new Regex(dl.getDownloadURL(), "video=/([^<>\"/]*?)/([^<>\"/]*?)/([^<>\"/]*?)/([^<>\"/]+)");
-        br.getPage("http://video.mail.ru/" + urlparts.getMatch(0) + "/" + urlparts.getMatch(1) + "/" + urlparts.getMatch(2) + "/" + urlparts.getMatch(3) + ".lite");
+        br.getPage("https://video.mail.ru/" + urlparts.getMatch(0) + "/" + urlparts.getMatch(1) + "/" + urlparts.getMatch(2) + "/" + urlparts.getMatch(3) + ".lite");
         final String srv = grabVar("srv");
         final String vcontentHost = grabVar("vcontentHost");
         final String key = grabVar("key");
@@ -380,7 +398,7 @@ public class MyMailRu extends PluginForHost {
         final String rk = rnd + key;
         final String tempHash = JDHash.getMD5(rk);
         final String pk = tempHash.substring(0, 9) + rnd;
-        DLLINK = "http://" + vcontentHost + "/" + urlparts.getMatch(0) + "/" + urlparts.getMatch(1) + "/" + urlparts.getMatch(2) + "/" + urlparts.getMatch(3) + "flv?k=" + pk + "&" + srv;
+        DLLINK = "https://" + vcontentHost + "/" + urlparts.getMatch(0) + "/" + urlparts.getMatch(1) + "/" + urlparts.getMatch(2) + "/" + urlparts.getMatch(3) + "flv?k=" + pk + "&" + srv;
         return DLLINK;
     }
 
@@ -392,11 +410,11 @@ public class MyMailRu extends PluginForHost {
     private String getVideoURL() throws Exception {
         String bestDirecturl = null;
         final String preferredQuality = getConfiguredQuality();
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final ArrayList<Object> videoQualities = (ArrayList) entries.get("videos");
         String directurl = null;
         for (final Object quality : videoQualities) {
-            final LinkedHashMap<String, Object> quality_map = (LinkedHashMap<String, Object>) quality;
+            final Map<String, Object> quality_map = (Map<String, Object>) quality;
             final String currDirectURL = (String) quality_map.get("url");
             final String qualityKey = (String) quality_map.get("key");
             if (StringUtils.isEmpty(currDirectURL) || StringUtils.isEmpty(qualityKey)) {

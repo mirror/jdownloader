@@ -167,6 +167,7 @@ public enum SplitType {
             exclude.add(parseIndex("zip"));
             exclude.add(parseIndex("rar"));
             exclude.add(parseIndex("bmp"));
+            exclude.add(parseIndex("html"));
             for (int index = 0; index < bitset.length(); index++) {
                 if (exclude.contains(Integer.valueOf(index))) {
                     /* exclude js,xz,db for validation */
