@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -31,7 +30,6 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "my.mail.ru" }, urls = { "https?://(?:www\\.)?my\\.mail\\.ru(?:decrypted)?/[^<>/\"]+/[^<>/\"]+/photo(?:\\?album_id=[a-z0-9\\-_]+)?" })
 public class MyMailRu extends PluginForDecrypt {
-
     public MyMailRu(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -44,7 +42,8 @@ public class MyMailRu extends PluginForDecrypt {
             setPackagename = false;
             parameter = parameter.replace("my.mail.rudecrypted/", "my.mail.ru/");
         }
-
+        // age check
+        br.setCookie(getHost(), "ero_accept", "1");
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
@@ -65,8 +64,8 @@ public class MyMailRu extends PluginForDecrypt {
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
-        final String username = new Regex(parameter, "http://(www\\.)?my\\.mail\\.ru/[^<>/\"]+/([^<>/\"]+)/.+").getMatch(1);
-        final String dirname = new Regex(parameter, "http://(www\\.)?my\\.mail\\.ru/([^<>/\"]+)/[^<>/\"]+/.+").getMatch(1);
+        final String username = new Regex(parameter, "https?://(www\\.)?my\\.mail\\.ru/[^<>/\"]+/([^<>/\"]+)/.+").getMatch(1);
+        final String dirname = new Regex(parameter, "https?://(www\\.)?my\\.mail\\.ru/([^<>/\"]+)/[^<>/\"]+/.+").getMatch(1);
         if (parameter.matches("http://(www\\.)?my\\.mail\\.ru/[^<>/\"]+/[^<>/\"]+/photo\\?album_id=[a-z0-9\\-_]+")) {
             /* Decrypt an album */
             if (br.containsHTML("class=oranzhe><b>Ошибка</b>")) {
@@ -75,10 +74,9 @@ public class MyMailRu extends PluginForDecrypt {
             }
             String fpName = br.getRegex("<h1 class=\"l\\-header1\">([^<>\"]*?)</h1>").getMatch(0);
             int offset = 0;
-            final Regex parameterStuff = new Regex(parameter, "http://(www\\.)?my\\.mail\\.ru/[^<>/\"]+/([^<>/\"]+)/photo\\?album_id=(.+)");
+            final Regex parameterStuff = new Regex(parameter, "https?://(www\\.)?my\\.mail\\.ru/[^<>/\"]+/([^<>/\"]+)/photo\\?album_id=(.+)");
             final String albumID = parameterStuff.getMatch(2);
             final double maxPicsPerSegment = Double.parseDouble(getData("imagesOffset"));
-
             final int imgCount = Integer.parseInt(getData("imagesTotal"));
             final int segmentCount = (int) StrictMath.ceil(imgCount / maxPicsPerSegment);
             int segment = 1;
@@ -86,14 +84,14 @@ public class MyMailRu extends PluginForDecrypt {
                 logger.info("Decrypting segment " + segment + " of maybe " + segmentCount + " segments...");
                 if (offset > 0) {
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    br.getPage("http://my.mail.ru/" + dirname + "/" + username + "/ajax?ajax_call=1&func_name=photo.photostream&mna=false&mnb=false&encoding=windows-1251&arg_offset=" + offset + "&arg_marker=" + new Random().nextInt(1000) + "&arg_album_id=" + albumID);
+                    br.getPage("https://my.mail.ru/" + dirname + "/" + username + "/ajax?ajax_call=1&func_name=photo.photostream&mna=false&mnb=false&encoding=windows-1251&arg_offset=" + offset + "&arg_marker=" + new Random().nextInt(1000) + "&arg_album_id=" + albumID);
                     br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                 }
                 final String[] items = br.getRegex("(<div class=\"l\\-catalog_item\" data\\-bubble\\-config=.*?</div>)").getColumn(0);
                 if (items != null && items.length != 0) {
                     for (final String item : items) {
                         final String url = new Regex(item, "style=\"background\\-image:url\\((http://content[a-z0-9\\-_\\.]+\\.my\\.mail\\.ru/[^<>\"]+p\\-\\d+\\.jpg)\\);").getMatch(0);
-                        final String mainlink = new Regex(item, "\"(http://my\\.mail\\.ru/[^<>\"]+/photo/\\d+/\\d+\\.html)\"").getMatch(0);
+                        final String mainlink = new Regex(item, "\"(https?://my\\.mail\\.ru/[^<>\"]+/photo/\\d+/\\d+\\.html)\"").getMatch(0);
                         if (url != null && mainlink != null) {
                             final String ending = getFileNameExtensionFromString(url);
                             final DownloadLink dl = createDownloadlink("http://my.mail.ru/jdeatme" + System.currentTimeMillis() + new Random().nextInt(100000));
@@ -158,7 +156,6 @@ public class MyMailRu extends PluginForDecrypt {
     }
 
     /** old album decrypt */
-
     // final int albumShowed = Integer.parseInt(getData("albumShowed"));
     // final int albumTotal = Integer.parseInt(getData("albumTotal"));
     // int segment = 1;
@@ -198,10 +195,8 @@ public class MyMailRu extends PluginForDecrypt {
     // }
     // segment++;
     // }
-
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
