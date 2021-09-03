@@ -23,8 +23,8 @@ public enum FileContainer implements LabelInterface, TooltipInterface {
     JPG("jpg", "JPEG Image"),
     SRT("srt", "Subtitle"),
     TXT("txt", "Text");
-    private String extension = null;
-    private String longLabel;
+    private final String extension;
+    private final String longLabel;
 
     private FileContainer(String fileExtension, String longLabel) {
         this.extension = fileExtension;
@@ -107,14 +107,16 @@ public enum FileContainer implements LabelInterface, TooltipInterface {
     }
 
     public static int getSortId(AbstractVariant v) {
-        FileContainer res = v.getContainer();
+        final FileContainer res = v.getContainer();
         if (res == null) {
             return -1;
+        } else {
+            final Object intObj = YT_STATICS.SORTIDS_FILE_CONTAINER.get(res);
+            if (intObj == null) {
+                return -1;
+            } else {
+                return ((Number) intObj).intValue();
+            }
         }
-        Object intObj = YT_STATICS.SORTIDS_FILE_CONTAINER.get(res);
-        if (intObj == null) {
-            return -1;
-        }
-        return ((Number) intObj).intValue();
     }
 }
