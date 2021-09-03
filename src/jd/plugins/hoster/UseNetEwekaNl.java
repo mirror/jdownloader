@@ -37,7 +37,8 @@ public class UseNetEwekaNl extends UseNet {
     public static interface EwekaNlConfigInterface extends UsenetAccountConfigInterface {
     };
 
-    private final String USENET_USERNAME = "USENET_USERNAME";
+    private final String USENET_USERNAME            = "USENET_USERNAME";
+    private final String PROPERTY_USED_COOKIE_LOGIN = "used_cookie_login";
 
     @Override
     protected String getUseNetUsername(Account account) {
@@ -67,9 +68,15 @@ public class UseNetEwekaNl extends UseNet {
         }
         if (userName == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
-            account.setProperty(USENET_USERNAME, userName);
         }
+        /*
+         * When using cookie login user can enter whatever he wants into username field but we try to have unique usernames so user cannot
+         * add same account twice.
+         */
+        if (account.hasProperty(PROPERTY_USED_COOKIE_LOGIN)) {
+            account.setUser(userName);
+        }
+        account.setProperty(USENET_USERNAME, userName);
         String validUntil = br.getRegex("<td><b>Valid until</b></td>.*?<td.*?>\\s*?(\\d{2}-\\d{2}-\\d{4} \\d{2}:\\d{2})").getMatch(0);
         if (validUntil == null) {
             /* 2020-01-21 */
@@ -121,12 +128,14 @@ public class UseNetEwekaNl extends UseNet {
             if (checkLogin(br, userCookies)) {
                 logger.info("Successfully loggedin via user cookies");
                 account.saveCookies(br.getCookies(getHost()), "");
+                account.setProperty(PROPERTY_USED_COOKIE_LOGIN, true);
                 return;
             } else {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
         logger.info("Performing full login");
+        account.removeProperty(PROPERTY_USED_COOKIE_LOGIN);
         getPage("https://www." + this.getHost() + "/myeweka/?lang=en");
         final Form loginform = br.getFormbyProperty("id", "login-form");
         if (loginform == null) {
