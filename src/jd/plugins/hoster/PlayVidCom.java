@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -35,6 +36,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -142,7 +144,7 @@ public class PlayVidCom extends PluginForHost {
 
     private void doDownload(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        final String qualityvalue = link.getStringProperty("qualityvalue", null);
+        final String qualityvalue = link.getStringProperty("qualityvalue");
         if (qualityvalue == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -184,11 +186,15 @@ public class PlayVidCom extends PluginForHost {
             if (quality_720.equals(qualityvalue) && account == null) {
                 /* Should never happen! */
                 logger.info("User is not logged in but tries to download a quality which needs login");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                throw new AccountRequiredException();
             } else {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-                if (dl.getConnection().getContentType().contains("html")) {
-                    br.followConnection();
+                if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                    try {
+                        br.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
@@ -199,14 +205,14 @@ public class PlayVidCom extends PluginForHost {
     public static final boolean isOffline(final Browser br) {
         if (br.containsHTML("Video not found<|>This video has been removed|class=\"play\\-error\"|class=\"error\\-sorry\"") || br.getHttpConnection().getResponseCode() == 404) {
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     public void login(final Browser br, final Account account, final boolean verify) throws Exception {
         synchronized (account) {
             try {
-                // Load cookies
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {

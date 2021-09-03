@@ -16,12 +16,22 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.PorndigComConfig;
+import org.jdownloader.plugins.components.config.PorndigComConfig.PreferredQuality;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -30,12 +40,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porndig.com" }, urls = { "https?://(?:www\\.)?porndig\\.com/videos/\\d+/[a-z0-9\\-]+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porndig.com" }, urls = { "https?://(?:www\\.)?porndig\\.com/videos/(\\d+)/([a-z0-9\\-]+)\\.html" })
 public class PorndigCom extends PluginForHost {
     public PorndigCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -44,156 +49,184 @@ public class PorndigCom extends PluginForHost {
     /* DEV NOTES */
     // Tags:
     // protocol: no https
-    // other:
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_extension = ".mp4";
+    // other: porn plugin
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
-    private boolean              server_issues     = false;
+    private static final boolean free_resume                   = true;
+    private static final int     free_maxchunks                = 0;
+    private static final int     free_maxdownloads             = -1;
+    private static final String  PROPERTY_CHOSEN_VIDEO_QUALITY = "quality";
 
     @Override
     public String getAGBLink() {
         return "https://www.porndig.com/tos";
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        dllink = null;
-        server_issues = false;
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String url_filename = new Regex(link.getDownloadURL(), "videos/\\d+/([a-z0-9\\-]+)").getMatch(0);
-        String filename = br.getRegex("<title>([^<>\"]+) \\- PornDig\\.com</title>").getMatch(0);
-        if (filename == null) {
-            filename = url_filename;
-        }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        final String ext;
-        if (!StringUtils.isEmpty(dllink)) {
-            ext = getFileNameExtensionFromString(dllink, default_extension);
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
         } else {
-            ext = default_extension;
+            return super.getLinkID(link);
         }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
-        link.setFinalFileName(filename);
-        return AvailableStatus.TRUE;
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final String urlTitle = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+        link.setFinalFileName(urlTitle.replace("-", " ") + ".mp4");
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_embed = this.br.getRegex("<iframe[^<>]*?src=\"(http[^<>\"]+player/[^<>\"]+)\"").getMatch(0);
-        if (url_embed == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        getOfficialDownloadurlAndSetFilesize(link);
+        return AvailableStatus.TRUE;
+    }
+
+    private String getOfficialDownloadurlAndSetFilesize(final DownloadLink link) {
+        final String[] htmls = br.getRegex("<a href=\"[^\"]+/download/[^\"]+\"[^>]*><span class=\"link_name\">.*?</a>").getColumn(-1);
+        long bestFilesize = -1;
+        String bestDownloadurl = null;
+        String bestqualityName = null;
+        final String userPreferredQuality = getConfiguredQualityStringForOfficialDownloads();
+        for (final String html : htmls) {
+            final String url = new Regex(html, "\"(https?://[^/]+/download/[^\"]+)\"").getMatch(0);
+            String qualityName = new Regex(html, "class=\"link_name\">\\s*([A-Za-z0-9 ]+)").getMatch(0);
+            final String filesizeStr = new Regex(html, "class=\"file_size\">(\\d+ [A-Z]{1,5})</span>").getMatch(0);
+            if (url == null || qualityName == null || filesizeStr == null) {
+                /* Skip invalid items */
+                continue;
+            }
+            /* "UDH 4K " --> "UHD 4K" */
+            qualityName = qualityName.trim();
+            final long filesizeTmp = SizeFormatter.getSize(filesizeStr);
+            if (filesizeTmp > bestFilesize) {
+                bestFilesize = filesizeTmp;
+                bestDownloadurl = url;
+                bestqualityName = qualityName;
+            }
+            if (StringUtils.equals(qualityName, userPreferredQuality)) {
+                logger.info("Found user preferred quality: " + userPreferredQuality);
+                saveChosenQualityIdentifier(link, userPreferredQuality);
+                link.setDownloadSize(filesizeTmp);
+                return url;
+            }
         }
-        br.getPage(url_embed);
-        final String jssource = br.getRegex("\"sources\"[\t\n\r ]*?:[\t\n\r ]*?(\\[.*?\\])").getMatch(0);
-        if (jssource != null) {
-            try {
-                HashMap<String, Object> entries = null;
-                Object quality_temp_o = null;
-                long quality_temp = 0;
-                long quality_best = 0;
-                String dllink_temp = null;
-                final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(jssource);
-                for (final Object videoo : ressourcelist) {
-                    entries = (HashMap<String, Object>) videoo;
-                    dllink_temp = (String) entries.get("file");
-                    if (dllink_temp == null) {
-                        /* 2019-01-29 */
-                        dllink_temp = (String) entries.get("src");
-                    }
-                    quality_temp_o = entries.get("res");
-                    if (quality_temp_o == null) {
-                        quality_temp_o = entries.get("label");
-                    }
-                    if (quality_temp_o != null && quality_temp_o instanceof Number) {
-                        quality_temp = JavaScriptEngineFactory.toLong(quality_temp_o, 0);
-                    } else if (quality_temp_o != null && quality_temp_o instanceof String) {
-                        if (StringUtils.equalsIgnoreCase("4k", (String) quality_temp_o)) {
-                            quality_temp = 2160;
-                        } else {
-                            /* E.g. '360p' */
-                            quality_temp = Long.parseLong(new Regex((String) quality_temp_o, "(\\d+)p").getMatch(0));
+        if (bestDownloadurl == null) {
+            /* Probably website layout changes and fix required. */
+            logger.warning("Failed to find any official downloads");
+            return null;
+        } else {
+            logger.info("Using BEST quality:" + bestqualityName);
+            saveChosenQualityIdentifier(link, bestqualityName);
+            link.setDownloadSize(bestFilesize);
+            return bestDownloadurl;
+        }
+    }
+
+    private void saveChosenQualityIdentifier(final DownloadLink link, final String qualityName) {
+        if (qualityName != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            link.setComment(qualityName);
+        }
+        link.setProperty(PROPERTY_CHOSEN_VIDEO_QUALITY, qualityName);
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        String dllink = getOfficialDownloadurlAndSetFilesize(link);
+        if (dllink != null) {
+            logger.info("Downloading via official downloadurl");
+        } else {
+            logger.info("Failed to find official downloadurl --> Looking for stream downloadlink");
+            final String url_embed = this.br.getRegex("<iframe[^<>]*?src=\"(http[^<>\"]+player/[^<>\"]+)\"").getMatch(0);
+            if (url_embed == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage(url_embed);
+            final String jssource = br.getRegex("\"sources\"\\s*:\\s*(\\[.*?\\])").getMatch(0);
+            if (jssource != null) {
+                try {
+                    Map<String, Object> entries = null;
+                    long qualityBest = 0;
+                    final List<Object> ressourcelist = (List) JavaScriptEngineFactory.jsonToJavaObject(jssource);
+                    final String userPreferredQuality = getConfiguredQualityStringForStreamDownloads();
+                    for (final Object videoo : ressourcelist) {
+                        entries = (Map<String, Object>) videoo;
+                        final String dllinkTmp = (String) entries.get("src");
+                        final long qualityNumberTemp = ((Number) entries.get("res")).longValue();
+                        final String qualityNameTmp = (String) entries.get("label");
+                        if (StringUtils.isEmpty(dllinkTmp) || qualityNumberTemp == 0 || StringUtils.isEmpty(qualityNameTmp)) {
+                            continue;
+                        }
+                        if (StringUtils.equals(qualityNameTmp, userPreferredQuality)) {
+                            logger.info("Found user preferred quality: " + userPreferredQuality);
+                            dllink = dllinkTmp;
+                            break;
+                        }
+                        if (qualityNumberTemp > qualityBest) {
+                            qualityBest = qualityNumberTemp;
+                            dllink = dllinkTmp;
                         }
                     }
-                    if (StringUtils.isEmpty(dllink_temp) || quality_temp == 0) {
-                        continue;
+                    if (!StringUtils.isEmpty(dllink)) {
+                        logger.info("Handling for multiple video stream sources succeeded");
                     }
-                    if (quality_temp > quality_best) {
-                        quality_best = quality_temp;
-                        dllink = dllink_temp;
-                    }
+                } catch (final Throwable e) {
+                    logger.log(e);
+                    logger.info("BEST handling for multiple video source failed");
                 }
-                if (!StringUtils.isEmpty(dllink)) {
-                    logger.info("BEST handling for multiple video source succeeded");
-                }
-            } catch (final Throwable e) {
-                logger.log(e);
-                logger.info("BEST handling for multiple video source failed");
-            }
-        } else {
-            // <video> <source
-            int best = 0;
-            String hls = null;
-            final String[] sources = br.getRegex("<source[^>]+>").getColumn(-1);
-            if (sources != null && sources.length > 0) {
-                for (final String source : sources) {
-                    final String url = new Regex(source, "src\\s*=\\s*('|\")(.*?)\\1").getMatch(1);
-                    if (url.contains(".m3u8")) {
-                        // typically this is single entry.
-                        hls = url;
-                        continue;
+            } else {
+                // <video> <source
+                int best = 0;
+                String hls = null;
+                final String[] sources = br.getRegex("<source[^>]+>").getColumn(-1);
+                if (sources != null && sources.length > 0) {
+                    for (final String source : sources) {
+                        final String url = new Regex(source, "src\\s*=\\s*('|\")(.*?)\\1").getMatch(1);
+                        if (url.contains(".m3u8")) {
+                            // typically this is single entry.
+                            hls = url;
+                            continue;
+                        }
+                        final String label = new Regex(source, "label\\s*=\\s*('|\")(\\d+)p?\\1").getMatch(1);
+                        if (label == null || url == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        final int p = Integer.parseInt(label);
+                        if (best < p) {
+                            dllink = url;
+                            best = p;
+                        }
                     }
-                    final String label = new Regex(source, "label\\s*=\\s*('|\")(\\d+)p?\\1").getMatch(1);
-                    if (label == null || url == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    // prefer non hls over hls, as hls core can't chunk at this stage.
+                    if (dllink == null && hls != null) {
+                        // hls has multiple qualities....
+                        final Browser br2 = br.cloneBrowser();
+                        br2.getPage(hls);
+                        final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br2));
+                        if (hlsbest == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        dllink = hlsbest.getDownloadurl();
                     }
-                    final int p = Integer.parseInt(label);
-                    if (best < p) {
-                        dllink = url;
-                        best = p;
-                    }
-                }
-                // prefer non hls over hls, as hls core can't chunk at this stage.
-                if (dllink == null && hls != null) {
-                    // hls has multiple qualities....
-                    final Browser br2 = br.cloneBrowser();
-                    br2.getPage(hls);
-                    final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br2));
-                    if (hlsbest == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    dllink = hlsbest.getDownloadurl();
                 }
             }
         }
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (dllink.contains("m3u8") || dllink.contains("//ahhls.") || dllink.contains("media=hls")) {
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, dllink);
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, dllink);
             dl.startDownload();
         } else {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, free_resume, free_maxchunks);
             if (!looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection(true);
@@ -209,6 +242,63 @@ public class PorndigCom extends PluginForHost {
                 }
             }
             dl.startDownload();
+        }
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return PorndigComConfig.class;
+    }
+
+    protected String getConfiguredQualityStringForOfficialDownloads() {
+        /* Returns user-set value which can be used to circumvent government based GEO-block. */
+        final PreferredQuality cfgquality = PluginJsonConfig.get(PorndigComConfig.class).getPreferredQuality();
+        if (cfgquality == null) {
+            return null;
+        } else {
+            switch (cfgquality) {
+            case Q270P:
+                return "270p";
+            case Q360P:
+                return "360p";
+            case Q540P:
+                return "540p";
+            case Q720P:
+                return "720p";
+            case Q1080P:
+                return "1080p";
+            case UHD4K:
+                return "UHD 4K";
+            case BEST:
+            default:
+                return null;
+            }
+        }
+    }
+
+    protected String getConfiguredQualityStringForStreamDownloads() {
+        /* Returns user-set value which can be used to circumvent government based GEO-block. */
+        final PreferredQuality cfgquality = PluginJsonConfig.get(PorndigComConfig.class).getPreferredQuality();
+        if (cfgquality == null) {
+            return null;
+        } else {
+            switch (cfgquality) {
+            case Q270P:
+                return "270p";
+            case Q360P:
+                return "360p";
+            case Q540P:
+                return "540p";
+            case Q720P:
+                return "720p";
+            case Q1080P:
+                return "1080p";
+            case UHD4K:
+                return "4K";
+            case BEST:
+            default:
+                return null;
+            }
         }
     }
 

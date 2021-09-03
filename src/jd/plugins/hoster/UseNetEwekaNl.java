@@ -10,6 +10,7 @@ import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -43,94 +44,117 @@ public class UseNetEwekaNl extends UseNet {
         return account.getStringProperty(USENET_USERNAME, account.getUser());
     }
 
-    private boolean isLoggedIN() {
-        String logintoken = br.getCookie(getHost(), "auth-token", Cookies.NOTDELETEDPATTERN);
-        return !StringUtils.isEmpty(logintoken) && !logintoken.equals("\"\"");
-    }
-
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setBrowserExclusive();
         final AccountInfo ai = new AccountInfo();
-        br.setFollowRedirects(true);
-        final Cookies cookies = account.loadCookies("");
-        try {
-            if (cookies != null) {
-                logger.info("Checking login cookies");
-                br.setCookies(getHost(), cookies);
-                getPage("https://www." + this.getHost() + "/en/myeweka?p=pro");
-                if (!isLoggedIN()) {
-                    logger.info("Failed to login via cookies");
-                    br.getCookies(getHost()).clear();
-                } else {
-                    logger.info("Successfully loggedin via cookies");
-                }
+        login(account, true);
+        // final String server = br.getRegex("<td><b>Server</b></td>.*?<td.*?>(.*?)</td>").getMatch(0);
+        // final String port = br.getRegex("<td><b>Port</b></td>.*?<td.*?>(\\d+)</td>").getMatch(0);
+        // TODO: use these infos for available servers
+        getPage("/myeweka?p=acd");
+        final String connections = br.getRegex("<td><b>Connections</b></td>.*?<td.*?>(\\d+)</td>").getMatch(0);
+        if (connections != null) {
+            account.setMaxSimultanDownloads(Integer.parseInt(connections));
+        } else {
+            /* Fallback */
+            account.setMaxSimultanDownloads(8);
+        }
+        String userName = br.getRegex("name=\"username\" value=\"([^<>\"]+)\"").getMatch(0);
+        if (userName == null) {
+            /* Final fallback */
+            userName = account.getUser();
+        }
+        if (userName == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            account.setProperty(USENET_USERNAME, userName);
+        }
+        String validUntil = br.getRegex("<td><b>Valid until</b></td>.*?<td.*?>\\s*?(\\d{2}-\\d{2}-\\d{4} \\d{2}:\\d{2})").getMatch(0);
+        if (validUntil == null) {
+            /* 2020-01-21 */
+            validUntil = br.getRegex(">Next billing at</b></td>\\s*<td>(\\d{2}-\\d{2}-\\d{4} \\d{2}:\\d{2})").getMatch(0);
+        }
+        if (validUntil == null) {
+            /* 2020-01-21 - wide open RegEx as fallback */
+            validUntil = br.getRegex("(\\d{2}-\\d{2}-\\d{4} \\d{2}:\\d{2})").getMatch(0);
+        }
+        if (validUntil != null) {
+            final long date = TimeFormatter.getMilliSeconds(validUntil, "dd'-'MM'-'yyyy' 'HH:mm", null);
+            if (date > 0) {
+                ai.setValidUntil(date, br);
             }
-            if (!isLoggedIN()) {
-                logger.info("Performing full login");
-                account.clearCookies("");
-                getPage("https://www." + this.getHost() + "/myeweka/?lang=en");
-                final Form loginform = br.getFormbyProperty("id", "login-form");
-                if (loginform == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                loginform.setMethod(MethodType.POST);
-                loginform.put("identifier", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                submitForm(loginform);
-                if (!isLoggedIN()) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            }
-            account.saveCookies(br.getCookies(getHost()), "");
-            // final String server = br.getRegex("<td><b>Server</b></td>.*?<td.*?>(.*?)</td>").getMatch(0);
-            // final String port = br.getRegex("<td><b>Port</b></td>.*?<td.*?>(\\d+)</td>").getMatch(0);
-            // TODO: use these infos for available servers
-            getPage("/myeweka?p=acd");
-            final String connections = br.getRegex("<td><b>Connections</b></td>.*?<td.*?>(\\d+)</td>").getMatch(0);
-            if (connections != null) {
-                account.setMaxSimultanDownloads(Integer.parseInt(connections));
-            } else {
-                /* Fallback */
-                account.setMaxSimultanDownloads(8);
-            }
-            String userName = br.getRegex("name=\"username\" value=\"([^<>\"]+)\"").getMatch(0);
-            if (userName == null) {
-                /* Final fallback */
-                userName = account.getUser();
-            }
-            if (userName == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else {
-                account.setProperty(USENET_USERNAME, userName);
-            }
-            String validUntil = br.getRegex("<td><b>Valid until</b></td>.*?<td.*?>\\s*?(\\d{2}-\\d{2}-\\d{4} \\d{2}:\\d{2})").getMatch(0);
-            if (validUntil == null) {
-                /* 2020-01-21 */
-                validUntil = br.getRegex(">Next billing at</b></td>\\s*<td>(\\d{2}-\\d{2}-\\d{4} \\d{2}:\\d{2})").getMatch(0);
-            }
-            if (validUntil == null) {
-                /* 2020-01-21 - wide open RegEx as fallback */
-                validUntil = br.getRegex("(\\d{2}-\\d{2}-\\d{4} \\d{2}:\\d{2})").getMatch(0);
-            }
-            if (validUntil != null) {
-                final long date = TimeFormatter.getMilliSeconds(validUntil, "dd'-'MM'-'yyyy' 'HH:mm", null);
-                if (date > 0) {
-                    ai.setValidUntil(date, br);
-                }
-                account.setType(AccountType.PREMIUM);
-            } else {
-                account.setType(AccountType.FREE);
-                ai.setTrafficLeft(0);
-            }
-        } catch (final PluginException e) {
-            if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                account.clearCookies("");
-            }
-            throw e;
+            account.setType(AccountType.PREMIUM);
+        } else {
+            account.setType(AccountType.FREE);
+            ai.setTrafficLeft(0);
         }
         ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
         return ai;
+    }
+
+    private void login(final Account account, final boolean verifyCookies) throws Exception {
+        br.setFollowRedirects(true);
+        final Cookies cookies = account.loadCookies("");
+        /* 2021-09-03: Added cookie login as possible workaround for them using Cloudflare on login page. */
+        final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+        if (cookies != null) {
+            if (!verifyCookies) {
+                logger.info("Trust login cookies without check");
+                br.setCookies(cookies);
+                return;
+            }
+            logger.info("Checking login cookies");
+            if (checkLogin(br, cookies)) {
+                logger.info("Failed to login via cookies");
+                /* Delete old cookies */
+                account.clearCookies("");
+                br.getCookies(getHost()).clear();
+            } else {
+                logger.info("Successfully loggedin via cookies");
+                account.saveCookies(br.getCookies(getHost()), "");
+                return;
+            }
+        }
+        if (userCookies != null) {
+            logger.info("Checking login user cookies");
+            if (checkLogin(br, userCookies)) {
+                logger.info("Successfully loggedin via user cookies");
+                account.saveCookies(br.getCookies(getHost()), "");
+                return;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
+        logger.info("Performing full login");
+        getPage("https://www." + this.getHost() + "/myeweka/?lang=en");
+        final Form loginform = br.getFormbyProperty("id", "login-form");
+        if (loginform == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        loginform.setMethod(MethodType.POST);
+        loginform.put("identifier", Encoding.urlEncode(account.getUser()));
+        loginform.put("password", Encoding.urlEncode(account.getPass()));
+        submitForm(loginform);
+        if (!isLoggedIN(br)) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        account.saveCookies(br.getCookies(getHost()), "");
+    }
+
+    private boolean checkLogin(final Browser br, final Cookies cookies) throws Exception {
+        br.setCookies(cookies);
+        getPage("https://www." + this.getHost() + "/en/myeweka?p=pro");
+        if (isLoggedIN(br)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private boolean isLoggedIN(final Browser br) {
+        String logintoken = br.getCookie(getHost(), "auth-token", Cookies.NOTDELETEDPATTERN);
+        return !StringUtils.isEmpty(logintoken) && !logintoken.equals("\"\"");
     }
 
     @Override
