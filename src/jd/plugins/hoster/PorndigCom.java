@@ -15,13 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -33,6 +29,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porndig.com" }, urls = { "https?://(?:www\\.)?porndig\\.com/videos/\\d+/[a-z0-9\\-]+\\.html" })
 public class PorndigCom extends PluginForHost {
@@ -120,12 +121,19 @@ public class PorndigCom extends PluginForHost {
                         /* 2019-01-29 */
                         dllink_temp = (String) entries.get("src");
                     }
-                    quality_temp_o = entries.get("label");
-                    if (quality_temp_o != null && quality_temp_o instanceof Long) {
+                    quality_temp_o = entries.get("res");
+                    if (quality_temp_o == null) {
+                        quality_temp_o = entries.get("label");
+                    }
+                    if (quality_temp_o != null && quality_temp_o instanceof Number) {
                         quality_temp = JavaScriptEngineFactory.toLong(quality_temp_o, 0);
                     } else if (quality_temp_o != null && quality_temp_o instanceof String) {
-                        /* E.g. '360p' */
-                        quality_temp = Long.parseLong(new Regex((String) quality_temp_o, "(\\d+)p").getMatch(0));
+                        if (StringUtils.equalsIgnoreCase("4k", (String) quality_temp_o)) {
+                            quality_temp = 2160;
+                        } else {
+                            /* E.g. '360p' */
+                            quality_temp = Long.parseLong(new Regex((String) quality_temp_o, "(\\d+)p").getMatch(0));
+                        }
                     }
                     if (StringUtils.isEmpty(dllink_temp) || quality_temp == 0) {
                         continue;
@@ -139,6 +147,7 @@ public class PorndigCom extends PluginForHost {
                     logger.info("BEST handling for multiple video source succeeded");
                 }
             } catch (final Throwable e) {
+                logger.log(e);
                 logger.info("BEST handling for multiple video source failed");
             }
         } else {
@@ -179,25 +188,25 @@ public class PorndigCom extends PluginForHost {
         }
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (dllink.contains("m3u8") || dllink.contains("//ahhls.") || dllink.contains("media=hls")) {
+        } else if (dllink.contains("m3u8") || dllink.contains("//ahhls.") || dllink.contains("media=hls")) {
             checkFFmpeg(downloadLink, "Download a HLS Stream");
             dl = new HLSDownloader(downloadLink, br, dllink);
             dl.startDownload();
         } else {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br.followConnection();
-                try {
-                    dl.getConnection().disconnect();
-                } catch (final Throwable e) {
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
         }
