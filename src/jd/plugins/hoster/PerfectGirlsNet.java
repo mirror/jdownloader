@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "perfectgirls.net" }, urls = { "https?://(?:[a-z]+\\.)?perfectgirls\\.net/(?:gal/)?(\\d+)(/([A-Za-z0-9\\-_]+))?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "perfectgirls.net" }, urls = { "https?://(?:[a-z]+\\.)?perfectgirls\\.net/(?:gal/)?(\\d{2,})(/([A-Za-z0-9\\-_]+))?" })
 public class PerfectGirlsNet extends PluginForHost {
     public PerfectGirlsNet(PluginWrapper wrapper) {
         super(wrapper);
