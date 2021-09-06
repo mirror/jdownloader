@@ -11,6 +11,7 @@ import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
 import jd.plugins.DownloadLink;
@@ -40,7 +41,9 @@ public class FEmbedCom extends PluginForHost {
         return "https://www.fembed.com/";
     }
 
-    private String url = null;
+    private String  url       = null;
+    private boolean resume    = true;
+    private int     maxchunks = 1;
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -48,12 +51,19 @@ public class FEmbedCom extends PluginForHost {
         link.setUrlDownload(url);
     }
 
+    public static final String PROPERTY_DIRECTURL = "directurl";
+
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
-        String file_id = new Regex(parameter.getPluginPatternMatcher(), "/(?:f|v)/([a-zA-Z0-9_-]+)").getMatch(0);
-        final String fembedHost = parameter.getStringProperty("fembedHost", getHost());
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (checkDirectLink(link) != null) {
+            logger.info("Linkcheck via directurly SUCCESS");
+            return AvailableStatus.TRUE;
+        }
+        String fileID = new Regex(link.getPluginPatternMatcher(), "/(?:f|v)/([a-zA-Z0-9_-]+)").getMatch(0);
+        final String fembedHost = link.getStringProperty("fembedHost", getHost());
+        jd.plugins.decrypter.FEmbedDecrypter.setRequestLimit(fembedHost);
         br.setFollowRedirects(true);
-        final PostRequest postRequest = new PostRequest("https://" + fembedHost + "/api/source/" + file_id);
+        final PostRequest postRequest = new PostRequest("https://" + fembedHost + "/api/source/" + fileID);
         final Map<String, Object> response = JSonStorage.restoreFromString(br.getPage(postRequest), TypeRef.HASHMAP);
         if (!Boolean.TRUE.equals(response.get("success"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -64,7 +74,8 @@ public class FEmbedCom extends PluginForHost {
         } else {
             videos = (List<Map<String, Object>>) response.get("data");
         }
-        final String searchLabel = parameter.getStringProperty("label", null);
+        final String searchLabel = link.getStringProperty("label");
+        final boolean isDownload = (Thread.currentThread() instanceof SingleDownloadController);
         for (Map<String, Object> video : videos) {
             final String label = (String) video.get("label");
             final String file = (String) video.get("file");
@@ -73,12 +84,12 @@ public class FEmbedCom extends PluginForHost {
                 if (url.startsWith("/")) {
                     url = "https://www." + fembedHost + url;
                 }
-                if (!(Thread.currentThread() instanceof SingleDownloadController)) {
+                if (!isDownload) {
                     final URLConnectionAdapter con = br.cloneBrowser().openHeadConnection(file);
                     try {
                         if (this.looksLikeDownloadableContent(con)) {
                             if (con.getCompleteContentLength() > 0) {
-                                parameter.setVerifiedFileSize(con.getCompleteContentLength());
+                                link.setVerifiedFileSize(con.getCompleteContentLength());
                             }
                         } else {
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -93,23 +104,78 @@ public class FEmbedCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
+    private String checkDirectLink(final DownloadLink link) {
+        String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    return dllink;
+                } else {
+                    throw new IOException();
+                }
+            } catch (final Exception e) {
+                logger.log(e);
+                return null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
+            }
+        }
+        return null;
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        br.clearAuthentications();
-        if (url == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 1);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
+        if (!attemptStoredDownloadurlDownload(link)) {
+            requestFileInformation(link);
+            br.clearAuthentications();
+            if (url == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, resume, maxchunks);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl.startDownload();
+    }
+
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link) throws Exception {
+        final String url = link.getStringProperty(PROPERTY_DIRECTURL);
+        if (StringUtils.isEmpty(url)) {
+            return false;
+        }
+        try {
+            final Browser brc = br.cloneBrowser();
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resume, maxchunks);
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                return true;
+            } else {
+                link.removeProperty(PROPERTY_DIRECTURL);
+                brc.followConnection(true);
+                throw new IOException();
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+            try {
+                dl.getConnection().disconnect();
+            } catch (Throwable ignore) {
+            }
+            return false;
+        }
     }
 
     @Override

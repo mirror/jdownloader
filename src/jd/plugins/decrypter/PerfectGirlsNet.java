@@ -23,7 +23,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "perfectgirls.net", "perfektdamen.co" }, urls = { "https?://([a-z]+\\.)?(perfectgirls\\.net/\\d+/|(www|wwr|ipad|m)\\.perfectgirls\\.net/gal/\\d+/[A-Za-z0-9\\-_]+)", "https?://(?:www\\.)?perfektdamen\\.co/gal/\\d+/[A-Za-z0-9\\-_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "perfectgirls.net", "perfektdamen.co" }, urls = { "https?://([a-z]+\\.)?(perfectgirls\\.net/\\d{2,}/|(www|wwr|ipad|m)\\.perfectgirls\\.net/gal/\\d+/[A-Za-z0-9\\-_]+)", "https?://(?:www\\.)?perfektdamen\\.co/gal/\\d+/[A-Za-z0-9\\-_]+" })
 public class PerfectGirlsNet extends PornEmbedParser {
     public PerfectGirlsNet(PluginWrapper wrapper) {
         super(wrapper);

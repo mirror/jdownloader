@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhd.com" }, urls = { "https?://(?:www\\.)?pornhd\\.com/(videos/\\d+/[^/]+|video/embed/\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhd.com" }, urls = { "https?://(?:www\\.)?pornhd\\.com/(videos/\\d+/[a-z0-9\\-]+|video/embed/\\d+)" })
 public class PornhdCom extends PluginForHost {
     public PornhdCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,13 +48,31 @@ public class PornhdCom extends PluginForHost {
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
     private boolean              server_issues     = false;
-
     /* 2020-04-30: Do not modify added URLs anymore! This may corrupt them and lead to http response 404! */
     // public void correctDownloadLink(final DownloadLink link) {
     // final String fid = getFID(link);
     // link.setLinkID(this.getHost() + "://" + fid);
     // link.setPluginPatternMatcher("https://www.pornhd.com/videos/" + fid);
     // }
+
+    private String getFallbackTitle(final DownloadLink link) {
+        if (link.getPluginPatternMatcher() == null) {
+            return null;
+        } else if (link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_EMBED).getMatch(0);
+        } else {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(1).replace("-", " ");
+        }
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "https://www.pornhd.com/legal/terms";
+    }
+
+    private static final String TYPE_EMBED  = "https?://[^/]+/video/embed/(\\d+)";
+    private static final String TYPE_NORMAL = "https?://[^/]+/videos/(\\d+)/([a-z0-9\\-]+)";
+
     @Override
     public String getLinkID(final DownloadLink link) {
         final String linkid = getFID(link);
@@ -66,20 +84,20 @@ public class PornhdCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "(?:video/embed/|videos/)(\\d+)").getMatch(0);
-    }
-
-    private String getTitleURL(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "/videos/\\d+/(.+)").getMatch(0);
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "https://www.pornhd.com/legal/terms";
+        if (link.getPluginPatternMatcher() == null) {
+            return null;
+        } else if (link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_EMBED).getMatch(0);
+        } else {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(0);
+        }
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(getFallbackTitle(link) + ".mp4");
+        }
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -88,50 +106,41 @@ public class PornhdCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("name=\"og:title\" content=\"([^<>\"]*?) \\- HD porn video \\| PornHD\"").getMatch(0);
-        if (filename == null) {
-            /* Fallback1 */
-            filename = new Regex(br.getURL(), "/videos/\\d+/(.+)").getMatch(0);
-            if (filename != null) {
-                /* Make our fallback name look 'nicer'. */
-                filename = filename.replace("-", " ");
-            }
-        }
-        if (filename == null) {
-            /* Fallback2 */
-            filename = this.getFID(link);
-        }
         final String[] qualities = { "1080p", "720p", "480p", "360p", "240p" };
         for (final String quality : qualities) {
             dllink = br.getRegex("(?:\\'|\")" + quality + "(?:\\'|\")\\s*:\\s*(?:\\'|\")((https?|.?/)[^<>\"]*?)(?:\\'|\")").getMatch(0);
             if (dllink == null) {
                 /* 2020-04-30 */
-                dllink = br.getRegex("<source.*?src=\"(.*?)\"[^\"]*?label='" + quality + "").getMatch(0);
+                dllink = br.getRegex("<source[^>]*src=\"([^\"]+)\"[^>]*label='" + quality + "").getMatch(0);
             }
             if (dllink != null) {
                 break;
             }
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename);
+            filename = filename.trim();
+            filename = encodeUnicode(filename);
+            final String ext = ".mp4";
+            if (!filename.endsWith(ext)) {
+                filename += ext;
+            }
+            link.setFinalFileName(filename);
         }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        final String ext = ".mp4";
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
-        link.setFinalFileName(filename);
-        if (!StringUtils.isEmpty(dllink)) {
+        /* 2021-09-06: Disabled as their fileservers are very slow. */
+        final boolean checkFilesize = false;
+        if (!StringUtils.isEmpty(dllink) && checkFilesize) {
             dllink = Encoding.htmlDecode(dllink).replaceAll("\\\\", "");
             link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
+                if (!this.looksLikeDownloadableContent(con)) {
                     server_issues = true;
                 } else {
-                    link.setDownloadSize(con.getLongContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                     /* 2019-10-28: Redirects to final downloadurl */
                     dllink = con.getURL().toString();
                 }
@@ -146,21 +155,25 @@ public class PornhdCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {

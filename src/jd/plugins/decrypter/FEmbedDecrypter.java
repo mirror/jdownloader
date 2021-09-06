@@ -64,6 +64,21 @@ public class FEmbedDecrypter extends PluginForDecrypt {
     }
 
     @Override
+    public void init() {
+        super.init();
+        /* 2021-09-06: Without this we'll run into their rate-limit very fast! */
+        for (final String[] domainlist : getPluginDomains()) {
+            for (final String domain : domainlist) {
+                setRequestLimit(domain);
+            }
+        }
+    }
+
+    public static void setRequestLimit(final String domain) {
+        Browser.setRequestIntervalLimitGlobal(domain, true, 8000);
+    }
+
+    @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
@@ -116,12 +131,20 @@ public class FEmbedDecrypter extends PluginForDecrypt {
             final DownloadLink link = createDownloadlink(param.getCryptedUrl().replaceAll("https?://", "decryptedforFEmbedHosterPlugin://"));
             final String label = (String) video.get("label");
             final String type = (String) video.get("type");
+            String directurl = (String) video.get("file");
+            if (directurl != null && directurl.startsWith("/")) {
+                directurl = "https://www." + fembedHost + directurl;
+            }
             link.setProperty("label", label);
             link.setProperty("fembedid", file_id);
             link.setProperty("fembedHost", fembedHost);
+            if (directurl != null) {
+                link.setProperty(jd.plugins.hoster.FEmbedCom.PROPERTY_DIRECTURL, directurl);
+            }
             if (!StringUtils.isEmpty(name)) {
                 link.setFinalFileName(name + "-" + label + "." + type);
             } else {
+                /* Fallback */
                 link.setName(file_id + "-" + label + "." + type);
             }
             link.setAvailable(true);
@@ -183,5 +206,11 @@ public class FEmbedDecrypter extends PluginForDecrypt {
     @Override
     public Class<? extends PluginConfigInterface> getConfigInterface() {
         return FEmbedComConfig.class;
+    }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        /* 2021-09-06: They're using heavy rate-limiting. */
+        return 1;
     }
 }
