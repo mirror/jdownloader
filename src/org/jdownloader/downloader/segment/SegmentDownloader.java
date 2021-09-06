@@ -106,8 +106,8 @@ public class SegmentDownloader extends DownloadInterface {
         int segmentRetryCounter = 0;
         while (true) {
             final Browser br = obr.cloneBrowser();
-            final Request getRequest = createSegmentRequest(segment);
-            final URLConnectionAdapter ret = br.openRequestConnection(getRequest);
+            final Request request = createSegmentRequest(segment);
+            final URLConnectionAdapter ret = br.openRequestConnection(request);
             if (ret.getResponseCode() != 200) {
                 try {
                     br.followConnection(true);
@@ -201,7 +201,7 @@ public class SegmentDownloader extends DownloadInterface {
         }
     }
 
-    private GetRequest createSegmentRequest(final Segment seg) throws IOException {
+    protected Request createSegmentRequest(final Segment seg) throws IOException {
         final GetRequest ret = new GetRequest(seg.getUrl());
         return ret;
     }

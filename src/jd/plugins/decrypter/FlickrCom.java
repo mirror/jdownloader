@@ -23,13 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -50,6 +43,13 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flickr.com" }, urls = { "https?://(www\\.)?(secure\\.)?flickr\\.com/(photos|groups)/.+" })
 public class FlickrCom extends PluginForDecrypt {
@@ -157,7 +157,7 @@ public class FlickrCom extends PluginForDecrypt {
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         /* Set this if all items or a set/gallery belong to the same owner */
         String forcedOwner = null;
-        String username = null;
+        String username = this.username;
         String apilink = null;
         String path_alias = null;
         String setID = null;
@@ -303,9 +303,13 @@ public class FlickrCom extends PluginForDecrypt {
                     fina.setProperty("set_id", setID);
                 }
                 fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_MEDIA_TYPE, media);
-                fina.setProperty("owner", owner);
-                fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME, username);
-                if (!StringUtils.isEmpty(dateadded)) {
+                if (StringUtils.isNotEmpty(owner)) {
+                    fina.setProperty("owner", owner);
+                }
+                if (StringUtils.isNotEmpty(username)) {
+                    fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME, username);
+                }
+                if (StringUtils.isNotEmpty(dateadded)) {
                     fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_DATE, Long.parseLong(dateadded) * 1000);
                 }
                 if (!StringUtils.isEmpty(title)) {
@@ -313,7 +317,7 @@ public class FlickrCom extends PluginForDecrypt {
                 }
                 fina.setProperty("ext", extension);
                 fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_ORDER_ID, df.format(imagePosition));
-                fina.setLinkID("flickrcom_" + username + "_" + photo_id + (setID != null ? setID : ""));
+                fina.setLinkID("flickrcom_" + username + "_" + photo_id + (setID != null ? ("_" + setID) : ""));
                 final String formattedFilename = getFormattedFilename(fina);
                 fina.setName(formattedFilename);
                 fina.setAvailable(true);
@@ -363,11 +367,11 @@ public class FlickrCom extends PluginForDecrypt {
     }
 
     private String get_NSID(String username) throws IOException, DecrypterException, InterruptedException, PluginException {
-        String nsid;
         if (username == null) {
             username = this.username;
         }
         /* Check if we already have the id */
+        final String nsid;
         if (username.matches("\\d+@N\\d+")) {
             nsid = username;
         } else {
@@ -387,6 +391,7 @@ public class FlickrCom extends PluginForDecrypt {
         if (username == null) {
             username = this.username;
         }
+        // TODO: add lookup cache! also cache/use the *real* name from response
         final String user_url = "https://www.flickr.com/photos/" + username + "/";
         api_getPage("https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&method=flickr.urls.lookupUser&url=" + Encoding.urlEncode(user_url));
         return PluginJSonUtils.getJsonValue(br, "id");

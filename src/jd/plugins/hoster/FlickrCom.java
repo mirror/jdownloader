@@ -27,14 +27,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -59,6 +51,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(?:www\\.)?flickr\\.com/photos/(?!tags/)([^<>\"/]+)/(\\d+)(?:/in/album-\\d+)?" })
 public class FlickrCom extends PluginForHost {
@@ -108,11 +108,11 @@ public class FlickrCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
     }
 
     private String getUsername(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
     }
 
     private String getPhotoURLWithoutAlbumInfo(final DownloadLink link) throws PluginException {
@@ -153,7 +153,9 @@ public class FlickrCom extends PluginForHost {
         correctDownloadLink(link);
         final String photoURL = getPhotoURLWithoutAlbumInfo(link);
         /* Needed for custom filenames! */
-        link.setProperty(PROPERTY_USERNAME, this.getUsername(link));
+        if (!link.hasProperty(PROPERTY_USERNAME)) {
+            link.setProperty(PROPERTY_USERNAME, this.getUsername(link));
+        }
         br.clearCookies(this.getHost());
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
@@ -287,7 +289,8 @@ public class FlickrCom extends PluginForHost {
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        // chunked transfer
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (dl.getConnection().getURL().toString().contains("/photo_unavailable.gif")) {
             dl.getConnection().disconnect();
             /* Same as check below */
