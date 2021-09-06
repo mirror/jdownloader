@@ -33,7 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "milfzr.com" }, urls = { "https?://(?:www\\.)?milfzr\\.com/(?!feed|videos-up|wp-.*)[A-Za-z0-9\\-]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "milfzr.com" }, urls = { "https?://(?:www\\.)?milfzr\\.com/(?!feed|videos-up|wp-.*)[A-Za-z0-9\\-]+-[A-Za-z0-9\\-]+" })
 public class MilfzrCom extends PluginForHost {
     public MilfzrCom(PluginWrapper wrapper) {
         super(wrapper);
