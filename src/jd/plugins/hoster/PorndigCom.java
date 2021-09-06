@@ -19,16 +19,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -39,6 +29,16 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.parser.Regex;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porndig.com" }, urls = { "https?://(?:www\\.)?porndig\\.com/videos/(\\d+)/([a-z0-9\\-]+)\\.html" })
 public class PorndigCom extends PluginForHost {
@@ -94,7 +94,7 @@ public class PorndigCom extends PluginForHost {
         long bestFilesize = -1;
         String bestDownloadurl = null;
         String bestqualityName = null;
-        final String userPreferredQuality = getConfiguredQualityStringForOfficialDownloads(link);
+        final PreferredQuality userPreferredQuality = getConfiguredQuality(link);
         for (final String html : htmls) {
             final String url = new Regex(html, "\"(https?://[^/]+/download/[^\"]+)\"").getMatch(0);
             String qualityName = new Regex(html, "class=\"link_name\">\\s*([A-Za-z0-9 ]+)").getMatch(0);
@@ -111,9 +111,10 @@ public class PorndigCom extends PluginForHost {
                 bestDownloadurl = url;
                 bestqualityName = qualityName;
             }
-            if (StringUtils.equals(qualityName, userPreferredQuality)) {
-                logger.info("Found user preferred quality: " + userPreferredQuality);
-                saveChosenQualityIdentifier(link, userPreferredQuality);
+            final PreferredQuality quality = this.gerPreferredQualityByString(qualityName, false);
+            if (quality == userPreferredQuality) {
+                logger.info("Found user preferred quality: " + qualityName);
+                saveChosenQuality(link, qualityName);
                 link.setDownloadSize(filesizeTmp);
                 return url;
             }
@@ -124,13 +125,13 @@ public class PorndigCom extends PluginForHost {
             return null;
         } else {
             logger.info("Using BEST quality:" + bestqualityName);
-            saveChosenQualityIdentifier(link, bestqualityName);
+            saveChosenQuality(link, bestqualityName);
             link.setDownloadSize(bestFilesize);
             return bestDownloadurl;
         }
     }
 
-    private void saveChosenQualityIdentifier(final DownloadLink link, final String qualityName) {
+    private void saveChosenQuality(final DownloadLink link, final String qualityName) {
         if (qualityName != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             link.setComment(qualityName);
         }
@@ -140,25 +141,36 @@ public class PorndigCom extends PluginForHost {
     public PreferredQuality getChosenQualityIdentifier(final DownloadLink link) throws PluginException {
         if (link.hasProperty(PROPERTY_CHOSEN_VIDEO_QUALITY)) {
             final String quality = link.getStringProperty(PROPERTY_CHOSEN_VIDEO_QUALITY, null);
-            if (quality == null) {
-                return PreferredQuality.BEST;
-            } else if ("270p".equals(quality)) {
-                return PreferredQuality.Q270P;
-            } else if ("360p".equals(quality)) {
-                return PreferredQuality.Q360P;
-            } else if ("540p".equals(quality)) {
-                return PreferredQuality.Q540P;
-            } else if ("720p".equals(quality)) {
-                return PreferredQuality.Q720P;
-            } else if ("1080p".equals(quality)) {
-                return PreferredQuality.Q1080P;
-            } else if ("UHD 4K".equals(quality)) {
-                return PreferredQuality.UHD4K;
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown quality:" + quality);
-            }
+            return gerPreferredQualityByString(quality, true);
+        } else {
+            return null;
         }
-        return null;
+    }
+
+    private PreferredQuality gerPreferredQualityByString(final String quality, final boolean throwExceptionOnUnknownQuality) throws PluginException {
+        if (quality == null) {
+            return PreferredQuality.BEST;
+        } else if ("270p".equals(quality)) {
+            return PreferredQuality.Q270P;
+        } else if ("360p".equals(quality)) {
+            return PreferredQuality.Q360P;
+        } else if ("540p".equals(quality)) {
+            return PreferredQuality.Q540P;
+        } else if ("720p".equals(quality)) {
+            return PreferredQuality.Q720P;
+        } else if ("1080p".equals(quality)) {
+            return PreferredQuality.Q1080P;
+        } else if ("UHD 4K".equals(quality)) {
+            /* 4K iodentifier for official downloads */
+            return PreferredQuality.UHD4K;
+        } else if ("4K".equals(quality)) {
+            /* 4K identifier for stream downloads */
+            return PreferredQuality.UHD4K;
+        } else if (throwExceptionOnUnknownQuality) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown quality:" + quality);
+        } else {
+            return null;
+        }
     }
 
     @Override
@@ -180,7 +192,7 @@ public class PorndigCom extends PluginForHost {
                     Map<String, Object> entries = null;
                     long qualityBest = 0;
                     final List<Object> ressourcelist = (List) JavaScriptEngineFactory.jsonToJavaObject(jssource);
-                    final String userPreferredQuality = getConfiguredQualityStringForStreamDownloads(link);
+                    final PreferredQuality userPreferredQuality = getConfiguredQuality(link);
                     for (final Object videoo : ressourcelist) {
                         entries = (Map<String, Object>) videoo;
                         final String dllinkTmp = (String) entries.get("src");
@@ -189,8 +201,8 @@ public class PorndigCom extends PluginForHost {
                         if (StringUtils.isEmpty(dllinkTmp) || qualityNumberTemp == 0 || StringUtils.isEmpty(qualityNameTmp)) {
                             continue;
                         }
-                        if (StringUtils.equals(qualityNameTmp, userPreferredQuality)) {
-                            logger.info("Found user preferred quality: " + userPreferredQuality);
+                        if (userPreferredQuality == this.gerPreferredQualityByString(qualityNameTmp, false)) {
+                            logger.info("Found user preferred quality: " + qualityNameTmp);
                             dllink = dllinkTmp;
                             break;
                         }
@@ -274,46 +286,15 @@ public class PorndigCom extends PluginForHost {
         return PorndigComConfig.class;
     }
 
-    protected String getConfiguredQualityStringForOfficialDownloads(DownloadLink link) throws PluginException {
-        /* Returns user-set value which can be used to circumvent government based GEO-block. */
-        PreferredQuality cfgquality = getChosenQualityIdentifier(link);
-        if (cfgquality == null) {
-            cfgquality = PluginJsonConfig.get(PorndigComConfig.class).getPreferredQuality();
-        }
-        return getConfiguredQualityString(cfgquality);
-    }
-
-    protected String getConfiguredQualityString(PreferredQuality cfgquality) {
-        if (cfgquality == null) {
-            return null;
+    protected PreferredQuality getConfiguredQuality(final DownloadLink link) throws PluginException {
+        /* Return last used quality if available. */
+        final PreferredQuality cfgquality = getChosenQualityIdentifier(link);
+        if (cfgquality != null) {
+            return cfgquality;
         } else {
-            switch (cfgquality) {
-            case Q270P:
-                return "270p";
-            case Q360P:
-                return "360p";
-            case Q540P:
-                return "540p";
-            case Q720P:
-                return "720p";
-            case Q1080P:
-                return "1080p";
-            case UHD4K:
-                return "4K";
-            case BEST:
-            default:
-                return null;
-            }
+            /* Return currently selected preferred quality. */
+            return PluginJsonConfig.get(PorndigComConfig.class).getPreferredQuality();
         }
-    }
-
-    protected String getConfiguredQualityStringForStreamDownloads(DownloadLink link) throws PluginException {
-        /* Returns user-set value which can be used to circumvent government based GEO-block. */
-        PreferredQuality cfgquality = getChosenQualityIdentifier(link);
-        if (cfgquality == null) {
-            cfgquality = PluginJsonConfig.get(PorndigComConfig.class).getPreferredQuality();
-        }
-        return getConfiguredQualityString(cfgquality);
     }
 
     @Override
