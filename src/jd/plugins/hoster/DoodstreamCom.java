@@ -24,14 +24,6 @@ import java.util.Map;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -43,6 +35,14 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DoodstreamCom extends XFileSharingProBasic {
@@ -197,8 +197,8 @@ public class DoodstreamCom extends XFileSharingProBasic {
     @Override
     protected boolean isOffline(final DownloadLink link, final Browser br, final String html) {
         /**
-         * 2021-08-20: Hoster is playing cat & mouse games by adding fake "file not found" texts. </br>
-         * An empty embed iframe is a sign that the item is offline.
+         * 2021-08-20: Hoster is playing cat & mouse games by adding fake "file not found" texts. </br> An empty embed iframe is a sign that
+         * the item is offline.
          */
         if (new Regex(html, "<iframe src=\"/e/\"").matches()) {
             /* 2021-26-04 */
@@ -286,9 +286,12 @@ public class DoodstreamCom extends XFileSharingProBasic {
         if (link.getFinalFileName() == null) {
             if (link.getPluginPatternMatcher().matches(TYPE_STREAM)) {
                 /* First try to get filename from Chromecast json */
-                String filename = new Regex(getCorrectBR(br), "<title>\\s*([^<>\"]*?)\\s*-\\s*DoodStream\\.com\\s*</title>").getMatch(0);
+                String filename = new Regex(getCorrectBR(br), "<title>\\s*([^<>\"]*?)\\s*-\\s*DoodStream(?:\\.com)?\\s*</title>").getMatch(0);
                 if (filename == null) {
                     filename = new Regex(getCorrectBR(br), "<meta name\\s*=\\s*\"og:title\"[^>]*content\\s*=\\s*\"([^<>\"]+)\"\\s*>").getMatch(0);
+                    if (filename == null) {
+                        filename = new Regex(getCorrectBR(br), "videoInfo\\s*:\\s*\\{\\s*title\\s*:\\s*\"(.*?)\"").getMatch(0);
+                    }
                 }
                 if (StringUtils.isEmpty(filename)) {
                     link.setName(this.getFallbackFilename(link));
@@ -300,6 +303,9 @@ public class DoodstreamCom extends XFileSharingProBasic {
                 }
             } else {
                 String filename = br.getRegex("<meta name\\s*=\\s*\"og:title\"[^>]*content\\s*=\\s*\"([^<>\"]+)\"\\s*>").getMatch(0);
+                if (filename == null) {
+                    filename = new Regex(getCorrectBR(br), "videoInfo\\s*:\\s*\\{\\s*title\\s*:\\s*\"(.*?)\"").getMatch(0);
+                }
                 if (StringUtils.isEmpty(filename)) {
                     link.setName(this.getFallbackFilename(link));
                 } else {
