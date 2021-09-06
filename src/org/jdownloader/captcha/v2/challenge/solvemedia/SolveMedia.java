@@ -84,9 +84,9 @@ public class SolveMedia {
         }
         if (noscript) {
             verify = smBr.getForm(0);
-            captchaAddress = smBr.getRegex("<img src=\"(/papi/media\\?c=[^\"]+)").getMatch(0);
+            captchaAddress = smBr.getRegex("<img src\\s*=\\s*\"(/papi/media\\?c=[^\"]+)").getMatch(0);
             if (captchaAddress == null) {
-                captchaAddress = smBr.getRegex("src=\"(/papi/media\\?c=[^\"]+)").getMatch(0);
+                captchaAddress = smBr.getRegex("src\\s*=\\s*\"(/papi/media\\?c=[^\"]+)").getMatch(0);
             }
             if (verify == null) {
                 throw new Exception("SolveMedia Module fails");
@@ -101,16 +101,16 @@ public class SolveMedia {
     }
 
     private void getChallengeKey() {
-        challenge = br.getRegex("http://api\\.solvemedia\\.com/papi/_?challenge\\.script\\?k=(.{32})").getMatch(0);
+        challenge = br.getRegex("https?://api\\.solvemedia\\.com/papi/_?challenge\\.script\\?k=(.{32})").getMatch(0);
         if (challenge == null) {
             // when we retry solving a solvemedia session.
-            challenge = smBr.getRegex("<input type=hidden name=\"k\" value=\"([^\"]+)\">").getMatch(0);
+            challenge = smBr.getRegex("<input type=hidden name=\"k\" value\\s*=\\s*\"([^\"]+)\"\\s*>").getMatch(0);
         }
         if (challenge == null) {
             secure = true;
-            challenge = br.getRegex("ckey:\'([\\w\\-\\.]+)\'").getMatch(0);
+            challenge = br.getRegex("ckey\\s*:\\s*\'([\\w\\-\\.]+)\'").getMatch(0);
             if (challenge == null) {
-                challenge = br.getRegex("https://api-secure\\.solvemedia\\.com/papi/_?challenge\\.script\\?k=(.{32})").getMatch(0);
+                challenge = br.getRegex("https?://api-secure\\.solvemedia\\.com/papi/_?challenge\\.script\\?k=(.{32})").getMatch(0);
             }
             if (challenge == null) {
                 secure = false;
@@ -121,64 +121,75 @@ public class SolveMedia {
     public String getChallenge() {
         if (captchaAddress == null) {
             return null;
+        } else {
+            return new Regex(captchaAddress, "/papi/media\\?c=(.*?)$").getMatch(0);
         }
-        return new Regex(captchaAddress, "/papi/media\\?c=(.*?)$").getMatch(0);
     }
 
     public String getChallenge(final String code) throws Exception {
         if (!noscript) {
             return chId;
-        }
-        if (StringUtils.isEmpty(code)) {
+        } else if (StringUtils.isEmpty(code)) {
             // empty responses are not valid.
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
-        verify.put("adcopy_response", Encoding.urlEncode(code));
-        // for backup purposes.
-        final Browser smbr = smBr.cloneBrowser();
-        final int retry = 4;
-        for (int i = 0; i != retry; i++) {
-            smBr = smbr.cloneBrowser();
-            try {
-                // less common here..
-                smBr.submitForm(verify);
-            } catch (BrowserException e) {
-                // should cover socket related issues.
-                if (i + 1 != retry) {
-                    continue;
+        } else {
+            verify.put("adcopy_response", Encoding.urlEncode(code));
+            // for backup purposes.
+            final Browser baseBr = smBr.cloneBrowser();
+            final int retry = 4;
+            for (int i = 0; i != retry; i++) {
+                smBr = baseBr.cloneBrowser();
+                try {
+                    // less common here..
+                    smBr.submitForm(verify);
+                    break;
+                } catch (BrowserException e) {
+                    // should cover socket related issues.
+                    if (i + 1 != retry) {
+                        continue;
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "SolveMedia Module fails", e);
+                    }
                 }
-                throw new Exception("SolveMedia Module fails");
             }
-            break;
-        }
-        String verifyUrl = smBr.getRegex("URL=(http[^\"]+)").getMatch(0);
-        if (verifyUrl == null) {
-            return null;
-        }
-        String challenge = null;
-        for (int i = 0; i != retry; i++) {
-            smBr = smbr.cloneBrowser();
-            try {
-                // very common to get errors here! lets try a crude retry!
-                smBr.getPage(verifyUrl);
-            } catch (BrowserException e) {
-                // should cover socket related issues.
-                if (i + 1 != retry) {
-                    continue;
+            final String verifyUrl = smBr.getRegex("URL\\s*=\\s*(https?[^\"]+)").getMatch(0);
+            if (verifyUrl == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            for (int i = 0; i != retry; i++) {
+                smBr = baseBr.cloneBrowser();
+                try {
+                    // very common to get errors here! lets try a crude retry!
+                    smBr.getPage(verifyUrl);
+                    break;
+                } catch (BrowserException e) {
+                    // should cover socket related issues.
+                    if (i + 1 != retry) {
+                        continue;
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "SolveMedia Module fails", e);
+                    }
                 }
-                throw new Exception("SolveMedia Module fails");
             }
-            break;
+            /**
+             * incorrect responses are validated by the server! for instance<br/>
+             * they have redirect url with error=\d+ within when incorrect <br/>
+             * and html <span id="adcopy-error-msg">Try again\s*</span> <br/>
+             * challenge/gibberish will be null
+             *
+             */
+            final String challenge = smBr.getRegex("id\\s*=\\s*gibberish>\\s*([^<]+)").getMatch(0);
+            if (StringUtils.isEmpty(challenge)) {
+                if (smBr.containsHTML("adcopy_challenge")) {
+                    // response is invalid
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            } else {
+                return challenge;
+            }
         }
-        /**
-         * incorrect responses are validated by the server! for instance<br/>
-         * they have redirect url with error=\d+ within when incorrect <br/>
-         * and html <span id="adcopy-error-msg">Try again\s*</span> <br/>
-         * challenge/gibberish will be null
-         *
-         */
-        challenge = smBr.getRegex("id=gibberish>([^<]+)").getMatch(0);
-        return challenge;
     }
 
     public Browser getBr() {
