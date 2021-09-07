@@ -189,7 +189,7 @@ public class BoxbitApp extends PluginForHost {
     }
 
     private int getMaxChunks(final DownloadLink link) {
-        return (int) link.getLongProperty(PROPERTY_DOWNLOADLINK_maxchunks, 0);
+        return (int) link.getLongProperty(PROPERTY_DOWNLOADLINK_maxchunks, defaultMAXCHUNKS);
     }
 
     @Override
