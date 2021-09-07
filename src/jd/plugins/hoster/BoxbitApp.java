@@ -23,16 +23,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.Account;
@@ -46,11 +36,20 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boxbit.app" }, urls = { "" })
 public class BoxbitApp extends PluginForHost {
     /**
-     * New project of: geragera.com.br </br>
-     * API docs: https://boxbit.readme.io/reference/introduction
+     * New project of: geragera.com.br </br> API docs: https://boxbit.readme.io/reference/introduction
      */
     private static final String          API_BASE                         = "https://api.boxbit.app";
     private static MultiHosterManagement mhm                              = new MultiHosterManagement("boxbit.app");
@@ -137,7 +136,7 @@ public class BoxbitApp extends PluginForHost {
             int maxChunks;
             final Number maxChunksAPI = (Number) entries.get("max_chunks");
             if (maxChunksAPI != null) {
-                maxChunks = (int) maxChunksAPI;
+                maxChunks = maxChunksAPI.intValue();
                 if (maxChunks > 1) {
                     maxChunks = -maxChunks;
                 }

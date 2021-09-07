@@ -26,8 +26,10 @@ import jd.controlling.reconnect.pluginsinc.liveheader.recoll.RecollController;
 import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RouterData;
 import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.RequestHeader;
+import jd.http.requests.PostRequest;
 import jd.nutils.Formatter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
@@ -35,12 +37,14 @@ import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Hash;
+import org.appwork.utils.KeyValueStringEntry;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.IPVERSION;
+import org.appwork.utils.parser.UrlQuery;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -287,10 +291,11 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                         Browser retbr = null;
                         try {
                             retbr = this.doRequest(toDo.getChildNodes().item(0).getNodeValue().trim(), br, isAttributeSet(attributes, "https"), isAttributeSet(attributes, "raw"), isAttributeSet(attributes, "postraw"));
+                        } catch (final ReconnectException e) {
+                            logger.log(e);
+                            throw e;
                         } catch (final Exception e) {
-                            if (e instanceof ReconnectException) {
-                                throw e;
-                            }
+                            logger.log(e);
                             retbr = null;
                         }
                         /* DDoS Schutz */
@@ -486,13 +491,13 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
         logger.finer("Parsed Variables: " + this.parsedVariables);
     }
 
-    private Browser doRequest(String request, final Browser br, final boolean ishttps, final boolean israw, final boolean ispostraw) throws ReconnectException {
+    private Browser doRequest(String request, final Browser br, final boolean ishttps, final boolean isRawHeader, final boolean isRawPost) throws ReconnectException {
         try {
             final String requestType;
             final String path;
             final StringBuilder postContent = new StringBuilder();
             final HashMap<String, String> requestProperties = new HashMap<String, String>();
-            if (israw) {
+            if (isRawHeader) {
                 br.setHeaders(new RequestHeader());
             }
             String[] tmp = request.split("\\%\\%\\%(.*?)\\%\\%\\%");
@@ -533,14 +538,12 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
             }
             final String[] requestLines = splitLines(request);
             if (requestLines.length == 0) {
-                logger.severe("Parse Fehler:" + request);
-                return null;
+                throw new ReconnectException("Parse Fehler:" + request);
             }
             // RequestType
             tmp = requestLines[0].split(" ");
             if (tmp.length < 2) {
-                logger.severe("Konnte Requesttyp nicht finden: " + requestLines[0]);
-                return null;
+                throw new ReconnectException("Konnte Requesttyp nicht finden: " + requestLines[0]);
             }
             requestType = tmp[0];
             path = tmp[1];
@@ -550,11 +553,12 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
             final int requestLinesLength = requestLines.length;
             for (int li = 1; li < requestLinesLength; li++) {
                 if (headersEnd) {
-                    if (ispostraw) {
+                    if (isRawPost) {
                         postContent.append(requestLines[li].trim());
                     } else {
                         postContent.append(requestLines[li]);
-                        postContent.append(new char[] { '\r', '\n' });
+                        postContent.append('\r');
+                        postContent.append('\n');
                     }
                     continue;
                 }
@@ -577,43 +581,70 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
             if (host == null) {
                 throw new ReconnectException("Host not available: " + request);
             } else {
+                Request browserRequest = null;
                 try {
                     verifyHost(host);
-                    if (requestProperties != null) {
-                        br.getHeaders().putAll(requestProperties);
-                    }
                     final String protocoll = ishttps ? "https://" : "http://";
                     if (StringUtils.equalsIgnoreCase(requestType, "AUTH")) {
                         logger.finer("Convert AUTH->GET");
                     }
+                    final String requestURL = protocoll + host + path;
                     if (StringUtils.equalsIgnoreCase(requestType, "GET") || StringUtils.equalsIgnoreCase(requestType, "AUTH")) {
-                        br.getPage(protocoll + host + path);
+                        browserRequest = br.createGetRequest(requestURL);
                     } else if (StringUtils.equalsIgnoreCase(requestType, "POST")) {
-                        if (ispostraw) {
-                            br.postPageRaw(protocoll + host + path, HexFormatter.hexToByteArray(postContent.toString()));
+                        if (isRawPost) {
+                            final byte[] post = HexFormatter.hexToByteArray(postContent.toString());
+                            if (br.probeJSonContent(post)) {
+                                browserRequest = br.createJSonPostRequest(requestURL, new String(post, "UTF-8"));
+                            } else {
+                                browserRequest = br.createPostRequest(requestURL, new ArrayList<KeyValueStringEntry>(), null);
+                                ((PostRequest) browserRequest).setPostBytes(post);
+                            }
                         } else {
-                            br.postPageRaw(protocoll + host + path, postContent.toString().trim());
+                            final String post = postContent.toString().trim();
+                            if (br.probeJSonContent(post)) {
+                                browserRequest = br.createJSonPostRequest(requestURL, post);
+                            } else {
+                                browserRequest = br.createPostRequest(requestURL, new UrlQuery(), null);
+                                ((PostRequest) browserRequest).setPostDataString(post);
+                            }
                         }
                     } else {
-                        logger.severe("Unknown/Unsupported requestType: " + requestType);
-                        return null;
+                        throw new ReconnectException("Unknown/Unsupported requestType: " + requestType);
                     }
+                    if (requestProperties != null) {
+                        final HashSet<String> blackList = new HashSet<String>(Arrays.asList(new String[] { "content-length", "host", "accept-encoding" }));
+                        for (Entry<String, String> requestProperty : requestProperties.entrySet()) {
+                            final String key = requestProperty.getKey();
+                            final String value = requestProperty.getValue();
+                            if (StringUtils.equalsIgnoreCase(key, "cookie")) {
+                                final Cookies cookies = Cookies.parseCookies(value, null, null);
+                                browserRequest.getCookies().add(cookies);
+                            } else if (key != null && !blackList.contains(key.toLowerCase(Locale.ENGLISH))) {
+                                if (browserRequest.getHeaders().contains(key)) {
+                                    logger.info("ReplaceHeader:key=" + key + "|oldValue=" + browserRequest.getHeaders().getValue(key) + "|newValue=" + value);
+                                } else {
+                                    logger.info("SetHeader:key=" + key + "|newValue=" + value);
+                                }
+                                browserRequest.getHeaders().put(key, value);
+                            } else {
+                                logger.info("SkipHeader:key=" + key + "|existingValue=" + browserRequest.getHeaders().getValue(key) + "|newValue=" + value);
+                            }
+                        }
+                    }
+                    br.getPage(browserRequest);
                     return br;
                 } catch (final IOException e) {
-                    logger.log(e);
                     if (feedback != null) {
-                        feedback.onBasicRemoteAPIExceptionOccured(e, br.getRequest());
+                        feedback.onBasicRemoteAPIExceptionOccured(e, browserRequest);
                     }
-                    logger.severe("IO Error: " + e.getLocalizedMessage());
-                    return null;
+                    throw e;
                 }
             }
+        } catch (final ReconnectFailedException e) {
+            throw e;
         } catch (final Exception e) {
             logger.log(e);
-            if (e instanceof ReconnectFailedException) {
-                // feedbakc callbacks may throw these
-                throw (ReconnectException) e;
-            }
             return null;
         }
     }
