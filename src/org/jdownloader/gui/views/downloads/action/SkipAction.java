@@ -27,7 +27,6 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.SkipReason;
 
 public class SkipAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
-
     enum State {
         ALL_SKIPPED,
         ALL_UNSKIPPED,
@@ -35,9 +34,7 @@ public class SkipAction extends CustomizableTableContextAppAction<FilePackage, D
     }
 
     private State                                    state            = State.MIXED;
-
     private SelectionInfo<FilePackage, DownloadLink> selection        = null;
-
     private static final long                        serialVersionUID = 7107840091963427544L;
 
     @Override
@@ -81,7 +78,6 @@ public class SkipAction extends CustomizableTableContextAppAction<FilePackage, D
         }
         Boolean first = null;
         for (DownloadLink a : selection.getChildren()) {
-
             /* check a child */
             if (first == null) {
                 first = a.isSkipped();
@@ -89,7 +85,6 @@ public class SkipAction extends CustomizableTableContextAppAction<FilePackage, D
             if (a.isSkipped() != first) {
                 return State.MIXED;
             }
-
         }
         return first ? State.ALL_SKIPPED : State.ALL_UNSKIPPED;
     }
@@ -98,7 +93,6 @@ public class SkipAction extends CustomizableTableContextAppAction<FilePackage, D
         if (isEnabled()) {
             final SelectionInfo<FilePackage, DownloadLink> lSelection = getSelection();
             TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     if (isEnabled()) {
@@ -155,5 +149,4 @@ public class SkipAction extends CustomizableTableContextAppAction<FilePackage, D
     public boolean isEnabled() {
         return super.isEnabled() && DownloadWatchDog.getInstance().isRunning();
     }
-
 }

@@ -14,6 +14,9 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import jd.gui.swing.dialog.DialogType;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -24,40 +27,26 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaCategoryChallen
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 
-import jd.gui.swing.dialog.DialogType;
-import net.miginfocom.swing.MigLayout;
-
 public class KeyCaptchaCategoryDialog extends AbstractCaptchaDialog<String> implements ActionListener {
-
     // private BufferedImage[] kcImages;
     // private int kcSampleImg;
-
     private JPanel                      p;
     // private final Dimension dimensions;
-
     private KeyCaptchaCategoryChallenge challenge;
-
     private MigPanel                    pics;
     private int                         currentIndex;
-
     private Image                       image;
     private PicButton                   pic0;
-
     private PicButton                   pic1;
-
     private PicButton                   pic2;
-
     private ArrayList<Integer>          positions;
     private int                         maxHeight;
-
     private int                         maxWidth;
 
     public KeyCaptchaCategoryDialog(KeyCaptchaCategoryChallenge captchaChallenge2, int flag, DialogType type, DomainInfo domain, KeyCaptchaCategoryChallenge captchaChallenge) {
         super(captchaChallenge2, flag, _GUI.T.KeyCaptchaCategoryDialog(domain.getTld()), type, domain, _GUI.T.KeyCaptchaCategoryDialog_explain(domain.getTld()));
         // super(flag | Dialog.STYLE_HIDE_ICON | UIOManager.LOGIC_COUNTDOWN, title, null, null, null);
-
         this.challenge = captchaChallenge;
-
     }
 
     protected int getPreferredHeight() {
@@ -96,16 +85,16 @@ public class KeyCaptchaCategoryDialog extends AbstractCaptchaDialog<String> impl
 
     @Override
     public void pack() {
+        if (!getDialog().isMinimumSizeSet()) {
+            getDialog().setMinimumSize(new Dimension(300, 300));
+        }
         super.pack();
-        getDialog().setMinimumSize(new Dimension(300, 300));
-
     }
 
     protected HeaderScrollPane createHeaderScrollPane(MigPanel field) {
         HeaderScrollPane ret = new HeaderScrollPane(field);
         // ret.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
         // ret.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-
         return ret;
     }
 
@@ -121,19 +110,13 @@ public class KeyCaptchaCategoryDialog extends AbstractCaptchaDialog<String> impl
         CategoryData data = challenge.getHelper().getCategoryData();
         // MigPanel panel = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[]");
         // panel.add(label(new JLabel("Categories:")));
-
         MigPanel bgs = new MigPanel("ins 0,wrap 3", "[grow,fill][grow,fill][grow,fill]", "[]");
-
         SwingUtils.setOpaque(bgs, false);
-
         BufferedImage bg = data.getBackground();
         for (int i = 0; i < 3; i++) {
-
             BufferedImage cats = new BufferedImage(bg.getWidth() / 3, bg.getHeight(), Transparency.TRANSLUCENT);
-
             Graphics2D g = (Graphics2D) cats.getGraphics();
             g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-
             g.drawImage(bg, 0, 0, bg.getWidth() / 3, bg.getHeight(), i * bg.getWidth() / 3, 0, (i + 1) * bg.getWidth() / 3, bg.getHeight(), null);
             g.dispose();
             bgs.add(new JLabel(new ImageIcon(cats)));
@@ -147,7 +130,6 @@ public class KeyCaptchaCategoryDialog extends AbstractCaptchaDialog<String> impl
             maxHeight = Math.max(pref.height, maxHeight);
         }
         pics = new MigPanel("ins 0,wrap 3", "[grow,fill][grow,fill][grow,fill]", "[]");
-
         SwingUtils.setOpaque(pics, false);
         this.positions = new ArrayList<Integer>();
         p.add(bgs);
@@ -156,7 +138,6 @@ public class KeyCaptchaCategoryDialog extends AbstractCaptchaDialog<String> impl
         okButton.setEnabled(false);
         setImage(0);
         return p;
-
     }
 
     private void setImage(int i) {
@@ -171,7 +152,6 @@ public class KeyCaptchaCategoryDialog extends AbstractCaptchaDialog<String> impl
                 position = 3;
             }
             positions.add(position);
-
         }
         if (i >= challenge.getHelper().getCategoryData().getImages().size()) {
             okButton.setEnabled(true);
@@ -198,7 +178,6 @@ public class KeyCaptchaCategoryDialog extends AbstractCaptchaDialog<String> impl
     // SwingUtils.setOpaque(jLabel, false);
     // return jLabel;
     // }
-
     public void updateIcons(PicButton picButton) {
         pic0.setSelected(pic0 == picButton);
         pic1.setSelected(pic1 == picButton);
@@ -211,5 +190,4 @@ public class KeyCaptchaCategoryDialog extends AbstractCaptchaDialog<String> impl
     public void next() {
         setImage(currentIndex + 1);
     }
-
 }

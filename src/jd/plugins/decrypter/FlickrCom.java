@@ -42,7 +42,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.JDUtilities;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -486,11 +485,13 @@ public class FlickrCom extends PluginForDecrypt {
     }
 
     public static String getPublicAPIKey(final Browser br) throws IOException {
-        br.getPage("https://www.flickr.com/photos/groups/");
-        String api_apikey = br.getRegex("root\\.YUI_config\\.flickr\\.api\\.site_key\\s*?=\\s*?\"(.*?)\"").getMatch(0);
+        final Browser brc = br.cloneBrowser();
+        brc.setFollowRedirects(true);
+        brc.getPage("https://www.flickr.com/photos/groups/");
+        String api_apikey = brc.getRegex("root\\.YUI_config\\.flickr\\.api\\.site_key\\s*?=\\s*?\"(.*?)\"").getMatch(0);
         /* Handle API decryption for GROUPS and complete users here */
         if (api_apikey == null) {
-            api_apikey = PluginJSonUtils.getJsonValue(br, "api_key");
+            api_apikey = PluginJSonUtils.getJsonValue(brc, "api_key");
         }
         if (api_apikey == null) {
             api_apikey = "80bd84ccc43c9992edf04205340abe2f";
@@ -698,12 +699,13 @@ public class FlickrCom extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
     private boolean getUserLogin() throws Exception {
-        final PluginForHost flickrPlugin = JDUtilities.getPluginForHost("flickr.com");
-        final Account aa = AccountController.getInstance().getValidAccount(flickrPlugin);
+        final PluginForHost flickrPlugin = getNewPluginForHostInstance("flickr.com");
+        final Account aa = AccountController.getInstance().getValidAccount("flickr.com");
         if (aa != null) {
             try {
                 ((jd.plugins.hoster.FlickrCom) flickrPlugin).login(aa, false, this.br);
             } catch (final PluginException e) {
+                logger.log(e);
                 aa.setValid(false);
                 logger.info("Account seems to be invalid!");
                 return false;

@@ -164,6 +164,7 @@ public class KenfilesCom extends XFileSharingProBasic {
             }
             decoded = p;
         } catch (Exception e) {
+            logger.log(e);
         }
         String finallink = null;
         if (decoded != null) {
@@ -195,19 +196,5 @@ public class KenfilesCom extends XFileSharingProBasic {
             waitStr = new Regex(correctedBR, ">(\\d+)</span> seconds<").getMatch(0);
         }
         return waitStr;
-    }
-
-    @Override
-    public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
-        /* 2020-09-02: Special */
-        /* Captcha START */
-        if (captchaForm.containsHTML("g-recaptcha")) {
-            if (handleRecaptchaV2(link, captchaForm)) {
-                link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
-            }
-        } else {
-            /* Run template code */
-            super.handleCaptcha(link, captchaForm);
-        }
     }
 }

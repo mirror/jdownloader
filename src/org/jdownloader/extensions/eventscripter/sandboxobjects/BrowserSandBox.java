@@ -2,6 +2,7 @@ package org.jdownloader.extensions.eventscripter.sandboxobjects;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -66,7 +67,7 @@ public class BrowserSandBox {
 
     public Map<String, List<String>> getResponseHeaders() {
         final Request request = br.getRequest();
-        return request != null ? request.getResponseHeaders() : null;
+        return request != null ? new HashMap<String, List<String>>(request.getResponseHeaders()) : null;
     }
 
     public String getResponseHeader(String field) {
