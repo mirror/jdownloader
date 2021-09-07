@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -35,6 +36,7 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -82,9 +84,11 @@ public class FreeM3DownloadNet extends PluginForHost {
     private static final boolean              FREE_RESUME          = false;
     private static final int                  FREE_MAXCHUNKS       = 1;
     /* 2021-09-06: Only allow one download as a captcha may be required once per session. */
-    private static final int                  FREE_MAXDOWNLOADS    = 1;
+    private static final int                  FREE_MAXDOWNLOADS    = 20;
     private static final String               PROPERTY_PREFER_FLAC = "prefer_flac";
     protected static HashMap<String, Cookies> antiCaptchaCookies   = new HashMap<String, Cookies>();
+    /* don't touch the following! */
+    private static Map<String, AtomicInteger> freeRunning          = new HashMap<String, AtomicInteger>();
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -230,7 +234,15 @@ public class FreeM3DownloadNet extends PluginForHost {
             }
             link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         }
-        dl.startDownload();
+        try {
+            /* add a download slot */
+            controlMaxFreeDownloads(null, link, +1);
+            /* start the dl */
+            dl.startDownload();
+        } finally {
+            /* remove download slot */
+            controlMaxFreeDownloads(null, link, -1);
+        }
     }
 
     @Override
@@ -274,8 +286,51 @@ public class FreeM3DownloadNet extends PluginForHost {
         }
     }
 
+    /**
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
+     *
+     * This is needed because this website may ask for a session captcha once per session (per X time) so starting multiple downloads at the
+     * same time could result in multiple captchas -> We want to avoid that.
+     *
+     * @param num
+     *            : (+1|-1)
+     */
+    protected void controlMaxFreeDownloads(final Account account, final DownloadLink link, final int num) {
+        if (account == null) {
+            final AtomicInteger freeRunning = getFreeRunning();
+            synchronized (freeRunning) {
+                final int before = freeRunning.get();
+                final int after = before + num;
+                freeRunning.set(after);
+                logger.info("freeRunning(" + link.getName() + ")|max:" + getMaxSimultanFreeDownloadNum() + "|before:" + before + "|after:" + after + "|num:" + num);
+            }
+        }
+    }
+
+    protected AtomicInteger getFreeRunning() {
+        synchronized (freeRunning) {
+            AtomicInteger ret = freeRunning.get(getHost());
+            if (ret == null) {
+                ret = new AtomicInteger(0);
+                freeRunning.put(getHost(), ret);
+            }
+            return ret;
+        }
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
+        int max = getMaxSimultaneousFreeAnonymousDownloads();
+        if (max < 0) {
+            max = 20;
+        }
+        final int running = getFreeRunning().get();
+        final int ret = Math.min(running + 1, max);
+        return ret;
+    }
+
+    public int getMaxSimultaneousFreeAnonymousDownloads() {
         return FREE_MAXDOWNLOADS;
     }
 

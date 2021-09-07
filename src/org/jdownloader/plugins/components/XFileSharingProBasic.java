@@ -145,7 +145,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     @Deprecated
     public String                             correctedBR                                                       = "";
     protected WeakHashMap<Request, String>    correctedBrowserRequestMap                                        = new WeakHashMap<Request, String>();
-    // protected String fuid = null;
     /* don't touch the following! */
     private static Map<String, AtomicInteger> freeRunning                                                       = new HashMap<String, AtomicInteger>();
     private static final String               PROPERTY_pw_required                                              = "password_requested_by_website";
@@ -2836,6 +2835,22 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
+     * Fix filenames for HLS video downloads. </br>
+     * Ignores HLS audio for now.
+     */
+    protected void fixFilenameHLSDownload(final URLConnectionAdapter connection, final DownloadLink link) {
+        /* Either final filename from previous download attempt or filename found in HTML. */
+        String orgNameExt = link.getFinalFileName();
+        if (StringUtils.isEmpty(orgNameExt)) {
+            orgNameExt = link.getName();
+        }
+        if (orgNameExt != null) {
+            final String newFilename = this.correctOrApplyFileNameExtension(orgNameExt, ".mp4");
+            link.setFinalFileName(newFilename);
+        }
+    }
+
+    /**
      * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
      * which is based on fuid.
      *
@@ -2846,17 +2861,17 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         /* TODO: Maybe make use of already given methods to e.g. extract filename without extension from String. */
         /* Previous (e.h. html) filename without extension */
         String orgName = null;
-        /* Server filename without extension */
-        String servName = null;
         /* Server filename with extension */
+        String servName = null;
+        /* Server filename without extension */
         String servExt = null;
         /* Either final filename from previous download attempt or filename found in HTML. */
         String orgNameExt = link.getFinalFileName();
-        /* Extension of orgNameExt */
-        String orgExt = null;
         if (StringUtils.isEmpty(orgNameExt)) {
             orgNameExt = link.getName();
         }
+        /* Extension of orgNameExt */
+        String orgExt = null;
         if (!StringUtils.isEmpty(orgNameExt) && StringUtils.contains(orgNameExt, ".")) {
             orgExt = orgNameExt.substring(orgNameExt.lastIndexOf("."));
         }
@@ -2868,6 +2883,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         String servNameExt = connection != null ? Encoding.htmlDecode(getFileNameFromHeader(connection)) : null;
         if (!StringUtils.isEmpty(servNameExt) && !StringUtils.contains(servNameExt, ".")) {
+            /* Extension according to Content-Type header */
             final String mimeExt = connection != null ? getExtensionFromMimeType(connection.getContentType()) : null;
             if (mimeExt != null) {
                 servNameExt = servNameExt + "." + mimeExt;
@@ -4130,6 +4146,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 dllink = handleQualitySelectionHLS(this.br.cloneBrowser(), dllink);
                 checkFFmpeg(link, "Download a HLS Stream");
                 dl = new HLSDownloader(link, br, dllink);
+                fixFilenameHLSDownload(dl.getConnection(), link);
                 try {
                     /* add a download slot */
                     controlMaxFreeDownloads(account, link, +1);
