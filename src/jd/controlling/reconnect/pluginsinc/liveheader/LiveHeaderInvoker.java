@@ -617,18 +617,25 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                         for (Entry<String, String> requestProperty : requestProperties.entrySet()) {
                             final String key = requestProperty.getKey();
                             final String value = requestProperty.getValue();
-                            if (StringUtils.equalsIgnoreCase(key, "cookie")) {
+                            if (StringUtils.equalsIgnoreCase(key, "content-type")) {
+                                if (browserRequest instanceof PostRequest) {
+                                    final PostRequest postRequest = ((PostRequest) browserRequest);
+                                    logger.info("Set-ContentType:oldValue=" + postRequest.getContentType() + "|newValue=" + value);
+                                    postRequest.setContentType(value);
+                                }
+                            } else if (StringUtils.equalsIgnoreCase(key, "cookie")) {
                                 final Cookies cookies = Cookies.parseCookies(value, null, null);
+                                logger.info("Set-Cookies:" + cookies);
                                 browserRequest.getCookies().add(cookies);
                             } else if (key != null && !blackList.contains(key.toLowerCase(Locale.ENGLISH))) {
                                 if (browserRequest.getHeaders().contains(key)) {
-                                    logger.info("ReplaceHeader:key=" + key + "|oldValue=" + browserRequest.getHeaders().getValue(key) + "|newValue=" + value);
+                                    logger.info("Replace-Header:key=" + key + "|oldValue=" + browserRequest.getHeaders().getValue(key) + "|newValue=" + value);
                                 } else {
-                                    logger.info("SetHeader:key=" + key + "|newValue=" + value);
+                                    logger.info("Set-Header:key=" + key + "|newValue=" + value);
                                 }
                                 browserRequest.getHeaders().put(key, value);
                             } else {
-                                logger.info("SkipHeader:key=" + key + "|existingValue=" + browserRequest.getHeaders().getValue(key) + "|newValue=" + value);
+                                logger.info("Skip-Header:key=" + key + "|existingValue=" + browserRequest.getHeaders().getValue(key) + "|newValue=" + value);
                             }
                         }
                     }
