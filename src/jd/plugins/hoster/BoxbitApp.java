@@ -52,15 +52,16 @@ public class BoxbitApp extends PluginForHost {
      * New project of: geragera.com.br </br>
      * API docs: https://boxbit.readme.io/reference/introduction
      */
-    private static final String          API_BASE                        = "https://api.boxbit.app";
-    private static MultiHosterManagement mhm                             = new MultiHosterManagement("boxbit.app");
-    private static final int             defaultMAXDOWNLOADS             = -1;
-    private static final int             defaultMAXCHUNKS                = 0;
-    private static final boolean         defaultRESUME                   = true;
-    private static final String          PROPERTY_userid                 = "userid";
-    private static final String          PROPERTY_logintoken             = "token";
-    private static final String          PROPERTY_logintoken_valid_until = "token_valid_until";
-    private static final String          PROPERTY_directlink             = "directlink";
+    private static final String          API_BASE                         = "https://api.boxbit.app";
+    private static MultiHosterManagement mhm                              = new MultiHosterManagement("boxbit.app");
+    private static final int             defaultMAXDOWNLOADS              = -1;
+    private static final int             defaultMAXCHUNKS                 = 0;
+    private static final boolean         defaultRESUME                    = true;
+    private static final String          PROPERTY_userid                  = "userid";
+    private static final String          PROPERTY_logintoken              = "token";
+    private static final String          PROPERTY_logintoken_valid_until  = "token_valid_until";
+    private static final String          PROPERTY_DOWNLOADLINK_directlink = "directlink";
+    private static final String          PROPERTY_DOWNLOADLINK_maxchunks  = "maxchunks";
 
     @SuppressWarnings("deprecation")
     public BoxbitApp(PluginWrapper wrapper) {
@@ -108,7 +109,7 @@ public class BoxbitApp extends PluginForHost {
     }
 
     private void handleDL(final Account account, final DownloadLink link) throws Exception {
-        final String directlinkproperty = this.getHost() + PROPERTY_directlink;
+        final String directlinkproperty = this.getHost() + PROPERTY_DOWNLOADLINK_directlink;
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty)) {
             this.loginAPI(account, false);
             String passCode = link.getDownloadPassword();
@@ -132,15 +133,29 @@ public class BoxbitApp extends PluginForHost {
                 /* This should never happen */
                 mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, defaultMAXCHUNKS);
-            link.setProperty(this.getHost() + PROPERTY_directlink, dl.getConnection().getURL().toString());
+            /* Check how many connections per file are allowed. */
+            int maxChunks;
+            final Number maxChunksAPI = (Number) entries.get("max_chunks");
+            if (maxChunksAPI != null) {
+                maxChunks = (int) maxChunksAPI;
+                if (maxChunks > 1) {
+                    maxChunks = -maxChunks;
+                }
+                /* Save that so when re-using that generated directurls we can remember this limit. */
+                link.setProperty(PROPERTY_DOWNLOADLINK_maxchunks, maxChunks);
+            } else {
+                maxChunks = defaultMAXCHUNKS;
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, maxChunks);
+            link.setProperty(this.getHost() + PROPERTY_DOWNLOADLINK_directlink, dl.getConnection().getURL().toString());
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection(true);
                 } catch (final IOException e) {
                     logger.log(e);
                 }
-                handleErrors(this.br, account, link);
+                /* 2021-09-07: Don't jump into errorhandling here as we typically won't get a json response. */
+                // handleErrors(this.br, account, link);
                 mhm.handleErrorGeneric(account, link, "unknown_dl_error", 50, 5 * 60 * 1000l);
             }
         } else {
@@ -156,7 +171,7 @@ public class BoxbitApp extends PluginForHost {
         }
         try {
             final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, defaultRESUME, defaultMAXCHUNKS);
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, defaultRESUME, getMaxChunks(link));
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 return true;
             } else {
@@ -171,6 +186,10 @@ public class BoxbitApp extends PluginForHost {
             }
             return false;
         }
+    }
+
+    private int getMaxChunks(final DownloadLink link) {
+        return (int) link.getLongProperty(PROPERTY_DOWNLOADLINK_maxchunks, 0);
     }
 
     @Override
@@ -374,7 +393,9 @@ public class BoxbitApp extends PluginForHost {
                     link.setDownloadPassword(null);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                 } else {
-                    /* Stuff we may know but purposely handle as generic error: blocked_ip, temporarily_unavailable, ip_address_not_br */
+                    /*
+                     * Stuff we may know but purposely handle as generic error: blocked_ip, temporarily_unavailable, ip_address_not_br
+                     */
                     logger.info("Detected unknown/generic errorkey: " + error);
                 }
             }

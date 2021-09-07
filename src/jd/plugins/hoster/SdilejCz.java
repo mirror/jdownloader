@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -37,9 +39,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sdilej.cz" }, urls = { "https?://(www\\.)?sdilej\\.cz/\\d+/[a-z0-9-\\.]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sdilej.cz" }, urls = { "https?://(?:www\\.)?sdilej\\.cz/(\\d+)/([a-z0-9-\\.]+)" })
 public class SdilejCz extends PluginForHost {
     /** Former czshare.com */
     private static AtomicInteger SIMULTANEOUS_PREMIUM = new AtomicInteger(-1);
@@ -51,20 +51,18 @@ public class SdilejCz extends PluginForHost {
         this.enablePremium("http://sdilej.cz/registrace");
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */
             return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        } else if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
             /* free accounts also have captchas */
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
-    // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
         return false;
     }
@@ -76,32 +74,49 @@ public class SdilejCz extends PluginForHost {
     }
 
     @Override
-    public String rewriteHost(String host) {
-        if ("czshare.com".equals(host)) {
-            return "sdilej.cz";
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
         }
-        return super.rewriteHost(host);
     }
 
-    @SuppressWarnings("deprecation")
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            final String urlTitle = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+            link.setName(urlTitle.replace("-", " "));
+        }
         this.setBrowserExclusive();
         prepBR(this.br);
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("/error.php?co=4") || br.containsHTML("Omluvte, prosím, výpadek databáze\\. Na opravě pracujeme")) {
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.containsHTML("(?i)Omluvte, prosím, výpadek databáze\\. Na opravě pracujeme")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.canHandle(br.getURL())) {
+            /* E.g. /error.php?co=4 */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("<h1[^<>]+>([^<>\"]*?)<").getMatch(0);
-        final String filesize = br.getRegex("Velikost:</b> (.*?)<").getMatch(0);
-        if (filename == null || filesize == null || "0 B".equals(filesize)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filesize = br.getRegex("Velikost:</b> (.*?)<").getMatch(0);
+        /* Set final filename here because server sends html encoded filenames */
+        if (filename != null) {
+            link.setFinalFileName(Encoding.htmlDecode(filename).trim());
         }
-        // Set final filename here because server sends html encoded filenames
-        downloadLink.setFinalFileName(filename.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".").replace(" ", "")));
+        if (filesize != null) {
+            filesize = filesize.trim();
+            if (filesize.equals("0 B")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".").replace(" ", "")));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -128,8 +143,8 @@ public class SdilejCz extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         handleErrors();
         String dllink = br.getRegex("<a href=\"([^<>\"]+?)\"[^<>]+?>Stáhnout FREE<").getMatch(0);
         if (dllink == null) {
@@ -152,8 +167,8 @@ public class SdilejCz extends PluginForHost {
             if (!br.containsHTML(CAPTCHATEXT) || file == null || size == null || server == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            String code = getCaptchaCode("http://sdilej.cz/captcha.php", downloadLink);
-            br.postPage("http://sdilej.cz/download.php", "id=" + new Regex(downloadLink.getDownloadURL(), "sdilej\\.cz/(\\d+)/.*?").getMatch(0) + "&file=" + file + "&size=" + size + "&server=" + server + "&captchastring2=" + Encoding.urlEncode(code) + "&freedown=Ov%C4%9B%C5%99it+a+st%C3%A1hnout");
+            String code = getCaptchaCode("http://sdilej.cz/captcha.php", link);
+            br.postPage("http://sdilej.cz/download.php", "id=" + new Regex(link.getDownloadURL(), "sdilej\\.cz/(\\d+)/.*?").getMatch(0) + "&file=" + file + "&size=" + size + "&server=" + server + "&captchastring2=" + Encoding.urlEncode(code) + "&freedown=Ov%C4%9B%C5%99it+a+st%C3%A1hnout");
             if (br.containsHTML("Chyba 6 / Error 6")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000);
             }
@@ -174,7 +189,7 @@ public class SdilejCz extends PluginForHost {
             // if (waittime != null) wait = Integer.parseInt(waittime);
             // sleep(wait * 1001l, downloadLink);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
@@ -199,17 +214,17 @@ public class SdilejCz extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         br.setFollowRedirects(false);
-        final String linkID = new Regex(downloadLink.getDownloadURL(), "sdilej\\.cz/(\\d+)/").getMatch(0);
-        if (linkID == null) {
+        final String contentID = new Regex(link.getDownloadURL(), "sdilej\\.cz/(\\d+)/").getMatch(0);
+        if (contentID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String dllink = br.getRegex("\"\\s*(https?://(?:\\w+\\.)?sdilej.cz/sdilej_(?:profi|down)\\.php\\?id=" + linkID + "&.*?)\\s*\"").getMatch(0);
+        String dllink = br.getRegex("\"\\s*(https?://(?:\\w+\\.)?sdilej.cz/sdilej_(?:profi|down)\\.php\\?id=" + contentID + "&.*?)\\s*\"").getMatch(0);
         if (dllink == null) {
             String code = br.getRegex("<input type=\"hidden\" name=\"code\" value=\"(.*?)\"").getMatch(0);
             if (code == null) {
@@ -218,14 +233,14 @@ public class SdilejCz extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            br.postPage("http://sdilej.cz/profi_down.php", "id=" + linkID + "&code=" + code);
+            br.postPage("http://sdilej.cz/profi_down.php", "id=" + contentID + "&code=" + code);
             dllink = br.getRedirectLocation();
         }
         if (dllink == null) {
             logger.warning("dllink is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -10);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -10);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);

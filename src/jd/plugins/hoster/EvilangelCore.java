@@ -20,6 +20,22 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.EvilangelComConfig;
+import org.jdownloader.plugins.components.config.EvilangelComConfig.Quality;
+import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -38,22 +54,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.config.EvilangelComConfig;
-import org.jdownloader.plugins.components.config.EvilangelComConfig.Quality;
-import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class EvilangelCore extends PluginForHost {
@@ -91,7 +91,7 @@ public abstract class EvilangelCore extends PluginForHost {
     private String              dllink                                 = null;
     private static final String URL_EVILANGEL_FILM                     = "https?://members\\.evilangel.com/[a-z]{2}/([A-Za-z0-9\\-_]+)/film/(\\d+)";
     private static final String URL_EVILANGEL_FREE_TRAILER             = "https?://(?:www\\.)?evilangel\\.com/[a-z]{2}/video/([A-Za-z0-9\\-]+)/(\\d+)";
-    private static final String URL_VIDEO                              = "https?://members\\.[^/]+/[a-z]{2}/video/([A-Za-z0-9\\-_]+)(?:/[A-Za-z0-9\\-_]+)?/(\\d+)";
+    private static final String URL_VIDEO                              = "https?://members\\.[^/]+/[a-z]{2}/video/([A-Za-z0-9\\-_]+)(?:/([A-Za-z0-9\\-_]+))?/(\\d+)";
     private static final String PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIN = "has_used_cookie_login";
 
     public boolean isProxyRotationEnabledForLinkChecker() {
@@ -287,33 +287,32 @@ public abstract class EvilangelCore extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link, null, true);
-        if (!isFreeDownloadable(link)) {
+        if (isFreeDownloadable(link)) {
+            handleDownload(link);
+        } else {
             throw new AccountRequiredException();
         }
-        handleDownload(link);
     }
 
     protected String getURLTitle(final DownloadLink link) {
-        final String fileID = getFID(link);
-        String url_title;
+        String urlTitle;
         if (link.getPluginPatternMatcher().matches(URL_EVILANGEL_FILM)) {
-            url_title = new Regex(link.getPluginPatternMatcher(), URL_EVILANGEL_FILM).getMatch(0).replace("-", " ");
+            urlTitle = new Regex(link.getPluginPatternMatcher(), URL_EVILANGEL_FILM).getMatch(0).replace("-", " ");
         } else if (link.getPluginPatternMatcher().matches(URL_EVILANGEL_FREE_TRAILER)) {
-            url_title = new Regex(link.getPluginPatternMatcher(), URL_EVILANGEL_FREE_TRAILER).getMatch(0).replace("-", "");
+            urlTitle = new Regex(link.getPluginPatternMatcher(), URL_EVILANGEL_FREE_TRAILER).getMatch(0).replace("-", "");
         } else {
             final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), URL_VIDEO);
             /* Sometimes author/studio + title is given and sometimes title(=param1) only. */
             final String param1 = urlinfo.getMatch(0);
-            final String param2 = urlinfo.getMatch(0);
+            final String param2 = urlinfo.getMatch(1);
             if (param1 != null && param2 != null) {
-                url_title = param1.replace("-", " ") + " - " + param2.replace("-", " ");
+                urlTitle = param1.replace("-", " ") + " - " + param2.replace("-", " ");
             } else {
-                url_title = param1.replace("-", " ");
+                urlTitle = param1.replace("-", " ");
             }
         }
-        if (url_title != null) {
-            url_title = fileID + "_" + url_title;
-            return url_title;
+        if (urlTitle != null) {
+            return urlTitle;
         } else {
             /* Developer error --> URL structure is unsupported */
             return null;
