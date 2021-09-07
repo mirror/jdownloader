@@ -33,7 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "milfzr.com" }, urls = { "https?://(?:www\\.)?milfzr\\.com/[A-Za-z0-9\\-]+-[A-Za-z0-9\\-]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "milfzr.com" }, urls = { "https?://(?:www\\.)?milfzr\\.com/[A-Za-z0-9\\-%]+/?$" })
 public class MilfzrCom extends PluginForHost {
     public MilfzrCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -59,20 +59,37 @@ public class MilfzrCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        final String urlTitle = Encoding.htmlDecode(new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/([^/]+)").getMatch(0).replace("-", " "));
+        if (!link.isNameSet()) {
+            link.setName(urlTitle + ".mp4");
+        }
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        final String urlTitle = new Regex(link.getPluginPatternMatcher(), "/([^/]+)$").getMatch(0);
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(urlTitle)) {
+        if (br.getHttpConnection().getResponseCode() == 403) {
+            /* Bad responsecode */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
+            /* Bad responsecode */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.getHttpConnection().getContentType().contains("html")) {
+            /* Bad Content-Type e.g. https://milfzr.com/wp-json */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.canHandle(br.getURL())) {
+            /*
+             * Redirect to unsupported URL e.g. https://milfzr.com/wp-admin -->
+             * https://milfzr.com/wp-login.php?redirect_to=https%3A%2F%2Fmilfzr.com%2Fwp-admin%2F&reauth=1
+             */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.toString().length() <= 100) {
+            /* Invalid response */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1 id=\"title\">([^<>\"]+)</h1>").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
-            filename = urlTitle.replace("-", " ");
+            filename = urlTitle;
         }
         /* RegExes sometimes used for streaming */
         final String jssource = br.getRegex("sources(?:\")?\\s*?:\\s*?(\\[.*?\\])").getMatch(0);
