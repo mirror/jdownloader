@@ -19,7 +19,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -30,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sextvx.com" }, urls = { "http://(?:www\\.)?sextvx\\.com/[a-z]{2}/video/\\d+/[a-z0-9\\-]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sextvx.com" }, urls = { "https?://(?:www\\.)?sextvx\\.com/(?:(?:[a-z]{2}/)?video/\\d+/[a-z0-9\\-]+|embed/\\d+)" })
 public class SextvxCom extends PluginForHost {
     public SextvxCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,28 +44,61 @@ public class SextvxCom extends PluginForHost {
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = 5;
     private String               dllink            = null;
+    private static final String  TYPE_NORMAL       = "https?://[^/]+/(?:[a-z]{2}/)?video/(\\d+)/([a-z0-9\\-]+)";
+    private static final String  TYPE_EMBED        = "https?://[^/]+/embed/(\\d+)";
 
     @Override
     public String getAGBLink() {
         return "http://sextvx.com/en/terms";
     }
 
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        final Regex urlregex = new Regex(link.getDownloadURL(), "sextvx\\.com/[a-z]{2}/video/(\\d+)/(.+)");
-        final String fid = urlregex.getMatch(0);
-        link.setUrlDownload("http://sextvx.com/en/video/" + fid + "/" + urlregex.getMatch(1));
-        link.setLinkID(fid);
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
     }
 
-    @SuppressWarnings("deprecation")
+    private String getFID(final DownloadLink link) {
+        if (link.getPluginPatternMatcher() == null) {
+            return null;
+        } else if (link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_EMBED).getMatch(0);
+        } else {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(0);
+        }
+    }
+
+    private String getWeakFilename(final DownloadLink link) {
+        if (link.getPluginPatternMatcher() == null) {
+            return null;
+        } else if (link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_EMBED).getMatch(0) + ".mp4";
+        } else {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(1).replace("-", " ") + ".mp4";
+        }
+    }
+
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(getWeakFilename(link));
+        }
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("This video is no longer available")) {
+        if (link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
+            /* This way we're able to find filenames even for embed URLs. */
+            br.getPage("https://www." + this.getHost() + "/en/video/" + this.getFID(link));
+        } else {
+            br.getPage(link.getPluginPatternMatcher());
+        }
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)This video is no longer available")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1>([^<>]*?)</h1>").getMatch(0);
@@ -75,9 +107,6 @@ public class SextvxCom extends PluginForHost {
         }
         if (filename == null) {
             filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)<").getMatch(0);
-        }
-        if (filename == null) {
-            filename = new Regex(downloadLink.getDownloadURL(), "([a-z0-9\\-]+)$").getMatch(0);
         }
         // if (filename == null) {
         // filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
@@ -97,7 +126,7 @@ public class SextvxCom extends PluginForHost {
             flux = "/flux?d=web.flv&s=" + server + "&p=" + path;
         }
         String source = br.getRegex("<source[^<>']+src='([^']+)'").getMatch(0);
-        if (filename == null || source == null) {
+        if (source == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(false);
@@ -114,56 +143,59 @@ public class SextvxCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        if (!filename.endsWith(ext)) {
-            filename += ext;
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename);
+            filename = filename.trim();
+            filename = encodeUnicode(filename);
+            final String ext = getFileNameExtensionFromString(dllink, ".mp4");
+            if (!filename.endsWith(ext)) {
+                filename += ext;
+            }
+            link.setFinalFileName(filename);
         }
-        downloadLink.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("Referer", "http://sextvx.com/static/player/player.swf");
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            try {
-                con = br.openHeadConnection(dllink);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            con = br.openHeadConnection(dllink);
+            if (this.looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?");
             }
-            downloadLink.setProperty("directlink", dllink);
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (final Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?");
         }
         dl.startDownload();
     }
