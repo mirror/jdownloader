@@ -18,8 +18,9 @@ package jd.plugins.hoster;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
@@ -79,16 +80,18 @@ public class CocoleechCom extends PluginForHost {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (account == null) {
             /* without account its not possible to download the link */
             return false;
+        } else {
+            return true;
         }
-        return true;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    /* This should never get called. */
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
@@ -140,21 +143,21 @@ public class CocoleechCom extends PluginForHost {
         handleDL(account, link);
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        final String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        final String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 con = br2.openGetConnection(dllink);
                 if (!con.isOK() || con.getContentType().contains("html") || con.getResponseCode() == 404 || con.getLongContentLength() == -1) {
-                    downloadLink.removeProperty(property);
+                    link.removeProperty(property);
                 } else {
                     final ByteArrayOutputStream bos = new ByteArrayOutputStream();
                     final CountingOutputStream cos = new CountingOutputStream(bos);
                     IO.readStreamToOutputStream(128 * 1024, con.getInputStream(), cos, false);
                     if (cos.transferedBytes() < 100) {
-                        downloadLink.removeProperty(property);
+                        link.removeProperty(property);
                         logger.info(bos.toString("UTF-8"));
                     } else {
                         return dllink;
@@ -162,7 +165,7 @@ public class CocoleechCom extends PluginForHost {
                 }
             } catch (final Exception e) {
                 logger.log(e);
-                downloadLink.removeProperty(property);
+                link.removeProperty(property);
             } finally {
                 if (con != null) {
                     con.disconnect();
@@ -178,15 +181,16 @@ public class CocoleechCom extends PluginForHost {
         prepBR(this.br);
         final AccountInfo ai = new AccountInfo();
         login(account);
-        final String accounttype = PluginJSonUtils.getJsonValue(br, "type");
-        final String trafficleft = PluginJSonUtils.getJsonValue(br, "traffic_left");
-        final String validuntil = PluginJSonUtils.getJsonValue(br, "expire_date");
-        long timestamp_validuntil = 0;
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final String accounttype = (String) entries.get("type");
+        final String trafficleft = (String) entries.get("traffic_left");
+        final String validuntil = (String) entries.get("expire_date");
+        long timestampValiduntil = 0;
         if (validuntil != null) {
-            timestamp_validuntil = TimeFormatter.getMilliSeconds(validuntil, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
+            timestampValiduntil = TimeFormatter.getMilliSeconds(validuntil, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
         }
-        if ("premium".equalsIgnoreCase(accounttype) && timestamp_validuntil > 0) {
-            ai.setValidUntil(timestamp_validuntil);
+        if ("premium".equalsIgnoreCase(accounttype) && timestampValiduntil > System.currentTimeMillis()) {
+            ai.setValidUntil(timestampValiduntil);
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium account");
             account.setConcurrentUsePossible(true);
@@ -212,10 +216,10 @@ public class CocoleechCom extends PluginForHost {
         }
         this.br.getPage(API_ENDPOINT + "/hosts-status");
         ArrayList<String> supportedhostslist = new ArrayList();
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final ArrayList<Object> hosters = (ArrayList<Object>) entries.get("result");
+        entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final List<Object> hosters = (List<Object>) entries.get("result");
         for (final Object hostero : hosters) {
-            entries = (LinkedHashMap<String, Object>) hostero;
+            entries = (Map<String, Object>) hostero;
             String host = (String) entries.get("host");
             final String status = (String) entries.get("status");
             if (host != null && "online".equalsIgnoreCase(status)) {
