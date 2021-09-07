@@ -548,7 +548,7 @@ public class ScriptEnvironment {
         return new EnvironmentSandbox();
     }
 
-    @ScriptAPI(description = "Get an Environment Object")
+    @ScriptAPI(description = "Get an Browser Object")
     public static BrowserSandBox getBrowser() throws EnvironmentException {
         askForPermission("load resources from the internet");
         return new BrowserSandBox();

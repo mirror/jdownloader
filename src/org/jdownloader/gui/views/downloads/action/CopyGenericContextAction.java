@@ -75,11 +75,27 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
     }
 
     public static String getTranslationForPatternPackages() {
-        return _JDT.T.CopyGenericContextAction_getTranslationForPatternPackages_v2();
+        final StringBuilder sb = new StringBuilder();
+        sb.append("<html>");
+        sb.append(_JDT.T.CopyGenericContextAction_getTranslationForPatternPackages_v3());
+        sb.append("<br><ul>");
+        for (final String pattern : new String[] { PATTERN_TYPE, PATTERN_PATH, PATTERN_COMMENT, PATTERN_FILESIZE, PATTERN_FILESIZE_KIB, PATTERN_FILESIZE_MIB, PATTERN_FILESIZE_GIB, PATTERN_HOST, PATTERN_NEWLINE, PATTERN_NAME, PATTERN_PACKAGE_NAME, PATTERN_ARCHIVE_PASSWORD, PATTERN_NAME_NOEXT, PATTERN_EXTENSION, PATTERN_HASH, PATTERN_URL, PATTERN_URL_CONTAINER, PATTERN_URL_CONTENT, PATTERN_URL_ORIGIN, PATTERN_URL_REFERRER }) {
+            sb.append("<li>").append(pattern).append("</li>");
+        }
+        sb.append("</ul></html>");
+        return sb.toString();
     }
 
     public static String getTranslationForPatternLinks() {
-        return _JDT.T.CopyGenericContextAction_getTranslationForPatternLinks_v2();
+        final StringBuilder sb = new StringBuilder();
+        sb.append("<html>");
+        sb.append(_JDT.T.CopyGenericContextAction_getTranslationForPatternLinks_v3());
+        sb.append("<br><ul>");
+        for (final String pattern : new String[] { PATTERN_TYPE, PATTERN_HOST, PATTERN_PATH, PATTERN_COMMENT, PATTERN_FILESIZE, PATTERN_FILESIZE_KIB, PATTERN_FILESIZE_MIB, PATTERN_FILESIZE_GIB, PATTERN_NEWLINE, PATTERN_NAME, PATTERN_PACKAGE_NAME, PATTERN_NAME_NOEXT, PATTERN_EXTENSION, PATTERN_HASH, PATTERN_URL, PATTERN_URL_CONTAINER, PATTERN_URL_CONTENT, PATTERN_URL_ORIGIN, PATTERN_URL_REFERRER, PATTERN_ARCHIVE_PASSWORD }) {
+            sb.append("<li>").append(pattern).append("</li>");
+        }
+        sb.append("</ul></html>");
+        return sb.toString();
     }
 
     public static String getTranslationForSmartSelection() {
@@ -232,6 +248,18 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
         }
     }
 
+    private final String replaceArchiveInfos(AbstractNode pv, String line) {
+        if (StringUtils.contains(line, PATTERN_ARCHIVE_PASSWORD)) {
+            final List<Archive> archives = ArchiveValidator.getArchivesFromPackageChildren(Arrays.asList(new AbstractNode[] { pv }), 1);
+            if (archives != null && archives.size() == 1) {
+                line = line.replace(PATTERN_ARCHIVE_PASSWORD, nulltoString(archives.get(0).getFinalPassword()));
+            } else {
+                line = line.replace(PATTERN_ARCHIVE_PASSWORD, nulltoString(null));
+            }
+        }
+        return line;
+    }
+
     public void add(StringBuilder sb, AbstractNode pv, final boolean contentPermission) {
         String line = null;
         if (pv instanceof FilePackage) {
@@ -268,6 +296,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
         } else if (pv instanceof DownloadLink) {
             line = getPatternLinks();
             line = replaceDate(line);
+            line = replaceArchiveInfos(pv, line);
             final DownloadLink link = (DownloadLink) pv;
             final FilePackage fp = link.getFilePackage();
             line = line.replace(PATTERN_TYPE, "Link");
@@ -308,12 +337,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
         } else if (pv instanceof CrawledLink) {
             line = getPatternLinks();
             line = replaceDate(line);
-            final List<Archive> archives = ArchiveValidator.getArchivesFromPackageChildren(Arrays.asList(new AbstractNode[] { pv }), 1);
-            if (archives != null && archives.size() == 1) {
-                line = line.replace(PATTERN_ARCHIVE_PASSWORD, nulltoString(archives.get(0).getFinalPassword()));
-            } else {
-                line = line.replace(PATTERN_ARCHIVE_PASSWORD, nulltoString(null));
-            }
+            line = replaceArchiveInfos(pv, line);
             final CrawledLink link = (CrawledLink) pv;
             final CrawledPackage cp = link.getParentNode();
             line = line.replace(PATTERN_TYPE, "Link");
@@ -354,12 +378,6 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
         } else if (pv instanceof CrawledPackage) {
             line = getPatternPackages();
             line = replaceDate(line);
-            final List<Archive> archives = ArchiveValidator.getArchivesFromPackageChildren(Arrays.asList(new AbstractNode[] { pv }), 1);
-            if (archives != null && archives.size() == 1) {
-                line = line.replace(PATTERN_ARCHIVE_PASSWORD, nulltoString(archives.get(0).getFinalPassword()));
-            } else {
-                line = line.replace(PATTERN_ARCHIVE_PASSWORD, nulltoString(null));
-            }
             final CrawledPackage pkg = (CrawledPackage) pv;
             final CrawledPackageView fpv = new CrawledPackageView(pkg).aggregate();
             line = line.replace(PATTERN_TYPE, "Package");
@@ -397,7 +415,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
     }
 
     private final String nulltoString(final Object comment) {
-        return comment == null ? "" : comment.toString();
+        return StringUtils.valueOrEmpty(StringUtils.valueOfOrNull(comment));
     }
 
     private final PackageControllerTable<?, ?> getTable() {

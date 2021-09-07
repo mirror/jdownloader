@@ -742,11 +742,6 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
         return JDGui.getInstance().getMainFrame().getIconImages();
     }
 
-    public void pack() {
-        getDialog().pack();
-        getDialog().setMinimumSize(getDialog().getRawPreferredSize());
-    }
-
     public void setPlugin(Plugin plugin) {
         this.plugin = plugin;
     }

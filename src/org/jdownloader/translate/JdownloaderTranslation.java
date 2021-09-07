@@ -776,11 +776,11 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Add only selected Links" })
     String CollapseExpandContextAction_getTranslationForSelectionOnly();
 
-    @Default(lngs = { "en" }, values = { "<html>Pattern for the Packages<br><ul><li>{name}</li><li>{newline}</li><li>{comment}</li><li>{filesize}</li><li>{type}</li><li>{path}</li></ul></html>" })
-    String CopyGenericContextAction_getTranslationForPatternPackages_v2();
+    @Default(lngs = { "en" }, values = { "Pattern for the Packages" })
+    String CopyGenericContextAction_getTranslationForPatternPackages_v3();
 
-    @Default(lngs = { "en" }, values = { "<html>Pattern for the Links<br><ul><li>{name}</li><li>{newline}</li><li>{comment}</li><li>{sha256}</li><li>{md5}</li><li>{filesize}</li><li>{url}</li><li>{type}</li><li>{path}</li></ul></html>" })
-    String CopyGenericContextAction_getTranslationForPatternLinks_v2();
+    @Default(lngs = { "en" }, values = { "Pattern for the Links" })
+    String CopyGenericContextAction_getTranslationForPatternLinks_v3();
 
     @Default(lngs = { "en" }, values = { "Smart Selection" })
     String CopyGenericContextAction_getTranslationForSmartSelection();
