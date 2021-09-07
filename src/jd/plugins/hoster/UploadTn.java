@@ -41,7 +41,7 @@ public class UploadTn extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info:<br />
+     * limit-info: 2021-09-07: Tested all modes except free account download <br />
      * captchatype-info: 2021-09-06: hcaptcha<br />
      * other:<br />
      */
@@ -88,7 +88,7 @@ public class UploadTn extends XFileSharingProBasic {
             return 1;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
-            return 1;
+            return 0;
         } else {
             /* Free(anonymous) and unknown account type */
             return 1;
