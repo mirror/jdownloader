@@ -33,7 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "milfzr.com" }, urls = { "https?://(?:www\\.)?milfzr\\.com/(?!feed|videos-up|wp-.*)[A-Za-z0-9\\-]+-[A-Za-z0-9\\-]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "milfzr.com" }, urls = { "https?://(?:www\\.)?milfzr\\.com/[A-Za-z0-9\\-]+-[A-Za-z0-9\\-]+" })
 public class MilfzrCom extends PluginForHost {
     public MilfzrCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -66,6 +66,8 @@ public class MilfzrCom extends PluginForHost {
         br.getPage(link.getPluginPatternMatcher());
         final String urlTitle = new Regex(link.getPluginPatternMatcher(), "/([^/]+)$").getMatch(0);
         if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(urlTitle)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.toString().length() <= 100) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1 id=\"title\">([^<>\"]+)</h1>").getMatch(0);
