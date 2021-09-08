@@ -245,9 +245,16 @@ public class FakirdebridNet extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final Object accountBannedO = entries.get("AccountBanned");
+        final Object accountBannedO = entries.get("banned");
         if (accountBannedO instanceof Boolean && accountBannedO == Boolean.TRUE) {
             throw new AccountInvalidException("Account banned");
+        }
+        /*
+         * User only enters apikey as password and could enter anything into the username field --> Make sure it contains an unique value.
+         */
+        final String username = (String) entries.get("username");
+        if (!StringUtils.isEmpty(username)) {
+            account.setUser(username);
         }
         account.setType(AccountType.PREMIUM);
         ai.setStatus((String) entries.get("AccountType"));

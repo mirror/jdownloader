@@ -122,14 +122,14 @@ public class PremboxCom extends PluginForHost {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (account == null) {
             /* without account its not possible to download the link */
             return false;
         }
         /* Make sure that we do not start more than the allowed number of max simultan downloads for the current host. */
         synchronized (hostRunningDlsNumMap) {
-            final String currentHost = correctHost(downloadLink.getHost());
+            final String currentHost = correctHost(link.getHost());
             if (hostRunningDlsNumMap.containsKey(currentHost) && hostMaxdlsMap.containsKey(currentHost)) {
                 final int maxDlsForCurrentHost = hostMaxdlsMap.get(currentHost);
                 final AtomicInteger currentRunningDlsForCurrentHost = hostRunningDlsNumMap.get(currentHost);
@@ -146,12 +146,12 @@ public class PremboxCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         /* handle premium should never be called */
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }

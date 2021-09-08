@@ -868,7 +868,8 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
              * Example multiple qualities available but "get_file" URL with highest quality has no quality modifier in URL (= Stage 3
              * required): fapality.com, xcum.com, camwhoresbay.com
              */
-            final String[] dlURLs = br.getRegex("(https?://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"]*?)(?:'|\")").getColumn(0);
+            /* Example relative URLs: shooshtime.com */
+            final String[] dlURLs = br.getRegex("((?:https?://[A-Za-z0-9\\.\\-]+)?/get_file/[^<>\"]*?)(?:'|\")").getColumn(0);
             int foundQualities = 0;
             for (final String dllinkTmp : dlURLs) {
                 if (!isValidDirectURL(dllinkTmp)) {
@@ -917,7 +918,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             /* Stage 3 - wider attempt of "stage 1" in "crypted" handling. Aso allows URLs without the typical "get_file" KVS pattern. */
             foundQualities = 0;
             /* E.g. good for websites like: gottanut.com */
-            final String[][] videoInfos = br.getRegex("(video_url[a-z0-9_]*)\\s*:\\s*(?:\"|\\')(https?://[^<>\"\\']+\\.mp4[^<>\"\\']*)(?:\"|\\')").getMatches();
+            final String[][] videoInfos = br.getRegex("(video_url[a-z0-9_]*)\\s*:\\s*(?:\"|\\')((?:https?://|/)[^<>\"\\']+\\.mp4[^<>\"\\']*)(?:\"|\\')").getMatches();
             for (final String[] vidInfo : videoInfos) {
                 final String urlVarName = vidInfo[0];
                 final String dllinkTmp = vidInfo[1];
@@ -967,7 +968,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 dllink = br.getRegex("(?:file|video)\\s*?:\\s*?(?:\"|')(http[^<>\"\\']*?\\.(?:m3u8|mp4|flv)[^<>\"]*?)(?:\"|')").getMatch(0);
             }
             if (StringUtils.isEmpty(dllink)) {
-                dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(\"|')(http[^<>\"\\']*?\\.(?:m3u8|mp4|flv)[^<>\"]*?)\\1").getMatch(1);
+                dllink = br.getRegex("(?:file|url):\\s*(\"|')(http[^<>\"\\']*?\\.(?:m3u8|mp4|flv)[^<>\"]*?)\\1").getMatch(1);
             }
             if (StringUtils.isEmpty(dllink)) { // tryboobs.com
                 dllink = br.getRegex("<video src=\"(https?://[^<>\"]*?)\" controls").getMatch(0);
@@ -1168,7 +1169,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     protected boolean isValidDirectURL(final String url) {
         if (url == null) {
             return false;
-        } else if (!url.matches("https?://.+get_file.+\\.mp4.*")) {
+        } else if (!url.matches("^(?:https?://|/).*get_file.+\\.mp4.*")) {
             // logger.info("Skipping invalid video URL (= doesn't match expected pattern): " + url);
             return false;
         } else if (StringUtils.endsWithCaseInsensitive(url, "jpg/")) {

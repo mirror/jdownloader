@@ -50,11 +50,13 @@ import jd.plugins.hoster.DirectHTTP;
 public class Brds4Chnrg extends PluginForDecrypt {
     public Brds4Chnrg(PluginWrapper wrapper) {
         super(wrapper);
-        try {
-            /* 2020-11-19: https://github.com/4chan/4chan-API#api-rules */
-            Browser.setRequestIntervalLimitGlobal(API_BASE, true, 1250);
-        } catch (final Throwable e) {
-        }
+    }
+
+    @Override
+    public void init() {
+        super.init();
+        /* 2020-11-19: https://github.com/4chan/4chan-API#api-rules */
+        Browser.setRequestIntervalLimitGlobal(API_BASE, true, 1250);
     }
 
     @Override

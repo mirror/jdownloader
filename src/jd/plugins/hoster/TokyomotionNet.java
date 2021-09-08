@@ -19,7 +19,6 @@ import java.io.IOException;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -37,7 +36,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tokyomotion.net", "osakamotion.net" }, urls = { "https?://(?:www\\.)?tokyomotion\\.net/video/\\d+(?:/[^/]+)?", "https?://(?:www\\.)?osakamotion\\.net/video/\\d+(?:/[^/]+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tokyomotion.net", "osakamotion.net" }, urls = { "https?://(?:www\\.)?tokyomotion\\.net/(?:video/\\d+(?:/[^/]+)?|embed/[a-f0-9]{20})", "https?://(?:www\\.)?osakamotion\\.net/(?:video/\\d+(?:/[^/]+)?|embed/[a-f0-9]{20})" })
 public class TokyomotionNet extends PluginForHost {
     public TokyomotionNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -59,41 +58,90 @@ public class TokyomotionNet extends PluginForHost {
     /* 2017-11-21: Deactivated this as cookies can get invalid at any time. */
     private static final boolean TRUST_YOUNG_COOKIES_WITHOUT_ANY_CHECK = false;
     public static final long     trust_cookie_age                      = 300000l;
+    private static final String  TYPE_NORMAL                           = "https?://[^/]+/video/(\\d+)(?:/([^/]+))?";
+    private static final String  TYPE_NORMAL_WITH_TITLE                = "https?://[^/]+/video/(\\d+)/([^/]+)";
+    private static final String  TYPE_EMBED                            = "https?://[^/]+/embed/([a-f0-9]{20})";
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        if (link.getPluginPatternMatcher() == null) {
+            return null;
+        } else if (link.getPluginPatternMatcher().matches(TYPE_NORMAL)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(0);
+        } else {
+            /* TYPE_EMBED */
+            return new Regex(link.getPluginPatternMatcher(), TYPE_EMBED).getMatch(0);
+        }
+    }
+
+    private String getWeakFileTitle(final DownloadLink link) {
+        if (link.getPluginPatternMatcher() == null) {
+            return null;
+        } else if (link.getPluginPatternMatcher().matches(TYPE_NORMAL_WITH_TITLE)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL_WITH_TITLE).getMatch(1).replace("-", " ");
+        } else if (link.getPluginPatternMatcher().matches(TYPE_NORMAL)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(0);
+        } else {
+            /* TYPE_EMBED */
+            return new Regex(link.getPluginPatternMatcher(), TYPE_EMBED).getMatch(0);
+        }
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        if (!link.isNameSet()) {
+            link.setName(getWeakFileTitle(link) + ".mp4");
+        }
         dllink = null;
         server_issues = false;
         isPrivateContent = false;
         this.setBrowserExclusive();
-        final String url_filename = new Regex(link.getDownloadURL(), "/([^/]+)$").getMatch(0);
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
             login(aa);
         }
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL().replace("http://", "https://"));
+        if (link.getPluginPatternMatcher().matches(TYPE_NORMAL)) {
+            /* 2021-09-08: This was supposed to work around issues with double-encoded URLs causing browser redirectloop. */
+            br.getPage("https://www." + this.getHost() + "/video/" + this.getFID(link));
+        } else {
+            br.getPage(link.getPluginPatternMatcher().replace("http://", "https://"));
+        }
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (this.br.containsHTML(">This is a private video")) {
+        } else if (this.br.containsHTML("(?i)>\\s*This is a private video")) {
             isPrivateContent = true;
             return AvailableStatus.TRUE;
         }
-        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            filename = url_filename;
+        String filename;
+        if (br.getURL().matches(TYPE_EMBED)) {
+            filename = br.getRegex("shareTitle\\s*:\\s*\"([^\"]+)\"").getMatch(0);
+        } else {
+            filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
+        }
+        if (filename != null) {
+            filename += ".mp4";
+            link.setFinalFileName(filename);
         }
         dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\"[^>]*?type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
-        filename += ".mp4";
         if (!StringUtils.isEmpty(dllink)) {
             dllink = Encoding.htmlDecode(dllink);
-            link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                     /*
                      * Special: First URL is only accessible once but it redirects to the final URL which we can access multiple times which
                      * is why we need to get that! 2017-11-14: Seems as if this was a serverside issue - it does not happen anymore!
@@ -108,9 +156,6 @@ public class TokyomotionNet extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-        } else {
-            /* We cannot be sure whether we have the correct extension or not! */
-            link.setName(filename);
         }
         return AvailableStatus.TRUE;
     }
@@ -197,12 +242,7 @@ public class TokyomotionNet extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setMaxSimultanDownloads(MAXDOWNLOADS);
