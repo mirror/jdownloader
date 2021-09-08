@@ -174,7 +174,7 @@ public class MotherLessCom extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     private void gallery(ArrayList<DownloadLink> ret, String parameter, ProgressController progress) throws IOException {
         String relative_path = null;
-        ArrayList<String> dupes = new ArrayList<String>();
+        final HashSet<String> dupes = new HashSet<String>();
         if (parameter.matches(TYPE_FAVOURITES_ALL)) {
             final String username = new Regex(parameter, TYPE_FAVOURITES_ALL).getMatch(0);
             /* images or videos */
@@ -206,15 +206,12 @@ public class MotherLessCom extends PluginForDecrypt {
             br.getPage(GM);
         }
         // grabs final page as count.
-        String totalpages = br.getRegex("<a href=\"/[A-Z0-9]{9}\\?page=\\d+\"[^>]+>(\\d+)</a><a href=\"/[A-Z0-9]{9}\\?page=\\d+\"[^>]+>NEXT").getMatch(0);
+        String totalpages = br.getRegex("<a href=\"/[^<>\"]+\\?page=\\d+\"[^>]+>(\\d+)</a><a href=\"/[^<>\"]+\\?page=\\d+\"[^>]+>NEXT").getMatch(0);
         if (totalpages == null) {
-            totalpages = br.getRegex("<a href=\"/[A-Z0-9]{9}\\?page=\\d+\"[^>]+>(\\d+)</a><a href=\"/[A-Z0-9]{9}\\?page=\\d+\"[^>]+rel\\s*=\\s*\"next\"").getMatch(0);
+            totalpages = br.getRegex("<a href=\"/[^<>\"]+\\?page=\\d+\"[^>]+>(\\d+)</a><a href=\"/[^<>\"]+\\?page=\\d+\"[^>]+rel\\s*=\\s*\"next\"").getMatch(0);
             if (totalpages == null) {
-                /* Wide open RegEx */
-                totalpages = br.getRegex("<a href=\"/[^<>\"]+\\?page=\\d+\"[^>]+>(\\d+)</a><a href=\"/[^<>\"]+\\?page=\\d+\"[^>]+>NEXT").getMatch(0);
-                if (totalpages == null) {
-                    totalpages = "1";
-                }
+                logger.info("TotalPages failed");
+                totalpages = "1";
             }
         }
         int numberOfPages = Integer.parseInt(totalpages);
@@ -222,7 +219,7 @@ public class MotherLessCom extends PluginForDecrypt {
         logger.info("Found " + numberOfPages + " page(s), decrypting now...");
         for (int i = 1; i <= numberOfPages; i++) {
             // stupid site jumps URLS for NextPage depending on parameter
-            String nextPage = br.getRegex("<a href=\"(/[A-Z0-9]{7,9}\\?page=\\d+)\"[^>]+>NEXT").getMatch(0);
+            String nextPage = br.getRegex("<a href=\"(/[^<>\"]+\\?page=\\d+)\"[^>]+>NEXT").getMatch(0);
             if (nextPage == null) {
                 nextPage = br.getRegex("<a href=\"(/[^<>\"]+\\?page=\\d+)\"[^>]+rel\\s*=\\s*\"next\"").getMatch(0);
             }
@@ -241,11 +238,13 @@ public class MotherLessCom extends PluginForDecrypt {
                     ret.add(this.createDownloadlink("https://" + this.getHost() + "/G" + galleryID));
                 }
             } else {
-                String[] videolinks = br.getRegex("<a href=\"(/[^\"]+)\" class=\"img-container\" target=\"_self\">\\s*<span class=\"currently-playing-icon\"").getColumn(0);
+                final String[] videolinks = br.getRegex("<a href=\"(?:https?://[^/]+)?(/[^\"]+)\" class=\"img-container\" target=\"_self\">\\s*<span class=\"currently-playing-icon\"").getColumn(0);
                 if (videolinks != null && videolinks.length != 0) {
                     for (String singlelink : videolinks) {
-                        final String contentID = new Regex(singlelink, "/g/.*?/([A-Z0-9]+$)").getMatch(0);
-                        if (contentID != null) {
+                        final String contentID = new Regex(singlelink, "/([A-Z0-9]+$)").getMatch(0);
+                        if (!dupes.add(contentID)) {
+                            continue;
+                        } else if (contentID != null) {
                             singlelink = "https://" + this.getHost() + "/" + contentID;
                         }
                         singlelink = formLink(singlelink);
@@ -261,11 +260,11 @@ public class MotherLessCom extends PluginForDecrypt {
                         ret.add(dl);
                     }
                 }
-                String[] picturelinks = br.getRegex("<a href=\"(?:https?://[^/]+)?(/[a-zA-Z0-9]+){1,2}\"[^>]*class=\"img-container\"").getColumn(0);
+                final String[] picturelinks = br.getRegex("<a href=\"(?:https?://[^/]+)?(?:/g/[^/]+)?(/[a-zA-Z0-9]+){1,2}\"[^>]*class=\"img-container\"").getColumn(0);
                 if (picturelinks != null && picturelinks.length != 0) {
                     logger.info("Decrypting page " + i + " which contains " + picturelinks.length + " links.");
                     for (String singlelink : picturelinks) {
-                        final String contentID = new Regex(singlelink, "/g/.*?/([A-Z0-9]+$)").getMatch(0);
+                        final String contentID = new Regex(singlelink, "/([A-Z0-9]+$)").getMatch(0);
                         if (!dupes.add(contentID)) {
                             /* Already added as video content --> Skip */
                             continue;
