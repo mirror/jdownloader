@@ -18,12 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hds.HDSDownloader;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hds.HDSContainer;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -39,20 +33,29 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hds.HDSContainer;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orf.at" }, urls = { "https?://tvthek\\.orf\\.atdecrypted\\d+" })
 public class ORFMediathek extends PluginForHost {
-    private static final String NEW_URLFORMAT = "https?://tvthek\\.orf\\.atdecrypted\\d+";
-    private static final String TYPE_AUDIO    = "https?://ooe\\.orf\\.at/radio/stories/\\d+/";
-    public static final String  Q_SUBTITLES   = "Q_SUBTITLES";
-    public static final String  Q_THUMBNAIL   = "Q_THUMBNAIL";
-    public static final String  Q_BEST        = "Q_BEST_2";
-    public static final String  Q_LOW         = "Q_LOW";
-    public static final String  Q_MEDIUM      = "Q_MEDIUM";
-    public static final String  Q_HIGH        = "Q_HIGH";
-    public static final String  Q_VERYHIGH    = "Q_VERYHIGH";
-    public static final String  HTTP_STREAM   = "HTTP_STREAM";
-    public static final String  HLS_STREAM    = "HLS_STREAM";
-    public static final String  HDS_STREAM    = "HDS_STREAM";
+    private static final String NEW_URLFORMAT  = "https?://tvthek\\.orf\\.atdecrypted\\d+";
+    private static final String TYPE_AUDIO     = "https?://ooe\\.orf\\.at/radio/stories/\\d+/";
+    public static final String  Q_SUBTITLES    = "Q_SUBTITLES";
+    public static final String  Q_THUMBNAIL    = "Q_THUMBNAIL";
+    public static final String  Q_BEST         = "Q_BEST_2";
+    public static final String  Q_LOW          = "Q_LOW";
+    public static final String  Q_VERYLOW      = "Q_VERYLOW";
+    public static final String  Q_MEDIUM       = "Q_MEDIUM";
+    public static final String  Q_HIGH         = "Q_HIGH";
+    public static final String  Q_VERYHIGH     = "Q_VERYHIGH";
+    public static final String  VIDEO_SEGMENTS = "VIDEO_SEGMENTS";
+    public static final String  VIDEO_GAPLESS  = "VIDEO_GAPLESS";
+    public static final String  HTTP_STREAM    = "HTTP_STREAM";
+    public static final String  HLS_STREAM     = "HLS_STREAM";
+    public static final String  HDS_STREAM     = "HDS_STREAM";
 
     public ORFMediathek(PluginWrapper wrapper) {
         super(wrapper);
@@ -258,10 +261,14 @@ public class ORFMediathek extends PluginForHost {
         final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.orf.best", "Load Best Version ONLY")).setDefaultValue(true);
         getConfig().addEntry(bestonly);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYLOW, JDL.L("plugins.hoster.orf.loadverylow", "Load very low version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.orf.loadlow", "Load low version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_MEDIUM, JDL.L("plugins.hoster.orf.loadmedium", "Load medium version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.orf.loadhigh", "Load high version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYHIGH, JDL.L("plugins.hoster.orf.loadveryhigh", "Load very high version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), VIDEO_GAPLESS, JDL.L("plugins.hoster.orf.videogapless", "Load gapless video")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), VIDEO_SEGMENTS, JDL.L("plugins.hoster.orf.videosegments", "Load video segments")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HTTP_STREAM, JDL.L("plugins.hoster.orf.loadhttp", "Load http streams ONLY")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HLS_STREAM, JDL.L("plugins.hoster.orf.loadhttp", "Load hls streams ONLY")).setDefaultValue(true));

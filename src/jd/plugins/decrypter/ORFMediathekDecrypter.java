@@ -21,7 +21,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -43,6 +42,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -126,19 +126,20 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
         try {
             String json = this.br.getRegex("class=\"jsb_ jsb_VideoPlaylist\" data\\-jsb=\"([^<>\"]+)\"").getMatch(0);
             if (json != null) {
-                String quality = null, key = null, title = null;
+                String quality = null, key = null;
                 /* jsonData --> HashMap */
                 json = Encoding.htmlDecode(json);
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-                entries = (LinkedHashMap<String, Object>) entries.get("playlist");
+                final Map<String, Object> jsonMap = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+                final Map<String, Object> playlist = (Map<String, Object>) jsonMap.get("playlist");
+                final Map<String, Object> gapless_videoEntry = (Map<String, Object>) playlist.get("gapless_video");
                 String fpName = "";
-                title = (String) entries.get("title");
-                final String id_playlist = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), 0));
+                final String id_playlist = Long.toString(JavaScriptEngineFactory.toLong(playlist.get("id"), 0));
                 if (id_playlist.equals("0")) {
                     return null;
                 }
-                ArrayList<Object> video = (ArrayList) entries.get("videos");
+                final List<Map<String, Object>> videosEntries = (List<Map<String, Object>>) playlist.get("videos");
                 final Map<String, List<DownloadLink>> map = new HashMap<String, List<DownloadLink>>();
+                String title = (String) playlist.get("title");
                 if (title == null) {
                     title = getTitle(br);
                 }
@@ -146,44 +147,61 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                     fpName = date_formatted + "_";
                 }
                 fpName += title + "_" + id_playlist;
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(fpName);
                 String extension = ".mp4";
                 if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) {
                     extension = ".mp3";
                 }
                 int videoIndex = 0;
-                for (final Object videoo : video) {
-                    videoIndex++;
-                    final String videoIndexFormatted = new DecimalFormat("00").format(videoIndex);
-                    final LinkedHashMap<String, Object> entries_video = (LinkedHashMap<String, Object>) videoo;
-                    final String thumbnail = (String) entries_video.get("preview_image_url");
-                    final ArrayList<Object> sources_video = (ArrayList) entries_video.get("sources");
-                    ArrayList<Object> subtitle_list = null;
-                    final Object sources_subtitle_o = entries_video.get("subtitles");
-                    final String id_individual_video = Long.toString(JavaScriptEngineFactory.toLong(entries_video.get("id"), 0));
-                    if (id_individual_video.equals("0")) {
-                        return null;
+                final List<Map<String, Object>> videos = new ArrayList<Map<String, Object>>();
+                final boolean allVideos = cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.VIDEO_SEGMENTS, true) == cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.VIDEO_GAPLESS, true);
+                if (allVideos || cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.VIDEO_SEGMENTS, true)) {
+                    videos.addAll(videosEntries);
+                }
+                if (gapless_videoEntry != null && (allVideos || cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.VIDEO_GAPLESS, true))) {
+                    videos.add(gapless_videoEntry);
+                }
+                for (final Map<String, Object> video : videos) {
+                    final boolean isGaplessVideo = video == gapless_videoEntry;
+                    final String thumbnail = (String) video.get("preview_image_url");
+                    final List<Object> sources_video = (List) video.get("sources");
+                    List<Object> subtitle_list = null;
+                    final Object sources_subtitle_o = video.get("subtitles");
+                    final String id_individual_video;
+                    if (isGaplessVideo) {
+                        id_individual_video = "gapless";
+                    } else {
+                        id_individual_video = Long.toString(JavaScriptEngineFactory.toLong(video.get("id"), 0));
+                        if (id_individual_video.equals("0")) {
+                            logger.info("unsupported?:" + JSonStorage.toString(video));
+                            continue;
+                        }
                     }
-                    final String description = (String) entries_video.get("description");
-                    String titlethis = (String) entries_video.get("title");
-                    if (titlethis == null) {
-                        titlethis = description;
+                    String titlethis = null;
+                    if (isGaplessVideo) {
+                        titlethis = title;
+                    } else {
+                        titlethis = (String) video.get("title");
+                        if (titlethis == null) {
+                            final String description = (String) video.get("description");
+                            titlethis = description;
+                        }
                     }
                     if (titlethis != null && titlethis.length() > 80) {
                         /* Avoid too long filenames */
                         titlethis = titlethis.substring(0, 80);
                     }
-                    titlethis = videoIndexFormatted + "_" + sanitizeString(titlethis);
+                    if (!isGaplessVideo) {
+                        final String videoIndexFormatted = new DecimalFormat("00").format(++videoIndex);
+                        titlethis = videoIndexFormatted + "_" + sanitizeString(titlethis);
+                    }
                     String vIdTemp = "";
                     String bestFMT = null;
                     String subtitle = null;
-                    FilePackage fp = null;
-                    if (titlethis != null) {
-                        fp = FilePackage.getInstance();
-                        fp.setName(fpName);
-                    }
                     for (final Object sourceo : sources_video) {
                         subtitle = null;
-                        final LinkedHashMap<String, Object> entry_source = (LinkedHashMap<String, Object>) sourceo;
+                        final Map<String, Object> entry_source = (Map<String, Object>) sourceo;
                         /* Backward compatibility with xml method */
                         final String url_directlink_video = (String) entry_source.get("src");
                         String fmt = (String) entry_source.get("quality");
@@ -195,7 +213,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         }
                         if (sources_subtitle_o != null) {
                             /* [0] = .srt, [1] = WEBVTT .vtt */
-                            subtitle_list = (ArrayList) sources_subtitle_o;
+                            subtitle_list = (List) sources_subtitle_o;
                             if (subtitle_list.size() > 1) {
                                 subtitle = (String) JavaScriptEngineFactory.walkJson(subtitle_list.get(1), "src");
                             } else if (subtitle_list.size() == 1) {
@@ -208,13 +226,16 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         if (!"http".equals(protocol)) {
                             continue;
                         } else if ("progressive".equals(delivery) && !allow_HTTP) {
+                            logger.info("skip disabled:" + JSonStorage.toString(video));
                             continue;
                         } else if ("hls".equals(delivery) && !allow_HLS) {
+                            logger.info("skip disabled:" + JSonStorage.toString(video));
                             continue;
                         } else if ("hds".equals(delivery) && !allow_HDS) {
+                            logger.info("skip disabled:" + JSonStorage.toString(video));
                             continue;
                         } else if ("dash".equals(delivery)) {
-                            /* 2021-04-06 */
+                            /* 2021-04-06 unsupported */
                             continue;
                         } else if (url_directlink_video == null || isEmpty(fmt)) {
                             continue;
@@ -271,7 +292,13 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                             }
                         }
                         /* best selection is done at the end */
-                        if ("LOW".equals(fmt)) {
+                        if ("VERYLOW".equals(fmt)) {
+                            if ((cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.Q_VERYLOW, true) || BEST) == false) {
+                                continue;
+                            } else {
+                                fmt = "VERYLOW";
+                            }
+                        } else if ("LOW".equals(fmt)) {
                             if ((cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.Q_LOW, true) || BEST) == false) {
                                 continue;
                             } else {
@@ -317,11 +344,6 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         final String final_filename_video = final_filename_without_extension + extension;
                         final DownloadLink link = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
                         final String server_filename = getFileNameFromURL(new URL(url_directlink_video));
-                        String linkid_video = id_playlist + id_individual_video + fmt + protocol + delivery;
-                        if (server_filename != null) {
-                            /* Server filename should always be available! */
-                            linkid_video += server_filename;
-                        }
                         link.setFinalFileName(final_filename_video);
                         link.setContentUrl(data);
                         link.setProperty("directURL", url_directlink_video);
@@ -346,6 +368,11 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         }
                         if (fp != null) {
                             link._setFilePackage(fp);
+                        }
+                        String linkid_video = id_playlist + id_individual_video + fmt + protocol + delivery;
+                        if (server_filename != null) {
+                            /* Server filename should always be available! */
+                            linkid_video += server_filename;
                         }
                         link.setLinkID(linkid_video);
                         List<DownloadLink> list = map.get(fmt);
@@ -392,7 +419,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         ret.add(dl);
                     }
                     if (BEST) {
-                        final String[] qualities = { "VERYHIGH", "HIGH", "MEDIUM", "LOW" };
+                        final String[] qualities = { "VERYHIGH", "HIGH", "MEDIUM", "LOW", "VERYLOW" };
                         for (final String qual : qualities) {
                             List<DownloadLink> list = map.get(qual);
                             if (list != null) {
@@ -453,7 +480,9 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
 
     private String humanReadableQualityIdentifier(String quality) {
         final String humanreabable;
-        if ("Q1A".equals(quality)) {
+        if ("Q0A".equals(quality)) {
+            humanreabable = "VERYLOW";
+        } else if ("Q1A".equals(quality)) {
             humanreabable = "LOW";
         } else if ("Q4A".equals(quality)) {
             humanreabable = "MEDIUM";
