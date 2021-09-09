@@ -149,9 +149,8 @@ public class FlickrCom extends PluginForDecrypt {
         String fpName = null;
         final String apikey = getPublicAPIKey(this.br);
         if (StringUtils.isEmpty(apikey)) {
-            throw new DecrypterException("Decrypter broken for link: " + param.getCryptedUrl());
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getHeaders().put("Referer", "");
         csrf = PluginJSonUtils.getJsonValue(br, "csrf");
         if (csrf == null) {
             csrf = "";
@@ -169,6 +168,11 @@ public class FlickrCom extends PluginForDecrypt {
         boolean alreadyAccessedFirstPage = false;
         final UrlQuery params = new UrlQuery();
         params.add("api_key", apikey);
+        /**
+         * TODO: Add date_upload,description,owner_name,path_alias,realname </br>
+         * ... and all photo directurls e.g. url_q,url_z, ...
+         */
+        // params.add("extras", "");
         params.add("format", "json");
         params.add("per_page", Integer.toString(api_max_entries_per_page));
         params.add("hermes", "1");
@@ -294,6 +298,7 @@ public class FlickrCom extends PluginForDecrypt {
             final List<Map<String, Object>> photoList = (List<Map<String, Object>>) photoInfo.get("photo");
             for (final Map<String, Object> photo : photoList) {
                 imagePosition += 1;
+                final String thisUsernameSlug = (String) photo.get("pathalias");
                 final String thisUsernameInternal = (String) photo.get("owner");
                 final String usernameForContentURL;
                 /* E.g. in a set, all pictures got the same owner so the "owner" key is not available here. */
@@ -306,15 +311,7 @@ public class FlickrCom extends PluginForDecrypt {
                     /* This should never happen! */
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                final String thisUsernameFull;
-                final Object thisUsernameFullO = photo.get("ownername");
-                if (thisUsernameFullO != null) {
-                    thisUsernameFull = thisUsernameFullO.toString();
-                } else if (givenUsernameDataIsValidForAllMediaItems) {
-                    thisUsernameFull = usernameFull;
-                } else {
-                    thisUsernameFull = null;
-                }
+                final String thisUsernameFull = (String) photo.get("ownername");
                 final String photoID = photo.get("id").toString();
                 final String title = (String) photo.get("title");
                 final String dateadded = (String) photo.get("dateadded");
@@ -351,6 +348,9 @@ public class FlickrCom extends PluginForDecrypt {
                     if (!StringUtils.isEmpty(usernameFull)) {
                         dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_FULL, usernameFull);
                     }
+                }
+                if (!StringUtils.isEmpty(thisUsernameSlug)) {
+                    dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME, thisUsernameSlug);
                 }
                 if (!StringUtils.isEmpty(thisUsernameFull)) {
                     dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_FULL, thisUsernameFull);
@@ -622,6 +622,7 @@ public class FlickrCom extends PluginForDecrypt {
      */
     @SuppressWarnings({ "unchecked" })
     @Deprecated
+    /** Deprecated! Uses website without ajax requests! */
     private void site_handleSite(final CryptedLink param) throws Exception {
         // if not logged in this is 25... need to confirm for logged in -raztoki20160717
         int maxEntriesPerPage = 25;
