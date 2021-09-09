@@ -109,7 +109,7 @@ public class FlickrCom extends PluginForDecrypt {
         this.loggedin = getUserLogin();
         if (param.getCryptedUrl().matches(TYPE_SETS_OF_USER_ALL)) {
             apiCrawlSetsOfUser(param);
-        } else if (param.getCryptedUrl().matches(TYPE_FAVORITES) || loggedin) {
+        } else if (loggedin) {
             site_handleSite(param);
         } else {
             api_handleAPI(param);
@@ -165,14 +165,14 @@ public class FlickrCom extends PluginForDecrypt {
         String galleryID = null;
         String packageDescription = null;
         /* Set this if we pre-access items to e.g. get specific fields in beforehand. */
-        boolean alreadyAccessedFirstPage = false;
+        boolean alreadyAccessedFirstPage;
         final UrlQuery params = new UrlQuery();
         params.add("api_key", apikey);
         /**
          * TODO: Add date_upload,description,owner_name,path_alias,realname </br>
          * ... and all photo directurls e.g. url_q,url_z, ...
          */
-        // params.add("extras", "");
+        params.add("extras", "date_upload%2Cdescription%2Cowner_name%2Cpath_alias%2Crealname");
         params.add("format", "json");
         params.add("per_page", Integer.toString(api_max_entries_per_page));
         params.add("hermes", "1");
@@ -181,7 +181,7 @@ public class FlickrCom extends PluginForDecrypt {
         if (this.csrf != null) {
             params.add("csrf", this.csrf);
         }
-        String nameOfMainMap = null;
+        String nameOfMainMap;
         if (param.getCryptedUrl().matches(TYPE_SET_SINGLE)) {
             usernameFromURL = new Regex(param.getCryptedUrl(), TYPE_SET_SINGLE).getMatch(0);
             setID = new Regex(param.getCryptedUrl(), TYPE_SET_SINGLE).getMatch(1);
@@ -204,6 +204,7 @@ public class FlickrCom extends PluginForDecrypt {
             params.add("method", "flickr.photosets.getPhotos");
             params.add("photoset_id", setID);
             nameOfMainMap = "photoset";
+            alreadyAccessedFirstPage = false;
             givenUsernameDataIsValidForAllMediaItems = true;
         } else if (param.getCryptedUrl().matches(TYPE_GALLERY)) {
             usernameFromURL = new Regex(param.getCryptedUrl(), TYPE_GALLERY).getMatch(0);
@@ -227,15 +228,13 @@ public class FlickrCom extends PluginForDecrypt {
             alreadyAccessedFirstPage = true;
             givenUsernameDataIsValidForAllMediaItems = false;
         } else if (param.getCryptedUrl().matches(TYPE_FAVORITES)) {
-            /* TODO: Refactoring: Fix this */
             usernameFromURL = new Regex(param.getCryptedUrl(), TYPE_FAVORITES).getMatch(0);
-            final String nsid = this.lookupUser(usernameFromURL);
-            if (nsid == null) {
-                throw new DecrypterException("Decrypter broken for link: " + param.getCryptedUrl());
-            }
-            final String apilink = API_BASE + "services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + apikey + "&extras=media&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&user_id=" + Encoding.urlEncode(nsid) + "&method=flickr.favorites.getList&hermes=1&hermesClient=1&nojsoncallback=1";
-            api_getPage(apilink.replace("GETJDPAGE", "1"));
+            usernameInternal = this.lookupUser(usernameFromURL);
+            params.add("method", "flickr.favorites.getList");
+            params.add("user_id", Encoding.urlEncode(usernameInternal));
             fpName = "flickr.com favourites of user " + usernameFromURL;
+            nameOfMainMap = "photos";
+            alreadyAccessedFirstPage = false;
             givenUsernameDataIsValidForAllMediaItems = false;
         } else if (param.getCryptedUrl().matches(TYPE_GROUPS)) {
             usernameFromURL = new Regex(param.getCryptedUrl(), TYPE_GROUPS).getMatch(0);
@@ -257,9 +256,8 @@ public class FlickrCom extends PluginForDecrypt {
         } else if (param.getCryptedUrl().matches(TYPE_USER)) {
             /* Crawl all items of a user */
             usernameFromURL = new Regex(param.getCryptedUrl(), TYPE_USER).getMatch(0);
-            final String nsid = this.lookupUser(usernameFromURL);
-            params.add("extras", "media");
-            params.add("user_id", nsid);
+            usernameInternal = this.lookupUser(usernameFromURL);
+            params.add("user_id", usernameInternal);
             params.add("method", "flickr.people.getPublicPhotos"); // Alternative: flickr.people.getPhotos
             fpName = "flickr.com images of user " + usernameFromURL;
             nameOfMainMap = "photos";
@@ -294,12 +292,21 @@ public class FlickrCom extends PluginForDecrypt {
             final Map<String, Object> photoInfo = (Map<String, Object>) entries.get(nameOfMainMap);
             totalpages = ((Number) photoInfo.get("pages")).intValue();
             totalimgs = ((Number) photoInfo.get("total")).intValue();
+            if (totalimgs == 0) {
+                logger.info("ZERO items available");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             logger.info("Crawling page " + page + " / " + totalpages + " | Progress: " + decryptedLinks.size() + " of " + totalimgs);
             final List<Map<String, Object>> photoList = (List<Map<String, Object>>) photoInfo.get("photo");
+            final boolean seemsToContainMatureContent = page < totalpages && photoList.size() < api_max_entries_per_page;
+            if (seemsToContainMatureContent) {
+                logger.info("There is probably hidden mature content present? Found only " + photoList.size() + " of max " + api_max_entries_per_page + " items on page " + page + " although we're not yet on the last page");
+            }
             for (final Map<String, Object> photo : photoList) {
                 imagePosition += 1;
                 final String thisUsernameSlug = (String) photo.get("pathalias");
                 final String thisUsernameInternal = (String) photo.get("owner");
+                final String thisUsernameFull = (String) photo.get("ownername");
                 final String usernameForContentURL;
                 /* E.g. in a set, all pictures got the same owner so the "owner" key is not available here. */
                 if (givenUsernameDataIsValidForAllMediaItems) {
@@ -311,11 +318,10 @@ public class FlickrCom extends PluginForDecrypt {
                     /* This should never happen! */
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                final String thisUsernameFull = (String) photo.get("ownername");
                 final String photoID = photo.get("id").toString();
                 final String title = (String) photo.get("title");
-                final String dateadded = (String) photo.get("dateadded");
-                final String description = (String) photo.get("description");
+                final String dateUploaded = (String) photo.get("dateupload");
+                final String description = (String) JavaScriptEngineFactory.walkJson(photo, "description/_content");
                 final String contenturl;
                 if (setID != null) {
                     contenturl = "https://www." + this.getHost() + "/photos/" + usernameForContentURL + "/" + photoID + "/in/album-" + setID;
@@ -358,8 +364,8 @@ public class FlickrCom extends PluginForDecrypt {
                 if (!StringUtils.isEmpty(thisUsernameInternal)) {
                     dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_INTERNAL, thisUsernameInternal);
                 }
-                if (dateadded != null && dateadded.matches("\\d+")) {
-                    dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_DATE, Long.parseLong(dateadded) * 1000);
+                if (dateUploaded != null && dateUploaded.matches("\\d+")) {
+                    dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_DATE, Long.parseLong(dateUploaded) * 1000);
                 }
                 if (!StringUtils.isEmpty(title)) {
                     dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_TITLE, title);

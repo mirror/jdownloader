@@ -108,7 +108,7 @@ public class FlickrCom extends PluginForHost {
                 /* Fix for mistage in rev 44961 */
                 correctedUserCustomFilenameMask = correctedUserCustomFilenameMask.replace("*content_id", "*content_id*");
             }
-            this.getPluginConfig().setProperty(CUSTOM_FILENAME, correctedUserCustomFilenameMask);
+            getPluginConfig().setProperty(CUSTOM_FILENAME, correctedUserCustomFilenameMask);
         }
     }
 
