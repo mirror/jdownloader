@@ -970,7 +970,12 @@ public class SoundcloudCom extends PluginForHost {
     }
 
     public static AudioQualitySelectionMode getAudioQualitySelectionMode() {
-        return AudioQualitySelectionMode.values()[SubConfiguration.getConfig("soundcloud.com").getIntegerProperty(AUDIO_QUALITY_SELECTION_MODE, defaultAUDIO_QUALITY_SELECTION_MODE)];
+        final int arrayPos = SubConfiguration.getConfig("soundcloud.com").getIntegerProperty(AUDIO_QUALITY_SELECTION_MODE, defaultArrayPosAUDIO_QUALITY_SELECTION_MODE);
+        if (arrayPos < AudioQualitySelectionMode.values().length) {
+            return AudioQualitySelectionMode.values()[arrayPos];
+        } else {
+            return AudioQualitySelectionMode.values()[defaultArrayPosAUDIO_QUALITY_SELECTION_MODE];
+        }
     }
 
     public static boolean userPrefersOfficialDownload() {
@@ -982,7 +987,7 @@ public class SoundcloudCom extends PluginForHost {
         return SubConfiguration.getConfig("soundcloud.com").getBooleanProperty(ENFORCE_FILESIZE_CALCULATION_EVEN_FOR_OFFICIALLY_DOWNLOADABLE_CONTENT, defaultENFORCE_FILESIZE_CALCULATION_EVEN_FOR_OFFICIALLY_DOWNLOADABLE_CONTENT);
     }
 
-    private static final int     defaultAUDIO_QUALITY_SELECTION_MODE                                          = 0;
+    private static final int     defaultArrayPosAUDIO_QUALITY_SELECTION_MODE                                          = 0;
     private static final boolean defaultALLOW_PREVIEW_DOWNLOAD                                                = false;
     public static final boolean  defaultGRAB_PURCHASE_URL                                                     = false;
     public static final boolean  defaultGRAB500THUMB                                                          = false;
@@ -1000,7 +1005,7 @@ public class SoundcloudCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRABORIGINALTHUMB, getPhrase("SETTING_GRABORIGINALTHUMB")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPhrase("SETTING_LABEL_hoster")));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), AUDIO_QUALITY_SELECTION_MODE, getAudioQualitySelectionModeStrings(), getPhrase("SETTING_AUDIO_QUALITY_SELECTION_MODE")).setDefaultValue(defaultAUDIO_QUALITY_SELECTION_MODE));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), AUDIO_QUALITY_SELECTION_MODE, getAudioQualitySelectionModeStrings(), getPhrase("SETTING_AUDIO_QUALITY_SELECTION_MODE")).setDefaultValue(defaultArrayPosAUDIO_QUALITY_SELECTION_MODE));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_PREVIEW_DOWNLOAD, getPhrase("SETTING_ALLOW_PREVIEW_DOWNLOAD")).setDefaultValue(defaultALLOW_PREVIEW_DOWNLOAD));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPhrase("SETTING_LABEL_fnames_top")));

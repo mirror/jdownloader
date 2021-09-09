@@ -71,6 +71,7 @@ public class FlickrCom extends PluginForHost {
     }
 
     /* Settings */
+    private static final String            SETTING_SELECTED_PHOTO_QUALITY          = "SELECTED_PHOTO_QUALITY";
     private static final String            CUSTOM_DATE                             = "CUSTOM_DATE";
     private static final String            CUSTOM_FILENAME                         = "CUSTOM_FILENAME";
     private static final String            CUSTOM_FILENAME_EMPTY_TAG_STRING        = "CUSTOM_FILENAME_EMPTY_TAG_STRING";
@@ -101,7 +102,12 @@ public class FlickrCom extends PluginForHost {
         final String userCustomFilenameMask = this.getPluginConfig().getStringProperty(CUSTOM_FILENAME);
         if (userCustomFilenameMask != null && (userCustomFilenameMask.contains("*owner*") || userCustomFilenameMask.contains("*photo_id*"))) {
             String correctedUserCustomFilenameMask = userCustomFilenameMask.replace("*owner*", "*username_internal*");
-            correctedUserCustomFilenameMask = correctedUserCustomFilenameMask.replace("*photo_id*", "*content_id");
+            if (correctedUserCustomFilenameMask.contains("*photo_id*")) {
+                correctedUserCustomFilenameMask = correctedUserCustomFilenameMask.replace("*photo_id*", "*content_id*");
+            } else if (!correctedUserCustomFilenameMask.contains("*content_id*") && correctedUserCustomFilenameMask.contains("*content_id")) {
+                /* Fix for mistage in rev 44961 */
+                correctedUserCustomFilenameMask = correctedUserCustomFilenameMask.replace("*content_id", "*content_id*");
+            }
             this.getPluginConfig().setProperty(CUSTOM_FILENAME, correctedUserCustomFilenameMask);
         }
     }
@@ -204,60 +210,186 @@ public class FlickrCom extends PluginForHost {
             throw new AccountRequiredException();
         }
         /* Collect metadata (needed for custom filenames) */
-        String title = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
-        if (title == null) {
-            title = br.getRegex("class=\"photo\\-title\">(.*?)</h1").getMatch(0);
-        }
-        if (title == null) {
-            title = br.getRegex("<title>(.*?) \\| Flickr \\- Photo Sharing\\!</title>").getMatch(0);
-        }
-        if (title == null) {
-            title = br.getRegex("<meta name=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        }
-        if (title == null) {
-            title = br.getRegex("<title>([^<>]+)\\| Flickr</title").getMatch(0);
-        }
-        final String usernameFromHTML = br.getRegex("id=\"canonicalurl\"[^>]*href=\"https?://[^/]+/photos/([^/]+)/").getMatch(0);
-        if (usernameFromHTML != null) {
-            /* Overwrite property! */
-            if (jd.plugins.decrypter.FlickrCom.looksLikeInternalUsername(usernameFromHTML)) {
-                link.setProperty(PROPERTY_USERNAME_INTERNAL, usernameFromHTML);
-            } else {
-                link.setProperty(PROPERTY_USERNAME, usernameFromHTML);
+        final boolean collectMetadataFromHTML = false;
+        if (collectMetadataFromHTML) {
+            String title = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
+            if (title == null) {
+                title = br.getRegex("class=\"photo\\-title\">(.*?)</h1").getMatch(0);
             }
-        }
-        final String usernameFull = br.getRegex("class=\"owner-name truncate\"[^>]*data-track=\"attributionNameClick\">([^<]+)</a>").getMatch(0);
-        if (usernameFull != null && !link.hasProperty(PROPERTY_USERNAME_FULL)) {
-            link.setProperty(PROPERTY_USERNAME_FULL, Encoding.htmlDecode(usernameFull).trim());
-        }
-        /* Do not overwrite property as crawler is getting this information more reliably as it is using their API! */
-        if (!link.hasProperty(PROPERTY_TITLE) && title != null) {
-            title = Encoding.htmlDecode(title).trim();
-            if (!title.isEmpty()) {
-                link.setProperty(PROPERTY_TITLE, Encoding.htmlDecode(title).trim());
+            if (title == null) {
+                title = br.getRegex("<title>(.*?) \\| Flickr \\- Photo Sharing\\!</title>").getMatch(0);
             }
-        }
-        final String uploadedDate = PluginJSonUtils.getJsonValue(br, "datePosted");
-        if (uploadedDate != null && uploadedDate.matches("\\d+")) {
-            link.setProperty(PROPERTY_DATE, Long.parseLong(uploadedDate) * 1000);
+            if (title == null) {
+                title = br.getRegex("<meta name=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            }
+            if (title == null) {
+                title = br.getRegex("<title>([^<>]+)\\| Flickr</title").getMatch(0);
+            }
+            final String usernameFromHTML = br.getRegex("id=\"canonicalurl\"[^>]*href=\"https?://[^/]+/photos/([^/]+)/").getMatch(0);
+            if (usernameFromHTML != null) {
+                /* Overwrite property! */
+                if (jd.plugins.decrypter.FlickrCom.looksLikeInternalUsername(usernameFromHTML)) {
+                    link.setProperty(PROPERTY_USERNAME_INTERNAL, usernameFromHTML);
+                } else {
+                    link.setProperty(PROPERTY_USERNAME, usernameFromHTML);
+                }
+            }
+            final String usernameFull = br.getRegex("class=\"owner-name truncate\"[^>]*data-track=\"attributionNameClick\">([^<]+)</a>").getMatch(0);
+            if (usernameFull != null && !link.hasProperty(PROPERTY_USERNAME_FULL)) {
+                link.setProperty(PROPERTY_USERNAME_FULL, Encoding.htmlDecode(usernameFull).trim());
+            }
+            /* Do not overwrite property as crawler is getting this information more reliably as it is using their API! */
+            if (!link.hasProperty(PROPERTY_TITLE) && title != null) {
+                title = Encoding.htmlDecode(title).trim();
+                if (!title.isEmpty()) {
+                    link.setProperty(PROPERTY_TITLE, Encoding.htmlDecode(title).trim());
+                }
+            }
+            final String uploadedDate = PluginJSonUtils.getJsonValue(br, "datePosted");
+            if (uploadedDate != null && uploadedDate.matches("\\d+")) {
+                link.setProperty(PROPERTY_DATE, Long.parseLong(uploadedDate) * 1000);
+            }
         }
         link.setProperty(PROPERTY_CONTENT_ID, getFID(link));
+        final boolean isVideo = br.containsHTML("class=\"videoplayer main\\-photo\"") || StringUtils.equals(link.getStringProperty(this.PROPERTY_MEDIA_TYPE), "video");
+        final PhotoQuality preferredPhotoQuality = getPreferredPhotoQuality(link);
+        final String json = br.getRegex("main\":(\\{\"photo-models\".*?),\\s+auth: auth,").getMatch(0);
+        String secret = null;
+        if (json != null) {
+            /* json handling */
+            Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+            final List<Object> photoModels = (List) entries.get("photo-models");
+            final Map<String, Object> photoData = (Map<String, Object>) photoModels.get(0);
+            /* Required to obtain videostreams */
+            secret = (String) photoData.get("secret");
+            final Map<String, Object> owner = (Map<String, Object>) photoData.get("owner");
+            if (!link.hasProperty(PROPERTY_USERNAME)) {
+                link.setProperty(PROPERTY_USERNAME, owner.get("pathAlias"));
+            }
+            if (!link.hasProperty(PROPERTY_USERNAME_FULL)) {
+                link.setProperty(PROPERTY_USERNAME_FULL, Encoding.htmlDecode(owner.get("realname").toString()));
+            }
+            if (!link.hasProperty(PROPERTY_USERNAME_INTERNAL)) {
+                link.setProperty(PROPERTY_USERNAME_INTERNAL, owner.get("id"));
+            }
+            String description = (String) photoData.get("description");
+            if (description != null) {
+                description = Encoding.htmlDecode(description);
+                if (!StringUtils.isEmpty(description) && link.getComment() == null) {
+                    link.setComment(description);
+                }
+            }
+            /* Get metadata: This way is safer than via html and it will return more information! */
+            final Map<String, Object> photoSizes = (Map<String, Object>) photoData.get("sizes");
+            final Iterator<Entry<String, Object>> iterator = photoSizes.entrySet().iterator();
+            long maxWidth = -1;
+            String maxQualityName = null;
+            String maxQualityDownloadurl = null;
+            while (iterator.hasNext()) {
+                final Entry<String, Object> entry = iterator.next();
+                entries = (Map<String, Object>) entry.getValue();
+                String url = (String) entries.get("url");
+                final String qualityName = entry.getKey();
+                final long width = JavaScriptEngineFactory.toLong(entries.get("width"), 0);
+                if (StringUtils.isEmpty(url)) {
+                    /* Skip invalid items */
+                    continue;
+                }
+                /* Fix URL */
+                if (!url.startsWith("http")) {
+                    url = "https:" + url;
+                }
+                if (this.stringToQuality(qualityName) == preferredPhotoQuality) {
+                    logger.info("Found user preferred quality: " + qualityName);
+                    link.setProperty(PROPERTY_QUALITY, qualityName);
+                    dllink = url;
+                    break;
+                } else if (width > maxWidth) {
+                    maxQualityName = qualityName;
+                    maxWidth = width;
+                    maxQualityDownloadurl = url;
+                }
+            }
+            if (dllink == null && maxQualityDownloadurl != null) {
+                logger.info("Using best quality: " + maxQualityName + " | width: " + maxWidth);
+                link.setProperty(PROPERTY_QUALITY, maxQualityName);
+                dllink = maxQualityDownloadurl;
+            }
+        } else if (!isVideo) {
+            /* Old site handling */
+            /*
+             * Fast way to get finallink via site as we always try to access the "o" (original) quality. Page might be redirected!
+             */
+            br.getPage("/photos/" + getUsername(link) + "/" + getFID(link) + "/sizes/o");
+            /* Special case: Check if user prefers to download original quality */
+            if (preferredPhotoQuality == PhotoQuality.QO) {
+                if (br.getURL().contains("sizes/o")) { // Not redirected
+                    dllink = br.getRegex("<a href=\"([^<>\"]+)\">\\s*(Dieses Foto im Originalformat|Download the Original)").getMatch(0);
+                }
+            }
+            if (dllink == null) { // Redirected if download original is not allowed
+                /*
+                 * If it is redirected, get the highest available quality
+                 */
+                final String[] qualities = getKnownPhotoQualitiesDescending();
+                final String html = br.getRegex("<ol class=\"sizes-list\">(.*?)<div id=\"allsizes-photo\">").getMatch(0);
+                String maxQualityName = null;
+                String foundUserPreferredQualityName = null;
+                for (final String qualityName : qualities) {
+                    final String sizeAvailable = new Regex(html, "(?i)\"(/photos/[^/]+/\\d+/sizes/" + qualityName + "/)\"").getMatch(0);
+                    if (sizeAvailable != null) {
+                        /* First found = best */
+                        if (maxQualityName == null) {
+                            maxQualityName = qualityName;
+                        }
+                        if (this.stringToQuality(qualityName) == preferredPhotoQuality) {
+                            foundUserPreferredQualityName = qualityName;
+                            break;
+                        }
+                    }
+                }
+                if (maxQualityName != null || foundUserPreferredQualityName != null) {
+                    final String selectedQualityName;
+                    if (foundUserPreferredQualityName != null) {
+                        logger.info("Fond user preferred quality: " + foundUserPreferredQualityName);
+                        selectedQualityName = foundUserPreferredQualityName;
+                    } else {
+                        logger.info("Using best quality: " + maxQualityName);
+                        selectedQualityName = maxQualityName;
+                    }
+                    br.getPage(this.getPhotoURLWithoutAlbumInfo(link) + "/sites/" + selectedQualityName + "/");
+                    dllink = br.getRegex("id=\"allsizes-photo\">[^~]*?<img src=\"(http[^<>\"]*?)\"").getMatch(0);
+                    if (dllink != null) {
+                        link.setProperty(PROPERTY_QUALITY, selectedQualityName);
+                    } else {
+                        /* This should never happen */
+                        logger.warning("Website quality picker appears to be broken");
+                    }
+                } else {
+                    /* This should never happen */
+                    logger.warning("Failed to find any photo quality");
+                }
+            }
+        }
         final boolean allowCheckDirecturlForFilesize;
         String filenameURL = null; // 2021-09-09: Only allow this for photos atm.
-        if (br.containsHTML("class=\"videoplayer main\\-photo\"")) {
+        if (isVideo) {
             /* Video */
             /*
              * TODO: Add correct API csrf cookie handling so we can use this while being logged in to download videos and do not have to
              * remove the cookies here - that's just a workaround!
              */
-            final String secret = br.getRegex("\"secret\":\"([^<>\"]*)\"").getMatch(0);
             final Browser apibr = br.cloneBrowser();
             final String apikey = getPublicAPIKey(this.br);
-            if (StringUtils.isEmpty(apikey) || secret == null) {
+            if (StringUtils.isEmpty(apikey) || StringUtils.isEmpty(secret)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             apibr.getPage(jd.plugins.decrypter.FlickrCom.API_BASE + "services/rest?photo_id=" + getFID(link) + "&secret=" + secret + "&method=flickr.video.getStreamInfo&csrf=&api_key=" + apikey + "&format=json&hermes=1&hermesClient=1&reqId=&nojsoncallback=1");
             Map<String, Object> entries = JSonStorage.restoreFromString(apibr.toString(), TypeRef.HASHMAP);
+            /*
+             * 2021-09-09: Found 2 video types so far: "700" and "iphone_wifi" --> Both are equal in filesize. If more are available,
+             * implementing a quality selection for videos could make sense.
+             */
             final List<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "streams/stream");
             for (final Object streamO : ressourcelist) {
                 entries = (Map<String, Object>) streamO;
@@ -285,7 +417,6 @@ public class FlickrCom extends PluginForHost {
             allowCheckDirecturlForFilesize = true;
         } else {
             /* Photo */
-            dllink = getFinalLinkPhoto(link);
             String ext;
             if (!StringUtils.isEmpty(dllink)) {
                 ext = dllink.substring(dllink.lastIndexOf("."));
@@ -307,7 +438,11 @@ public class FlickrCom extends PluginForHost {
             link.setFinalFileName(getFormattedFilename(link));
         }
         this.br.setFollowRedirects(true);
-        if (dllink != null && !isDownload && allowCheckDirecturlForFilesize) {
+        /* Save directurl for later usage. */
+        if (!StringUtils.isEmpty(dllink)) {
+            link.setProperty("directurl_" + link.getStringProperty(PROPERTY_QUALITY), this.dllink);
+        }
+        if (!StringUtils.isEmpty(dllink) && !isDownload && allowCheckDirecturlForFilesize) {
             URLConnectionAdapter con = null;
             try {
                 final Browser brc = br.cloneBrowser();
@@ -467,75 +602,6 @@ public class FlickrCom extends PluginForHost {
         return a;
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    private String getFinalLinkPhoto(final DownloadLink link) throws Exception {
-        String finallink = null;
-        final String[] sizes = { "6k", "5k", "4k", "3k", "o", "k", "h", "l", "c", "z", "m", "n", "s", "t", "q", "sq" };
-        String picSource;
-        // picSource = br.getRegex("modelExport: (\\{\"photo\\-models\".*?),[\t\n\r ]+auth: auth,").getMatch(0);
-        picSource = br.getRegex("main\":(\\{\"photo-models\".*?),\\s+auth: auth,").getMatch(0);
-        if (picSource != null) {
-            /* json handling */
-            Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(picSource);
-            final ArrayList<Object> photo_models = (ArrayList) entries.get("photo-models");
-            final Map<String, Object> photo_data = (Map<String, Object>) photo_models.get(0);
-            final Map<String, Object> photo_sizes = (Map<String, Object>) photo_data.get("sizes");
-            final Iterator<Entry<String, Object>> iterator = photo_sizes.entrySet().iterator();
-            long maxWidth = -1;
-            String selectedQualityName = null;
-            while (iterator.hasNext()) {
-                final Entry<String, Object> entry = iterator.next();
-                entries = (Map<String, Object>) entry.getValue();
-                final String url = (String) entries.get("url");
-                final String qualityName = entry.getKey();
-                final long width = JavaScriptEngineFactory.toLong(entries.get("width"), 0);
-                if (width > maxWidth && !StringUtils.isEmpty(url)) {
-                    logger.info("Current best quality = " + qualityName + " with width of: " + width);
-                    selectedQualityName = qualityName;
-                    maxWidth = width;
-                    if (url.startsWith("http")) {
-                        finallink = url;
-                    } else {
-                        finallink = "https:" + url;
-                    }
-                }
-            }
-            if (finallink != null) {
-                logger.info("Selected best quality quality: " + selectedQualityName + " | width: " + maxWidth);
-                link.setProperty(PROPERTY_QUALITY, selectedQualityName);
-            }
-        } else {
-            /* Old site handling */
-            /*
-             * Fast way to get finallink via site as we always try to access the "o" (original) quality. Page might be redirected!
-             */
-            br.getPage("https://www.flickr.com/photos/" + getUsername(link) + "/" + getFID(link) + "/sizes/o");
-            if (br.getURL().contains("sizes/o")) { // Not redirected
-                finallink = br.getRegex("<a href=\"([^<>\"]+)\">\\s*(Dieses Foto im Originalformat|Download the Original)").getMatch(0);
-            }
-            if (finallink == null) { // Redirected if download original is not allowed
-                /*
-                 * If it is redirected, get the highest available quality
-                 */
-                picSource = br.getRegex("<ol class=\"sizes-list\">(.*?)<div id=\"allsizes-photo\">").getMatch(0);
-                for (final String size : sizes) {
-                    final String allsizeslink = new Regex(picSource, "\"(/photos/[A-Za-z0-9\\-_]+/\\d+/sizes/" + size + "/)\"").getMatch(0);
-                    if (allsizeslink != null) {
-                        br.getPage("https://www.flickr.com" + allsizeslink);
-                        finallink = br.getRegex("id=\"allsizes-photo\">[^~]*?<img src=\"(http[^<>\"]*?)\"").getMatch(0);
-                        if (finallink != null) {
-                            link.setProperty(PROPERTY_QUALITY, size);
-                        } else {
-                            logger.warning("Website quality picker appears to be broken");
-                        }
-                        break;
-                    }
-                }
-            }
-        }
-        return finallink;
-    }
-
     @SuppressWarnings("deprecation")
     public static String getFormattedFilename(final DownloadLink link) throws ParseException {
         String formattedFilename = null;
@@ -582,7 +648,28 @@ public class FlickrCom extends PluginForHost {
         return formattedFilename;
     }
 
-    public static enum Quality implements LabelInterface {
+    private PhotoQuality getPreferredPhotoQuality(final DownloadLink link) {
+        if (link.hasProperty(PROPERTY_QUALITY)) {
+            /* Return last saved quality. */
+            return stringToQuality(link.getStringProperty(PROPERTY_QUALITY));
+        } else {
+            /* Return quality currently selected by user. */
+            final int arrayPos = this.getPluginConfig().getIntegerProperty(SETTING_SELECTED_PHOTO_QUALITY, defaultArrayPosSelectedPhotoQuality);
+            if (arrayPos < PhotoQuality.values().length) {
+                return PhotoQuality.values()[arrayPos];
+            } else {
+                return PhotoQuality.values()[defaultArrayPosSelectedPhotoQuality];
+            }
+        }
+    }
+
+    public static enum PhotoQuality implements LabelInterface {
+        QO {
+            @Override
+            public String getLabel() {
+                return "Original";
+            }
+        },
         Q6K {
             @Override
             public String getLabel() {
@@ -681,6 +768,37 @@ public class FlickrCom extends PluginForHost {
         };
     }
 
+    private String[] getKnownPhotoQualitiesDescending() {
+        final String[] ret = new String[PhotoQuality.values().length];
+        for (int i = 0; i < PhotoQuality.values().length; i++) {
+            ret[i] = PhotoQuality.values()[i].name().substring(1);
+        }
+        return ret;
+    }
+
+    private PhotoQuality stringToQuality(final String str) {
+        if (str == null) {
+            return null;
+        } else {
+            for (final PhotoQuality quality : PhotoQuality.values()) {
+                final String qualStr = quality.name().substring(1);
+                if (qualStr.equalsIgnoreCase(str)) {
+                    return quality;
+                }
+            }
+            return null;
+        }
+    }
+
+    private String[] getPhotoQualityStrings() {
+        final PhotoQuality[] qualityValues = PhotoQuality.values();
+        final String[] ret = new String[qualityValues.length];
+        for (int i = 0; i < qualityValues.length; i++) {
+            ret[i] = qualityValues[i].getLabel();
+        }
+        return ret;
+    }
+
     public static String getCustomStringForEmptyTags() {
         final SubConfiguration cfg = SubConfiguration.getConfig("flickr.com");
         String emptytag = cfg.getStringProperty(CUSTOM_FILENAME_EMPTY_TAG_STRING, defaultCustomStringForEmptyTags);
@@ -690,11 +808,12 @@ public class FlickrCom extends PluginForHost {
         return emptytag;
     }
 
-    private static final boolean defaultPreferServerFilename     = false;
-    private static final String  defaultCustomDate               = "MM-dd-yyyy";
-    private static final String  defaultCustomFilename           = "*username*_*content_id*_*title**extension*";
-    public final static String   defaultCustomStringForEmptyTags = "-";
-    public final static String   defaultPhotoExt                 = ".jpg";
+    private static final int     defaultArrayPosSelectedPhotoQuality = 0;
+    private static final boolean defaultPreferServerFilename         = false;
+    private static final String  defaultCustomDate                   = "MM-dd-yyyy";
+    private static final String  defaultCustomFilename               = "*username*_*content_id*_*title**extension*";
+    public final static String   defaultCustomStringForEmptyTags     = "-";
+    public final static String   defaultPhotoExt                     = ".jpg";
 
     @Override
     public String getDescription() {
@@ -702,9 +821,10 @@ public class FlickrCom extends PluginForHost {
     }
 
     private void setConfigElements() {
-        /* TODO: Add photo quality selection */
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SETTING_SELECTED_PHOTO_QUALITY, getPhotoQualityStrings(), "Select preferred quality. If that is not available, best will be used instead.").setDefaultValue(defaultArrayPosSelectedPhotoQuality));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         /* Filename settings */
-        final ConfigEntry preferServerFilenames = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_SETTING_PREFER_SERVER_FILENAME, "Prefer server filenames instead of formatted filenames e.g. '11112222_574508fa345a_6k.jpg'?").setDefaultValue(defaultPreferServerFilename);
+        final ConfigEntry preferServerFilenames = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_SETTING_PREFER_SERVER_FILENAME, "Prefer server filenames instead of formatted filenames (photos only) e.g. '11112222_574508fa345a_6k.jpg'?").setDefaultValue(defaultPreferServerFilename);
         getConfig().addEntry(preferServerFilenames);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, "Define how dates inside filenames should look like:").setDefaultValue(defaultCustomDate).setEnabledCondidtion(preferServerFilenames, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME, "Custom filename:").setDefaultValue(defaultCustomFilename).setEnabledCondidtion(preferServerFilenames, false));
