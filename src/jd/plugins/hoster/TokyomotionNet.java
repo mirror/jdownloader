@@ -112,7 +112,8 @@ public class TokyomotionNet extends PluginForHost {
         br.setFollowRedirects(true);
         if (link.getPluginPatternMatcher().matches(TYPE_NORMAL)) {
             /* 2021-09-08: This was supposed to work around issues with double-encoded URLs causing browser redirectloop. */
-            br.getPage("https://www." + this.getHost() + "/video/" + this.getFID(link));
+            // br.getPage("https://www." + this.getHost() + "/video/" + this.getFID(link));
+            br.getPage(link.getPluginPatternMatcher());
         } else {
             br.getPage(link.getPluginPatternMatcher().replace("http://", "https://"));
         }
