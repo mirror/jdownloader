@@ -155,7 +155,9 @@ public class FlickrCom extends PluginForDecrypt {
         if (csrf == null) {
             csrf = "";
         }
-        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Origin", "https://www." + this.getHost());
+        br.getHeaders().put("Referer", "https://www." + this.getHost());
+        br.getHeaders().put("Accept", "*/*");
         String usernameFromURL = null;
         String usernameSlug = null; // username lowercase (inside URLs) e.g. "exampleusername"
         String usernameFull = null; // Username full e.g. "Example Username"
@@ -168,11 +170,12 @@ public class FlickrCom extends PluginForDecrypt {
         boolean alreadyAccessedFirstPage;
         final UrlQuery params = new UrlQuery();
         params.add("api_key", apikey);
-        /**
-         * TODO: Add date_upload,description,owner_name,path_alias,realname </br>
-         * ... and all photo directurls e.g. url_q,url_z, ...
-         */
-        params.add("extras", "date_upload%2Cdescription%2Cowner_name%2Cpath_alias%2Crealname");
+        String extras = "date_upload%2Cdescription%2Cowner_name%2Cpath_alias%2Crealname";
+        final String[] allPhotoQualities = jd.plugins.hoster.FlickrCom.getPhotoQualityStringsDescending();
+        for (final String qualityStr : allPhotoQualities) {
+            extras += "%2Curl_" + qualityStr;
+        }
+        params.add("extras", extras);
         params.add("format", "json");
         params.add("per_page", Integer.toString(api_max_entries_per_page));
         params.add("hermes", "1");
@@ -283,6 +286,7 @@ public class FlickrCom extends PluginForDecrypt {
         int imagePosition = 0;
         final DecimalFormat df = new DecimalFormat(String.valueOf(totalimgs).replaceAll("\\d", "0"));
         int page = 1;
+        final String userPreferredPhotoQualityStr = jd.plugins.hoster.FlickrCom.photoQualityEnumNameToString(jd.plugins.hoster.FlickrCom.getPreferredPhotoQuality().name());
         do {
             if (page > 1 || !alreadyAccessedFirstPage) {
                 params.addAndReplace("page", Integer.toString(page));
@@ -334,10 +338,46 @@ public class FlickrCom extends PluginForDecrypt {
                 }
                 final String media = (String) photo.get("media");
                 final String extension;
+                String filenameURL = null;
                 if ("video".equalsIgnoreCase(media)) {
                     extension = ".mp4";
                 } else {
                     extension = ".jpg";
+                    /* Try to find photo directurl right away */
+                    String maxQualityName = null;
+                    String maxQualityDownloadurl = null;
+                    String userPreferredQualityDownloadurl = null;
+                    for (final String qualityStr : allPhotoQualities) {
+                        final String url = (String) photo.get("url_" + qualityStr);
+                        if (url == null) {
+                            continue;
+                        }
+                        /* First found = best */
+                        if (maxQualityDownloadurl == null) {
+                            maxQualityDownloadurl = url;
+                            maxQualityName = qualityStr;
+                        }
+                        if (qualityStr.equalsIgnoreCase(userPreferredPhotoQualityStr)) {
+                            /* Quit loop as this is the quality our user wants to have. */
+                            userPreferredQualityDownloadurl = url;
+                            break;
+                        }
+                    }
+                    /* Check if we found anything and set to re-use later. */
+                    if (!StringUtils.isEmpty(maxQualityDownloadurl) || !StringUtils.isEmpty(userPreferredQualityDownloadurl)) {
+                        final String url;
+                        final String chosenQualityStr;
+                        if (userPreferredQualityDownloadurl != null) {
+                            url = userPreferredQualityDownloadurl;
+                            chosenQualityStr = userPreferredPhotoQualityStr;
+                        } else {
+                            url = maxQualityDownloadurl;
+                            chosenQualityStr = maxQualityName;
+                        }
+                        dl.setProperty(String.format(jd.plugins.hoster.FlickrCom.PROPERTY_DIRECTURL, chosenQualityStr), url);
+                        dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_QUALITY, chosenQualityStr);
+                        filenameURL = jd.plugins.hoster.FlickrCom.getFilenameFromDirecturl(url);
+                    }
                 }
                 dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_CONTENT_ID, photoID);
                 dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_MEDIA_TYPE, media);
@@ -372,8 +412,12 @@ public class FlickrCom extends PluginForDecrypt {
                 }
                 dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_EXT, extension);
                 dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_ORDER_ID, df.format(imagePosition));
-                final String formattedFilename = getFormattedFilename(dl);
-                dl.setName(formattedFilename);
+                if (filenameURL != null && jd.plugins.hoster.FlickrCom.userPrefersServerFilenames()) {
+                    dl.setFinalFileName(filenameURL);
+                } else {
+                    final String formattedFilename = getFormattedFilename(dl);
+                    dl.setFinalFileName(formattedFilename);
+                }
                 dl.setAvailable(true);
                 dl._setFilePackage(fp);
                 distribute(dl);
@@ -390,6 +434,15 @@ public class FlickrCom extends PluginForDecrypt {
                 /* continue */
             }
         } while (true);
+    }
+
+    private String getExtrasParam() {
+        String extras = "date_upload%2Cdescription%2Cowner_name%2Cpath_alias%2Crealname";
+        final String[] allPhotoQualities = jd.plugins.hoster.FlickrCom.getPhotoQualityStringsDescending();
+        for (final String qualityStr : allPhotoQualities) {
+            extras += "%2" + qualityStr;
+        }
+        return extras;
     }
 
     private String getFormattedFilename(final DownloadLink dl) throws ParseException {
