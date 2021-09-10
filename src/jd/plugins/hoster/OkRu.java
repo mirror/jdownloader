@@ -147,8 +147,9 @@ public class OkRu extends PluginForHost {
                 this.paidContent = true;
             } else {
                 // final String[] qualities = { "full", "hd", "sd", "low", "lowest", "mobile" };
-                String bestQualityDownloadurl = null;
-                final Map<String, String> collectedQualities = new HashMap<String, String>();
+                String bestHTTPQualityDownloadurl = null;
+                String bestHTTPQualityName = null;
+                final Map<String, String> collectedHTTPQualities = new HashMap<String, String>();
                 Map<String, Object> httpQualityInfo = null;
                 final Object httpQualitiesO = entries.get("videos");
                 if (httpQualitiesO != null) {
@@ -161,7 +162,7 @@ public class OkRu extends PluginForHost {
                         if (StringUtils.isEmpty(qualityIdentifier) || StringUtils.isEmpty(url)) {
                             continue;
                         }
-                        collectedQualities.put(qualityIdentifier, url);
+                        collectedHTTPQualities.put(qualityIdentifier, url);
                         final int currentQualityInt;
                         if (qualityIdentifier.equalsIgnoreCase("full")) {
                             currentQualityInt = 200;
@@ -181,20 +182,25 @@ public class OkRu extends PluginForHost {
                             logger.info("Unknown qualityIdentifier: " + qualityIdentifier);
                         }
                         if (currentQualityInt > maxQuality) {
-                            bestQualityDownloadurl = url;
+                            bestHTTPQualityDownloadurl = url;
+                            bestHTTPQualityName = qualityIdentifier;
                             maxQuality = currentQualityInt;
                         }
                     }
                 }
                 final String userPreferredQuality = getUserPreferredqualityStr();
-                if (collectedQualities.containsKey(userPreferredQuality)) {
-                    logger.info("Using user preferred quality: " + userPreferredQuality);
-                    this.dllink = collectedQualities.get(userPreferredQuality);
-                } else if (!StringUtils.isEmpty(bestQualityDownloadurl)) {
-                    logger.info("Using best quality");
-                    this.dllink = bestQualityDownloadurl;
+                if (collectedHTTPQualities.containsKey(userPreferredQuality)) {
+                    logger.info("Using user preferred HTTP quality: " + userPreferredQuality);
+                    this.dllink = collectedHTTPQualities.get(userPreferredQuality);
+                } else if (!StringUtils.isEmpty(bestHTTPQualityDownloadurl)) {
+                    logger.info("Using best HTTP quality: " + bestHTTPQualityName);
+                    this.dllink = bestHTTPQualityDownloadurl;
                 } else {
                     /* Prefer http - only use HLS if http is not available! */
+                    /**
+                     * 2021-09-10: Some users also get: ondemandHls and ondemandDash </br>
+                     * No idea if "ondemandHls" == "hlsManifestUrl"
+                     */
                     logger.info("Trying HLS fallback");
                     dllink = (String) entries.get("hlsManifestUrl");
                     if (!StringUtils.isEmpty(dllink)) {
@@ -235,13 +241,13 @@ public class OkRu extends PluginForHost {
         }
         link.setFinalFileName(filename);
         /* Only check filesize during linkcheck to avoid double-http-requests */
-        if (!StringUtils.isEmpty(dllink) && !isDownload) {
+        if (!StringUtils.isEmpty(dllink) && !isDownload && !dllink.contains(".m3u8")) {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
                 if (con.isOK() && con.isContentDisposition()) {
-                    if (con.getLongContentLength() > 0) {
-                        link.setDownloadSize(con.getLongContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
