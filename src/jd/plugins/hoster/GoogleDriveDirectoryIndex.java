@@ -52,6 +52,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "workers.dev" });
         ret.add(new String[] { "dragsterps-team.tk" });
+        ret.add(new String[] { "get.tgdrive.tech" });
         return ret;
     }
 
