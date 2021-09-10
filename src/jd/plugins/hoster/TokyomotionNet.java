@@ -130,6 +130,7 @@ public class TokyomotionNet extends PluginForHost {
                         logger.info("Stepping out of redirect-workaround because:  No redirect");
                         if (br.getURL().contains(this.getFID(link))) {
                             /* Set new URL to avoid those redirects when this URL gets checked again. */
+                            /* Those two URLs should be different from each other! */
                             logger.info("Old PluginPatternMatcher: " + url);
                             logger.info("New PluginPatternMatcher: " + br.getURL());
                             link.setPluginPatternMatcher(br.getURL());
