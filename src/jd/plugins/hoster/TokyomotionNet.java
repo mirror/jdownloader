@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Locale;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.StringUtils;
@@ -111,11 +112,59 @@ public class TokyomotionNet extends PluginForHost {
         }
         br.setFollowRedirects(true);
         if (link.getPluginPatternMatcher().matches(TYPE_NORMAL)) {
-            /* 2021-09-08: This was supposed to work around issues with double-encoded URLs causing browser redirectloop. */
-            // br.getPage("https://www." + this.getHost() + "/video/" + this.getFID(link));
-            br.getPage(link.getPluginPatternMatcher());
+            /**
+             * 2021-09-08: This was supposed to work around issues with double-encoded URLs causing browser redirectloop. This website
+             * requires the chinese letters in the URLs' path to be html-encoded UPPERCASE. </br>
+             * It is uncertain if the redirect-loop without this workaround happens because of a bug in our own Browser class
+             */
+            /* Workaround to work-around the above mentioned Redidrect-Loop Browser issue! */
+            final String url = link.getPluginPatternMatcher().replaceFirst("http://", "https://");
+            br.setFollowRedirects(false);
+            br.getPage(url);
+            int numberofRedirects = 0;
+            if (br.getRedirectLocation() != null) {
+                do {
+                    logger.info("Redirect workaround handling round " + (numberofRedirects + 1));
+                    final String redirect = br.getRedirectLocation();
+                    if (redirect == null) {
+                        logger.info("Stepping out of redirect-workaround because:  No redirect");
+                        if (br.getURL().contains(this.getFID(link))) {
+                            /* Set new URL to avoid those redirects when this URL gets checked again. */
+                            logger.info("Old PluginPatternMatcher: " + url);
+                            logger.info("New PluginPatternMatcher: " + br.getURL());
+                            link.setPluginPatternMatcher(br.getURL());
+                        } else {
+                            logger.warning("New URL is not supported by plugin --> Redirect into the unknown?");
+                        }
+                        break;
+                    } else if (!this.canHandle(redirect)) {
+                        logger.info("Stepping out of redirect-workaround because:  Redirect to unsupported URL#1");
+                        break;
+                    } else if (!redirect.matches(TYPE_NORMAL_WITH_TITLE)) {
+                        logger.info("Stepping out of redirect-workaround because:  Redirect to unsupported URL#2");
+                        break;
+                    } else if (numberofRedirects > 3) {
+                        logger.info("Stepping out of redirect-workaround because:  Too many redirects");
+                        break;
+                    } else {
+                        numberofRedirects += 1;
+                        final String urlPart = new Regex(redirect, TYPE_NORMAL_WITH_TITLE).getMatch(1);
+                        final String urlPartUpper = urlPart.toUpperCase(Locale.ENGLISH);
+                        if (urlPart.equals(urlPartUpper)) {
+                            logger.warning("Stepping out of redirect-workaround because:  Relevant part of the URL is already uppercase and we still got a redirect!");
+                            break;
+                        }
+                        logger.info("Old: " + urlPart + " | New: " + urlPartUpper);
+                        br.getPage("/video/" + this.getFID(link) + "/" + urlPartUpper);
+                        // continue;
+                    }
+                } while (true);
+                br.setFollowRedirects(true);
+                /* Follow redirect if there still is one */
+                br.followRedirect();
+            }
         } else {
-            br.getPage(link.getPluginPatternMatcher().replace("http://", "https://"));
+            br.getPage(link.getPluginPatternMatcher().replaceFirst("http://", "https://"));
         }
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

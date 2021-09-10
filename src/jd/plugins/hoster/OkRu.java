@@ -198,9 +198,13 @@ public class OkRu extends PluginForHost {
                 } else {
                     /* Prefer http - only use HLS if http is not available! */
                     /**
-                     * 2021-09-10: Some users also get: ondemandHls and ondemandDash </br>
+                     * 2021-09-10: Some users also get: "ondemandHls" and "ondemandDash" </br>
                      * No idea if "ondemandHls" == "hlsManifestUrl"
                      */
+                    if (entries.containsKey("ondemandHls")) {
+                        /* 2021-09-10: Debug log */
+                        logger.warning("Found ondemandHls | HTTP quality selection probably failed for user --> ondemandHls = " + entries.get("ondemandHls"));
+                    }
                     logger.info("Trying HLS fallback");
                     dllink = (String) entries.get("hlsManifestUrl");
                     if (!StringUtils.isEmpty(dllink)) {
