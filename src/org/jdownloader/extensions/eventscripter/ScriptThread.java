@@ -230,8 +230,11 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
         }
     }
 
+    private List<Class<?>> visibleClasses = null;
+
     private String preInitClasses() {
         final HashSet<String> dupes = new HashSet<String>();
+        final HashSet<Class<?>> visibleClasses = new HashSet<Class<?>>();
         dupes.add("net.sourceforge.htmlunit.corejs.javascript.Function");
         dupes.add("void");
         StringBuilder preloadClasses = new StringBuilder("");
@@ -241,10 +244,10 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
             }
             if (!dupes.add(c.getName())) {
                 continue;
-            }
-            if (c.isPrimitive()) {
+            } else if (c.isPrimitive()) {
                 continue;
             }
+            visibleClasses.add(c);
             preloadClasses.append("load=");
             preloadClasses.append(c.getName());
             preloadClasses.append(";\r\n");
@@ -259,8 +262,7 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
             }
             if (!dupes.add(c.getName())) {
                 continue;
-            }
-            if (c.isPrimitive()) {
+            } else if (c.isPrimitive()) {
                 continue;
             }
             preloadClasses.append("load=");
@@ -275,8 +277,7 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
                 }
                 if (!dupes.add(c.getName())) {
                     continue;
-                }
-                if (Clazz.isPrimitive(c)) {
+                } else if (Clazz.isPrimitive(c)) {
                     continue;
                 }
                 preloadClasses.append("load=");
@@ -285,6 +286,7 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
             }
         }
         preloadClasses.append("delete load;");
+        this.visibleClasses = new ArrayList<Class<?>>(visibleClasses);
         return preloadClasses.toString();
     }
 
@@ -460,7 +462,19 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
             return true;
         } else {
-            EcmaError ret = ScriptRuntime.constructError("Security Violation", "Security Violation " + className);
+            try {
+                if (visibleClasses != null) {
+                    final Class<?> clazz = Class.forName(className, false, null);
+                    for (Class<?> visibleClass : visibleClasses) {
+                        if (visibleClass.equals(clazz) || visibleClass.isAssignableFrom(clazz) || visibleClass.equals(clazz.getDeclaringClass())) {
+                            return true;
+                        }
+                    }
+                }
+            } catch (ClassNotFoundException e) {
+                logger.log(e);
+            }
+            final EcmaError ret = ScriptRuntime.constructError("Security Violation", "Security Violation " + className);
             throw ret;
         }
     }
