@@ -18,6 +18,18 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -41,18 +53,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.DiskYandexNetFolder;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net" }, urls = { "http://yandexdecrypted\\.net/\\d+" })
 public class DiskYandexNet extends PluginForHost {
@@ -180,7 +180,7 @@ public class DiskYandexNet extends PluginForHost {
             filesize_str = this.br.getRegex("class=\"item-details__name\">Size:</span> ([^<>\"]+)</div>").getMatch(0);
         }
         if (filesize_str == null) {
-            /* Language independant */
+            /* Language independent */
             filesize_str = this.br.getRegex("class=\"item-details__name\">[^<>\"]+</span> ([\\d\\.]+ (?:B|KB|MB|GB))</div>").getMatch(0);
         }
         if (filesize_str != null) {
@@ -737,9 +737,10 @@ public class DiskYandexNet extends PluginForHost {
                 if (internal_file_path == null) {
                     logger.info("MoveFileIntoAccount: No internal filepath available --> Trying to move file into account");
                     /**
-                     * 2021-02-10: Possible values for "source": public_web_copy, public_web_copy_limit </br> public_web_copy_limit is
-                     * usually used if the files is currently quota limited and cannot be downloaded at all at this moment. </br> Both will
-                     * work but we'll try to choose the one which would also be used via browser.
+                     * 2021-02-10: Possible values for "source": public_web_copy, public_web_copy_limit </br>
+                     * public_web_copy_limit is usually used if the files is currently quota limited and cannot be downloaded at all at this
+                     * moment. </br>
+                     * Both will work but we'll try to choose the one which would also be used via browser.
                      */
                     final String copySource;
                     if (this.isFileDownloadQuotaReached(link)) {

@@ -36,6 +36,8 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -43,7 +45,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cocoleech.com" }, urls = { "" })
 public class CocoleechCom extends PluginForHost {
@@ -53,6 +54,8 @@ public class CocoleechCom extends PluginForHost {
     private static final int             defaultMAXCHUNKS    = -4;
     private static final boolean         defaultRESUME       = true;
     // private final String apikey = "cdb5efc9c72196c1bd8b7a594b46b44f";
+    private static final String          PROPERTY_DIRECTURL  = "cocoleechcom_directlink";
+    private static final String          PROPERTY_MAXCHUNKS  = "cocoleechcom_maxchunks";
     private static MultiHosterManagement mhm                 = new MultiHosterManagement("cocoleech.com");
 
     @SuppressWarnings("deprecation")
@@ -102,33 +105,67 @@ public class CocoleechCom extends PluginForHost {
     }
 
     private void handleDL(final Account account, final DownloadLink link) throws Exception {
-        String dllink = checkDirectLink(link, this.getHost() + "directlink");
-        String maxchunksStr = null;
-        if (dllink == null) {
+        if (!attemptStoredDownloadurlDownload(link)) {
             br.setFollowRedirects(true);
-            /* request creation of downloadlink */
-            /* Make sure that the file exists - unnecessary step in my opinion (psp) but admin wanted to have it implemented this way. */
+            /* Request creation of downloadlink */
             this.br.getPage(API_ENDPOINT + "?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
             handleAPIErrors(this.br, account, link);
-            maxchunksStr = PluginJSonUtils.getJsonValue(this.br, "chunks");
-            dllink = PluginJSonUtils.getJsonValue(br, "download");
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            String maxchunksStr = null;
+            final Object chunksO = entries.get("chunks");
+            if (chunksO != null) {
+                maxchunksStr = chunksO.toString();
+            }
+            final String dllink = (String) entries.get("download");
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Final downloadlink is null");
                 mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
             }
-        }
-        int maxChunks = defaultMAXCHUNKS;
-        if (!StringUtils.isEmpty(maxchunksStr) && maxchunksStr.matches("\\d+")) {
-            maxChunks = -Integer.parseInt(maxchunksStr);
-        }
-        link.setProperty(this.getHost() + "directlink", dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, maxChunks);
-        if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("json")) {
-            br.followConnection();
-            handleAPIErrors(this.br, account, link);
-            mhm.handleErrorGeneric(account, link, "unknowndlerror", 50, 5 * 60 * 1000l);
+            int maxChunks = defaultMAXCHUNKS;
+            if (!StringUtils.isEmpty(maxchunksStr) && maxchunksStr.matches("^\\d+$")) {
+                maxChunks = -Integer.parseInt(maxchunksStr);
+                link.setProperty(PROPERTY_MAXCHUNKS, -Integer.parseInt(maxchunksStr));
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, maxChunks);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                if (dl.getConnection().getContentType().contains("json")) {
+                    handleAPIErrors(this.br, account, link);
+                }
+                mhm.handleErrorGeneric(account, link, "unknowndlerror", 50, 5 * 60 * 1000l);
+            }
+            link.setProperty(PROPERTY_DIRECTURL, dllink);
         }
         this.dl.startDownload();
+    }
+
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link) throws Exception {
+        final String url = link.getStringProperty(PROPERTY_DIRECTURL);
+        if (StringUtils.isEmpty(url)) {
+            return false;
+        }
+        try {
+            final Browser brc = br.cloneBrowser();
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, defaultRESUME, link.getIntegerProperty(PROPERTY_MAXCHUNKS, defaultMAXCHUNKS));
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                return true;
+            } else {
+                link.removeProperty(PROPERTY_DIRECTURL);
+                brc.followConnection(true);
+                throw new IOException();
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+            try {
+                dl.getConnection().disconnect();
+            } catch (Throwable ignore) {
+            }
+            return false;
+        }
     }
 
     @Override
@@ -198,10 +235,10 @@ public class CocoleechCom extends PluginForHost {
              * 2017-02-08: Accounts do usually not have general traffic limits - however there are individual host traffic limits see
              * mainpage (when logged in) --> Right side "Daily Limit(s)"
              */
-            if (trafficleft != null && !trafficleft.equalsIgnoreCase("unlimited")) {
-                ai.setTrafficLeft(Long.parseLong(trafficleft));
-            } else {
+            if (StringUtils.equalsIgnoreCase(trafficleft, "unlimited")) {
                 ai.setUnlimitedTraffic();
+            } else {
+                ai.setTrafficLeft(Long.parseLong(trafficleft));
             }
         } else {
             account.setType(AccountType.FREE);
@@ -221,42 +258,60 @@ public class CocoleechCom extends PluginForHost {
         this.br.getPage(API_ENDPOINT + "/hosts-status");
         ArrayList<String> supportedhostslist = new ArrayList();
         entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final List<Object> hosters = (List<Object>) entries.get("result");
-        for (final Object hostero : hosters) {
-            entries = (Map<String, Object>) hostero;
-            String host = (String) entries.get("host");
-            final String status = (String) entries.get("status");
-            if (host != null && "online".equalsIgnoreCase(status)) {
+        final List<Map<String, Object>> hosters = (List<Map<String, Object>>) entries.get("result");
+        for (final Map<String, Object> hostinfo : hosters) {
+            String host = (String) hostinfo.get("host");
+            final String status = (String) hostinfo.get("status");
+            if (StringUtils.isEmpty(host)) {
+                /* Skip invalid items */
+                continue;
+            }
+            if ("online".equalsIgnoreCase(status)) {
                 supportedhostslist.add(host);
+            } else {
+                logger.info("NOT adding offline host: " + host);
             }
         }
         ai.setMultiHostSupport(this, supportedhostslist);
         return ai;
     }
 
-    private void login(final Account account) throws IOException, PluginException, InterruptedException {
+    private void login(final Account account) throws Exception {
         synchronized (account) {
             this.br.getPage(API_ENDPOINT + "/info?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            /* No error here = account is valid. */
             handleAPIErrors(this.br, account, null);
         }
     }
 
-    private void handleAPIErrors(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {
-        final String statusmsg = PluginJSonUtils.getJsonValue(br, "message");
-        if (statusmsg != null) {
+    private void handleAPIErrors(final Browser br, final Account account, final DownloadLink link) throws Exception {
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        /**
+         * 2021-09-10: "status" is independent from e.g. {"status":"100","message":"Incorrect log-in or password."} </br>
+         * {"status":"100","message":"Your IP is blocked for today. Please contact support."}
+         */
+        final String statusmsg = (String) entries.get("message");
+        if (!StringUtils.isEmpty(statusmsg)) {
             if (statusmsg.equalsIgnoreCase("Incorrect log-in or password.")) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusmsg, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if (statusmsg.matches("Daily limit is reached\\. Hours left:\\s*?\\d+")) {
+                throw new AccountInvalidException(statusmsg);
+            } else if (statusmsg.matches("(?i)Daily limit is reached\\. Hours left:\\s*?\\d+")) {
                 mhm.handleErrorGeneric(account, link, "daily_limit_reached", 10, 5 * 60 * 1000l);
             } else if (statusmsg.equalsIgnoreCase("Failed to generate link.")) {
                 mhm.handleErrorGeneric(account, link, "failedtogeneratelink", 50, 5 * 60 * 1000l);
             } else if (statusmsg.equalsIgnoreCase("Premium membership expired.")) {
                 logger.info("Premium account has expired");
                 account.getAccountInfo().setExpired(true);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusmsg, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new AccountUnavailableException(statusmsg, 5 * 60 * 1000l);
+            } else if (statusmsg.equalsIgnoreCase("Your IP is blocked for today. Please contact support.")) {
+                /* Put all account temp. unavailable errors here. */
+                throw new AccountUnavailableException(statusmsg, 5 * 60 * 1000l);
             } else {
                 /* Unknown error */
-                mhm.handleErrorGeneric(account, link, "unknown_api_error", 50, 5 * 60 * 1000l);
+                if (link == null) {
+                    throw new AccountUnavailableException(statusmsg, 3 * 60 * 1000l);
+                } else {
+                    mhm.handleErrorGeneric(account, link, "unknown_api_error", 50, 5 * 60 * 1000l);
+                }
             }
         }
     }

@@ -813,7 +813,7 @@ public class VKontakteRu extends PluginForDecrypt {
         } else if (br.toString().contains("This video is not available in your region")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.toString().contains("id=\"video_ext_msg\"")) {
-            /* 2017-11-21: Basic trait for all kinds of errormessage (shall be language-independant) */
+            /* 2017-11-21: Basic trait for all kinds of errormessage (shall be language-independent) */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("profile_deleted_text")) {
             /* 2019-07-26: E.g. <h5 class="profile_deleted_text">Dieses Profil ist nur f&#252;r autorisierte Nutzer verf&#252;gbar.</h5> */
