@@ -436,15 +436,6 @@ public class FlickrCom extends PluginForDecrypt {
         } while (true);
     }
 
-    private String getExtrasParam() {
-        String extras = "date_upload%2Cdescription%2Cowner_name%2Cpath_alias%2Crealname";
-        final String[] allPhotoQualities = jd.plugins.hoster.FlickrCom.getPhotoQualityStringsDescending();
-        for (final String qualityStr : allPhotoQualities) {
-            extras += "%2" + qualityStr;
-        }
-        return extras;
-    }
-
     private String getFormattedFilename(final DownloadLink dl) throws ParseException {
         return jd.plugins.hoster.FlickrCom.getFormattedFilename(dl);
     }
