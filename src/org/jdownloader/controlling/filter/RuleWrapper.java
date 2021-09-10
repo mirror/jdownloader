@@ -1,5 +1,7 @@
 package org.jdownloader.controlling.filter;
 
+import java.io.File;
+import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
@@ -179,6 +181,7 @@ public class RuleWrapper<T extends FilterRule> {
     public boolean checkFileType(final CrawledLink link) {
         final CompiledFiletypeFilter filetypeFilter = getFiletypeFilter();
         if (filetypeFilter != null) {
+            final String url = link.getURL();
             final DownloadLink downloadLink = link.getDownloadLink();
             if (downloadLink != null) {
                 final LinkInfo linkInfo = link.getLinkInfo();
@@ -194,6 +197,14 @@ public class RuleWrapper<T extends FilterRule> {
                 } else {
                     return false;
                 }
+            } else if (StringUtils.startsWithCaseInsensitive(url, "file:")) {
+                try {
+                    final File file = new File(new URL(url).toURI());
+                    final LinkInfo linkInfo = LinkInfo.getLinkInfo(file);
+                    return filetypeFilter.matches(linkInfo.getExtension().name(), linkInfo);
+                } catch (final Exception e) {
+                    return false;
+                }
             } else {
                 return false;
             }
@@ -204,6 +215,7 @@ public class RuleWrapper<T extends FilterRule> {
     public boolean checkFileSize(final CrawledLink link) {
         final CompiledFilesizeFilter fileSizeRule = getFilesizeRule();
         if (fileSizeRule != null) {
+            final String url = link.getURL();
             final DownloadLink downloadLink = link.getDownloadLink();
             if (downloadLink != null) {
                 if (downloadLink.getVerifiedFileSize() >= 0) {
@@ -213,6 +225,13 @@ public class RuleWrapper<T extends FilterRule> {
                 } else if (checkOnlineStatus(link)) {
                     return fileSizeRule.matches(link.getSize());
                 } else {
+                    return false;
+                }
+            } else if (StringUtils.startsWithCaseInsensitive(url, "file:")) {
+                try {
+                    final File file = new File(new URL(url).toURI());
+                    return fileSizeRule.matches(file.length());
+                } catch (final Exception e) {
                     return false;
                 }
             } else {
@@ -248,6 +267,7 @@ public class RuleWrapper<T extends FilterRule> {
     public boolean checkFileName(final CrawledLink link) {
         final CompiledRegexFilter fileNameRule = getFileNameRule();
         if (fileNameRule != null) {
+            final String url = link.getURL();
             final DownloadLink downloadLink = link.getDownloadLink();
             if (downloadLink != null) {
                 if (downloadLink.getFinalFileName() != null || downloadLink.getForcedFileName() != null) {
@@ -260,6 +280,13 @@ public class RuleWrapper<T extends FilterRule> {
                     // onlinestatus matches so we trust the available filename
                     return fileNameRule.matches(link.getName());
                 } else {
+                    return false;
+                }
+            } else if (StringUtils.startsWithCaseInsensitive(url, "file:")) {
+                try {
+                    final File file = new File(new URL(url).toURI());
+                    return fileNameRule.matches(file.getName());
+                } catch (final Exception e) {
                     return false;
                 }
             } else {
