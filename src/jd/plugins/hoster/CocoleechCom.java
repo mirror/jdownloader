@@ -207,12 +207,16 @@ public class CocoleechCom extends PluginForHost {
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
             /*
-             * 2016-05-05: According to admin, free accounts cannot download anything. We will allow download attempts anyways but this will
-             * usually result in error "Premium membership expired." which will then temp. deactivate the account!
+             * 2016-05-05: According to admin, free accounts cannot download anything.
              */
             account.setConcurrentUsePossible(false);
             account.setMaxSimultanDownloads(1);
-            ai.setUnlimitedTraffic();
+            ai.setTrafficLeft(0);
+        }
+        /* Overwrite previously set status in case an account package-name is available */
+        final String accountPackage = (String) entries.get("package"); // E.g. "1 Month Premium" or "No Package" for free accounts
+        if (!StringUtils.isEmpty(accountPackage)) {
+            ai.setStatus(accountPackage);
         }
         this.br.getPage(API_ENDPOINT + "/hosts-status");
         ArrayList<String> supportedhostslist = new ArrayList();
