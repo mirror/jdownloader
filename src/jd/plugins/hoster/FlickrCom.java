@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -56,6 +57,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(?:www\\.)?flickr\\.com/photos/(?!tags/)([^<>\"/]+)/(\\d+)(?:/in/album-\\d+)?" })
 public class FlickrCom extends PluginForHost {
@@ -86,7 +88,8 @@ public class FlickrCom extends PluginForHost {
     public static final String             PROPERTY_ORDER_ID                       = "order_id";
     public static final String             PROPERTY_MEDIA_TYPE                     = "media";
     private static final String            PROPERTY_SETTING_PREFER_SERVER_FILENAME = "prefer_server_filename";
-    private static final String            PROPERTY_QUALITY                        = "quality";
+    public static final String             PROPERTY_QUALITY                        = "quality";
+    public static final String             PROPERTY_DIRECTURL                      = "directurl_%s";
     private String                         dllink                                  = null;
     private static HashMap<String, Object> api                                     = new HashMap<String, Object>();
 
@@ -173,17 +176,16 @@ public class FlickrCom extends PluginForHost {
         return requestFileInformation(link, aa, false);
     }
 
-    @SuppressWarnings("deprecation")
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        correctDownloadLink(link);
         if (!link.isNameSet()) {
             /* Set fallback name */
-            if (StringUtils.equals(link.getStringProperty(PROPERTY_MEDIA_TYPE), "video")) {
+            if (isVideo(link)) {
                 link.setName(this.getFID(link) + ".mp4");
             } else {
                 link.setName(this.getFID(link));
             }
         }
-        correctDownloadLink(link);
         if (link.hasProperty("owner")) {
             /** Backward compatibility: TODO: Remove this in 01-2022 */
             link.setProperty(PROPERTY_USERNAME_INTERNAL, link.getStringProperty("owner"));
@@ -196,10 +198,20 @@ public class FlickrCom extends PluginForHost {
         } else {
             link.setProperty(PROPERTY_USERNAME, usernameFromURL);
         }
+        br.setFollowRedirects(true);
+        /* Picture direct-URLs are static --> Rely on them. */
+        final String storedDirecturl = getStoredDirecturl(link);
+        if (storedDirecturl != null && !isVideo(link)) {
+            if (isDownload) {
+                this.dllink = storedDirecturl;
+            } else {
+                checkDirecturl(link, storedDirecturl);
+            }
+            return AvailableStatus.TRUE;
+        }
         if (account != null) {
             login(account, false);
         }
-        br.setFollowRedirects(true);
         br.getPage(getPhotoURLWithoutAlbumInfo(link) + "/in/photostream");
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("div class=\"Four04Case\">") || br.containsHTML("(?i)>\\s*This member is no longer active on Flickr") || br.containsHTML("class=\"Problem\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -251,7 +263,7 @@ public class FlickrCom extends PluginForHost {
             }
         }
         link.setProperty(PROPERTY_CONTENT_ID, getFID(link));
-        final boolean isVideo = br.containsHTML("class=\"videoplayer main\\-photo\"") || StringUtils.equals(link.getStringProperty(this.PROPERTY_MEDIA_TYPE), "video");
+        final boolean isVideo = br.containsHTML("class=\"videoplayer main\\-photo\"") || isVideo(link);
         final PhotoQuality preferredPhotoQuality = getPreferredPhotoQuality(link);
         final String json = br.getRegex("main\":(\\{\"photo-models\".*?),\\s+auth: auth,").getMatch(0);
         String secret = null;
@@ -331,7 +343,7 @@ public class FlickrCom extends PluginForHost {
                 /*
                  * If it is redirected, get the highest available quality
                  */
-                final String[] qualities = getKnownPhotoQualitiesDescending();
+                final String[] qualities = getPhotoQualityStringsDescending();
                 final String html = br.getRegex("<ol class=\"sizes-list\">(.*?)<div id=\"allsizes-photo\">").getMatch(0);
                 String maxQualityName = null;
                 String foundUserPreferredQualityName = null;
@@ -423,7 +435,7 @@ public class FlickrCom extends PluginForHost {
                 if (ext == null || ext.length() > 5) {
                     ext = defaultPhotoExt;
                 }
-                filenameURL = new Regex(this.dllink, "(?i)https?://live\\.staticflickr\\.com/\\d+/([^/]+)").getMatch(0);
+                filenameURL = getFilenameFromDirecturl(this.dllink);
             } else {
                 ext = defaultPhotoExt;
             }
@@ -432,7 +444,7 @@ public class FlickrCom extends PluginForHost {
             /* 2021-09-09: Filesize is not provided for photo directURLs */
             allowCheckDirecturlForFilesize = false;
         }
-        if (this.getPluginConfig().getBooleanProperty(PROPERTY_SETTING_PREFER_SERVER_FILENAME, defaultPreferServerFilename) && filenameURL != null) {
+        if (userPrefersServerFilenames()) {
             link.setFinalFileName(filenameURL);
         } else {
             link.setFinalFileName(getFormattedFilename(link));
@@ -440,33 +452,49 @@ public class FlickrCom extends PluginForHost {
         this.br.setFollowRedirects(true);
         /* Save directurl for later usage. */
         if (!StringUtils.isEmpty(dllink)) {
-            link.setProperty("directurl_" + link.getStringProperty(PROPERTY_QUALITY), this.dllink);
+            link.setProperty(String.format(PROPERTY_DIRECTURL, link.getStringProperty(PROPERTY_QUALITY)), this.dllink);
         }
         if (!StringUtils.isEmpty(dllink) && !isDownload && allowCheckDirecturlForFilesize) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser brc = br.cloneBrowser();
-                brc.setFollowRedirects(true);
-                con = brc.openHeadConnection(dllink);
-                if (looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    }
-                } else {
-                    if (con.getResponseCode() == 404) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-                    }
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-            }
+            checkDirecturl(link, this.dllink);
         }
         return AvailableStatus.TRUE;
+    }
+
+    private void checkDirecturl(final DownloadLink link, final String directurl) throws IOException, PluginException {
+        URLConnectionAdapter con = null;
+        try {
+            final Browser brc = br.cloneBrowser();
+            brc.setFollowRedirects(true);
+            con = brc.openHeadConnection(directurl);
+            if (looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                }
+            } else {
+                if (con.getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+                }
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
+    }
+
+    private boolean isVideo(final DownloadLink link) {
+        if (StringUtils.equals(link.getStringProperty(PROPERTY_MEDIA_TYPE), "video")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private String getStoredDirecturl(final DownloadLink link) {
+        return link.getStringProperty(String.format(PROPERTY_DIRECTURL, link.getStringProperty(PROPERTY_QUALITY, "undefined")));
     }
 
     @Override
@@ -648,18 +676,31 @@ public class FlickrCom extends PluginForHost {
         return formattedFilename;
     }
 
+    public static final String getFilenameFromDirecturl(final String url) {
+        return new Regex(url, "(?i)https?://live\\.staticflickr\\.com/\\d+/([^/]+)").getMatch(0);
+    }
+
+    public static boolean userPrefersServerFilenames() {
+        return JDUtilities.getPluginForHost("flickr.com").getPluginConfig().getBooleanProperty(PROPERTY_SETTING_PREFER_SERVER_FILENAME, defaultPreferServerFilename);
+    }
+
     private PhotoQuality getPreferredPhotoQuality(final DownloadLink link) {
         if (link.hasProperty(PROPERTY_QUALITY)) {
             /* Return last saved quality. */
             return stringToQuality(link.getStringProperty(PROPERTY_QUALITY));
         } else {
             /* Return quality currently selected by user. */
-            final int arrayPos = this.getPluginConfig().getIntegerProperty(SETTING_SELECTED_PHOTO_QUALITY, defaultArrayPosSelectedPhotoQuality);
-            if (arrayPos < PhotoQuality.values().length) {
-                return PhotoQuality.values()[arrayPos];
-            } else {
-                return PhotoQuality.values()[defaultArrayPosSelectedPhotoQuality];
-            }
+            return getPreferredPhotoQuality();
+        }
+    }
+
+    /** Returns quality currently selected by user. */
+    public static PhotoQuality getPreferredPhotoQuality() {
+        final int arrayPos = JDUtilities.getPluginForHost("flickr.com").getPluginConfig().getIntegerProperty(SETTING_SELECTED_PHOTO_QUALITY, defaultArrayPosSelectedPhotoQuality);
+        if (arrayPos < PhotoQuality.values().length) {
+            return PhotoQuality.values()[arrayPos];
+        } else {
+            return PhotoQuality.values()[defaultArrayPosSelectedPhotoQuality];
         }
     }
 
@@ -768,12 +809,16 @@ public class FlickrCom extends PluginForHost {
         };
     }
 
-    private String[] getKnownPhotoQualitiesDescending() {
+    public static String[] getPhotoQualityStringsDescending() {
         final String[] ret = new String[PhotoQuality.values().length];
         for (int i = 0; i < PhotoQuality.values().length; i++) {
-            ret[i] = PhotoQuality.values()[i].name().substring(1);
+            ret[i] = photoQualityEnumNameToString(PhotoQuality.values()[i].name());
         }
         return ret;
+    }
+
+    public static String photoQualityEnumNameToString(final String label) {
+        return label.substring(1).toLowerCase(Locale.ENGLISH);
     }
 
     private PhotoQuality stringToQuality(final String str) {
@@ -781,7 +826,7 @@ public class FlickrCom extends PluginForHost {
             return null;
         } else {
             for (final PhotoQuality quality : PhotoQuality.values()) {
-                final String qualStr = quality.name().substring(1);
+                final String qualStr = photoQualityEnumNameToString(quality.name());
                 if (qualStr.equalsIgnoreCase(str)) {
                     return quality;
                 }
@@ -790,7 +835,7 @@ public class FlickrCom extends PluginForHost {
         }
     }
 
-    private String[] getPhotoQualityStrings() {
+    private String[] getPhotoQualityLabels() {
         final PhotoQuality[] qualityValues = PhotoQuality.values();
         final String[] ret = new String[qualityValues.length];
         for (int i = 0; i < qualityValues.length; i++) {
@@ -821,7 +866,7 @@ public class FlickrCom extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SETTING_SELECTED_PHOTO_QUALITY, getPhotoQualityStrings(), "Select preferred quality. If that is not available, best will be used instead.").setDefaultValue(defaultArrayPosSelectedPhotoQuality));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SETTING_SELECTED_PHOTO_QUALITY, getPhotoQualityLabels(), "Select preferred quality. If that is not available, best will be used instead.").setDefaultValue(defaultArrayPosSelectedPhotoQuality));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         /* Filename settings */
         final ConfigEntry preferServerFilenames = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_SETTING_PREFER_SERVER_FILENAME, "Prefer server filenames instead of formatted filenames (photos only) e.g. '11112222_574508fa345a_6k.jpg'?").setDefaultValue(defaultPreferServerFilename);
