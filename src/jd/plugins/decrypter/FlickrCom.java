@@ -314,8 +314,8 @@ public class FlickrCom extends PluginForDecrypt {
                 imagePosition += 1;
                 final String thisUsernameSlug = (String) photo.get("pathalias");
                 final String thisUsernameInternal = (String) photo.get("owner");
-                final String thisUsernameFull = (String) photo.get("ownername");
-                final String realName = (String) photo.get("realname");
+                final String thisUsernameFull = (String) photo.get("realname");
+                final String realName = (String) photo.get("ownername");
                 final String usernameForContentURL;
                 /* E.g. in a set, all pictures got the same owner so the "owner" key is not available here. */
                 if (givenUsernameDataIsValidForAllMediaItems) {
