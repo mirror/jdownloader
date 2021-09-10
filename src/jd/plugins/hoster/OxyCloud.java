@@ -90,7 +90,7 @@ public class OxyCloud extends antiDDoSForHost {
              */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /* Language independant RegEx */
+        /* Language independent RegEx */
         String filename = br.getRegex("text_font_text text-block__text\" data\\-reactid=\"19\">[^<]+<b>([^<>\"]+)</b>").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
             /* Fallback */

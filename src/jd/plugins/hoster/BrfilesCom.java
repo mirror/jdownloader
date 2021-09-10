@@ -229,7 +229,7 @@ public class BrfilesCom extends YetiShareCore {
             String expireStr = br.getRegex("Sua conta expira em (\\d{2}/\\d{2}/\\d{4})").getMatch(0);
             if (expireStr == null) {
                 if (expireStr == null) {
-                    /* More wide RegEx to be more language independant (e.g. required for freefile.me) */
+                    /* More wide RegEx to be more language independent (e.g. required for freefile.me) */
                     expireStr = br.getRegex("(\\d{2}/\\d{2}/\\d{4})").getMatch(0);
                 }
             }

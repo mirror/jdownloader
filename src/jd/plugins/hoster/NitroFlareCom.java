@@ -538,7 +538,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                 }
                 dllink = ajax.getRegex("\"(https?://[a-z0-9\\-_]+\\.(?:nitroflare\\.com|nitroflare\\.net|nitro\\.download)|/[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
-                    /* Domain independant RegEx */
+                    /* Domain independent RegEx */
                     dllink = ajax.getRegex("href=\"(https?://[^\"]+)\"[^>]*>Click here to download").getMatch(0);
                 }
                 if (dllink == null) {

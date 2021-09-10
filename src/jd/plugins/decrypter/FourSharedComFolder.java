@@ -19,6 +19,11 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.ProgressController;
@@ -35,11 +40,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "4shared.com" }, urls = { "https?://(?:www\\.)?4shared(?:\\-china)?\\.com/(?:dir|folder|minifolder)/[A-Za-z0-9\\-_]+/(?:\\d+/)?[A-Za-z0-9\\-_]+" })
 public class FourSharedComFolder extends PluginForDecrypt {
@@ -101,7 +101,7 @@ public class FourSharedComFolder extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        /* Important: Make sure this check is language independant! */
+        /* Important: Make sure this check is language independent! */
         if (folderNeedsPassword()) {
             /*
              * 2019-08-30: Check if password protected folders still exist. At least via free account I was not able to password-protect a

@@ -81,6 +81,7 @@ public class FlickrCom extends PluginForHost {
     public static final String             PROPERTY_USERNAME_INTERNAL              = "username_internal";
     public static final String             PROPERTY_USERNAME                       = "username";
     public static final String             PROPERTY_USERNAME_FULL                  = "username_full";
+    public static final String             PROPERTY_REAL_NAME                      = "real_name";
     public static final String             PROPERTY_CONTENT_ID                     = "content_id";
     public static final String             PROPERTY_SET_ID                         = "set_id";
     public static final String             PROPERTY_DATE                           = "dateadded";                       // timestamp
@@ -280,11 +281,31 @@ public class FlickrCom extends PluginForHost {
             if (!link.hasProperty(PROPERTY_USERNAME)) {
                 link.setProperty(PROPERTY_USERNAME, owner.get("pathAlias"));
             }
+            /*
+             * This might be confusing but their fields are different in API/website! E.g. API.ownername == Website.realname --> Both really
+             * is the full username (not to be mistaken with the real name of the uploader!!)
+             */
             if (!link.hasProperty(PROPERTY_USERNAME_FULL)) {
-                link.setProperty(PROPERTY_USERNAME_FULL, Encoding.htmlDecode(owner.get("realname").toString()));
+                /* Thiks is not(!!!) the users real name! See below! */
+                String usernameFull = (String) owner.get("realname");
+                if (usernameFull != null) {
+                    usernameFull = Encoding.htmlDecode(usernameFull);
+                }
+                if (!StringUtils.isEmpty(usernameFull)) {
+                    link.setProperty(PROPERTY_USERNAME_FULL, usernameFull);
+                }
             }
             if (!link.hasProperty(PROPERTY_USERNAME_INTERNAL)) {
                 link.setProperty(PROPERTY_USERNAME_INTERNAL, owner.get("id"));
+            }
+            if (!link.hasProperty(PROPERTY_REAL_NAME)) {
+                String realName = (String) owner.get("username");
+                if (realName != null) {
+                    realName = Encoding.htmlDecode(realName);
+                }
+                if (!StringUtils.isEmpty(realName)) {
+                    link.setProperty(PROPERTY_REAL_NAME, realName);
+                }
             }
             String title = (String) photoData.get("title");
             if (!link.hasProperty(PROPERTY_TITLE) && !StringUtils.isEmpty(title)) {
@@ -657,7 +678,6 @@ public class FlickrCom extends PluginForHost {
         String formattedFilename = null;
         final SubConfiguration cfg = SubConfiguration.getConfig("flickr.com");
         final String customStringForEmptyTags = getCustomStringForEmptyTags();
-        final String ext = link.getStringProperty(PROPERTY_EXT, defaultPhotoExt);
         String formattedDate = defaultCustomStringForEmptyTags;
         if (link.hasProperty(PROPERTY_DATE)) {
             final long date = link.getLongProperty(PROPERTY_DATE, 0);
@@ -686,10 +706,11 @@ public class FlickrCom extends PluginForHost {
         formattedFilename = formattedFilename.replace("*quality*", link.getStringProperty(PROPERTY_QUALITY, customStringForEmptyTags));
         formattedFilename = formattedFilename.replace("*date*", formattedDate);
         formattedFilename = formattedFilename.replace("*date_taken*", link.getStringProperty(PROPERTY_DATE_TAKEN, customStringForEmptyTags));
-        formattedFilename = formattedFilename.replace("*extension*", ext);
+        formattedFilename = formattedFilename.replace("*extension*", link.getStringProperty(PROPERTY_EXT, defaultPhotoExt));
         formattedFilename = formattedFilename.replace("*username*", link.getStringProperty(PROPERTY_USERNAME, customStringForEmptyTags));
         formattedFilename = formattedFilename.replace("*username_full*", link.getStringProperty(PROPERTY_USERNAME_FULL, customStringForEmptyTags));
         formattedFilename = formattedFilename.replace("*username_internal*", link.getStringProperty(PROPERTY_USERNAME_INTERNAL, customStringForEmptyTags));
+        formattedFilename = formattedFilename.replace("*real_name*", link.getStringProperty(PROPERTY_REAL_NAME, customStringForEmptyTags));
         formattedFilename = formattedFilename.replace("*title*", link.getStringProperty(PROPERTY_TITLE, customStringForEmptyTags));
         return formattedFilename;
     }
@@ -897,6 +918,7 @@ public class FlickrCom extends PluginForHost {
         sbtags.append("*username* = Short username e.g. 'exampleusername'\r\n");
         sbtags.append("*username_internal* = Internal username e.g. '12345678@N04'\r\n");
         sbtags.append("*username_full* = Full username e.g. 'Example Username'\r\n");
+        sbtags.append("*real_name* = Real name of the user (name and surname) e.g. 'Marcus Mueller'\r\n");
         sbtags.append("*date* = date when the photo was uploaded - custom date format will be used here\r\n");
         sbtags.append("*date_taken* = date when the photo was taken - pre-formatted string (yyyy-MM-dd HH:mm:ss)\r\n");
         sbtags.append("*title* = Title of the photo\r\n");

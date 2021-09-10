@@ -126,7 +126,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                         maxPage = pageTemp;
                     }
                 }
-                /* Add separate links for all found pages so call can be crawled independantly from each other! */
+                /* Add separate links for all found pages so call can be crawled independently from each other! */
                 if (maxPage > startPage) {
                     logger.info("Found " + maxPage + " pages");
                     final FilePackage fp = FilePackage.getInstance();
