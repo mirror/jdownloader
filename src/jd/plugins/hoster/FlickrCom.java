@@ -83,7 +83,9 @@ public class FlickrCom extends PluginForHost {
     public static final String             PROPERTY_USERNAME_FULL                  = "username_full";
     public static final String             PROPERTY_CONTENT_ID                     = "content_id";
     public static final String             PROPERTY_SET_ID                         = "set_id";
-    public static final String             PROPERTY_DATE                           = "dateadded";
+    public static final String             PROPERTY_DATE                           = "dateadded";                       // timestamp
+    /* pre-formatted string */
+    public static final String             PROPERTY_DATE_TAKEN                     = "date_taken";
     public static final String             PROPERTY_TITLE                          = "title";
     public static final String             PROPERTY_ORDER_ID                       = "order_id";
     public static final String             PROPERTY_MEDIA_TYPE                     = "media";
@@ -269,8 +271,8 @@ public class FlickrCom extends PluginForHost {
         String secret = null;
         if (json != null) {
             /* json handling */
-            Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-            final List<Object> photoModels = (List) entries.get("photo-models");
+            Map<String, Object> root = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+            final List<Object> photoModels = (List) root.get("photo-models");
             final Map<String, Object> photoData = (Map<String, Object>) photoModels.get(0);
             /* Required to obtain videostreams */
             secret = (String) photoData.get("secret");
@@ -284,11 +286,31 @@ public class FlickrCom extends PluginForHost {
             if (!link.hasProperty(PROPERTY_USERNAME_INTERNAL)) {
                 link.setProperty(PROPERTY_USERNAME_INTERNAL, owner.get("id"));
             }
+            String title = (String) photoData.get("title");
+            if (!link.hasProperty(PROPERTY_TITLE) && !StringUtils.isEmpty(title)) {
+                title = Encoding.htmlDecode(title);
+                if (!StringUtils.isEmpty(title)) {
+                    link.setProperty(PROPERTY_TITLE, title);
+                }
+            }
             String description = (String) photoData.get("description");
             if (description != null) {
                 description = Encoding.htmlDecode(description);
                 if (!StringUtils.isEmpty(description) && link.getComment() == null) {
                     link.setComment(description);
+                }
+            }
+            {
+                /* This block solely exists to find the uploaded-timestamp. */
+                final List<Object> photoStatsModels = (List) root.get("photo-stats-models");
+                final Map<String, Object> photoStatsData = (Map<String, Object>) photoStatsModels.get(0);
+                final long datePosted = JavaScriptEngineFactory.toLong(photoStatsData.get("datePosted"), 0);
+                if (datePosted > 0) {
+                    link.setProperty(PROPERTY_DATE, datePosted * 1000);
+                }
+                final String dateTaken = (String) photoStatsData.get("dateTaken");
+                if (!StringUtils.isEmpty(dateTaken)) {
+                    link.setProperty(PROPERTY_DATE_TAKEN, Encoding.htmlDecode(dateTaken));
                 }
             }
             /* Get metadata: This way is safer than via html and it will return more information! */
@@ -299,10 +321,10 @@ public class FlickrCom extends PluginForHost {
             String maxQualityDownloadurl = null;
             while (iterator.hasNext()) {
                 final Entry<String, Object> entry = iterator.next();
-                entries = (Map<String, Object>) entry.getValue();
-                String url = (String) entries.get("url");
+                root = (Map<String, Object>) entry.getValue();
+                String url = (String) root.get("url");
                 final String qualityName = entry.getKey();
-                final long width = JavaScriptEngineFactory.toLong(entries.get("width"), 0);
+                final long width = JavaScriptEngineFactory.toLong(root.get("width"), 0);
                 if (StringUtils.isEmpty(url)) {
                     /* Skip invalid items */
                     continue;
@@ -636,24 +658,25 @@ public class FlickrCom extends PluginForHost {
         final SubConfiguration cfg = SubConfiguration.getConfig("flickr.com");
         final String customStringForEmptyTags = getCustomStringForEmptyTags();
         final String ext = link.getStringProperty(PROPERTY_EXT, defaultPhotoExt);
-        final long date = link.getLongProperty(PROPERTY_DATE, 0);
-        String formattedDate = null;
-        final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, defaultCustomDate);
-        Date theDate = new Date(date);
-        if (userDefinedDateFormat != null) {
-            try {
-                final SimpleDateFormat formatter = new SimpleDateFormat(userDefinedDateFormat);
-                formattedDate = formatter.format(theDate);
-            } catch (Exception e) {
-                /* prevent user error killing the custom filename function. */
-                formattedDate = defaultCustomStringForEmptyTags;
+        String formattedDate = defaultCustomStringForEmptyTags;
+        if (link.hasProperty(PROPERTY_DATE)) {
+            final long date = link.getLongProperty(PROPERTY_DATE, 0);
+            final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, defaultCustomDate);
+            Date theDate = new Date(date);
+            if (userDefinedDateFormat != null) {
+                try {
+                    final SimpleDateFormat formatter = new SimpleDateFormat(userDefinedDateFormat);
+                    formattedDate = formatter.format(theDate);
+                } catch (final Exception ignore) {
+                    /* prevent user error killing the custom filename function. */
+                    formattedDate = defaultCustomStringForEmptyTags;
+                }
             }
         }
         formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
         if (formattedFilename == null || formattedFilename.equals("")) {
             formattedFilename = defaultCustomFilename;
         }
-        formattedFilename = formattedFilename.toLowerCase();
         /* Make sure that the user entered a VALID custom filename - if not, use the default name */
         if (!formattedFilename.contains("*extension*") || (!formattedFilename.contains("*content_id*") && !formattedFilename.contains("*date*") && !formattedFilename.contains("*username*") && !formattedFilename.contains("*username_internal*"))) {
             formattedFilename = defaultCustomFilename;
@@ -662,17 +685,12 @@ public class FlickrCom extends PluginForHost {
         formattedFilename = formattedFilename.replace("*order_id*", link.getStringProperty(PROPERTY_ORDER_ID, customStringForEmptyTags));
         formattedFilename = formattedFilename.replace("*quality*", link.getStringProperty(PROPERTY_QUALITY, customStringForEmptyTags));
         formattedFilename = formattedFilename.replace("*date*", formattedDate);
+        formattedFilename = formattedFilename.replace("*date_taken*", link.getStringProperty(PROPERTY_DATE_TAKEN, customStringForEmptyTags));
         formattedFilename = formattedFilename.replace("*extension*", ext);
         formattedFilename = formattedFilename.replace("*username*", link.getStringProperty(PROPERTY_USERNAME, customStringForEmptyTags));
         formattedFilename = formattedFilename.replace("*username_full*", link.getStringProperty(PROPERTY_USERNAME_FULL, customStringForEmptyTags));
-        formattedFilename = formattedFilename.replace("*username_internal*", cfg.getStringProperty(PROPERTY_USERNAME_INTERNAL, customStringForEmptyTags));
+        formattedFilename = formattedFilename.replace("*username_internal*", link.getStringProperty(PROPERTY_USERNAME_INTERNAL, customStringForEmptyTags));
         formattedFilename = formattedFilename.replace("*title*", link.getStringProperty(PROPERTY_TITLE, customStringForEmptyTags));
-        /* Cut filenames if they're too long */
-        if (formattedFilename.length() > 180) {
-            int extLength = ext.length();
-            formattedFilename = formattedFilename.substring(0, 180 - extLength);
-            formattedFilename += ext;
-        }
         return formattedFilename;
     }
 
@@ -879,7 +897,8 @@ public class FlickrCom extends PluginForHost {
         sbtags.append("*username* = Short username e.g. 'exampleusername'\r\n");
         sbtags.append("*username_internal* = Internal username e.g. '12345678@N04'\r\n");
         sbtags.append("*username_full* = Full username e.g. 'Example Username'\r\n");
-        sbtags.append("*date* = ate when the photo was uploaded - custom date format will be used here\r\n");
+        sbtags.append("*date* = date when the photo was uploaded - custom date format will be used here\r\n");
+        sbtags.append("*date_taken* = date when the photo was taken - pre-formatted string (yyyy-MM-dd HH:mm:ss)\r\n");
         sbtags.append("*title* = Title of the photo\r\n");
         sbtags.append("*extension* = Extension of the photo - usually '.jpg'\r\n");
         sbtags.append("*quality* = Quality of the photo/video e.g. 'm'\r\n");

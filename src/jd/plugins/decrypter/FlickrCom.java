@@ -170,7 +170,7 @@ public class FlickrCom extends PluginForDecrypt {
         boolean alreadyAccessedFirstPage;
         final UrlQuery params = new UrlQuery();
         params.add("api_key", apikey);
-        String extras = "date_upload%2Cdescription%2Cowner_name%2Cpath_alias%2Crealname";
+        String extras = "date_taken%2Cdate_upload%2Cdescription%2Cowner_name%2Cpath_alias%2Crealname";
         final String[] allPhotoQualities = jd.plugins.hoster.FlickrCom.getPhotoQualityStringsDescending();
         for (final String qualityStr : allPhotoQualities) {
             extras += "%2Curl_" + qualityStr;
@@ -284,7 +284,7 @@ public class FlickrCom extends PluginForDecrypt {
         int totalimgs = -1;
         int totalpages = -1;
         int imagePosition = 0;
-        final DecimalFormat df = new DecimalFormat(String.valueOf(totalimgs).replaceAll("\\d", "0"));
+        DecimalFormat df = null;
         int page = 1;
         final String userPreferredPhotoQualityStr = jd.plugins.hoster.FlickrCom.photoQualityEnumNameToString(jd.plugins.hoster.FlickrCom.getPreferredPhotoQuality().name());
         do {
@@ -299,6 +299,9 @@ public class FlickrCom extends PluginForDecrypt {
             if (totalimgs == 0) {
                 logger.info("ZERO items available");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (df == null) {
+                df = new DecimalFormat(String.valueOf(totalimgs).replaceAll("\\d", "0"));
             }
             logger.info("Crawling page " + page + " / " + totalpages + " | Progress: " + decryptedLinks.size() + " of " + totalimgs);
             final List<Map<String, Object>> photoList = (List<Map<String, Object>>) photoInfo.get("photo");
@@ -384,28 +387,36 @@ public class FlickrCom extends PluginForDecrypt {
                 if (setID != null) {
                     dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_SET_ID, setID);
                 }
-                if (givenUsernameDataIsValidForAllMediaItems) {
-                    if (!StringUtils.isEmpty(usernameSlug)) {
-                        dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME, usernameSlug);
+                {
+                    /* Set different "username" properties */
+                    if (givenUsernameDataIsValidForAllMediaItems) {
+                        if (!StringUtils.isEmpty(usernameSlug)) {
+                            dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME, usernameSlug);
+                        }
+                        if (!StringUtils.isEmpty(usernameInternal)) {
+                            dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_INTERNAL, usernameInternal);
+                        }
+                        if (!StringUtils.isEmpty(usernameFull)) {
+                            dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_FULL, usernameFull);
+                        }
                     }
-                    if (!StringUtils.isEmpty(usernameInternal)) {
-                        dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_INTERNAL, usernameInternal);
+                    /* Overwrite previously set properties if our "photo" object has them too as we can trust those ones 100%. */
+                    if (!StringUtils.isEmpty(thisUsernameSlug)) {
+                        dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME, thisUsernameSlug);
                     }
-                    if (!StringUtils.isEmpty(usernameFull)) {
-                        dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_FULL, usernameFull);
+                    if (!StringUtils.isEmpty(thisUsernameFull)) {
+                        dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_FULL, thisUsernameFull);
                     }
-                }
-                if (!StringUtils.isEmpty(thisUsernameSlug)) {
-                    dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME, thisUsernameSlug);
-                }
-                if (!StringUtils.isEmpty(thisUsernameFull)) {
-                    dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_FULL, thisUsernameFull);
-                }
-                if (!StringUtils.isEmpty(thisUsernameInternal)) {
-                    dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_INTERNAL, thisUsernameInternal);
+                    if (!StringUtils.isEmpty(thisUsernameInternal)) {
+                        dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_INTERNAL, thisUsernameInternal);
+                    }
                 }
                 if (dateUploaded != null && dateUploaded.matches("\\d+")) {
                     dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_DATE, Long.parseLong(dateUploaded) * 1000);
+                }
+                final String dateTaken = (String) photo.get("datetaken");
+                if (!StringUtils.isEmpty(dateTaken)) {
+                    dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_DATE_TAKEN, dateTaken);
                 }
                 if (!StringUtils.isEmpty(title)) {
                     dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_TITLE, title);
