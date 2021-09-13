@@ -227,19 +227,22 @@ public class TwitterCom extends PornEmbedParser {
                         int highestBitrate = -1;
                         final List<Map<String, Object>> videoVariants = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(media, "video_info/variants");
                         String streamURL = null;
+                        String hlsMaster = null;
                         for (final Map<String, Object> videoVariant : videoVariants) {
                             final String content_type = (String) videoVariant.get("content_type");
-                            if (!content_type.equalsIgnoreCase("video/mp4")) {
-                                /* Skip all except http videos (e.g. HLS --> application/x-mpegURL) */
-                                continue;
-                            }
-                            final int bitrate = ((Number) videoVariant.get("bitrate")).intValue();
-                            if (bitrate > highestBitrate) {
-                                highestBitrate = bitrate;
-                                streamURL = (String) videoVariant.get("url");
+                            if (content_type.equalsIgnoreCase("video/mp4")) {
+                                final int bitrate = ((Number) videoVariant.get("bitrate")).intValue();
+                                if (bitrate > highestBitrate) {
+                                    highestBitrate = bitrate;
+                                    streamURL = (String) videoVariant.get("url");
+                                }
+                            } else if (content_type.equalsIgnoreCase("application/x-mpegURL")) {
+                                hlsMaster = (String) videoVariant.get("url");
+                            } else {
+                                logger.info("Skipping unsupported video content_type: " + content_type);
                             }
                         }
-                        if (streamURL == null) {
+                        if (StringUtils.isEmpty(streamURL)) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         dl = this.createDownloadlink(createVideourl(tweetID));
@@ -250,6 +253,9 @@ public class TwitterCom extends PornEmbedParser {
                         }
                         dl.setProperty(PROPERTY_BITRATE, highestBitrate);
                         dl.setProperty(jd.plugins.hoster.TwitterCom.PROPERTY_DIRECTURL, streamURL);
+                        if (!StringUtils.isEmpty(hlsMaster)) {
+                            dl.setProperty(jd.plugins.hoster.TwitterCom.PROPERTY_DIRECTURL_hls_master, hlsMaster);
+                        }
                     } else if (type.equals("photo")) {
                         final String url = (String) media.get("media_url"); /* Also available as "media_url_https" */
                         if (url == null) {
@@ -259,7 +265,7 @@ public class TwitterCom extends PornEmbedParser {
                         if (useOriginalFilenames) {
                             dl.setFinalFileName(tweetID + "_" + Plugin.getFileNameFromURL(new URL(url)));
                         } else {
-                            final String filename = formattedDate + "_" + username + "_" + tweetID + "_" + mediaIndex + "." + Plugin.getFileNameExtensionFromURL(url);
+                            final String filename = formattedDate + "_" + username + "_" + tweetID + "_" + mediaIndex + Plugin.getFileNameExtensionFromURL(url);
                             dl.setFinalFileName(filename);
                         }
                     } else {
@@ -402,7 +408,7 @@ public class TwitterCom extends PornEmbedParser {
                 if (useOriginalFilenames) {
                     dl.setFinalFileName(tweetID + "_" + Plugin.getFileNameFromURL(new URL(url)));
                 } else {
-                    dl.setFinalFileName(formattedDate + "_" + username + "_" + tweetID + "_" + mediaIndex + "." + Plugin.getFileNameExtensionFromURL(url));
+                    dl.setFinalFileName(formattedDate + "_" + username + "_" + tweetID + "_" + mediaIndex + Plugin.getFileNameExtensionFromURL(url));
                 }
             }
             dl.setAvailable(true);
