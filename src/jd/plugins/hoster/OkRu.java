@@ -184,7 +184,7 @@ public class OkRu extends PluginForHost {
                         }
                     }
                 }
-                /* 0 = user wants BEST */
+                /* null = user wants BEST */
                 final String userPreferredQuality = getUserPreferredqualityStr();
                 if (userPreferredQuality != null && collectedHTTPQualities.containsKey(userPreferredQuality)) {
                     logger.info("Using user preferred HTTP quality: " + userPreferredQuality);
