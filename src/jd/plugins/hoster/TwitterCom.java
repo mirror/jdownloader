@@ -19,6 +19,22 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
@@ -40,22 +56,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com" }, urls = { "https?://[a-z0-9]+\\.twimg\\.com/media/[^/]+|https?://amp\\.twimg\\.com/prod/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap|https?://amp\\.twimg\\.com/v/.+|https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+" })
 public class TwitterCom extends PluginForHost {
     public TwitterCom(PluginWrapper wrapper) {
@@ -75,22 +75,24 @@ public class TwitterCom extends PluginForHost {
         return link.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
-    private final String       TYPE_DIRECT                  = "https?://[a-z0-9]+\\.twimg\\.com/.+";
-    private final String       TYPE_VIDEO_DIRECT            = "https?://amp\\.twimg\\.com/v/.+";
-    private final String       TYPE_VIDEO_VMAP              = "https?://amp\\.twimg\\.com/prod/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap";
-    public static final String TYPE_VIDEO_EMBED             = "https?://[^/]+/i/videos/tweet/(\\d+)";
+    private final String        TYPE_DIRECT                   = "https?://[a-z0-9]+\\.twimg\\.com/.+";
+    private final String        TYPE_VIDEO_DIRECT             = "https?://amp\\.twimg\\.com/v/.+";
+    private final String        TYPE_VIDEO_VMAP               = "https?://amp\\.twimg\\.com/prod/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap";
+    public static final String  TYPE_VIDEO_EMBED              = "https?://[^/]+/i/videos/tweet/(\\d+)";
     /* Connection stuff - don't allow chunks as we only download small pictures */
-    private final boolean      FREE_RESUME                  = true;
-    private final int          FREE_MAXCHUNKS               = 1;
-    private final int          FREE_MAXDOWNLOADS            = 20;
-    private final boolean      ACCOUNT_FREE_RESUME          = true;
-    private final int          ACCOUNT_FREE_MAXCHUNKS       = 1;
-    private final int          ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private String             dllink                       = null;
-    private boolean            account_required             = false;
-    private boolean            geo_blocked                  = false;
-    public static final String COOKIE_KEY_LOGINED_CSRFTOKEN = "ct0";
-    public static final String PROPERTY_DIRECTURL           = "directlink";
+    private final boolean       FREE_RESUME                   = true;
+    private final int           FREE_MAXCHUNKS                = 1;
+    private final int           FREE_MAXDOWNLOADS             = 20;
+    private final boolean       ACCOUNT_FREE_RESUME           = true;
+    private final int           ACCOUNT_FREE_MAXCHUNKS        = 1;
+    private final int           ACCOUNT_FREE_MAXDOWNLOADS     = 20;
+    private String              dllink                        = null;
+    private boolean             account_required              = false;
+    private boolean             geo_blocked                   = false;
+    public static final String  COOKIE_KEY_LOGINED_CSRFTOKEN  = "ct0";
+    public static final String  PROPERTY_DIRECTURL            = "directlink";
+    public static final String  PROPERTY_DIRECTURL_hls_master = "directlink_hls_master";
+    private static final String PROPERTY_BROKEN_FILE          = "broken_file";
 
     public static Browser prepBR(final Browser br) {
         br.setAllowedResponseCodes(new int[] { 429 });
@@ -155,7 +157,7 @@ public class TwitterCom extends PluginForHost {
             final String username = link.getStringProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_USERNAME);
             final boolean useNewWay = true;
             if (useNewWay) {
-                this.dllink = link.getStringProperty(PROPERTY_DIRECTURL, null);
+                this.dllink = getStoredVideoDirecturl(link);
                 if (StringUtils.isEmpty(this.dllink)) {
                     logger.info("Obtaining new directurl via crawler");
                     final PluginForDecrypt decrypter = this.getNewPluginForDecryptInstance(this.getHost());
@@ -185,11 +187,17 @@ public class TwitterCom extends PluginForHost {
                          */
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Single tweet video item type mismatch");
                     }
-                    this.dllink = result.getStringProperty(PROPERTY_DIRECTURL);
+                    this.dllink = getStoredVideoDirecturl(result);
                     if (StringUtils.isEmpty(dllink)) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        /* Video download failed and no alternatives are available? */
+                        if (this.looksLikeBrokenFile(link)) {
+                            throw new PluginException(LinkStatus.ERROR_FATAL, "Broken video?");
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                     }
-                    link.setProperty(PROPERTY_DIRECTURL, this.dllink);
+                    link.setProperty(PROPERTY_DIRECTURL, result.getStringProperty(PROPERTY_DIRECTURL));
+                    link.setProperty(PROPERTY_DIRECTURL_hls_master, result.getStringProperty(PROPERTY_DIRECTURL_hls_master));
                     if (result.getFinalFileName() != null) {
                         link.setFinalFileName(result.getFinalFileName());
                     } else if (result.getForcedFileName() != null) { /* Old handling */
@@ -416,6 +424,19 @@ public class TwitterCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private String getStoredVideoDirecturl(final DownloadLink link) {
+        if (looksLikeBrokenFile(link)) {
+            return link.getStringProperty(PROPERTY_DIRECTURL_hls_master);
+        } else {
+            return link.getStringProperty(PROPERTY_DIRECTURL);
+        }
+    }
+
+    /** Returns true if last download attempt lead to empty file. */
+    private boolean looksLikeBrokenFile(final DownloadLink link) {
+        return link.getBooleanProperty(PROPERTY_BROKEN_FILE, false);
+    }
+
     private static String regexVideoVmapHighestQualityURL(final Browser br) {
         String videourl = br.getRegex("<MediaFile>\\s*?<\\!\\[CDATA\\[(http[^<>\"]*?)\\]\\]>\\s*?</MediaFile>").getMatch(0);
         if (videourl == null) {
@@ -458,12 +479,25 @@ public class TwitterCom extends PluginForHost {
         } else {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumable, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                if (dl.getConnection().getResponseCode() == 429) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Rate-limit reached", 5 * 60 * 1000l);
+                }
                 try {
                     br.followConnection(true);
                 } catch (final IOException e) {
                     logger.log(e);
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if (dl.getConnection().getCompleteContentLength() == 0) {
+                /*
+                 * 2021-09-13: E.g. broken videos: HEAD request looks good but download-attepmpt will result in empty file --> Catch that
+                 * and use HLS download for next attempt
+                 */
+                link.setProperty(PROPERTY_BROKEN_FILE, true);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken file?", 1 * 60 * 1000l);
+            } else if (StringUtils.containsIgnoreCase(dl.getConnection().getURL().toString(), ".mp4") && dl.getConnection().getCompleteContentLength() == -1) {
+                link.setProperty(PROPERTY_BROKEN_FILE, true);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?", 1 * 60 * 1000l);
             }
             dl.startDownload();
         }
