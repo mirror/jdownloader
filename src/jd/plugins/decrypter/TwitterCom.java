@@ -29,6 +29,15 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -52,15 +61,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(?:www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/status/\\d+|https?://(?:www\\.|mobile\\.)?twitter\\.com/(?!i/)[A-Za-z0-9_\\-]{2,}(?:/(?:media|likes))?|https://twitter\\.com/i/cards/tfw/v1/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" })
 public class TwitterCom extends PornEmbedParser {
@@ -513,6 +513,13 @@ public class TwitterCom extends PornEmbedParser {
             /* https://developer.twitter.com/en/docs/twitter-api/rate-limits */
             /* per 15 mins window, 300 per app, 900 per user */
             br.getPage("https://api.twitter.com/1.1/users/lookup.json?screen_name=" + username);
+            if (br.getHttpConnection().getResponseCode() == 403) {
+                /* {"errors":[{"code":22,"message":"Not authorized to view the specified user."}]} */
+                throw new AccountRequiredException();
+            } else if (br.getHttpConnection().getResponseCode() == 404) {
+                /* {"errors":[{"code":17,"message":"No user matches for specified terms."}]} */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             user_id = PluginJSonUtils.getJson(br, "id_str");
             statuses_count = PluginJSonUtils.getJson(br, "statuses_count");
             media_count = PluginJSonUtils.getJson(br, "media_count");
@@ -654,7 +661,8 @@ public class TwitterCom extends PornEmbedParser {
     }
 
     /**
-     * https://developer.twitter.com/en/support/twitter-api/error-troubleshooting </br> Scroll down to "Twitter API error codes"
+     * https://developer.twitter.com/en/support/twitter-api/error-troubleshooting </br>
+     * Scroll down to "Twitter API error codes"
      */
     private void handleErrorsAPI(final Browser br) throws Exception {
         final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
