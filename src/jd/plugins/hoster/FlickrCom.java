@@ -244,6 +244,7 @@ public class FlickrCom extends PluginForHost {
             if (title == null) {
                 title = br.getRegex("<title>([^<>]+)\\| Flickr</title").getMatch(0);
             }
+            /* Username used inside URL for this item */
             final String usernameFromHTML = br.getRegex("id=\"canonicalurl\"[^>]*href=\"https?://[^/]+/photos/([^/]+)/").getMatch(0);
             if (usernameFromHTML != null) {
                 /* Overwrite property! */
