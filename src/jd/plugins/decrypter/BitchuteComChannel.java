@@ -48,8 +48,10 @@ public class BitchuteComChannel extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*This channel is unavailable at your location due to the following restrictions")) {
+            /* 2021-09-13 */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String csrftoken = this.br.getCookie(br.getHost(), "csrftoken", Cookies.NOTDELETEDPATTERN);
         final String channelUID = br.getRegex("channelRefreshCounts\\('([A-Za-z0-9]+)'").getMatch(0);
