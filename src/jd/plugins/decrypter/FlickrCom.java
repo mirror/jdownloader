@@ -110,6 +110,7 @@ public class FlickrCom extends PluginForDecrypt {
         if (param.getCryptedUrl().matches(TYPE_SETS_OF_USER_ALL)) {
             apiCrawlSetsOfUser(param);
         } else if (loggedin) {
+            /* TODO: Remove this?! */
             site_handleSite(param);
         } else {
             api_handleAPI(param);
@@ -170,8 +171,11 @@ public class FlickrCom extends PluginForDecrypt {
         boolean alreadyAccessedFirstPage;
         final UrlQuery params = new UrlQuery();
         params.add("api_key", apikey);
-        /* needs_interstitial = show 18+ content */
-        String extras = "date_taken%2Cdate_upload%2Cdescription%2Cowner_name%2Cpath_alias%2Crealname%2Cneeds_interstitial";
+        /**
+         * needs_interstitial = show 18+ content </br>
+         * media = include media-type (video/photo)
+         */
+        String extras = "date_taken%2Cdate_upload%2Cdescription%2Cowner_name%2Cpath_alias%2Crealname%2Cneeds_interstitial%2Cmedia";
         final String[] allPhotoQualities = jd.plugins.hoster.FlickrCom.getPhotoQualityStringsDescending();
         for (final String qualityStr : allPhotoQualities) {
             extras += "%2Curl_" + qualityStr;
@@ -316,10 +320,14 @@ public class FlickrCom extends PluginForDecrypt {
                 final String thisUsernameInternal = (String) photo.get("owner");
                 final String thisUsernameFull = (String) photo.get("realname");
                 final String realName = (String) photo.get("ownername");
+                final String photoID = photo.get("id").toString();
+                final String title = (String) photo.get("title");
+                final String dateUploaded = (String) photo.get("dateupload");
+                final String description = (String) JavaScriptEngineFactory.walkJson(photo, "description/_content");
+                final String contenturl;
                 final String usernameForContentURL;
-                /* E.g. in a set, all pictures got the same owner so the "owner" key is not available here. */
-                if (givenUsernameDataIsValidForAllMediaItems) {
-                    usernameForContentURL = usernameFromURL;
+                if (!StringUtils.isEmpty(thisUsernameSlug)) {
+                    usernameForContentURL = thisUsernameSlug;
                 } else {
                     usernameForContentURL = thisUsernameInternal;
                 }
@@ -327,11 +335,6 @@ public class FlickrCom extends PluginForDecrypt {
                     /* This should never happen! */
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                final String photoID = photo.get("id").toString();
-                final String title = (String) photo.get("title");
-                final String dateUploaded = (String) photo.get("dateupload");
-                final String description = (String) JavaScriptEngineFactory.walkJson(photo, "description/_content");
-                final String contenturl;
                 if (setID != null) {
                     contenturl = "https://www." + this.getHost() + "/photos/" + usernameForContentURL + "/" + photoID + "/in/album-" + setID;
                 } else {
@@ -344,7 +347,7 @@ public class FlickrCom extends PluginForDecrypt {
                 final String media = (String) photo.get("media");
                 final String extension;
                 String filenameURL = null;
-                if ("video".equalsIgnoreCase(media)) {
+                if (media.equalsIgnoreCase("video")) {
                     extension = ".mp4";
                 } else {
                     extension = ".jpg";
@@ -409,12 +412,11 @@ public class FlickrCom extends PluginForDecrypt {
                     if (!StringUtils.isEmpty(thisUsernameFull)) {
                         dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_FULL, thisUsernameFull);
                     }
-                    if (!StringUtils.isEmpty(thisUsernameInternal)) {
-                        dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_INTERNAL, thisUsernameInternal);
-                    }
                     if (!StringUtils.isEmpty(realName)) {
                         dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_REAL_NAME, realName);
                     }
+                    dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_INTERNAL, thisUsernameInternal);
+                    dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_URL, usernameForContentURL);
                 }
                 if (dateUploaded != null && dateUploaded.matches("\\d+")) {
                     dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_DATE, Long.parseLong(dateUploaded) * 1000);

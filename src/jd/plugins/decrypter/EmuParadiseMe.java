@@ -61,7 +61,7 @@ public class EmuParadiseMe extends PluginForDecrypt {
             return decryptedLinks;
         }
         // many links? single link?
-        final String[] links = br.getRegex(((jd.plugins.hoster.EmuParadiseMe) plugin).subURL).getColumn(-1);
+        final String[] links = br.getRegex(jd.plugins.hoster.EmuParadiseMe.TYPE_SEMICOLON_DOWNLOAD).getColumn(-1);
         if (links != null && links.length > 0) {
             // many
             final String fpName = PluginJSonUtils.getJson(br, "name");

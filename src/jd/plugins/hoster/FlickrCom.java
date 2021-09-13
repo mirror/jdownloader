@@ -81,6 +81,7 @@ public class FlickrCom extends PluginForHost {
     public static final String             PROPERTY_USERNAME_INTERNAL              = "username_internal";
     public static final String             PROPERTY_USERNAME                       = "username";
     public static final String             PROPERTY_USERNAME_FULL                  = "username_full";
+    public static final String             PROPERTY_USERNAME_URL                   = "username_url";
     public static final String             PROPERTY_REAL_NAME                      = "real_name";
     public static final String             PROPERTY_CONTENT_ID                     = "content_id";
     public static final String             PROPERTY_SET_ID                         = "set_id";
@@ -201,6 +202,7 @@ public class FlickrCom extends PluginForHost {
         } else {
             link.setProperty(PROPERTY_USERNAME, usernameFromURL);
         }
+        link.setProperty(PROPERTY_USERNAME_URL, usernameFromURL);
         br.setFollowRedirects(true);
         /* Picture direct-URLs are static --> Rely on them. */
         final String storedDirecturl = getStoredDirecturl(link);
@@ -215,7 +217,9 @@ public class FlickrCom extends PluginForHost {
         if (account != null) {
             login(account, false);
         }
-        br.getPage(getPhotoURLWithoutAlbumInfo(link) + "/in/photostream");
+        /* 2021-09-13: Don't do this anymore as it may not always work for videos! */
+        // br.getPage(getPhotoURLWithoutAlbumInfo(link) + "/in/photostream");
+        br.getPage(getPhotoURLWithoutAlbumInfo(link));
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("div class=\"Four04Case\">") || br.containsHTML("(?i)>\\s*This member is no longer active on Flickr") || br.containsHTML("class=\"Problem\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection().getResponseCode() == 403) {
@@ -320,6 +324,10 @@ public class FlickrCom extends PluginForHost {
                 if (!StringUtils.isEmpty(description) && link.getComment() == null) {
                     link.setComment(description);
                 }
+            }
+            final String mediaType = (String) photoData.get("mediaType");
+            if (!link.hasProperty(PROPERTY_MEDIA_TYPE) && !StringUtils.isEmpty(mediaType)) {
+                link.setProperty(PROPERTY_MEDIA_TYPE, mediaType);
             }
             {
                 /* This block solely exists to find the uploaded-timestamp. */
@@ -446,18 +454,27 @@ public class FlickrCom extends PluginForHost {
              * implementing a quality selection for videos could make sense.
              */
             final List<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "streams/stream");
+            int skippedVideoTypes = 0;
             for (final Object streamO : ressourcelist) {
                 entries = (Map<String, Object>) streamO;
-                if (entries.get("type") instanceof String) {
-                    dllink = (String) entries.get("_content");
-                    if (!StringUtils.isEmpty(dllink)) {
-                        break;
-                    }
+                final String videoType = entries.get("type").toString();
+                if (videoType.equals("700") || videoType.equalsIgnoreCase("iphone_wifi")) {
+                    continue;
+                }
+                /* Pick first allowed quality e.g. type "288p" */
+                dllink = (String) entries.get("_content");
+                if (!StringUtils.isEmpty(dllink)) {
+                    logger.info("Picked video quality: " + videoType);
+                    break;
                 }
             }
             // dllink = apibr.getRegex("\"type\":\"orig\",\\s*?\"_content\":\"(https[^<>\"]*?)\"").getMatch(0);
-            if (StringUtils.isEmpty(dllink) || !dllink.startsWith("http")) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (StringUtils.isEmpty(dllink)) {
+                if (skippedVideoTypes > 0) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Broken video?");
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             String videoExt;
             if (dllink.contains("mp4")) {
@@ -708,6 +725,7 @@ public class FlickrCom extends PluginForHost {
         formattedFilename = formattedFilename.replace("*date_taken*", link.getStringProperty(PROPERTY_DATE_TAKEN, customStringForEmptyTags));
         formattedFilename = formattedFilename.replace("*extension*", link.getStringProperty(PROPERTY_EXT, defaultPhotoExt));
         formattedFilename = formattedFilename.replace("*username*", link.getStringProperty(PROPERTY_USERNAME, customStringForEmptyTags));
+        formattedFilename = formattedFilename.replace("*username_url*", link.getStringProperty(PROPERTY_USERNAME_URL, customStringForEmptyTags));
         formattedFilename = formattedFilename.replace("*username_full*", link.getStringProperty(PROPERTY_USERNAME_FULL, customStringForEmptyTags));
         formattedFilename = formattedFilename.replace("*username_internal*", link.getStringProperty(PROPERTY_USERNAME_INTERNAL, customStringForEmptyTags));
         formattedFilename = formattedFilename.replace("*real_name*", link.getStringProperty(PROPERTY_REAL_NAME, customStringForEmptyTags));
@@ -916,6 +934,7 @@ public class FlickrCom extends PluginForHost {
         sbtags.append("Explanation of the available tags:\r\n");
         sbtags.append("*content_id* = ID of the photo/video\r\n");
         sbtags.append("*username* = Short username e.g. 'exampleusername'\r\n");
+        sbtags.append("*username_url* = Username from inside URL - usually either the same value as 'username' or 'username_internal'\r\n");
         sbtags.append("*username_internal* = Internal username e.g. '12345678@N04'\r\n");
         sbtags.append("*username_full* = Full username e.g. 'Example Username'\r\n");
         sbtags.append("*real_name* = Real name of the user (name and surname) e.g. 'Marcus Mueller'\r\n");

@@ -52,7 +52,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "emuparadise.me" }, urls = { "https?://(www\\.)?emuparadise\\.me/[^<>/]+/[^<>/]+/(?:\\d{4,}-download-\\d+|\\d{4,})" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "emuparadise.me" }, urls = { "https?://(?:www\\.)?emuparadise\\.me/(roms/roms\\.php\\?gid=\\d+|roms/get-download\\.php\\?gid=\\d+|[^<>/]+/[^<>/]+/\\d+)" })
 public class EmuParadiseMe extends PluginForHost {
     public EmuParadiseMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -87,8 +87,10 @@ public class EmuParadiseMe extends PluginForHost {
     private final boolean        ACCOUNT_PREMIUM_RESUME       = true;
     private final int            ACCOUNT_PREMIUM_MAXCHUNKS    = -4;
     private final int            ACCOUNT_PREMIUM_MAXDOWNLOADS = 4;
-    public final String          subURL                       = "(?:https?:)?(?://(?:www\\.)?emuparadise\\.me)?/[^<>/]+/[^<>/]+/\\d{4,}-download-\\d+";
-    private boolean              isSubURL                     = false;
+    public static final String   TYPE_NORMAL                  = "https?://[^/]+/[^<>/]+/[^<>/]+/(\\d+)";
+    public static final String   TYPE_GID                     = "https?://[^/]+/roms/roms\\.php\\?gid=(\\d+)";
+    public static final String   TYPE_GID_DOWNLOAD            = "https?://[^/]+/roms/get-download\\.php\\?gid=(\\d+)";
+    public static final String   TYPE_SEMICOLON_DOWNLOAD      = "https?://[^/]+/[^<>/]+/[^<>/]+/(\\d+)-download-\\d+";
     /*
      * note: this is on every bloody page, but format is slightly different.
      */
@@ -106,21 +108,40 @@ public class EmuParadiseMe extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
+        if (link.getPluginPatternMatcher() == null) {
+            return null;
+        } else {
+            if (link.getPluginPatternMatcher().matches(TYPE_NORMAL)) {
+                return new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(0);
+            } else if (link.getPluginPatternMatcher().matches(TYPE_GID)) {
+                return new Regex(link.getPluginPatternMatcher(), TYPE_GID).getMatch(0);
+            } else if (link.getPluginPatternMatcher().matches(TYPE_GID_DOWNLOAD)) {
+                return new Regex(link.getPluginPatternMatcher(), TYPE_GID_DOWNLOAD).getMatch(0);
+            } else if (link.getPluginPatternMatcher().matches(TYPE_SEMICOLON_DOWNLOAD)) {
+                return new Regex(link.getPluginPatternMatcher(), TYPE_SEMICOLON_DOWNLOAD).getMatch(0);
+            } else {
+                /* This should never happen */
+                return null;
+            }
+        }
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        final String url = Encoding.htmlDecode(link.getPluginPatternMatcher());
-        isSubURL = new Regex(url, subURL).matches();
+        final String fid = this.getFID(link);
+        if (fid == null) {
+            /* This should never happen */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (!link.isNameSet()) {
-            link.setName(new Regex(url, "emuparadise\\.me/[^<>/]+/([^<>/]+)/").getMatch(0) + ".zip");
+            link.setName(fid + ".zip");
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBrowser();
         setCookies();
-        br.getPage(url);
+        /* This should redirect to TYPE_NORMAL. */
+        br.getPage("https://www." + this.getHost() + "/roms/roms.php?gid=" + fid);
         if (offlineCheck()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -134,7 +155,7 @@ public class EmuParadiseMe extends PluginForHost {
     public void parseFileInfo(final DownloadLink link) throws PluginException {
         String filename = null;
         String filesize = null;
-        if (isSubURL || br.containsHTML(HTML_TYPE_DIRECT)) {
+        if (isUrlSemicolonDownload(br.getURL()) || br.containsHTML(HTML_TYPE_DIRECT)) {
             final Regex result = new Regex(br, ">Download\\s*(.*?)</a><font[^>]+>\\s*-\\s*File Size:\\s*(\\d+(?:\\.\\d+)?[KMG]{1}[B]{0,1})</font>");
             filename = result.getMatch(0);
             filesize = result.getMatch(1);
@@ -158,6 +179,14 @@ public class EmuParadiseMe extends PluginForHost {
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(correctFilesize(filesize)));
+        }
+    }
+
+    public boolean isUrlSemicolonDownload(final String url) {
+        if (url.matches("(?:https?)?(?://(?:www\\.)?emuparadise\\.me)?/[^<>/]+/[^<>/]+/\\d{4,}-download-\\d+")) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -214,7 +243,7 @@ public class EmuParadiseMe extends PluginForHost {
                 if (dllink == null) {
                     // redirects can be here
                     br.setFollowRedirects(true);
-                    if (!isSubURL) {
+                    if (!isUrlSemicolonDownload(br.getURL())) {
                         br.getPage(br.getURL() + "-download");
                     }
                     /* As long as the static cookie set captcha workaround works fine, */
