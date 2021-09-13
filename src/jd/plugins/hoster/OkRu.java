@@ -69,16 +69,11 @@ public class OkRu extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), "/(\\d+(-\\d+)?)$").getMatch(0);
     }
 
-    /* DEV NOTES */
-    // Porn_plugin
-    // Tags:
-    // protocol: no https
-    // other:
-    /* Connection stuff */
-    private final String PREFER_480P        = "PREFER_480P";
-    private String       dllink             = null;
-    private boolean      downloadImpossible = false;
-    private boolean      paidContent        = false;
+    private String              dllink               = null;
+    private boolean             downloadImpossible   = false;
+    private boolean             paidContent          = false;
+    private static final String PROPERTY_QUALITY     = "quality";
+    private static final String PROPERTY_QUALITY_HLS = "quality_hls";
 
     public static void prepBR(final Browser br) {
         /* Use mobile website to get http urls. */
@@ -194,9 +189,11 @@ public class OkRu extends PluginForHost {
                 if (userPreferredQuality != null && collectedHTTPQualities.containsKey(userPreferredQuality)) {
                     logger.info("Using user preferred HTTP quality: " + userPreferredQuality);
                     this.dllink = collectedHTTPQualities.get(userPreferredQuality);
+                    link.setProperty(PROPERTY_QUALITY, userPreferredQuality);
                 } else if (userPreferredQuality == null && !StringUtils.isEmpty(bestHTTPQualityDownloadurl)) {
                     logger.info("Using best HTTP quality: " + bestHTTPQualityName);
                     this.dllink = bestHTTPQualityDownloadurl;
+                    link.setProperty(PROPERTY_QUALITY, bestHTTPQualityName);
                 } else {
                     /* Prefer http - only use HLS if http is not available! */
                     /**
@@ -351,6 +348,7 @@ public class OkRu extends PluginForHost {
                 }
                 chosenQuality = HlsContainer.findBestVideoByBandwidth(qualities);
             }
+            link.setProperty(PROPERTY_QUALITY_HLS, chosenQuality.getHeight());
             dllink = chosenQuality.getDownloadurl();
             checkFFmpeg(link, "Download a HLS Stream");
             dl = new HLSDownloader(link, br, dllink);
