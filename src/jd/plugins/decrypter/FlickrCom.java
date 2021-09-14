@@ -24,6 +24,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -43,12 +49,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flickr.com" }, urls = { "https?://(?:secure\\.|www\\.)?flickr\\.com/(?:photos|groups)/.+" })
 public class FlickrCom extends PluginForDecrypt {
@@ -172,7 +172,8 @@ public class FlickrCom extends PluginForDecrypt {
         final UrlQuery params = new UrlQuery();
         params.add("api_key", apikey);
         /**
-         * needs_interstitial = show 18+ content </br> media = include media-type (video/photo)
+         * needs_interstitial = show 18+ content </br>
+         * media = include media-type (video/photo)
          */
         String extras = "date_taken%2Cdate_upload%2Cdescription%2Cowner_name%2Cpath_alias%2Crealname%2Cneeds_interstitial%2Cmedia";
         final String[] allPhotoQualities = jd.plugins.hoster.FlickrCom.getPhotoQualityStringsDescending();
@@ -308,7 +309,7 @@ public class FlickrCom extends PluginForDecrypt {
                 /* Set this on first run. */
                 df = new DecimalFormat(String.valueOf(totalimgs).replaceAll("\\d", "0"));
             }
-            logger.info("Crawling page " + page + " / " + totalpages + " | Progress: " + decryptedLinks.size() + " of " + totalimgs);
+            logger.info("Crawling page " + page + " / " + totalpages);
             final List<Map<String, Object>> photoList = (List<Map<String, Object>>) photoInfo.get("photo");
             final boolean seemsToContainMatureContent = page < totalpages && photoList.size() < api_max_entries_per_page;
             if (seemsToContainMatureContent) {
@@ -406,9 +407,9 @@ public class FlickrCom extends PluginForDecrypt {
                         setStringProperty(dl, jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_FULL, usernameFull, false);
                     }
                     /* Overwrite previously set properties if our "photo" object has them too as we can trust those ones 100%. */
-                    setStringProperty(dl, jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME, thisUsernameSlug, false);
-                    setStringProperty(dl, jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_FULL, thisUsernameFull, false);
-                    setStringProperty(dl, jd.plugins.hoster.FlickrCom.PROPERTY_REAL_NAME, realName, false);
+                    setStringProperty(dl, jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME, thisUsernameSlug, true);
+                    setStringProperty(dl, jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_FULL, thisUsernameFull, true);
+                    setStringProperty(dl, jd.plugins.hoster.FlickrCom.PROPERTY_REAL_NAME, realName, true);
                     dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_INTERNAL, thisUsernameInternal);
                     dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_URL, usernameForContentURL);
                 }
@@ -430,6 +431,7 @@ public class FlickrCom extends PluginForDecrypt {
                 distribute(dl);
                 decryptedLinks.add(dl);
             }
+            logger.info("Page " + page + " / " + totalpages + " DONE | Progress: " + decryptedLinks.size() + " of " + totalimgs);
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user");
                 return;
