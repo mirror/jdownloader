@@ -302,11 +302,22 @@ public class DegooCom extends PluginForHost {
     private void checkLoginErrorsAPI(final Browser br, final Account account) throws Exception {
         final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final Object errorO = entries.get("Error");
+        final Object errorsO = entries.get("errors");
         /* Collection of possible errors below */
         /* Response 400: {"Error": "Not authorized!"} */
         if (errorO instanceof String) {
             final String error = errorO.toString();
             throw new AccountInvalidException(error);
+        } else if (errorsO instanceof List) {
+            /**
+             * E.g. after calling accessAccountInfoIfNotAlreadyAccessed: </br>
+             * {"data":{"getUserInfo3":null},"errors":[{"path":["getUserInfo3"],"data":null,"errorType":"Unauthorized","errorInfo":null,
+             * "locations":[{"line":1,"column":42,"sourceName":null}],"message":"Not Authorized to access getUserInfo3 on type Query"}]}
+             */
+            final List<Map<String, Object>> errors = (List<Map<String, Object>>) errorsO;
+            for (final Map<String, Object> error : errors) {
+                throw new AccountInvalidException(error.get("message").toString());
+            }
         }
     }
 
