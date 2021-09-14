@@ -277,7 +277,7 @@ image_description=이미지 파일: jpg, png, gif,...
 jd_controlling_SingleDownloadController_askexists3=파일 다운로드에 문제가 있습니다!\n파일이 하드 디스크에 이미 존재합니다. 그래도 작업을 계속 하시겠습니까?
 jd_controlling_SingleDownloadController_askexists_title=이미 파일이 존재합니다
 jd_controlling_reconnect_Reconnector_progress_failed2=재연결이 너무 자주 실패! 자동 재연결이 해제되었습니다! 재연결 설정을 확인하십시오!
-jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>재연결 안 함을 선택했습니다</u></b><br/><p>재연결은 대다수의 호스트가 무료 사용자에게 부과, 긴 대기 시간을 단축하기 위한 선진적인 접근입니다.<br>그렇지만 이 기능은 프리미엄 계정을 사용하고 있다면 불필요합니다.</p><p>재연결에 대한 자세한 내용은 <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>여기</a>를 참조하십시오.</p>
+jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>재연결 안 함을 선택했습니다</u></b><br/><p>재연결은 대다수의 호스트가 무료 사용자에게 부과, 긴 대기 시간을 단축하기 위한 선진적인 접근입니다.<br>그렇지만 이 기능은 프리미엄 계정을 사용하고 있다면 불필요합니다.</p><p>재연결에 대한 자세한 내용은 <a href='https://support.jdownloader.org/Knowledgebase/Article/View/1'>여기</a>를 참조하십시오.</p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=재연결 안 함
 jd_plugins_PluginUtils_askPassword=다음의 비밀번호를 입력하십시오:\n%s1
 lit_hide=숨기기

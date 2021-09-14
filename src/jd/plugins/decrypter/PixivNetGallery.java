@@ -16,22 +16,14 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.PixivNetConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -46,7 +38,14 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.PixivNet;
-import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.PixivNetConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "https?://(?:www\\.)?pixiv\\.net/([a-z]{2}/)?(artworks/\\d+|member_illust\\.php\\?mode=[a-z0-9]+\\&illust_id=\\d+|users/\\d+(/(?:artworks|illustrations|manga|bookmarks/artworks))?)" })
 public class PixivNetGallery extends PluginForDecrypt {
@@ -57,9 +56,9 @@ public class PixivNetGallery extends PluginForDecrypt {
     private static final String TYPE_GALLERY = ".+/(?:member_illust\\.php\\?mode=[a-z]+\\&illust_id=|artworks/)(\\d+)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        final PluginForHost hostplugin = JDUtilities.getPluginForHost(this.getHost());
+        final PluginForHost hostplugin = getNewPluginForHostInstance(this.getHost());
         final Account aa = AccountController.getInstance().getValidAccount(hostplugin);
         PixivNet.prepBR(br);
         boolean loggedIn = false;
@@ -73,12 +72,11 @@ public class PixivNetGallery extends PluginForDecrypt {
         }
         String itemID = new Regex(parameter, "id=(\\d+)").getMatch(0);
         br.setFollowRedirects(true);
-        String fpName = null;
         String uploadDate = null;
         if (parameter.matches(TYPE_GALLERY)) {
             itemID = new Regex(parameter, TYPE_GALLERY).getMatch(0);
             if (itemID == null) {
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find galleryid");
             }
             br.getPage("https://www." + this.getHost() + "/ajax/illust/" + itemID);
             if (br.getHttpConnection().getResponseCode() == 404) {
@@ -185,15 +183,25 @@ public class PixivNetGallery extends PluginForDecrypt {
             if (itemID == null) {
                 /* 2020-01-27 */
                 itemID = new Regex(parameter, "users/(\\d+)").getMatch(0);
-            }
-            if (itemID == null) {
-                logger.warning("Failed to find userid");
-                return null;
+                if (itemID == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find userid");
+                }
             }
             br.getPage(parameter);
-            fpName = br.getRegex("<meta property=\"og:title\" content=\"(.*?)(?:\\s*\\[pixiv\\])?\">").getMatch(0);
+            String fpName = br.getRegex("<meta property=\"og:title\" content=\"(.*?)(?:\\s*\\[pixiv\\])?\">").getMatch(0);
             if (fpName == null) {
                 fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+            }
+            if (fpName == null) {
+                fpName = itemID;
+            } else {
+                fpName = Encoding.htmlOnlyDecode(fpName);
+                fpName = itemID + "_" + fpName;
+            }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            if (!PluginJsonConfig.get(this.getConfigInterface()).isCrawlUserWorksIndividually()) {
+                fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, Boolean.TRUE);
             }
             uploadDate = PluginJSonUtils.getJson(br, "uploadDate");
             if (isOffline(br)) {
@@ -260,12 +268,12 @@ public class PixivNetGallery extends PluginForDecrypt {
                 final Object worksO = body.get("works");
                 if (worksO != null) {
                     /* E.g. bookmarks */
-                    ArrayList<Object> works = null;
+                    List<Object> works = null;
                     if (worksO instanceof Map) {
                         works = new ArrayList<Object>();
                         works.add(worksO);
                     } else {
-                        works = (ArrayList<Object>) worksO;
+                        works = (List<Object>) worksO;
                     }
                     for (final Object workO : works) {
                         final Map<String, Object> entries = (Map<String, Object>) workO;
@@ -277,6 +285,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                         if (!StringUtils.isEmpty(galleryID) && dups.add(galleryID)) {
                             itemcounter++;
                             final DownloadLink dl = createDownloadlink(PixivNet.createSingleImageUrl(galleryID));
+                            fp.add(dl);
                             decryptedLinks.add(dl);
                             distribute(dl);
                             numberofitems_found_on_current_page++;
@@ -293,6 +302,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                             if (!StringUtils.isEmpty(uploadDate)) {
                                 dl.setProperty(PixivNet.PROPERTY_UPLOADDATE, uploadDate);
                             }
+                            fp.add(dl);
                             decryptedLinks.add(dl);
                             distribute(dl);
                             numberofitems_found_on_current_page++;
@@ -306,6 +316,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                         if (dups.add(galleryID)) {
                             itemcounter++;
                             final DownloadLink dl = createDownloadlink(PixivNet.createSingleImageUrl(galleryID));
+                            fp.add(dl);
                             decryptedLinks.add(dl);
                             distribute(dl);
                             numberofitems_found_on_current_page++;
@@ -316,15 +327,6 @@ public class PixivNetGallery extends PluginForDecrypt {
                 page++;
             } while (numberofitems_found_on_current_page >= max_numbeofitems_per_page && maxitemsperpage != -1 && !this.isAbort());
         }
-        if (fpName == null) {
-            fpName = itemID;
-        } else {
-            fpName = Encoding.htmlOnlyDecode(fpName);
-            fpName = itemID + "_" + fpName;
-        }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 
@@ -394,15 +396,6 @@ public class PixivNetGallery extends PluginForDecrypt {
             thistitle += " - " + username;
         }
         return galleryID + "_p" + picNumberStr + " " + thistitle;
-    }
-
-    private boolean add(Set<String> set, Browser br, final String pattern) {
-        final String links[] = br.getRegex(pattern).getColumn(0);
-        if (links != null && links.length > 0) {
-            return set.addAll(Arrays.asList(links));
-        } else {
-            return false;
-        }
     }
 
     public static boolean isOffline(final Browser br) {

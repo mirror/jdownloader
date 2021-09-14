@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -27,12 +26,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -58,6 +51,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(?:www\\.)?flickr\\.com/photos/(?!tags/)([^<>\"/]+)/(\\d+)(?:/in/album-\\d+)?" })
 public class FlickrCom extends PluginForHost {
@@ -120,9 +119,8 @@ public class FlickrCom extends PluginForHost {
             } else if (userCustomFilenameMask.equalsIgnoreCase("*username*_*content_id*_*title**extension*")) {
                 /**
                  * 2021-09-14: Correct defaults just in case user has entered the field so the property has been saved. See new default in:
-                 * defaultCustomFilename </br>
-                 * username_url = always given </br>
-                 * username = not always given but previously the same as new "username_url" and default.
+                 * defaultCustomFilename </br> username_url = always given </br> username = not always given but previously the same as new
+                 * "username_url" and default.
                  */
                 final String correctedUserCustomFilenameMask = userCustomFilenameMask.replace("*username*", "*username_url*");
                 getPluginConfig().setProperty(CUSTOM_FILENAME, correctedUserCustomFilenameMask);
@@ -266,16 +264,9 @@ public class FlickrCom extends PluginForHost {
                 }
             }
             final String usernameFull = br.getRegex("class=\"owner-name truncate\"[^>]*data-track=\"attributionNameClick\">([^<]+)</a>").getMatch(0);
-            if (usernameFull != null && !link.hasProperty(PROPERTY_USERNAME_FULL)) {
-                link.setProperty(PROPERTY_USERNAME_FULL, Encoding.htmlDecode(usernameFull).trim());
-            }
+            setStringProperty(link, PROPERTY_USERNAME_FULL, usernameFull, false);
             /* Do not overwrite property as crawler is getting this information more reliably as it is using their API! */
-            if (!link.hasProperty(PROPERTY_TITLE) && title != null) {
-                title = Encoding.htmlDecode(title).trim();
-                if (!title.isEmpty()) {
-                    link.setProperty(PROPERTY_TITLE, Encoding.htmlDecode(title).trim());
-                }
-            }
+            setStringProperty(link, PROPERTY_TITLE, title, false);
             final String uploadedDate = PluginJSonUtils.getJsonValue(br, "datePosted");
             if (uploadedDate != null && uploadedDate.matches("\\d+")) {
                 link.setProperty(PROPERTY_DATE, Long.parseLong(uploadedDate) * 1000);
@@ -294,52 +285,26 @@ public class FlickrCom extends PluginForHost {
             /* Required to obtain videostreams */
             secret = (String) photoData.get("secret");
             final Map<String, Object> owner = (Map<String, Object>) photoData.get("owner");
-            if (!link.hasProperty(PROPERTY_USERNAME)) {
-                link.setProperty(PROPERTY_USERNAME, owner.get("pathAlias"));
-            }
+            setStringProperty(link, PROPERTY_USERNAME, (String) owner.get("pathAlias"), false);
             /*
              * This might be confusing but their fields are different in API/website! E.g. API.ownername == Website.realname --> Both really
              * is the full username (not to be mistaken with the real name of the uploader!!)
              */
-            if (!link.hasProperty(PROPERTY_USERNAME_FULL)) {
-                /* Thiks is not(!!!) the users real name! See below! */
-                String usernameFull = (String) owner.get("realname");
-                if (usernameFull != null) {
-                    usernameFull = Encoding.htmlDecode(usernameFull);
-                }
-                if (!StringUtils.isEmpty(usernameFull)) {
-                    link.setProperty(PROPERTY_USERNAME_FULL, usernameFull);
-                }
-            }
+            setStringProperty(link, PROPERTY_USERNAME_FULL, (String) owner.get("realname"), false);
             if (!link.hasProperty(PROPERTY_USERNAME_INTERNAL)) {
                 link.setProperty(PROPERTY_USERNAME_INTERNAL, owner.get("id"));
             }
-            if (!link.hasProperty(PROPERTY_REAL_NAME)) {
-                String realName = (String) owner.get("username");
-                if (realName != null) {
-                    realName = Encoding.htmlDecode(realName);
-                }
-                if (!StringUtils.isEmpty(realName)) {
-                    link.setProperty(PROPERTY_REAL_NAME, realName);
-                }
-            }
-            String title = (String) photoData.get("title");
-            if (!link.hasProperty(PROPERTY_TITLE) && !StringUtils.isEmpty(title)) {
-                title = Encoding.htmlDecode(title);
-                if (!StringUtils.isEmpty(title)) {
-                    link.setProperty(PROPERTY_TITLE, title);
-                }
-            }
+            setStringProperty(link, PROPERTY_REAL_NAME, (String) owner.get("username"), false);
+            setStringProperty(link, PROPERTY_TITLE, (String) photoData.get("title"), false);
             String description = (String) photoData.get("description");
             if (description != null) {
-                description = Encoding.htmlDecode(description);
+                description = decodeEncoding(null, description);
                 if (!StringUtils.isEmpty(description) && link.getComment() == null) {
                     link.setComment(description);
                 }
             }
             final String mediaType = (String) photoData.get("mediaType");
-            if (!link.hasProperty(PROPERTY_MEDIA_TYPE) && !StringUtils.isEmpty(mediaType)) {
-                link.setProperty(PROPERTY_MEDIA_TYPE, mediaType);
+            if (setStringProperty(link, PROPERTY_MEDIA_TYPE, mediaType, false)) {
                 /* Assign this again just to be sure. */
                 isVideo = isVideo(link);
             }
@@ -352,9 +317,7 @@ public class FlickrCom extends PluginForHost {
                     link.setProperty(PROPERTY_DATE, datePosted * 1000);
                 }
                 final String dateTaken = (String) photoStatsData.get("dateTaken");
-                if (!StringUtils.isEmpty(dateTaken)) {
-                    link.setProperty(PROPERTY_DATE_TAKEN, Encoding.htmlDecode(dateTaken));
-                }
+                setStringProperty(link, PROPERTY_DATE_TAKEN, dateTaken, false);
             }
             /* Get metadata: This way is safer than via html and it will return more information! */
             final Map<String, Object> photoSizes = (Map<String, Object>) photoData.get("sizes");
@@ -467,7 +430,7 @@ public class FlickrCom extends PluginForHost {
              * 2021-09-09: Found 2 video types so far: "700" and "iphone_wifi" --> Both are equal in filesize. If more are available,
              * implementing a quality selection for videos could make sense.
              */
-            final List<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "streams/stream");
+            final List<Object> ressourcelist = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "streams/stream");
             int skippedVideoTypes = 0;
             for (final Object streamO : ressourcelist) {
                 entries = (Map<String, Object>) streamO;
@@ -532,6 +495,27 @@ public class FlickrCom extends PluginForHost {
             checkDirecturl(link, this.dllink);
         }
         return AvailableStatus.TRUE;
+    }
+
+    public static boolean setStringProperty(final DownloadLink link, final String property, String value, final boolean overwrite) {
+        if (overwrite || (!link.hasProperty(property)) && !StringUtils.isEmpty(value)) {
+            value = decodeEncoding(property, value);
+            if (overwrite || !StringUtils.isEmpty(value)) {
+                link.setProperty(property, value);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static String decodeEncoding(final String property, final String input) {
+        if (input != null) {
+            String ret = Encoding.htmlDecode(input);
+            ret = Encoding.unicodeDecode(ret);
+            return ret;
+        } else {
+            return null;
+        }
     }
 
     private void checkDirecturl(final DownloadLink link, final String directurl) throws IOException, PluginException {

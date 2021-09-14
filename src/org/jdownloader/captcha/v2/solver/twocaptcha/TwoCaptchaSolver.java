@@ -229,19 +229,25 @@ public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
     public TwoCaptchaAccount loadAccount() {
         TwoCaptchaAccount ret = new TwoCaptchaAccount();
         try {
-            Browser br = new Browser();
-            UrlQuery q = new UrlQuery();
+            final Browser br = new Browser();
+            final UrlQuery q = new UrlQuery();
             q.appendEncoded("key", config.getApiKey());
             q.appendEncoded("action", "getbalance");
             q.appendEncoded("json", "1");
-            String json = br.getPage("http://2captcha.com/res.php?" + q.toString());
-            BalanceResponse response = JSonStorage.restoreFromString(json, new TypeRef<BalanceResponse>() {
-            });
-            if (1 != response.getStatus()) {
-                ret.setError("Bad Login: " + json);
+            final String json = br.getPage("http://2captcha.com/res.php?" + q.toString());
+            final String validcheck = br.getRegex("^([0-9.,]+$)").getMatch(0);
+            if (validcheck != null) {
+                // capmonster.cloud
+                ret.setBalance(Double.parseDouble(validcheck.replace(",", ".")));
+            } else {
+                final BalanceResponse response = JSonStorage.restoreFromString(json, new TypeRef<BalanceResponse>() {
+                });
+                if (1 != response.getStatus()) {
+                    ret.setError("Bad Login: " + json);
+                }
+                ret.setBalance(Double.parseDouble(response.getRequest()));
             }
             ret.setUserName(config.getApiKey());
-            ret.setBalance(Double.parseDouble(response.getRequest()));
         } catch (Exception e) {
             logger.log(e);
             ret.setError(e.getMessage());

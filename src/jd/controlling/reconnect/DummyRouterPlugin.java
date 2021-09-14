@@ -23,7 +23,7 @@ public class DummyRouterPlugin extends RouterPlugin {
         return DummyRouterPlugin.INSTANCE;
     }
 
-    private Icon icon;
+    private final Icon icon;
 
     private DummyRouterPlugin() {
         icon = new AbstractIcon(IconKey.ICON_DELETE, 16);
