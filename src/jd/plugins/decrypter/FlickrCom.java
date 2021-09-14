@@ -306,6 +306,7 @@ public class FlickrCom extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (df == null) {
+                /* Set this on first run. */
                 df = new DecimalFormat(String.valueOf(totalimgs).replaceAll("\\d", "0"));
             }
             logger.info("Crawling page " + page + " / " + totalpages + " | Progress: " + decryptedLinks.size() + " of " + totalimgs);
@@ -326,7 +327,9 @@ public class FlickrCom extends PluginForDecrypt {
                 final String description = (String) JavaScriptEngineFactory.walkJson(photo, "description/_content");
                 final String contenturl;
                 final String usernameForContentURL;
-                if (!StringUtils.isEmpty(thisUsernameSlug)) {
+                if (givenUsernameDataIsValidForAllMediaItems) {
+                    usernameForContentURL = usernameFromURL;
+                } else if (!StringUtils.isEmpty(thisUsernameSlug)) {
                     usernameForContentURL = thisUsernameSlug;
                 } else {
                     usernameForContentURL = thisUsernameInternal;
@@ -344,6 +347,10 @@ public class FlickrCom extends PluginForDecrypt {
                 if (!StringUtils.isEmpty(description)) {
                     dl.setComment(Encoding.htmlDecode(description));
                 }
+                /*
+                 * 2021-09-14: There is also a field media_status=ready --> Maybe indicates if an item is down or needs processing (e.g.
+                 * videos)?
+                 */
                 final String media = (String) photo.get("media");
                 final String extension;
                 String filenameURL = null;
