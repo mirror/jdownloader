@@ -65,8 +65,8 @@ public class FakirdebridNet extends PluginForHost {
     private static MultiHosterManagement mhm                = new MultiHosterManagement("fakirdebrid.net");
     private static final boolean         defaultResume      = true;
     private static final int             defaultMaxchunks   = -10;
-    private final String                 PROPERTY_RESUME    = "resume";
-    private final String                 PROPERTY_MAXCHUNKS = "maxchunks";
+    private final String                 PROPERTY_RESUME    = "fakirdebrid_resume";
+    private final String                 PROPERTY_MAXCHUNKS = "fakirdebrid_maxchunks";
 
     @SuppressWarnings("deprecation")
     public FakirdebridNet(PluginWrapper wrapper) {
@@ -264,17 +264,17 @@ public class FakirdebridNet extends PluginForHost {
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         br.getPage(API_BASE + "/supportedhosts.php?pin=" + Encoding.urlEncode(account.getPass()));
         entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final List<Object> array_hoster;
+        final List<Object> arrayHoster;
         final Object arrayHosterO = entries.get("supportedhosts");
         /* 2021-05-27: API can return Map instead of expected Array */
         if (arrayHosterO instanceof Map) {
             final Map<String, Object> mapHoster = (Map<String, Object>) arrayHosterO;
-            array_hoster = new ArrayList(mapHoster.values());
+            arrayHoster = new ArrayList(mapHoster.values());
             // mapHoster.values();
         } else {
-            array_hoster = (List<Object>) arrayHosterO;
+            arrayHoster = (List<Object>) arrayHosterO;
         }
-        for (final Object hoster : array_hoster) {
+        for (final Object hoster : arrayHoster) {
             final Map<String, Object> hostermap = (Map<String, Object>) hoster;
             final String domain = (String) hostermap.get("host");
             final boolean active = ((Boolean) hostermap.get("currently_working")).booleanValue();
@@ -304,10 +304,23 @@ public class FakirdebridNet extends PluginForHost {
                 logger.info("Trust token without login");
                 return;
             } else {
+                if (!isValidAPIPIN(account.getPass())) {
+                    throw new AccountInvalidException("Invalid API PIN format.\r\n Find your API PIN here: " + pinURLWithoutProtocol);
+                }
                 br.getPage(API_BASE + "/info.php?pin=" + Encoding.urlEncode(account.getPass()));
                 handleErrorsAPI(br, account);
                 /* Assume successful login if no error has happened! */
             }
+        }
+    }
+
+    private boolean isValidAPIPIN(final String str) {
+        if (str == null) {
+            return false;
+        } else if (str.matches("[A-Za-z0-9]{10,}")) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -338,6 +351,7 @@ public class FakirdebridNet extends PluginForHost {
             final String message = (String) entries.get("message");
             final Object errorCodeO = entries.get("code");
             if (errorCodeO instanceof Number || errorCodeO.toString().matches("\\d+")) {
+                /* 2021-09-14: Seems like this is not required anymore because the "code" field is always a String. */
                 final int errorcode = Integer.parseInt(errorCodeO.toString());
                 switch (errorcode) {
                 case -1:
@@ -353,7 +367,13 @@ public class FakirdebridNet extends PluginForHost {
             } else {
                 /* Distinguish between temp. account errors, permanent account errors and downloadlink/host related errors. */
                 final String errorStr = errorCodeO.toString();
-                if (errorStr.equalsIgnoreCase("PIN_Invalid") || errorStr.equalsIgnoreCase("Banned_Account") || errorStr.equalsIgnoreCase("Free_Account")) {
+                if (errorStr.equalsIgnoreCase("PIN_Invalid")) {
+                    /* Only show this dialog if user has tried to add this account for the first time. */
+                    if (account.getLastValidTimestamp() == -1) {
+                        showPINLoginInformation();
+                    }
+                    throw new AccountInvalidException(message);
+                } else if (errorStr.equalsIgnoreCase("Banned_Account") || errorStr.equalsIgnoreCase("Free_Account")) {
                     /* Permanent account error */
                     throw new AccountInvalidException(message);
                 } else if (errorStr.equalsIgnoreCase("Limit_Error_Transfer") || errorStr.equalsIgnoreCase("Limit_Error_Premium")) {
@@ -362,14 +382,20 @@ public class FakirdebridNet extends PluginForHost {
                 } else if (errorStr.equalsIgnoreCase("Password_Required") || errorStr.equalsIgnoreCase("Wrong_Password")) {
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                 } else {
-                    mhm.handleErrorGeneric(account, this.getDownloadLink(), errorStr, 10);
+                    logger.info("Unknown error happened: " + errorStr);
+                    if (this.getDownloadLink() == null) {
+                        throw new AccountUnavailableException(errorStr, 5 * 60 * 1000l);
+                    } else {
+                        mhm.handleErrorGeneric(account, this.getDownloadLink(), errorStr, 10);
+                    }
                 }
             }
         }
     }
 
+    private static final String pinURLWithoutProtocol = "fakirdebrid.net/api/login.php";
+
     private Thread showPINLoginInformation() {
-        final String pinURLWithoutProtocol = "fakirdebrid.net/api/login.php";
         final Thread thread = new Thread() {
             public void run() {
                 try {
@@ -379,7 +405,7 @@ public class FakirdebridNet extends PluginForHost {
                         title = "Fakirdebrid.net - Login";
                         message += "Hallo liebe(r) Fakirdebrid NutzerIn\r\n";
                         message += "Um deinen Fakirdebrid Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
-                        message += "1. Öffne diesen Link im Browser falls das nicht automatisch passiert:\r\n\t'" + pinURLWithoutProtocol + "'\t\r\n";
+                        message += "1. Öffne den folgenden Link im Browser falls das nicht bereits automatisch passiert ist:\r\n\t'" + pinURLWithoutProtocol + "'\t\r\n";
                         message += "2. Kopiere deine PIN, versuche erneut einen fakirdebrid Account hinzuzufügen und gib sie in JDownloader ein.\r\n";
                         message += "Falls du myjdownloader verwendest, gib die PIN in das Benutzername- und in das Passwort Feld ein.\r\n";
                     } else {
