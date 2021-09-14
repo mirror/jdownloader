@@ -494,10 +494,10 @@ public class TwitterCom extends PluginForHost {
                  * and use HLS download for next attempt
                  */
                 link.setProperty(PROPERTY_BROKEN_FILE, true);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken file?", 1 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Broken file?");
             } else if (StringUtils.containsIgnoreCase(dl.getConnection().getURL().toString(), ".mp4") && dl.getConnection().getCompleteContentLength() == -1) {
                 link.setProperty(PROPERTY_BROKEN_FILE, true);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?", 1 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Broken video?");
             }
             dl.startDownload();
         }
