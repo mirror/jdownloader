@@ -737,6 +737,7 @@ public class FlickrCom extends PluginForHost {
         formattedFilename = formattedFilename.replace("*quality*", link.getStringProperty(PROPERTY_QUALITY, customStringForEmptyTags));
         formattedFilename = formattedFilename.replace("*date*", formattedDate);
         formattedFilename = formattedFilename.replace("*date_taken*", link.getStringProperty(PROPERTY_DATE_TAKEN, customStringForEmptyTags));
+        formattedFilename = formattedFilename.replace("*media*", link.getStringProperty(PROPERTY_MEDIA_TYPE, customStringForEmptyTags));
         formattedFilename = formattedFilename.replace("*extension*", link.getStringProperty(PROPERTY_EXT, defaultPhotoExt));
         formattedFilename = formattedFilename.replace("*username*", link.getStringProperty(PROPERTY_USERNAME, customStringForEmptyTags));
         formattedFilename = formattedFilename.replace("*username_url*", link.getStringProperty(PROPERTY_USERNAME_URL, customStringForEmptyTags));
@@ -947,17 +948,18 @@ public class FlickrCom extends PluginForHost {
         final StringBuilder sbtags = new StringBuilder();
         sbtags.append("Explanation of the available tags:\r\n");
         sbtags.append("*content_id* = ID of the photo/video\r\n");
-        sbtags.append("*username* = Short username e.g. 'exampleusername'\r\n");
-        sbtags.append("*username_url* = Username from inside URL - usually either the same value as 'username' or 'username_internal'\r\n");
-        sbtags.append("*username_internal* = Internal username e.g. '12345678@N04'\r\n");
-        sbtags.append("*username_full* = Full username e.g. 'Example Username'\r\n");
-        sbtags.append("*real_name* = Real name of the user (name and surname) e.g. 'Marcus Mueller'\r\n");
         sbtags.append("*date* = date when the photo was uploaded - custom date format will be used here\r\n");
         sbtags.append("*date_taken* = date when the photo was taken - pre-formatted string (yyyy-MM-dd HH:mm:ss)\r\n");
-        sbtags.append("*title* = Title of the photo\r\n");
         sbtags.append("*extension* = Extension of the photo - usually '.jpg'\r\n");
+        sbtags.append("*media* = Media type ('video' or 'photo')\r\n");
+        sbtags.append("*order_id* = Position of image/video if it was part of a crawled gallery/user-profile\r\n");
         sbtags.append("*quality* = Quality of the photo/video e.g. 'm'\r\n");
-        sbtags.append("*order_id* = Position of image/video if it was part of a crawled gallery/user-profile");
+        sbtags.append("*real_name* = Real name of the user (name and surname) e.g. 'Marcus Mueller'\r\n");
+        sbtags.append("*title* = Title of the photo\r\n");
+        sbtags.append("*username* = Short username e.g. 'exampleusername'\r\n");
+        sbtags.append("*username_internal* = Internal username e.g. '12345678@N04'\r\n");
+        sbtags.append("*username_full* = Full username e.g. 'Example Username'\r\n");
+        sbtags.append("*username_url* = Username from inside URL - usually either the same value as 'username' or 'username_internal'");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sbtags.toString()));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_EMPTY_TAG_STRING, "Char which will be used for empty tags (e.g. missing data):").setDefaultValue(defaultCustomStringForEmptyTags).setEnabledCondidtion(preferServerFilenames, false));
     }
