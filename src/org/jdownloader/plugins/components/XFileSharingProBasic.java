@@ -167,7 +167,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     // private static final String TYPE_DIRECT_IMAGE_THUMBNAIL = "(?i)https?:///th/\\d+/[a-z0-9]{12}\\.jpg";
     /**
      * DEV NOTES XfileSharingProBasic Version 4.4.3.8<br />
-     * mods: See overridden functions<br />
      * See official changelogs for upcoming XFS changes: https://sibsoft.net/xfilesharing/changelog.html |
      * https://sibsoft.net/xvideosharing/changelog.html <br/>
      * limit-info:<br />
@@ -3717,15 +3716,16 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         /* We trust these cookies as they're not that old --> Do not check them */
                         logger.info("Trust login-cookies without checking as they should still be fresh");
                         return false;
-                    }
-                    logger.info("Verifying login-cookies");
-                    getPage(getMainPage() + getRelativeAccountInfoURL());
-                    if (isLoggedin(this.br)) {
-                        logger.info("Successfully logged in via cookies");
-                        account.saveCookies(br.getCookies(getMainPage()), "");
-                        return true;
                     } else {
-                        logger.info("Cookie login failed");
+                        logger.info("Verifying login-cookies");
+                        getPage(getMainPage() + getRelativeAccountInfoURL());
+                        if (isLoggedin(this.br)) {
+                            logger.info("Successfully logged in via cookies");
+                            account.saveCookies(br.getCookies(getMainPage()), "");
+                            return true;
+                        } else {
+                            logger.info("Cookie login failed");
+                        }
                     }
                 }
                 /*
@@ -4703,7 +4703,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 apikey = account.getPass();
             } else {
                 /* In website mode we store apikey as a property on our current account object. */
-                apikey = account.getStringProperty(PROPERTY_ACCOUNT_apikey, null);
+                apikey = account.getStringProperty(PROPERTY_ACCOUNT_apikey);
             }
             if (isAPIKey(apikey)) {
                 return apikey;
@@ -4742,7 +4742,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     protected boolean isAPIKey(final String apiKey) {
-        return apiKey != null && apiKey.matches("^[a-z0-9]{16,}$");
+        if (apiKey != null && apiKey.matches("^[a-z0-9]{16,}$")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -4926,35 +4930,34 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Do not override - at least try to avoid having to!!
      */
     private final boolean internal_supports_availablecheck_filename_abuse() {
-        final boolean supported_by_hardcoded_setting = this.supports_availablecheck_filename_abuse();
-        final boolean supported_by_indicating_html_code = new Regex(getCorrectBR(br), "op=report_file&(?:amp;)?id=" + this.getFUIDFromURL(this.getDownloadLink())).matches();
-        boolean allowed_by_auto_handling = true;
+        final boolean supportedByIndicatingHtmlCode = new Regex(getCorrectBR(br), "op=report_file&(?:amp;)?id=" + this.getFUIDFromURL(this.getDownloadLink())).matches();
+        boolean allowedByAutoHandling = true;
         final SubConfiguration config = this.getPluginConfig();
-        final long last_failure = config.getLongProperty(PROPERTY_PLUGIN_REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP, 0);
+        final long timestampLastFailure = config.getLongProperty(PROPERTY_PLUGIN_REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP, 0);
         final String last_version = config.getStringProperty(PROPERTY_PLUGIN_REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_VERSION, null);
-        if (last_failure > 0 && StringUtils.equalsIgnoreCase(getPluginVersionHash(), last_version)) {
-            final long timestamp_cooldown = last_failure + internal_waittime_on_alternative_availablecheck_failures();
-            if (timestamp_cooldown > System.currentTimeMillis()) {
+        if (timestampLastFailure > 0 && StringUtils.equalsIgnoreCase(getPluginVersionHash(), last_version)) {
+            final long timestampCooldown = timestampLastFailure + internal_waittime_on_alternative_availablecheck_failures();
+            if (timestampCooldown > System.currentTimeMillis()) {
                 logger.info("internal_supports_availablecheck_filename_abuse is still deactivated as it did not work on the last attempt");
-                logger.info("Time until retry: " + TimeFormatter.formatMilliSeconds(timestamp_cooldown - System.currentTimeMillis(), 0));
-                allowed_by_auto_handling = false;
+                logger.info("Time until retry: " + TimeFormatter.formatMilliSeconds(timestampCooldown - System.currentTimeMillis(), 0));
+                allowedByAutoHandling = false;
             }
         }
-        return (supported_by_hardcoded_setting || supported_by_indicating_html_code) && allowed_by_auto_handling;
+        return (this.supports_availablecheck_filename_abuse() || supportedByIndicatingHtmlCode) && allowedByAutoHandling;
     }
 
     protected boolean internal_supports_availablecheck_alt() {
-        boolean allowed_by_auto_handling = true;
-        final long last_failure = this.getPluginConfig().getLongProperty("ALT_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP", 0);
-        if (last_failure > 0) {
-            final long timestamp_cooldown = last_failure + internal_waittime_on_alternative_availablecheck_failures();
-            if (timestamp_cooldown > System.currentTimeMillis()) {
+        boolean allowedByAutoHandling = true;
+        final long timestampLastFailure = this.getPluginConfig().getLongProperty("ALT_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP", 0);
+        if (timestampLastFailure > 0) {
+            final long timestampCooldown = timestampLastFailure + internal_waittime_on_alternative_availablecheck_failures();
+            if (timestampCooldown > System.currentTimeMillis()) {
                 logger.info("internal_supports_availablecheck_alt is still deactivated as it did not work on the last attempt");
-                logger.info("Time until retry: " + TimeFormatter.formatMilliSeconds(timestamp_cooldown - System.currentTimeMillis(), 0));
-                allowed_by_auto_handling = false;
+                logger.info("Time until retry: " + TimeFormatter.formatMilliSeconds(timestampCooldown - System.currentTimeMillis(), 0));
+                allowedByAutoHandling = false;
             }
         }
-        return supports_availablecheck_alt() && allowed_by_auto_handling;
+        return supports_availablecheck_alt() && allowedByAutoHandling;
     }
 
     /**
