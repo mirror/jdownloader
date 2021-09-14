@@ -273,7 +273,7 @@ image_description=Archivos de Imágenes: jpg, png, gif,...
 jd_controlling_SingleDownloadController_askexists3=Hay un problema descargando un archivo!\nEl archivo ya esiste en el Disco Duro. ¿Qué desea hacer?
 jd_controlling_SingleDownloadController_askexists_title=El archivo existe
 jd_controlling_reconnect_Reconnector_progress_failed2=La reconexión ha fallado demasiadas veces y ha sido desactivada. Por favor, revisa tus ajustes.
-jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Se ha elegido no reconectar</u></b><br/><p>La Reconexión es un método para evitar los tiempos de espera que imponen algunos Servidores a sus servicios gratuitos. No sirve de nada en cuentas Premium.</p><p>Más acerca de la Reconexión <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>aquí</a>.</p>
+jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Se ha elegido no reconectar</u></b><br/><p>La Reconexión es un método para evitar los tiempos de espera que imponen algunos Servidores a sus servicios gratuitos. No sirve de nada en cuentas Premium.</p><p>Más acerca de la Reconexión <a href='https://support.jdownloader.org/Knowledgebase/Article/View/1'>aquí</a>.</p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=No reconectar
 jd_plugins_PluginUtils_askPassword=Por favor, ingrese la contraseña para %s1
 lit_hide=Ocultar

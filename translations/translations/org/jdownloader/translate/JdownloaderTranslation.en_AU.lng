@@ -277,7 +277,7 @@ image_description=Image Files: jpg, png, gif,...
 jd_controlling_SingleDownloadController_askexists3=There is a problem downloading a file!\r\nThe file already exists on Storage Device. What do you want to do?
 jd_controlling_SingleDownloadController_askexists_title=File exists
 jd_controlling_reconnect_Reconnector_progress_failed2=Reconnect failed too often! Auto-Reconnect is disabled! Please check your reconnect Settings!
-jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>No Reconnect selected</u></b><br/><p>Reconnection is an advanced approach for skipping long waits that some hosts impose on free users. <br>It is not helpful while using a premium account.</p><p>Read more about Reconnect <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>here</a></p>
+jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>No Reconnect selected</u></b><br/><p>Reconnection is an advanced approach for skipping long waits that some hosts impose on free users. <br>It is not helpful while using a premium account.</p><p>Read more about Reconnect <a href='https://support.jdownloader.org/Knowledgebase/Article/View/1'>here</a></p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=No Reconnect
 jd_plugins_PluginUtils_askPassword=Please enter the password for\r\n%s1
 lit_hide=Hide

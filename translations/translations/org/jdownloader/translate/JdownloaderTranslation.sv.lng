@@ -315,7 +315,7 @@ image_description=Bildfiler: jpg, png, gif,...
 jd_controlling_SingleDownloadController_askexists3=Ett fell uppstod under nerladdningen!\nFilen existerar redan på hårddisken. Vad vill du göra?
 jd_controlling_SingleDownloadController_askexists_title=filen existerar
 jd_controlling_reconnect_Reconnector_progress_failed2=Återuppkoppling misslyckas för ofta! Automatisk återuppkoppling är avaktiverad! Kontrollera dina inställningar!
-jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Ingen Återuppkoppling vald</u></b><br/><p>Återuppkoppling är en avancerad funktion för att hoppa över långa väntetider som vissa hosts påtvingar fria användare. <br>Den ger ingen hjälp om du har premium konton.</p><p>Läs mer om återuppkoppling <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>här</a></p>
+jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Ingen Återuppkoppling vald</u></b><br/><p>Återuppkoppling är en avancerad funktion för att hoppa över långa väntetider som vissa hosts påtvingar fria användare. <br>Den ger ingen hjälp om du har premium konton.</p><p>Läs mer om återuppkoppling <a href='https://support.jdownloader.org/Knowledgebase/Article/View/1'>här</a></p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Ingen Återuppkoppling
 jd_plugins_PluginUtils_askPassword=Ange lösenordet för %s1
 lit_add_audio=Lägg till ljud

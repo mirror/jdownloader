@@ -290,7 +290,7 @@ image_description=Αρχεία Εικόνας: jpg, png, gif,...
 jd_controlling_SingleDownloadController_askexists3=Υπάρχει πρόβλημα με τη λήψη ενός αρχείου!\nΤο αρχείο υπάρχει ήδη στο σκληρό δίσκο. Τι θέλετε να γίνει;
 jd_controlling_SingleDownloadController_askexists_title=Το αρχείο υπάρχει
 jd_controlling_reconnect_Reconnector_progress_failed2=Η Επανασύνδεση αποτυγχάνει πολύ συχνά! Η αυτόματη Επανασύνδεση έχει απενεργοποιηθεί! Παρακαλούμε ελέγξτε τις ρυθμίσεις Επανασύνδεσης!
-jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Δεν επιλέχθηκε Επανασύνδεση</u></b><br/><p>Η Επανασύνδεση είναι μια προηγμένη προσέγγιση για την παράκαμψη των χρόνων αναμονής που επιβάλουν μερικοί Πάροχοι στους δωρεάν χρήστες. <br>Δεν βοηθάει όταν χρησιμοποιείτε Premium λογαριασμούς.</p><p>Διαβάστε περισσότερα για την Επανασύνδεση <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>εδώ</a></p>
+jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Δεν επιλέχθηκε Επανασύνδεση</u></b><br/><p>Η Επανασύνδεση είναι μια προηγμένη προσέγγιση για την παράκαμψη των χρόνων αναμονής που επιβάλουν μερικοί Πάροχοι στους δωρεάν χρήστες. <br>Δεν βοηθάει όταν χρησιμοποιείτε Premium λογαριασμούς.</p><p>Διαβάστε περισσότερα για την Επανασύνδεση <a href='https://support.jdownloader.org/Knowledgebase/Article/View/1'>εδώ</a></p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Χωρίς Επανασύνδεση
 jd_plugins_PluginUtils_askPassword=Παρακαλούμε πληκτρολογήστε τον κωδικό για το %s1
 lit_hide=Απόκρυψη

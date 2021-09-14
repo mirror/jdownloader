@@ -116,7 +116,7 @@ gui_warning_reconnectunknown=Reconnexió desconeguda
 image_description=Fitxers d'imatge: jpg, png, gif, ...
 jd_controlling_SingleDownloadController_askexists_title=L'arxiu existeix
 jd_controlling_reconnect_Reconnector_progress_failed2=La reconnexió ha fallat molts cops i ha estat desactivada. Si us plau, revisa la teva configuració!
-jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>S'ha triat no reconnectar</u></b><br/><p>La Reconnexió és un mètode per evitar els temps d'espera que imposen alguns servidors als seus serveis gratuïts. No serveix de res en comptes Premium.</p><p>Més informació sobre la reconnexió <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>aquí</a>.</p>
+jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>S'ha triat no reconnectar</u></b><br/><p>La Reconnexió és un mètode per evitar els temps d'espera que imposen alguns servidors als seus serveis gratuïts. No serveix de res en comptes Premium.</p><p>Més informació sobre la reconnexió <a href='https://support.jdownloader.org/Knowledgebase/Article/View/1'>aquí</a>.</p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=No reconnectis
 jd_plugins_PluginUtils_askPassword=Si us plau, introduïu la contrasenya per %s1
 literally_offline=En línia

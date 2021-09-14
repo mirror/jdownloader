@@ -665,5 +665,6 @@ public class TwitterCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        link.removeProperty(PROPERTY_DIRECTURL);
     }
 }

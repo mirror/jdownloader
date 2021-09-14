@@ -24,12 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -49,6 +43,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flickr.com" }, urls = { "https?://(?:secure\\.|www\\.)?flickr\\.com/(?:photos|groups)/.+" })
 public class FlickrCom extends PluginForDecrypt {
@@ -172,8 +172,7 @@ public class FlickrCom extends PluginForDecrypt {
         final UrlQuery params = new UrlQuery();
         params.add("api_key", apikey);
         /**
-         * needs_interstitial = show 18+ content </br>
-         * media = include media-type (video/photo)
+         * needs_interstitial = show 18+ content </br> media = include media-type (video/photo)
          */
         String extras = "date_taken%2Cdate_upload%2Cdescription%2Cowner_name%2Cpath_alias%2Crealname%2Cneeds_interstitial%2Cmedia";
         final String[] allPhotoQualities = jd.plugins.hoster.FlickrCom.getPhotoQualityStringsDescending();
@@ -402,39 +401,22 @@ public class FlickrCom extends PluginForDecrypt {
                 {
                     /* Set different username/name properties */
                     if (givenUsernameDataIsValidForAllMediaItems) {
-                        if (!StringUtils.isEmpty(usernameSlug)) {
-                            dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME, usernameSlug);
-                        }
-                        if (!StringUtils.isEmpty(usernameInternal)) {
-                            dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_INTERNAL, usernameInternal);
-                        }
-                        if (!StringUtils.isEmpty(usernameFull)) {
-                            dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_FULL, usernameFull);
-                        }
+                        setStringProperty(dl, jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME, usernameSlug, false);
+                        setStringProperty(dl, jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_INTERNAL, usernameInternal, false);
+                        setStringProperty(dl, jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_FULL, usernameFull, false);
                     }
                     /* Overwrite previously set properties if our "photo" object has them too as we can trust those ones 100%. */
-                    if (!StringUtils.isEmpty(thisUsernameSlug)) {
-                        dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME, thisUsernameSlug);
-                    }
-                    if (!StringUtils.isEmpty(thisUsernameFull)) {
-                        dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_FULL, thisUsernameFull);
-                    }
-                    if (!StringUtils.isEmpty(realName)) {
-                        dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_REAL_NAME, realName);
-                    }
+                    setStringProperty(dl, jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME, thisUsernameSlug, false);
+                    setStringProperty(dl, jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_FULL, thisUsernameFull, false);
+                    setStringProperty(dl, jd.plugins.hoster.FlickrCom.PROPERTY_REAL_NAME, realName, false);
                     dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_INTERNAL, thisUsernameInternal);
                     dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_URL, usernameForContentURL);
                 }
                 if (dateUploaded != null && dateUploaded.matches("\\d+")) {
                     dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_DATE, Long.parseLong(dateUploaded) * 1000);
                 }
-                final String dateTaken = (String) photo.get("datetaken");
-                if (!StringUtils.isEmpty(dateTaken)) {
-                    dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_DATE_TAKEN, dateTaken);
-                }
-                if (!StringUtils.isEmpty(title)) {
-                    dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_TITLE, title);
-                }
+                setStringProperty(dl, jd.plugins.hoster.FlickrCom.PROPERTY_DATE_TAKEN, (String) photo.get("datetaken"), false);
+                setStringProperty(dl, jd.plugins.hoster.FlickrCom.PROPERTY_TITLE, title, false);
                 dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_EXT, extension);
                 dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_ORDER_ID, df.format(imagePosition));
                 if (filenameURL != null && jd.plugins.hoster.FlickrCom.userPrefersServerFilenames()) {
@@ -625,10 +607,11 @@ public class FlickrCom extends PluginForDecrypt {
 
     /* Handles most of the possible API errorcodes - most of them should never happen. */
     private void handleAPIErrors(final Browser br) throws DecrypterException, PluginException {
-        String statusMessage = null;
+        final String statusMessage;
         switch (statuscode) {
         case 0:
             /* Everything ok */
+            statusMessage = null;
             break;
         case 1:
             statusMessage = "Group/user/photo not found - possibly invalid nsid";
@@ -664,6 +647,9 @@ public class FlickrCom extends PluginForDecrypt {
             statusMessage = "Bad URL found";
             throw new DecrypterException("API_URL_NOT_FOUND");
         default:
+            statusMessage = "Unknown/unsupported statusCode:" + statuscode;
+            logger.info(statusMessage);
+            break;
         }
     }
 
@@ -864,6 +850,10 @@ public class FlickrCom extends PluginForDecrypt {
                 i++;
             }
         } while (!this.isAbort());
+    }
+
+    public static boolean setStringProperty(final DownloadLink link, final String property, String value, final boolean overwrite) {
+        return jd.plugins.hoster.FlickrCom.setStringProperty(link, property, value, overwrite);
     }
 
     public String trimFilename(String filename) {

@@ -17,4 +17,12 @@ public interface PixivNetConfig extends PluginConfigInterface {
     boolean isCrawlAnimationsMetadata();
 
     void setCrawlAnimationsMetadata(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Crawl user works individually?")
+    @Order(30)
+    boolean isCrawlUserWorksIndividually();
+
+    void setCrawlUserWorksIndividually(boolean b);
 }
