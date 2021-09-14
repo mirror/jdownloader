@@ -143,6 +143,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_PHOTO_ALBUM                       = ".*?(tag|album(?:\\-)?\\d+_|photos(?:\\-)?)\\d+";
     private static final String     PATTERN_PHOTO_ALBUMS                      = "https?://[^/]+/.*?albums((?:\\-)?\\d+)";
     private static final String     PATTERN_GENERAL_WALL_LINK                 = "https?://[^/]+/wall(?:\\-)?\\d+(?:\\?maxoffset=\\d+\\&currentoffset=\\d+)?";
+    private static final String     PATTERN_USER_STORY                        = "https?://[^/]+/[^\\?]+\\?w=story(\\-\\d+)_(\\d+)%2Fowner_feed(-\\d+)";
     private static final String     PATTERN_WALL_LOOPBACK_LINK                = "https?://[^/]+/wall\\-\\d+.*maxoffset=(\\d+)\\&currentoffset=(\\d+).*";
     private static final String     PATTERN_WALL_POST_LINK                    = ".+wall(?:\\-)?\\d+_\\d+.*?";
     private static final String     PATTERN_WALL_POST_LINK_2                  = "https?://[^/]+/wall\\-\\d+.+w=wall(?:\\-)?\\d+_\\d+.*?";
@@ -258,6 +259,9 @@ public class VKontakteRu extends PluginForDecrypt {
             }
         }
         getUserLogin(false);
+        if (needsAccount(param.getCryptedUrl()) && this.account == null) {
+            throw new AccountRequiredException();
+        }
         try {
             prepCryptedLink();
             /* Replace section start */
@@ -340,6 +344,8 @@ public class VKontakteRu extends PluginForDecrypt {
                 crawlDocs(param);
             } else if (param.getCryptedUrl().matches(PATTERN_WALL_CLIPS)) {
                 crawlWallClips(param);
+            } else if (isUserStory(param.getCryptedUrl())) {
+                this.crawlUserStory(param);
             } else {
                 /* Wall link or unsupported link! */
                 // no requests have been made yet, why are we checking for this? -raztoki20160809
@@ -369,11 +375,22 @@ public class VKontakteRu extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    private static boolean needsAccount(final String url) {
+        /* TODO: Add more linktypes here! */
+        if (isUserStory(url)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     /** Checks if the type of a link is clear, meaning we're sure we have no vk.com/username link if this is returns true. */
     private static boolean isKnownType(final String url) {
         if (isVideoAlbum(url)) {
             return true;
         } else if (isTypeSingleVideo(url)) {
+            return true;
+        } else if (isUserStory(url)) {
             return true;
         } else {
             final boolean isKnown = url.matches(PATTERN_VIDEO_SINGLE_Z) || url.matches(PATTERN_PHOTO_ALBUM) || url.matches(PATTERN_PHOTO_ALBUMS) || url.matches(PATTERN_AUDIO_PAGE) || url.matches(PATTERN_GENERAL_WALL_LINK) || url.matches(PATTERN_GENERAL_AUDIO) || url.matches(PATTERN_WALL_POST_LINK) || url.matches(PATTERN_PHOTO_MODULE) || url.matches(PATTERN_AUDIO_PAGE_oid) || url.matches(PATTERN_DOCS);
@@ -2081,6 +2098,53 @@ public class VKontakteRu extends PluginForDecrypt {
         return;
     }
 
+    private void crawlUserStory(final CryptedLink param) throws Exception {
+        this.getPage(param.getCryptedUrl());
+        this.siteGeneralErrorhandling(this.br);
+        final String json = br.getRegex("cur\\['stories_list_owner_feed-\\d+'\\]=(\\[.+\\]);").getMatch(0);
+        if (StringUtils.isEmpty(json)) {
+            /* Probably user does not have a story at this moment or account is required to view those. */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) JavaScriptEngineFactory.jsonToJavaObject(json);
+        if (ressourcelist.isEmpty()) {
+            /* Probably user does not have a story at this moment. */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Map<String, Object> story = ressourcelist.get(0);
+        final Map<String, Object> author = (Map<String, Object>) story.get("author");
+        final String authorName = author.get("name").toString();
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(authorName + " - Story");
+        final List<Map<String, Object>> items = (List<Map<String, Object>>) story.get("items");
+        final DecimalFormat df = new DecimalFormat(String.valueOf(items.size()).replaceAll("\\d", "0"));
+        int position = 0;
+        for (final Map<String, Object> item : items) {
+            position += 1;
+            final String type = item.get("type").toString();
+            String ext = null;
+            String url = null;
+            if (type.equals("video")) {
+                url = item.get("video_url").toString();
+                ext = ".mp4";
+            } else if (type.equals("photo")) {
+                url = item.get("TODO").toString();
+                ext = ".jpg";
+            } else {
+                logger.warning("Unsupported type: " + type);
+                continue;
+            }
+            if (StringUtils.isEmpty(url)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final DownloadLink dl = this.createDownloadlink(url);
+            dl.setFinalFileName(authorName + "_" + df.format(position) + "_" + item.get("raw_id") + ext);
+            dl.setAvailable(true);
+            decryptedLinks.add(dl);
+            dl._setFilePackage(fp);
+        }
+    }
+
     private void crawlWallClips(final CryptedLink param) throws Exception {
         final String clipCollectionName = new Regex(param.getCryptedUrl(), PATTERN_WALL_CLIPS).getMatch(0);
         this.getPage(br, param.getCryptedUrl());
@@ -2155,8 +2219,8 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private void getPage(final String url) throws Exception {
-        getPage(br, url);
-        siteGeneralErrorhandling();
+        getPage(this.br, url);
+        siteGeneralErrorhandling(this.br);
     }
 
     private void apiGetPageSafe(final String parameter) throws Exception {
@@ -2363,7 +2427,6 @@ public class VKontakteRu extends PluginForDecrypt {
     private Account account = null;
 
     /** Log in via hoster plugin */
-    @SuppressWarnings("deprecation")
     private boolean getUserLogin(final boolean force) throws Exception {
         if (account == null) {
             account = AccountController.getInstance().getValidAccount(getHost());
@@ -2504,18 +2567,22 @@ public class VKontakteRu extends PluginForDecrypt {
         return input.matches(PATTERN_VIDEO_ALBUM) || input.matches(PATTERN_VIDEO_COMMUNITY_ALBUM);
     }
 
+    private static boolean isUserStory(final String input) {
+        return input.matches(PATTERN_USER_STORY);
+    }
+
     /**
      * Handles basic (offline) errors.
      *
      * @throws PluginException
      */
-    private void siteGeneralErrorhandling() throws DecrypterException, PluginException {
+    private void siteGeneralErrorhandling(final Browser br) throws DecrypterException, PluginException {
         /* General errorhandling start */
-        if (br.containsHTML(">\\s*Unknown error")) {
+        if (br.containsHTML("(?i)>\\s*Unknown error")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML(">\\s*Only logged in users can see this profile\\.<")) {
+        } else if (br.containsHTML("(?i)>\\s*Only logged in users can see this profile\\.<")) {
             throw new AccountRequiredException();
-        } else if (br.containsHTML(">\\s*Access denied|>\\s*You do not have permission to do this")) {
+        } else if (br.containsHTML("(?i)>\\s*Access denied|>\\s*You do not have permission to do this")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("vk.com/blank.php")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
