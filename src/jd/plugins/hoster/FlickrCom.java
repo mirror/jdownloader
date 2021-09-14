@@ -107,15 +107,26 @@ public class FlickrCom extends PluginForHost {
         }
         /** Backward compatibility: TODO: Remove this in 01-2022 */
         final String userCustomFilenameMask = this.getPluginConfig().getStringProperty(CUSTOM_FILENAME);
-        if (userCustomFilenameMask != null && (userCustomFilenameMask.contains("*owner*") || userCustomFilenameMask.contains("*photo_id*"))) {
-            String correctedUserCustomFilenameMask = userCustomFilenameMask.replace("*owner*", "*username_internal*");
-            if (correctedUserCustomFilenameMask.contains("*photo_id*")) {
-                correctedUserCustomFilenameMask = correctedUserCustomFilenameMask.replace("*photo_id*", "*content_id*");
-            } else if (!correctedUserCustomFilenameMask.contains("*content_id*") && correctedUserCustomFilenameMask.contains("*content_id")) {
-                /* Fix for mistage in rev 44961 */
-                correctedUserCustomFilenameMask = correctedUserCustomFilenameMask.replace("*content_id", "*content_id*");
+        if (userCustomFilenameMask != null) {
+            if (userCustomFilenameMask.contains("*owner*") || userCustomFilenameMask.contains("*photo_id*")) {
+                String correctedUserCustomFilenameMask = userCustomFilenameMask.replace("*owner*", "*username_internal*");
+                if (correctedUserCustomFilenameMask.contains("*photo_id*")) {
+                    correctedUserCustomFilenameMask = correctedUserCustomFilenameMask.replace("*photo_id*", "*content_id*");
+                } else if (!correctedUserCustomFilenameMask.contains("*content_id*") && correctedUserCustomFilenameMask.contains("*content_id")) {
+                    /* Fix for mistage in rev 44961 */
+                    correctedUserCustomFilenameMask = correctedUserCustomFilenameMask.replace("*content_id", "*content_id*");
+                }
+                getPluginConfig().setProperty(CUSTOM_FILENAME, correctedUserCustomFilenameMask);
+            } else if (userCustomFilenameMask.equalsIgnoreCase("*username*_*content_id*_*title**extension*")) {
+                /**
+                 * 2021-09-14: Correct defaults just in case user has entered the field so the property has been saved. See new default in:
+                 * defaultCustomFilename </br>
+                 * username_url = always given </br>
+                 * username = not always given but previously the same as new "username_url" and default.
+                 */
+                final String correctedUserCustomFilenameMask = userCustomFilenameMask.replace("*username*", "*username_url*");
+                getPluginConfig().setProperty(CUSTOM_FILENAME, correctedUserCustomFilenameMask);
             }
-            getPluginConfig().setProperty(CUSTOM_FILENAME, correctedUserCustomFilenameMask);
         }
     }
 
@@ -271,7 +282,7 @@ public class FlickrCom extends PluginForHost {
             }
         }
         link.setProperty(PROPERTY_CONTENT_ID, getFID(link));
-        final boolean isVideo = br.containsHTML("class=\"videoplayer main\\-photo\"") || isVideo(link);
+        boolean isVideo = br.containsHTML("class=\"videoplayer main\\-photo\"") || isVideo(link);
         final PhotoQuality preferredPhotoQuality = getPreferredPhotoQuality(link);
         final String json = br.getRegex("main\":(\\{\"photo-models\".*?),\\s+auth: auth,").getMatch(0);
         String secret = null;
@@ -329,6 +340,8 @@ public class FlickrCom extends PluginForHost {
             final String mediaType = (String) photoData.get("mediaType");
             if (!link.hasProperty(PROPERTY_MEDIA_TYPE) && !StringUtils.isEmpty(mediaType)) {
                 link.setProperty(PROPERTY_MEDIA_TYPE, mediaType);
+                /* Assign this again just to be sure. */
+                isVideo = isVideo(link);
             }
             {
                 /* This block solely exists to find the uploaded-timestamp. */
@@ -914,7 +927,7 @@ public class FlickrCom extends PluginForHost {
     private static final int     defaultArrayPosSelectedPhotoQuality = 0;
     private static final boolean defaultPreferServerFilename         = false;
     private static final String  defaultCustomDate                   = "MM-dd-yyyy";
-    private static final String  defaultCustomFilename               = "*username*_*content_id*_*title**extension*";
+    private static final String  defaultCustomFilename               = "*username_url*_*content_id*_*title**extension*";
     public final static String   defaultCustomStringForEmptyTags     = "-";
     public final static String   defaultPhotoExt                     = ".jpg";
 
