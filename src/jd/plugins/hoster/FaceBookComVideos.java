@@ -63,7 +63,6 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FaceBookComVideos extends PluginForHost {
-    /* 2020-06-05: TODO: This linktype can (also) lead to video content! */
     private static final String TYPE_PHOTO                             = "(?i)https?://[^/]+/photo\\.php\\?fbid=(\\d+)";
     private static final String TYPE_PHOTO_PART_OF_ALBUM               = "(?i)https?://[^/]+/[^/]+/photos/a\\.\\d+/(\\d+)";
     private static final String TYPE_VIDEO_WATCH                       = "(?i)https?://[^/]+/watch/\\?v=(\\d+)";
@@ -172,7 +171,7 @@ public class FaceBookComVideos extends PluginForHost {
         prepBR(this.br);
         String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
         if (dllink != null) {
-            logger.info("Attempting linkcheck via directurl...s");
+            logger.info("Attempting linkcheck via directurl...");
             if (this.checkDirecturlAndSetFilesize(link, dllink)) {
                 logger.info("Availablecheck only via directurl done");
                 return AvailableStatus.TRUE;
@@ -1036,6 +1035,8 @@ public class FaceBookComVideos extends PluginForHost {
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 return true;
             } else {
+                /* Remove that so we don't waste time checking this again. */
+                link.removeProperty(PROPERTY_DIRECTURL);
                 brc.followConnection(true);
                 throw new IOException();
             }
