@@ -1062,28 +1062,19 @@ public class LinkCrawler {
         return null;
     }
 
-    protected URLConnectionAdapter openCrawlDeeperConnection(final LinkCrawlerGeneration generation, final LinkCrawlerRule matchingRule, Browser br, CrawledLink source) throws Exception {
+    protected URLConnectionAdapter openCrawlDeeperConnection(final LinkCrawlerGeneration generation, final LogInterface logger, final LinkCrawlerRule matchingRule, Browser br, CrawledLink source) throws Exception {
         final LazyCrawlerPlugin lazyC = getDeepCrawlingPlugin();
         if (lazyC == null) {
             throw new UpdateRequiredClassNotFoundException("could not find 'LinkCrawlerDeepHelper' crawler plugin");
         }
         final PluginForDecrypt wplg = lazyC.newInstance(getPluginClassLoaderChild());
         final AtomicReference<LinkCrawler> nextLinkCrawler = new AtomicReference<LinkCrawler>(this);
-        final LogInterface logger;
-        if (matchingRule != null && matchingRule.isLogging()) {
-            logger = LogController.getFastPluginLogger("LinkCrawlerRule." + matchingRule.getId());
-            br.setVerbose(true);
-            br.setDebug(true);
-        } else {
-            logger = LogController.getFastPluginLogger("LinkCrawlerDeep." + CrossSystem.alleviatePathParts(source.getHost()));
-        }
-        br.setLogger(logger);
         wplg.setBrowser(br);
+        wplg.setLogger(logger);
         wplg.init();
         LogInterface oldLogger = null;
         boolean oldVerbose = false;
         boolean oldDebug = false;
-        wplg.setLogger(logger);
         /* now we run the plugin and let it find some links */
         final LinkCrawlerThread lct = getCurrentLinkCrawlerThread();
         Object owner = null;
@@ -1119,9 +1110,6 @@ public class LinkCrawler {
                 wplg.setCurrentLink(null);
                 final long endTime = System.currentTimeMillis() - startTime;
                 lazyC.updateCrawlRuntime(endTime);
-                if (logger instanceof ClosableLogInterface) {
-                    ((ClosableLogInterface) logger).close();
-                }
             }
         } finally {
             if (lct != null) {
@@ -1263,6 +1251,12 @@ public class LinkCrawler {
         if ((task = checkStartNotify(generation, "crawlDeeperOrMatchingRule:" + source.getURL())) != null) {
             try {
                 Browser br = null;
+                final LogInterface logger;
+                if (matchingRule != null && matchingRule.isLogging()) {
+                    logger = LogController.getFastPluginLogger("LinkCrawlerRule." + matchingRule.getId());
+                } else {
+                    logger = LogController.getFastPluginLogger("LinkCrawlerDeep." + CrossSystem.alleviatePathParts(source.getHost()));
+                }
                 try {
                     processedLinksCounter.incrementAndGet();
                     if (StringUtils.startsWithCaseInsensitive(source.getURL(), "file:/")) {
@@ -1287,7 +1281,12 @@ public class LinkCrawler {
                         }
                     } else {
                         br = new Browser();
-                        final URLConnectionAdapter connection = openCrawlDeeperConnection(generation, matchingRule, br, source);
+                        br.setLogger(logger);
+                        if (matchingRule != null && matchingRule.isLogging()) {
+                            br.setVerbose(true);
+                            br.setDebug(true);
+                        }
+                        final URLConnectionAdapter connection = openCrawlDeeperConnection(generation, logger, matchingRule, br, source);
                         final CrawledLink deeperSource;
                         final String[] sourceURLs;
                         if (StringUtils.equals(connection.getRequest().getUrl(), source.getURL())) {
@@ -1309,9 +1308,8 @@ public class LinkCrawler {
                             try {
                                 inspectedLinks = lDeepInspector.deepInspect(this, generation, br, connection, deeperSource);
                             } catch (final IOException e) {
-                                final LogInterface log = br.getLogger();
-                                if (log != null) {
-                                    log.log(e);
+                                if (logger != null) {
+                                    logger.log(e);
                                 }
                                 throw e;
                             }
@@ -1505,9 +1503,15 @@ public class LinkCrawler {
                     }
                 } catch (Throwable e) {
                     LogController.CL().log(e);
+                    if (logger != null) {
+                        logger.log(e);
+                    }
                 } finally {
                     if (br != null) {
                         br.disconnect();
+                    }
+                    if (logger != null && logger instanceof ClosableLogInterface) {
+                        ((ClosableLogInterface) logger).close();
                     }
                 }
             } finally {
