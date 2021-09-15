@@ -62,6 +62,7 @@ import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.logging2.ClearableLogInterface;
@@ -1105,7 +1106,7 @@ public class LinkCrawler {
                 }
                 return ((LinkCrawlerDeepHelperInterface) wplg).openConnection(matchingRule, br, source);
             } finally {
-                /* close the logger */
+                wplg.clean();
                 wplg.setLinkCrawlerGeneration(null);
                 wplg.setCurrentLink(null);
                 final long endTime = System.currentTimeMillis() - startTime;
@@ -2676,7 +2677,7 @@ public class LinkCrawler {
                                 sourcePackage = null;
                             }
                         }
-                        final long startTime = System.currentTimeMillis();
+                        final long startTime = Time.systemIndependentCurrentJVMTimeMillis();
                         final List<CrawledLink> crawledLinks = new ArrayList<CrawledLink>();
                         try {
                             wplg.setCurrentLink(possibleCryptedLink);
@@ -2705,7 +2706,7 @@ public class LinkCrawler {
                             }
                         } finally {
                             wplg.setCurrentLink(null);
-                            final long endTime = System.currentTimeMillis() - startTime;
+                            final long endTime = Time.systemIndependentCurrentJVMTimeMillis() - startTime;
                             wplg.getLazyP().updateParseRuntime(endTime);
                             /* close the logger */
                             if (logger instanceof ClosableLogInterface) {
@@ -3506,7 +3507,7 @@ public class LinkCrawler {
                         lct.setVerbose(true);
                         lct.setDebug(true);
                     }
-                    final long startTime = System.currentTimeMillis();
+                    final long startTime = Time.systemIndependentCurrentJVMTimeMillis();
                     try {
                         wplg.setCrawler(this);
                         wplg.setLinkCrawlerGeneration(generation);
@@ -3534,7 +3535,7 @@ public class LinkCrawler {
                         /* close the logger */
                         wplg.setLinkCrawlerGeneration(null);
                         wplg.setCurrentLink(null);
-                        final long endTime = System.currentTimeMillis() - startTime;
+                        final long endTime = Time.systemIndependentCurrentJVMTimeMillis() - startTime;
                         lazyC.updateCrawlRuntime(endTime);
                         if (logger instanceof ClosableLogInterface) {
                             ((ClosableLogInterface) logger).close();
