@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 
@@ -30,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornclipsxxx.com", "al4a.com" }, urls = { "https?://(?:www\\.)?pornclipsxxx\\.com/video/[a-z0-9\\-]+\\d+\\.html", "https?://(?:www\\.)?al4a\\.com/video/[a-z0-9\\-]+\\d+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "al4a.com" }, urls = { "https?://(?:www\\.)?al4a\\.com/video/[a-z0-9\\-]+-(\\d+)\\.html" })
 public class FluidPlayer extends PluginForHost {
     public FluidPlayer(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,7 +51,21 @@ public class FluidPlayer extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://pornclipsxxx.com/tos";
+        return "https://al4a.com/tos";
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @SuppressWarnings("deprecation")
@@ -65,10 +81,6 @@ public class FluidPlayer extends PluginForHost {
         }
         final String url_filename = new Regex(link.getDownloadURL(), "/video/([a-z0-9\\-]*\\-\\d+)\\.html").getMatch(0).replace("-", " ");
         String filename = br.getRegex("title: '([^<>\"']*?)',").getMatch(0);
-        if (filename == null) {
-            /* 2020-10-21: pornclipsxxx.com */
-            filename = br.getRegex("<div class=\"header icon1\"><h2>([^<>\"]+)</h2>").getMatch(0);
-        }
         if (filename == null) {
             filename = url_filename;
         }
@@ -108,8 +120,10 @@ public class FluidPlayer extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br2.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 } else {
                     server_issues = true;
                 }
@@ -126,21 +140,25 @@ public class FluidPlayer extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {
