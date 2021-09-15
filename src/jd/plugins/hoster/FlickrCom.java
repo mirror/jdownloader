@@ -498,21 +498,21 @@ public class FlickrCom extends PluginForHost {
     }
 
     public static boolean setStringProperty(final DownloadLink link, final String property, String value, final boolean overwrite) {
-        if (overwrite || (!link.hasProperty(property)) && !StringUtils.isEmpty(value)) {
-            value = decodeEncoding(property, value);
-            if (overwrite || !StringUtils.isEmpty(value)) {
-                link.setProperty(property, value);
+        if ((overwrite || !link.hasProperty(property)) && !StringUtils.isEmpty(value)) {
+            final String decodedValue = decodeEncoding(property, value);
+            if (!StringUtils.isEmpty(decodedValue)) {
+                link.setProperty(property, decodedValue);
                 return true;
             }
         }
         return false;
     }
 
-    public static String decodeEncoding(final String property, final String input) {
-        if (input != null) {
-            String ret = Encoding.htmlDecode(input);
-            ret = Encoding.unicodeDecode(ret);
-            return ret;
+    public static String decodeEncoding(final String property, final String value) {
+        if (value != null) {
+            String decodedValue = Encoding.unicodeDecode(value);
+            decodedValue = Encoding.htmlDecode(decodedValue);
+            return decodedValue.trim();
         } else {
             return null;
         }
