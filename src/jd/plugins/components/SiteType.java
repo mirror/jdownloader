@@ -49,7 +49,7 @@ public class SiteType {
          * <b>Minimum requirements:</b> Website has to use fluidplayer: <a href="https:/fluidplayer.com/">fluidplayer.com</a> <br />
          * <b>Additional requirements to be added to main class:</b> NO account support<br />
          * <b>Main host class:</b> FluidPlayer<br />
-         * <b>Example that suits main host class:</b> <a href="https:/pornclipsxxx.com/">pornclipsxxx.com</a><br />
+         * <b>Example that suits main host class:</b> <a href="https:/al4a.com.com/">al4a.com.com</a><br />
          * <b>Example that does NOT suit main host class (needs separate class):</b> -<br />
          * <b>Example that needs a decrypter class :</b> -<br />
          */

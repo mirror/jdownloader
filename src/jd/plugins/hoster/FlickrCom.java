@@ -27,6 +27,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -51,12 +57,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(?:www\\.)?flickr\\.com/photos/(?!tags/)([^<>\"/]+)/(\\d+)(?:/in/album-\\d+)?" })
 public class FlickrCom extends PluginForHost {
@@ -120,8 +120,9 @@ public class FlickrCom extends PluginForHost {
             } else if (userCustomFilenameMask.equalsIgnoreCase("*username*_*content_id*_*title**extension*")) {
                 /**
                  * 2021-09-14: Correct defaults just in case user has entered the field so the property has been saved. See new default in:
-                 * defaultCustomFilename </br> username_url = always given </br> username = not always given but previously the same as new
-                 * "username_url" and default.
+                 * defaultCustomFilename </br>
+                 * username_url = always given </br>
+                 * username = not always given but previously the same as new "username_url" and default.
                  */
                 final String correctedUserCustomFilenameMask = userCustomFilenameMask.replace("*username*", "*username_url*");
                 getPluginConfig().setProperty(CUSTOM_FILENAME, correctedUserCustomFilenameMask);
@@ -632,7 +633,7 @@ public class FlickrCom extends PluginForHost {
         }
     }
 
-    private void connectionErrorhandling(final URLConnectionAdapter con) throws PluginException {
+    private static void connectionErrorhandling(final URLConnectionAdapter con) throws PluginException {
         if (con.getURL().toString().contains("/photo_unavailable.gif")) {
             con.disconnect();
             /* Same as check below */
