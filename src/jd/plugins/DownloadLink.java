@@ -102,7 +102,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private static final String               PROPERTY_PASS                       = "pass";
     private static final String               PROPERTY_FINALFILENAME              = "FINAL_FILENAME";
     private static final String               PROPERTY_FORCEDFILENAME             = "FORCED_FILENAME";
-    private static final String               PROPERTY_COMMENT                    = "COMMENT";
+    public static final String                PROPERTY_COMMENT                    = "COMMENT";
     private static final String               PROPERTY_PASSWORD_PROTECTED         = "PASSWORD_PROTECTED";
     private static final String               PROPERTY_PRIORITY                   = "PRIORITY2";
     private static final String               PROPERTY_FINISHTIME                 = "FINISHTIME";
@@ -961,7 +961,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /*
      * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
      * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
-     *
+     * 
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityStatusChecked() {
