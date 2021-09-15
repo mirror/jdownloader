@@ -143,7 +143,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_PHOTO_ALBUM                       = ".*?(tag|album(?:\\-)?\\d+_|photos(?:\\-)?)\\d+";
     private static final String     PATTERN_PHOTO_ALBUMS                      = "https?://[^/]+/.*?albums((?:\\-)?\\d+)";
     private static final String     PATTERN_GENERAL_WALL_LINK                 = "https?://[^/]+/wall(?:\\-)?\\d+(?:\\?maxoffset=\\d+\\&currentoffset=\\d+)?";
-    private static final String     PATTERN_USER_STORY                        = "https?://[^/]+/[^\\?]+\\?w=story(\\-\\d+)_(\\d+)%2Fowner_feed(-\\d+)";
+    private static final String     PATTERN_USER_STORY                        = "https?://[^/]+/[^\\?]+\\?w=story-?(\\d+)_(\\d+).*";
     private static final String     PATTERN_WALL_LOOPBACK_LINK                = "https?://[^/]+/wall\\-\\d+.*maxoffset=(\\d+)\\&currentoffset=(\\d+).*";
     private static final String     PATTERN_WALL_POST_LINK                    = ".+wall(?:\\-)?\\d+_\\d+.*?";
     private static final String     PATTERN_WALL_POST_LINK_2                  = "https?://[^/]+/wall\\-\\d+.+w=wall(?:\\-)?\\d+_\\d+.*?";
@@ -2101,7 +2101,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private void crawlUserStory(final CryptedLink param) throws Exception {
         this.getPage(param.getCryptedUrl());
         this.siteGeneralErrorhandling(this.br);
-        final String json = br.getRegex("cur\\['stories_list_owner_feed-\\d+'\\]=(\\[.+\\]);").getMatch(0);
+        final String json = br.getRegex("cur\\['stories_list_owner_feed-?\\d+'\\]=(\\[.+\\]);").getMatch(0);
         if (StringUtils.isEmpty(json)) {
             /* Probably user does not have a story at this moment or account is required to view those. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -2128,7 +2128,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 url = item.get("video_url").toString();
                 ext = ".mp4";
             } else if (type.equals("photo")) {
-                url = item.get("TODO").toString();
+                url = item.get("photo_url").toString();
                 ext = ".jpg";
             } else {
                 logger.warning("Unsupported type: " + type);

@@ -15,7 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -50,48 +50,65 @@ public class EltrecetvComAr extends antiDDoSForHost {
     private String hlsurl = null;
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        getPage(downloadLink.getPluginPatternMatcher());
+        getPage(link.getPluginPatternMatcher());
         final String playerdata = br.getRegex("(playerId/[^/]+/contentId/\\d+)").getMatch(0);
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (playerdata == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        br.getPage("https://api.vodgc.net/player/conf/" + playerdata);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (playerdata != null) {
+            br.getPage("https://api.vodgc.net/player/conf/" + playerdata);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            hlsurl = (String) entries.get("m3u8_url");
+            if (StringUtils.isEmpty(hlsurl)) {
+                hlsurl = (String) JavaScriptEngineFactory.walkJson(entries, "sources/{0}/src");
+            }
+            String filename = (String) entries.get("video_name");
+            if (StringUtils.isEmpty(filename)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            filename = Encoding.htmlDecode(filename).trim();
+            link.setFinalFileName(filename + ".mp4");
+        } else {
+            /* 2021-09-15 */
+            final String playerContentID = br.getRegex("data-content-id=\"(\\d+)\"").getMatch(0);
+            if (playerContentID == null) {
+                /* Probably no video content */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            br.getPage("https://genoa-player-api.vodgc.net/content/" + playerContentID);
+            /* Double-check */
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            /* 2021-09-15: HTTP stream is also available but only in lower quality 480p. */
+            this.hlsurl = JavaScriptEngineFactory.walkJson(entries, "sources/{0}/src").toString();
+            link.setFinalFileName(entries.get("video_name") + ".mp4");
         }
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        hlsurl = (String) entries.get("m3u8_url");
-        if (StringUtils.isEmpty(hlsurl)) {
-            hlsurl = (String) JavaScriptEngineFactory.walkJson(entries, "sources/{0}/src");
-        }
-        String filename = (String) entries.get("video_name");
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename).trim();
-        downloadLink.setFinalFileName(filename + ".mp4");
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        download(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        download(link);
     }
 
-    private void download(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    private void download(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (StringUtils.isEmpty(hlsurl)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage(hlsurl);
         final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-        dl = new HLSDownloader(downloadLink, br, hlsbest.getDownloadurl());
+        checkFFmpeg(link, "Download a HLS Stream");
+        dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
         dl.startDownload();
     }
 

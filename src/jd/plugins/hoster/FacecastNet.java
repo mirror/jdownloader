@@ -15,12 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Map;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -32,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "facecast.net" }, urls = { "https?://(?:www\\.)?facecast\\.net/v/[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "facecast.net" }, urls = { "https?://(?:www\\.)?facecast\\.net/v/([A-Za-z0-9]+)" })
 public class FacecastNet extends PluginForHost {
     public FacecastNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,34 +47,52 @@ public class FacecastNet extends PluginForHost {
     /* Use this server as default until they change something or we find an easy way to find a working server. */
     // private static final String server_default = "http://edge-de-2.facecast.net";
     // TODO: Run this js to find fastest server: <script src="/v/player.min.js?c53b37b"></script>
-    private static final String server_default = "http://edge-2.facecast.net";
+    private static final String server_default = "https://edge-de-2.facecast.net";
     private long                date_start     = 0;
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (!link.isNameSet()) {
+            /* Set fallback filename */
+            link.setName(this.getFID(link) + ".mp4" + "");
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         this.br.getPage(server_default + "/eventdata?code=" + fid + "&ref=&_=" + System.currentTimeMillis());
-        /* So far known errormessages: "Такого видео не существует" */
-        final String error = PluginJSonUtils.getJsonValue(br, "error");
-        if (br.getHttpConnection().getResponseCode() == 404 || error != null) {
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        if (br.getHttpConnection().getResponseCode() == 404 || entries.containsKey("error")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String date = PluginJSonUtils.getJsonValue(br, "date_plan_start_ts");
-        if (date == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        date_start = Long.parseLong(date) * 1000;
+        date_start = ((Number) entries.get("date_plan_start_ts")).longValue() * 1000;
         final String date_formatted = formatDate();
-        link.setFinalFileName(date_formatted + "_facecast_.mp4");
+        final String title = (String) entries.get("name");
+        String filename = date_formatted;
+        if (title != null) {
+            filename = filename + "_" + title;
+        }
+        link.setFinalFileName(filename + ".mp4");
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         if (this.date_start > System.currentTimeMillis()) {
             /* Seems like what the user wants to download hasn't aired yet --> Wait and retry later! */
             final long waitUntilStart = this.date_start - System.currentTimeMillis();
@@ -89,8 +108,8 @@ public class FacecastNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String url_hls = hlsbest.getDownloadurl();
-        checkFFmpeg(downloadLink, "Download a HLS Stream");
-        dl = new HLSDownloader(downloadLink, br, url_hls);
+        checkFFmpeg(link, "Download a HLS Stream");
+        dl = new HLSDownloader(link, br, url_hls);
         dl.startDownload();
     }
 
