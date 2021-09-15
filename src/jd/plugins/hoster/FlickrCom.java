@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -26,12 +28,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -53,10 +49,18 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(?:www\\.)?flickr\\.com/photos/(?!tags/)([^<>\"/]+)/(\\d+)(?:/in/album-\\d+)?" })
 public class FlickrCom extends PluginForHost {
@@ -120,9 +124,8 @@ public class FlickrCom extends PluginForHost {
             } else if (userCustomFilenameMask.equalsIgnoreCase("*username*_*content_id*_*title**extension*")) {
                 /**
                  * 2021-09-14: Correct defaults just in case user has entered the field so the property has been saved. See new default in:
-                 * defaultCustomFilename </br>
-                 * username_url = always given </br>
-                 * username = not always given but previously the same as new "username_url" and default.
+                 * defaultCustomFilename </br> username_url = always given </br> username = not always given but previously the same as new
+                 * "username_url" and default.
                  */
                 final String correctedUserCustomFilenameMask = userCustomFilenameMask.replace("*username*", "*username_url*");
                 getPluginConfig().setProperty(CUSTOM_FILENAME, correctedUserCustomFilenameMask);
@@ -268,9 +271,9 @@ public class FlickrCom extends PluginForHost {
                 }
             }
             final String usernameFull = br.getRegex("class=\"owner-name truncate\"[^>]*data-track=\"attributionNameClick\">([^<]+)</a>").getMatch(0);
-            setStringProperty(link, PROPERTY_USERNAME_FULL, usernameFull, false);
+            setStringProperty(this, link, PROPERTY_USERNAME_FULL, usernameFull, false);
             /* Do not overwrite property as crawler is getting this information more reliably as it is using their API! */
-            setStringProperty(link, PROPERTY_TITLE, title, false);
+            setStringProperty(this, link, PROPERTY_TITLE, title, false);
             final String uploadedDate = PluginJSonUtils.getJsonValue(br, "datePosted");
             if (uploadedDate != null && uploadedDate.matches("\\d+")) {
                 link.setProperty(PROPERTY_DATE, Long.parseLong(uploadedDate) * 1000);
@@ -289,26 +292,23 @@ public class FlickrCom extends PluginForHost {
             /* Required to obtain videostreams */
             secret = (String) photoData.get("secret");
             final Map<String, Object> owner = (Map<String, Object>) photoData.get("owner");
-            setStringProperty(link, PROPERTY_USERNAME, (String) owner.get("pathAlias"), false);
+            setStringProperty(this, link, PROPERTY_USERNAME, (String) owner.get("pathAlias"), false);
             /*
              * This might be confusing but their fields are different in API/website! E.g. API.ownername == Website.realname --> Both really
              * is the full username (not to be mistaken with the real name of the uploader!!)
              */
-            setStringProperty(link, PROPERTY_USERNAME_FULL, (String) owner.get("realname"), false);
+            setStringProperty(this, link, PROPERTY_USERNAME_FULL, (String) owner.get("realname"), false);
             if (!link.hasProperty(PROPERTY_USERNAME_INTERNAL)) {
                 link.setProperty(PROPERTY_USERNAME_INTERNAL, owner.get("id"));
             }
-            setStringProperty(link, PROPERTY_REAL_NAME, (String) owner.get("username"), false);
-            setStringProperty(link, PROPERTY_TITLE, (String) photoData.get("title"), false);
+            setStringProperty(this, link, PROPERTY_REAL_NAME, (String) owner.get("username"), false);
+            setStringProperty(this, link, PROPERTY_TITLE, (String) photoData.get("title"), false);
             String description = (String) photoData.get("description");
             if (description != null) {
-                description = decodeEncoding(null, description);
-                if (!StringUtils.isEmpty(description) && link.getComment() == null) {
-                    link.setComment(description);
-                }
+                setStringProperty(this, link, DownloadLink.PROPERTY_COMMENT, description, false);
             }
             final String mediaType = (String) photoData.get("mediaType");
-            if (setStringProperty(link, PROPERTY_MEDIA_TYPE, mediaType, false)) {
+            if (setStringProperty(this, link, PROPERTY_MEDIA_TYPE, mediaType, false)) {
                 /* Assign this again just to be sure. */
                 isVideo = isVideo(link);
             }
@@ -321,7 +321,7 @@ public class FlickrCom extends PluginForHost {
                     link.setProperty(PROPERTY_DATE, datePosted * 1000);
                 }
                 final String dateTaken = (String) photoStatsData.get("dateTaken");
-                setStringProperty(link, PROPERTY_DATE_TAKEN, dateTaken, false);
+                setStringProperty(this, link, PROPERTY_DATE_TAKEN, dateTaken, false);
             }
             /* Get metadata: This way is safer than via html and it will return more information! */
             final Map<String, Object> photoSizes = (Map<String, Object>) photoData.get("sizes");
@@ -519,9 +519,9 @@ public class FlickrCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public static boolean setStringProperty(final DownloadLink link, final String property, String value, final boolean overwrite) {
+    public static boolean setStringProperty(final Plugin plugin, final DownloadLink link, final String property, String value, final boolean overwrite) {
         if ((overwrite || !link.hasProperty(property)) && !StringUtils.isEmpty(value)) {
-            final String decodedValue = decodeEncoding(property, value);
+            final String decodedValue = decodeEncoding(plugin, property, value);
             if (!StringUtils.isEmpty(decodedValue)) {
                 link.setProperty(property, decodedValue);
                 return true;
@@ -530,10 +530,25 @@ public class FlickrCom extends PluginForHost {
         return false;
     }
 
-    public static String decodeEncoding(final String property, final String value) {
+    public static String decodeEncoding(Plugin plugin, final String property, final String value) {
         if (value != null) {
             String decodedValue = Encoding.unicodeDecode(value);
-            decodedValue = Encoding.htmlDecode(decodedValue);
+            try {
+                decodedValue = URLEncode.decodeURIComponent(decodedValue, new URLEncode.Decoder() {
+                    @Override
+                    public String decode(String value) throws UnsupportedEncodingException {
+                        String ret = URLDecoder.decode(value, "UTF-8");
+                        if (ret.contains("\ufffd")) {
+                            // REPLACEMENT CHARACTER
+                            ret = URLDecoder.decode(value, "ISO-8859-1");
+                        }
+                        return ret;
+                    }
+                });
+            } catch (UnsupportedEncodingException e) {
+                plugin.getLogger().log(e);
+            }
+            decodedValue = Encoding.htmlOnlyDecode(decodedValue);
             return decodedValue.trim();
         } else {
             return null;
