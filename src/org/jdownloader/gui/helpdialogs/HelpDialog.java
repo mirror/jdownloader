@@ -3,6 +3,7 @@ package org.jdownloader.gui.helpdialogs;
 import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.PointerInfo;
+import java.awt.event.ComponentEvent;
 import java.awt.event.WindowEvent;
 
 import javax.swing.Icon;
@@ -22,7 +23,6 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.updatev2.RestartController;
 
 public class HelpDialog {
-
     public static void show(final Point point, final String dontShowAgainKey, int flags, String title, String msg, Icon icon) {
         show(null, null, point, dontShowAgainKey, flags, title, msg, icon);
     }
@@ -55,7 +55,6 @@ public class HelpDialog {
                 {
                     if (point != null) {
                         setLocator(new DialogLocator() {
-
                             @Override
                             public Point getLocationOnScreen(AbstractDialog<?> abstractDialog) {
                                 if (Boolean.FALSE.equals(expandToBottom)) {
@@ -68,9 +67,8 @@ public class HelpDialog {
                             }
 
                             @Override
-                            public void onClose(AbstractDialog<?> abstractDialog) {
+                            public void onClose(AbstractDialog<?> abstractDialog, final ComponentEvent event) {
                             }
-
                         });
                     }
                 }
@@ -107,5 +105,4 @@ public class HelpDialog {
     public static void show(int flags, String title, String msg, Icon icon) {
         show(null, title, flags, title, msg, icon);
     }
-
 }

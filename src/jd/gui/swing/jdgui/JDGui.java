@@ -655,11 +655,11 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             }
 
             @Override
-            public void onClose(AbstractDialog<?> abstractDialog) {
+            public void onClose(AbstractDialog<?> abstractDialog, final ComponentEvent event) {
                 if (!abstractDialog.hasBeenMoved()) {
                     return;
                 }
-                super.onClose(abstractDialog);
+                super.onClose(abstractDialog, event);
             }
         });
         locator.setFallbackLocator(new DialogLocator() {
@@ -681,7 +681,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             }
 
             @Override
-            public void onClose(AbstractDialog<?> abstractDialog) {
+            public void onClose(AbstractDialog<?> abstractDialog, final ComponentEvent event) {
             }
         });
         AbstractDialog.ZHANDLER = new WindowZHandler() {
