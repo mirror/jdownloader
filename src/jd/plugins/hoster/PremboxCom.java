@@ -455,15 +455,16 @@ public class PremboxCom extends PluginForHost {
         this.currAcc.setProperty(PROPERTY_ACCOUNT_last_time_deleted_history, System.currentTimeMillis());
     }
 
-    // private String getDownloadType() {
-    // String type;
-    // if (PROPERTY_DOWNLOADTYPE_cloud.equals(this.currDownloadLink.getStringProperty(PROPERTY_DOWNLOADTYPE, null))) {
-    // type = PROPERTY_DOWNLOADTYPE_cloud;
-    // } else {
-    // type = PROPERTY_DOWNLOADTYPE_instant;
-    // }
-    // return type;
-    // }
+    private String getDownloadType() {
+        String type;
+        if (PROPERTY_DOWNLOADTYPE_cloud.equals(this.getDownloadLink().getStringProperty(PROPERTY_DOWNLOADTYPE, null))) {
+            type = PROPERTY_DOWNLOADTYPE_cloud;
+        } else {
+            type = PROPERTY_DOWNLOADTYPE_instant;
+        }
+        return type;
+    }
+
     /* Returns the time difference between now and the last time the complete download history has been deleted. */
     private long getLast_deleted_complete_download_history_time_ago() {
         return System.currentTimeMillis() - this.currAcc.getLongProperty(PROPERTY_ACCOUNT_last_time_deleted_history, System.currentTimeMillis());
@@ -503,7 +504,6 @@ public class PremboxCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cannot download this file with this account", 3 * 60 * 1000l);
                 } else if (StringUtils.containsIgnoreCase(errorDescription, "Maximum supported file size in direct download mode is")) {
                     /* 2021-09-16: Typically "Maximum supported file size in direct download mode is 15 GB" */
-                    /* TODO: */
                     if (this.getDownloadLink().hasProperty(PROPERTY_ENFORCE_CLOUD_DOWNLOAD)) {
                         /* This should never happen! */
                         mhm.putError(this.currAcc, this.getDownloadLink(), 5 * 60 * 1000l, errorDescription);
@@ -523,20 +523,23 @@ public class PremboxCom extends PluginForHost {
                 /* This one should never happen! */
                 mhm.handleErrorGeneric(this.currAcc, this.getDownloadLink(), "Empty or too long URL", 10);
             } else {
-                /* TODO */
+                logger.info("Unknown error happened: " + error);
+                if (this.getDownloadLink() == null) {
+                    throw new AccountUnavailableException(error, 5 * 60 * 1000l);
+                } else {
+                    mhm.handleErrorGeneric(this.currAcc, this.getDownloadLink(), error, 50);
+                }
             }
         }
     }
 
     /** Corrects input so that it fits what we use in our plugins. */
     private int correctChunks(int maxchunks) {
-        if (maxchunks < 1) {
-            maxchunks = 1;
-        } else if (maxchunks > 1) {
-            maxchunks = -maxchunks;
+        if (maxchunks <= 1) {
+            return 1;
+        } else {
+            return -maxchunks;
         }
-        /* Else maxchunks == 1 */
-        return maxchunks;
     }
 
     /** Corrects input so that it fits what we use in our plugins. */
