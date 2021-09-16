@@ -44,14 +44,15 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "atv.at" }, urls = { "https?://(?:www\\.)?atv\\.at/[a-z0-9\\-_]+/[a-z0-9\\-_]+/(?:d|v)\\d+/|https?://(?:www\\.)?atvsmart\\.(tv|at)/[^/]+/[^/]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "atv.at" }, urls = { "https?://(?:www\\.)?atv\\.at/([a-z0-9\\-_]+/[a-z0-9\\-_]+/(?:d|v)\\d+/|tv/[a-z0-9\\-]+/[a-z0-9\\-]+/[a-z0-9\\-]+/[a-z0-9\\-]+)" })
 public class AtvAt extends PluginForDecrypt {
     public AtvAt(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_ATVSMART        = "https?://(?:www\\.)?atvsmart\\.(tv|at)/.+";
     private static final String REGEX_HTTP_STREAMING = "(https?://.+/hbbtv)/(\\d+)(_\\d+)?\\.mp4";
+    private static final String TYPE_OLD             = "(?i)https?://(?:www\\.)?atv\\.at/([a-z0-9\\-_]+)/([a-z0-9\\-_]+)/(?:d|v)(\\d+)/";
+    private static final String TYPE_NEW             = "(?i)https?://(?:www\\.)?atv\\.at/tv/([a-z0-9\\-]+)/([a-z0-9\\-]+)/([a-z0-9\\-]+)/([a-z0-9\\-]+)";
 
     /**
      * Important note: Via browser the videos are streamed via RTSP.
@@ -65,96 +66,73 @@ public class AtvAt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final String fid;
         String seriesname = null;
         String episodename = null;
         String url_seriesname;
         String url_episodename;
         String json_source = null;
-        String seasonnumber_str = null;
-        String episodenumber_str = null;
+        String seasonnumberStr = null;
+        String episodenumberStr = null;
         Map<String, Object> entries;
         List<Object> parts = null;
         boolean possiblyGeoBlocked = false;
-        if (parameter.matches(TYPE_ATVSMART)) {
-            final Regex linkinfo = new Regex(parameter, "atvsmart\\.(?:at|tv)/([a-z0-9\\-_]+)/([a-z0-9\\-_]+)");
+        if (param.getCryptedUrl().matches(TYPE_OLD)) {
+            final Regex linkinfo = new Regex(param.getCryptedUrl(), TYPE_OLD);
             url_seriesname = linkinfo.getMatch(0);
             url_episodename = linkinfo.getMatch(1);
-            br.getPage(parameter);
-            br.followRedirect();
-            if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">404 \\- Nicht gefunden|Leider ist die von Ihnen aufgerufene Seite nicht")) {
-                logger.info("Link offline (404 error): " + parameter);
-                final DownloadLink offline = this.createOfflinelink(parameter);
-                offline.setFinalFileName(url_seriesname + "_" + url_episodename);
-                decryptedLinks.add(offline);
-                return decryptedLinks;
-            }
-            final String api_b64 = this.br.getRegex("asm_viewData\\s*?=\\s*?\\'([^<>\"\\']+)\\'").getMatch(0);
-            json_source = Encoding.Base64Decode(api_b64);
-            json_source = Encoding.urlDecode(json_source, false);
-            entries = JavaScriptEngineFactory.jsonToJavaMap(json_source);
-            episodename = (String) JavaScriptEngineFactory.walkJson(entries, "api/{0}/title");
-            entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "api/{0}/reference/episode");
-            seriesname = (String) entries.get("title");
-            seasonnumber_str = Long.toString(JavaScriptEngineFactory.toLong(entries.get("season"), 0));
-            episodenumber_str = Long.toString(JavaScriptEngineFactory.toLong(entries.get("episode"), 0));
-            if (seasonnumber_str.equals("0")) {
-                seasonnumber_str = null;
-            }
-            if (episodenumber_str.equals("0")) {
-                episodenumber_str = null;
-            }
-            parts = (List<Object>) entries.get("videoUrl");
         } else {
-            final Regex linkinfo = new Regex(parameter, "(?i)atv\\.(?:at|tv)/([a-z0-9\\-_]+)/([a-z0-9\\-_]+)/((?:d|v)\\d+)/$");
+            final Regex linkinfo = new Regex(parameter, TYPE_NEW);
             url_seriesname = linkinfo.getMatch(0);
-            url_episodename = linkinfo.getMatch(1);
-            fid = linkinfo.getMatch(2);
-            br.getPage(parameter);
-            br.followRedirect();
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                logger.info("Link offline (404 error): " + parameter);
-                final DownloadLink offline = this.createOfflinelink(parameter);
-                offline.setFinalFileName(url_seriesname + "_" + url_episodename);
-                decryptedLinks.add(offline);
-                return decryptedLinks;
-            } else if (br.containsHTML("is_geo_ip_blocked\\&quot;:true")) {
-                /*
-                 * We can get the direct links of geo blocked videos anyways - also, this variable only tells if a video is geo blocked at
-                 * all - this does not necessarily mean that it is blocked in the users'country!
-                 */
-                logger.info("Video might not be available in your country [workaround might be possible though]: " + parameter);
-                possiblyGeoBlocked = true;
+            url_episodename = linkinfo.getMatch(3);
+            final String urlSeasonInfo = linkinfo.getMatch(1);
+            final String urlEpisodeinfo = linkinfo.getMatch(2);
+            seasonnumberStr = new Regex(urlSeasonInfo, "staffel-(\\d+)").getMatch(0);
+            episodenumberStr = new Regex(urlEpisodeinfo, "episode-(\\d+)").getMatch(0);
+        }
+        br.getPage(parameter);
+        br.followRedirect();
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            logger.info("Link offline (404 error): " + parameter);
+            final DownloadLink offline = this.createOfflinelink(parameter);
+            offline.setFinalFileName(url_seriesname + "_" + url_episodename + ".mp4");
+            decryptedLinks.add(offline);
+            return decryptedLinks;
+        } else if (br.containsHTML("is_geo_ip_blocked\\&quot;:true")) {
+            /*
+             * We can get the direct links of geo blocked videos anyways - also, this variable only tells if a video is geo blocked at all -
+             * this does not necessarily mean that it is blocked in the users'country!
+             */
+            logger.info("Video might not be available in your country [workaround might be possible though]: " + parameter);
+            possiblyGeoBlocked = true;
+        }
+        br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
+        /* Get filename base information */
+        try {
+            seriesname = this.br.getRegex("\">zurück zu ([^<>\"]*?)<span class=\"ico ico_close\"").getMatch(0);
+            episodename = this.br.getRegex("property=\"og:title\" content=\"Folge \\d+ \\- ([^<>\"]*?)\"").getMatch(0);
+            episodenumberStr = br.getRegex("class=\"headline\">Folge (\\d+)</h4>").getMatch(0);
+            json_source = br.getRegex("var\\s*flashPlayerOptions\\s*=\\s*\"(.*?)\"").getMatch(0);
+            if (json_source == null) {
+                json_source = br.getRegex("<div class=\"jsb_ jsb_video/FlashPlayer\" data\\-jsb=\"([^\"<>]+)\">").getMatch(0);
             }
-            br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-            /* Get filename base information */
-            try {
-                seriesname = this.br.getRegex("\">zurück zu ([^<>\"]*?)<span class=\"ico ico_close\"").getMatch(0);
-                episodename = this.br.getRegex("property=\"og:title\" content=\"Folge \\d+ \\- ([^<>\"]*?)\"").getMatch(0);
-                episodenumber_str = br.getRegex("class=\"headline\">Folge (\\d+)</h4>").getMatch(0);
-                json_source = br.getRegex("var\\s*flashPlayerOptions\\s*=\\s*\"(.*?)\"").getMatch(0);
-                if (json_source == null) {
-                    json_source = br.getRegex("<div class=\"jsb_ jsb_video/FlashPlayer\" data\\-jsb=\"([^\"<>]+)\">").getMatch(0);
-                }
-                if (json_source != null) {
-                    json_source = Encoding.htmlDecode(json_source);
-                    entries = JavaScriptEngineFactory.jsonToJavaMap(json_source);
-                    entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "config/initial_video");
-                    parts = (List<Object>) entries.get("parts");
-                } else {
-                    /* New 2021-04-15 */
-                    final String partsJson = br.getRegex("var playlist\\s*=\\s*(\\[.*?\\]);").getMatch(0);
-                    parts = JSonStorage.restoreFromString(partsJson, TypeRef.LIST);
-                }
-            } catch (final Throwable e) {
-                logger.log(e);
-                /* Offline or plugin failure */
-                logger.info("There seems to be no downloadable content: " + parameter);
-                final DownloadLink offline = this.createOfflinelink(parameter);
-                offline.setFinalFileName(url_seriesname + "_" + url_episodename);
-                decryptedLinks.add(offline);
-                return decryptedLinks;
+            if (json_source != null) {
+                json_source = Encoding.htmlDecode(json_source);
+                entries = JavaScriptEngineFactory.jsonToJavaMap(json_source);
+                entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "config/initial_video");
+                parts = (List<Object>) entries.get("parts");
+            } else {
+                /* New 2021-04-15 */
+                final String partsJson = br.getRegex("var playlist\\s*=\\s*(\\[.*?\\]);").getMatch(0);
+                parts = JSonStorage.restoreFromString(partsJson, TypeRef.LIST);
             }
+        } catch (final Throwable ignore) {
+            logger.log(ignore);
+            /* Offline or plugin failure */
+            logger.info("There seems to be no downloadable content: " + parameter);
+            final DownloadLink offline = this.createOfflinelink(parameter);
+            offline.setFinalFileName(url_seriesname + "_" + url_episodename);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
         }
         final String urlSeriesnameRemove = new Regex(url_seriesname, "((?:\\-)?staffel\\-\\d+)").getMatch(0);
         final String urlEpisodenameRemove = new Regex(url_episodename, "((?:\\-)?folge\\-\\d+)").getMatch(0);
@@ -170,22 +148,22 @@ public class AtvAt extends PluginForDecrypt {
             episodename = url_episodename.replace("-", " ");
         }
         if (urlSeriesnameRemove != null) {
-            if (seasonnumber_str == null) {
-                seasonnumber_str = new Regex(urlSeriesnameRemove, "(\\d+)$").getMatch(0);
-            }
             /* Clean url_seriesname */
+            if (seasonnumberStr == null) {
+                seasonnumberStr = new Regex(urlSeriesnameRemove, "(\\d+)$").getMatch(0);
+            }
             url_seriesname = url_seriesname.replace(urlSeriesnameRemove, "");
         }
         if (urlEpisodenameRemove != null) {
-            if (episodenumber_str == null) {
-                episodenumber_str = new Regex(urlEpisodenameRemove, "(\\d+)$").getMatch(0);
+            if (episodenumberStr == null) {
+                episodenumberStr = new Regex(urlEpisodenameRemove, "(\\d+)$").getMatch(0);
             }
             /* Clean url_episodename! */
             url_episodename = url_episodename.replace(urlEpisodenameRemove, "");
         }
-        if (seasonnumber_str != null && episodenumber_str != null) {
-            seasonnumber = Short.parseShort(seasonnumber_str);
-            episodenumber = Short.parseShort(episodenumber_str);
+        if (seasonnumberStr != null && episodenumberStr != null) {
+            seasonnumber = Short.parseShort(seasonnumberStr);
+            episodenumber = Short.parseShort(episodenumberStr);
         }
         String hybrid_name = seriesname + "_";
         if (seasonnumber > 0 && episodenumber > 0) {
