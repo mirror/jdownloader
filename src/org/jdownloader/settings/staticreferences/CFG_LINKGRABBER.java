@@ -83,6 +83,4 @@ public class CFG_LINKGRABBER {
      * correct packages.
      **/
     public static final BooleanKeyHandler                   AUTO_PACKAGE_MATCHING_CORRECTION_ENABLED                 = SH.getKeyHandler("AutoPackageMatchingCorrectionEnabled", BooleanKeyHandler.class);
-    public static final IntegerKeyHandler                   ADD_DIALOG_WIDTH                                         = SH.getKeyHandler("AddDialogWidth", IntegerKeyHandler.class);
-    public static final IntegerKeyHandler                   ADD_DIALOG_HEIGHT                                        = SH.getKeyHandler("AddDialogHeight", IntegerKeyHandler.class);
 }
