@@ -108,14 +108,14 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
 
     @Override
     public void dispose() {
-        locator.onClose(this);
+        locator.onClose(this, null);
         super.dispose();
     }
 
     @Override
     public void setVisible(boolean b) {
         if (!b) {
-            locator.onClose(this);
+            locator.onClose(this, null);
         }
         super.setVisible(b);
     }
@@ -302,7 +302,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
 
     @Override
     public void windowClosed(WindowEvent e) {
-        locator.onClose(this);
+        locator.onClose(this, e);
     }
 
     @Override

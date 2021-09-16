@@ -17,9 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -39,6 +36,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "motherless.com" }, urls = { "https?://(?:www\\.|members\\.)?(?:motherless\\.com/(?:movies|thumbs).*|(?:premium)?motherlesspictures(?:media)?\\.com/[a-zA-Z0-9/\\.]+|motherlessvideos\\.com/[a-zA-Z0-9/\\.]+)" })
 public class MotherLessCom extends PluginForHost {
@@ -406,7 +406,10 @@ public class MotherLessCom extends PluginForHost {
     private void getVideoLink() {
         dllink = br.getRegex("addVariable\\(\\'file\\', \\'(https?://.*?\\.(flv|mp4))\\'\\)").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("(https?://[^/]+\\.motherlessmedia\\.com/[^<>\"]*?\\.(flv|mp4))\"").getMatch(0);
+            dllink = br.getRegex("(https?://[^/]+\\.motherlessmedia\\.com/[^<>\"]*?-720p\\.(flv|mp4))\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("(https?://[^/]+\\.motherlessmedia\\.com/[^<>\"]*?\\.(flv|mp4))\"").getMatch(0);
+            }
         }
         if (dllink == null) {
             dllink = PluginJSonUtils.getJsonValue(br, "file");

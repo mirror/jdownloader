@@ -71,6 +71,7 @@ import org.appwork.utils.swing.dialog.DefaultButtonPanel;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.dimensor.RememberLastDialogDimension;
 import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.PasswordUtils;
@@ -167,7 +168,10 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                 }
             }
         };
+        setPreferredWidth(700);
+        setPreferredHeight(300);
         setLocator(new RememberRelativeDialogLocator("AddLinksDialog", JDGui.getInstance().getMainFrame()));
+        setDimensor(new RememberLastDialogDimension("AddLinksDialog"));
     }
 
     @Override
@@ -360,8 +364,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     }
 
     public void actionPerformed(final ActionEvent e) {
-        config.setAddDialogHeight(getDialog().getHeight());
-        config.setAddDialogWidth(getDialog().getWidth());
         super.actionPerformed(e);
     }
 
@@ -701,15 +703,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     public void pack() {
         this.getDialog().pack();
-    }
-
-    @Override
-    protected int getPreferredWidth() {
-        return config.getAddDialogWidth();
-    }
-
-    protected int getPreferredHeight() {
-        return config.getAddDialogHeight();
     }
 
     protected boolean isResizable() {

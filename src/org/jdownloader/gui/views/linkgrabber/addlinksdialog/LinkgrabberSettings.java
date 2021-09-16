@@ -63,16 +63,6 @@ public interface LinkgrabberSettings extends ConfigInterface {
 
     void setVariousPackageEnabled(boolean b);
 
-    @DefaultIntValue(800)
-    int getAddDialogWidth();
-
-    void setAddDialogWidth(int width);
-
-    @DefaultIntValue(-1)
-    int getAddDialogHeight();
-
-    void setAddDialogHeight(int height);
-
     void setLatestDownloadDestinationFolder(String absolutePath);
 
     String getLatestDownloadDestinationFolder();
