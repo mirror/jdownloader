@@ -29,6 +29,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -55,18 +63,15 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(?:www\\.)?flickr\\.com/photos/(?!tags/)([^<>\"/]+)/(\\d+)(?:/in/album-\\d+)?" })
 public class FlickrCom extends PluginForHost {
     public FlickrCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://edit.yahoo.com/registration?.src=flickrsignup");
+        /*
+         * 2021-09-17: Disabled account support for now as mature content can be downloaded without account so the only reason to use an
+         * account might be to download self uploaded but private content(??!)
+         */
+        // this.enablePremium("https://edit.yahoo.com/registration?.src=flickrsignup");
         setConfigElements();
     }
 
@@ -76,6 +81,7 @@ public class FlickrCom extends PluginForHost {
     }
 
     /* Settings */
+    private static final String            SETTING_FAST_LINKCHECK                  = "FAST_LINKCHECK";
     private static final String            SETTING_SELECTED_PHOTO_QUALITY          = "SELECTED_PHOTO_QUALITY";
     private static final String            SETTING_SELECTED_VIDEO_QUALITY          = "SELECTED_VIDEO_QUALITY";
     private static final String            CUSTOM_DATE                             = "CUSTOM_DATE";
@@ -97,8 +103,9 @@ public class FlickrCom extends PluginForHost {
     public static final String             PROPERTY_MEDIA_TYPE                     = "media";
     private static final String            PROPERTY_SETTING_PREFER_SERVER_FILENAME = "prefer_server_filename";
     public static final String             PROPERTY_QUALITY                        = "quality";
+    /* required e.g. to download video streams */
+    public static final String             PROPERTY_SECRET                         = "secret";
     public static final String             PROPERTY_DIRECTURL                      = "directurl_%s";
-    private String                         dllink                                  = null;
     private static HashMap<String, Object> api                                     = new HashMap<String, Object>();
 
     /** Max 2000 requests per hour. */
@@ -124,13 +131,19 @@ public class FlickrCom extends PluginForHost {
             } else if (userCustomFilenameMask.equalsIgnoreCase("*username*_*content_id*_*title**extension*")) {
                 /**
                  * 2021-09-14: Correct defaults just in case user has entered the field so the property has been saved. See new default in:
-                 * defaultCustomFilename </br> username_url = always given </br> username = not always given but previously the same as new
-                 * "username_url" and default.
+                 * defaultCustomFilename </br>
+                 * username_url = always given </br>
+                 * username = not always given but previously the same as new "username_url" and default.
                  */
                 final String correctedUserCustomFilenameMask = userCustomFilenameMask.replace("*username*", "*username_url*");
                 getPluginConfig().setProperty(CUSTOM_FILENAME, correctedUserCustomFilenameMask);
             }
         }
+    }
+
+    public static final Browser prepBrowser(final Browser br) {
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -195,6 +208,7 @@ public class FlickrCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        prepBrowser(this.br);
         correctDownloadLink(link);
         if (!link.isNameSet()) {
             /* Set fallback name */
@@ -218,7 +232,6 @@ public class FlickrCom extends PluginForHost {
             link.setProperty(PROPERTY_USERNAME, usernameFromURL);
         }
         link.setProperty(PROPERTY_USERNAME_URL, usernameFromURL);
-        br.setFollowRedirects(true);
         /* Picture direct-URLs are static --> Rely on them. */
         final String storedDirecturl = getStoredDirecturl(link);
         if (storedDirecturl != null) {
@@ -233,13 +246,49 @@ public class FlickrCom extends PluginForHost {
         if (account != null) {
             login(account, false);
         }
+        /* 2021-09-17: Prefer API over website. */
+        final boolean useAPI = true;
+        if (useAPI) {
+            availablecheckAPI(link);
+        } else {
+            availablecheckWebsite(link);
+        }
+        final String directurl;
+        if (isVideo(link) && (isDownload || !this.getPluginConfig().getBooleanProperty(SETTING_FAST_LINKCHECK, default_SETTING_FAST_LINKCHECK))) {
+            directurl = getVideoDownloadurlAPI(link);
+        } else {
+            directurl = getStoredDirecturl(link);
+        }
+        setFilename(link);
+        this.br.setFollowRedirects(true);
+        if (!StringUtils.isEmpty(directurl) && !isDownload && allowDirecturlCheckForFilesize(link)) {
+            checkDirecturl(link, directurl);
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    public static void setFilename(final DownloadLink link) throws ParseException {
+        final String directurl = getStoredDirecturl(link);
+        String filenameURL = null;
+        if (directurl != null && !isVideo(link)) {
+            filenameURL = new Regex(directurl, "(?i)https?://live\\.staticflickr\\.com/\\d+/([^/]+)").getMatch(0);
+        }
+        if (userPrefersServerFilenames() && filenameURL != null) {
+            link.setFinalFileName(filenameURL);
+        } else {
+            link.setFinalFileName(getFormattedFilename(link));
+        }
+    }
+
+    /** Checks single video/photo via website and sets required DownloadLink properties. */
+    private void availablecheckWebsite(final DownloadLink link) throws Exception {
         /* 2021-09-13: Don't do this anymore as it may not always work for videos! */
         // br.getPage(getPhotoURLWithoutAlbumInfo(link) + "/in/photostream");
         br.getPage(getPhotoURLWithoutAlbumInfo(link));
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("div class=\"Four04Case\">") || br.containsHTML("(?i)>\\s*This member is no longer active on Flickr") || br.containsHTML("class=\"Problem\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection().getResponseCode() == 403) {
-            /* 2020-04-27 */
+            /* This can also happen when user is logged in --> This then probably means that that is private content. */
             throw new AccountRequiredException();
         } else if (br.getURL().contains("login.yahoo.com/config")) {
             throw new AccountRequiredException();
@@ -280,17 +329,21 @@ public class FlickrCom extends PluginForHost {
             }
         }
         link.setProperty(PROPERTY_CONTENT_ID, getFID(link));
-        boolean isVideo = br.containsHTML("class=\"videoplayer main\\-photo\"") || isVideo(link);
+        if (!link.hasProperty(PROPERTY_MEDIA_TYPE)) {
+            /* Fallback */
+            if (br.containsHTML("class=\"videoplayer main\\-photo\"")) {
+                link.setProperty(PROPERTY_MEDIA_TYPE, "video");
+            } else {
+                link.setProperty(PROPERTY_MEDIA_TYPE, "photo");
+            }
+        }
         final PhotoQuality preferredPhotoQuality = getPreferredPhotoQuality(link);
         final String json = br.getRegex("main\":(\\{\"photo-models\".*?),\\s+auth: auth,").getMatch(0);
-        String secret = null;
         if (json != null) {
             /* json handling */
             Map<String, Object> root = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
             final List<Object> photoModels = (List) root.get("photo-models");
             final Map<String, Object> photoData = (Map<String, Object>) photoModels.get(0);
-            /* Required to obtain videostreams */
-            secret = (String) photoData.get("secret");
             final Map<String, Object> owner = (Map<String, Object>) photoData.get("owner");
             setStringProperty(this, link, PROPERTY_USERNAME, (String) owner.get("pathAlias"), false);
             /*
@@ -302,16 +355,16 @@ public class FlickrCom extends PluginForHost {
                 link.setProperty(PROPERTY_USERNAME_INTERNAL, owner.get("id"));
             }
             setStringProperty(this, link, PROPERTY_REAL_NAME, (String) owner.get("username"), false);
+            final String secret = (String) photoData.get("secret");
+            if (!StringUtils.isEmpty(secret)) {
+                setStringProperty(this, link, PROPERTY_SECRET, secret, false);
+            }
             setStringProperty(this, link, PROPERTY_TITLE, (String) photoData.get("title"), false);
             String description = (String) photoData.get("description");
             if (description != null) {
                 setStringProperty(this, link, DownloadLink.PROPERTY_COMMENT, description, false);
             }
-            final String mediaType = (String) photoData.get("mediaType");
-            if (setStringProperty(this, link, PROPERTY_MEDIA_TYPE, mediaType, false)) {
-                /* Assign this again just to be sure. */
-                isVideo = isVideo(link);
-            }
+            setStringProperty(this, link, PROPERTY_MEDIA_TYPE, photoData.get("mediaType").toString(), false);
             {
                 /* This block solely exists to find the uploaded-timestamp. */
                 final List<Object> photoStatsModels = (List) root.get("photo-stats-models");
@@ -329,6 +382,8 @@ public class FlickrCom extends PluginForHost {
             long maxWidth = -1;
             String maxQualityName = null;
             String maxQualityDownloadurl = null;
+            String userPreferredQualityName = null;
+            String userPreferredDownloadurl = null;
             while (iterator.hasNext()) {
                 final Entry<String, Object> entry = iterator.next();
                 root = (Map<String, Object>) entry.getValue();
@@ -345,8 +400,8 @@ public class FlickrCom extends PluginForHost {
                 }
                 if (this.stringToPhotoQuality(qualityName) == preferredPhotoQuality) {
                     logger.info("Found user preferred quality: " + qualityName);
-                    link.setProperty(PROPERTY_QUALITY, qualityName);
-                    dllink = url;
+                    userPreferredQualityName = qualityName;
+                    userPreferredDownloadurl = url;
                     break;
                 } else if (width > maxWidth) {
                     maxQualityName = qualityName;
@@ -354,169 +409,291 @@ public class FlickrCom extends PluginForHost {
                     maxQualityDownloadurl = url;
                 }
             }
-            if (dllink == null && maxQualityDownloadurl != null) {
+            if (userPreferredDownloadurl != null) {
+                logger.info("Using user preferred quality: " + userPreferredQualityName);
+                link.setProperty(PROPERTY_QUALITY, userPreferredQualityName);
+                link.setProperty(String.format(PROPERTY_DIRECTURL, link.getStringProperty(userPreferredQualityName)), userPreferredDownloadurl);
+            } else if (maxQualityDownloadurl != null) {
                 logger.info("Using best quality: " + maxQualityName + " | width: " + maxWidth);
                 link.setProperty(PROPERTY_QUALITY, maxQualityName);
-                dllink = maxQualityDownloadurl;
+                link.setProperty(String.format(PROPERTY_DIRECTURL, link.getStringProperty(maxQualityName)), maxQualityDownloadurl);
             }
-        } else if (!isVideo) {
-            /* Old website handling */
-            /*
-             * Fast way to get finallink via site as we always try to access the "o" (original) quality. Page might be redirected!
-             */
-            br.getPage("/photos/" + getUsername(link) + "/" + getFID(link) + "/sizes/o");
-            /* Special case: Check if user prefers to download original quality */
-            if (preferredPhotoQuality == PhotoQuality.QO) {
-                if (br.getURL().contains("sizes/o")) { // Not redirected
-                    dllink = br.getRegex("<a href=\"([^<>\"]+)\">\\s*(Dieses Foto im Originalformat|Download the Original)").getMatch(0);
-                }
-            }
-            if (dllink == null) { // Redirected if download original is not allowed
+        } else {
+            logger.warning("Failed to find json in html");
+            if (!isVideo(link)) {
+                /* Old website handling */
                 /*
-                 * If it is redirected, get the highest available quality
+                 * Fast way to get finallink via site as we always try to access the "o" (original) quality. Page might be redirected!
                  */
-                final String[] qualities = getPhotoQualityStringsDescending();
-                final String html = br.getRegex("<ol class=\"sizes-list\">(.*?)<div id=\"allsizes-photo\">").getMatch(0);
-                String maxQualityName = null;
-                String foundUserPreferredQualityName = null;
-                for (final String qualityName : qualities) {
-                    final String sizeAvailable = new Regex(html, "(?i)\"(/photos/[^/]+/\\d+/sizes/" + qualityName + "/)\"").getMatch(0);
-                    if (sizeAvailable != null) {
-                        /* First found = best */
-                        if (maxQualityName == null) {
-                            maxQualityName = qualityName;
-                        }
-                        if (this.stringToPhotoQuality(qualityName) == preferredPhotoQuality) {
-                            foundUserPreferredQualityName = qualityName;
-                            break;
-                        }
+                br.getPage("/photos/" + getUsername(link) + "/" + getFID(link) + "/sizes/o");
+                /* Special case: Check if user prefers to download original quality */
+                String directurl = null;
+                if (preferredPhotoQuality == PhotoQuality.QO) {
+                    if (br.getURL().contains("sizes/o")) { // Not redirected
+                        directurl = br.getRegex("<a href=\"([^<>\"]+)\">\\s*(Dieses Foto im Originalformat|Download the Original)").getMatch(0);
                     }
                 }
-                if (maxQualityName != null || foundUserPreferredQualityName != null) {
-                    final String selectedQualityName;
-                    if (foundUserPreferredQualityName != null) {
-                        logger.info("Fond user preferred quality: " + foundUserPreferredQualityName);
-                        selectedQualityName = foundUserPreferredQualityName;
-                    } else {
-                        logger.info("Using best quality: " + maxQualityName);
-                        selectedQualityName = maxQualityName;
+                if (directurl != null) {
+                    link.setProperty(PROPERTY_QUALITY, "o");
+                    link.setProperty(String.format(PROPERTY_DIRECTURL, "o"), directurl);
+                } else { // Redirected if download original is not allowed
+                    /*
+                     * If it is redirected, get the highest available quality
+                     */
+                    final String[] qualities = getPhotoQualityStringsDescending();
+                    final String html = br.getRegex("<ol class=\"sizes-list\">(.*?)<div id=\"allsizes-photo\">").getMatch(0);
+                    String maxQualityName = null;
+                    String foundUserPreferredQualityName = null;
+                    for (final String qualityName : qualities) {
+                        final String sizeAvailable = new Regex(html, "(?i)\"(/photos/[^/]+/\\d+/sizes/" + qualityName + "/)\"").getMatch(0);
+                        if (sizeAvailable != null) {
+                            /* First found = best */
+                            if (maxQualityName == null) {
+                                maxQualityName = qualityName;
+                            }
+                            if (this.stringToPhotoQuality(qualityName) == preferredPhotoQuality) {
+                                foundUserPreferredQualityName = qualityName;
+                                break;
+                            }
+                        }
                     }
-                    br.getPage(this.getPhotoURLWithoutAlbumInfo(link) + "/sites/" + selectedQualityName + "/");
-                    dllink = br.getRegex("id=\"allsizes-photo\">[^~]*?<img src=\"(http[^<>\"]*?)\"").getMatch(0);
-                    if (dllink != null) {
-                        link.setProperty(PROPERTY_QUALITY, selectedQualityName);
+                    if (maxQualityName != null || foundUserPreferredQualityName != null) {
+                        final String selectedQualityName;
+                        if (foundUserPreferredQualityName != null) {
+                            logger.info("Fond user preferred quality: " + foundUserPreferredQualityName);
+                            selectedQualityName = foundUserPreferredQualityName;
+                        } else {
+                            logger.info("Using best quality: " + maxQualityName);
+                            selectedQualityName = maxQualityName;
+                        }
+                        br.getPage(this.getPhotoURLWithoutAlbumInfo(link) + "/sites/" + selectedQualityName + "/");
+                        directurl = br.getRegex("id=\"allsizes-photo\">[^~]*?<img src=\"(http[^<>\"]*?)\"").getMatch(0);
+                        if (directurl != null) {
+                            link.setProperty(PROPERTY_QUALITY, selectedQualityName);
+                            link.setProperty(String.format(PROPERTY_DIRECTURL, selectedQualityName), directurl);
+                        } else {
+                            /* This should never happen */
+                            logger.warning("Website quality picker appears to be broken");
+                        }
                     } else {
                         /* This should never happen */
-                        logger.warning("Website quality picker appears to be broken");
+                        logger.warning("Failed to find any photo quality");
                     }
-                } else {
-                    /* This should never happen */
-                    logger.warning("Failed to find any photo quality");
                 }
             }
         }
-        final boolean allowCheckDirecturlForFilesize;
-        String filenameURL = null; // 2021-09-09: Only allow this for photos atm.
-        if (isVideo) {
-            /* Video */
-            /*
-             * TODO: Add correct API csrf cookie handling so we can use this while being logged in to download videos and do not have to
-             * remove the cookies here - that's just a workaround!
-             */
-            final Browser apibr = br.cloneBrowser();
-            final String apikey = getPublicAPIKey(this.br);
-            if (StringUtils.isEmpty(apikey) || StringUtils.isEmpty(secret)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    }
+
+    /** Checks single video/photo via API and sets required DownloadLink properties. */
+    private void availablecheckAPI(final DownloadLink link) throws Exception {
+        final UrlQuery query = new UrlQuery();
+        query.add("api_key", this.getPublicAPIKey(br));
+        query.add("extras", getApiParamExtras());
+        query.add("format", "json");
+        query.add("hermes", "1");
+        query.add("hermesClient", "1");
+        query.add("nojsoncallback", "1");
+        query.add("csrf", "");
+        query.add("method", "flickr.photos.getInfo");
+        query.add("photo_id", this.getFID(link));
+        br.getPage(jd.plugins.decrypter.FlickrCom.API_BASE + "services/rest?" + query.toString());
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        /*
+         * Compared to the website, this API will return offline status for private files too while website would return error 403. We don't
+         * care about it as it#s an edge case anyways!
+         */
+        /* E.g. {"stat":"fail","code":1,"message":"Photo \"<content_id>\" not found (invalid ID)"} */
+        if (StringUtils.equalsIgnoreCase(entries.get("stat").toString(), "fail")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Map<String, Object> photo = (Map<String, Object>) entries.get("photo");
+        parseInfoAPI(this, link, photo);
+    }
+
+    private String getVideoDownloadurlAPI(final DownloadLink link) throws PluginException, IOException {
+        /* Video */
+        /*
+         * TODO: Add correct API csrf cookie handling so we can use this while being logged in to download videos and do not have to remove
+         * the cookies here - that's just a workaround!
+         */
+        final String secret = link.getStringProperty(PROPERTY_SECRET);
+        if (StringUtils.isEmpty(secret)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final Browser apibr = br.cloneBrowser();
+        final UrlQuery query = new UrlQuery();
+        query.add("photo_id", getFID(link));
+        query.add("secret", secret);
+        query.add("method", "flickr.video.getStreamInfo");
+        query.add("csrf", "");
+        query.add("api_key", getPublicAPIKey(this.br));
+        query.add("format", "json");
+        query.add("hermes", "1");
+        query.add("hermesClient", "1");
+        query.add("nojsoncallback", "1");
+        apibr.getPage(jd.plugins.decrypter.FlickrCom.API_BASE + "services/rest?" + query.toString());
+        Map<String, Object> entries = JSonStorage.restoreFromString(apibr.toString(), TypeRef.HASHMAP);
+        /*
+         * 2021-09-09: Found 2 video types so far: "700" and "iphone_wifi" --> Both are equal in filesize. If more are available,
+         * implementing a quality selection for videos could make sense.
+         */
+        final List<Map<String, Object>> streams = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "streams/stream");
+        if (streams.isEmpty()) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String bestQualityURL = null;
+        String bestQualityName = null;
+        String userPreferredQualityURL = null;
+        String userPreferredQualityName = null;
+        final VideoQuality userPreferredVideoQuality = getPreferredVideoQuality();
+        for (final Map<String, Object> stream : streams) {
+            /* type can sometimes be represented as an Integer. */
+            final String qualityName = stream.get("type").toString();
+            final String url = (String) stream.get("_content");
+            // if (qualityName.equals("700") || qualityName.equalsIgnoreCase("iphone_wifi")) {
+            if (qualityName.equalsIgnoreCase("iphone_wifi")) {
+                continue;
+            } else if (StringUtils.isEmpty(url)) {
+                continue;
             }
-            apibr.getPage(jd.plugins.decrypter.FlickrCom.API_BASE + "services/rest?photo_id=" + getFID(link) + "&secret=" + secret + "&method=flickr.video.getStreamInfo&csrf=&api_key=" + apikey + "&format=json&hermes=1&hermesClient=1&reqId=&nojsoncallback=1");
-            Map<String, Object> entries = JSonStorage.restoreFromString(apibr.toString(), TypeRef.HASHMAP);
-            /*
-             * 2021-09-09: Found 2 video types so far: "700" and "iphone_wifi" --> Both are equal in filesize. If more are available,
-             * implementing a quality selection for videos could make sense.
-             */
-            final List<Map<String, Object>> streams = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "streams/stream");
-            if (streams.isEmpty()) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (bestQualityURL == null) {
+                /* List is sorted from best to worst -> Set best first */
+                bestQualityURL = url;
+                bestQualityName = qualityName;
             }
-            String bestQualityURL = null;
-            String bestQualityName = null;
-            String userPreferredQualityURL = null;
-            String userPreferredQualityName = null;
-            final VideoQuality userPreferredVideoQuality = getPreferredVideoQuality();
-            for (final Map<String, Object> stream : streams) {
-                /* type can sometimes be represented as an Integer. */
-                final String qualityName = stream.get("type").toString();
-                final String url = (String) stream.get("_content");
-                // if (qualityName.equals("700") || qualityName.equalsIgnoreCase("iphone_wifi")) {
-                if (qualityName.equalsIgnoreCase("iphone_wifi")) {
-                    continue;
-                } else if (StringUtils.isEmpty(url)) {
+            if (stringToVideoQuality(qualityName) == userPreferredVideoQuality) {
+                userPreferredQualityURL = url;
+                userPreferredQualityName = qualityName;
+                break;
+            }
+        }
+        if (userPreferredQualityURL != null) {
+            logger.info("Found user preferred quality: " + userPreferredQualityName);
+            link.setProperty(PROPERTY_QUALITY, userPreferredQualityName);
+            link.setProperty(String.format(PROPERTY_DIRECTURL, userPreferredQualityName), userPreferredQualityURL);
+            return userPreferredQualityURL;
+        } else if (bestQualityURL != null) {
+            logger.info("Failed to find user preferred quality " + userPreferredVideoQuality.getLabel() + " - using this one instead: " + bestQualityName);
+            link.setProperty(PROPERTY_QUALITY, bestQualityName);
+            link.setProperty(String.format(PROPERTY_DIRECTURL, bestQualityName), bestQualityURL);
+            return bestQualityURL;
+        } else {
+            /* This should either never happen or be a very rare case. */
+            logger.warning("Failed to find any usable video stream --> Only broken streams available?");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Broken video?");
+        }
+    }
+
+    /** Returns API parameters "extras" containing the needed extra properties for images/videos. */
+    public static final String getApiParamExtras() {
+        /**
+         * needs_interstitial = show 18+ content </br>
+         * media = include media-type (video/photo)
+         */
+        String extras = "date_taken%2Cdate_upload%2Cdescription%2Cowner_name%2Cpath_alias%2Crealname%2Cneeds_interstitial%2Cmedia";
+        final String[] allPhotoQualities = getPhotoQualityStringsDescending();
+        for (final String qualityStr : allPhotoQualities) {
+            extras += "%2Curl_" + qualityStr;
+        }
+        return extras;
+    }
+
+    /** Finds and sets all required information for single photo/video returned by previously done flickr API request. */
+    public static void parseInfoAPI(final Plugin plg, final DownloadLink link, final Map<String, Object> photo) {
+        final String userPreferredPhotoQualityStr = photoQualityToQualityString(jd.plugins.hoster.FlickrCom.getPreferredPhotoQuality());
+        final String thisUsernameSlug = (String) photo.get("pathalias");
+        /*
+         * This can be a map containing more information about the owner when json is obtained via API method=flickr.photos.getInfo, else it
+         * is a string.
+         */
+        final Object ownerO = photo.get("owner");
+        String thisUsernameInternal = null;
+        if (ownerO instanceof String) {
+            thisUsernameInternal = (String) ownerO;
+        } else if (ownerO instanceof Map) {
+            final Map<String, Object> owner = (Map<String, Object>) ownerO;
+            thisUsernameInternal = (String) owner.get("nsid");
+        }
+        final String thisUsernameFull = (String) photo.get("realname");
+        final String realName = (String) photo.get("ownername");
+        final String photoID = photo.get("id").toString();
+        final Object titleO = photo.get("title");
+        String title = null;
+        if (titleO instanceof String) {
+            title = (String) titleO;
+        } else {
+            title = (String) JavaScriptEngineFactory.walkJson(titleO, "_content");
+        }
+        final String dateUploaded = (String) photo.get("dateupload");
+        final String description = (String) JavaScriptEngineFactory.walkJson(photo, "description/_content");
+        if (!StringUtils.isEmpty(description) && link.getComment() == null) {
+            link.setComment(Encoding.htmlDecode(description));
+        }
+        /*
+         * 2021-09-14: There is also a field media_status=ready --> Maybe indicates if an item is down or needs processing (e.g. videos)?
+         */
+        final String media = (String) photo.get("media");
+        // final String originalformat = (String) photo.get("originalformat");
+        final String extension;
+        if (media.equalsIgnoreCase("video")) {
+            extension = ".mp4";
+            final String secret = (String) photo.get("secret");
+            if (!StringUtils.isEmpty(secret)) {
+                link.setProperty(PROPERTY_SECRET, secret);
+            }
+        } else {
+            extension = ".jpg";
+            /* Try to find photo directurl right away */
+            String maxQualityName = null;
+            String maxQualityDownloadurl = null;
+            String userPreferredQualityDownloadurl = null;
+            final String[] allPhotoQualities = getPhotoQualityStringsDescending();
+            for (final String qualityStr : allPhotoQualities) {
+                final String url = (String) photo.get("url_" + qualityStr);
+                if (url == null) {
                     continue;
                 }
-                if (bestQualityURL == null) {
-                    /* List is sorted from best to worst -> Set best first */
-                    bestQualityURL = url;
-                    bestQualityName = qualityName;
+                /* First found = best */
+                if (maxQualityDownloadurl == null) {
+                    maxQualityDownloadurl = url;
+                    maxQualityName = qualityStr;
                 }
-                if (stringToVideoQuality(qualityName) == userPreferredVideoQuality) {
-                    userPreferredQualityURL = url;
-                    userPreferredQualityName = qualityName;
+                if (qualityStr.equalsIgnoreCase(userPreferredPhotoQualityStr)) {
+                    /* Quit loop as this is the quality our user wants to have. */
+                    userPreferredQualityDownloadurl = url;
                     break;
                 }
             }
-            if (userPreferredQualityURL != null) {
-                logger.info("Found user preferred quality: " + userPreferredQualityName);
-                link.setProperty(PROPERTY_QUALITY, userPreferredQualityName);
-                this.dllink = userPreferredQualityURL;
-            } else if (bestQualityURL != null) {
-                logger.info("Failed to find user preferred quality " + userPreferredVideoQuality.getLabel() + " - using this one instead: " + bestQualityName);
-                link.setProperty(PROPERTY_QUALITY, bestQualityName);
-                this.dllink = bestQualityURL;
-            } else {
-                /* This should either never happen or be a very rare case. */
-                logger.warning("Failed to find any usable video stream --> Only broken streams available?");
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Broken video?");
-            }
-            String videoExt;
-            if (dllink.contains("mp4")) {
-                videoExt = ".mp4";
-            } else {
-                videoExt = ".flv";
-            }
-            /* Needed for custom filenames! */
-            link.setProperty(PROPERTY_EXT, videoExt);
-            allowCheckDirecturlForFilesize = true;
-        } else {
-            /* Photo */
-            String ext;
-            if (!StringUtils.isEmpty(dllink)) {
-                ext = dllink.substring(dllink.lastIndexOf("."));
-                if (ext == null || ext.length() > 5) {
-                    ext = defaultPhotoExt;
+            /* Check if we found anything and set to re-use later. */
+            if (!StringUtils.isEmpty(maxQualityDownloadurl) || !StringUtils.isEmpty(userPreferredQualityDownloadurl)) {
+                final String url;
+                final String chosenQualityStr;
+                if (userPreferredQualityDownloadurl != null) {
+                    url = userPreferredQualityDownloadurl;
+                    chosenQualityStr = userPreferredPhotoQualityStr;
+                } else {
+                    url = maxQualityDownloadurl;
+                    chosenQualityStr = maxQualityName;
                 }
-                filenameURL = getFilenameFromDirecturl(this.dllink);
-            } else {
-                ext = defaultPhotoExt;
+                link.setProperty(String.format(jd.plugins.hoster.FlickrCom.PROPERTY_DIRECTURL, chosenQualityStr), url);
+                link.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_QUALITY, chosenQualityStr);
             }
-            /* Needed for custom filenames! */
-            link.setProperty(PROPERTY_EXT, ext);
-            /* 2021-09-09: Filesize is not provided for photo directURLs */
-            allowCheckDirecturlForFilesize = false;
         }
-        if (userPrefersServerFilenames()) {
-            link.setFinalFileName(filenameURL);
-        } else {
-            link.setFinalFileName(getFormattedFilename(link));
+        link.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_CONTENT_ID, photoID);
+        link.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_MEDIA_TYPE, media);
+        {
+            /* Overwrite previously set properties if our "photo" object has them too as we can trust those ones 100%. */
+            setStringProperty(plg, link, jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME, thisUsernameSlug, true);
+            setStringProperty(plg, link, jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_FULL, thisUsernameFull, true);
+            setStringProperty(plg, link, jd.plugins.hoster.FlickrCom.PROPERTY_REAL_NAME, realName, true);
+            link.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_INTERNAL, thisUsernameInternal);
         }
-        this.br.setFollowRedirects(true);
-        if (!StringUtils.isEmpty(dllink) && !isDownload && allowCheckDirecturlForFilesize) {
-            checkDirecturl(link, this.dllink);
+        if (dateUploaded != null && dateUploaded.matches("\\d+")) {
+            link.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_DATE, Long.parseLong(dateUploaded) * 1000);
         }
-        /* Save directurl for later usage. */
-        if (!StringUtils.isEmpty(dllink)) {
-            link.setProperty(String.format(PROPERTY_DIRECTURL, link.getStringProperty(PROPERTY_QUALITY)), this.dllink);
-        }
-        return AvailableStatus.TRUE;
+        setStringProperty(plg, link, jd.plugins.hoster.FlickrCom.PROPERTY_DATE_TAKEN, (String) photo.get("datetaken"), false);
+        setStringProperty(plg, link, jd.plugins.hoster.FlickrCom.PROPERTY_TITLE, title, false);
+        link.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_EXT, extension);
     }
 
     public static boolean setStringProperty(final Plugin plugin, final DownloadLink link, final String property, String value, final boolean overwrite) {
@@ -581,7 +758,7 @@ public class FlickrCom extends PluginForHost {
         }
     }
 
-    private boolean isVideo(final DownloadLink link) {
+    public static boolean isVideo(final DownloadLink link) {
         if (StringUtils.equals(link.getStringProperty(PROPERTY_MEDIA_TYPE), "video")) {
             return true;
         } else {
@@ -589,19 +766,28 @@ public class FlickrCom extends PluginForHost {
         }
     }
 
-    private String getStoredDirecturl(final DownloadLink link) {
+    private boolean allowDirecturlCheckForFilesize(final DownloadLink link) {
+        if (isVideo(link)) {
+            return true;
+        } else {
+            /* 2021-09-17: No Content-Length header given for images. */
+            return false;
+        }
+    }
+
+    public static String getStoredDirecturl(final DownloadLink link) {
         return link.getStringProperty(getDirecturlProperty(link));
     }
 
-    private String getDirecturlProperty(final DownloadLink link) {
+    public static String getDirecturlProperty(final DownloadLink link) {
         return String.format(PROPERTY_DIRECTURL, link.getStringProperty(PROPERTY_QUALITY, getPreferredQualityStr(link)));
     }
 
-    private String getPreferredQualityStr(final DownloadLink link) {
-        if (this.isVideo(link)) {
-            return photoQualityEnumNameToString(getPreferredVideoQuality().name());
+    private static String getPreferredQualityStr(final DownloadLink link) {
+        if (isVideo(link)) {
+            return videoQualityToQualityString(getPreferredVideoQuality());
         } else {
-            return photoQualityEnumNameToString(getPreferredPhotoQuality().name());
+            return photoQualityToQualityString(getPreferredPhotoQuality());
         }
     }
 
@@ -613,11 +799,12 @@ public class FlickrCom extends PluginForHost {
     public void handleDownload(final DownloadLink link, final Account account) throws Exception {
         if (!attemptStoredDownloadurlDownload(link)) {
             requestFileInformation(link, account, true);
-            if (StringUtils.isEmpty(dllink)) {
+            final String directurl = getStoredDirecturl(link);
+            if (StringUtils.isEmpty(directurl)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* chunked transfer */
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, isResumable(link), getMaxChunks(link));
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, isResumable(link), getMaxChunks(link));
             connectionErrorhandling(dl.getConnection());
             if (!looksLikeDownloadableContent(dl.getConnection())) {
                 try {
@@ -684,7 +871,7 @@ public class FlickrCom extends PluginForHost {
     }
 
     private boolean isResumable(final DownloadLink link) {
-        if (this.isVideo(link)) {
+        if (isVideo(link)) {
             return true;
         } else {
             return false;
@@ -692,7 +879,7 @@ public class FlickrCom extends PluginForHost {
     }
 
     private int getMaxChunks(final DownloadLink link) {
-        if (this.isVideo(link)) {
+        if (isVideo(link)) {
             /* Unlimited */
             return 0;
         } else {
@@ -833,10 +1020,6 @@ public class FlickrCom extends PluginForHost {
         formattedFilename = formattedFilename.replace("*real_name*", link.getStringProperty(PROPERTY_REAL_NAME, customStringForEmptyTags));
         formattedFilename = formattedFilename.replace("*title*", link.getStringProperty(PROPERTY_TITLE, customStringForEmptyTags));
         return formattedFilename;
-    }
-
-    public static final String getFilenameFromDirecturl(final String url) {
-        return new Regex(url, "(?i)https?://live\\.staticflickr\\.com/\\d+/([^/]+)").getMatch(0);
     }
 
     public static boolean userPrefersServerFilenames() {
@@ -991,13 +1174,13 @@ public class FlickrCom extends PluginForHost {
     public static String[] getPhotoQualityStringsDescending() {
         final String[] ret = new String[PhotoQuality.values().length];
         for (int i = 0; i < PhotoQuality.values().length; i++) {
-            ret[i] = photoQualityEnumNameToString(PhotoQuality.values()[i].name());
+            ret[i] = photoQualityToQualityString(PhotoQuality.values()[i]);
         }
         return ret;
     }
 
-    public static String photoQualityEnumNameToString(final String label) {
-        return label.substring(1).toLowerCase(Locale.ENGLISH);
+    public static String photoQualityToQualityString(final PhotoQuality photoQuality) {
+        return photoQuality.name().substring(1).toLowerCase(Locale.ENGLISH);
     }
 
     private PhotoQuality stringToPhotoQuality(final String str) {
@@ -1005,7 +1188,7 @@ public class FlickrCom extends PluginForHost {
             return null;
         } else {
             for (final PhotoQuality quality : PhotoQuality.values()) {
-                final String qualStr = photoQualityEnumNameToString(quality.name());
+                final String qualStr = photoQualityToQualityString(quality);
                 if (qualStr.equalsIgnoreCase(str)) {
                     return quality;
                 }
@@ -1047,13 +1230,13 @@ public class FlickrCom extends PluginForHost {
     public static String[] getVideoQualityStringsDescending() {
         final String[] ret = new String[VideoQuality.values().length];
         for (int i = 0; i < VideoQuality.values().length; i++) {
-            ret[i] = videoQualityEnumNameToString(VideoQuality.values()[i].name());
+            ret[i] = videoQualityToQualityString(VideoQuality.values()[i]);
         }
         return ret;
     }
 
-    public static String videoQualityEnumNameToString(final String label) {
-        return label.substring(1).toLowerCase(Locale.ENGLISH);
+    public static String videoQualityToQualityString(final VideoQuality videoQuality) {
+        return videoQuality.name().substring(1).toLowerCase(Locale.ENGLISH);
     }
 
     private VideoQuality stringToVideoQuality(final String str) {
@@ -1061,7 +1244,7 @@ public class FlickrCom extends PluginForHost {
             return null;
         } else {
             for (final VideoQuality quality : VideoQuality.values()) {
-                final String qualStr = videoQualityEnumNameToString(quality.name());
+                final String qualStr = videoQualityToQualityString(quality);
                 if (qualStr.equalsIgnoreCase(str)) {
                     return quality;
                 }
@@ -1088,6 +1271,7 @@ public class FlickrCom extends PluginForHost {
         return emptytag;
     }
 
+    private static final boolean default_SETTING_FAST_LINKCHECK      = true;
     private static final int     defaultArrayPosSelectedPhotoQuality = 0;
     private static final int     defaultArrayPosSelectedVideoQuality = 0;
     private static final boolean defaultPreferServerFilename         = false;
@@ -1102,6 +1286,7 @@ public class FlickrCom extends PluginForHost {
     }
 
     private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_FAST_LINKCHECK, "Enable fast linkcheck for videos?\r\nFilesize won't be displayed until download is started.").setDefaultValue(default_SETTING_FAST_LINKCHECK));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SETTING_SELECTED_PHOTO_QUALITY, getPhotoQualityLabels(), "Select preferred photo quality. If that is not available, best will be used instead.").setDefaultValue(defaultArrayPosSelectedPhotoQuality));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SETTING_SELECTED_VIDEO_QUALITY, getVideoQualityLabels(), "Select preferred video quality. If that is not available, best will be used instead.").setDefaultValue(defaultArrayPosSelectedVideoQuality));
