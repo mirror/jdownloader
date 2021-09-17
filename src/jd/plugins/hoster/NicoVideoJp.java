@@ -112,14 +112,15 @@ public class NicoVideoJp extends PluginForHost {
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
-        boolean loggedin = false;
+        br.setAllowedResponseCodes(400);
         if (account != null) {
             this.login(account, false);
-            loggedin = true;
         }
         br.getPage(link.getPluginPatternMatcher());
-        /* 2020-06-04: Redirect to login page = account required, response 403 = private video */
-        if (br.getURL().contains("account.nicovideo") || br.getHttpConnection().getResponseCode() == 403) {
+        if (br.getHttpConnection().getResponseCode() == 400) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getURL().contains("account.nicovideo") || br.getHttpConnection().getResponseCode() == 403) {
+            /* 2020-06-04: Redirect to login page = account required, response 403 = private video */
             /* Account required */
             link.setName(fid);
             if (account != null) {
