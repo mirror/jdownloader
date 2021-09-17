@@ -31,7 +31,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "facecast.net" }, urls = { "https?://(?:www\\.)?facecast\\.net/v/([A-Za-z0-9]+)" })
 public class FacecastNet extends PluginForHost {
@@ -96,13 +95,23 @@ public class FacecastNet extends PluginForHost {
         if (this.date_start > System.currentTimeMillis()) {
             /* Seems like what the user wants to download hasn't aired yet --> Wait and retry later! */
             final long waitUntilStart = this.date_start - System.currentTimeMillis();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This video has not yet been broadcasted!", waitUntilStart);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This video has not been broadcasted yet!", waitUntilStart);
         }
-        final String videoid_intern = PluginJSonUtils.getJsonValue(br, "id");
-        if (videoid_intern == null) {
+        if (true) {
+            /* https://svn.jdownloader.org/issues/84276 */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "HLS streams with split video/audio are not yet supported");
+        }
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final String eid = entries.get("id").toString();
+        if (eid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        this.br.getPage("/public/" + videoid_intern + ".m3u8?_=" + System.currentTimeMillis());
+        // br.getPage("https://cdn-3.facecast.net/viewer_auth?eid=" + eid + "&sid=");
+        this.br.getPage("/public/" + eid + ".m3u8?_=" + System.currentTimeMillis());
+        if (br.getHttpConnection().getResponseCode() == 204) {
+            /* 204 no content --> Most likely password protected content */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected videos are not yet supported");
+        }
         final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
         if (hlsbest == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

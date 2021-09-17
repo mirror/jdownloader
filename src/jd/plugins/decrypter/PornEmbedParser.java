@@ -235,13 +235,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         if (handleExtern("tnaflix.com", processAll, decryptedLinks)) {
             return decryptedLinks;
         }
-        externID = br.getRegex("metacafe\\.com/fplayer/(\\d+)/").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add("//www.metacafe.com/watch/" + externID + "/" + System.currentTimeMillis());
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
         // pornhub handling number #1
         externID = br.getRegex("\"((?:https?:)?//(?:[a-z0-9]+\\.)?pornhub\\.com/embed/[a-z0-9]+)\"").getMatch(0);
         if (externID != null) {

@@ -21,30 +21,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
 
-import jd.PluginWrapper;
-import jd.config.Property;
-import jd.config.SubConfiguration;
-import jd.controlling.AccountController;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountInvalidException;
-import jd.plugins.AccountRequiredException;
-import jd.plugins.AccountUnavailableException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.components.MultiHosterManagement;
-import jd.plugins.components.PluginJSonUtils;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -57,6 +33,28 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
+import jd.PluginWrapper;
+import jd.config.Property;
+import jd.config.SubConfiguration;
+import jd.controlling.AccountController;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.components.MultiHosterManagement;
+import jd.plugins.components.PluginJSonUtils;
+
 //IMPORTANT: this class must stay in jd.plugins.hoster because it extends another plugin (UseNet) which is only available through PluginClassLoader
 abstract public class ZeveraCore extends UseNet {
     /* Connection limits */
@@ -64,16 +62,6 @@ abstract public class ZeveraCore extends UseNet {
     private static final int             ACCOUNT_PREMIUM_MAXCHUNKS                   = 0;
     private static final String          PROPERTY_ACCOUNT_successfully_loggedin_once = "successfully_loggedin_once";
     private static MultiHosterManagement mhm                                         = new MultiHosterManagement();
-
-    @Override
-    @Deprecated
-    public void correctDownloadLink(final DownloadLink link) {
-        if (isDirecturl(link.getDownloadLink())) {
-            /* TODO: Remove this after 2020-10-01 */
-            final String new_url = link.getPluginPatternMatcher().replaceAll("[a-z0-9]+decrypted://", "https://");
-            link.setPluginPatternMatcher(new_url);
-        }
-    }
 
     public ZeveraCore(PluginWrapper wrapper) {
         super(wrapper);
@@ -165,7 +153,7 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     @Override
-    public boolean isSpeedLimited(DownloadLink link, Account account) {
+    public boolean isSpeedLimited(final DownloadLink link, final Account account) {
         return false;
     }
 
@@ -173,14 +161,13 @@ abstract public class ZeveraCore extends UseNet {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (isUsenetLink(link)) {
             return super.requestFileInformation(link);
-        } else if (this.isSelfhostedContent(link)) {
-            return requestFileInformationSelfhosted(link, null);
         } else {
-            return requestFileInformationDirectURL(link);
+            final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+            return requestFileInformationSelfhosted(link, account);
         }
     }
 
-    protected AvailableStatus requestFileInformationSelfhosted(final DownloadLink link, Account account) throws Exception {
+    protected AvailableStatus requestFileInformationSelfhosted(final DownloadLink link, final Account account) throws Exception {
         /* 2020-07-16: New handling */
         final String fileID = getFID(link);
         if (fileID == null) {
@@ -189,10 +176,6 @@ abstract public class ZeveraCore extends UseNet {
         if (!link.isNameSet()) {
             /* Set meaningful names in case content is offline */
             link.setName(fileID);
-        }
-        if (account == null) {
-            /* Account required to perform the API request below. */
-            account = AccountController.getInstance().getValidAccount(this.getHost());
         }
         if (account == null) {
             /* Cannot check without account */
@@ -213,52 +196,9 @@ abstract public class ZeveraCore extends UseNet {
         return AvailableStatus.TRUE;
     }
 
-    @Deprecated
-    protected AvailableStatus requestFileInformationDirectURL(final DownloadLink link) throws Exception {
-        /* OLD handling: TODO: Remove this after 2020-10-01 */
-        URLConnectionAdapter con = null;
-        try {
-            final Browser brc = br.cloneBrowser();
-            brc.setFollowRedirects(true);
-            con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(link.getPluginPatternMatcher()));
-            if (!StringUtils.containsIgnoreCase(con.getContentType(), "text") && con.getResponseCode() == 200) {
-                if (link.getFinalFileName() == null) {
-                    link.setFinalFileName(Encoding.urlDecode(Plugin.getFileNameFromHeader(con), false));
-                }
-                final long completeContentLength = con.getCompleteContentLength();
-                final long verifiedFileSize = link.getVerifiedFileSize();
-                if (completeContentLength != verifiedFileSize) {
-                    logger.info("Update Filesize: old=" + verifiedFileSize + "|new=" + completeContentLength);
-                    link.setVerifiedFileSize(completeContentLength);
-                }
-                return AvailableStatus.TRUE;
-            } else if (con.getResponseCode() == 404) {
-                /* Usually 404 == offline */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                /*
-                 * E.g. 403 because of bad fair use status (or offline, 2019-05-08: This is confusing, support was told to change it to a
-                 * 404 if a cloud file has been deleted by the user and is definitely offline!)
-                 */
-                return AvailableStatus.UNCHECKABLE;
-            }
-        } finally {
-            try {
-                if (con != null) {
-                    /* make sure we close connection */
-                    con.disconnect();
-                }
-            } catch (final Throwable e) {
-            }
-        }
-    }
-
     @Override
     public boolean canHandle(DownloadLink link, Account account) throws Exception {
-        if (link != null && this.isDirecturl(link)) {
-            /* Such URLs can even be downloaded without account */
-            return true;
-        } else if (account != null) {
+        if (account != null) {
             /*
              * Either only premium accounts are allowed or, if configured by users, free accounts are allowed to be used for downloading too
              * in some cases.
@@ -270,34 +210,25 @@ abstract public class ZeveraCore extends UseNet {
         }
     }
 
-    @Deprecated
-    private boolean isDirecturl(final DownloadLink link) {
-        return StringUtils.equals(getHost(), link.getHost()) && !isSelfhostedContent(link);
-    }
-
     private boolean isSelfhostedContent(final DownloadLink link) {
         if (link == null) {
             return false;
+        } else if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches("https?://[^/]+/file\\?id=.+")) {
+            return true;
+        } else {
+            return false;
         }
-        return link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches("https?://[^/]+/file\\?id=.+");
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception, PluginException {
-        if (isDirecturl(link)) {
-            /* DirectURLs can be downloaded without logging in */
-            handleDL_DIRECT(null, link);
-        } else {
-            throw new AccountRequiredException();
-        }
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        throw new AccountRequiredException();
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         if (this.isSelfhostedContent(link)) {
             handleDLSelfhosted(link, account);
-        } else if (isDirecturl(link)) {
-            handleDL_DIRECT(account, link);
         } else {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -314,11 +245,8 @@ abstract public class ZeveraCore extends UseNet {
         if (isUsenetLink(link)) {
             super.handleMultiHost(link, account);
             return;
-        } else if (isDirecturl(link)) {
-            /* TODO: Remove this */
-            handleDL_DIRECT(account, link);
         } else {
-            this.br = prepBR(this.br);
+            prepBR(this.br);
             mhm.runCheck(account, link);
             login(this.br, account, false, getClientID());
             final String dllink = getDllink(this.br, account, link, getClientID(), this);
@@ -333,7 +261,6 @@ abstract public class ZeveraCore extends UseNet {
         }
         link.setProperty(account.getHoster() + "directlink", dllink);
         try {
-            antiCloudflare(br, dllink);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             final long completeContentLength = dl.getConnection().getCompleteContentLength();
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
@@ -357,36 +284,6 @@ abstract public class ZeveraCore extends UseNet {
         }
     }
 
-    @Deprecated
-    protected void antiCloudflare(Browser br, final String url) throws Exception {
-        /* 2019-12-18: TODO: Check if we still need this */
-        final Request request = br.createHeadRequest(url);
-        prepBrowser(br, request.getURL().getHost());
-        final URLConnectionAdapter con = openAntiDDoSRequestConnection(br, request);
-        con.disconnect();
-    }
-
-    /** Account is not required for such URLs. */
-    @Deprecated
-    private void handleDL_DIRECT(final Account account, final DownloadLink link) throws Exception {
-        antiCloudflare(br, link.getPluginPatternMatcher());
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-        if (dl.getConnection().getResponseCode() == 403) {
-            /*
-             * 2019-05-08: This most likely only happens for offline cloud files. They've been notified to update their API to return a
-             * clear 404 for offline files.
-             */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Most likely you have reached your bandwidth limit, or you don't have this file in your cloud anymore!", 3 * 60 * 1000l);
-        }
-        final String contenttype = dl.getConnection().getContentType();
-        if (contenttype.contains("html")) {
-            // br.followConnection();
-            // handleAPIErrors(this.br);
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 3 * 60 * 1000l);
-        }
-        this.dl.startDownload();
-    }
-
     private void handleDLSelfhosted(final DownloadLink link, final Account account) throws Exception {
         this.requestFileInformationSelfhosted(link, account);
         final String dllink = PluginJSonUtils.getJson(br, "link");
@@ -394,17 +291,16 @@ abstract public class ZeveraCore extends UseNet {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-        final String contenttype = dl.getConnection().getContentType();
-        if (contenttype.contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             // br.followConnection();
             // handleAPIErrors(this.br);
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 3 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content", 3 * 60 * 1000l);
         }
         this.dl.startDownload();
     }
 
     public String getDllink(final Browser br, final Account account, final DownloadLink link, final String client_id, final PluginForHost hostPlugin) throws Exception {
-        String dllink = checkDirectLink(br, link, account.getHoster() + "directlink");
+        String dllink = checkDirectLink(link, account.getHoster() + "directlink");
         if (dllink == null) {
             /* TODO: Check if the cache function is useful for us */
             // br.getPage("https://www." + account.getHoster() + "/api/cache/check?client_id=" + client_id + "&pin=" +
@@ -451,37 +347,33 @@ abstract public class ZeveraCore extends UseNet {
         return dllink;
     }
 
-    public String checkDirectLink(final Browser br, final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
-                con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(dllink));
-                if (StringUtils.containsIgnoreCase(con.getContentType(), "text") || con.getResponseCode() != 200 || con.getCompleteContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    return dllink;
+                } else {
+                    throw new IOException();
                 }
             } catch (final Exception e) {
                 logger.log(e);
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                return null;
             } finally {
-                try {
-                    if (con != null) {
-                        con.disconnect();
-                    }
-                } catch (final Throwable e) {
+                if (con != null) {
+                    con.disconnect();
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        this.br = prepBR(this.br);
         final AccountInfo ai = fetchAccountInfoAPI(this.br, getClientID(), account);
         return ai;
     }
@@ -716,7 +608,7 @@ abstract public class ZeveraCore extends UseNet {
     public void login(Browser br, final Account account, final boolean force, final String clientID) throws Exception {
         synchronized (account) {
             br.setCookiesExclusive(true);
-            br = prepBR(br);
+            prepBR(br);
             loginAPI(br, clientID, account, force);
         }
     }
@@ -960,8 +852,9 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     /**
-     * Indicates whether or not to display free account download dialogs which tell the user to activate free mode via website. </br> Some
-     * users find this annoying and will deactivate it. </br> default = true
+     * Indicates whether or not to display free account download dialogs which tell the user to activate free mode via website. </br>
+     * Some users find this annoying and will deactivate it. </br>
+     * default = true
      */
     public boolean displayFreeAccountDownloadDialogs(final Account account) {
         return false;
@@ -969,9 +862,10 @@ abstract public class ZeveraCore extends UseNet {
 
     /**
      * 2019-08-21: Premiumize.me has so called 'booster points' which basically means that users with booster points can download more than
-     * normal users can with their fair use limit: https://www.premiumize.me/booster </br> Premiumize has not yet integrated this in their
-     * API which means accounts with booster points will run into the fair-use-limit in JDownloader and will not be able to download any
-     * more files then. </br> This workaround can set accounts to unlimited traffic so that users will still be able to download.</br>
+     * normal users can with their fair use limit: https://www.premiumize.me/booster </br>
+     * Premiumize has not yet integrated this in their API which means accounts with booster points will run into the fair-use-limit in
+     * JDownloader and will not be able to download any more files then. </br>
+     * This workaround can set accounts to unlimited traffic so that users will still be able to download.</br>
      * Remove this workaround once Premiumize has integrated their booster points into their API.
      */
     public boolean isBoosterPointsUnlimitedTrafficWorkaroundActive(final Account account) {
