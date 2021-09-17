@@ -80,7 +80,6 @@ public class PremboxCom extends PluginForHost {
     private static HashMap<String, AtomicInteger> hostRunningDlsNumMap                       = new HashMap<String, AtomicInteger>();
     /* List of hosts which are only available via cloud (queue) download system */
     public static ArrayList<String>               cloudOnlyHosts                             = new ArrayList<String>();
-    private Account                               currAcc                                    = null;
     public static Object                          ACCLOCK                                    = new Object();
     private static Object                         CTRLLOCK                                   = new Object();
     private static AtomicInteger                  maxPrem                                    = new AtomicInteger(1);
@@ -112,10 +111,6 @@ public class PremboxCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws PluginException {
         return AvailableStatus.UNCHECKABLE;
-    }
-
-    private void setConstants(final Account acc, final DownloadLink dl) {
-        this.currAcc = acc;
     }
 
     @Override
@@ -174,7 +169,6 @@ public class PremboxCom extends PluginForHost {
                 this.fetchAccountInfo(account);
             }
         }
-        setConstants(account, link);
         if (!attemptStoredDownloadurlDownload(link)) {
             final long timestampGeneratedDirecturlExpires = link.getLongProperty(PROPERTY_DLLINK_GENERATED_TIMESTAMP, System.currentTimeMillis()) + 3 * 24 * 60 * 60 * 1000;
             final long timeUntilNextTryPossible = System.currentTimeMillis() - timestampGeneratedDirecturlExpires;
@@ -197,14 +191,14 @@ public class PremboxCom extends PluginForHost {
                 int counter = 0;
                 int count_max = 15;
                 /* TODO: Use json parser here */
-                br.postPage(API_SERVER + "/downloadLink", "directDownload=0&login=" + JSonUtils.escape(this.currAcc.getUser()) + "&pass=" + JSonUtils.escape(this.currAcc.getPass()) + "&url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
-                this.handleErrors(br);
+                br.postPage(API_SERVER + "/downloadLink", "directDownload=0&login=" + JSonUtils.escape(account.getUser()) + "&pass=" + JSonUtils.escape(account.getPass()) + "&url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+                this.handleErrors(br, account);
                 /* 'downloadLink' value will be "fileNotReadyYet" at this stage. */
                 do {
                     // this.postAPISafe(API_SERVER + "/serverFileStatus", "login=" + JSonUtils.escape(this.currAcc.getUser()) + "&pass=" +
                     // JSonUtils.escape(this.currAcc.getPass()) + "&url=" + Encoding.urlEncode(this.currDownloadLink.getDownloadURL()));
-                    br.postPage(API_SERVER + "/serverFileStatus", "login=" + JSonUtils.escape(this.currAcc.getUser()) + "&pass=" + JSonUtils.escape(this.currAcc.getPass()) + "&url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
-                    this.handleErrors(br);
+                    br.postPage(API_SERVER + "/serverFileStatus", "login=" + JSonUtils.escape(account.getUser()) + "&pass=" + JSonUtils.escape(account.getPass()) + "&url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+                    this.handleErrors(br, account);
                     dllink = PluginJSonUtils.getJsonValue(br, "downloadLink");
                     if (!StringUtils.isEmpty(dllink)) {
                         break;
@@ -221,7 +215,8 @@ public class PremboxCom extends PluginForHost {
             } else {
                 link.setProperty(PROPERTY_DOWNLOADTYPE, PROPERTY_DOWNLOADTYPE_instant);
                 /* TODO: Use json parser here */
-                br.postPage(API_SERVER + "/downloadLink", "directDownload=1&login=" + JSonUtils.escape(this.currAcc.getUser()) + "&pass=" + JSonUtils.escape(this.currAcc.getPass()) + "&url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+                br.postPage(API_SERVER + "/downloadLink", "directDownload=1&login=" + JSonUtils.escape(account.getUser()) + "&pass=" + JSonUtils.escape(account.getPass()) + "&url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+                this.handleErrors(br, account);
                 // this.postAPISafe(API_SERVER + "/serverFileStatus", "directDownload=1&login=" + JSonUtils.escape(this.currAcc.getUser()) +
                 // "&pass=" + JSonUtils.escape(this.currAcc.getPass()) + "&url=" +
                 // Encoding.urlEncode(this.currDownloadLink.getDownloadURL()));
@@ -241,7 +236,7 @@ public class PremboxCom extends PluginForHost {
                 } catch (final IOException e) {
                     logger.log(e);
                 }
-                handleErrors(this.br);
+                handleErrors(this.br, account);
                 mhm.handleErrorGeneric(account, this.getDownloadLink(), "unknowndlerror", 50);
             }
         } else {
@@ -309,8 +304,7 @@ public class PremboxCom extends PluginForHost {
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        setConstants(account, null);
-        login();
+        login(account);
         final AccountInfo ai = new AccountInfo();
         Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
         entries = (Map<String, Object>) entries.get("data");
@@ -399,9 +393,10 @@ public class PremboxCom extends PluginForHost {
                 /* Workaround to get our internal/real domain of the host in case we got a plugin for it. */
                 final List<String> realHosts = ai.setMultiHostSupport(this, dummyList);
                 if (realHosts != null && !realHosts.isEmpty()) {
-                    supportedHosts.add(host);
+                    final String realHost = realHosts.get(0);
+                    supportedHosts.add(realHost);
                     if (cloudonly == 1) {
-                        cloudOnlyHosts.add(host);
+                        cloudOnlyHosts.add(realHost);
                     }
                     hostMaxchunksMap.put(host, this.correctChunks(maxChunks));
                     hostMaxdlsMap.put(host, this.correctMaxdls(maxDownloads));
@@ -412,13 +407,13 @@ public class PremboxCom extends PluginForHost {
             }
         }
         ai.setMultiHostSupport(this, supportedHosts);
-        final long last_deleted_complete_download_history_time_ago = getLast_deleted_complete_download_history_time_ago();
+        final long last_deleted_complete_download_history_time_ago = getLast_deleted_complete_download_history_time_ago(account);
         if (this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY, default_clear_download_history_complete) && (last_deleted_complete_download_history_time_ago >= DELETE_COMPLETE_DOWNLOAD_HISTORY_INTERVAL || last_deleted_complete_download_history_time_ago == 0)) {
             /*
              * Go in here if user wants to have it's history deleted && last deletion was before DELETE_COMPLETE_DOWNLOAD_HISTORY_INTERVAL
              * or never executed (0).
              */
-            this.deleteCompleteDownloadHistory(PROPERTY_DOWNLOADTYPE_instant);
+            this.deleteCompleteDownloadHistory(account, PROPERTY_DOWNLOADTYPE_instant);
         }
         return ai;
     }
@@ -428,31 +423,31 @@ public class PremboxCom extends PluginForHost {
      *
      * @throws Exception
      */
-    private void login() throws Exception {
+    private void login(final Account account) throws Exception {
         this.prepBR(br);
-        br.postPage(API_SERVER + "/login", "login=" + JSonUtils.escape(currAcc.getUser()) + "&pass=" + JSonUtils.escape(currAcc.getPass()));
-        this.handleErrors(this.br);
+        br.postPage(API_SERVER + "/login", "login=" + JSonUtils.escape(account.getUser()) + "&pass=" + JSonUtils.escape(account.getPass()));
+        this.handleErrors(this.br, account);
     }
 
     /**
      * Deletes the complete download list / history.
      **/
-    private void deleteCompleteDownloadHistory(final String downloadtype) throws Exception {
+    private void deleteCompleteDownloadHistory(final Account account, final String downloadtype) throws Exception {
         /* This moves the downloaded files/entries to the download history. */
-        br.postPage(API_SERVER + "/clearFileList", "login=" + JSonUtils.escape(currAcc.getUser()) + "&pass=" + JSonUtils.escape(currAcc.getPass()));
+        br.postPage(API_SERVER + "/clearFileList", "login=" + JSonUtils.escape(account.getUser()) + "&pass=" + JSonUtils.escape(account.getPass()));
         try {
-            this.handleErrors(br);
+            this.handleErrors(br, account);
         } catch (final Throwable ignore) {
             logger.warning("Failed to delete file list");
         }
         /* This deletes the download history. */
-        br.postPage(API_SERVER + "/clearHistory", "login=" + JSonUtils.escape(currAcc.getUser()) + "&pass=" + JSonUtils.escape(currAcc.getPass()));
+        br.postPage(API_SERVER + "/clearHistory", "login=" + JSonUtils.escape(account.getUser()) + "&pass=" + JSonUtils.escape(account.getPass()));
         try {
-            this.handleErrors(br);
+            this.handleErrors(br, account);
         } catch (final Throwable ignore) {
             logger.warning("Failed to delete download history");
         }
-        this.currAcc.setProperty(PROPERTY_ACCOUNT_last_time_deleted_history, System.currentTimeMillis());
+        account.setProperty(PROPERTY_ACCOUNT_last_time_deleted_history, System.currentTimeMillis());
     }
 
     private String getDownloadType() {
@@ -466,11 +461,11 @@ public class PremboxCom extends PluginForHost {
     }
 
     /* Returns the time difference between now and the last time the complete download history has been deleted. */
-    private long getLast_deleted_complete_download_history_time_ago() {
-        return System.currentTimeMillis() - this.currAcc.getLongProperty(PROPERTY_ACCOUNT_last_time_deleted_history, System.currentTimeMillis());
+    private long getLast_deleted_complete_download_history_time_ago(final Account account) {
+        return System.currentTimeMillis() - account.getLongProperty(PROPERTY_ACCOUNT_last_time_deleted_history, System.currentTimeMillis());
     }
 
-    private void handleErrors(final Browser br) throws Exception {
+    private void handleErrors(final Browser br, final Account account) throws Exception {
         final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final boolean success = ((Boolean) entries.get("success")).booleanValue();
         final String error = (String) entries.get("error");
@@ -493,7 +488,7 @@ public class PremboxCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else if (error.equalsIgnoreCase("fileNotFound")) {
                 /* 2017-04-24: Do not trust their 'File not found' errormessage! */
-                mhm.handleErrorGeneric(this.currAcc, this.getDownloadLink(), "api_dummy_file_not_found", 10);
+                mhm.handleErrorGeneric(account, this.getDownloadLink(), "api_dummy_file_not_found", 10);
             } else if (error.equalsIgnoreCase("invalidAccount")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cannot download this file with this account", 3 * 60 * 1000l);
             } else if (error.equalsIgnoreCase("invalidUrl")) {
@@ -506,14 +501,14 @@ public class PremboxCom extends PluginForHost {
                     /* 2021-09-16: Typically "Maximum supported file size in direct download mode is 15 GB" */
                     if (this.getDownloadLink().hasProperty(PROPERTY_ENFORCE_CLOUD_DOWNLOAD)) {
                         /* This should never happen! */
-                        mhm.putError(this.currAcc, this.getDownloadLink(), 5 * 60 * 1000l, errorDescription);
+                        mhm.putError(account, this.getDownloadLink(), 5 * 60 * 1000l, errorDescription);
                     } else {
                         /* 2021-09-16: Workaround for API design flaw. */
                         this.getDownloadLink().setProperty(PROPERTY_ENFORCE_CLOUD_DOWNLOAD, true);
                         throw new PluginException(LinkStatus.ERROR_RETRY, "Retry with cloud download instead of direct download");
                     }
                 } else {
-                    mhm.putError(this.currAcc, this.getDownloadLink(), 3 * 60 * 1000l, "Host unsupported ?!");
+                    mhm.putError(account, this.getDownloadLink(), 3 * 60 * 1000l, "Host unsupported ?!");
                 }
             } else if (error.equalsIgnoreCase("tooManyConcurrentDownloads")) {
                 throw new AccountUnavailableException("Too many concurrent downloads with this account", 30 * 1000l);
@@ -521,13 +516,13 @@ public class PremboxCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cannot download this file with this account at the moment", 3 * 60 * 1000l);
             } else if (error.equalsIgnoreCase("emptyUrl") || error.equalsIgnoreCase("tooLongUrl")) {
                 /* This one should never happen! */
-                mhm.handleErrorGeneric(this.currAcc, this.getDownloadLink(), "Empty or too long URL", 10);
+                mhm.handleErrorGeneric(account, this.getDownloadLink(), "Empty or too long URL", 10);
             } else {
                 logger.info("Unknown error happened: " + error);
                 if (this.getDownloadLink() == null) {
                     throw new AccountUnavailableException(error, 5 * 60 * 1000l);
                 } else {
-                    mhm.handleErrorGeneric(this.currAcc, this.getDownloadLink(), error, 50);
+                    mhm.handleErrorGeneric(account, this.getDownloadLink(), error, 50);
                 }
             }
         }

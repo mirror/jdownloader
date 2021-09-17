@@ -37,7 +37,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mais.uol.com.br" }, urls = { "https?://((?:www\\.)?mais\\.uol\\.com\\.br/view/[a-z0-9]+/[A-Za-z0-9\\-]+|player\\.mais\\.uol\\.com\\.br/\\?mediaId=\\d+\\&type=video)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mais.uol.com.br" }, urls = { "https?://((?:www\\.)?mais\\.uol\\.com\\.br/view/(?:[a-z0-9]+/[A-Za-z0-9\\-]+|\\d+)|player\\.mais\\.uol\\.com\\.br/\\?mediaId=\\d+\\&type=video)" })
 public class MaisUolComBr extends PluginForHost {
     public MaisUolComBr(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,8 +52,9 @@ public class MaisUolComBr extends PluginForHost {
         return "http://mais.uol.com.br/";
     }
 
-    private static final String TYPE_NORMAL = "(?i)https?://(?:www\\.)?mais\\.uol\\.com\\.br/view/([a-z0-9]+)/([A-Za-z0-9\\-]+)";
-    private static final String TYPE_EMBED  = "(?i)https?://player\\.mais\\.uol\\.com\\.br/\\?mediaId=(\\d+)\\&type=video";
+    private static final String TYPE_NORMAL     = "(?i)https?://(?:www\\.)?mais\\.uol\\.com\\.br/view/([a-z0-9]+)/([A-Za-z0-9\\-]+)";
+    private static final String TYPE_VIEW_SHORT = "(?i)https?://(?:www\\.)?mais\\.uol\\.com\\.br/view/(\\d+)$";
+    private static final String TYPE_EMBED      = "(?i)https?://player\\.mais\\.uol\\.com\\.br/\\?mediaId=(\\d+)\\&type=video";
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
@@ -67,6 +68,8 @@ public class MaisUolComBr extends PluginForHost {
         Map<String, Object> entries;
         if (link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
             mediaID = new Regex(link.getPluginPatternMatcher(), TYPE_EMBED).getMatch(0);
+        } else if (link.getPluginPatternMatcher().matches(TYPE_VIEW_SHORT)) {
+            mediaID = new Regex(link.getPluginPatternMatcher(), TYPE_VIEW_SHORT).getMatch(0);
         } else {
             /* 2021-08-16: TODO: Find a way to get the v4 API json with only a single HTTP request */
             br.getPage(link.getPluginPatternMatcher());
