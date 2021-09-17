@@ -61,6 +61,7 @@ import org.appwork.utils.event.DefaultEventSender;
 import org.appwork.utils.event.EventSuppressor;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxy.TYPE;
@@ -405,11 +406,11 @@ public class ProxyController implements ProxySelectorInterface {
                         }
                     }
                 } catch (Throwable e) {
-                    LogController.getRebirthLogger(logger).log(e);
+                    getLogger().log(e);
                 }
             }
         } catch (Throwable e) {
-            LogController.getRebirthLogger(logger).log(e);
+            getLogger().log(e);
         }
         return new ArrayList<AbstractProxySelectorImpl>(ret);
     }
@@ -819,9 +820,21 @@ public class ProxyController implements ProxySelectorInterface {
                 return updateProxy(selectedProxy, request.getProxy(), proxyAuths, new URL(request.getUrl()), retryCounter);
             }
         } catch (Throwable e) {
-            LogController.getRebirthLogger(logger).log(e);
+            getLogger().log(e);
         }
         return false;
+    }
+
+    private LogInterface getLogger() {
+        final Plugin plugin = getPluginFromThread();
+        LogInterface ret = plugin != null ? plugin.getLogger() : null;
+        if (ret == null) {
+            ret = LogController.getRebirthLogger(this.logger);
+            if (ret == null) {
+                ret = LogController.CL();
+            }
+        }
+        return ret;
     }
 
     private boolean askForProxyAuth(final SelectedProxy selectedProxy, final int flags, final boolean typeEditable, final URL url, final String msg, final String title) throws IOException {
@@ -829,6 +842,7 @@ public class ProxyController implements ProxySelectorInterface {
         final Plugin plugin = getPluginFromThread();
         if (selector.isProxyBannedFor(selectedProxy, url, plugin, false) == false) {
             HTTPProxy proxy = null;
+            final LogInterface logger = getLogger();
             boolean rememberCheckBox = false;
             try {
                 final ProxyDialog pd = new ProxyDialog(selectedProxy, msg) {
@@ -844,7 +858,9 @@ public class ProxyController implements ProxySelectorInterface {
 
                     @Override
                     public void pack() {
-                        getDialog().setMinimumSize(new Dimension(450, getPreferredSize().height));
+                        if (!getDialog().isMinimumSizeSet()) {
+                            getDialog().setMinimumSize(new Dimension(450, getRawPreferredSize().height));
+                        }
                         super.pack();
                     }
 
@@ -869,6 +885,7 @@ public class ProxyController implements ProxySelectorInterface {
                 proxy = Dialog.getInstance().showDialog(pd);
                 rememberCheckBox = pd.isRememberChecked();
             } catch (DialogNoAnswerException e) {
+                logger.log(e);
                 proxy = null;
             }
             final String userName;
@@ -876,9 +893,11 @@ public class ProxyController implements ProxySelectorInterface {
             if (proxy != null) {
                 userName = proxy.getUser();
                 passWord = proxy.getPass();
+                logger.info("askForProxyAuth:" + rememberCheckBox + "|" + proxy);
             } else {
                 passWord = null;
                 userName = null;
+                logger.info("askForProxyAuth:" + rememberCheckBox + "|" + userName + "|" + passWord);
             }
             if (selector instanceof PacProxySelectorImpl) {
                 final PacProxySelectorImpl pacProxySelector = (PacProxySelectorImpl) selector;
@@ -987,7 +1006,7 @@ public class ProxyController implements ProxySelectorInterface {
                 }
             }
         } catch (final Throwable e) {
-            LogController.getRebirthLogger(logger).log(e);
+            getLogger().log(e);
         }
         return false;
     }
@@ -1006,7 +1025,7 @@ public class ProxyController implements ProxySelectorInterface {
                 }
             }
         } catch (final Throwable e) {
-            LogController.getRebirthLogger(logger).log(e);
+            getLogger().log(e);
         }
         return null;
     }
@@ -1094,11 +1113,11 @@ public class ProxyController implements ProxySelectorInterface {
                         }
                     }
                 } catch (Throwable e) {
-                    LogController.getRebirthLogger(logger).log(e);
+                    getLogger().log(e);
                 }
             }
         } catch (Throwable e) {
-            LogController.getRebirthLogger(logger).log(e);
+            getLogger().log(e);
         }
         return new ArrayList<HTTPProxy>(ret);
     }
@@ -1195,7 +1214,7 @@ public class ProxyController implements ProxySelectorInterface {
                 }
             }
         } catch (Throwable e1) {
-            LogController.getRebirthLogger(logger).log(e1);
+            getLogger().log(e1);
         }
         return false;
     }
@@ -1232,7 +1251,7 @@ public class ProxyController implements ProxySelectorInterface {
                 }
             }
         } catch (Throwable e1) {
-            LogController.getRebirthLogger(logger).log(e1);
+            getLogger().log(e1);
         }
         return false;
     }

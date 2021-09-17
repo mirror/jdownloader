@@ -69,10 +69,10 @@ public abstract class AbstractBan implements ConnectionBan {
     public boolean proxyEquals(HTTPProxy a, HTTPProxy b) {
         if (a == b) {
             return true;
-        }
-        if (a != null && b != null) {
+        } else if (a != null && b != null) {
             return a.getType() == b.getType() && stringEquals(a.getHost(), b.getHost()) && a.getPort() == b.getPort();
+        } else {
+            return false;
         }
-        return false;
     }
 }

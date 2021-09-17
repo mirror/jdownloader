@@ -40,10 +40,10 @@ public class AuthExceptionGenericBan extends AbstractBan {
     public boolean canSwallow(ConnectionBan ban) {
         if (!(ban instanceof AuthExceptionGenericBan)) {
             return false;
-        }
-        if (!proxyEquals(((AuthExceptionGenericBan) ban).getProxy(), getProxy())) {
+        } else if (!proxyEquals(((AuthExceptionGenericBan) ban).getProxy(), getProxy())) {
             return false;
+        } else {
+            return true;
         }
-        return true;
     }
 }

@@ -5,6 +5,7 @@ import java.net.URL;
 import jd.http.Browser;
 import jd.plugins.Plugin;
 
+import org.appwork.utils.Time;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.translate._JDT;
 
@@ -22,9 +23,10 @@ public class GenericConnectExceptionBan extends AuthExceptionGenericBan {
         final URL url = getURL();
         if (url != null) {
             return _JDT.T.ConnectExceptionInPluginBan(Browser.getHost(url).concat(":").concat(Integer.toString(getPort(url))));
+        } else {
+            final HTTPProxy proxy = getProxy();
+            return _JDT.T.ConnectExceptionInPluginBan(proxy == null ? "" : proxy.toString());
         }
-        final HTTPProxy proxy = getProxy();
-        return _JDT.T.ConnectExceptionInPluginBan(proxy == null ? "" : proxy.toString());
     }
 
     @Override
@@ -41,15 +43,15 @@ public class GenericConnectExceptionBan extends AuthExceptionGenericBan {
     public boolean canSwallow(ConnectionBan ban) {
         if (!super.canSwallow(ban)) {
             return false;
-        }
-        if (ban instanceof GenericConnectExceptionBan) {
+        } else if (ban instanceof GenericConnectExceptionBan) {
             created = Math.max(((GenericConnectExceptionBan) ban).getCreated(), getCreated());
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
-    private volatile long created = System.currentTimeMillis();
+    private volatile long created = Time.systemIndependentCurrentJVMTimeMillis();
 
     protected long getCreated() {
         return created;
@@ -57,6 +59,6 @@ public class GenericConnectExceptionBan extends AuthExceptionGenericBan {
 
     @Override
     public boolean isExpired() {
-        return System.currentTimeMillis() - getCreated() > getExpireTimeout() || super.isExpired();
+        return Time.systemIndependentCurrentJVMTimeMillis() - getCreated() > getExpireTimeout() || super.isExpired();
     }
 }

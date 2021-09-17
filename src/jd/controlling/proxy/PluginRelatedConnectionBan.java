@@ -42,14 +42,14 @@ public class PluginRelatedConnectionBan extends AbstractBan {
     public boolean canSwallow(ConnectionBan ban) {
         if (!(ban instanceof PluginRelatedConnectionBan)) {
             return false;
-        }
-        if (!proxyEquals(((PluginRelatedConnectionBan) ban).getProxy(), getProxy())) {
+        } else if (!proxyEquals(((PluginRelatedConnectionBan) ban).getProxy(), getProxy())) {
             return false;
-        }
-        // actually not really required. of one plugin is banned, all are banned
-        if (!StringUtils.equalsIgnoreCase(((PluginRelatedConnectionBan) ban).getHost(), getHost())) {
-            return false;
-        }
-        return true;
+        } else
+            // actually not really required. of one plugin is banned, all are banned
+            if (!StringUtils.equalsIgnoreCase(((PluginRelatedConnectionBan) ban).getHost(), getHost())) {
+                return false;
+            } else {
+                return true;
+            }
     }
 }

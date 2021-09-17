@@ -4,13 +4,13 @@ import java.net.URL;
 
 import jd.plugins.Plugin;
 
+import org.appwork.utils.Time;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.translate._JDT;
 
 public class ConnectExceptionInPluginBan extends PluginRelatedConnectionBan {
     public ConnectExceptionInPluginBan(Plugin plg, AbstractProxySelectorImpl proxySelector, HTTPProxy proxy) {
         super(plg, proxySelector, proxy);
-        created = System.currentTimeMillis();
     }
 
     @Override
@@ -29,23 +29,23 @@ public class ConnectExceptionInPluginBan extends PluginRelatedConnectionBan {
         return !ignoreConnectBans;
     }
 
-    private volatile long created;
+    private volatile long created = Time.systemIndependentCurrentJVMTimeMillis();
 
     @Override
     public boolean canSwallow(ConnectionBan ban) {
         if (!super.canSwallow(ban)) {
             return false;
-        }
-        if (ban instanceof ConnectExceptionInPluginBan) {
+        } else if (ban instanceof ConnectExceptionInPluginBan) {
             created = Math.max(((ConnectExceptionInPluginBan) ban).getCreated(), getCreated());
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     @Override
     public boolean isExpired() {
-        return System.currentTimeMillis() - getCreated() > 15 * 60 * 1000l || super.isExpired();
+        return Time.systemIndependentCurrentJVMTimeMillis() - getCreated() > 15 * 60 * 1000l || super.isExpired();
     }
 
     public long getCreated() {

@@ -6,6 +6,7 @@ import jd.http.Browser;
 import jd.plugins.Plugin;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.translate._JDT;
 
@@ -23,7 +24,6 @@ public class EndPointConnectExceptionBan extends AbstractBan {
     public EndPointConnectExceptionBan(AbstractProxySelectorImpl selector, HTTPProxy proxy, URL url) {
         super(proxy, selector);
         this.url = url;
-        created = System.currentTimeMillis();
     }
 
     protected String getHost() {
@@ -58,16 +58,17 @@ public class EndPointConnectExceptionBan extends AbstractBan {
         if (!ignoreConnectBans && proxyEquals(getProxy(), proxy)) {
             final boolean ret = getPort() == getPort(url) && StringUtils.containsIgnoreCase(getHost(), Browser.getHost(url)) && StringUtils.equals(getProtocol(), url.getProtocol());
             return ret;
+        } else {
+            return false;
         }
-        return false;
     }
 
     @Override
     public boolean isExpired() {
-        return System.currentTimeMillis() - getCreated() > getExpireTimeout() || super.isExpired();
+        return Time.systemIndependentCurrentJVMTimeMillis() - getCreated() > getExpireTimeout() || super.isExpired();
     }
 
-    private volatile long created = System.currentTimeMillis();
+    private volatile long created = Time.systemIndependentCurrentJVMTimeMillis();
 
     protected long getCreated() {
         return created;
