@@ -18,7 +18,8 @@ package jd.plugins.decrypter;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -27,6 +28,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -35,6 +37,7 @@ import org.w3c.dom.NodeList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
@@ -183,45 +186,75 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
             }
             Browser ajax = getAjaxBR(br);
             getPage(ajax, "/api/play/options/" + vid + "/?format=json&no_404=true&sqr4374_compat=1&referer=" + Encoding.urlEncode(br.getURL()) + "&_t=" + System.currentTimeMillis());
-            final HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
-            final String videoBalancer = (String) JavaScriptEngineFactory.walkJson(entries, "video_balancer/default");
-            if (videoBalancer != null) {
+            final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
+            final Map<String, Object> videoBalancer = (Map<String, Object>) entries.get("video_balancer");
+            final String streamDefault = (String) videoBalancer.get("default");
+            final String streamHLSMaster = (String) videoBalancer.get("m3u8");
+            /* 2021-09-17: Prefer HLS over HDS */
+            ArrayList<RuTubeVariant> variantsVideo = new ArrayList<RuTubeVariant>();
+            RuTubeVariant bestVariant = null;
+            if (!StringUtils.isEmpty(streamHLSMaster)) {
+                /* HLS */
+                final Browser hlsBR = br.cloneBrowser();
+                hlsBR.getPage(streamHLSMaster);
+                final List<HlsContainer> qualities = HlsContainer.getHlsQualities(hlsBR);
+                int highestBandwidth = -1;
+                int counter = 0;
+                for (final HlsContainer quality : qualities) {
+                    final RuTubeVariant variant = new RuTubeVariant(Integer.toString(quality.getWidth()), Integer.toString(quality.getHeight()), Integer.toString(quality.getBandwidth()), "hls_" + counter);
+                    variantsVideo.add(variant);
+                    if (quality.getBandwidth() > highestBandwidth) {
+                        highestBandwidth = quality.getBandwidth();
+                        bestVariant = variant;
+                    }
+                    ret.setProperty("directurl_" + variant.getStreamID(), quality.getDownloadurl());
+                    counter += 1;
+                }
+            } else if (streamDefault != null && streamDefault.contains(".f4m")) {
+                if (!streamDefault.contains(".f4m")) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
                 final XPath xPath = XPathFactory.newInstance().newXPath();
                 ajax = getAjaxBR(br);
-                ajax.getPage(videoBalancer);
+                ajax.getPage(streamDefault);
                 Document d = parser.parse(new ByteArrayInputStream(ajax.toString().getBytes("UTF-8")));
                 String baseUrl = xPath.evaluate("/manifest/baseURL", d).trim();
                 NodeList f4mUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
                 Node best = f4mUrls.item(f4mUrls.getLength() - 1);
-                ArrayList<RuTubeVariant> variantsVideo = new ArrayList<RuTubeVariant>();
-                RuTubeVariant bestVariant = null;
+                long bestSizeEstimation = 0;
                 for (int i = 0; i < f4mUrls.getLength(); i++) {
                     best = f4mUrls.item(i);
                     String width = getAttByNamedItem(best, "width");
                     String height = getAttByNamedItem(best, "height");
                     String bitrate = getAttByNamedItem(best, "bitrate");
                     String f4murl = getAttByNamedItem(best, "href");
+                    double duration = Double.parseDouble(xPath.evaluate("/manifest/duration", d));
+                    bestSizeEstimation = (long) ((duration * Long.parseLong(bitrate) * 1024l) / 8);
                     ajax = getAjaxBR(br);
                     ajax.getPage(baseUrl + f4murl);
                     d = parser.parse(new ByteArrayInputStream(ajax.toString().getBytes("UTF-8")));
                     // baseUrl = xPath.evaluate("/manifest/baseURL", d).trim();
-                    double duration = Double.parseDouble(xPath.evaluate("/manifest/duration", d));
+                    // double duration = Double.parseDouble(xPath.evaluate("/manifest/duration", d));
                     NodeList mediaUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
                     Node media;
                     for (int j = 0; j < mediaUrls.getLength(); j++) {
                         media = mediaUrls.item(j);
                         // System.out.println(new String(Base64.decode(xPath.evaluate("/manifest/media[" + (j + 1) + "]/metadata",
                         // d).trim())));
-                        RuTubeVariant var = new RuTubeVariant(width, height, bitrate, getAttByNamedItem(media, "streamId"));
-                        variantsVideo.add(var);
-                        bestVariant = var;
+                        final RuTubeVariant variant = new RuTubeVariant(width, height, bitrate, getAttByNamedItem(media, "streamId"));
+                        variantsVideo.add(variant);
+                        ret.setProperty("directurl_" + variant.getStreamID(), Request.getLocation(getAttByNamedItem(media, "url"), ajax.getRequest()));
+                        bestVariant = variant;
                     }
                 }
-                if (variantsVideo.size() > 0) {
-                    ret.setVariants(variantsVideo);
-                    ret.setVariant(bestVariant);
+                if (bestSizeEstimation > 0) {
+                    ret.setDownloadSize(bestSizeEstimation);
                 }
+            }
+            if (variantsVideo.size() > 0) {
+                ret.setVariants(variantsVideo);
+                ret.setVariant(bestVariant);
                 return ret;
             } else {
                 logger.info("Video not available in your country: " + "http://rutube.ru/api/video/" + vid);
@@ -240,8 +273,6 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
         ajax.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:51.0) Gecko/20100101 Firefox/51.0");
         ajax.getHeaders().put("Accept", "*/*");
         ajax.getHeaders().put("Content-Type", "application/json");
-        /* 2017-03-22: This Header is not required anymore! */
-        // ajax.getHeaders().put("X-Requested-With", "ShockwaveFlash/22.0.0.209");
         return ajax;
     }
 

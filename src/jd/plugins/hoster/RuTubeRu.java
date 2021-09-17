@@ -30,6 +30,7 @@ import javax.xml.xpath.XPathFactory;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -86,36 +87,50 @@ public class RuTubeRu extends PluginForHost {
     }
 
     @Override
-    public LinkVariant getActiveVariantByLink(DownloadLink downloadLink) {
-        return downloadLink.getVariant(RuTubeVariant.class);
+    public LinkVariant getActiveVariantByLink(final DownloadLink link) {
+        return link.getVariant(RuTubeVariant.class);
     }
 
     @Override
-    public void setActiveVariantByLink(DownloadLink downloadLink, LinkVariant variant) {
-        downloadLink.setDownloadSize(-1);
-        super.setActiveVariantByLink(downloadLink, variant);
+    public void setActiveVariantByLink(final DownloadLink link, LinkVariant variant) {
+        link.setDownloadSize(-1);
+        super.setActiveVariantByLink(link, variant);
     }
 
     @Override
-    public List<? extends LinkVariant> getVariantsByLink(DownloadLink downloadLink) {
-        return downloadLink.getVariants(RuTubeVariant.class);
+    public List<? extends LinkVariant> getVariantsByLink(DownloadLink link) {
+        return link.getVariants(RuTubeVariant.class);
     }
 
-    private void download(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        final Browser ajax = cloneBrowser(br);
-        dl = new HDSDownloader(downloadLink, ajax, downloadLink.getStringProperty("f4vUrl"));
-        dl.startDownload();
+    private void download(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        final String directurl = getStoredDirecturl(link);
+        if (directurl.contains(".m3u8")) {
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, directurl);
+            dl.startDownload();
+        } else {
+            final Browser brc = cloneBrowser(br);
+            dl = new HDSDownloader(link, brc, link.getStringProperty("f4vUrl"));
+            dl.startDownload();
+        }
+    }
+
+    private String getStoredDirecturl(final DownloadLink link) {
+        final String newHandlingValue = link.getStringProperty("directurl_" + link.getVariant(RuTubeVariant.class).getStreamID());
+        if (newHandlingValue != null) {
+            return newHandlingValue;
+        } else {
+            return link.getStringProperty("f4vUrl");
+        }
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         setBrowserExclusive();
-        privatevalue = downloadLink.getStringProperty("privatevalue", null);
-        RuTubeVariant var = downloadLink.getVariant(RuTubeVariant.class);
-        String dllink = downloadLink.getDownloadURL();
-        String regId = "http://video\\.rutube\\.ru/([0-9a-f]{32})";
-        final String nextId = new Regex(dllink, regId).getMatch(0);
+        privatevalue = link.getStringProperty("privatevalue");
+        final RuTubeVariant var = link.getVariant(RuTubeVariant.class);
+        final String nextId = new Regex(link.getPluginPatternMatcher(), "https?://video\\.rutube\\.ru/([0-9a-f]{32})").getMatch(0);
         br.setCustomCharset("utf-8");
         /*
          * 2017-02-21: Using User-Agent 'Mozilla/5.0 (Windows NT 6.3; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0' will return a different
@@ -141,13 +156,17 @@ public class RuTubeRu extends PluginForHost {
             filename = nextId;
         }
         if (var != null) {
-            downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "_" + var.getHeight() + "p" + ".mp4");
+            link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "_" + var.getHeight() + "p" + ".mp4");
         }
-        /* 2019-09-19: This value was usually something else than 'nextId' but it seems to be the same now! */
+        if (getStoredDirecturl(link) != null) {
+            /* We already got a stored directurl --> Stop here */
+            return AvailableStatus.TRUE;
+        }
         final String vid = br.getRegex("/play/embed/([^/<>\"\\\\]+)").getMatch(0);
         if (vid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        /* TODO: Refactor all below. Maybe only use the crawler for this because at this moment we have this code twice! */
         /* 2019-09-19: This request is not required anymore */
         // getPage("https://rutube.ru/play/embed/" + vid + "?wmode=opaque&autoStart=true");
         // swf requests over json
@@ -167,7 +186,7 @@ public class RuTubeRu extends PluginForHost {
         String baseUrl = xPath.evaluate("/manifest/baseURL", d).trim();
         NodeList f4mUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
         Node best = f4mUrls.item(f4mUrls.getLength() - 1);
-        RuTubeVariant bestVariant = null;
+        // RuTubeVariant bestVariant = null;
         long bestSizeEstimation = 0;
         String bestUrl = null;
         String width = null;
@@ -190,9 +209,9 @@ public class RuTubeRu extends PluginForHost {
             for (int j = 0; j < mediaUrls.getLength(); j++) {
                 media = mediaUrls.item(j);
                 if (var == null) {
-                    downloadLink.setDownloadSize(bestSizeEstimation);
-                    downloadLink.setProperty("f4vUrl", Request.getLocation(getAttByNamedItem(media, "url"), ajax.getRequest()));
-                    downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "_" + height + "p" + ".mp4");
+                    link.setDownloadSize(bestSizeEstimation);
+                    link.setProperty("f4vUrl", Request.getLocation(getAttByNamedItem(media, "url"), ajax.getRequest()));
+                    link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "_" + height + "p" + ".mp4");
                     return AvailableStatus.TRUE;
                 }
                 if (var == null || StringUtils.equals(getAttByNamedItem(media, "streamId"), var.getStreamID())) {
@@ -202,9 +221,9 @@ public class RuTubeRu extends PluginForHost {
                         if (StringUtils.equals(var.getWidth(), width)) {
                             if (StringUtils.equals(var.getHeight(), height)) {
                                 if (StringUtils.equals(var.getBitrate(), bitrate)) {
-                                    downloadLink.setDownloadSize(bestSizeEstimation);
-                                    downloadLink.setProperty("f4vUrl", Request.getLocation(getAttByNamedItem(media, "url"), ajax.getRequest()));
-                                    downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "_" + height + "p" + ".mp4");
+                                    link.setDownloadSize(bestSizeEstimation);
+                                    link.setProperty("f4vUrl", Request.getLocation(getAttByNamedItem(media, "url"), ajax.getRequest()));
+                                    link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "_" + height + "p" + ".mp4");
                                     return AvailableStatus.TRUE;
                                 }
                             }
@@ -214,9 +233,9 @@ public class RuTubeRu extends PluginForHost {
             }
         }
         if (bestSizeEstimation > 0) {
-            downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "_" + height + "p" + ".mp4");
-            downloadLink.setDownloadSize(bestSizeEstimation);
-            downloadLink.setProperty("f4vUrl", bestUrl);
+            link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "_" + height + "p" + ".mp4");
+            link.setDownloadSize(bestSizeEstimation);
+            link.setProperty("f4vUrl", bestUrl);
             return AvailableStatus.TRUE;
         }
         return AvailableStatus.FALSE;
