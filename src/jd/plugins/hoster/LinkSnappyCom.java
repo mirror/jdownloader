@@ -23,6 +23,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -40,22 +56,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginProgress;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  *
@@ -176,7 +176,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 if (StringUtils.isEmpty(host)) {
                     continue;
                 }
-                HashMap<String, Object> e = new HashMap<String, Object>();
+                HashMap<String, Object> hostInfo = new HashMap<String, Object>();
                 final long status = JavaScriptEngineFactory.toLong(hosterInformation.get("Status"), 0);
                 final Object quotaO = hosterInformation.get("Quota");
                 final long quota;
@@ -184,7 +184,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 if (quotaO != null && quotaO instanceof String) {
                     if ("unlimited".equalsIgnoreCase((String) quotaO)) {
                         hostHasUnlimitedQuota = true;
-                        e.put("quota", -1);
+                        hostInfo.put("quota", -1);
                     } else {
                         /* this should not happen */
                         hostHasUnlimitedQuota = false;
@@ -200,14 +200,14 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 final long usage = JavaScriptEngineFactory.toLong(hosterInformation.get("Usage"), 0);
                 final long resume = JavaScriptEngineFactory.toLong(hosterInformation.get("resume"), 0);
                 final Object connlimit = hosterInformation.get("connlimit");
-                e.put("usage", usage);
+                hostInfo.put("usage", usage);
                 if (resume == 1) {
-                    e.put("resumes", true);
+                    hostInfo.put("resumes", true);
                 } else {
-                    e.put("resumes", false);
+                    hostInfo.put("resumes", false);
                 }
                 if (connlimit != null) {
-                    e.put("chunks", JavaScriptEngineFactory.toLong(connlimit, 1));
+                    hostInfo.put("chunks", JavaScriptEngineFactory.toLong(connlimit, 1));
                 }
                 if (canDownload != 1) {
                     logger.info("Skipping host as it is because API says download is not possible (canDownload!=1): " + host);
@@ -221,10 +221,19 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     logger.info("Skipping host as account has no quota left for it: " + host);
                     continue;
                 }
-                if (!e.isEmpty()) {
-                    con.put(host, e);
+                /* Workaround to find real host. */
+                final ArrayList<String> tempList = new ArrayList<String>();
+                tempList.add(host);
+                final List<String> realHosts = ac.setMultiHostSupport(this, tempList);
+                if (realHosts == null || realHosts.isEmpty()) {
+                    logger.info("Skipping host because we don't have a plugin for it or the plugin we have doesn#t allow multihost usage: " + host);
+                    continue;
                 }
-                supportedHosts.add(host);
+                final String realHost = realHosts.get(0);
+                if (!hostInfo.isEmpty()) {
+                    con.put(realHost, hostInfo);
+                }
+                supportedHosts.add(realHost);
             }
             account.setProperty("accountProperties", con);
             // final List<String> mapped = ac.setMultiHostSupport(this, supportedHosts);
@@ -505,8 +514,8 @@ public class LinkSnappyCom extends antiDDoSForHost {
     }
 
     /**
-     * We have already retried X times before this method is called, their is zero point to additional retries too soon.</br> It should be
-     * minimum of 5 minutes and above!
+     * We have already retried X times before this method is called, their is zero point to additional retries too soon.</br>
+     * It should be minimum of 5 minutes and above!
      *
      * @throws InterruptedException
      */
