@@ -20,6 +20,11 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import org.jdownloader.captcha.v2.challenge.hcaptcha.AbstractHCaptcha;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -37,11 +42,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.captcha.v2.challenge.hcaptcha.AbstractHCaptcha;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 /**
  * @author typek_pb
@@ -81,7 +81,7 @@ public class AvxHmeW extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private static final String TYPE_REDIRECT = "https?://[^/]+/(go/\\d+/[^\"]+|go/[a-f0-9]{32}/\\d+/?)";
+    private static final String TYPE_REDIRECT = "https?://[^/]+/go/([a-f0-9]{32}/\\d+/?|[A-Za-z0-9\\-_:%]+/?|\\d+/[^\"]+)";
 
     @Override
     public int getMaxConcurrentProcessingInstances() {
@@ -186,7 +186,6 @@ public class AvxHmeW extends PluginForDecrypt {
                     decryptedLinks.add(createDownloadlink(url));
                 }
             }
-            logger.info("Found " + allURLs.length + " redirectURLs");
             // try also LINK</br>, but ignore self site refs + imdb refs
             links = br.getRegex("(" + notThis + ")<br\\s*/\\s*>").getColumn(0);
             if (links.length > 0) {
