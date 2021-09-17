@@ -168,7 +168,7 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
                 }
             }
             if (addFlag && banList.addIfAbsent(newBan)) {
-                LogController.CL().severe(newBan.toString());
+                LogController.CL().log(new Exception(newBan.toString()));
             }
         }
     }
