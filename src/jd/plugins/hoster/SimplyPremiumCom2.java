@@ -21,6 +21,9 @@ import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -31,7 +34,11 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.config.AccountConfigInterface;
+import org.jdownloader.plugins.config.Order;
 
 import jd.PluginWrapper;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -39,7 +46,9 @@ import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 4, names = { "simply-premium.com" }, urls = { "" })
 public class SimplyPremiumCom2 extends HighWayCore {
@@ -214,6 +223,60 @@ public class SimplyPremiumCom2 extends HighWayCore {
         @Override
         public Account getAccount() {
             return new Account(null, getPassword());
+        }
+    }
+
+    public static interface SimplyPremiumComConfigInterface extends UsenetAccountConfigInterface {
+        public class Translation {
+            public String getUseDownloadslotBlockingCloudDownloadMode_label() {
+                return "Block download slots for files which have to be downloaded to the multihoster first? If you disable this, you will need to add account usage rules to be able to smoothly use this feature!";
+            }
+        }
+
+        public static final SimplyPremiumComConfigInterface.Translation TRANSLATION = new Translation();
+
+        @AboutConfig
+        @DefaultBooleanValue(true)
+        @Order(10)
+        boolean isUseDownloadslotBlockingCloudDownloadMode();
+
+        void setUseDownloadslotBlockingCloudDownloadMode(boolean b);
+    };
+
+    @Override
+    protected PluginConfigPanelNG createConfigPanel() {
+        return new UsenetConfigPanel() {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            protected boolean showKeyHandler(KeyHandler<?> keyHandler) {
+                return "usedownloadslotblockingclouddownloadmode".equals(keyHandler.getKey());
+            }
+
+            @Override
+            protected boolean useCustomUI(KeyHandler<?> keyHandler) {
+                return !"usedownloadslotblockingclouddownloadmode".equals(keyHandler.getKey());
+            }
+
+            @Override
+            protected void initAccountConfig(PluginForHost plgh, Account acc, Class<? extends AccountConfigInterface> cf) {
+                super.initAccountConfig(plgh, acc, cf);
+                extend(this, getHost(), getAvailableUsenetServer(), getAccountJsonConfig(acc));
+            }
+        };
+    }
+
+    @Override
+    public SimplyPremiumComConfigInterface getAccountJsonConfig(final Account account) {
+        return (SimplyPremiumComConfigInterface) super.getAccountJsonConfig(account);
+    }
+
+    @Override
+    protected boolean blockDownloadSlotsForCloudDownloads(final Account account) {
+        if (getAccountJsonConfig(account).isUseDownloadslotBlockingCloudDownloadMode()) {
+            return true;
+        } else {
+            return false;
         }
     }
 

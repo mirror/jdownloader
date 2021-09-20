@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
@@ -231,6 +232,11 @@ public class ZapiszSe extends PluginForHost {
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 loginform.put("remember", "ON");
+                /* 2021-09-20: reCaptchaV2 invisible required. */
+                if (loginform.hasInputFieldByName("recaptcha_response")) {
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    loginform.put("recaptcha_response", Encoding.urlEncode(recaptchaV2Response));
+                }
                 br.submitForm(loginform);
                 if (!isLoggedIN()) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
