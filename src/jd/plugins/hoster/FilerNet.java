@@ -17,10 +17,13 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -39,10 +42,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "https?://(?:www\\.)?filer\\.net/(?:app\\.php/)?(?:get|dl)/([a-z0-9]+)" })
 public class FilerNet extends PluginForHost {
@@ -87,7 +86,11 @@ public class FilerNet extends PluginForHost {
     @Override
     public String getLinkID(DownloadLink link) {
         final String fileID = getFileID(link);
-        return getHost() + "://" + fileID;
+        if (fileID != null) {
+            return getHost() + "://" + fileID;
+        } else {
+            return super.getLinkID(link);
+        }
     }
 
     private void prepBrowser() {
@@ -142,9 +145,9 @@ public class FilerNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        doFree(null, downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        doFree(null, link);
     }
 
     @SuppressWarnings({ "deprecation" })
@@ -369,7 +372,6 @@ public class FilerNet extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -377,11 +379,9 @@ public class FilerNet extends PluginForHost {
         login(account);
         if ("free".equals(PluginJSonUtils.getJson(br, "state"))) {
             account.setType(AccountType.FREE);
-            ai.setStatus("Free User");
             ai.setUnlimitedTraffic();
         } else {
             account.setType(AccountType.PREMIUM);
-            ai.setStatus("Premium User");
             ai.setTrafficLeft(Long.parseLong(PluginJSonUtils.getJson(br, "traffic")));
             final String maxTraffic = PluginJSonUtils.getJson(br, "maxtraffic");
             if (maxTraffic != null) {
@@ -395,14 +395,14 @@ public class FilerNet extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         setBrowserExclusive();
         if (account.getType() == AccountType.FREE) {
             loginWebsite(account, false);
-            requestFileInformation(downloadLink);
-            doFree(account, downloadLink);
+            requestFileInformation(link);
+            doFree(account, link);
         } else {
-            requestFileInformation(downloadLink);
+            requestFileInformation(link);
             handleDownloadErrors();
             br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
             callAPI(account, "http://filer.net/api/dl/" + fuid + ".json");
@@ -421,7 +421,8 @@ public class FilerNet extends PluginForHost {
             }
             /* Important!! */
             br.getHeaders().put("Authorization", "");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+            /* 2021-09-20: Error 500 may happen quite often. */
             if (!looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection(true);
@@ -441,8 +442,8 @@ public class FilerNet extends PluginForHost {
                 // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 // }
                 if (br.getURL().matches(".+/error/\\d+") || dl.getConnection().getCompleteContentLength() == 0) {
-                    final int failed = downloadLink.getIntegerProperty("errorFailure", 0) + 1;
-                    downloadLink.setProperty("errorFailure", failed);
+                    final int failed = link.getIntegerProperty("errorFailure", 0) + 1;
+                    link.setProperty("errorFailure", failed);
                     if (failed > 10) {
                         throw new PluginException(LinkStatus.ERROR_FATAL, "Retry count over 10, count=" + failed);
                     } else if (failed > 4) {
@@ -450,40 +451,42 @@ public class FilerNet extends PluginForHost {
                     } else {
                         throw new PluginException(LinkStatus.ERROR_RETRY);
                     }
+                } else {
+                    /* Do not throw plugin_Defect errors here as we're using an API which we can trust. */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content", 3 * 60 * 1000l);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.setAllowFilenameFromURL(true);
             this.dl.startDownload();
         }
     }
 
-    /**
-     * Check if a stored directlink exists under property 'property' and if so, check if it is still valid (leads to a downloadable content
-     * [NOT html]).
-     */
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    return dllink;
+                } else {
+                    throw new IOException();
                 }
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                logger.log(e);
+                return null;
             } finally {
-                try {
+                if (con != null) {
                     con.disconnect();
-                } catch (final Throwable e) {
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
     private void handleErrors(final Account account, final boolean afterDownload) throws PluginException {
@@ -530,7 +533,7 @@ public class FilerNet extends PluginForHost {
         }
     }
 
-    private void handleErrorsAPI(Account account) throws PluginException {
+    private void handleErrorsAPI(final Account account) throws PluginException {
         if (statusCode == 501) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", 10 * 60 * 1000l);
         } else if (statusCode == 502) {
