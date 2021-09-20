@@ -145,6 +145,10 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
         return ret;
     }
 
+    public static boolean looksLikeMpegURL(URLConnectionAdapter con) {
+        return con != null && (StringUtils.equalsIgnoreCase(con.getContentType(), "application/vnd.apple.mpegurl") || StringUtils.equalsIgnoreCase(con.getContentType(), "application/x-mpegurl"));
+    }
+
     private static void addToResults(final PluginForDecrypt plugin, final List<DownloadLink> results, final Browser br, final URL url, final DownloadLink link) {
         if (StringUtils.endsWithCaseInsensitive(url.getPath(), ".m3u8")) {
             results.add(link);
@@ -154,7 +158,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
             URLConnectionAdapter con = null;
             try {
                 con = brc.openRequestConnection(new HeadRequest(url));
-                if (con.isOK() && ((StringUtils.equalsIgnoreCase(con.getContentType(), "application/vnd.apple.mpegurl") || (StringUtils.equalsIgnoreCase(con.getContentType(), "application/x-mpegURL")) || StringUtils.endsWithCaseInsensitive(con.getURL().getPath(), ".m3u8")))) {
+                if (con.isOK() && (looksLikeMpegURL(con) || StringUtils.endsWithCaseInsensitive(con.getURL().getPath(), ".m3u8"))) {
                     link.setPluginPatternMatcher("m3u8" + url.toString().substring(4));
                     results.add(link);
                 }
