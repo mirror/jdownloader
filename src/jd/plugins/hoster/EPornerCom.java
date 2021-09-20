@@ -17,12 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.config.EpornerComConfig;
-import org.jdownloader.plugins.components.config.EpornerComConfig.PreferredStreamQuality;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -41,7 +35,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eporner.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?eporner\\.com/(?:hd\\-porn/|video-)(\\w+)(/([^/]+))?" })
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.config.EpornerComConfig;
+import org.jdownloader.plugins.components.config.EpornerComConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eporner.com" }, urls = { "https?://(?:\\w+\\.)?eporner\\.com/(?:hd\\-porn/|video-)(\\w+)(/([^/]+))?" })
 public class EPornerCom extends PluginForHost {
     public String   dllink        = null;
     private String  vq            = null;
@@ -123,7 +123,7 @@ public class EPornerCom extends PluginForHost {
                     tempsizel = SizeFormatter.getSize(tempsizeFoundInHTML);
                     if (tempsizel > filesize) {
                         filesize = tempsizel;
-                        dllink = "http://www.eporner.com" + tempurl;
+                        dllink = "https://www.eporner.com" + tempurl;
                     }
                 }
             }
@@ -144,7 +144,7 @@ public class EPornerCom extends PluginForHost {
                 }
             }
         }
-        if ("http://download.eporner.com/na.flv".equalsIgnoreCase(dllink)) {
+        if ("http://download.eporner.com/na.flv".equalsIgnoreCase(dllink) || "https://download.eporner.com/na.flv".equalsIgnoreCase(dllink)) {
             server_issues = true;
         }
         filename = filename.trim();
@@ -219,7 +219,7 @@ public class EPornerCom extends PluginForHost {
         vq = getPreferredStreamQuality();
         if (vq != null) {
             logger.info("Looking for user selected quality");
-            dllink = br.getRegex("<a href=\"(/dload/[^\"]+)\"\\s*>Download MP4 \\(" + vq).getMatch(0);
+            dllink = br.getRegex("<a href\\s*=\\s*\"(/dload/[^\"]+)\"\\s*>\\s*Download MP4 \\(" + vq).getMatch(0);
             if (dllink != null) {
                 logger.info("Found user selected quality: " + vq);
             } else {
@@ -231,14 +231,14 @@ public class EPornerCom extends PluginForHost {
             final String[] allQualities = new String[] { "2160p", "1440p", "1080p", "720p", "480p", "360p", "240p" };
             for (final String qualityCandidate : allQualities) {
                 vq = qualityCandidate;
-                dllink = br.getRegex("<a href=\"(/dload/[^\"]+)\"\\s*>Download MP4 \\(" + vq).getMatch(0);
+                dllink = br.getRegex("<a href\\s*=\\s*\"(/dload/[^\"]+)\"\\s*>\\s*Download MP4 \\(" + vq).getMatch(0);
                 if (dllink != null) {
                     logger.info("Picked quality: " + vq);
                     break;
                 }
             }
         }
-        final String filesize = br.getRegex(">Download MP4 \\(" + vq + "\\s*,\\s*(\\d+[^<>\"]+)\\)").getMatch(0);
+        final String filesize = br.getRegex(">\\s*Download MP4 \\(" + vq + "\\s*,\\s*(\\d+[^<>\"]+)\\)").getMatch(0);
         if (filesize != null) {
             logger.info("Found filesize for picked quality: " + filesize);
             link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -326,11 +326,7 @@ public class EPornerCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            throw e;
-        }
+        login(account, true);
         ai.setUnlimitedTraffic();
         account.setConcurrentUsePossible(false);
         ai.setStatus("Registered (free) user");
