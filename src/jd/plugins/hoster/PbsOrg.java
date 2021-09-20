@@ -173,6 +173,8 @@ public class PbsOrg extends PluginForHost {
         } else if (br.containsHTML(">\\s*We're sorry, but this video is not available")) {
             /* 2020-11-24 */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("class=\"error-message\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML(">\\s*This video is unavailable in your area")) {
             geoblocked = true;

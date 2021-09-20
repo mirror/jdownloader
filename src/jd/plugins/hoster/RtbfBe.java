@@ -17,6 +17,14 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -26,14 +34,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rtbf.be" }, urls = { "http://rtbf\\.bedecrypted/\\d+" })
 public class RtbfBe extends PluginForHost {
@@ -72,8 +72,12 @@ public class RtbfBe extends PluginForHost {
             final HLSDownloader downloader = new HLSDownloader(link, br, dllink);
             final StreamInfo streamInfo = downloader.getProbe();
             if (streamInfo == null) {
-                // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                server_issues = true;
+                if (dllink.contains("/drm/")) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "603 Restricted (DRM)");
+                } else {
+                    // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    server_issues = true;
+                }
             } else {
                 final long estimatedSize = downloader.getEstimatedSize();
                 if (estimatedSize > 0) {
@@ -86,9 +90,12 @@ public class RtbfBe extends PluginForHost {
                 final Browser brc = br.cloneBrowser();
                 brc.setFollowRedirects(true);
                 con = brc.openHeadConnection(dllink);
+                if (con.getResponseCode() == 603) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "603 Restricted (DRM)");
+                }
                 if (this.looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
-                        link.setDownloadSize(con.getCompleteContentLength());
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 } else {
                     possibly_geo_blocked = con.getResponseCode() == 403;
@@ -105,8 +112,8 @@ public class RtbfBe extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (possibly_geo_blocked) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
         } else if (server_issues) {
@@ -115,11 +122,11 @@ public class RtbfBe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (dllink.contains("m3u8")) {
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, dllink);
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, dllink);
             dl.startDownload();
         } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
                 try {

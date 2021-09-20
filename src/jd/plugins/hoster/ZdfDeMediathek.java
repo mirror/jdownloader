@@ -84,7 +84,7 @@ public class ZdfDeMediathek extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setFinalFileName(link.getStringProperty("directName", null));
+        link.setFinalFileName(link.getStringProperty("directName"));
         if (dllink.contains("m3u8")) {
             checkFFProbe(link, "Download a HLS Stream");
             final HLSDownloader downloader = new HLSDownloader(link, br, dllink);
@@ -102,8 +102,12 @@ public class ZdfDeMediathek extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = this.br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                } else if (con.getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "GEO blocked");
                 } else {
                     server_issues = true;
                 }
@@ -118,9 +122,9 @@ public class ZdfDeMediathek extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        download(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        download(link);
     }
 
     private void setupRTMPConnection(String stream, DownloadInterface dl) {
