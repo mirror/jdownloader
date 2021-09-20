@@ -182,7 +182,6 @@ public class CFG_GENERAL {
      **/
     public static final ObjectKeyHandler                DOMAIN_RULES                                                     = SH.getKeyHandler("DomainRules", ObjectKeyHandler.class);
     public static final BooleanKeyHandler               MAX_DOWNLOADS_PER_HOST_ENABLED                                   = SH.getKeyHandler("MaxDownloadsPerHostEnabled", BooleanKeyHandler.class);
-    public static final BooleanKeyHandler               AUTOADD_LINKS_AFTER_LINKCHECK                                    = SH.getKeyHandler("AutoaddLinksAfterLinkcheck", BooleanKeyHandler.class);
     /**
      * Enable shared memory state info.
      **/

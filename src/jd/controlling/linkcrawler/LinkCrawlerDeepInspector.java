@@ -49,7 +49,7 @@ public abstract class LinkCrawlerDeepInspector {
                     return true;
                 }
             } else if (hasContentType && (!isTextContent(urlConnection) && contentType.matches("(?i)^(application|audio|video|image)/.+"))) {
-                if (contentType.matches("(?i)application/vnd.apple.mpegurl")) {
+                if (contentType.matches("(?i)application/vnd.apple.mpegurl") || contentType.matches("(?i)application/x-mpegurl")) {
                     return false;
                 } else {
                     return true;

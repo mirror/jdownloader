@@ -14,7 +14,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.Socket;
-import java.net.SocketException;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -28,11 +27,9 @@ import java.util.Map.Entry;
 import java.util.Vector;
 
 import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSocketFactory;
 
 import org.appwork.utils.DebugMode;
-import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamFactory;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamInterface;
@@ -426,28 +423,32 @@ public class BCSSLSocketStreamFactory implements SSLSocketStreamFactory {
             // https://www.bouncycastle.org/docs/tlsdocs1.5on/org/bouncycastle/tls/AlertDescription.html
             if (options.getCustomFactorySettings().add(TLS13_ENABLED)) {
                 // retry with TLS1.3 enabled
-                return options.addRetryReason("enable TLS1.3");
+                return options.addRetryReason("(TLS)enable TLS1.3");
             }
             final String bcRetry = options.enableNextDisabledCipher("GCM");
             if (bcRetry != null) {
                 // retry with TLS1.3 and GCM
-                return options.addRetryReason("enable " + bcRetry + " for TLS1.3");
+                return options.addRetryReason("(TLS)enable " + bcRetry + " for TLS1.3");
             }
         }
-        if (Exceptions.containsInstanceOf(e, SSLHandshakeException.class) || StringUtils.containsIgnoreCase(eMessage, "Remote host terminated the handshake")) {
-            if (options.getCustomFactorySettings().add(TLS10_11_DISABLED)) {
-                // disable old TLS1.0 and TLS1.1 and retry with TLS1.2
-                return options.addRetryReason("disable TLS1.0/TLS1.1");
-            }
-        }
-        if (Exceptions.containsInstanceOf(e, SSLException.class, SocketException.class) && StringUtils.containsIgnoreCase(eMessage, "reset")) {
+        if (options.isHandshakeException(e)) {
             final String jsseRetry = options.enableNextDisabledCipher("GCM");
             if (jsseRetry != null) {
                 // retry with TLS1.2 GCM
-                return options.addRetryReason("enable " + jsseRetry + " for TLS1.2/TLS1.3");
+                return options.addRetryReason("(Handshake)enable " + jsseRetry + " for TLS1.2/TLS1.3");
             } else if (options.getCustomFactorySettings().add(TLS10_11_DISABLED)) {
                 // disable old TLS1.0 and TLS1.1 and retry with TLS1.2
-                return options.addRetryReason("disable TLS1.0/TLS1.1");
+                return options.addRetryReason("(Handshake)disable TLS1.0/TLS1.1");
+            }
+        }
+        if (options.isConnectionResetException(e)) {
+            final String jsseRetry = options.enableNextDisabledCipher("GCM");
+            if (jsseRetry != null) {
+                // retry with TLS1.2 GCM
+                return options.addRetryReason("(Reset)enable " + jsseRetry + " for TLS1.2/TLS1.3");
+            } else if (options.getCustomFactorySettings().add(TLS10_11_DISABLED)) {
+                // disable old TLS1.0 and TLS1.1 and retry with TLS1.2
+                return options.addRetryReason("(Reset)disable TLS1.0/TLS1.1");
             }
         }
         return null;

@@ -33,6 +33,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.GenericM3u8Decrypter;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -181,6 +182,11 @@ public class LbryTv extends PluginForHost {
         doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
+    @Override
+    protected boolean looksLikeDownloadableContent(URLConnectionAdapter urlConnection) {
+        return super.looksLikeDownloadableContent(urlConnection) && !GenericM3u8Decrypter.looksLikeMpegURL(urlConnection);
+    }
+
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
             requestFileInformation(link);
@@ -193,7 +199,7 @@ public class LbryTv extends PluginForHost {
             final URLConnectionAdapter con = brc.openGetConnection(dllink);
             if (!looksLikeDownloadableContent(con)) {
                 brc.followConnection();
-                if (StringUtils.equalsIgnoreCase(con.getContentType(), "application/vnd.apple.mpegurl")) {
+                if (GenericM3u8Decrypter.looksLikeMpegURL(con)) {
                     final List<HlsContainer> hls = HlsContainer.getHlsQualities(brc);
                     final HlsContainer best = HlsContainer.findBestVideoByBandwidth(hls);
                     if (best == null) {
