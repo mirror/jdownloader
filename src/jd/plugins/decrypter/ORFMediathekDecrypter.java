@@ -26,6 +26,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -41,11 +46,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 // http://tvthek,orf.at/live/... --> HDS
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvthek.orf.at" }, urls = { "https?://(?:www\\.)?tvthek\\.orf\\.at/(?:index\\.php/)?(?:programs?|topic|profile)/.+" })
@@ -192,6 +192,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         /* Avoid too long filenames */
                         titlethis = titlethis.substring(0, 80);
                     }
+                    /* Add index to title if current video is split up into multiple parts. */
                     if (!isGaplessVideo && videosEntries != null && videosEntries.size() > 1) {
                         final String videoIndexFormatted = new DecimalFormat("00").format(++videoIndex);
                         titlethis = videoIndexFormatted + "_" + sanitizeString(titlethis);

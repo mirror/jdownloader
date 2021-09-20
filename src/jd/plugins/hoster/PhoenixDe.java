@@ -92,9 +92,9 @@ public class PhoenixDe extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        download(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        download(link);
     }
 
     private void setupRTMPConnection(String stream, DownloadInterface dl) {
@@ -104,7 +104,7 @@ public class PhoenixDe extends PluginForHost {
         rtmp.setRealTime();
     }
 
-    private void download(final DownloadLink downloadLink) throws Exception {
+    private void download(final DownloadLink link) throws Exception {
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
@@ -114,20 +114,20 @@ public class PhoenixDe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nur von 20-06 Uhr verfügbar!", 30 * 60 * 1000l);
         }
         if (dllink.startsWith("rtmp")) {
-            dl = new RTMPDownload(this, downloadLink, dllink);
+            dl = new RTMPDownload(this, link, dllink);
             setupRTMPConnection(dllink, dl);
             ((RTMPDownload) dl).startDownload();
         } else {
             boolean resume = true;
             int maxChunks = 0;
-            if ("subtitle".equals(downloadLink.getStringProperty("streamingType", null))) {
+            if ("subtitle".equals(link.getStringProperty("streamingType", null))) {
                 br.getHeaders().put("Accept-Encoding", "identity");
-                downloadLink.setDownloadSize(0);
+                link.setDownloadSize(0);
                 resume = false;
                 maxChunks = 1;
             }
             br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxChunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 if (br.getHttpConnection().getResponseCode() == 403) {
@@ -138,7 +138,7 @@ public class PhoenixDe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
             }
             if (this.dl.startDownload()) {
-                this.postprocess(downloadLink);
+                this.postprocess(link);
             }
         }
     }
