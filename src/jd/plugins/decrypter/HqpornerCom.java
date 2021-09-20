@@ -24,7 +24,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hqporner.com" }, urls = { "https?://(?:www\\.)?hqporner\\.com/hdporn/\\d+\\-([^/]+)\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hqporner.com", "hqpornerpro.com" }, urls = { "https?://(?:www\\.)?hqporner\\.com/hdporn/\\d+\\-([^/]+)\\.html", "https?://(?:www\\.)?hqpornerpro\\.com/([^/]+)" })
 public class HqpornerCom extends PornEmbedParser {
     public HqpornerCom(PluginWrapper wrapper) {
         super(wrapper);
