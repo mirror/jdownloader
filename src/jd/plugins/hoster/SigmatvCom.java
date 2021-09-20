@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -31,11 +30,9 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sigmatv.com" }, urls = { "https?://(?:www\\.)?sigmatv\\.com/shows/[^/]+/episodes/\\d+" })
 public class SigmatvCom extends PluginForHost {
-
     public SigmatvCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: no https
@@ -47,7 +44,6 @@ public class SigmatvCom extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
@@ -59,6 +55,10 @@ public class SigmatvCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        final String urlTitle = new Regex(link.getDownloadURL(), "/shows/(.+)").getMatch(0).replace("/", "_");
+        if (!link.isNameSet()) {
+            link.setName(urlTitle + ".mp4");
+        }
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
@@ -67,39 +67,35 @@ public class SigmatvCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "/shows/(.+)").getMatch(0).replace("/", "_");
         String filename = br.getRegex("class=\"title_episodiu\">([^<>\"]+)<").getMatch(0);
-        if (filename == null) {
-            filename = url_filename;
-        }
-        dllink = br.getRegex("<source type=\"video/(?:mp4|flash)\" src=\"(http[^<>\"]+)\" />").getMatch(0);
+        dllink = br.getRegex("<source type=\"video/(?:mp4|flash)\" src=\"((http:)?//[^<>\"]+)\" />").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("(https?://[^/]+/media\\d*?/[^<>\"]+\\.(?:mp4|flv))\"").getMatch(0);
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        final String ext;
-        if (dllink != null) {
-            ext = getFileNameExtensionFromString(dllink, default_extension);
-        } else {
-            ext = default_extension;
-        }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename);
+            filename = filename.trim();
+            filename = encodeUnicode(filename);
+            final String ext;
+            if (dllink != null) {
+                ext = getFileNameExtensionFromString(dllink, default_extension);
+            } else {
+                ext = default_extension;
+            }
+            if (!filename.endsWith(ext)) {
+                filename += ext;
+            }
+            link.setFinalFileName(filename);
         }
         if (dllink != null) {
             dllink = Encoding.htmlDecode(dllink);
-            link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
-                    link.setProperty("directlink", dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 } else {
                     server_issues = true;
                 }
@@ -109,22 +105,21 @@ public class SigmatvCom extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-        } else {
-            /* We cannot be sure whether we have the correct extension or not! */
-            link.setName(filename);
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        if (server_issues) {
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        if (br.containsHTML("class=\"player restricted\"")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "GEO blocked");
+        } else if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
