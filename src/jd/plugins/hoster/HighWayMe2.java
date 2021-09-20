@@ -18,19 +18,28 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.config.AccountConfigInterface;
+import org.jdownloader.plugins.config.Order;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 4, names = { "high-way.me" }, urls = { "https?://high\\-way\\.me/onlinetv\\.php\\?id=\\d+[^/]+|https?://[a-z0-9\\-\\.]+\\.high\\-way\\.me/dlu/[a-z0-9]+/[^/]+" })
 public class HighWayMe2 extends HighWayCore {
@@ -112,6 +121,60 @@ public class HighWayMe2 extends HighWayCore {
         thread.setDaemon(true);
         thread.start();
         return thread;
+    }
+
+    public static interface HighWayMeConfigInterface extends UsenetAccountConfigInterface {
+        public class Translation {
+            public String getUseDownloadslotBlockingCloudDownloadMode_label() {
+                return "Block download slots for files which have to be downloaded to the multihoster first? If you disable this, you will need to add account usage rules to be able to smoothly use this feature!";
+            }
+        }
+
+        public static final HighWayMeConfigInterface.Translation TRANSLATION = new Translation();
+
+        @AboutConfig
+        @DefaultBooleanValue(true)
+        @Order(10)
+        boolean isUseDownloadslotBlockingCloudDownloadMode();
+
+        void setUseDownloadslotBlockingCloudDownloadMode(boolean b);
+    };
+
+    @Override
+    protected PluginConfigPanelNG createConfigPanel() {
+        return new UsenetConfigPanel() {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            protected boolean showKeyHandler(KeyHandler<?> keyHandler) {
+                return "usedownloadslotblockingclouddownloadmode".equals(keyHandler.getKey());
+            }
+
+            @Override
+            protected boolean useCustomUI(KeyHandler<?> keyHandler) {
+                return !"usedownloadslotblockingclouddownloadmode".equals(keyHandler.getKey());
+            }
+
+            @Override
+            protected void initAccountConfig(PluginForHost plgh, Account acc, Class<? extends AccountConfigInterface> cf) {
+                super.initAccountConfig(plgh, acc, cf);
+                extend(this, getHost(), getAvailableUsenetServer(), getAccountJsonConfig(acc));
+            }
+        };
+    }
+
+    @Override
+    public HighWayMeConfigInterface getAccountJsonConfig(final Account account) {
+        return (HighWayMeConfigInterface) super.getAccountJsonConfig(account);
+    }
+
+    @Override
+    protected boolean blockDownloadSlotsForCloudDownloads(final Account account) {
+        if (getAccountJsonConfig(account).isUseDownloadslotBlockingCloudDownloadMode()) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
