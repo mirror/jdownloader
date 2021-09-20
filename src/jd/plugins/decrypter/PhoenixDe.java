@@ -37,7 +37,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "phoenix.de" }, urls = { "https?://(?:www\\.)?phoenix\\.de/content/\\d+|http://(?:www\\.)?phoenix\\.de/podcast/[A-Za-z0-9]+/video/rss\\.xml" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "phoenix.de" }, urls = { "https?://(?:www\\.)?phoenix\\.de/content/\\d+|https?://(?:www\\.)?phoenix\\.de/podcast/[A-Za-z0-9]+/video/rss\\.xml" })
 public class PhoenixDe extends PluginForDecrypt {
     public PhoenixDe(PluginWrapper wrapper) {
         super(wrapper);
@@ -63,6 +63,7 @@ public class PhoenixDe extends PluginForDecrypt {
         final SubConfiguration cfg = SubConfiguration.getConfig(Browser.getHost(PARAMETER));
         BEST = cfg.getBooleanProperty(Q_BEST, false);
         this.fastlinkcheck = cfg.getBooleanProperty(FASTLINKCHECK, false);
+        br.setFollowRedirects(true);
         if (PARAMETER.matches(TYPE_PHOENIX_RSS)) {
             decryptPhoenixRSS();
         } else {
@@ -88,7 +89,10 @@ public class PhoenixDe extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpname);
         for (final String item : items) {
-            final String url = getXML(item, "guid");
+            String url = new Regex(item, "<enclosure[^>]*type='video/mp4'[^>]*url='(https://[^\\']+)' />").getMatch(0);
+            if (url == null) {
+                url = getXML(item, "guid");
+            }
             final String title = getXML(item, "title");
             final String description = getXML(item, "description");
             final String date = getXML(item, "pubDate");
