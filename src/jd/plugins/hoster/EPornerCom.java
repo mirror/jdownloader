@@ -41,7 +41,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eporner.com" }, urls = { "https?://(?:www\\.)?eporner\\.com/(?:hd\\-porn/|video-)(\\w+)(/([^/]+))?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eporner.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?eporner\\.com/(?:hd\\-porn/|video-)(\\w+)(/([^/]+))?" })
 public class EPornerCom extends PluginForHost {
     public String   dllink        = null;
     private String  vq            = null;
@@ -115,12 +115,12 @@ public class EPornerCom extends PluginForHost {
             final String[][] dloadinfo = this.br.getRegex("href=\"(/dload/[^<>\"]+)\">Download MP4 \\(\\d+p, ([^<>\"]+)\\)</a>").getMatches();
             if (dloadinfo != null && dloadinfo.length != 0) {
                 String tempurl = null;
-                String tempsize = null;
+                String tempsizeFoundInHTML = null;
                 long tempsizel = 0;
                 for (final String[] dlinfo : dloadinfo) {
                     tempurl = dlinfo[0];
-                    tempsize = dlinfo[1];
-                    tempsizel = SizeFormatter.getSize(tempsize);
+                    tempsizeFoundInHTML = dlinfo[1];
+                    tempsizel = SizeFormatter.getSize(tempsizeFoundInHTML);
                     if (tempsizel > filesize) {
                         filesize = tempsizel;
                         dllink = "http://www.eporner.com" + tempurl;
@@ -163,8 +163,7 @@ public class EPornerCom extends PluginForHost {
                 con = br2.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
-                        filesize = con.getCompleteContentLength();
-                        link.setVerifiedFileSize(filesize);
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 } else {
                     /* 2020-05-26: Probably daily limit reached */
@@ -176,8 +175,7 @@ public class EPornerCom extends PluginForHost {
                 } catch (Throwable e) {
                 }
             }
-        }
-        if (filesize > 0) {
+        } else if (filesize > 0) {
             link.setDownloadSize(filesize);
         }
         return AvailableStatus.TRUE;
