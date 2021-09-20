@@ -192,7 +192,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         /* Avoid too long filenames */
                         titlethis = titlethis.substring(0, 80);
                     }
-                    if (!isGaplessVideo) {
+                    if (!isGaplessVideo && videosEntries != null && videosEntries.size() > 1) {
                         final String videoIndexFormatted = new DecimalFormat("00").format(++videoIndex);
                         titlethis = videoIndexFormatted + "_" + sanitizeString(titlethis);
                     }
