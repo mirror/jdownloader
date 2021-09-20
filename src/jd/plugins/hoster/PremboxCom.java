@@ -452,7 +452,7 @@ public class PremboxCom extends PluginForHost {
 
     private String getDownloadType() {
         String type;
-        if (PROPERTY_DOWNLOADTYPE_cloud.equals(this.getDownloadLink().getStringProperty(PROPERTY_DOWNLOADTYPE, null))) {
+        if (PROPERTY_DOWNLOADTYPE_cloud.equals(this.getDownloadLink().getStringProperty(PROPERTY_DOWNLOADTYPE))) {
             type = PROPERTY_DOWNLOADTYPE_cloud;
         } else {
             type = PROPERTY_DOWNLOADTYPE_instant;
@@ -593,7 +593,9 @@ public class PremboxCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
+        /* Allow generation of new directurl on reset. */
         link.removeProperty(PROPERTY_DLLINK_GENERATED_TIMESTAMP);
+        /* Remove this special flag needed for a workaround. */
         link.removeProperty(PROPERTY_ENFORCE_CLOUD_DOWNLOAD);
     }
 }

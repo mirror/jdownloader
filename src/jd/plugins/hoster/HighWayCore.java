@@ -309,6 +309,14 @@ public abstract class HighWayCore extends UseNet {
         return new FEATURE[] { FEATURE.MULTIHOST, FEATURE.USENET };
     }
 
+    /**
+     * Block download slots for files which have to be downloaded to the multihost first? If this returns true, new downloads will not be
+     * allowed as long as cacheDLChecker is running/waiting.
+     */
+    protected boolean blockDownloadSlotsForCloudDownloads(final Account account) {
+        return true;
+    }
+
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         /*
@@ -533,23 +541,31 @@ public abstract class HighWayCore extends UseNet {
                     br.getPage(cachePollingURL);
                     this.checkErrors(br, account);
                     entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                    final int retryInSecondsAPI = ((Number) entries.get("retry_in_seconds")).intValue();
-                    /* Don't wait longer than the max. remaining wait seconds */
-                    final int retryInSeconds = Math.min(retryInSecondsAPI, maxWaitSeconds - secondsWaited);
-                    this.sleep(retryInSeconds * 1000l, link);
-                    secondsWaited += retryInSeconds;
-                    final Integer currentProgress = ((Number) entries.get("percentage_Complete")).intValue();
-                    link.addPluginProgress(waitProgress);
-                    waitProgress.updateValues(currentProgress.intValue(), 100);
-                    for (int sleepRound = 0; sleepRound < retryInSeconds; sleepRound++) {
-                        if (isAbort()) {
-                            throw new PluginException(LinkStatus.ERROR_RETRY);
-                        } else {
-                            Thread.sleep(1000);
+                    final int retryInSecondsThisRound = ((Number) entries.get("retry_in_seconds")).intValue();
+                    if (blockDownloadSlotsForCloudDownloads(account)) {
+                        /* Don't wait longer than the max. remaining wait seconds */
+                        final int retryInSeconds = Math.min(retryInSecondsThisRound, maxWaitSeconds - secondsWaited);
+                        this.sleep(retryInSeconds * 1000l, link);
+                        secondsWaited += retryInSeconds;
+                        final Integer currentProgress = ((Number) entries.get("percentage_Complete")).intValue();
+                        link.addPluginProgress(waitProgress);
+                        waitProgress.updateValues(currentProgress.intValue(), 100);
+                        for (int sleepRound = 0; sleepRound < retryInSeconds; sleepRound++) {
+                            if (isAbort()) {
+                                throw new PluginException(LinkStatus.ERROR_RETRY);
+                            } else {
+                                Thread.sleep(1000);
+                            }
                         }
+                        logger.info("Cache handling: Seconds waited " + secondsWaited + "/" + maxWaitSeconds + "|Remaining: " + (maxWaitSeconds - secondsWaited));
+                        continue;
+                    } else {
+                        /*
+                         * Throw exception right away so other download candidates will be tried. This may speed up downloads significantly
+                         * for some users.
+                         */
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, (String) entries.get("for_jd"), retryInSecondsThisRound * 1000l);
                     }
-                    logger.info("Cache handling: Seconds waited " + secondsWaited + "/" + maxWaitSeconds + "|Remaining: " + (maxWaitSeconds - secondsWaited));
-                    continue;
                 }
             } while (!this.isAbort() && secondsWaited < maxWaitSeconds);
         } finally {
