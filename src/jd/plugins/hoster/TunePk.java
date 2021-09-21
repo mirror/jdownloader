@@ -15,11 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -77,14 +77,16 @@ public class TunePk extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link) + ".mp4");
+        }
         dllink = null;
         server_issues = false;
         e = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(400);
         final String fid = getFID(link);
-        link.setName(fid);
         // br.getPage("https://embed." + this.getHost() + "/play/" + fid + "?autoplay=no&ssl=no&inline=true");
         // br.getPage(link.getDownloadURL().replace("http:", "https:"));
         /* 2020-05-13: Static key from website */
@@ -117,20 +119,21 @@ public class TunePk extends PluginForHost {
             link.setFinalFileName(filename);
             return AvailableStatus.TRUE;
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final String errormessage = (String) JavaScriptEngineFactory.walkJson(entries, "data/configs/error/message");
-        if (!StringUtils.isEmpty(errormessage) && errormessage.equalsIgnoreCase("This video has been deactivated")) {
+        if (!StringUtils.isEmpty(errormessage)) {
+            /* E.g. "This video has been deactivated" or "This video is dead!!" */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/configs/details");
+        entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/configs/details");
         String filename = (String) JavaScriptEngineFactory.walkJson(entries, "video/title");
         /* Find highest quality */
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "player/sources");
+        final List<Object> ressourcelist = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "player/sources");
         String dllinktemp = null;
         long bitratetemp = 0;
         long bitratemax = 0;
         for (final Object qualityo : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) qualityo;
+            entries = (Map<String, Object>) qualityo;
             dllinktemp = (String) entries.get("file");
             bitratetemp = JavaScriptEngineFactory.toLong(entries.get("bitrate"), 0);
             if (StringUtils.isEmpty(dllinktemp) || bitratetemp <= 0) {
@@ -150,26 +153,25 @@ public class TunePk extends PluginForHost {
                 dllink = dllinktemp;
             }
         }
-        if (StringUtils.isEmpty(filename)) {
-            /* Fallback */
-            filename = fid;
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename);
+            filename = filename.trim();
+            filename = encodeUnicode(filename);
+            if (!filename.endsWith(default_Extension)) {
+                filename += default_Extension;
+            }
+            link.setFinalFileName(filename);
         }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        if (!filename.endsWith(default_Extension)) {
-            filename += default_Extension;
-        }
-        link.setFinalFileName(filename);
         if (dllink != null && !dllink.contains(".m3u8")) {
             br.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
                 if (this.e == null) {
-                    if (!con.getContentType().contains("html")) {
-                        link.setDownloadSize(con.getLongContentLength());
-                        link.setProperty("directlink", dllink);
+                    if (this.looksLikeDownloadableContent(con)) {
+                        if (con.getCompleteContentLength() > 0) {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                     } else {
                         server_issues = true;
                     }
@@ -205,13 +207,17 @@ public class TunePk extends PluginForHost {
         } else {
             /* HTTP download */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
                 }
-                br.followConnection();
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 try {
                     dl.getConnection().disconnect();
                 } catch (final Throwable e) {
@@ -243,8 +249,10 @@ public class TunePk extends PluginForHost {
         br2.setFollowRedirects(true);
         try {
             con = br2.openGetConnection(flink);
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
+            if (this.looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
                 dllink = flink;
             } else {
                 dllink = null;

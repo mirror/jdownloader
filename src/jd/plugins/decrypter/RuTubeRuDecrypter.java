@@ -28,6 +28,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.w3c.dom.Document;
@@ -39,7 +40,6 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
-import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -47,8 +47,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.RuTubeVariant;
+import jd.plugins.hoster.RuTubeRu;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rutube.ru" }, urls = { "https?://((?:www\\.)?rutube\\.ru/(tracks/\\d+\\.html|(play/|video/)?embed/\\w+(.*?p=[A-Za-z0-9\\-_]+)?|video/[a-f0-9]{32})|video\\.rutube.ru/([a-f0-9]{32}|\\d+))" })
 public class RuTubeRuDecrypter extends PluginForDecrypt {
@@ -56,69 +56,16 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private String uid          = null;
-    private String vid          = null;
+    /* TODO: Eliminate this global variable. */
     private String privatevalue = null;
-    private String parameter    = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br = new Browser();
-        parameter = param.toString();
-        uid = new Regex(parameter, "/([a-f0-9]{32})").getMatch(0);
-        vid = new Regex(parameter, "rutube\\.ru/(?:play/|video/)?embed/(\\d{3,})").getMatch(0);
-        privatevalue = new Regex(parameter, "p=([A-Za-z0-9\\-_]+)").getMatch(0);
-        if (vid == null) {
-            vid = new Regex(parameter, "video\\.rutube\\.ru/(\\d{3,})").getMatch(0);
-        }
-        if (uid == null) {
-            /* Find long 'effective_video'-id */
-            br.setFollowRedirects(true);
-            if (vid != null) {
-                final boolean useNewAPI = true;
-                if (useNewAPI) {
-                    getPage("https://rutube.ru/api/play/options/" + vid + "/?format=json&no_404=true&referer=" + Encoding.urlEncode(parameter));
-                    uid = PluginJSonUtils.getJson(br, "effective_video");
-                } else {
-                    // embed link, grab info since we are already on this page
-                    getPage("http://rutube.ru/play/embed/" + vid + "?wmode=opaque&autoStart=true");
-                    final String b = HTMLEntities.unhtmlentities(HTMLEntities.unhtmlDoubleQuotes(br.toString()));
-                    uid = new Regex(b, "\"id\"\\s*:\\s*\"([a-f0-9]{32})\"").getMatch(0);
-                    if (uid == null) {
-                        /* E.g. video/private/[a-f0-9]{32} */
-                        uid = new Regex(b, "<link rel=\"canonical\" href=\"https?://rutube\\.ru/video[^<>\"\\']+([a-f0-9]{32})").getMatch(0);
-                    }
-                }
-                if (StringUtils.isEmpty(uid)) {
-                    String msg = getErrorMessage();
-                    if (msg != null) {
-                        decryptedLinks.add(createOfflinelink(parameter, "Offline - " + vid + " - " + msg, msg));
-                    } else {
-                        decryptedLinks.add(createOfflinelink(parameter, "Offline - " + vid, null));
-                    }
-                    return decryptedLinks;
-                }
-            } else {
-                // tracks link
-                br.getPage(parameter);
-                if (br.getHttpConnection().getResponseCode() == 404) {
-                    decryptedLinks.add(createOfflinelink(parameter));
-                    return decryptedLinks;
-                }
-                br.getPage(br.getURL().replace("/video/", "/api/video/") + "?format=xml");
-                uid = br.getRegex("<id>([a-f0-9]{32})</id>").getMatch(0);
-            }
-            if (uid == null) {
-                throw new Exception("Unknown LinkType");
-            }
-        }
-        if (uid != null && decryptedLinks.isEmpty()) {
-            final DownloadLink link = createDownloadlink(uid);
-            if (link == null) {
-                return null;
-            } else {
-                decryptedLinks.add(link);
-            }
+        final DownloadLink link = crawlSingleVideo(param);
+        if (link == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            decryptedLinks.add(link);
         }
         return decryptedLinks;
     }
@@ -139,132 +86,145 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
         br.getPage(url);
     }
 
-    /**
-     * error message types on the embeded link url
-     *
-     */
-    private String getErrorMessage() {
-        String msg = null;
-        /* 2016-09-16: Private videos with given "p" parameter can be watched by anyone who has the url! */
-        if (br.containsHTML("\"description\":\\s*\"The author made this video private\\.\"")) {
-            // not supported
-            msg = "Private Video, Unsupported feature";
-        } else if (br.containsHTML("\"description\":\\s*\"This video does not exist or URL link isn't correct\\.\"") || br.containsHTML("\"description\":\\s*\"Video removed at the request of the copyright holder\"")) {
-            // wrong url or removed content
-            msg = "Video does not exist";
+    protected DownloadLink crawlSingleVideo(final CryptedLink param) throws PluginException, Exception {
+        String videoHash = new Regex(param.getCryptedUrl(), "/([a-f0-9]{32})").getMatch(0);
+        String videoID = new Regex(param.getCryptedUrl(), "rutube\\.ru/(?:play/|video/)?embed/(\\d{3,})").getMatch(0);
+        if (videoID == null) {
+            videoID = new Regex(param.getCryptedUrl(), "video\\.rutube\\.ru/(\\d{3,})").getMatch(0);
         }
-        return msg;
-    }
-
-    @Override
-    protected DownloadLink createDownloadlink(String id) {
-        DownloadLink ret = super.createDownloadlink("http://video.decryptedrutube.ru/" + id);
-        if (privatevalue != null) {
-            ret.setProperty("privatevalue", privatevalue);
+        privatevalue = new Regex(param.getCryptedUrl(), "p=([A-Za-z0-9\\-_]+)").getMatch(0);
+        if (videoID == null) {
+            if (videoHash == null) {
+                /* Developer mistake */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            /* Find videoID */
+            final Browser br = this.br.cloneBrowser();
+            // since we know the embed url for player/embed link types no need todo this step
+            getPage(br, "http://" + this.getHost() + "/api/video/" + videoHash);
+            /* 2020-02-11: This may return HTTP/1.1 401 UNAUTHORIZED for normal offline content too. */
+            if (br.containsHTML("<root><detail>Not found</detail></root>") || br.getHttpConnection().getResponseCode() == 401 || br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            videoID = br.getRegex("/embed/(\\d{3,})").getMatch(0);
+            if (videoID == null) {
+                /* Assume that this video is offline. */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
-        try {
-            if (vid == null) {
-                final Browser br = this.br.cloneBrowser();
-                // since we know the embed url for player/embed link types no need todo this step
-                getPage(br, "http://rutube.ru/api/video/" + id);
-                /* 2020-02-11: This may return HTTP/1.1 401 UNAUTHORIZED for normal offline content too. */
-                if (br.containsHTML("<root><detail>Not found</detail></root>") || br.getHttpConnection().getResponseCode() == 401 || br.getHttpConnection().getResponseCode() == 404) {
-                    return createOfflinelink(parameter);
-                }
-                vid = br.getRegex("/embed/(\\d{3,})").getMatch(0);
-                if (vid == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+        final Browser ajax = getAjaxBR(br);
+        getPage(ajax, "http://" + this.getHost() + "/api/play/options/" + videoID + "/?format=json&no_404=true&sqr4374_compat=1&referer=" + Encoding.urlEncode(param.getCryptedUrl()) + "&_t=" + System.currentTimeMillis());
+        final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
+        videoHash = (String) entries.get("effective_video");
+        if (!(Boolean) entries.get("has_video")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (ajax.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (StringUtils.isEmpty(videoHash)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String contentURL = "https://rutube.ru/video/" + videoHash;
+        final DownloadLink ret = super.createDownloadlink(contentURL);
+        final String title = (String) entries.get("title");
+        final long durationSeconds = ((Number) entries.get("duration")).longValue();
+        final String videoDescription = (String) entries.get("description");
+        final Map<String, Object> author = (Map<String, Object>) entries.get("author");
+        final String uploaderName = (String) author.get("name");
+        final Map<String, Object> videoBalancer = (Map<String, Object>) entries.get("video_balancer");
+        final String streamDefault = (String) videoBalancer.get("default");
+        final String streamHLSMaster = (String) videoBalancer.get("m3u8");
+        final String expireTimestampStr;
+        /* 2021-09-17: Prefer HLS over HDS */
+        ArrayList<RuTubeVariant> variantsVideo = new ArrayList<RuTubeVariant>();
+        RuTubeVariant bestVariant = null;
+        if (!StringUtils.isEmpty(streamHLSMaster)) {
+            /* HLS */
+            expireTimestampStr = UrlQuery.parse(streamHLSMaster).get("expire");
+            if (expireTimestampStr == null || !expireTimestampStr.matches("\\d+")) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            getPage("http://rutube.ru/play/embed/" + vid + "?wmode=opaque&autoStart=true");
-            {
-                // shouldn't be needed, non embeded links without 'vid' value should create offlinelink above.
-                final String msg = getErrorMessage();
-                if (msg != null) {
-                    return createOfflinelink(parameter, vid + " - " + msg, msg);
+            final Browser hlsBR = br.cloneBrowser();
+            hlsBR.getPage(streamHLSMaster);
+            final List<HlsContainer> qualities = HlsContainer.getHlsQualities(hlsBR);
+            int highestBandwidth = -1;
+            int counter = 0;
+            for (final HlsContainer quality : qualities) {
+                final RuTubeVariant variant = new RuTubeVariant(Integer.toString(quality.getWidth()), Integer.toString(quality.getHeight()), Integer.toString(quality.getBandwidth()), "hls_" + counter);
+                variantsVideo.add(variant);
+                if (quality.getBandwidth() > highestBandwidth) {
+                    highestBandwidth = quality.getBandwidth();
+                    bestVariant = variant;
                 }
+                ret.setProperty("directurl_" + variant.getStreamID(), quality.getDownloadurl());
+                counter += 1;
             }
-            Browser ajax = getAjaxBR(br);
-            getPage(ajax, "/api/play/options/" + vid + "/?format=json&no_404=true&sqr4374_compat=1&referer=" + Encoding.urlEncode(br.getURL()) + "&_t=" + System.currentTimeMillis());
-            final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
-            final Map<String, Object> videoBalancer = (Map<String, Object>) entries.get("video_balancer");
-            final String streamDefault = (String) videoBalancer.get("default");
-            final String streamHLSMaster = (String) videoBalancer.get("m3u8");
-            /* 2021-09-17: Prefer HLS over HDS */
-            ArrayList<RuTubeVariant> variantsVideo = new ArrayList<RuTubeVariant>();
-            RuTubeVariant bestVariant = null;
-            if (!StringUtils.isEmpty(streamHLSMaster)) {
-                /* HLS */
-                final Browser hlsBR = br.cloneBrowser();
-                hlsBR.getPage(streamHLSMaster);
-                final List<HlsContainer> qualities = HlsContainer.getHlsQualities(hlsBR);
-                int highestBandwidth = -1;
-                int counter = 0;
-                for (final HlsContainer quality : qualities) {
-                    final RuTubeVariant variant = new RuTubeVariant(Integer.toString(quality.getWidth()), Integer.toString(quality.getHeight()), Integer.toString(quality.getBandwidth()), "hls_" + counter);
+        } else {
+            if (streamDefault == null || !streamDefault.contains(".f4m")) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            expireTimestampStr = UrlQuery.parse(streamDefault).get("expire");
+            if (expireTimestampStr == null || !expireTimestampStr.matches("\\d+")) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            final XPath xPath = XPathFactory.newInstance().newXPath();
+            final Browser streamBR = getAjaxBR(br);
+            streamBR.getPage(streamDefault);
+            Document d = parser.parse(new ByteArrayInputStream(streamBR.toString().getBytes("UTF-8")));
+            String baseUrl = xPath.evaluate("/manifest/baseURL", d).trim();
+            NodeList f4mUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
+            Node best = f4mUrls.item(f4mUrls.getLength() - 1);
+            long bestSizeEstimation = 0;
+            for (int i = 0; i < f4mUrls.getLength(); i++) {
+                best = f4mUrls.item(i);
+                String width = getAttByNamedItem(best, "width");
+                String height = getAttByNamedItem(best, "height");
+                String bitrate = getAttByNamedItem(best, "bitrate");
+                String f4murl = getAttByNamedItem(best, "href");
+                bestSizeEstimation = (durationSeconds * Long.parseLong(bitrate) * 1024l) / 8;
+                streamBR.getPage(baseUrl + f4murl);
+                d = parser.parse(new ByteArrayInputStream(streamBR.toString().getBytes("UTF-8")));
+                // baseUrl = xPath.evaluate("/manifest/baseURL", d).trim();
+                // double duration = Double.parseDouble(xPath.evaluate("/manifest/duration", d));
+                NodeList mediaUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
+                Node media;
+                for (int j = 0; j < mediaUrls.getLength(); j++) {
+                    media = mediaUrls.item(j);
+                    // System.out.println(new String(Base64.decode(xPath.evaluate("/manifest/media[" + (j + 1) + "]/metadata",
+                    // d).trim())));
+                    final RuTubeVariant variant = new RuTubeVariant(width, height, bitrate, getAttByNamedItem(media, "streamId"));
                     variantsVideo.add(variant);
-                    if (quality.getBandwidth() > highestBandwidth) {
-                        highestBandwidth = quality.getBandwidth();
-                        bestVariant = variant;
-                    }
-                    ret.setProperty("directurl_" + variant.getStreamID(), quality.getDownloadurl());
-                    counter += 1;
-                }
-            } else if (streamDefault != null && streamDefault.contains(".f4m")) {
-                if (!streamDefault.contains(".f4m")) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-                final XPath xPath = XPathFactory.newInstance().newXPath();
-                ajax = getAjaxBR(br);
-                ajax.getPage(streamDefault);
-                Document d = parser.parse(new ByteArrayInputStream(ajax.toString().getBytes("UTF-8")));
-                String baseUrl = xPath.evaluate("/manifest/baseURL", d).trim();
-                NodeList f4mUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
-                Node best = f4mUrls.item(f4mUrls.getLength() - 1);
-                long bestSizeEstimation = 0;
-                for (int i = 0; i < f4mUrls.getLength(); i++) {
-                    best = f4mUrls.item(i);
-                    String width = getAttByNamedItem(best, "width");
-                    String height = getAttByNamedItem(best, "height");
-                    String bitrate = getAttByNamedItem(best, "bitrate");
-                    String f4murl = getAttByNamedItem(best, "href");
-                    double duration = Double.parseDouble(xPath.evaluate("/manifest/duration", d));
-                    bestSizeEstimation = (long) ((duration * Long.parseLong(bitrate) * 1024l) / 8);
-                    ajax = getAjaxBR(br);
-                    ajax.getPage(baseUrl + f4murl);
-                    d = parser.parse(new ByteArrayInputStream(ajax.toString().getBytes("UTF-8")));
-                    // baseUrl = xPath.evaluate("/manifest/baseURL", d).trim();
-                    // double duration = Double.parseDouble(xPath.evaluate("/manifest/duration", d));
-                    NodeList mediaUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
-                    Node media;
-                    for (int j = 0; j < mediaUrls.getLength(); j++) {
-                        media = mediaUrls.item(j);
-                        // System.out.println(new String(Base64.decode(xPath.evaluate("/manifest/media[" + (j + 1) + "]/metadata",
-                        // d).trim())));
-                        final RuTubeVariant variant = new RuTubeVariant(width, height, bitrate, getAttByNamedItem(media, "streamId"));
-                        variantsVideo.add(variant);
-                        ret.setProperty("directurl_" + variant.getStreamID(), Request.getLocation(getAttByNamedItem(media, "url"), ajax.getRequest()));
-                        bestVariant = variant;
-                    }
-                }
-                if (bestSizeEstimation > 0) {
-                    ret.setDownloadSize(bestSizeEstimation);
+                    ret.setProperty("directurl_" + variant.getStreamID(), Request.getLocation(getAttByNamedItem(media, "url"), ajax.getRequest()));
+                    bestVariant = variant;
                 }
             }
-            if (variantsVideo.size() > 0) {
-                ret.setVariants(variantsVideo);
-                ret.setVariant(bestVariant);
-                return ret;
-            } else {
-                logger.info("Video not available in your country: " + "http://rutube.ru/api/video/" + vid);
-                ret.setAvailable(false);
-                return ret;
+            if (bestSizeEstimation > 0) {
+                ret.setDownloadSize(bestSizeEstimation);
             }
-        } catch (Exception e) {
-            getLogger().log(e);
         }
-        return null;
+        ret.setProperty(RuTubeRu.PROPERTY_INTERNAL_VIDEOID, videoID);
+        ret.setProperty(RuTubeRu.PROPERTY_EXPIRE_TIMESTAMP, Long.parseLong(expireTimestampStr) * 1000);
+        ret.setProperty(RuTubeRu.PROPERTY_TITLE, title);
+        ret.setProperty(RuTubeRu.PROPERTY_DURATION, durationSeconds);
+        if (!StringUtils.isEmpty(uploaderName)) {
+            ret.setProperty(RuTubeRu.PROPERTY_UPLOADER, uploaderName);
+        }
+        if (privatevalue != null) {
+            ret.setProperty(RuTubeRu.PROPERTY_PRIVATEVALUE, privatevalue);
+        }
+        if (!StringUtils.isEmpty(videoDescription)) {
+            ret.setComment(videoDescription);
+        }
+        if (variantsVideo.size() > 0) {
+            ret.setVariants(variantsVideo);
+            ret.setVariant(bestVariant);
+            return ret;
+        } else {
+            /* TODO: Check this */
+            logger.info("Video not available in your country: http://rutube.ru/api/video/" + videoID);
+            ret.setAvailable(false);
+            return ret;
+        }
     }
 
     private Browser getAjaxBR(final Browser br) {
@@ -289,8 +249,7 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
         return (t != null ? t.trim() : null);
     }
 
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
         return false;
     }
 }
