@@ -208,6 +208,10 @@ public class TedCom extends PluginForDecrypt {
                     final Entry<String, Object> currentObject = iteratorAvailableQualities.next();
                     final String qualityKey = currentObject.getKey();
                     final String downloadurl = (String) currentObject.getValue();
+                    if (StringUtils.isEmpty(downloadurl)) {
+                        /* E.g. "high=null" --> Skip unavailable items */
+                        continue;
+                    }
                     final DownloadLink dl = createDownloadlink("decrypted://decryptedtedcom.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
                     dl.setProperty("directlink", downloadurl);
                     dl.setProperty("type", "video");

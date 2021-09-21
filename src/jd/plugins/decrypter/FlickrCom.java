@@ -411,7 +411,9 @@ public class FlickrCom extends PluginForDecrypt {
                 final DownloadLink fina = createDownloadlink(contenturl);
                 decryptedLinks.add(fina);
             }
-            if (sets.size() < api_max_entries_per_page) {
+            if (this.isAbort()) {
+                return;
+            } else if (sets.size() < api_max_entries_per_page) {
                 logger.info("Stopping because: Current page contains less than max. item number");
                 break;
             } else if (page >= maxPage) {
@@ -421,7 +423,10 @@ public class FlickrCom extends PluginForDecrypt {
                 page += 1;
                 /* Continue */
             }
-        } while (!this.isAbort());
+        } while (true);
+        if (decryptedLinks.size() < totalitems) {
+            logger.warning("Number of results != expected number of results: Found: " + decryptedLinks.size() + " Expected: " + totalitems);
+        }
     }
 
     public static boolean looksLikeInternalUsername(final String str) {
