@@ -1,24 +1,26 @@
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
-
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.parser.html.InputField;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.InputField;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
 /**
  *
@@ -46,7 +48,9 @@ public class SproutVideoCom extends PluginForHost {
         dllink = null;
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">404 Not Found")) {
+        if (br.getHttpConnection().getResponseCode() == 403) {
+            throw new AccountRequiredException();
+        } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*404 Not Found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // if (!br.getURL().contains("/embed/")) {
@@ -158,8 +162,12 @@ public class SproutVideoCom extends PluginForHost {
         } else {
             /* Official download */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-            if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("json")) {
-                br.followConnection();
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             this.dl.startDownload();
