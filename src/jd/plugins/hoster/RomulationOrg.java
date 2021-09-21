@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -27,15 +29,13 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "romulation.org" }, urls = { "https?://(?:www\\.)?romulation\\.(?:net|org)/rom/([^/]+/[^/]+)" })
 public class RomulationOrg extends PluginForHost {
@@ -59,41 +59,32 @@ public class RomulationOrg extends PluginForHost {
         }
     }
 
-    @Override
-    public String rewriteHost(String host) {
-        if (host == null || host.equalsIgnoreCase("romulation.net")) {
-            return this.getHost();
-        } else {
-            return super.rewriteHost(host);
-        }
-    }
-
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
     private static final int     FREE_MAXCHUNKS               = 1;
-    private static final int     FREE_MAXDOWNLOADS            = 2;
+    private static final int     FREE_MAXDOWNLOADS            = 1;
     private static final boolean ACCOUNT_FREE_RESUME          = true;
     private static final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
         this.br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.getRedirectLocation() != null) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.canHandle(br.getURL())) {
+            /* Redirect to unknown page */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("Full Name</strong></td>[\t\n\r ]*?<td>([^<>\"]+)</td>").getMatch(0);
-        if (filename == null) {
-            filename = new Regex(link.getPluginPatternMatcher(), "/([^/]+)$").getMatch(0) + ".7z";
-        }
+        final String filename = br.getRegex("Full Name</strong></td>[\t\n\r ]*?<td>([^<>\"]+)</td>").getMatch(0);
         String filesize = br.getRegex("Filesize</strong></td>[\t\n\r ]*?<td>([^<>\"]+)</td>").getMatch(0);
-        filename = Encoding.htmlDecode(filename).trim();
-        link.setName(filename);
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename).trim());
+        } else {
+            link.setName(new Regex(link.getPluginPatternMatcher(), "/([^/]+)$").getMatch(0) + ".7z");
+        }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -118,13 +109,14 @@ public class RomulationOrg extends PluginForHost {
             }
             this.br.getPage(dllink);
             /* Downloadable via free account */
-            final boolean tooBigForGuests = br.containsHTML("File too big for guests");
+            final boolean tooBigForGuests = br.containsHTML("(?i)File too big for guests");
             /* Premium required */
-            final boolean premiumonly = br.containsHTML("Sorry, this game is restricted");
+            final boolean premiumonly = br.containsHTML("(?i)Sorry, this game is restricted");
             if (tooBigForGuests || premiumonly) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                throw new AccountRequiredException();
             }
-            if (br.containsHTML(">Too many active connections")) {
+            if (br.containsHTML("(?i)>\\s*Too many active connections")) {
+                /* If the user is using only JD for downloading, this should never happen. */
                 /*
                  * <li>Too many active connections. <a
                  * href="/buy/premium?utm_source=romulation&utm_medium=website&utm_campaign=member-download-connections">Upgrade to
@@ -186,10 +178,25 @@ public class RomulationOrg extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
-                    return;
+                    if (!force) {
+                        /* Trust cookies without check */
+                        return;
+                    } else {
+                        logger.info("Checking cookies...");
+                        br.getPage("https://www." + this.getHost() + "/");
+                        if (isLoggedIn(this.br)) {
+                            logger.info("Cookie login successful");
+                            account.saveCookies(this.br.getCookies(this.getHost()), "");
+                            return;
+                        } else {
+                            logger.info("Cookie login failed");
+                            br.clearCookies(br.getHost());
+                        }
+                    }
                 }
+                logger.info("Performing full login");
                 br.getPage("https://www." + account.getHoster() + "/user/login");
                 final Form loginform = br.getForm(0);
                 if (loginform == null) {
@@ -199,7 +206,7 @@ public class RomulationOrg extends PluginForHost {
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 loginform.put("remember", "1");
                 br.submitForm(loginform);
-                if (!br.containsHTML("/user/logout")) {
+                if (!isLoggedIn(this.br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -210,83 +217,45 @@ public class RomulationOrg extends PluginForHost {
         }
     }
 
+    private boolean isLoggedIn(final Browser br) {
+        if (br.containsHTML("/user/logout")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            throw e;
-        }
-        if (br.getURL() == null || !br.getURL().contains("/user")) {
+        login(account, true);
+        if (!br.getURL().contains("/user")) {
             br.getPage("/user");
         }
-        final boolean isFree = br.containsHTML("User class: Regular Member");
         ai.setUnlimitedTraffic();
-        if (isFree) {
+        if (br.containsHTML("User class: Regular Member")) {
             account.setType(AccountType.FREE);
             /* free accounts can still have captcha */
             account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
-            ai.setStatus("Registered (free) user");
         } else {
-            /* 2019-01-29: TODO */
-            // final String expire = br.getRegex("").getMatch(0);
-            // if (expire == null) {
-            // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-            // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account
-            // Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein
-            // Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            // } else {
-            // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or unsupported account type!\r\nQuick
-            // help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters,
-            // change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            // }
-            // } else {
-            // ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
-            // }
+            /* Untested */
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
-            ai.setStatus("Premium account");
         }
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
         login(account, false);
-        br.getPage(link.getPluginPatternMatcher());
-        if (account.getType() == AccountType.FREE) {
-            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
-        } else {
-            String dllink = this.checkDirectLink(link, "premium_directlink");
-            if (dllink == null) {
-                dllink = br.getRegex("").getMatch(0);
-                if (StringUtils.isEmpty(dllink)) {
-                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                }
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            link.setProperty("premium_directlink", dl.getConnection().getURL().toString());
-            dl.startDownload();
-        }
+        requestFileInformation(link);
+        doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
     }
 
     @Override
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
         /* 2019-01-29: No captchas at all */
         return false;
     }
@@ -301,6 +270,6 @@ public class RomulationOrg extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 }
