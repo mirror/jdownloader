@@ -26,6 +26,7 @@ import org.jdownloader.plugins.components.YetiShareCore;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.CryptedLink;
@@ -102,8 +103,8 @@ public class FastDriveIo extends YetiShareCore {
     protected void handleDownloadWebsite(final DownloadLink link, final Account account) throws Exception, PluginException {
         try {
             requestFileInformationWebsite(link, account, true);
-        } catch (final PluginException e) {
-            ignorePluginException(e, br, link, account);
+        } catch (final PluginException ignore) {
+            ignorePluginException(ignore, br, link, account);
         }
         if (account != null) {
             loginWebsite(account, false);
@@ -211,20 +212,34 @@ public class FastDriveIo extends YetiShareCore {
                 } else {
                     /* Redirect to roda.site or securitystickers.info -> Captcha -> Final downloadurl */
                     externalRedirect = br.getRegex("(https?://go\\." + Regex.escape(this.br.getHost()) + "/[A-Za-z0-9]+)").getMatch(0);
+                    if (externalRedirect == null) {
+                        /* 2021-09-21: Typically securitystickers.info */
+                        final String redirect1 = br.getRegex("var ars\\s*=\\s*'(https?://[^\\']+)';").getMatch(0);
+                        if (redirect1 != null) {
+                            /* arsae_ref = real Referer --> We don't provide any. */
+                            br.setFollowRedirects(true);
+                            this.getPage(redirect1 + "/?arsae=" + Encoding.urlEncode(link.getPluginPatternMatcher()) + "&arsae_ref=");
+                            /* This will redirect multiple times until we're on roda.site */
+                            externalRedirect = this.getContinueLink(br);
+                            final String waitStr = this.regexWaittime(br);
+                            // var seconds = 5;
+                            this.sleep(Long.parseLong(waitStr) * 1001l, link);
+                        }
+                    }
                 }
             }
             if (externalRedirect == null) {
                 this.checkErrorsLastResort(br, link, account);
             }
-            br.setFollowRedirects(false);
+            br.setFollowRedirects(true);
             this.getPage(externalRedirect);
-            final String redirectToUrlShortener = this.br.getRedirectLocation();
-            if (redirectToUrlShortener == null) {
+            if (this.canHandle(br.getURL())) {
+                logger.warning("External redirect failed! Current URL: " + br.getURL());
                 this.checkErrorsLastResort(br, link, account);
             }
             final PluginForDecrypt crawler = this.getNewPluginForDecryptInstance("cut-urls.com");
             crawler.setBrowser(this.br.cloneBrowser());
-            final CryptedLink param = new CryptedLink(redirectToUrlShortener, link);
+            final CryptedLink param = new CryptedLink(br.getURL(), link);
             final ArrayList<DownloadLink> decryptedLinks = crawler.decryptIt(param, null);
             if (decryptedLinks.isEmpty()) {
                 this.checkErrorsLastResort(br, link, account);

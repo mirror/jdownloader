@@ -1,10 +1,10 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
+import java.util.Map;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sproutvideo.com" }, urls = { "https?://(?:www\\.)?(?:videos\\.sproutvideo\\.com/embed/[a-f0-9]{18}/[a-f0-9]{16}|\\w+\\.vids\\.io/videos/[a-f0-9]{18})" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sproutvideo.com" }, urls = { "https?://(?:videos\\.sproutvideo\\.com/embed/[a-f0-9]{18}/[a-f0-9]{16}|\\w+\\.vids\\.io/videos/[a-f0-9]{18})" })
 public class SproutVideoCom extends PluginForHost {
     public SproutVideoCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -40,7 +40,9 @@ public class SproutVideoCom extends PluginForHost {
         return null;
     }
 
-    private String dllink;
+    private static final String TYPE_1 = "https?://videos\\.sproutvideo\\.com/embed/[a-f0-9]{18}/[a-f0-9]{16}";
+    private static final String TYPE_2 = "https?://\\w+\\.vids\\.io/videos/[a-f0-9]{18}";
+    private String              dllink;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
@@ -52,6 +54,14 @@ public class SproutVideoCom extends PluginForHost {
             throw new AccountRequiredException();
         } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*404 Not Found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (link.getPluginPatternMatcher().matches(TYPE_2)) {
+            /* 2021-09-21 */
+            final String embedURL = br.getRegex("<iframe src='(https?://videos\\.sproutvideo\\.com/embed/[^\\']+)'").getMatch(0);
+            if (embedURL != null) {
+                logger.info("Found embedURL: " + embedURL);
+                br.getPage(embedURL);
+            }
         }
         // if (!br.getURL().contains("/embed/")) {
         if (containsPassword()) {
@@ -74,7 +84,7 @@ public class SproutVideoCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         json = Encoding.Base64Decode(json);
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+        Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         final Boolean hls = (Boolean) entries.get("hls");
         final String title = (String) entries.get("title");
         if (StringUtils.isEmpty(title)) {
@@ -90,16 +100,16 @@ public class SproutVideoCom extends PluginForHost {
             }
             final String userHash = (String) entries.get("s3_user_hash");
             final String videoHash = (String) entries.get("s3_video_hash");
+            final String sessionID = (String) entries.get("sessionID");
             // / cant use cdSig, its wrong
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "signatures/m");
+            entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "signatures/m");
             final String cfPolicy = (String) entries.get("CloudFront-Policy");
             final String cfSignature = (String) entries.get("CloudFront-Signature");
             final String cfKeyPairId = (String) entries.get("CloudFront-Key-Pair-Id");
-            m3u = "https://hls2.videos.sproutvideo.com/" + userHash + "/" + videoHash + "/video/index.m3u8?Policy=" + cfPolicy + "&Signature=" + cfSignature + "&Key-Pair-Id=" + cfKeyPairId;
+            m3u = "https://hls2.videos.sproutvideo.com/" + userHash + "/" + videoHash + "/video/index.m3u8?Policy=" + cfPolicy + "&Signature=" + cfSignature + "&Key-Pair-Id=" + cfKeyPairId + "&sessionID=" + sessionID;
             dllink = m3u;
         }
         link.setName(title + ".mp4");
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
     }
 
     @Override
@@ -151,6 +161,10 @@ public class SproutVideoCom extends PluginForHost {
         }
         if (dllink.contains(".m3u8")) {
             /* Download stream */
+            if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                /* 2021-09-21: HLS URLs are broken but content is DRM protected anyways. */
+                throw new PluginException(LinkStatus.ERROR_FATAL, "DRM unsupported");
+            }
             final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br, dllink));
             String dllink = hlsbest.getDownloadurl();
             String betterFilename = link.getName();
