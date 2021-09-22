@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -35,6 +34,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -68,21 +68,25 @@ public class FrancetelevisionsCom extends PluginForHost {
         final String videoid = videoinfo[0];
         /* 2017-05-10: The 'catalogue' parameter is not required anymore or at least not for all videoids! */
         final String catalogue = videoinfo[1].equals("null") ? "" : videoinfo[1];
-        this.br.getPage("https://sivideo.webservices.francetelevisions.fr/tools/getInfosOeuvre/v2/?idDiffusion=" + videoid + "&catalogue=" + catalogue + "&callback=_jsonp_loader_callback_request_0");
-        final String json = this.br.getRegex("^_jsonp_loader_callback_request_0\\((.+)\\)$").getMatch(0);
+        // device_type=desktop -> mpd -> we can convert to m3u8 (manifest.mpd to master.m3u8) but drm protected
+        // device_type=mobile -> m3u8, but drm protected
+        final String json = this.br.getPage("https://player.webservices.francetelevisions.fr/v1/videos/" + videoid + "?country_code=FR&catalogue=" + catalogue + "&device_type=desktop&browser=chrome");
         final long responsecode = this.br.getHttpConnection().getResponseCode();
         if (responsecode == 400 || responsecode == 404 || json == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-        final String title = (String) entries.get("titre");
-        final String subtitle = (String) entries.get("sous_titre");
-        final String description = (String) entries.get("synopsis");
-        final String date = (String) JavaScriptEngineFactory.walkJson(entries, "diffusion/date_debut");
-        String channel = (String) entries.get("chaine");
-        final DecimalFormat df = new DecimalFormat("00");
-        final long season = JavaScriptEngineFactory.toLong(entries.get("saison"), -1);
-        final long episode = JavaScriptEngineFactory.toLong(entries.get("episode"), -1);
+        String title = (String) JavaScriptEngineFactory.walkJson(entries, "meta/title");
+        if (StringUtils.isEmpty(title)) {
+            title = (String) JavaScriptEngineFactory.walkJson(entries, "markers/npaw/title");
+        }
+        String subtitle = (String) JavaScriptEngineFactory.walkJson(entries, "meta/additional_title");
+        if (StringUtils.isEmpty(subtitle)) {
+            subtitle = (String) JavaScriptEngineFactory.walkJson(entries, "markers/npaw/title_episode");
+        }
+        final String date = (String) JavaScriptEngineFactory.walkJson(entries, "meta/broadcasted_at");
+        String channel = (String) JavaScriptEngineFactory.walkJson(entries, "markers/npaw/channel");
+        final String seasonEpisode = (String) JavaScriptEngineFactory.walkJson(entries, "markers/estat/newLevel4");
         if (inValidate(title)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -97,8 +101,8 @@ public class FrancetelevisionsCom extends PluginForHost {
             filename += date_formatted + "_";
         }
         filename += channel + "_" + title;
-        if (season != -1 && episode != -1) {
-            filename += "_S" + df.format(season) + "E" + df.format(episode);
+        if (StringUtils.isNotEmpty(seasonEpisode)) {
+            filename += "_" + seasonEpisode;
         }
         if (!inValidate(subtitle)) {
             filename += " - " + subtitle;
@@ -107,8 +111,12 @@ public class FrancetelevisionsCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename).trim();
         filename = encodeUnicode(filename);
         link.setFinalFileName(filename);
-        if (!inValidate(description) && inValidate(link.getComment())) {
-            link.setComment(description);
+        if (Boolean.TRUE.equals(JavaScriptEngineFactory.walkJson(entries, "video/drm"))) {
+            final String type = StringUtils.valueOrEmpty(StringUtils.valueOfOrNull(JavaScriptEngineFactory.walkJson(entries, "video/drm_type")));
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "DRM '" + type + "' protected");
+        } else if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            // 89353
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "unsupported streaming format");
         }
         return AvailableStatus.TRUE;
     }
@@ -120,18 +128,28 @@ public class FrancetelevisionsCom extends PluginForHost {
         String hls_master = null;
         String url_http = null;
         String url_temp = null;
-        final ArrayList<Object> ressourcelist = (ArrayList) entries.get("videos");
+        final ArrayList<Object> ressourcelist = new ArrayList<Object>();
+        ressourcelist.add(entries.get("video"));
         final ArrayList<String> hls = new ArrayList<String>();
         for (final Object videoo : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) videoo;
-            final String format = (String) entries.get("format");
+            final Map<String, Object> entries = (Map<String, Object>) videoo;
+            String format = (String) entries.get("format");
             url_temp = (String) entries.get("url");
             if (inValidate(format) || inValidate(url_temp)) {
                 continue;
+            } else if ("dash".equals(format)) {
+                if (false) {
+                    // convert to hls, but drm protected
+                    format = "hls";
+                    url_temp = url_temp.replace("manifest.mpd", "master.m3u8");
+                } else {
+                    // unsupported,89353
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "unsupported streaming format");
+                }
             }
-            if (format.equals("mp4-dp")) {
+            if ("mp4-dp".equals(format)) {
                 url_http = url_temp;
-            } else if (format.contains("hls") || format.contains("m3u8")) {
+            } else if ("hls".equals(format) || "m3u8".equals(format)) {
                 for (final String host : new String[] { "hdfauthftv-a.akamaihd.net", "hdfauth.francetv.fr" }) {
                     try {
                         final Browser brc = br.cloneBrowser();
@@ -206,7 +224,7 @@ public class FrancetelevisionsCom extends PluginForHost {
     }
 
     private String formatDate(final String input) {
-        final long date = TimeFormatter.getMilliSeconds(input, "dd/MM/yyyy HH:mm", Locale.FRANCE);
+        final long date = TimeFormatter.getMilliSeconds(input, "yyyy'-'MM'-'dd'T'HH:mm", Locale.FRANCE);
         String formattedDate = null;
         final String targetFormat = "yyyy-MM-dd";
         Date theDate = new Date(date);
