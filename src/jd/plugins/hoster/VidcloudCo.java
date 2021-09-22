@@ -17,6 +17,15 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -27,15 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidcloud.ru" }, urls = { "https?://(?:www\\.)?(?:vidcloud\\.co|vcstream\\.to|vidcloud\\.ru)/(?:embed|v)/([a-z0-9]+)" })
 public class VidcloudCo extends PluginForHost {
@@ -96,6 +96,9 @@ public class VidcloudCo extends PluginForHost {
             filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)\"/>").getMatch(0);
         }
         br.getPage("https://" + this.getHost() + "/player?fid=" + fid + "&page=embed");
+        if (!br.containsHTML(this.getFID(link))) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String status = PluginJSonUtils.getJson(br, "status");
         if (br.getHttpConnection().getResponseCode() == 404 || "false".equals(status)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -128,8 +131,8 @@ public class VidcloudCo extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
@@ -138,8 +141,8 @@ public class VidcloudCo extends PluginForHost {
         br.getPage(this.dllink);
         final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
         this.dllink = hlsbest.getDownloadurl();
-        checkFFmpeg(downloadLink, "Download a HLS Stream");
-        dl = new HLSDownloader(downloadLink, br, this.dllink);
+        checkFFmpeg(link, "Download a HLS Stream");
+        dl = new HLSDownloader(link, br, this.dllink);
         dl.startDownload();
     }
 
