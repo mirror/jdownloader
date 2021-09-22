@@ -58,6 +58,7 @@ public abstract class IExtraction {
         this.filters = filters;
     }
 
+    /* TODO: add support for different path delimiter, eg replace delimiter and check twice */
     protected boolean isFiltered(final String path) {
         final String check = "/".concat(path);
         for (final Matcher regex : filters) {
@@ -66,7 +67,7 @@ public abstract class IExtraction {
                     return true;
                 }
             } catch (final Throwable e) {
-                logger.log(e);
+                getLogger().log(e);
             }
         }
         return false;

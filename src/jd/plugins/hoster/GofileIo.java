@@ -16,9 +16,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -32,6 +35,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
@@ -40,6 +44,7 @@ import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -80,6 +85,38 @@ public class GofileIo extends PluginForHost {
         return this.requestFileInformation(link, false);
     }
 
+    protected static AtomicReference<String> TOKEN           = new AtomicReference<String>();
+    protected static AtomicLong              TOKEN_TIMESTAMP = new AtomicLong(-1);
+    protected final static long              TOKEN_EXPIRE    = 30 * 60 * 1000l;
+
+    public static String getToken(Plugin plugin, Browser br) throws IOException, PluginException {
+        synchronized (TOKEN) {
+            String token = TOKEN.get();
+            if (!StringUtils.isEmpty(token) && Time.systemIndependentCurrentJVMTimeMillis() - TOKEN_TIMESTAMP.get() < TOKEN_EXPIRE) {
+                return token;
+            } else {
+                final Browser brc = br.cloneBrowser();
+                final GetRequest req = brc.createGetRequest("https://api." + plugin.getHost() + "/createAccount");
+                req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://gofile.io"));
+                req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://gofile.io"));
+                brc.getPage(req);
+                final HashMap<String, Object> response = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                if ("ok".equals(response.get("status"))) {
+                    token = (String) JavaScriptEngineFactory.walkJson(response, "data/token");
+                    if (StringUtils.isEmpty(token)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else {
+                        TOKEN.set(token);
+                        TOKEN_TIMESTAMP.set(Time.systemIndependentCurrentJVMTimeMillis());
+                        return token;
+                    }
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+        }
+    }
+
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -102,6 +139,7 @@ public class GofileIo extends PluginForHost {
         boolean passwordRequired = false;
         int attempt = 0;
         final Browser brc = br.cloneBrowser();
+        final String token = getToken(this, brc);
         Map<String, Object> response = null;
         do {
             if (passwordRequired) {
@@ -111,7 +149,7 @@ public class GofileIo extends PluginForHost {
                 /* E.g. first try and password is available from when user added folder via crawler. */
                 query.addAndReplace("password", JDHash.getSHA256(link.getDownloadPassword()));
             }
-            final GetRequest req = br.createGetRequest("https://api." + this.getHost() + "/getContent?" + query.toString());
+            final GetRequest req = br.createGetRequest("https://api." + this.getHost() + "/getContent?" + query.toString() + "&token=" + token);
             req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://gofile.io"));
             req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://gofile.io"));
             brc.getPage(req);

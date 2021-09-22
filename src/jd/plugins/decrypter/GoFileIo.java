@@ -39,12 +39,13 @@ public class GoFileIo extends PluginForDecrypt {
         int attempt = 0;
         Map<String, Object> response = null;
         final Browser brc = br.cloneBrowser();
+        final String token = jd.plugins.hoster.GofileIo.getToken(this, brc);
         do {
             if (passwordRequired) {
                 passCode = getUserInput("Password?", parameter);
                 query.addAndReplace("password", JDHash.getSHA256(passCode));
             }
-            final GetRequest req = br.createGetRequest("https://api." + this.getHost() + "/getContent?" + query.toString());
+            final GetRequest req = br.createGetRequest("https://api." + this.getHost() + "/getContent?" + query.toString() + "&token=" + token);
             req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://gofile.io"));
             req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://gofile.io"));
             brc.getPage(req);
