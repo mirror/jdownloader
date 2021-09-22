@@ -21,7 +21,7 @@ public enum DONATE_EVENT {
         @Override
         public boolean isNow() {
             final GregorianCalendar calendar = new GregorianCalendar();
-            calendar.setTimeInMillis(timeStamp);
+            calendar.setTimeInMillis(getNowTimeStamp());
             final int day = calendar.get(Calendar.DAY_OF_MONTH);
             final int month = calendar.get(Calendar.MONTH);
             final int year = calendar.get(Calendar.YEAR);
@@ -37,6 +37,9 @@ public enum DONATE_EVENT {
             } else if (year == 2021) {
                 // Corona
                 return false;
+            } else if (year == 2022) {
+                // Corona?
+                return false;
             }
             return false;
         }
@@ -46,7 +49,7 @@ public enum DONATE_EVENT {
         public boolean isNow() {
             // last day of the year and first day of the year
             final GregorianCalendar calendar = new GregorianCalendar();
-            calendar.setTimeInMillis(timeStamp);
+            calendar.setTimeInMillis(getNowTimeStamp());
             final int day = calendar.get(Calendar.DAY_OF_MONTH);
             final int month = calendar.get(Calendar.MONTH);
             final int lastDay = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
@@ -60,7 +63,7 @@ public enum DONATE_EVENT {
         @Override
         public String getToolTipText() {
             final GregorianCalendar calendar = new GregorianCalendar();
-            calendar.setTimeInMillis(timeStamp);
+            calendar.setTimeInMillis(getNowTimeStamp());
             final int year = calendar.get(Calendar.YEAR);
             final int happyNewYear;
             if (calendar.get(Calendar.DAY_OF_MONTH) == 1) {
@@ -76,7 +79,7 @@ public enum DONATE_EVENT {
         public String getID() {
             // NEWYEARSEVE.CurrentYear-NextYear
             final GregorianCalendar calendar = new GregorianCalendar();
-            calendar.setTimeInMillis(timeStamp);
+            calendar.setTimeInMillis(getNowTimeStamp());
             final int year = calendar.get(Calendar.YEAR);
             if (calendar.get(Calendar.DAY_OF_MONTH) == 1) {
                 return name() + "." + (year - 1) + "-" + year;
@@ -95,7 +98,7 @@ public enum DONATE_EVENT {
         public boolean isNow() {
             // 7 days, from 20.12 - 26.12
             final GregorianCalendar calendar = new GregorianCalendar();
-            calendar.setTimeInMillis(timeStamp);
+            calendar.setTimeInMillis(getNowTimeStamp());
             final int day = calendar.get(Calendar.DAY_OF_MONTH);
             final int month = calendar.get(Calendar.MONTH);
             if (month == Calendar.DECEMBER && day >= 20 && day <= 26) {
@@ -114,7 +117,7 @@ public enum DONATE_EVENT {
         @Override
         public boolean isNow() {
             final GregorianCalendar calendar = new GregorianCalendar();
-            calendar.setTimeInMillis(timeStamp);
+            calendar.setTimeInMillis(getNowTimeStamp());
             final int day = calendar.get(Calendar.DAY_OF_MONTH);
             final int month = calendar.get(Calendar.MONTH);
             if (month == Calendar.OCTOBER && day == 31) {
@@ -133,7 +136,7 @@ public enum DONATE_EVENT {
         @Override
         public boolean isNow() {
             final GregorianCalendar calendar = new GregorianCalendar();
-            calendar.setTimeInMillis(timeStamp);
+            calendar.setTimeInMillis(getNowTimeStamp());
             final int day = calendar.get(Calendar.DAY_OF_MONTH);
             final int month = calendar.get(Calendar.MONTH);
             if (month == Calendar.FEBRUARY && day == 14) {
@@ -152,7 +155,7 @@ public enum DONATE_EVENT {
         @Override
         public boolean isNow() {
             final GregorianCalendar calendar = new GregorianCalendar();
-            calendar.setTimeInMillis(timeStamp);
+            calendar.setTimeInMillis(getNowTimeStamp());
             final int day = calendar.get(Calendar.DAY_OF_MONTH);
             final int month = calendar.get(Calendar.MONTH);
             final int year = calendar.get(Calendar.YEAR);
@@ -180,7 +183,7 @@ public enum DONATE_EVENT {
         @Override
         public boolean isNow() {
             final GregorianCalendar calendar = new GregorianCalendar();
-            calendar.setTimeInMillis(timeStamp);
+            calendar.setTimeInMillis(getNowTimeStamp());
             final int day = calendar.get(Calendar.DAY_OF_MONTH);
             final int month = calendar.get(Calendar.MONTH);
             final int year = calendar.get(Calendar.YEAR);
@@ -238,8 +241,7 @@ public enum DONATE_EVENT {
             return name() + "." + timeStamp;
         }
     };
-    private static final long timeStamp = System.currentTimeMillis();
-    private final String      iconKey;
+    private final String iconKey;
 
     private DONATE_EVENT(final String iconKey) {
         this.iconKey = iconKey;
@@ -265,9 +267,13 @@ public enum DONATE_EVENT {
 
     public abstract String getToolTipText();
 
+    protected long getNowTimeStamp() {
+        return System.currentTimeMillis();
+    }
+
     public String getID() {
         final GregorianCalendar calendar = new GregorianCalendar();
-        calendar.setTimeInMillis(timeStamp);
+        calendar.setTimeInMillis(getNowTimeStamp());
         return name() + "." + calendar.get(Calendar.YEAR);
     }
 

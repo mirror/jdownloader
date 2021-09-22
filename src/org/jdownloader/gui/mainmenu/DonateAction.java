@@ -40,6 +40,10 @@ public class DonateAction extends CustomizableAppAction {
             protected int getPreferredWidth() {
                 return 650;
             };
+
+            protected int getPreferredHeight() {
+                return 150;
+            };
         };
         final ConfirmDialogInterface di = UIOManager.I().show(null, d);
         if (di.getCloseReason() == CloseReason.OK) {
