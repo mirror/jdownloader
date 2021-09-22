@@ -45,9 +45,8 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public abstract class BrowserReference implements ExtendedHttpRequestHandler, HttpRequestHandler, ConnectionHook {
-    private final AtomicReference<HttpHandlerInfo> handlerInfo = new AtomicReference<HttpHandlerInfo>(null);
-    private final AbstractBrowserChallenge         challenge;
-    private final UniqueAlltimeID                  id          = new UniqueAlltimeID();
+    private final AbstractBrowserChallenge challenge;
+    private final UniqueAlltimeID          id = new UniqueAlltimeID();
 
     public UniqueAlltimeID getId() {
         return id;
@@ -90,8 +89,8 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
         this.challenge = challenge;
     }
 
-    protected volatile HttpHandlerInfo handler = null;
-    protected final static Object      LOCK    = new Object();
+    protected final AtomicReference<HttpHandlerInfo> handlerInfo = new AtomicReference<HttpHandlerInfo>(null);
+    protected final static Object                    LOCK        = new Object();
 
     public void open() throws IOException {
         TaskQueue.getQueue().addWait(new QueueAction<Void, IOException>() {
@@ -107,13 +106,14 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
                             port = 65000;
                         }
                         lHandlerInfo = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(port, true, BrowserReference.this);
+                        handlerInfo.set(lHandlerInfo);
                     } catch (final IOException e) {
                         getLogger().log(e);
                         lHandlerInfo = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(0, true, BrowserReference.this);
+                        handlerInfo.set(lHandlerInfo);
                     }
                     BrowserSolverService.getInstance().getConfig().setLocalHttpPort(lHandlerInfo.getPort());
                 }
-                handler = lHandlerInfo;
                 openURL(URLHelper.parseLocation(new URL(getBase()), "?id=" + id.getID()));
                 return null;
             }
@@ -139,7 +139,7 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
     }
 
     public int getBasePort() {
-        final HttpHandlerInfo handler = this.handler;
+        final HttpHandlerInfo handler = handlerInfo.get();
         if (handler != null) {
             return handler.getPort();
         } else {
@@ -189,10 +189,10 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
     }
 
     public void dispose() {
+        final HttpHandlerInfo lHandlerInfo = handlerInfo.getAndSet(null);
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
             @Override
             protected Void run() throws RuntimeException {
-                final HttpHandlerInfo lHandlerInfo = handlerInfo.getAndSet(null);
                 if (lHandlerInfo != null) {
                     DeprecatedAPIHttpServerController.getInstance().unregisterRequestHandler(lHandlerInfo);
                 }
@@ -245,7 +245,7 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.appwork.utils.net.httpserver.handler.HttpRequestHandler#onGetRequest(org.appwork.utils.net.httpserver.requests.GetRequest,
      * org.appwork.utils.net.httpserver.responses.HttpResponse)
      */
