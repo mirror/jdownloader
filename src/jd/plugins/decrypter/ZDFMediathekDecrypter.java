@@ -822,7 +822,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         if (filesize > 0) {
                             dl.setAvailable(true);
                             dl.setVerifiedFileSize(filesize);
-                            // dl.setDownloadSize(filesize);
                         }
                         setDownloadlinkProperties(dl, final_filename, type, linkid, title, tv_show, date_formatted, tv_station);
                         final String qualitySelectorString = generateQualitySelectorString(protocol, ext, quality, language, audio_class);
