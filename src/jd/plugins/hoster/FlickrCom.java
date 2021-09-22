@@ -35,7 +35,6 @@ import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.os.CrossSystem;
@@ -72,13 +71,11 @@ import jd.utils.JDUtilities;
 public class FlickrCom extends PluginForHost {
     public FlickrCom(PluginWrapper wrapper) {
         super(wrapper);
-        /*
-         * 2021-09-17: Disabled account support for now as mature content can be downloaded without account so the only reason to use an
-         * account might be to download self uploaded but private content(??!)
+        /**
+         * Accounts are required to be able to download some mature content and/or content that is private (can only be viewed by the user
+         * who has added the account) and some "moderated" content.
          */
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            this.enablePremium("https://edit.yahoo.com/registration?.src=flickrsignup");
-        }
+        this.enablePremium("https://edit.yahoo.com/registration?.src=flickrsignup");
         setConfigElements();
     }
 
@@ -88,34 +85,34 @@ public class FlickrCom extends PluginForHost {
     }
 
     /* Settings */
-    private static final String            SETTING_FAST_LINKCHECK                  = "FAST_LINKCHECK";
-    private static final String            SETTING_SELECTED_PHOTO_QUALITY          = "SELECTED_PHOTO_QUALITY";
-    private static final String            SETTING_SELECTED_VIDEO_QUALITY          = "SELECTED_VIDEO_QUALITY";
-    private static final String            CUSTOM_DATE                             = "CUSTOM_DATE";
-    private static final String            CUSTOM_FILENAME                         = "CUSTOM_FILENAME";
-    private static final String            CUSTOM_FILENAME_EMPTY_TAG_STRING        = "CUSTOM_FILENAME_EMPTY_TAG_STRING";
-    public static final String             PROPERTY_EXT                            = "ext";
-    public static final String             PROPERTY_USERNAME_INTERNAL              = "username_internal";
-    public static final String             PROPERTY_USERNAME                       = "username";
-    public static final String             PROPERTY_USERNAME_FULL                  = "username_full";
-    public static final String             PROPERTY_USERNAME_URL                   = "username_url";
-    public static final String             PROPERTY_REAL_NAME                      = "real_name";
-    public static final String             PROPERTY_CONTENT_ID                     = "content_id";
-    public static final String             PROPERTY_SET_ID                         = "set_id";
-    public static final String             PROPERTY_DATE                           = "dateadded";                       // timestamp
+    private static final String              SETTING_FAST_LINKCHECK                  = "FAST_LINKCHECK";
+    private static final String              SETTING_SELECTED_PHOTO_QUALITY          = "SELECTED_PHOTO_QUALITY";
+    private static final String              SETTING_SELECTED_VIDEO_QUALITY          = "SELECTED_VIDEO_QUALITY";
+    private static final String              CUSTOM_DATE                             = "CUSTOM_DATE";
+    private static final String              CUSTOM_FILENAME                         = "CUSTOM_FILENAME";
+    private static final String              CUSTOM_FILENAME_EMPTY_TAG_STRING        = "CUSTOM_FILENAME_EMPTY_TAG_STRING";
+    public static final String               PROPERTY_EXT                            = "ext";
+    public static final String               PROPERTY_USERNAME_INTERNAL              = "username_internal";
+    public static final String               PROPERTY_USERNAME                       = "username";
+    public static final String               PROPERTY_USERNAME_FULL                  = "username_full";
+    public static final String               PROPERTY_USERNAME_URL                   = "username_url";
+    public static final String               PROPERTY_REAL_NAME                      = "real_name";
+    public static final String               PROPERTY_CONTENT_ID                     = "content_id";
+    public static final String               PROPERTY_SET_ID                         = "set_id";
+    public static final String               PROPERTY_DATE                           = "dateadded";                       // timestamp
     /* pre-formatted string */
-    public static final String             PROPERTY_DATE_TAKEN                     = "date_taken";
-    public static final String             PROPERTY_TITLE                          = "title";
-    public static final String             PROPERTY_ORDER_ID                       = "order_id";
-    public static final String             PROPERTY_MEDIA_TYPE                     = "media";
-    private static final String            PROPERTY_SETTING_PREFER_SERVER_FILENAME = "prefer_server_filename";
-    public static final String             PROPERTY_QUALITY                        = "quality";
+    public static final String               PROPERTY_DATE_TAKEN                     = "date_taken";
+    public static final String               PROPERTY_TITLE                          = "title";
+    public static final String               PROPERTY_ORDER_ID                       = "order_id";
+    public static final String               PROPERTY_MEDIA_TYPE                     = "media";
+    private static final String              PROPERTY_SETTING_PREFER_SERVER_FILENAME = "prefer_server_filename";
+    public static final String               PROPERTY_QUALITY                        = "quality";
     /* required e.g. to download video streams */
-    public static final String             PROPERTY_SECRET                         = "secret";
-    public static final String             PROPERTY_DIRECTURL                      = "directurl_%s";
-    public static final String             PROPERTY_ACCOUNT_CSRF                   = "csrf";
-    public static final String             PROPERTY_ACCOUNT_USERNAME_INTERNAL      = "username_internal";
-    private static HashMap<String, Object> api                                     = new HashMap<String, Object>();
+    public static final String               PROPERTY_SECRET                         = "secret";
+    public static final String               PROPERTY_DIRECTURL                      = "directurl_%s";
+    public static final String               PROPERTY_ACCOUNT_CSRF                   = "csrf";
+    public static final String               PROPERTY_ACCOUNT_USERNAME_INTERNAL      = "username_internal";
+    protected static HashMap<String, Object> api                                     = new HashMap<String, Object>();
 
     /** Max 2000 requests per hour. */
     @Override
@@ -192,15 +189,7 @@ public class FlickrCom extends PluginForHost {
     }
 
     private String getPublicAPIKey(final Browser br) throws IOException {
-        synchronized (api) {
-            if (!api.containsKey("apikey") || !api.containsKey("timestamp") || System.currentTimeMillis() - ((Number) api.get("timestamp")).longValue() > 1 * 60 * 60 * 1000) {
-                logger.info("apikey refresh required");
-                final String apikey = jd.plugins.decrypter.FlickrCom.findPublicApikey(br);
-                api.put("apikey", apikey);
-                api.put("timestamp", System.currentTimeMillis());
-            }
-            return api.get("apikey").toString();
-        }
+        return jd.plugins.decrypter.FlickrCom.getPublicAPIKey(this, br);
     }
 
     @Override
@@ -251,13 +240,13 @@ public class FlickrCom extends PluginForHost {
         /* 2021-09-17: Prefer API over website. */
         final boolean useAPI = true;
         if (useAPI) {
-            availablecheckAPI(link);
+            availablecheckAPI(link, account);
         } else {
-            availablecheckWebsite(link);
+            availablecheckWebsite(link, account);
         }
         final String directurl;
         if (isVideo(link) && (isDownload || !this.getPluginConfig().getBooleanProperty(SETTING_FAST_LINKCHECK, default_SETTING_FAST_LINKCHECK))) {
-            directurl = getVideoDownloadurlAPI(link);
+            directurl = getVideoDownloadurlAPI(link, account);
         } else {
             directurl = getStoredDirecturl(link);
         }
@@ -283,7 +272,7 @@ public class FlickrCom extends PluginForHost {
     }
 
     /** Checks single video/photo via website and sets required DownloadLink properties. */
-    private void availablecheckWebsite(final DownloadLink link) throws Exception {
+    private void availablecheckWebsite(final DownloadLink link, final Account account) throws Exception {
         /* 2021-09-13: Don't do this anymore as it may not always work for videos! */
         // br.getPage(getPhotoURLWithoutAlbumInfo(link) + "/in/photostream");
         br.getPage(getPhotoURLWithoutAlbumInfo(link));
@@ -487,7 +476,7 @@ public class FlickrCom extends PluginForHost {
     }
 
     /** Checks single video/photo via API and sets required DownloadLink properties. */
-    private void availablecheckAPI(final DownloadLink link) throws Exception {
+    private void availablecheckAPI(final DownloadLink link, final Account account) throws Exception {
         final UrlQuery query = new UrlQuery();
         query.add("api_key", this.getPublicAPIKey(br));
         query.add("extras", getApiParamExtras());
@@ -495,7 +484,11 @@ public class FlickrCom extends PluginForHost {
         query.add("hermes", "1");
         query.add("hermesClient", "1");
         query.add("nojsoncallback", "1");
-        query.add("csrf", "");
+        if (account != null) {
+            query.add("csrf", Encoding.urlEncode(account.getStringProperty(PROPERTY_ACCOUNT_CSRF)));
+        } else {
+            query.add("csrf", "");
+        }
         query.add("method", "flickr.photos.getInfo");
         query.add("photo_id", this.getFID(link));
         br.getPage(jd.plugins.decrypter.FlickrCom.API_BASE + "services/rest?" + query.toString());
@@ -512,12 +505,8 @@ public class FlickrCom extends PluginForHost {
         parseInfoAPI(this, link, photo);
     }
 
-    private String getVideoDownloadurlAPI(final DownloadLink link) throws PluginException, IOException {
+    private String getVideoDownloadurlAPI(final DownloadLink link, final Account account) throws PluginException, IOException {
         /* Video */
-        /*
-         * TODO: Add correct API csrf cookie handling so we can use this while being logged in to download videos and do not have to remove
-         * the cookies here - that's just a workaround!
-         */
         final String secret = link.getStringProperty(PROPERTY_SECRET);
         if (StringUtils.isEmpty(secret)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -527,7 +516,11 @@ public class FlickrCom extends PluginForHost {
         query.add("photo_id", getFID(link));
         query.add("secret", secret);
         query.add("method", "flickr.video.getStreamInfo");
-        query.add("csrf", "");
+        if (account != null) {
+            query.add("csrf", Encoding.urlEncode(account.getStringProperty(PROPERTY_ACCOUNT_CSRF)));
+        } else {
+            query.add("csrf", "");
+        }
         query.add("api_key", getPublicAPIKey(this.br));
         query.add("format", "json");
         query.add("hermes", "1");
@@ -873,11 +866,16 @@ public class FlickrCom extends PluginForHost {
     }
 
     private boolean isResumable(final DownloadLink link) {
-        if (isVideo(link)) {
-            return true;
-        } else {
-            return false;
-        }
+        // if (isVideo(link)) {
+        // return true;
+        // } else {
+        // return true;
+        // }
+        /*
+         * 2021-09-22: Videos are always resumable. For photos it varies but upper handling correctly auto-detects it so let's allow resume
+         * in general.
+         */
+        return true;
     }
 
     private int getMaxChunks(final DownloadLink link) {
