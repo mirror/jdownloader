@@ -45,6 +45,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -68,9 +69,6 @@ public class FlickrCom extends PluginForDecrypt {
     public static final String                   API_BASE                 = "https://api.flickr.com/";
     private static final int                     api_max_entries_per_page = 500;
     private ArrayList<DownloadLink>              decryptedLinks           = new ArrayList<DownloadLink>();
-    private String                               csrf                     = null;
-    private boolean                              loggedin                 = false;
-    private int                                  statuscode               = 0;
     private static LinkedHashMap<String, String> INTERNAL_USERNAME_CACHE  = new LinkedHashMap<String, String>() {
                                                                               protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
                                                                                   return size() > 200;
@@ -98,27 +96,29 @@ public class FlickrCom extends PluginForDecrypt {
     }
 
     /**
-     * Using API: https://www.flickr.com/services/api/ - without our own apikey. Site is still used for /* TODO API: Get correct csrf values
-     * so we can make requests as a logged-in user.
+     * Using API: https://www.flickr.com/services/api/ - with websites public apikey.
      */
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         correctAddedURL(param);
         prepBrowserAPI(this.br);
-        /* Check if link is for hosterplugin */
-        if (param.getCryptedUrl().matches(TYPE_SINGLE_PHOTO)) {
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account != null) {
+            /* Login whenever possible */
+            final PluginForHost flickrHostPlugin = this.getNewPluginForHostInstance(this.getHost());
+            ((jd.plugins.hoster.FlickrCom) flickrHostPlugin).login(account, false);
+        }
+        if (param.getCryptedUrl().matches(INVALIDLINKS) || param.getCryptedUrl().equals("https://www.flickr.com/photos/groups/") || param.getCryptedUrl().contains("/map")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (param.getCryptedUrl().matches(TYPE_SINGLE_PHOTO)) {
             /* Pass to hostplugin */
             decryptedLinks.add(createDownloadlink(param.getCryptedUrl()));
             return decryptedLinks;
-        } else if (param.getCryptedUrl().matches(INVALIDLINKS) || param.getCryptedUrl().equals("https://www.flickr.com/photos/groups/") || param.getCryptedUrl().contains("/map")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
-            /* Login whenever possible */
-            this.loggedin = getUserLogin();
             if (param.getCryptedUrl().matches(TYPE_SETS_OF_USER_ALL)) {
-                apiCrawlSetsOfUser(param);
+                apiCrawlSetsOfUser(param, account);
             } else {
-                api_handleAPI(param);
+                api_handleAPI(param, account);
             }
             return decryptedLinks;
         }
@@ -150,17 +150,11 @@ public class FlickrCom extends PluginForDecrypt {
      *
      * @throws Exception
      */
-    private void api_handleAPI(final CryptedLink param) throws Exception {
-        /* TODO: Fix csrf handling to make requests as logged-in user possible. */
-        br.clearCookies(this.getHost());
+    private void api_handleAPI(final CryptedLink param, final Account account) throws Exception {
         String fpName = null;
-        final String apikey = getPublicAPIKey(this.br);
+        final String apikey = getPublicAPIKey(this, this.br);
         if (StringUtils.isEmpty(apikey)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        csrf = PluginJSonUtils.getJsonValue(br, "csrf");
-        if (csrf == null) {
-            csrf = "";
         }
         br.getHeaders().put("Origin", "https://www." + this.getHost());
         br.getHeaders().put("Referer", "https://www." + this.getHost());
@@ -175,24 +169,27 @@ public class FlickrCom extends PluginForDecrypt {
         String packageDescription = null;
         /* Set this if we pre-access items to e.g. get specific fields in beforehand. */
         boolean alreadyAccessedFirstPage;
-        final UrlQuery params = new UrlQuery();
-        params.add("api_key", apikey);
-        params.add("extras", jd.plugins.hoster.FlickrCom.getApiParamExtras());
-        params.add("format", "json");
-        params.add("per_page", Integer.toString(api_max_entries_per_page));
-        params.add("hermes", "1");
-        params.add("hermesClient", "1");
-        params.add("nojsoncallback", "1");
-        if (this.csrf != null) {
-            params.add("csrf", this.csrf);
+        final UrlQuery query = new UrlQuery();
+        query.add("api_key", apikey);
+        query.add("extras", jd.plugins.hoster.FlickrCom.getApiParamExtras());
+        query.add("format", "json");
+        query.add("per_page", Integer.toString(api_max_entries_per_page));
+        query.add("hermes", "1");
+        query.add("hermesClient", "1");
+        query.add("nojsoncallback", "1");
+        if (account != null) {
+            query.add("csrf", Encoding.urlEncode(account.getStringProperty(jd.plugins.hoster.FlickrCom.PROPERTY_ACCOUNT_CSRF)));
+            query.add("viewerNSID", Encoding.urlEncode(account.getStringProperty(jd.plugins.hoster.FlickrCom.PROPERTY_ACCOUNT_USERNAME_INTERNAL)));
+        } else {
+            query.add("csrf", "");
         }
         String nameOfMainMap;
         if (param.getCryptedUrl().matches(TYPE_SET_SINGLE)) {
             usernameFromURL = new Regex(param.getCryptedUrl(), TYPE_SET_SINGLE).getMatch(0);
             setID = new Regex(param.getCryptedUrl(), TYPE_SET_SINGLE).getMatch(1);
             /* This request is only needed to get the title and owner of the photoset */
-            params.add("photoset_id", setID);
-            final UrlQuery paramsSetInfo = params;
+            query.add("photoset_id", setID);
+            final UrlQuery paramsSetInfo = query;
             paramsSetInfo.add("method", "flickr.photosets.getInfo");
             api_getPage(API_BASE + "services/rest?" + paramsSetInfo.toString());
             final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
@@ -206,16 +203,16 @@ public class FlickrCom extends PluginForDecrypt {
             } else {
                 fpName = Encoding.unicodeDecode(fpName);
             }
-            params.addAndReplace("method", "flickr.photosets.getPhotos");
+            query.addAndReplace("method", "flickr.photosets.getPhotos");
             nameOfMainMap = "photoset";
             alreadyAccessedFirstPage = false;
             givenUsernameDataIsValidForAllMediaItems = true;
         } else if (param.getCryptedUrl().matches(TYPE_GALLERY)) {
             usernameFromURL = new Regex(param.getCryptedUrl(), TYPE_GALLERY).getMatch(0);
             galleryID = new Regex(param.getCryptedUrl(), TYPE_GALLERY).getMatch(1);
-            params.add("method", "flickr.galleries.getPhotos");
-            params.add("gallery_id", galleryID);
-            final UrlQuery specialQueryForFirstRequest = params;
+            query.add("method", "flickr.galleries.getPhotos");
+            query.add("gallery_id", galleryID);
+            final UrlQuery specialQueryForFirstRequest = query;
             specialQueryForFirstRequest.add("get_gallery_info", "1");
             api_getPage(API_BASE + "services/rest?" + specialQueryForFirstRequest.toString());
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
@@ -233,20 +230,20 @@ public class FlickrCom extends PluginForDecrypt {
             givenUsernameDataIsValidForAllMediaItems = false;
         } else if (param.getCryptedUrl().matches(TYPE_FAVORITES)) {
             usernameFromURL = new Regex(param.getCryptedUrl(), TYPE_FAVORITES).getMatch(0);
-            usernameInternal = this.lookupUser(usernameFromURL);
-            params.add("method", "flickr.favorites.getList");
-            params.add("user_id", Encoding.urlEncode(usernameInternal));
+            usernameInternal = this.lookupUser(usernameFromURL, account);
+            query.add("method", "flickr.favorites.getList");
+            query.add("user_id", Encoding.urlEncode(usernameInternal));
             fpName = "flickr.com favourites of user " + usernameFromURL;
             nameOfMainMap = "photos";
             alreadyAccessedFirstPage = false;
             givenUsernameDataIsValidForAllMediaItems = false;
         } else if (param.getCryptedUrl().matches(TYPE_GROUPS)) {
             usernameFromURL = new Regex(param.getCryptedUrl(), TYPE_GROUPS).getMatch(0);
-            usernameInternal = this.lookupGroup(usernameFromURL);
-            params.add("group_id", Encoding.urlEncode(usernameInternal));
-            params.add("method", "flickr.groups.pools.getPhotos");
+            usernameInternal = this.lookupGroup(usernameFromURL, account);
+            query.add("group_id", Encoding.urlEncode(usernameInternal));
+            query.add("method", "flickr.groups.pools.getPhotos");
             /* Only request group info on first request. */
-            final UrlQuery specialQueryForFirstRequest = params;
+            final UrlQuery specialQueryForFirstRequest = query;
             specialQueryForFirstRequest.add("get_group_info", "1");
             api_getPage(API_BASE + "services/rest?" + specialQueryForFirstRequest.toString());
             final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
@@ -260,9 +257,9 @@ public class FlickrCom extends PluginForDecrypt {
         } else if (param.getCryptedUrl().matches(TYPE_USER)) {
             /* Crawl all items of a user */
             usernameFromURL = new Regex(param.getCryptedUrl(), TYPE_USER).getMatch(0);
-            usernameInternal = this.lookupUser(usernameFromURL);
-            params.add("user_id", usernameInternal);
-            params.add("method", "flickr.people.getPublicPhotos"); // Alternative: flickr.people.getPhotos
+            usernameInternal = this.lookupUser(usernameFromURL, account);
+            query.add("user_id", usernameInternal);
+            query.add("method", "flickr.people.getPublicPhotos"); // Alternative: flickr.people.getPhotos
             fpName = "flickr.com images of user " + usernameFromURL;
             nameOfMainMap = "photos";
             alreadyAccessedFirstPage = false;
@@ -289,8 +286,8 @@ public class FlickrCom extends PluginForDecrypt {
         int page = 1;
         do {
             if (page > 1 || !alreadyAccessedFirstPage) {
-                params.addAndReplace("page", Integer.toString(page));
-                api_getPage(API_BASE + "services/rest?" + params.toString());
+                query.addAndReplace("page", Integer.toString(page));
+                api_getPage(API_BASE + "services/rest?" + query.toString());
             }
             final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final Map<String, Object> photoInfo = (Map<String, Object>) entries.get(nameOfMainMap);
@@ -372,27 +369,34 @@ public class FlickrCom extends PluginForDecrypt {
         }
     }
 
+    /** Wrapper */
     private String getFormattedFilename(final DownloadLink dl) throws ParseException {
         return jd.plugins.hoster.FlickrCom.getFormattedFilename(dl);
     }
 
-    private void apiCrawlSetsOfUser(final CryptedLink param) throws Exception {
+    /** Crawls all sets/albums of a user. */
+    private void apiCrawlSetsOfUser(final CryptedLink param, final Account account) throws Exception {
         final String username = new Regex(param.getCryptedUrl(), TYPE_SETS_OF_USER_ALL).getMatch(0);
         if (username == null) {
             /* Most likely developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String nsid = lookupUser(username);
+        final String nsid = lookupUser(username, account);
         final UrlQuery query = new UrlQuery();
         query.add("format", "json");
-        query.add("csrf", this.csrf);
-        query.add("api_key", getPublicAPIKey(br));
+        query.add("api_key", getPublicAPIKey(this, br));
         query.add("per_page", Integer.toString(api_max_entries_per_page));
         query.add("user_id", Encoding.urlEncode(nsid));
         query.add("method", "flickr.photosets.getList");
         query.add("hermes", "1");
         query.add("hermesClient", "1");
         query.add("nojsoncallback", "1");
+        if (account != null) {
+            query.add("csrf", Encoding.urlEncode(account.getStringProperty(jd.plugins.hoster.FlickrCom.PROPERTY_ACCOUNT_CSRF)));
+            query.add("viewerNSID", Encoding.urlEncode(account.getStringProperty(jd.plugins.hoster.FlickrCom.PROPERTY_ACCOUNT_USERNAME_INTERNAL)));
+        } else {
+            query.add("csrf", "");
+        }
         int totalitems = -1;
         int maxPage = -1;
         int page = 1;
@@ -439,7 +443,7 @@ public class FlickrCom extends PluginForDecrypt {
         }
     }
 
-    private String lookupUser(final String username) throws Exception {
+    private String lookupUser(final String username, final Account account) throws Exception {
         if (StringUtils.isEmpty(username)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (looksLikeInternalUsername(username)) {
@@ -450,8 +454,12 @@ public class FlickrCom extends PluginForDecrypt {
                     final String userURL = "https://www." + this.getHost() + "/photos/" + username + "/";
                     final UrlQuery query = new UrlQuery();
                     query.add("format", "json");
-                    query.add("csrf", this.csrf);
-                    query.add("api_key", getPublicAPIKey(br));
+                    if (account != null) {
+                        query.add("csrf", Encoding.urlEncode(account.getStringProperty(jd.plugins.hoster.FlickrCom.PROPERTY_ACCOUNT_CSRF)));
+                    } else {
+                        query.add("csrf", "");
+                    }
+                    query.add("api_key", getPublicAPIKey(this, br));
                     query.add("method", "flickr.urls.lookupUser");
                     query.add("url", Encoding.urlEncode(userURL));
                     query.add("nojsoncallback", "1");
@@ -468,7 +476,7 @@ public class FlickrCom extends PluginForDecrypt {
         }
     }
 
-    private String lookupGroup(final String groupname) throws Exception {
+    private String lookupGroup(final String groupname, final Account account) throws Exception {
         if (StringUtils.isEmpty(groupname)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (looksLikeInternalUsername(groupname)) {
@@ -479,8 +487,12 @@ public class FlickrCom extends PluginForDecrypt {
                     final String groupURL = "https://www." + this.getHost() + "/groups/" + groupname + "/";
                     final UrlQuery query = new UrlQuery();
                     query.add("format", "json");
-                    query.add("csrf", this.csrf);
-                    query.add("api_key", getPublicAPIKey(br));
+                    if (account != null) {
+                        query.add("csrf", Encoding.urlEncode(account.getStringProperty(jd.plugins.hoster.FlickrCom.PROPERTY_ACCOUNT_CSRF)));
+                    } else {
+                        query.add("csrf", "");
+                    }
+                    query.add("api_key", getPublicAPIKey(this, br));
                     query.add("method", "flickr.urls.lookupGroup");
                     query.add("url", Encoding.urlEncode(groupURL));
                     query.add("nojsoncallback", "1");
@@ -499,7 +511,7 @@ public class FlickrCom extends PluginForDecrypt {
 
     private static Object LOCK = new Object();
 
-    private void api_getPage(final String url) throws IOException, DecrypterException, InterruptedException, PluginException {
+    private void api_getPage(final String url) throws Exception {
         synchronized (LOCK) {
             final URLConnectionAdapter con = br.openGetConnection(url);
             try {
@@ -519,95 +531,94 @@ public class FlickrCom extends PluginForDecrypt {
                 con.disconnect();
             }
         }
-        updatestatuscode();
         this.handleAPIErrors(this.br);
     }
 
-    /** Check for errorcode and set it if existant */
-    private void updatestatuscode() {
-        String errorcode = PluginJSonUtils.getJsonValue(br, "error");
-        if (errorcode == null) {
-            errorcode = PluginJSonUtils.getJsonValue(br, "code");
-        }
-        if (errorcode != null) {
-            statuscode = Integer.parseInt(errorcode);
-        } else {
-            statuscode = 0;
-        }
-    }
-
     /* Handles most of the possible API errorcodes - most of them should never happen. */
-    private void handleAPIErrors(final Browser br) throws DecrypterException, PluginException {
-        final String statusMessage;
-        switch (statuscode) {
-        case 0:
-            /* Everything ok */
-            statusMessage = null;
-            break;
-        case 1:
-            statusMessage = "Group/user/photo not found - possibly invalid nsid";
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        case 2:
-            statusMessage = "No user specified or permission denied";
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        case 98:
-            statusMessage = "Login failed";
-            throw new DecrypterException("API_LOGIN_FAILED");
-        case 100:
-            statusMessage = "Invalid api key";
-            throw new DecrypterException("API_INVALID_APIKEY");
-        case 105:
-            statusMessage = "Service currently unavailable";
-            throw new DecrypterException("API_SERVICE_CURRENTLY_UNAVAILABLE");
-        case 106:
-            statusMessage = "Write operation failed";
-            throw new DecrypterException("API_WRITE_OPERATION FAILED");
-        case 111:
-            statusMessage = "Format not found";
-            throw new DecrypterException("API_FORMAT_NOT_FOUND");
-        case 112:
-            statusMessage = "Method not found";
-            throw new DecrypterException("API_METHOD_NOT_FOUND");
-        case 114:
-            statusMessage = "Invalid SOAP envelope";
-            throw new DecrypterException("API_INVALID_SOAP_ENVELOPE");
-        case 115:
-            statusMessage = "Invalid XML-RPC Method Call";
-            throw new DecrypterException("API_INVALID_XML_RPC_METHOD_CALL");
-        case 116:
-            statusMessage = "Bad URL found";
-            throw new DecrypterException("API_URL_NOT_FOUND");
-        default:
-            statusMessage = "Unknown/unsupported statusCode:" + statuscode;
-            logger.info(statusMessage);
-            break;
+    private void handleAPIErrors(final Browser br) throws Exception {
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final String status = (String) entries.get("stat");
+        if (StringUtils.equalsIgnoreCase(status, "fail")) {
+            final int statuscode = ((Number) entries.get("code")).intValue();
+            final String statusMessage;
+            switch (statuscode) {
+            case 0:
+                /* Everything ok */
+                statusMessage = null;
+                break;
+            case 1:
+                statusMessage = "Group/user/photo not found - possibly invalid nsid";
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            case 2:
+                statusMessage = "No user specified or permission denied";
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            case 98:
+                statusMessage = "Login failed";
+                throw new DecrypterException("API_LOGIN_FAILED");
+            case 100:
+                statusMessage = "Invalid api key";
+                throw new DecrypterException("API_INVALID_APIKEY");
+            case 105:
+                statusMessage = "Service currently unavailable";
+                throw new DecrypterException("API_SERVICE_CURRENTLY_UNAVAILABLE");
+            case 106:
+                /* This should never happen */
+                statusMessage = "Write operation failed";
+                throw new DecrypterException("API_WRITE_OPERATION FAILED");
+            case 111:
+                /* This should never happen */
+                statusMessage = "Format not found";
+                throw new DecrypterException("API_FORMAT_NOT_FOUND");
+            case 112:
+                /* This should never happen */
+                statusMessage = "Method not found";
+                throw new DecrypterException("API_METHOD_NOT_FOUND");
+            case 114:
+                statusMessage = "Invalid SOAP envelope";
+                throw new DecrypterException("API_INVALID_SOAP_ENVELOPE");
+            case 115:
+                statusMessage = "Invalid XML-RPC Method Call";
+                throw new DecrypterException("API_INVALID_XML_RPC_METHOD_CALL");
+            case 116:
+                statusMessage = "Bad URL found";
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            default:
+                /**
+                 * 2021-09-22: E.g. {"stat":"fail","code":119,"message":"The API thinks the user is logged out, but the client thinks the
+                 * user is 123456@N04"} </br>
+                 * --> This may happen if we try to do API calls without user loggedin cookies!
+                 */
+                statusMessage = "Unknown/unsupported statusCode:" + statuscode;
+                logger.info(statusMessage);
+                throw new DecrypterException(statusMessage);
+            }
         }
     }
 
-    private String getPublicAPIKey(final Browser br) throws IOException {
+    public static String getPublicAPIKey(final Plugin plugin, final Browser br) throws IOException {
         synchronized (api) {
             if (!api.containsKey("apikey") || !api.containsKey("timestamp") || System.currentTimeMillis() - ((Number) api.get("timestamp")).longValue() > 1 * 60 * 60 * 1000) {
-                logger.info("apikey refresh required");
-                final String apikey = findPublicApikey(br);
+                if (!api.containsKey("apikey")) {
+                    plugin.getLogger().info("apikey needs to be crawled for the first time");
+                } else {
+                    plugin.getLogger().info("apikey refresh required");
+                }
+                final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(true);
+                brc.getPage("https://www.flickr.com");
+                String apikey = brc.getRegex("root\\.YUI_config\\.flickr\\.api\\.site_key\\s*?=\\s*?\"(.*?)\"").getMatch(0);
+                if (apikey == null) {
+                    apikey = PluginJSonUtils.getJsonValue(brc, "api_key");
+                }
+                if (StringUtils.isEmpty(apikey)) {
+                    /* 2021-09-22: Use static attempt as final fallback */
+                    apikey = "9d5522296a7b6e5af504263952122e1c";
+                }
                 api.put("apikey", apikey);
                 api.put("timestamp", System.currentTimeMillis());
             }
             return api.get("apikey").toString();
         }
-    }
-
-    public static String findPublicApikey(final Browser br) throws IOException {
-        final Browser brc = br.cloneBrowser();
-        brc.setFollowRedirects(true);
-        brc.getPage("https://www.flickr.com/photos/groups/");
-        String apikey = brc.getRegex("root\\.YUI_config\\.flickr\\.api\\.site_key\\s*?=\\s*?\"(.*?)\"").getMatch(0);
-        if (apikey == null) {
-            apikey = PluginJSonUtils.getJsonValue(brc, "api_key");
-        }
-        if (StringUtils.isEmpty(apikey)) {
-            apikey = "89e6ebe516ca5928161b4884693d5995";
-        }
-        return apikey;
     }
 
     /**
@@ -618,7 +629,7 @@ public class FlickrCom extends PluginForDecrypt {
     @SuppressWarnings({ "unchecked" })
     @Deprecated
     /** Deprecated! Uses website without ajax requests! */
-    private void site_handleSite(final CryptedLink param) throws Exception {
+    private void site_handleSite(final CryptedLink param, final Account account) throws Exception {
         prepBrowserWebsite(this.br);
         // if not logged in this is 25... need to confirm for logged in -raztoki20160717
         int maxEntriesPerPage = 25;
@@ -626,7 +637,7 @@ public class FlickrCom extends PluginForDecrypt {
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if ((br.containsHTML("class=\"ThinCase Interst\"") || br.getURL().contains("/login.yahoo.com/")) && !this.loggedin) {
+        } else if ((br.containsHTML("class=\"ThinCase Interst\"") || br.getURL().contains("/login.yahoo.com/"))) {
             throw new AccountRequiredException();
         } else if (param.getCryptedUrl().matches(TYPE_FAVORITES) && br.containsHTML("id=\"no\\-faves\"")) {
             /* Favourite link but user has no favourites */
@@ -786,30 +797,6 @@ public class FlickrCom extends PluginForDecrypt {
 
     public boolean setStringProperty(final DownloadLink link, final String property, String value, final boolean overwrite) {
         return jd.plugins.hoster.FlickrCom.setStringProperty(this, link, property, value, overwrite);
-    }
-
-    public String trimFilename(String filename) {
-        while (filename != null) {
-            if (filename.endsWith(".")) {
-                filename = filename.substring(0, filename.length() - 1);
-            } else if (filename.endsWith(" ")) {
-                filename = filename.substring(0, filename.length() - 1);
-            } else {
-                break;
-            }
-        }
-        return filename;
-    }
-
-    private boolean getUserLogin() throws Exception {
-        final PluginForHost flickrPlugin = getNewPluginForHostInstance(this.getHost());
-        final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
-        if (aa != null) {
-            ((jd.plugins.hoster.FlickrCom) flickrPlugin).login(aa, false);
-            return true;
-        } else {
-            return false;
-        }
     }
 
     public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
