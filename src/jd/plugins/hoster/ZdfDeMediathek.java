@@ -134,7 +134,7 @@ public class ZdfDeMediathek extends PluginForHost {
         rtmp.setRealTime();
     }
 
-    private void download(final DownloadLink downloadLink) throws Exception {
+    private void download(final DownloadLink link) throws Exception {
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
@@ -144,36 +144,52 @@ public class ZdfDeMediathek extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nur von 20-06 Uhr verfügbar!", 30 * 60 * 1000l);
         }
         if (dllink.startsWith("rtmp")) {
-            dl = new RTMPDownload(this, downloadLink, dllink);
+            dl = new RTMPDownload(this, link, dllink);
             setupRTMPConnection(dllink, dl);
             ((RTMPDownload) dl).startDownload();
         } else if (dllink.contains("m3u8")) {
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, dllink);
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, dllink);
             dl.startDownload();
         } else {
             boolean resume = true;
             int maxChunks = 0;
-            if ("subtitle".equals(downloadLink.getStringProperty(PROPERTY_streamingType, null))) {
+            if ("subtitle".equals(link.getStringProperty(PROPERTY_streamingType, null))) {
                 br.getHeaders().put("Accept-Encoding", "identity");
-                downloadLink.setDownloadSize(0);
+                link.setDownloadSize(0);
                 resume = false;
                 maxChunks = 1;
             }
             br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxChunks);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 if (br.getHttpConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 3 * 60 * 1000l);
                 } else if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 3 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
                 }
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
             }
             if (this.dl.startDownload()) {
-                this.postprocess(downloadLink);
+                this.postprocess(link);
             }
+        }
+    }
+
+    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
+        if (super.looksLikeDownloadableContent(urlConnection)) {
+            return true;
+        } else if (urlConnection.getURL().toString().endsWith(".xml") && urlConnection.getContentType().contains("application/xml")) {
+            /* XML subtitle */
+            return true;
+        } else {
+            return false;
         }
     }
 
