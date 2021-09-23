@@ -67,7 +67,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(?:www\\.)?flickr\\.com/photos/(?!tags/)([^<>\"/]+)/(\\d+)(?:/in/album-\\d+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(?:www\\.)?flickr\\.com/photos/([^<>\"/]+)/(\\d+)(?:/in/album-\\d+|/in/gallery-\\d+@N\\d+-\\d+)?" })
 public class FlickrCom extends PluginForHost {
     public FlickrCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -98,8 +98,10 @@ public class FlickrCom extends PluginForHost {
     public static final String               PROPERTY_USERNAME_URL                   = "username_url";
     public static final String               PROPERTY_REAL_NAME                      = "real_name";
     public static final String               PROPERTY_CONTENT_ID                     = "content_id";
-    public static final String               PROPERTY_SET_ID                         = "set_id";
-    public static final String               PROPERTY_DATE                           = "dateadded";                       // timestamp
+    public static final String               PROPERTY_SET_ID                         = "set_id";                                                                    // set/album
+    public static final String               PROPERTY_GALLERY_ID                     = "gallery_id";                                                                // gallery
+    // id
+    public static final String               PROPERTY_DATE                           = "dateadded";                                                                 // timestamp
     /* pre-formatted string */
     public static final String               PROPERTY_DATE_TAKEN                     = "date_taken";
     public static final String               PROPERTY_TITLE                          = "title";
@@ -112,6 +114,9 @@ public class FlickrCom extends PluginForHost {
     public static final String               PROPERTY_DIRECTURL                      = "directurl_%s";
     public static final String               PROPERTY_ACCOUNT_CSRF                   = "csrf";
     public static final String               PROPERTY_ACCOUNT_USERNAME_INTERNAL      = "username_internal";
+    private static final String              TYPE_PHOTO                              = "https?://[^/]+/photos/([^<>\"/]+)/(\\d+)$";
+    private static final String              TYPE_PHOTO_AS_PART_OF_SET               = "https?://[^/]+/photos/([^<>\"/]+)/(\\d+)/in/album-(\\d+)/?$";
+    private static final String              TYPE_PHOTO_AS_PART_OF_GALLERY           = "https?://[^/]+/photos/([^<>\"/]+)/(\\d+)/in/gallery-(\\d+@N\\d+)-(\\d+)/?$";
     protected static HashMap<String, Object> api                                     = new HashMap<String, Object>();
 
     /** Max 2000 requests per hour. */
@@ -170,7 +175,7 @@ public class FlickrCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    private String getPhotoURLWithoutAlbumInfo(final DownloadLink link) throws PluginException {
+    private String getPhotoURLWithoutAlbumOrGalleryInfo(final DownloadLink link) throws PluginException {
         final String ret = new Regex(link.getPluginPatternMatcher(), "(?i)(https?://[^/]+/photos/[^<>\"/]+/\\d+)").getMatch(0);
         if (ret == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -214,7 +219,7 @@ public class FlickrCom extends PluginForHost {
             link.setProperty(PROPERTY_USERNAME_INTERNAL, link.getStringProperty("owner"));
             link.removeProperty("owner");
         }
-        /* Needed for custom filenames! */
+        /* Set some properties needed for custom filenames/Packagizer! */
         final String usernameFromURL = this.getUsername(link);
         /* Determine which type of username is inside the URL. */
         if (jd.plugins.decrypter.FlickrCom.looksLikeInternalUsername(usernameFromURL)) {
@@ -223,6 +228,14 @@ public class FlickrCom extends PluginForHost {
             link.setProperty(PROPERTY_USERNAME, usernameFromURL);
         }
         link.setProperty(PROPERTY_USERNAME_URL, usernameFromURL);
+        final String setID = new Regex(link.getPluginPatternMatcher(), TYPE_PHOTO_AS_PART_OF_SET).getMatch(2);
+        if (setID != null) {
+            link.setProperty(PROPERTY_SET_ID, setID);
+        }
+        final String galleryID = new Regex(link.getPluginPatternMatcher(), TYPE_PHOTO_AS_PART_OF_GALLERY).getMatch(3);
+        if (galleryID != null) {
+            link.setProperty(PROPERTY_GALLERY_ID, galleryID);
+        }
         /* Picture direct-URLs are static --> Rely on them. */
         final String storedDirecturl = getStoredDirecturl(link);
         if (storedDirecturl != null) {
@@ -251,7 +264,6 @@ public class FlickrCom extends PluginForHost {
             directurl = getStoredDirecturl(link);
         }
         setFilename(link);
-        this.br.setFollowRedirects(true);
         if (!StringUtils.isEmpty(directurl) && !isDownload && allowDirecturlCheckForFilesize(link)) {
             checkDirecturl(link, directurl);
         }
@@ -274,8 +286,8 @@ public class FlickrCom extends PluginForHost {
     /** Checks single video/photo via website and sets required DownloadLink properties. */
     private void availablecheckWebsite(final DownloadLink link, final Account account) throws Exception {
         /* 2021-09-13: Don't do this anymore as it may not always work for videos! */
-        // br.getPage(getPhotoURLWithoutAlbumInfo(link) + "/in/photostream");
-        br.getPage(getPhotoURLWithoutAlbumInfo(link));
+        // br.getPage(https://www.flickr.com/photos/<pathAlias>/<photoID> + "/in/photostream");
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("div class=\"Four04Case\">") || br.containsHTML("(?i)>\\s*This member is no longer active on Flickr") || br.containsHTML("class=\"Problem\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection().getResponseCode() == 403) {
@@ -355,7 +367,11 @@ public class FlickrCom extends PluginForHost {
             if (description != null) {
                 setStringProperty(this, link, DownloadLink.PROPERTY_COMMENT, description, false);
             }
-            setStringProperty(this, link, PROPERTY_MEDIA_TYPE, photoData.get("mediaType").toString(), false);
+            /* 2021-09-23: Seems like this is only given for video items(?) */
+            final Object mediaTypeO = photoData.get("mediaType");
+            if (mediaTypeO != null) {
+                setStringProperty(this, link, PROPERTY_MEDIA_TYPE, mediaTypeO.toString(), false);
+            }
             {
                 /* This block solely exists to find the uploaded-timestamp. */
                 final List<Object> photoStatsModels = (List) root.get("photo-stats-models");
@@ -407,7 +423,7 @@ public class FlickrCom extends PluginForHost {
             } else if (maxQualityDownloadurl != null) {
                 logger.info("Using best quality: " + maxQualityName + " | width: " + maxWidth);
                 link.setProperty(PROPERTY_QUALITY, maxQualityName);
-                link.setProperty(String.format(PROPERTY_DIRECTURL, link.getStringProperty(maxQualityName)), maxQualityDownloadurl);
+                link.setProperty(String.format(PROPERTY_DIRECTURL, maxQualityName), maxQualityDownloadurl);
             }
         } else {
             logger.warning("Failed to find json in html");
@@ -457,7 +473,7 @@ public class FlickrCom extends PluginForHost {
                             logger.info("Using best quality: " + maxQualityName);
                             selectedQualityName = maxQualityName;
                         }
-                        br.getPage(this.getPhotoURLWithoutAlbumInfo(link) + "/sites/" + selectedQualityName + "/");
+                        br.getPage(this.getPhotoURLWithoutAlbumOrGalleryInfo(link) + "/sites/" + selectedQualityName + "/");
                         directurl = br.getRegex("id=\"allsizes-photo\">[^~]*?<img src=\"(http[^<>\"]*?)\"").getMatch(0);
                         if (directurl != null) {
                             link.setProperty(PROPERTY_QUALITY, selectedQualityName);
@@ -1029,6 +1045,8 @@ public class FlickrCom extends PluginForHost {
             formattedFilename = defaultCustomFilename;
         }
         formattedFilename = formattedFilename.replace("*content_id*", link.getStringProperty(PROPERTY_CONTENT_ID, customStringForEmptyTags));
+        formattedFilename = formattedFilename.replace("*set_id*", link.getStringProperty(PROPERTY_SET_ID, customStringForEmptyTags));
+        formattedFilename = formattedFilename.replace("*gallery_id*", link.getStringProperty(PROPERTY_GALLERY_ID, customStringForEmptyTags));
         formattedFilename = formattedFilename.replace("*order_id*", link.getStringProperty(PROPERTY_ORDER_ID, customStringForEmptyTags));
         formattedFilename = formattedFilename.replace("*quality*", link.getStringProperty(PROPERTY_QUALITY, customStringForEmptyTags));
         formattedFilename = formattedFilename.replace("*date*", formattedDate);
@@ -1321,6 +1339,8 @@ public class FlickrCom extends PluginForHost {
         final StringBuilder sbtags = new StringBuilder();
         sbtags.append("Explanation of the available tags:\r\n");
         sbtags.append("*content_id* = ID of the photo/video\r\n");
+        sbtags.append("*set_id* = ID of album if the photo/video is part of a crawled album or single photo/video URL contains album ID\r\n");
+        sbtags.append("*gallery_id* = ID of gallery if the photo/video is part of a crawled gallery or single photo/video URL contains gallery ID\r\n");
         sbtags.append("*date* = date when the photo was uploaded - custom date format will be used here\r\n");
         sbtags.append("*date_taken* = date when the photo was taken - pre-formatted string (yyyy-MM-dd HH:mm:ss)\r\n");
         sbtags.append("*extension* = Extension of the photo - usually '.jpg'\r\n");
