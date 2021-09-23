@@ -100,7 +100,10 @@ public class PicsVc extends PluginForDecrypt {
             page += 1;
             logger.info("Crawling page: " + page);
             /* 2021-03-24: Avoid grabbing "related" pictures listed below the actual pictures belonging to a category! */
-            final String[] links = br.getRegex("(https?://s\\d+\\.pics\\.vc/pics/s/[^\"\\']+\\.jpg)[^>]*pic_loader\\(this\\)").getColumn(0);
+            String[] links = br.getRegex("(https?://s\\d+\\.pics\\.vc/pics/s/[^\"\\']+\\.jpg)[^>]*pic_loader\\(this\\)").getColumn(0);
+            if (links == null || links.length == 0) {
+                links = br.getRegex("(/cdn/s\\d+/[^\"\\']+\\.jpg)[^>]*pic_loader\\(this\\)").getColumn(0);
+            }
             if (links == null || links.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -109,7 +112,18 @@ public class PicsVc extends PluginForDecrypt {
                     continue;
                 }
                 dupes.add(singleLink);
-                singleLink = singleLink.replaceFirst("/pics/s/", "/pics/o/");
+                if (singleLink.startsWith("/cdn/")) {
+                    final String server = new Regex(singleLink, "/cdn/(s\\d+)").getMatch(0);
+                    final String rest = new Regex(singleLink, "\\d+/s/(.+)").getMatch(0);
+                    if (server == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else if (rest == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    singleLink = "https://" + server + ".pics.vc/pics/n/" + rest;
+                } else {
+                    singleLink = singleLink.replaceFirst("/pics/s/", "/pics/o/");
+                }
                 String filename = Plugin.getFileNameFromURL(new URL(singleLink));
                 filename = df.format(offset + 1) + "_" + filename;
                 final DownloadLink dl = createDownloadlink("directhttp://" + singleLink);
