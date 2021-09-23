@@ -30,7 +30,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -149,18 +149,18 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
         return hideAllCaptchas;
     }
 
-    private DomainInfo                                hosterInfo;
-    protected AbstractConfigPanel                     iconPanel;
-    protected Point                                   offset;
-    private Plugin                                    plugin;
-    protected boolean                                 stopDownloads    = false;
-    private DialogType                                type;
-    protected boolean                                 refresh;
-    protected boolean                                 stopCrawling;
-    protected boolean                                 stopShowingCrawlerCaptchas;
-    protected final AtomicReference<BrowserReference> browserReference = new AtomicReference<BrowserReference>(null);
-    private volatile String                           responseCode;
-    private WindowFocusListener                       openBrowserFocusListener;
+    private DomainInfo                                     hosterInfo;
+    protected AbstractConfigPanel                          iconPanel;
+    protected Point                                        offset;
+    private Plugin                                         plugin;
+    protected boolean                                      stopDownloads     = false;
+    private DialogType                                     type;
+    protected boolean                                      refresh;
+    protected boolean                                      stopCrawling;
+    protected boolean                                      stopShowingCrawlerCaptchas;
+    protected final CopyOnWriteArrayList<BrowserReference> browserReferences = new CopyOnWriteArrayList<BrowserReference>();
+    private volatile String                                responseCode;
+    private WindowFocusListener                            openBrowserFocusListener;
 
     private void createPopup() {
         final JPopupMenu popup = new JPopupMenu();
@@ -291,9 +291,11 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
                 super.dispose();
             }
         } finally {
-            final BrowserReference lBrowserReference = browserReference.getAndSet(null);
-            if (lBrowserReference != null) {
-                lBrowserReference.dispose();
+            while (browserReferences.size() > 0) {
+                final BrowserReference browserReference = browserReferences.remove(0);
+                if (browserReference != null) {
+                    browserReference.dispose();
+                }
             }
         }
     }
@@ -747,11 +749,7 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
     }
 
     protected void openBrowser() {
-        BrowserReference lBrowserReference = browserReference.getAndSet(null);
-        if (lBrowserReference != null) {
-            lBrowserReference.dispose();
-        }
-        lBrowserReference = new BrowserReference(challenge) {
+        final BrowserReference browserReference = new BrowserReference(challenge) {
             @Override
             public void onResponse(String parameter) {
                 responseCode = parameter;
@@ -764,15 +762,13 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
                 };
             }
         };
+        browserReferences.add(browserReference);
         try {
-            if (browserReference.compareAndSet(null, lBrowserReference)) {
-                lBrowserReference.open();
-            }
+            browserReference.open();
         } catch (Throwable e1) {
+            browserReference.dispose();
+            browserReferences.remove(browserReference);
             UIOManager.I().showException(e1.getMessage(), e1);
-            if (browserReference.compareAndSet(lBrowserReference, null)) {
-                lBrowserReference.dispose();
-            }
         }
     }
 }

@@ -13,10 +13,12 @@ import jd.controlling.captcha.SkipRequest;
 import jd.parser.Regex;
 import jd.plugins.Plugin;
 
+import org.appwork.controlling.SingleReachableState;
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
+import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
@@ -90,29 +92,28 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
     }
 
     protected final AtomicReference<HttpHandlerInfo> handlerInfo = new AtomicReference<HttpHandlerInfo>(null);
-    protected final static Object                    LOCK        = new Object();
+    protected final SingleReachableState             canClose    = new SingleReachableState("canClose");
 
     public void open() throws IOException {
         TaskQueue.getQueue().addWait(new QueueAction<Void, IOException>() {
             @Override
             protected Void run() throws IOException {
-                HttpHandlerInfo lHandlerInfo = null;
-                synchronized (LOCK) {
-                    try {
-                        int port = BrowserSolverService.getInstance().getConfig().getLocalHttpPort();
-                        if (port < 1024) {
-                            port = 0;
-                        } else if (port > 65000) {
-                            port = 65000;
+                synchronized (handlerInfo) {
+                    if (handlerInfo.get() == null) {
+                        try {
+                            int port = BrowserSolverService.getInstance().getConfig().getLocalHttpPort();
+                            if (port < 1024) {
+                                port = 0;
+                            } else if (port > 65000) {
+                                port = 65000;
+                            }
+                            handlerInfo.set(DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(port, true, BrowserReference.this));
+                        } catch (final IOException e) {
+                            getLogger().log(e);
+                            handlerInfo.set(DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(0, true, BrowserReference.this));
                         }
-                        lHandlerInfo = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(port, true, BrowserReference.this);
-                        handlerInfo.set(lHandlerInfo);
-                    } catch (final IOException e) {
-                        getLogger().log(e);
-                        lHandlerInfo = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(0, true, BrowserReference.this);
-                        handlerInfo.set(lHandlerInfo);
+                        BrowserSolverService.getInstance().getConfig().setLocalHttpPort(getBasePort());
                     }
-                    BrowserSolverService.getInstance().getConfig().setLocalHttpPort(lHandlerInfo.getPort());
                 }
                 openURL(URLHelper.parseLocation(new URL(getBase()), "?id=" + id.getID()));
                 return null;
@@ -189,10 +190,34 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
     }
 
     public void dispose() {
-        final HttpHandlerInfo lHandlerInfo = handlerInfo.getAndSet(null);
+        final DelayedRunnable delayedRunnable = new DelayedRunnable(10000) {
+            @Override
+            public void delayedrun() {
+                unregisterRequestHandler();
+            }
+        };
+        canClose.executeWhen(new Runnable() {
+            @Override
+            public void run() {
+                delayedRunnable.stop();
+                delayedRunnable.delayedrun();
+            }
+        }, new Runnable() {
+            @Override
+            public void run() {
+                delayedRunnable.run();
+            }
+        });
+    }
+
+    protected void unregisterRequestHandler() {
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
             @Override
             protected Void run() throws RuntimeException {
+                final HttpHandlerInfo lHandlerInfo;
+                synchronized (handlerInfo) {
+                    lHandlerInfo = handlerInfo.getAndSet(null);
+                }
                 if (lHandlerInfo != null) {
                     DeprecatedAPIHttpServerController.getInstance().unregisterRequestHandler(lHandlerInfo);
                 }
@@ -394,6 +419,7 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
                 final SolverJob<?> job = ChallengeResponseController.getInstance().getJobByChallengeId(challenge.getId().getID());
                 if (challenge.isSolved() || job == null || job.isDone() || BrowserSolver.getInstance().isJobDone(job)) {
                     response.getOutputStream(true).write("true".getBytes("UTF-8"));
+                    canClose.setReached();
                     return true;
                 } else {
                     response.getOutputStream(true).write("false".getBytes("UTF-8"));
