@@ -330,7 +330,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
             if (StringUtils.containsIgnoreCase(laf.getID(), "FlatLaf")) {
                 stats.add(disable(laf.getName(), "https://www.formdev.com/flatlaf/"));
             } else if (StringUtils.containsIgnoreCase(laf.getID(), "Synthetica")) {
-                stats.add(disable(laf.getName(), "http://www.jyloo.com/synthetica/"));
+                stats.add(disable(laf.getName(), "https://www.jyloo.com/synthetica/"));
                 try {
                     final Object info = UIManager.get("Synthetica.license.info");
                     if (info instanceof String[]) {
