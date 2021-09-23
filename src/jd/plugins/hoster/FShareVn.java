@@ -27,12 +27,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.components.config.FshareVnConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -81,6 +88,7 @@ public class FShareVn extends PluginForHost {
     private static final boolean use_api_for_login_fetch_account_info  = true;
     private static final String  PROPERTY_ACCOUNT_TOKEN                = "token";
     private static final String  PROPERTY_ACCOUNT_COOKIES              = "apicookies";
+    private static final String  apiCredentialsHelpPage                = "https://support.jdownloader.org/Knowledgebase/Article/View/fshare-custom-api-credentials";
 
     public FShareVn(PluginWrapper wrapper) {
         super(wrapper);
@@ -246,6 +254,16 @@ public class FShareVn extends PluginForHost {
         /* 2021-07-09: File offline can redirect to html page so our json parser would fail --> Check for this first! */
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 500) {
+            /**
+             * 2021-09-23: API credentials have been banned. This happened multiple times to our "official" JD credentials which is why
+             * we've added the ability for users to use their own API credentials.
+             */
+            if (StringUtils.equalsIgnoreCase(PluginJsonConfig.get(getConfigInterface()).getApiAppKey(), "JDDEFAULT")) {
+                /* Show extended error dialog to user in case default JD API credentials were used. */
+                showAPICustomCredentialsRequiredInformation();
+            }
+            throw new AccountUnavailableException("Banned API credentials - read this: " + apiCredentialsHelpPage, 60 * 60 * 1000l);
         }
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         String msg = "Unknown error";
@@ -297,6 +315,32 @@ public class FShareVn extends PluginForHost {
             /* Other errors e.g. 406 account locked, see: https://www.fshare.vn/api-doc#/Login%20-%20Logout%20-%20User%20info/login */
             throw new AccountInvalidException(msg);
         }
+    }
+
+    private Thread showAPICustomCredentialsRequiredInformation() {
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    final String title = "fshare.vn - custom API credentials required";
+                    String message = "Hello dear fshare.vn user\r\n";
+                    message += "It seems like our default API credentials are not working anymore.\r\n";
+                    message += "Please open the following URL if this didn't already happen automatically and follow the instructions to be able to continue using your fshare.vn premium account in JD.\r\n";
+                    message += apiCredentialsHelpPage;
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(3 * 60 * 1000);
+                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL(apiCredentialsHelpPage);
+                    }
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
     }
 
     private boolean isDownloadPasswordRequiredOrInvalid(final String msg) {
@@ -463,13 +507,33 @@ public class FShareVn extends PluginForHost {
      *
      * @return
      */
-    public static Browser prepBrowserAPI(final Browser br) {
+    private Browser prepBrowserAPI(final Browser br) {
         /* Sometimes their API is extremely slow! */
         br.setReadTimeout(120 * 1000);
         br.setAllowedResponseCodes(new int[] { 201, 400, 405, 406, 410, 424, 500 });
         /* Important! According to their API docs, API key ("App Key") is bound to User-Agent! */
-        br.setHeader("User-Agent", "JDownloader-D0OCY1");
+        br.setHeader("User-Agent", getApiUserAgent());
         return br;
+    }
+
+    private String getApiAppKey() {
+        final String customApiAppKey = PluginJsonConfig.get(getConfigInterface()).getApiAppKey();
+        if (customApiAppKey != null && !customApiAppKey.equalsIgnoreCase("JDDEFAULT")) {
+            return customApiAppKey;
+        } else {
+            /* Default/fallback */
+            return new String(HexFormatter.hexToByteArray("644D6E714D4D5A4D556E4E355970764B454E614568645151356A784471646474"));
+        }
+    }
+
+    private String getApiUserAgent() {
+        final String customApiUserAgent = PluginJsonConfig.get(getConfigInterface()).getApiUserAgent();
+        if (customApiUserAgent != null && !customApiUserAgent.equalsIgnoreCase("JDDEFAULT")) {
+            return customApiUserAgent;
+        } else {
+            /* Default/fallback */
+            return "JDownloader-D0OCY1";
+        }
     }
 
     @Override
@@ -899,7 +963,7 @@ public class FShareVn extends PluginForHost {
                 prepBrowserAPI(br);
                 String token = getAPIToken(account);
                 final Cookies cookies = account.loadCookies(PROPERTY_ACCOUNT_COOKIES);
-                final String app_key = new String(HexFormatter.hexToByteArray("644D6E714D4D5A4D556E4E355970764B454E614568645151356A784471646474"));
+                final String appKey = getApiAppKey();
                 if (token != null && cookies != null) {
                     logger.info("Logging in via cookies");
                     br.setCookies(getAPIHost(), cookies);
@@ -916,7 +980,7 @@ public class FShareVn extends PluginForHost {
                             logger.info("Session expired --> Attempting refresh");
                             final Map<String, Object> map = new HashMap<String, Object>();
                             map.put("token", token);
-                            map.put("app_key", app_key);
+                            map.put("app_key", appKey);
                             /*
                              * Important! Use separate Browser instance! Otherwise e.g. remaining Referer will cause error response 400 on
                              * next request!
@@ -955,7 +1019,7 @@ public class FShareVn extends PluginForHost {
                 map.put("user_email", account.getUser());
                 map.put("password", account.getPass());
                 // map.put("app_key", "L2S7R6ZMagggC5wWkQhX2+aDi467PPuftWUMRFSn"); --> Their old App API key
-                map.put("app_key", app_key);
+                map.put("app_key", appKey);
                 /*
                  * Important! Use separate Browser instance! Otherwise e.g. remaining Referer will cause error response 400 on next request!
                  */
@@ -1222,5 +1286,10 @@ public class FShareVn extends PluginForHost {
         } else {
             return null;
         }
+    }
+
+    @Override
+    public Class<? extends FshareVnConfig> getConfigInterface() {
+        return FshareVnConfig.class;
     }
 }
