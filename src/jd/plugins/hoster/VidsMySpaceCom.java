@@ -13,8 +13,11 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
+
+import java.util.Map;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -27,9 +30,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vids.myspace.com" }, urls = { "https?://(www\\.)?(myspace\\.com/(([a-z0-9\\-_\\.]+/)?video/[a-z0-9\\-_]+/\\d+|[a-z0-9\\-_]+/music/song/[a-z0-9\\-_\\.]+)|mediaservices\\.myspace\\.com/services/media/embed\\.aspx/m=\\d+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vids.myspace.com" }, urls = { "https?://(?:www\\.)?(myspace\\.com/(([a-z0-9\\-_\\.]+/)?video/[a-z0-9\\-_]+/\\d+|[a-z0-9\\-_]+/music/song/[a-z0-9\\-_\\.]+)|mediaservices\\.myspace\\.com/services/media/embed\\.aspx/m=\\d+)" })
 public class VidsMySpaceCom extends PluginForHost {
-
     private static final String  SONGURL         = "https?://(www\\.)?myspace\\.com/[a-z0-9\\-_]+/music/song/[a-z0-9\\-_\\.]+";
     private static final boolean rtmpe_supported = false;
     private static final boolean rtmpe_needed    = true;
@@ -63,7 +65,7 @@ public class VidsMySpaceCom extends PluginForHost {
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(link.getDownloadURL());
+            con = br.openGetConnection(link.getPluginPatternMatcher());
             // This usually only happens for embed links
             if (con.getResponseCode() == 404 || con.getResponseCode() == 500) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -123,8 +125,15 @@ public class VidsMySpaceCom extends PluginForHost {
             }
             br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("https://myspace.com/ajax/streamurl", "mediaType=video&mediaId=" + new Regex(link.getDownloadURL(), "(\\d+)").getMatch(0));
-            dlurl = br.getRegex("\"(rtmp[^<>\"]*?)\"").getMatch(0);
+            final String videoID = new Regex(link.getDownloadURL(), "(\\d+)").getMatch(0);
+            // br.postPage("https://myspace.com/ajax/streamurl", "mediaType=video&mediaId=" + videoID);
+            br.postPage("https://" + this.getHost() + "/ajax/videos/rightRail/render", "entityKey=video_" + videoID + "&mediaId=" + videoID);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FATAL);
+            }
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final String html = (String) entries.get("html");
+            dlurl = new Regex(html, "\"(rtmp[^<>\"]+)\"").getMatch(0);
         }
         if (dlurl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -157,7 +166,7 @@ public class VidsMySpaceCom extends PluginForHost {
             ((RTMPDownload) dl).startDownload();
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlurl, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 dl.getConnection().disconnect();
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

@@ -43,8 +43,14 @@ public class VidsharTv extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "vidshar.tv" });
+        ret.add(new String[] { "vedshare.com", "vidshar.tv" });
         return ret;
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        /* 2021-09-23: Main domain changed from vidshar.tv to vedshare.com */
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     public static String[] getAnnotationNames() {

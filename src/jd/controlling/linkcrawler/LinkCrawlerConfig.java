@@ -82,6 +82,7 @@ public interface LinkCrawlerConfig extends ConfigInterface {
 
     @AboutConfig
     @DefaultEnumValue("ALWAYS")
+    @DescriptionForConfigEntry("When to accept direct downloadable URLs? ALWAYS = Accept all, no matter how they were added RULES_ONLY = Only accept direct URLs added via LinkCrawler DIRECTHTTP rule, FORBIDDEN = Never accept direct URLs")
     DirectHTTPPermission getDirectHTTPPermission();
 
     void setDirectHTTPPermission(DirectHTTPPermission e);
