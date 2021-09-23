@@ -17,12 +17,14 @@ package jd.plugins.hoster;
 
 import java.util.Map;
 
+import org.appwork.utils.DebugMode;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -114,26 +116,33 @@ public class VidsMySpaceCom extends PluginForHost {
             dlurl = br.getRegex("data\\-stream\\-url=\"(rtmp[^<>\"]*?)\"").getMatch(0);
         } else {
             if (br.containsHTML("class=\"lock_16\"")) {
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
+                /* +18 Videos are only downloadable for registered users */
+                throw new AccountRequiredException();
+            }
+            dlurl = br.getRegex("\"(rtmp[^<>\"]+)\"").getMatch(0);
+            if (dlurl == null) {
+                if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                throw new PluginException(LinkStatus.ERROR_FATAL, "+18 Videos are only downloadable for registered users");
+                br.getHeaders().put("Accept", "*/*");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.getHeaders().put("Origin", "https://myspace.com");
+                br.getHeaders().put("Client", "TODO");
+                br.getHeaders().put("Hash", "TODO");
+                final String videoID = new Regex(link.getDownloadURL(), "(\\d+)").getMatch(0);
+                if (videoID == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.clearCookies(br.getHost());
+                // br.postPage("https://myspace.com/ajax/streamurl", "mediaType=video&mediaId=" + videoID);
+                br.postPage("https://" + this.getHost() + "/ajax/videos/rightRail/render", "entityKey=video_" + videoID + "&mediaId=" + videoID);
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL);
+                }
+                final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                final String html = (String) entries.get("html");
+                dlurl = new Regex(html, "\"(rtmp[^<>\"]+)\"").getMatch(0);
             }
-            br.getHeaders().put("Accept", "*/*");
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            final String videoID = new Regex(link.getDownloadURL(), "(\\d+)").getMatch(0);
-            // br.postPage("https://myspace.com/ajax/streamurl", "mediaType=video&mediaId=" + videoID);
-            br.postPage("https://" + this.getHost() + "/ajax/videos/rightRail/render", "entityKey=video_" + videoID + "&mediaId=" + videoID);
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FATAL);
-            }
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            final String html = (String) entries.get("html");
-            dlurl = new Regex(html, "\"(rtmp[^<>\"]+)\"").getMatch(0);
         }
         if (dlurl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -142,7 +151,7 @@ public class VidsMySpaceCom extends PluginForHost {
             if (!rtmpe_supported && !rtmpe_needed) {
                 dlurl = dlurl.replace("rtmpe://", "rtmp://");
             }
-            final String playpath = new Regex(dlurl, "(mp4:.+)").getMatch(0);
+            final String playpath = new Regex(dlurl, "((mp4|flv):.+)").getMatch(0);
             final String app = "";
             if (playpath == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

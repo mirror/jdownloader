@@ -40,7 +40,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestore.to" }, urls = { "http://(www\\.)?filestore\\.to/\\?d=[A-Z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestore.to" }, urls = { "https?://(?:www\\.)?filestore\\.to/\\?d=([A-Z0-9]+)" })
 public class FilestoreTo extends PluginForHost {
     private String aBrowser = "";
 
@@ -48,6 +48,20 @@ public class FilestoreTo extends PluginForHost {
         super(wrapper);
         setStartIntervall(10000l);
         enablePremium("https://filestore.to/premium");
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
@@ -62,14 +76,12 @@ public class FilestoreTo extends PluginForHost {
             final long until = TimeFormatter.getMilliSeconds(validUntilString, "dd'.'MM'.'yyyy' - 'HH':'mm", Locale.ENGLISH);
             ai.setValidUntil(until);
             if (!ai.isExpired()) {
-                ai.setStatus("Premium");
                 account.setType(AccountType.PREMIUM);
                 account.setMaxSimultanDownloads(20);
                 account.setConcurrentUsePossible(true);
                 return ai;
             }
         }
-        ai.setStatus("Free");
         account.setType(AccountType.FREE);
         account.setMaxSimultanDownloads(2);
         account.setConcurrentUsePossible(false);

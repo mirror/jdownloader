@@ -373,10 +373,8 @@ public class EmuParadiseMe extends PluginForHost {
         return dllink;
     }
 
-    private static Object LOCK_ACC = new Object();
-
     public void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK_ACC) {
+        synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
