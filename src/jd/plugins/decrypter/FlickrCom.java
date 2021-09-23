@@ -59,10 +59,10 @@ public class FlickrCom extends PluginForDecrypt {
 
     private static final String                  TYPE_FAVORITES           = "https?://[^/]+/photos/([^<>\"/]+)/favorites(/.+)?";
     private static final String                  TYPE_GROUPS              = "https?://[^/]+/groups/([^<>\"/]+)([^<>\"]+)?";
-    private static final String                  TYPE_SET_SINGLE          = "https?://[^/]+/photos/([^<>\"/]+)/(?:sets|albums)/(\\d+)/?";
-    private static final String                  TYPE_GALLERY             = "https?://[^/]+/photos/([^<>\"/]+)/galleries/(\\d+)/?";
+    private static final String                  TYPE_SET_SINGLE          = "^https?://[^/]+/photos/([^<>\"/]+)/(?:sets|albums)/(\\d+).*";
+    private static final String                  TYPE_GALLERY             = "^https?://[^/]+/photos/([^<>\"/]+)/galleries/(\\d+).*";
     private static final String                  TYPE_SETS_OF_USER_ALL    = "^https?://[^/]+/photos/([^/]+)/(?:albums|sets)/?$";
-    private static final String                  TYPE_SINGLE_PHOTO        = "https?://[^/]+/photos/(?!tags/)[^<>\"/]+/\\d+.+";
+    private static final String                  TYPE_SINGLE_PHOTO        = "^https?://[^/]+/photos/[^<>\"/]+/\\d+.*";
     private static final String                  TYPE_PHOTO               = "https?://[^/]+/photos/.*?";
     private static final String                  TYPE_USER                = "^https?://[^/]+/photos/([^/]+)/?$";
     private static final String                  INVALIDLINKS             = "https?://[^/]+/(photos/(me|upload|tags.*?)|groups/[^<>\"/]+/rules|groups/[^<>\"/]+/discuss.*?)";
@@ -151,7 +151,6 @@ public class FlickrCom extends PluginForDecrypt {
      * @throws Exception
      */
     private void api_handleAPI(final CryptedLink param, final Account account) throws Exception {
-        String fpName = null;
         final String apikey = getPublicAPIKey(this, this.br);
         if (StringUtils.isEmpty(apikey)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -169,6 +168,8 @@ public class FlickrCom extends PluginForDecrypt {
         String packageDescription = null;
         /* Set this if we pre-access items to e.g. get specific fields in beforehand. */
         boolean alreadyAccessedFirstPage;
+        String fpName = null;
+        String nameOfMainMap;
         final UrlQuery query = new UrlQuery();
         query.add("api_key", apikey);
         query.add("extras", jd.plugins.hoster.FlickrCom.getApiParamExtras());
@@ -183,7 +184,6 @@ public class FlickrCom extends PluginForDecrypt {
         } else {
             query.add("csrf", "");
         }
-        String nameOfMainMap;
         if (param.getCryptedUrl().matches(TYPE_SET_SINGLE)) {
             usernameFromURL = new Regex(param.getCryptedUrl(), TYPE_SET_SINGLE).getMatch(0);
             setID = new Regex(param.getCryptedUrl(), TYPE_SET_SINGLE).getMatch(1);
@@ -312,7 +312,6 @@ public class FlickrCom extends PluginForDecrypt {
                 final String thisUsernameSlug = (String) photo.get("pathalias");
                 final String thisUsernameInternal = (String) photo.get("owner");
                 final String photoID = photo.get("id").toString();
-                final String contenturl;
                 final String usernameForContentURL;
                 if (givenUsernameDataIsValidForAllMediaItems) {
                     usernameForContentURL = usernameFromURL;
@@ -325,12 +324,14 @@ public class FlickrCom extends PluginForDecrypt {
                     /* This should never happen! */
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                String contentURL = buildContentURL(usernameForContentURL, photoID);
+                /* The following is really only to match the URLs exactly like in browser and is not necessary for that URL to be valid! */
                 if (setID != null) {
-                    contenturl = "https://www." + this.getHost() + "/photos/" + usernameForContentURL + "/" + photoID + "/in/album-" + setID;
-                } else {
-                    contenturl = "https://www." + this.getHost() + "/photos/" + usernameForContentURL + "/" + photoID;
+                    contentURL += "/in/album-" + setID + "/";
+                } else if (galleryID != null) {
+                    contentURL += "/in/gallery-" + usernameFromURL + "-" + galleryID;
                 }
-                final DownloadLink dl = createDownloadlink(contenturl);
+                final DownloadLink dl = createDownloadlink(contentURL);
                 jd.plugins.hoster.FlickrCom.parseInfoAPI(this, dl, photo);
                 {
                     /* Set different username/name properties in context */
@@ -344,6 +345,9 @@ public class FlickrCom extends PluginForDecrypt {
                 }
                 if (setID != null) {
                     dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_SET_ID, setID);
+                }
+                if (galleryID != null) {
+                    dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_GALLERY_ID, galleryID);
                 }
                 dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_ORDER_ID, df.format(imagePosition));
                 jd.plugins.hoster.FlickrCom.setFilename(dl);
@@ -715,7 +719,7 @@ public class FlickrCom extends PluginForDecrypt {
                 }
                 String title = (String) entry.get("title");
                 String media = (String) entry.get("media");
-                final String pic_id = (String) entry.get("id");
+                final String picID = (String) entry.get("id");
                 // not all images have a title.
                 if (title == null) {
                     title = "";
@@ -752,13 +756,12 @@ public class FlickrCom extends PluginForDecrypt {
                         }
                     }
                 }
-                if (pic_id == null || pathAlias == null) {
+                if (picID == null || pathAlias == null) {
                     /* Skip invalid items */
                     logger.warning("Found invalid json object");
                     continue;
                 }
-                final String url = "https://www." + this.getHost() + "/photos/" + pathAlias + "/" + pic_id;
-                final DownloadLink fina = createDownloadlink(url);
+                final DownloadLink fina = createDownloadlink(buildContentURL(pathAlias, picID));
                 final String extension;
                 if ("video".equalsIgnoreCase(media)) {
                     extension = ".mp4";
@@ -768,14 +771,12 @@ public class FlickrCom extends PluginForDecrypt {
                 fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_MEDIA_TYPE, media);
                 fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_EXT, extension);
                 fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME, pathAlias);
-                fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_CONTENT_ID, pic_id);
+                fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_CONTENT_ID, picID);
                 fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_TITLE, title);
                 fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_ORDER_ID, df.format(imagePosition));
                 final String formattedFilename = getFormattedFilename(fina);
                 fina.setName(formattedFilename);
                 fina.setAvailable(true);
-                /* No need to hide decrypted single links */
-                fina.setContentUrl(url);
                 fp.add(fina);
                 distribute(fina);
                 decryptedLinks.add(fina);
@@ -793,6 +794,10 @@ public class FlickrCom extends PluginForDecrypt {
                 i++;
             }
         } while (!this.isAbort());
+    }
+
+    private String buildContentURL(final String pathAlias, final String contentID) {
+        return "https://www." + this.getHost() + "/photos/" + pathAlias + "/" + contentID;
     }
 
     public boolean setStringProperty(final DownloadLink link, final String property, String value, final boolean overwrite) {
