@@ -68,27 +68,29 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/file/([0-9A-Z]+)" })
 public class FShareVn extends PluginForHost {
-    private final String         SERVERERROR                           = "Tài nguyên bạn yêu cầu không tìm thấy";
-    private final String         IPBLOCKED                             = "<li>Tài khoản của bạn thuộc GUEST nên chỉ tải xuống";
-    private String               dllink                                = null;
+    private final String         SERVERERROR                            = "Tài nguyên bạn yêu cầu không tìm thấy";
+    private final String         IPBLOCKED                              = "<li>Tài khoản của bạn thuộc GUEST nên chỉ tải xuống";
+    private String               dllink                                 = null;
     /* Connection stuff */
-    private static final boolean FREE_RESUME                           = false;
-    private static final int     FREE_MAXCHUNKS                        = 1;
-    private static final int     FREE_MAXDOWNLOADS                     = 1;
+    private static final boolean FREE_RESUME                            = false;
+    private static final int     FREE_MAXCHUNKS                         = 1;
+    private static final int     FREE_MAXDOWNLOADS                      = 1;
     // private static final boolean ACCOUNT_FREE_RESUME = false;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 1;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS             = 1;
-    private static final boolean ACCOUNT_PREMIUM_RESUME                = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS             = -3;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS          = -1;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS              = 1;
+    private static final boolean ACCOUNT_PREMIUM_RESUME                 = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS              = -3;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS           = -1;
     /* 2021-07-09: Website account mode is broken && Deprecated! */
-    private static AtomicBoolean USE_API_IN_ACCOUNT_MODE               = new AtomicBoolean(true);
-    private static final boolean use_api_for_premium_account_downloads = true;
-    private static final boolean use_api_for_free_account_downloads    = true;
-    private static final boolean use_api_for_login_fetch_account_info  = true;
-    private static final String  PROPERTY_ACCOUNT_TOKEN                = "token";
-    private static final String  PROPERTY_ACCOUNT_COOKIES              = "apicookies";
-    private static final String  apiCredentialsHelpPage                = "https://support.jdownloader.org/Knowledgebase/Article/View/fshare-custom-api-credentials";
+    private static AtomicBoolean USE_API_IN_ACCOUNT_MODE                = new AtomicBoolean(true);
+    private static final boolean use_api_for_premium_account_downloads  = true;
+    private static final boolean use_api_for_free_account_downloads     = true;
+    private static final boolean use_api_for_login_fetch_account_info   = true;
+    private static final String  PROPERTY_ACCOUNT_TOKEN                 = "token";
+    private static final String  PROPERTY_ACCOUNT_COOKIES               = "apicookies";
+    private static final String  PROPERTY_ACCOUNT_API_HELP_DIALOG_SHOWN = "api_help_dialog_shown";
+    private static final String  apiCredentialsHelpPage                 = "https://support.jdownloader.org/Knowledgebase/Article/View/fshare-custom-api-credentials";
+    private static final Object  apiCredentialsHelpDialogLock           = new Object();
 
     public FShareVn(PluginWrapper wrapper) {
         super(wrapper);
@@ -255,15 +257,18 @@ public class FShareVn extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection().getResponseCode() == 500) {
-            /**
-             * 2021-09-23: API credentials have been banned. This happened multiple times to our "official" JD credentials which is why
-             * we've added the ability for users to use their own API credentials.
-             */
-            if (StringUtils.equalsIgnoreCase(PluginJsonConfig.get(getConfigInterface()).getApiAppKey(), "JDDEFAULT")) {
-                /* Show extended error dialog to user in case default JD API credentials were used. */
-                showAPICustomCredentialsRequiredInformation();
+            synchronized (apiCredentialsHelpDialogLock) {
+                /**
+                 * 2021-09-23: API credentials have been banned. This happened multiple times to our "official" JD credentials which is why
+                 * we've added the ability for users to use their own API credentials.
+                 */
+                if (StringUtils.equalsIgnoreCase(PluginJsonConfig.get(getConfigInterface()).getApiAppKey(), "JDDEFAULT") && !account.hasProperty(PROPERTY_ACCOUNT_API_HELP_DIALOG_SHOWN)) {
+                    /* Show extended error dialog to user in case default JD API credentials were used. */
+                    account.setProperty(PROPERTY_ACCOUNT_API_HELP_DIALOG_SHOWN, true);
+                    showAPICustomCredentialsRequiredInformation();
+                }
+                throw new AccountUnavailableException("Banned API credentials - read this: " + apiCredentialsHelpPage, 60 * 60 * 1000l);
             }
-            throw new AccountUnavailableException("Banned API credentials - read this: " + apiCredentialsHelpPage, 60 * 60 * 1000l);
         }
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         String msg = "Unknown error";
@@ -327,7 +332,7 @@ public class FShareVn extends PluginForHost {
                     message += "Please open the following URL if this didn't already happen automatically and follow the instructions to be able to continue using your fshare.vn premium account in JD.\r\n";
                     message += apiCredentialsHelpPage;
                     final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                    dialog.setTimeout(3 * 60 * 1000);
+                    dialog.setTimeout(5 * 60 * 1000);
                     if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
                         CrossSystem.openURL(apiCredentialsHelpPage);
                     }
