@@ -43,8 +43,14 @@ public class YoudboxCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "youdbox.com" });
+        ret.add(new String[] { "youdbox.net", "youdbox.com" });
         return ret;
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        /* 2021-09-24: Main domain changed from youdbox.com to youdbox.net. */
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     public static String[] getAnnotationNames() {
