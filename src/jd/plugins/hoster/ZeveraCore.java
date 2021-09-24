@@ -21,6 +21,18 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -42,18 +54,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //IMPORTANT: this class must stay in jd.plugins.hoster because it extends another plugin (UseNet) which is only available through PluginClassLoader
 abstract public class ZeveraCore extends UseNet {
@@ -250,38 +250,34 @@ abstract public class ZeveraCore extends UseNet {
             mhm.runCheck(account, link);
             login(this.br, account, false, getClientID());
             final String dllink = getDllink(this.br, account, link, getClientID(), this);
-            handleDL_MOCH(account, link, dllink);
-        }
-    }
-
-    private void handleDL_MOCH(final Account account, final DownloadLink link, final String dllink) throws Exception {
-        if (dllink == null) {
-            handleAPIErrors(this.br, link, account);
-            mhm.handleErrorGeneric(account, link, "dllinknull", 2, 5 * 60 * 1000l);
-        }
-        link.setProperty(account.getHoster() + "directlink", dllink);
-        try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            dl.setFilenameFix(true);
-            final long completeContentLength = dl.getConnection().getCompleteContentLength();
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+            if (dllink == null) {
                 handleAPIErrors(this.br, link, account);
-                mhm.handleErrorGeneric(account, link, "unknowndlerror", 50, 5 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, link, "dllinknull", 2, 5 * 60 * 1000l);
             }
-            final long verifiedFileSize = link.getVerifiedFileSize();
-            if (completeContentLength != verifiedFileSize) {
-                logger.info("Update Filesize: old=" + verifiedFileSize + "|new=" + completeContentLength);
-                link.setVerifiedFileSize(completeContentLength);
+            link.setProperty(account.getHoster() + "directlink", dllink);
+            try {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+                dl.setFilenameFix(true);
+                final long completeContentLength = dl.getConnection().getCompleteContentLength();
+                if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                    try {
+                        br.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
+                    handleAPIErrors(this.br, link, account);
+                    mhm.handleErrorGeneric(account, link, "unknowndlerror", 50, 5 * 60 * 1000l);
+                }
+                final long verifiedFileSize = link.getVerifiedFileSize();
+                if (completeContentLength != verifiedFileSize) {
+                    logger.info("Update Filesize: old=" + verifiedFileSize + "|new=" + completeContentLength);
+                    link.setVerifiedFileSize(completeContentLength);
+                }
+                this.dl.startDownload();
+            } catch (final Exception e) {
+                link.setProperty(account.getHoster() + "directlink", Property.NULL);
+                throw e;
             }
-            this.dl.startDownload();
-        } catch (final Exception e) {
-            link.setProperty(account.getHoster() + "directlink", Property.NULL);
-            throw e;
         }
     }
 
@@ -310,19 +306,22 @@ abstract public class ZeveraCore extends UseNet {
             final String hash_md5 = link.getMD5Hash();
             final String hash_sha1 = link.getSha1Hash();
             final String hash_sha256 = link.getSha256Hash();
-            String getdata = "?src=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, hostPlugin));
+            final UrlQuery query = new UrlQuery();
+            query.add("src", Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, hostPlugin)));
             if (hash_md5 != null) {
-                getdata += "&hash_md5=" + hash_md5;
+                query.add("hash_md5", hash_md5);
             }
             if (hash_sha1 != null) {
-                getdata += "&hash_sha1=" + hash_sha1;
+                query.add("hash_sha1", hash_sha1);
             }
             if (hash_sha256 != null) {
-                getdata += "&hash_sha256=" + hash_sha256;
+                query.add("hash_sha256", hash_sha256);
             }
-            callAPI(br, account, "/api/transfer/directdl" + getdata);
-            dllink = PluginJSonUtils.getJsonValue(br, "location");
-            final String filename = PluginJSonUtils.getJsonValue(br, "filename");
+            callAPI(br, account, "/api/transfer/directdl" + "?" + query.toString());
+            this.handleAPIErrors(br, link, account);
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            dllink = (String) entries.get("location");
+            final String filename = (String) entries.get("filename");
             if (!StringUtils.isEmpty(filename) && link.getFinalFileName() == null) {
                 link.setFinalFileName(filename);
             }
@@ -336,11 +335,7 @@ abstract public class ZeveraCore extends UseNet {
                  */
                 final boolean forceDisableCRCCheck = true;
                 final long originalSourceFilesize = link.getView().getBytesTotal();
-                long thisFilesize = 0;
-                final String thisFilesizeStr = PluginJSonUtils.getJson(br, "filesize");
-                if (thisFilesizeStr != null && thisFilesizeStr.matches("\\d+")) {
-                    thisFilesize = Long.parseLong(thisFilesizeStr);
-                }
+                long thisFilesize = ((Number) entries.get("filesize")).longValue();
                 if (forceDisableCRCCheck || originalSourceFilesize > 0 && thisFilesize > 0 && thisFilesize != originalSourceFilesize) {
                     logger.info("Dumping existing hashes to prevent errors because of cache download");
                     link.setHashInfo(null);
@@ -385,6 +380,12 @@ abstract public class ZeveraCore extends UseNet {
         final AccountInfo ai = new AccountInfo();
         login(br, account, true, client_id);
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final String customerID = entries.get("customer_id").toString();
+        if (customerID != null && customerID.length() > 2) {
+            /* don't store the complete customer id as a security purpose */
+            final String shortenedCustomerID = customerID.substring(0, customerID.length() / 2) + "****";
+            account.setUser(shortenedCustomerID);
+        }
         // final String fair_use_used_str = PluginJSonUtils.getJson(br, "limit_used");
         final Object fair_use_usedO = entries.get("limit_used");
         final Object space_usedO = entries.get("space_used");
@@ -431,6 +432,7 @@ abstract public class ZeveraCore extends UseNet {
             setFreeAccountTraffic(account, ai);
         }
         callAPI(br, account, "/api/services/list");
+        this.handleAPIErrors(br, null, account);
         entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         // final ArrayList<String> supportedHosts = new ArrayList<String>();
         final ArrayList<String> directdl = (ArrayList<String>) entries.get("directdl");
@@ -612,113 +614,105 @@ abstract public class ZeveraCore extends UseNet {
         synchronized (account) {
             br.setCookiesExclusive(true);
             prepBR(br);
-            loginAPI(br, clientID, account, force);
-        }
-    }
-
-    public void loginAPI(final Browser br, final String clientID, final Account account, final boolean force) throws Exception {
-        if (usePairingLogin(account)) {
-            /* 2019-06-26: New: TODO: We need a way to get the usenet logindata without exposing the original account logindata/apikey! */
-            try {
-                boolean has_tried_old_token = false;
-                final long token_valid_until = account.getLongProperty("token_valid_until", 0);
-                if (System.currentTimeMillis() > token_valid_until) {
-                    logger.info("Token has expired");
-                } else if (setAuthHeader(br, account)) {
-                    has_tried_old_token = true;
-                    callAPI(br, account, "/api/account/info");
-                    if (isLoggedIn(br)) {
-                        return;
-                    }
-                    logger.info("Token expired or user has revoked access --> Full login required");
-                }
-                this.postPage("https://www." + account.getHoster() + "/token", "response_type=device_code&client_id=" + clientID);
-                final int interval_seconds = Integer.parseInt(PluginJSonUtils.getJson(br, "interval"));
-                final int expires_in_seconds = Integer.parseInt(PluginJSonUtils.getJson(br, "expires_in")) - interval_seconds;
-                final long expires_in_timestamp = System.currentTimeMillis() + expires_in_seconds * 1000l;
-                final String verification_uri = PluginJSonUtils.getJson(br, "verification_uri");
-                final String device_code = PluginJSonUtils.getJson(br, "device_code");
-                final String user_code = PluginJSonUtils.getJson(br, "user_code");
-                if (StringUtils.isEmpty(device_code) || StringUtils.isEmpty(user_code) || StringUtils.isEmpty(verification_uri)) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                boolean success = false;
-                int loop = 0;
-                int internal_max_loops_limit = 120;
-                final Thread dialog = showPairingLoginInformation(verification_uri, user_code);
-                String access_token = null;
-                try {
-                    do {
-                        logger.info("Waiting for user to authorize application: " + loop);
-                        Thread.sleep(interval_seconds * 1001l);
-                        this.postPage("https://www." + account.getHoster() + "/token", "grant_type=device_code&client_id=" + clientID + "&code=" + device_code);
-                        access_token = PluginJSonUtils.getJson(br, "access_token");
-                        if (!StringUtils.isEmpty(access_token)) {
-                            success = true;
-                            break;
-                        } else if (!dialog.isAlive()) {
-                            logger.info("Dialog closed!");
-                            break;
-                        }
-                        loop++;
-                    } while (!success && System.currentTimeMillis() < expires_in_timestamp && loop < internal_max_loops_limit);
-                } finally {
-                    dialog.interrupt();
-                }
-                final String token_expires_in = PluginJSonUtils.getJson(br, "expires_in");
-                final String token_type = PluginJSonUtils.getJson(br, "token_type");
-                if (!success) {
-                    final String errormsg = "User did not confirm pairing code!\r\nDo not close the pairing dialog until you've confirmed the code via browser!";
-                    if (has_tried_old_token) {
-                        /*
-                         * Don't display permanent error if we still have an old token. Maybe something else has failed and the old token
-                         * will work fine again on the next try.
-                         */
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, errormsg, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, errormsg, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                } else if (!"bearer".equals(token_type)) {
-                    /* This should never happen! */
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unsupported token_type", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                account.setProperty("access_token", access_token);
-                if (!StringUtils.isEmpty(token_expires_in) && token_expires_in.matches("\\d+")) {
-                    account.setProperty("token_valid_until", System.currentTimeMillis() + Long.parseLong(token_expires_in));
-                }
-                setAuthHeader(br, account);
-                callAPI(br, account, "/api/account/info");
-                if (!isLoggedIn(br)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    account.setProperty(PROPERTY_ACCOUNT_successfully_loggedin_once, true);
-                }
-            } finally {
+            if (usePairingLogin(account)) {
                 /*
-                 * Users may enter logindata through webinterface which means they may even enter their real password which we do not want
-                 * to store in our account database. Also we do not want this field to be empty (null) as this would look strange in the
-                 * account manager.
+                 * 2019-06-26: New: TODO: We need a way to get the usenet logindata without exposing the original account logindata/apikey!
                  */
-                account.setPass("JD_DUMMY_PASSWORD");
-            }
-        } else {
-            callAPI(br, account, "/api/account/info");
-            if (!isLoggedIn(br)) {
-                /* E.g. {"status":"error","message":"customer_id and pin parameter missing or not logged in "} */
-                loginInvalid(account);
+                try {
+                    boolean hasTriedOldToken = false;
+                    final long tokenValidUntil = account.getLongProperty("token_valid_until", 0);
+                    if (System.currentTimeMillis() > tokenValidUntil) {
+                        logger.info("Token has expired");
+                    } else if (setAuthHeader(br, account)) {
+                        hasTriedOldToken = true;
+                        callAPI(br, account, "/api/account/info");
+                        try {
+                            this.handleAPIErrors(br, null, account);
+                            logger.info("Token login successful");
+                            return;
+                        } catch (final Throwable ignore) {
+                            logger.info("Token expired or user has revoked access --> Full login required");
+                        }
+                        logger.info("Token expired or user has revoked access --> Full login required");
+                    }
+                    this.postPage("https://www." + account.getHoster() + "/token", "response_type=device_code&client_id=" + clientID);
+                    final int interval_seconds = Integer.parseInt(PluginJSonUtils.getJson(br, "interval"));
+                    final int expires_in_seconds = Integer.parseInt(PluginJSonUtils.getJson(br, "expires_in")) - interval_seconds;
+                    final long expires_in_timestamp = System.currentTimeMillis() + expires_in_seconds * 1000l;
+                    final String verification_uri = PluginJSonUtils.getJson(br, "verification_uri");
+                    final String device_code = PluginJSonUtils.getJson(br, "device_code");
+                    final String user_code = PluginJSonUtils.getJson(br, "user_code");
+                    if (StringUtils.isEmpty(device_code) || StringUtils.isEmpty(user_code) || StringUtils.isEmpty(verification_uri)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    boolean success = false;
+                    int loop = 0;
+                    int internal_max_loops_limit = 120;
+                    final Thread dialog = showPairingLoginInformation(verification_uri, user_code);
+                    String access_token = null;
+                    try {
+                        do {
+                            logger.info("Waiting for user to authorize application: " + loop);
+                            Thread.sleep(interval_seconds * 1001l);
+                            this.postPage("https://www." + account.getHoster() + "/token", "grant_type=device_code&client_id=" + clientID + "&code=" + device_code);
+                            access_token = PluginJSonUtils.getJson(br, "access_token");
+                            if (!StringUtils.isEmpty(access_token)) {
+                                success = true;
+                                break;
+                            } else if (!dialog.isAlive()) {
+                                logger.info("Dialog closed!");
+                                break;
+                            }
+                            loop++;
+                        } while (!success && System.currentTimeMillis() < expires_in_timestamp && loop < internal_max_loops_limit);
+                    } finally {
+                        dialog.interrupt();
+                    }
+                    final String token_expires_in = PluginJSonUtils.getJson(br, "expires_in");
+                    final String token_type = PluginJSonUtils.getJson(br, "token_type");
+                    if (!success) {
+                        final String errormsg = "User did not confirm pairing code!\r\nDo not close the pairing dialog until you've confirmed the code via browser!";
+                        if (hasTriedOldToken) {
+                            /*
+                             * Do not display permanent error if we still have an old token. Maybe something else has failed and the old
+                             * token will work fine again on the next try.
+                             */
+                            throw new AccountUnavailableException(errormsg, 5 * 60 * 1000l);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, errormsg, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    } else if (!"bearer".equals(token_type)) {
+                        /* This should never happen! */
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unsupported token_type", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                    account.setProperty("access_token", access_token);
+                    if (!StringUtils.isEmpty(token_expires_in) && token_expires_in.matches("\\d+")) {
+                        account.setProperty("token_valid_until", System.currentTimeMillis() + Long.parseLong(token_expires_in));
+                    }
+                    setAuthHeader(br, account);
+                    callAPI(br, account, "/api/account/info");
+                    this.handleAPIErrors(br, null, account);
+                    /* No Exception = Success */
+                    account.setProperty(PROPERTY_ACCOUNT_successfully_loggedin_once, true);
+                } finally {
+                    /*
+                     * Users may enter logindata through webinterface which means they may even enter their real password which we do not
+                     * want to store in our account database. Also we do not want this field to be empty (null) as this would look strange
+                     * in the account manager.
+                     */
+                    account.setPass("JD_DUMMY_PASSWORD");
+                }
             } else {
+                callAPI(br, account, "/api/account/info");
+                this.handleAPIErrors(br, null, account);
+                /* No Exception = Success */
                 account.setProperty(PROPERTY_ACCOUNT_successfully_loggedin_once, true);
             }
-        }
-        final String customer_id = PluginJSonUtils.getJson(br, "customer_id");
-        if (customer_id != null && customer_id.length() > 2) {
-            /* don't store the complete customer id as a security purpose */
-            final String shortcustomer_id = customer_id.substring(0, customer_id.length() / 2) + "****";
-            account.setUser(shortcustomer_id);
         }
     }
 
     /* 2020-04-1: Temp. workaround for possible API issue */
+    @Deprecated
     private void loginInvalid(final Account account) throws PluginException {
         final boolean successfully_loggedin_once = account.getBooleanProperty(PROPERTY_ACCOUNT_successfully_loggedin_once, false);
         if (successfully_loggedin_once) {
@@ -757,7 +751,7 @@ abstract public class ZeveraCore extends UseNet {
     protected String getUseNetUsername(Account account) {
         if (usePairingLogin(account)) {
             /* Login via access_token:access_token */
-            return account.getStringProperty("access_token", null);
+            return account.getStringProperty("access_token");
         } else {
             /* Login via APIKEY:APIKEY */
             return account.getPass();
@@ -768,20 +762,10 @@ abstract public class ZeveraCore extends UseNet {
     protected String getUseNetPassword(Account account) {
         if (usePairingLogin(account)) {
             /* Login via access_token:access_token */
-            return account.getStringProperty("access_token", null);
+            return account.getStringProperty("access_token");
         } else {
             /* Login via APIKEY:APIKEY */
             return account.getPass();
-        }
-    }
-
-    private boolean isLoggedIn(final Browser br) {
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final Object statusO = entries.get("status");
-        if ("success".equalsIgnoreCase((String) statusO)) {
-            return true;
-        } else {
-            return false;
         }
     }
 
@@ -855,8 +839,9 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     /**
-     * Indicates whether or not to display free account download dialogs which tell the user to activate free mode via website. </br> Some
-     * users find this annoying and will deactivate it. </br> default = true
+     * Indicates whether or not to display free account download dialogs which tell the user to activate free mode via website. </br>
+     * Some users find this annoying and will deactivate it. </br>
+     * default = true
      */
     public boolean displayFreeAccountDownloadDialogs(final Account account) {
         return false;
@@ -864,9 +849,10 @@ abstract public class ZeveraCore extends UseNet {
 
     /**
      * 2019-08-21: Premiumize.me has so called 'booster points' which basically means that users with booster points can download more than
-     * normal users can with their fair use limit: https://www.premiumize.me/booster </br> Premiumize has not yet integrated this in their
-     * API which means accounts with booster points will run into the fair-use-limit in JDownloader and will not be able to download any
-     * more files then. </br> This workaround can set accounts to unlimited traffic so that users will still be able to download.</br>
+     * normal users can with their fair use limit: https://www.premiumize.me/booster </br>
+     * Premiumize has not yet integrated this in their API which means accounts with booster points will run into the fair-use-limit in
+     * JDownloader and will not be able to download any more files then. </br>
+     * This workaround can set accounts to unlimited traffic so that users will still be able to download.</br>
      * Remove this workaround once Premiumize has integrated their booster points into their API.
      */
     public boolean isBoosterPointsUnlimitedTrafficWorkaroundActive(final Account account) {
@@ -880,20 +866,22 @@ abstract public class ZeveraCore extends UseNet {
     /**
      * Keep this for possible future API implementation
      *
-     * @throws InterruptedException
+     * @throws Exception
      */
-    private void handleAPIErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException, InterruptedException {
+    private void handleAPIErrors(final Browser br, final DownloadLink link, final Account account) throws Exception {
         /* E.g. {"status":"error","error":"topup_required","message":"Please purchase premium membership or activate free mode."} */
-        final String status = PluginJSonUtils.getJson(br, "status");
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final String status = (String) entries.get("status");
         if ("error".equalsIgnoreCase(status)) {
-            String errortype = PluginJSonUtils.getJson(br, "error");
+            /* This field is not always given! */
+            String errortype = (String) entries.get("error");
             if (errortype == null) {
                 errortype = "unknowndlerror";
             }
-            String message = PluginJSonUtils.getJson(br, "message");
+            String message = (String) entries.get("message");
             if (message == null) {
                 /* Fallback */
-                message = errortype;
+                message = "Unknown error";
             }
             if ("topup_required".equalsIgnoreCase(errortype)) {
                 /**
@@ -903,7 +891,7 @@ abstract public class ZeveraCore extends UseNet {
                  * file. 3. User has activated free mode but this file is not allowed to be downloaded via free account.
                  */
                 /* {"status":"error","error":"topup_required","message":"Please purchase premium membership or activate free mode."} */
-                if (account != null && account.getType() == AccountType.FREE) {
+                if (account.getType() == AccountType.FREE) {
                     /* Free */
                     /* 2019-07-27: Original errormessage may cause confusion so we'll slightly modify that. */
                     message = "Premium required or activate free mode via premiumize.me/free";
@@ -921,31 +909,39 @@ abstract public class ZeveraCore extends UseNet {
                 } else {
                     /* Premium account - probably no traffic left */
                     message = "Traffic empty or fair use limit reached?";
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, message, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    throw new AccountUnavailableException(message, 5 * 60 * 1000l);
                 }
-            } else if ("content not in cache".equalsIgnoreCase(message)) {
+            } else if (message.matches("(?i).*customer_id and pin parameter missing or not logged in.*")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, message, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (message.matches("(?i).*content not in cache.*")) {
                 /* 2019-02-19: Not all errors have an errortype given */
                 /* E.g. {"status":"error","message":"content not in cache"} */
-                if (account != null && account.getType() == AccountType.FREE && this.supportsFreeAccountDownloadMode(account)) {
+                if (account.getType() == AccountType.FREE && this.supportsFreeAccountDownloadMode(account)) {
                     /* Case: User tries to download non-cached-file via free account. */
                     message = "Not downloadable via free account because: " + message;
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, message);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, message);
                 }
-            } else if (StringUtils.containsIgnoreCase(message, "file not found")) {
+            } else if (message.matches("(?i).*file not found.*")) {
                 /*
                  * { "status": "error", "message": "Error: file not found"}
                  */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, message);
-            } else if (StringUtils.containsIgnoreCase(message, "item not found")) {
+            } else if (message.matches("(?i).*item not found.*")) {
                 /*
                  * 2020-07-16: This should only happen for selfhosted cloud items --> Offline: {"status":"error","message":"item not found"}
+                 * --> Trust offline status
                  */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, message);
             } else {
                 /* Unknown error */
-                mhm.handleErrorGeneric(account, link, errortype, 2, 5 * 60 * 1000l);
+                if (link == null) {
+                    /* Account/login related error */
+                    throw new AccountUnavailableException(message, 5 * 60 * 1000l);
+                } else {
+                    mhm.handleErrorGeneric(account, link, errortype, 2, 5 * 60 * 1000l);
+                }
             }
         }
     }
