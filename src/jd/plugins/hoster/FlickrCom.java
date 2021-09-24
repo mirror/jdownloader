@@ -22,7 +22,6 @@ import java.net.URLDecoder;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -81,43 +80,42 @@ public class FlickrCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://flickr.com";
+        return "https://www.flickr.com/help/terms";
     }
 
     /* Settings */
-    private static final String              SETTING_FAST_LINKCHECK                  = "FAST_LINKCHECK";
-    private static final String              SETTING_SELECTED_PHOTO_QUALITY          = "SELECTED_PHOTO_QUALITY";
-    private static final String              SETTING_SELECTED_VIDEO_QUALITY          = "SELECTED_VIDEO_QUALITY";
-    private static final String              CUSTOM_DATE                             = "CUSTOM_DATE";
-    private static final String              CUSTOM_FILENAME                         = "CUSTOM_FILENAME";
-    private static final String              CUSTOM_FILENAME_EMPTY_TAG_STRING        = "CUSTOM_FILENAME_EMPTY_TAG_STRING";
-    public static final String               PROPERTY_EXT                            = "ext";
-    public static final String               PROPERTY_USERNAME_INTERNAL              = "username_internal";
-    public static final String               PROPERTY_USERNAME                       = "username";
-    public static final String               PROPERTY_USERNAME_FULL                  = "username_full";
-    public static final String               PROPERTY_USERNAME_URL                   = "username_url";
-    public static final String               PROPERTY_REAL_NAME                      = "real_name";
-    public static final String               PROPERTY_CONTENT_ID                     = "content_id";
-    public static final String               PROPERTY_SET_ID                         = "set_id";                                                                    // set/album
-    public static final String               PROPERTY_GALLERY_ID                     = "gallery_id";                                                                // gallery
+    private static final String SETTING_FAST_LINKCHECK                  = "FAST_LINKCHECK";
+    private static final String SETTING_SELECTED_PHOTO_QUALITY          = "SELECTED_PHOTO_QUALITY";
+    private static final String SETTING_SELECTED_VIDEO_QUALITY          = "SELECTED_VIDEO_QUALITY";
+    private static final String CUSTOM_DATE                             = "CUSTOM_DATE";
+    private static final String CUSTOM_FILENAME                         = "CUSTOM_FILENAME";
+    private static final String CUSTOM_FILENAME_EMPTY_TAG_STRING        = "CUSTOM_FILENAME_EMPTY_TAG_STRING";
+    public static final String  PROPERTY_EXT                            = "ext";
+    public static final String  PROPERTY_USERNAME_INTERNAL              = "username_internal";
+    public static final String  PROPERTY_USERNAME                       = "username";
+    public static final String  PROPERTY_USERNAME_FULL                  = "username_full";
+    public static final String  PROPERTY_USERNAME_URL                   = "username_url";
+    public static final String  PROPERTY_REAL_NAME                      = "real_name";
+    public static final String  PROPERTY_CONTENT_ID                     = "content_id";
+    public static final String  PROPERTY_SET_ID                         = "set_id";                                                                    // set/album
+    public static final String  PROPERTY_GALLERY_ID                     = "gallery_id";                                                                // gallery
     // id
-    public static final String               PROPERTY_DATE                           = "dateadded";                                                                 // timestamp
+    public static final String  PROPERTY_DATE                           = "dateadded";                                                                 // timestamp
     /* pre-formatted string */
-    public static final String               PROPERTY_DATE_TAKEN                     = "date_taken";
-    public static final String               PROPERTY_TITLE                          = "title";
-    public static final String               PROPERTY_ORDER_ID                       = "order_id";
-    public static final String               PROPERTY_MEDIA_TYPE                     = "media";
-    private static final String              PROPERTY_SETTING_PREFER_SERVER_FILENAME = "prefer_server_filename";
-    public static final String               PROPERTY_QUALITY                        = "quality";
+    public static final String  PROPERTY_DATE_TAKEN                     = "date_taken";
+    public static final String  PROPERTY_TITLE                          = "title";
+    public static final String  PROPERTY_ORDER_ID                       = "order_id";
+    public static final String  PROPERTY_MEDIA_TYPE                     = "media";
+    private static final String PROPERTY_SETTING_PREFER_SERVER_FILENAME = "prefer_server_filename";
+    public static final String  PROPERTY_QUALITY                        = "quality";
     /* required e.g. to download video streams */
-    public static final String               PROPERTY_SECRET                         = "secret";
-    public static final String               PROPERTY_DIRECTURL                      = "directurl_%s";
-    public static final String               PROPERTY_ACCOUNT_CSRF                   = "csrf";
-    public static final String               PROPERTY_ACCOUNT_USERNAME_INTERNAL      = "username_internal";
-    private static final String              TYPE_PHOTO                              = "https?://[^/]+/photos/([^<>\"/]+)/(\\d+)$";
-    private static final String              TYPE_PHOTO_AS_PART_OF_SET               = "https?://[^/]+/photos/([^<>\"/]+)/(\\d+)/in/album-(\\d+)/?$";
-    private static final String              TYPE_PHOTO_AS_PART_OF_GALLERY           = "https?://[^/]+/photos/([^<>\"/]+)/(\\d+)/in/gallery-(\\d+@N\\d+)-(\\d+)/?$";
-    protected static HashMap<String, Object> api                                     = new HashMap<String, Object>();
+    public static final String  PROPERTY_SECRET                         = "secret";
+    public static final String  PROPERTY_DIRECTURL                      = "directurl_%s";
+    public static final String  PROPERTY_ACCOUNT_CSRF                   = "csrf";
+    public static final String  PROPERTY_ACCOUNT_USERNAME_INTERNAL      = "username_internal";
+    private static final String TYPE_PHOTO                              = "https?://[^/]+/photos/([^<>\"/]+)/(\\d+)$";
+    private static final String TYPE_PHOTO_AS_PART_OF_SET               = "https?://[^/]+/photos/([^<>\"/]+)/(\\d+)/in/album-(\\d+)/?$";
+    private static final String TYPE_PHOTO_AS_PART_OF_GALLERY           = "https?://[^/]+/photos/([^<>\"/]+)/(\\d+)/in/gallery-(\\d+@N\\d+)-(\\d+)/?$";
 
     /** Max 2000 requests per hour. */
     @Override
@@ -244,7 +242,7 @@ public class FlickrCom extends PluginForHost {
                 logger.info("Linkcheck via directurl successful");
                 return AvailableStatus.TRUE;
             } else {
-                logger.info("Linkcheck via directurl failed --> Full linkcheck needed");
+                logger.info("Linkcheck via directurl failed --> Full linkcheck needed to get fresh directurl");
             }
         }
         if (account != null) {
@@ -270,6 +268,7 @@ public class FlickrCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    /** Sets filename according to user preferences. */
     public static void setFilename(final DownloadLink link) throws ParseException {
         final String directurl = getStoredDirecturl(link);
         String filenameURL = null;
@@ -284,6 +283,7 @@ public class FlickrCom extends PluginForHost {
     }
 
     /** Checks single video/photo via website and sets required DownloadLink properties. */
+    @Deprecated
     private void availablecheckWebsite(final DownloadLink link, final Account account) throws Exception {
         /* 2021-09-13: Don't do this anymore as it may not always work for videos! */
         // br.getPage(https://www.flickr.com/photos/<pathAlias>/<photoID> + "/in/photostream");
@@ -550,8 +550,10 @@ public class FlickrCom extends PluginForHost {
          */
         final List<Map<String, Object>> streams = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "streams/stream");
         if (streams.isEmpty()) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* This should never happen! */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "No streams available");
         }
+        /* Find user preferred quality. */
         String bestQualityURL = null;
         String bestQualityName = null;
         String userPreferredQualityURL = null;
@@ -781,7 +783,7 @@ public class FlickrCom extends PluginForHost {
         if (isVideo(link)) {
             return true;
         } else {
-            /* 2021-09-17: No Content-Length header given for images. */
+            /* 2021-09-17: Content-Length header not always given for images. */
             return false;
         }
     }
@@ -794,6 +796,7 @@ public class FlickrCom extends PluginForHost {
         return String.format(PROPERTY_DIRECTURL, link.getStringProperty(PROPERTY_QUALITY, getPreferredQualityStr(link)));
     }
 
+    /** Returns preferred video/photo quality as string. */
     private static String getPreferredQualityStr(final DownloadLink link) {
         if (isVideo(link)) {
             return videoQualityToQualityString(getPreferredVideoQuality());
@@ -841,17 +844,20 @@ public class FlickrCom extends PluginForHost {
                 link.setDownloadCurrent(0);
                 /* Size unknown */
                 link.setDownloadSize(0);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken image?");
+                errorBrokenImage();
             }
         }
     }
 
     private static void connectionErrorhandling(final URLConnectionAdapter con) throws PluginException {
-        if (con.getURL().toString().contains("/photo_unavailable.gif")) {
+        if (StringUtils.containsIgnoreCase(con.getURL().toString(), "/photo_unavailable.gif")) {
             con.disconnect();
-            /* Same as check below */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            errorBrokenImage();
         }
+    }
+
+    private static void errorBrokenImage() throws PluginException {
+        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken image?");
     }
 
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link) throws Exception {
@@ -899,7 +905,10 @@ public class FlickrCom extends PluginForHost {
             /* Unlimited */
             return 0;
         } else {
-            /* Max 1 */
+            /*
+             * Max 1 as chunkload is not possible for all images and most times these are small times so chunkload won't help that much to
+             * get better download speeds.
+             */
             return 1;
         }
     }
@@ -1016,6 +1025,7 @@ public class FlickrCom extends PluginForHost {
         return thread;
     }
 
+    /** Returns formatted filename according to user preferences. */
     @SuppressWarnings("deprecation")
     public static String getFormattedFilename(final DownloadLink link) throws ParseException {
         String formattedFilename = null;
@@ -1367,6 +1377,7 @@ public class FlickrCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
+        /* Allow upper code to change to a different preferred quality whenever user resets DownloadLink. */
         link.removeProperty(PROPERTY_QUALITY);
     }
 

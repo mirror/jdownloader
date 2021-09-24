@@ -28,6 +28,7 @@ import javax.swing.JLabel;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
@@ -138,11 +139,11 @@ public class EmuParadiseMe extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        prepBrowser();
+        prepBrowser(this.br);
         setCookies();
         /* This should redirect to TYPE_NORMAL. */
         br.getPage("https://www." + this.getHost() + "/roms/roms.php?gid=" + fid);
-        if (offlineCheck()) {
+        if (isOffline()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         parseFileInfo(link);
@@ -192,20 +193,23 @@ public class EmuParadiseMe extends PluginForHost {
 
     public String correctFilesize(String fileSize) {
         if (fileSize != null && !fileSize.trim().endsWith("B")) {
-            fileSize = fileSize.trim() + "B";
+            return fileSize.trim() + "B";
+        } else {
+            return fileSize;
         }
-        return fileSize;
     }
 
-    public boolean offlineCheck() {
+    public boolean isOffline() {
         if (br.getHttpConnection().getResponseCode() == 404) {
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
-    public void prepBrowser() {
+    public Browser prepBrowser(final Browser br) {
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.3; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0");
+        return br;
     }
 
     public void setCookies() {
@@ -243,49 +247,52 @@ public class EmuParadiseMe extends PluginForHost {
                 if (dllink == null) {
                     // redirects can be here
                     br.setFollowRedirects(true);
-                    if (!isUrlSemicolonDownload(br.getURL())) {
-                        br.getPage(br.getURL() + "-download");
-                    }
-                    /* As long as the static cookie set captcha workaround works fine, */
-                    if (br.containsHTML("solvemedia\\.com/papi/")) {
-                        /* Premium users should of course not have to enter captchas here! */
-                        logger.info("Detected captcha method \"solvemedia\" for this host");
-                        final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-                        File cf = null;
-                        try {
-                            cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                        } catch (final Exception e) {
-                            if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
-                                throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
-                            }
-                            throw e;
+                    final boolean preferWorkaroundRightAway = true;
+                    if (preferWorkaroundRightAway) {
+                        dllink = getDirectDownloadurlViaWorkaround(this.br, link);
+                    } else {
+                        if (!isUrlSemicolonDownload(br.getURL())) {
+                            br.getPage(br.getURL() + "-download");
                         }
-                        final String code = getCaptchaCode(cf, link);
-                        final String chid = sm.getChallenge(code);
-                        br.postPage(br.getURL(), "submit=+Verify+%26+Download&adcopy_response=" + Encoding.urlEncode(code) + "&adcopy_challenge=" + chid);
+                        /* As long as the static cookie set captcha workaround works fine, */
                         if (br.containsHTML("solvemedia\\.com/papi/")) {
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                            /* Premium users should of course not have to enter captchas here! */
+                            logger.info("Detected captcha method \"solvemedia\" for this host");
+                            final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
+                            File cf = null;
+                            try {
+                                cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                            } catch (final Exception e) {
+                                if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                                    throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                                }
+                                throw e;
+                            }
+                            final String code = getCaptchaCode(cf, link);
+                            final String chid = sm.getChallenge(code);
+                            br.postPage(br.getURL(), "submit=+Verify+%26+Download&adcopy_response=" + Encoding.urlEncode(code) + "&adcopy_challenge=" + chid);
+                            if (br.containsHTML("solvemedia\\.com/papi/")) {
+                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                            }
+                            /* Save cookies to avoid captchas in the future */
+                            final HashMap<String, String> cookies = new HashMap<String, String>();
+                            final Cookies add = br.getCookies(COOKIE_HOST);
+                            for (final Cookie c : add.getCookies()) {
+                                cookies.put(c.getKey(), c.getValue());
+                            }
+                            this.getPluginConfig().setProperty("cookies", cookies);
                         }
-                        /* Save cookies to avoid captchas in the future */
-                        final HashMap<String, String> cookies = new HashMap<String, String>();
-                        final Cookies add = br.getCookies(COOKIE_HOST);
-                        for (final Cookie c : add.getCookies()) {
-                            cookies.put(c.getKey(), c.getValue());
-                        }
-                        this.getPluginConfig().setProperty("cookies", cookies);
-                    }
-                    dllink = br.getRegex("\"[^<>\"]*?(/roms/get\\-download\\.php[^<>\"]*?)\"").getMatch(0);
-                    if (dllink == null) {
-                        /* 2021-09-13: No downloadlinks available for a lot of content. */
-                        final String gid = getFID(link);
-                        if (gid == null) {
-                            throw new PluginException(LinkStatus.ERROR_FATAL, "No downloadlink available");
+                        dllink = br.getRegex("\"[^<>\"]*?(/roms/get\\-download\\.php[^<>\"]*?)\"").getMatch(0);
+                        // if (dllink == null && br.containsHTML("(?i)>\\s*This game is unavailable")) {
+                        // errorNoDownloadlinkAvailable();
+                        // }
+                        if (dllink != null) {
+                            dllink = Encoding.htmlOnlyDecode(dllink);
                         } else {
-                            /* 2021-09-13: Workaround possible */
-                            dllink = "/roms/get-download.php?gid=" + gid + "&test=true";
+                            /* 2021-09-13: No downloadlinks available for a lot of content but there is a workaround. */
+                            dllink = getDirectDownloadurlViaWorkaround(this.br, link);
                         }
                     }
-                    dllink = Encoding.htmlOnlyDecode(dllink);
                 }
             }
             // do not analyse if accounts been used.
@@ -330,6 +337,32 @@ public class EmuParadiseMe extends PluginForHost {
         link.setProperty(directlinkproperty, dllink);
         link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())).trim());
         dl.startDownload();
+    }
+
+    /** Source: https://gist.github.com/infval/c69b479ff0bd590f2dd7e1975fe2fcad */
+    private String getDirectDownloadurlViaWorkaround(final Browser br, final DownloadLink link) throws PluginException {
+        /* 2021-09-13: No downloadlinks available for a lot of content. */
+        final String gid = getFID(link);
+        if (gid == null) {
+            errorNoDownloadlinkAvailable();
+        }
+        String dllink;
+        if (StringUtils.containsIgnoreCase(br.getURL(), "Sega_Dreamcast_ISOs")) {
+            /* Special case */
+            /* Download can be available in multiple versions (or is it only multiple archive types e.g. .7z and .zip?). */
+            final String[] downloadCandidates = br.getRegex("-download-\\d+\" title=\"Download ([^\"]+) ISO for Sega Dreamcast").getColumn(0);
+            if (downloadCandidates.length == 0) {
+                errorNoDownloadlinkAvailable();
+            }
+            dllink = "http://50.7.92.186/happyUUKAm8913lJJnckLiePutyNak/Dreamcast/" + URLEncode.encodeURIComponent(downloadCandidates[0]);
+        } else {
+            dllink = "/roms/get-download.php?gid=" + gid + "&test=true";
+        }
+        return dllink;
+    }
+
+    private void errorNoDownloadlinkAvailable() throws PluginException {
+        throw new PluginException(LinkStatus.ERROR_FATAL, "No downloadlink available");
     }
 
     private void setDownloadServerCookie() {

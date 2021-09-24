@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.Regex;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -29,10 +30,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vitaminogretmen.com" }, urls = { "http://(www\\.)?vitaminogretmen\\.com/videolar/video\\-detay/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vitaminogretmen.com" }, urls = { "https?://(?:www\\.)?vitaminogretmen\\.com/(?:videolar/video\\-detay|video)/(\\d+)" })
 public class VitaminoGretmenCom extends PluginForHost {
-
-    private String DLLINK = null;
+    private String dllink = null;
 
     public VitaminoGretmenCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,56 +49,77 @@ public class VitaminoGretmenCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link) + ".mp4");
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"error\\-content\"") || br.containsHTML("(>Kayıtlı video bulunmamaktadır\\.<|<title>Eğitim Videoları \\-  Vitamin Öğretmen Portalı </title>)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("class=\"videoDetailTitle\">(.*?)<\\!").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>Eğitim Videoları \\- (.*?) \\-  Vitamin Öğretmen Portalı </title>").getMatch(0);
+        String filename = br.getRegex("itemprop=\"name\" content=\"([^<>\"]+)\"").getMatch(0);
+        dllink = br.getRegex("(/_docs/video/.*?\\.(?:flv|mp4))").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("file\\s*:\\s*(?:'|\")([^<>\"\\']+\\.mp4)(?:'|\")").getMatch(0);
         }
-        DLLINK = br.getRegex("file: \\'(/.*?)\\'").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\\'(/_docs/video/.*?\\.flv)\\'").getMatch(0);
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename);
+            filename = filename.trim();
+            link.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
         }
-        if (filename == null || DLLINK == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        DLLINK = "http://www.vitaminogretmen.com" + Encoding.htmlDecode(DLLINK);
-        filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
+        if (dllink != null) {
+            Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (Throwable e) {
+                con = br2.openGetConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override

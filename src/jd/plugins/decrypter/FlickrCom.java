@@ -57,15 +57,15 @@ public class FlickrCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String                  TYPE_FAVORITES           = "https?://[^/]+/photos/([^<>\"/]+)/favorites(/.+)?";
-    private static final String                  TYPE_GROUPS              = "https?://[^/]+/groups/([^<>\"/]+)([^<>\"]+)?";
+    private static final String                  TYPE_FAVORITES           = "^https?://[^/]+/photos/([^<>\"/]+)/favorites(/.+)?";
+    private static final String                  TYPE_GROUPS              = "^https?://[^/]+/groups/([^<>\"/]+)([^<>\"]+)?";
     private static final String                  TYPE_SET_SINGLE          = "^https?://[^/]+/photos/([^<>\"/]+)/(?:sets|albums)/(\\d+).*";
     private static final String                  TYPE_GALLERY             = "^https?://[^/]+/photos/([^<>\"/]+)/galleries/(\\d+).*";
     private static final String                  TYPE_SETS_OF_USER_ALL    = "^https?://[^/]+/photos/([^/]+)/(?:albums|sets)/?$";
     private static final String                  TYPE_SINGLE_PHOTO        = "^https?://[^/]+/photos/[^<>\"/]+/\\d+.*";
     private static final String                  TYPE_PHOTO               = "https?://[^/]+/photos/.*?";
     private static final String                  TYPE_USER                = "^https?://[^/]+/photos/([^/]+)/?$";
-    private static final String                  INVALIDLINKS             = "https?://[^/]+/(photos/(me|upload|tags.*?)|groups/[^<>\"/]+/rules|groups/[^<>\"/]+/discuss.*?)";
+    private static final String                  INVALIDLINKS             = "^https?://[^/]+/(photos/(me|upload|tags.*?)|groups/[^<>\"/]+/rules|groups/[^<>\"/]+/discuss.*?)";
     public static final String                   API_BASE                 = "https://api.flickr.com/";
     private static final int                     api_max_entries_per_page = 500;
     private ArrayList<DownloadLink>              decryptedLinks           = new ArrayList<DownloadLink>();
@@ -80,14 +80,6 @@ public class FlickrCom extends PluginForDecrypt {
                                                                               };
                                                                           };
     private static HashMap<String, Object>       api                      = new HashMap<String, Object>();
-
-    private Browser prepBrowserWebsite(final Browser br) {
-        br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
-        br.setFollowRedirects(true);
-        br.setCookie(this.getHost(), "localization", "en-us%3Bus%3Bde");
-        br.setCookie(this.getHost(), "fldetectedlang", "en-us");
-        return br;
-    }
 
     private Browser prepBrowserAPI(final Browser br) {
         br.setFollowRedirects(true);
@@ -118,7 +110,7 @@ public class FlickrCom extends PluginForDecrypt {
             if (param.getCryptedUrl().matches(TYPE_SETS_OF_USER_ALL)) {
                 apiCrawlSetsOfUser(param, account);
             } else {
-                api_handleAPI(param, account);
+                crawlStreamsAPI(param, account);
             }
             return decryptedLinks;
         }
@@ -150,7 +142,7 @@ public class FlickrCom extends PluginForDecrypt {
      *
      * @throws Exception
      */
-    private void api_handleAPI(final CryptedLink param, final Account account) throws Exception {
+    private void crawlStreamsAPI(final CryptedLink param, final Account account) throws Exception {
         final String apikey = getPublicAPIKey(this, this.br);
         if (StringUtils.isEmpty(apikey)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -191,7 +183,7 @@ public class FlickrCom extends PluginForDecrypt {
             query.add("photoset_id", setID);
             final UrlQuery paramsSetInfo = query;
             paramsSetInfo.add("method", "flickr.photosets.getInfo");
-            api_getPage(API_BASE + "services/rest?" + paramsSetInfo.toString());
+            apiGetPage(API_BASE + "services/rest?" + paramsSetInfo.toString());
             final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final Map<String, Object> photoset = (Map<String, Object>) entries.get("photoset");
             usernameInternal = (String) photoset.get("owner");
@@ -214,7 +206,7 @@ public class FlickrCom extends PluginForDecrypt {
             query.add("gallery_id", galleryID);
             final UrlQuery specialQueryForFirstRequest = query;
             specialQueryForFirstRequest.add("get_gallery_info", "1");
-            api_getPage(API_BASE + "services/rest?" + specialQueryForFirstRequest.toString());
+            apiGetPage(API_BASE + "services/rest?" + specialQueryForFirstRequest.toString());
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final Map<String, Object> galleryinfo = (Map<String, Object>) entries.get("gallery");
             usernameSlug = (String) galleryinfo.get("username");
@@ -245,7 +237,7 @@ public class FlickrCom extends PluginForDecrypt {
             /* Only request group info on first request. */
             final UrlQuery specialQueryForFirstRequest = query;
             specialQueryForFirstRequest.add("get_group_info", "1");
-            api_getPage(API_BASE + "services/rest?" + specialQueryForFirstRequest.toString());
+            apiGetPage(API_BASE + "services/rest?" + specialQueryForFirstRequest.toString());
             final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final Map<String, Object> group = (Map<String, Object>) entries.get("group");
             usernameSlug = (String) group.get("pathalias");
@@ -265,7 +257,7 @@ public class FlickrCom extends PluginForDecrypt {
             alreadyAccessedFirstPage = false;
             givenUsernameDataIsValidForAllMediaItems = true;
         } else {
-            /* Unsupported URL --> Developer mistake */
+            /* Unsupported URL --> Developer mistake! */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (looksLikeInternalUsername(usernameFromURL)) {
@@ -287,7 +279,7 @@ public class FlickrCom extends PluginForDecrypt {
         do {
             if (page > 1 || !alreadyAccessedFirstPage) {
                 query.addAndReplace("page", Integer.toString(page));
-                api_getPage(API_BASE + "services/rest?" + query.toString());
+                apiGetPage(API_BASE + "services/rest?" + query.toString());
             }
             final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final Map<String, Object> photoInfo = (Map<String, Object>) entries.get(nameOfMainMap);
@@ -303,8 +295,8 @@ public class FlickrCom extends PluginForDecrypt {
             }
             logger.info("Crawling page " + page + " / " + totalpages);
             final List<Map<String, Object>> photoList = (List<Map<String, Object>>) photoInfo.get("photo");
-            final boolean seemsToContainMatureContent = page < totalpages && photoList.size() < api_max_entries_per_page;
-            if (seemsToContainMatureContent) {
+            final boolean looksLikeSomeItemsAreMissing = page < totalpages && photoList.size() < api_max_entries_per_page;
+            if (looksLikeSomeItemsAreMissing) {
                 logger.info("There is probably hidden mature content present? Found only " + photoList.size() + " of max " + api_max_entries_per_page + " items on page " + page + " although we're not yet on the last page");
             }
             for (final Map<String, Object> photo : photoList) {
@@ -406,7 +398,7 @@ public class FlickrCom extends PluginForDecrypt {
         int page = 1;
         do {
             query.addAndReplace("page", Integer.toString(page));
-            this.api_getPage(API_BASE + "services/rest?" + query.toString());
+            this.apiGetPage(API_BASE + "services/rest?" + query.toString());
             final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final Map<String, Object> setInfo = (Map<String, Object>) entries.get("photosets");
             totalitems = ((Number) setInfo.get("total")).intValue();
@@ -451,6 +443,7 @@ public class FlickrCom extends PluginForDecrypt {
         if (StringUtils.isEmpty(username)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (looksLikeInternalUsername(username)) {
+            /* We already got what we need. */
             return username;
         } else {
             synchronized (INTERNAL_USERNAME_CACHE) {
@@ -467,7 +460,7 @@ public class FlickrCom extends PluginForDecrypt {
                     query.add("method", "flickr.urls.lookupUser");
                     query.add("url", Encoding.urlEncode(userURL));
                     query.add("nojsoncallback", "1");
-                    api_getPage(API_BASE + "services/rest?" + query.toString());
+                    apiGetPage(API_BASE + "services/rest?" + query.toString());
                     final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
                     final String usernameInternal = (String) JavaScriptEngineFactory.walkJson(entries, "user/id");
                     if (StringUtils.isEmpty(usernameInternal)) {
@@ -484,6 +477,7 @@ public class FlickrCom extends PluginForDecrypt {
         if (StringUtils.isEmpty(groupname)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (looksLikeInternalUsername(groupname)) {
+            /* We already got what we need. */
             return groupname;
         } else {
             synchronized (INTERNAL_GROUPNAME_CACHE) {
@@ -500,7 +494,7 @@ public class FlickrCom extends PluginForDecrypt {
                     query.add("method", "flickr.urls.lookupGroup");
                     query.add("url", Encoding.urlEncode(groupURL));
                     query.add("nojsoncallback", "1");
-                    api_getPage(API_BASE + "services/rest?" + query.toString());
+                    apiGetPage(API_BASE + "services/rest?" + query.toString());
                     final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
                     final String usernameInternal = (String) JavaScriptEngineFactory.walkJson(entries, "group/id");
                     if (StringUtils.isEmpty(usernameInternal)) {
@@ -515,7 +509,7 @@ public class FlickrCom extends PluginForDecrypt {
 
     private static Object LOCK = new Object();
 
-    private void api_getPage(final String url) throws Exception {
+    private void apiGetPage(final String url) throws Exception {
         synchronized (LOCK) {
             final URLConnectionAdapter con = br.openGetConnection(url);
             try {
@@ -625,6 +619,14 @@ public class FlickrCom extends PluginForDecrypt {
         }
     }
 
+    private Browser prepBrowserWebsite(final Browser br) {
+        br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
+        br.setFollowRedirects(true);
+        br.setCookie(this.getHost(), "localization", "en-us%3Bus%3Bde");
+        br.setCookie(this.getHost(), "fldetectedlang", "en-us");
+        return br;
+    }
+
     /**
      * Handles decryption via website.
      *
@@ -633,7 +635,7 @@ public class FlickrCom extends PluginForDecrypt {
     @SuppressWarnings({ "unchecked" })
     @Deprecated
     /** Deprecated! Uses website without ajax requests! */
-    private void site_handleSite(final CryptedLink param, final Account account) throws Exception {
+    private void crawlStreamsWebsite(final CryptedLink param, final Account account) throws Exception {
         prepBrowserWebsite(this.br);
         // if not logged in this is 25... need to confirm for logged in -raztoki20160717
         int maxEntriesPerPage = 25;
