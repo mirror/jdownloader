@@ -24,6 +24,7 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -56,9 +57,12 @@ public class MediafilesCc extends YetiShareCore {
 
     @Override
     public boolean assignPlugin(DownloadLink link) {
+        final boolean correctDownloadLink = !StringUtils.equals(link.getHost(), getHost());
         if (super.assignPlugin(link)) {
-            // old domains are no longer working
-            correctDownloadLink(link);
+            if (correctDownloadLink) {
+                // old domains are no longer working
+                correctDownloadLink(link);
+            }
             return true;
         } else {
             return false;
