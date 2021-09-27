@@ -28,19 +28,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -65,6 +52,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(?:www\\.)?flickr\\.com/photos/([^<>\"/]+)/(\\d+)(?:/in/album-\\d+|/in/gallery-\\d+@N\\d+-\\d+)?" })
 public class FlickrCom extends PluginForHost {
@@ -140,9 +140,8 @@ public class FlickrCom extends PluginForHost {
             } else if (userCustomFilenameMask.equalsIgnoreCase("*username*_*content_id*_*title**extension*")) {
                 /**
                  * 2021-09-14: Correct defaults just in case user has entered the field so the property has been saved. See new default in:
-                 * defaultCustomFilename </br>
-                 * username_url = always given </br>
-                 * username = not always given but previously the same as new "username_url" and default.
+                 * defaultCustomFilename </br> username_url = always given </br> username = not always given but previously the same as new
+                 * "username_url" and default.
                  */
                 final String correctedUserCustomFilenameMask = userCustomFilenameMask.replace("*username*", "*username_url*");
                 getPluginConfig().setProperty(CUSTOM_FILENAME, correctedUserCustomFilenameMask);
@@ -600,8 +599,7 @@ public class FlickrCom extends PluginForHost {
     /** Returns API parameters "extras" containing the needed extra properties for images/videos. */
     public static final String getApiParamExtras() {
         /**
-         * needs_interstitial = show 18+ content </br>
-         * media = include media-type (video/photo)
+         * needs_interstitial = show 18+ content </br> media = include media-type (video/photo)
          */
         String extras = "date_taken%2Cdate_upload%2Cdescription%2Cowner_name%2Cpath_alias%2Crealname%2Cneeds_interstitial%2Cmedia";
         final String[] allPhotoQualities = getPhotoQualityStringsDescending();
@@ -720,19 +718,24 @@ public class FlickrCom extends PluginForHost {
         return false;
     }
 
-    public static String decodeEncoding(Plugin plugin, final String property, final String value) {
+    public static String decodeEncoding(final Plugin plugin, final String property, final String value) {
         if (value != null) {
             String decodedValue = Encoding.unicodeDecode(value);
             try {
                 decodedValue = URLEncode.decodeURIComponent(decodedValue, new URLEncode.Decoder() {
                     @Override
                     public String decode(String value) throws UnsupportedEncodingException {
-                        String ret = URLDecoder.decode(value, "UTF-8");
-                        if (ret.contains("\ufffd")) {
-                            // REPLACEMENT CHARACTER
-                            ret = URLDecoder.decode(value, "ISO-8859-1");
+                        try {
+                            String ret = URLDecoder.decode(value, "UTF-8");
+                            if (ret.contains("\ufffd")) {
+                                // REPLACEMENT CHARACTER
+                                ret = URLDecoder.decode(value, "ISO-8859-1");
+                            }
+                            return ret;
+                        } catch (IllegalArgumentException e) {
+                            plugin.getLogger().log(e);
+                            return value;
                         }
-                        return ret;
                     }
                 });
             } catch (UnsupportedEncodingException e) {
@@ -1062,7 +1065,12 @@ public class FlickrCom extends PluginForHost {
         formattedFilename = formattedFilename.replace("*date*", formattedDate);
         formattedFilename = formattedFilename.replace("*date_taken*", link.getStringProperty(PROPERTY_DATE_TAKEN, customStringForEmptyTags));
         formattedFilename = formattedFilename.replace("*media*", link.getStringProperty(PROPERTY_MEDIA_TYPE, customStringForEmptyTags));
-        formattedFilename = formattedFilename.replace("*extension*", link.getStringProperty(PROPERTY_EXT, defaultPhotoExt));
+        final String url = getStoredDirecturl(link);
+        String extension = url != null ? getFileNameExtensionFromURL(url) : null;
+        if (StringUtils.isEmpty(extension)) {
+            extension = link.getStringProperty(PROPERTY_EXT, defaultPhotoExt);
+        }
+        formattedFilename = formattedFilename.replace("*extension*", extension);
         formattedFilename = formattedFilename.replace("*username*", link.getStringProperty(PROPERTY_USERNAME, customStringForEmptyTags));
         formattedFilename = formattedFilename.replace("*username_url*", link.getStringProperty(PROPERTY_USERNAME_URL, customStringForEmptyTags));
         formattedFilename = formattedFilename.replace("*username_full*", link.getStringProperty(PROPERTY_USERNAME_FULL, customStringForEmptyTags));
