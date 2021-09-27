@@ -89,36 +89,44 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
 
     public BrowserReference(AbstractBrowserChallenge challenge) {
         this.challenge = challenge;
+        canClose.executeWhenReached(new DelayedRunnable(10000) {
+            @Override
+            public void delayedrun() {
+                unregisterRequestHandler();
+            }
+        });
     }
 
     protected final AtomicReference<HttpHandlerInfo> handlerInfo = new AtomicReference<HttpHandlerInfo>(null);
     protected final SingleReachableState             canClose    = new SingleReachableState("canClose");
 
     public void open() throws IOException {
-        TaskQueue.getQueue().addWait(new QueueAction<Void, IOException>() {
-            @Override
-            protected Void run() throws IOException {
-                synchronized (handlerInfo) {
-                    if (handlerInfo.get() == null) {
-                        try {
-                            int port = BrowserSolverService.getInstance().getConfig().getLocalHttpPort();
-                            if (port < 1024) {
-                                port = 0;
-                            } else if (port > 65000) {
-                                port = 65000;
+        if (!canClose.isReached()) {
+            TaskQueue.getQueue().addWait(new QueueAction<Void, IOException>() {
+                @Override
+                protected Void run() throws IOException {
+                    synchronized (handlerInfo) {
+                        if (handlerInfo.get() == null) {
+                            try {
+                                int port = BrowserSolverService.getInstance().getConfig().getLocalHttpPort();
+                                if (port < 1024) {
+                                    port = 0;
+                                } else if (port > 65000) {
+                                    port = 65000;
+                                }
+                                handlerInfo.set(DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(port, true, BrowserReference.this));
+                            } catch (final IOException e) {
+                                getLogger().log(e);
+                                handlerInfo.set(DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(0, true, BrowserReference.this));
                             }
-                            handlerInfo.set(DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(port, true, BrowserReference.this));
-                        } catch (final IOException e) {
-                            getLogger().log(e);
-                            handlerInfo.set(DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(0, true, BrowserReference.this));
+                            BrowserSolverService.getInstance().getConfig().setLocalHttpPort(getBasePort());
                         }
-                        BrowserSolverService.getInstance().getConfig().setLocalHttpPort(getBasePort());
                     }
+                    openURL(URLHelper.parseLocation(new URL(getBase()), "?id=" + id.getID()));
+                    return null;
                 }
-                openURL(URLHelper.parseLocation(new URL(getBase()), "?id=" + id.getID()));
-                return null;
-            }
-        });
+            });
+        }
     }
 
     protected LogInterface getLogger() {
@@ -190,24 +198,7 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
     }
 
     public void dispose() {
-        final DelayedRunnable delayedRunnable = new DelayedRunnable(10000) {
-            @Override
-            public void delayedrun() {
-                unregisterRequestHandler();
-            }
-        };
-        canClose.executeWhen(new Runnable() {
-            @Override
-            public void run() {
-                delayedRunnable.stop();
-                delayedRunnable.delayedrun();
-            }
-        }, new Runnable() {
-            @Override
-            public void run() {
-                delayedRunnable.run();
-            }
-        });
+        canClose.setReached();
     }
 
     protected void unregisterRequestHandler() {
