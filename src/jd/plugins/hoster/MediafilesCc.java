@@ -54,6 +54,17 @@ public class MediafilesCc extends YetiShareCore {
         return this.rewriteHost(getPluginDomains(), host, new String[0]);
     }
 
+    @Override
+    public boolean assignPlugin(DownloadLink link) {
+        if (super.assignPlugin(link)) {
+            // old domains are no longer working
+            correctDownloadLink(link);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
     }
