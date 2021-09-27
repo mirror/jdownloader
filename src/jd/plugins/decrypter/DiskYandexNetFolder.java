@@ -63,7 +63,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "yandex.net", "yandex.com", "yandex.com.tr", "yandex.ru", "yandex.ua", "yadi.sk", "yadisk.cc" });
+        ret.add(new String[] { "yandex.net", "yandex.com", "yandex.com.tr", "yandex.ru", "yandex.ua", "yadi.sk", "yadisk.cc", "yandex.kz" });
         return ret;
     }
 

@@ -71,7 +71,7 @@ public class VidmolyTo extends XFileSharingProBasic {
 
     public static final String getDefaultAnnotationPatternPartCustom() {
         /* 2020-05-18: Special */
-        return "/(?:embed-|dl/)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?";
+        return "/(?:embed-|dl?/)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?";
     }
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
@@ -87,7 +87,7 @@ public class VidmolyTo extends XFileSharingProBasic {
         /* 2020-05-18: Special */
         try {
             if (dl != null && dl.getPluginPatternMatcher() != null) {
-                final String result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "/(?:embed-|dl/)?([a-z0-9]{12})").getMatch(0);
+                final String result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "/(?:embed-|dl?/)?([a-z0-9]{12})").getMatch(0);
                 return result;
             } else {
                 return null;
