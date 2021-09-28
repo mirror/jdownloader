@@ -38,7 +38,7 @@ public class LogController extends LogSourceProvider {
             return "Log > /dev/null!";
         }
     };
-    private static volatile WeakHashMap<Thread, LogSource> map      = new WeakHashMap<Thread, LogSource>();
+    private static final WeakHashMap<Thread, LogInterface> MAP      = new WeakHashMap<Thread, LogInterface>();
 
     /**
      * get the only existing instance of org.appwork.utils.logging2.extmanager.LoggerFactory. This is a singleton
@@ -82,13 +82,15 @@ public class LogController extends LogSourceProvider {
 
     public static LogSource getRebirthLogger() {
         LogInterface logger = null;
-        Thread currentThread = Thread.currentThread();
+        final Thread currentThread = Thread.currentThread();
         /* fetch logger from map if we have one set for current Thread */
-        logger = map.get(currentThread);
+        synchronized (MAP) {
+            logger = MAP.get(currentThread);
+        }
         if (logger == null) {
             if (currentThread instanceof LinkCrawlerThread) {
                 /* we are inside a LinkCrawlerThread, lets reuse the logger from decrypterPlugin */
-                Object owner = ((LinkCrawlerThread) currentThread).getCurrentOwner();
+                final Object owner = ((LinkCrawlerThread) currentThread).getCurrentOwner();
                 if (owner != null) {
                     if (owner instanceof PluginForDecrypt) {
                         logger = ((PluginForDecrypt) owner).getLogger();
@@ -103,51 +105,49 @@ public class LogController extends LogSourceProvider {
                 logger = ((SingleDownloadController) currentThread).getLogger();
             } else if (currentThread instanceof QueueThread && ((QueueThread) currentThread).getQueue() instanceof ExtractionQueue) {
                 /* we are inside an ExtractionController */
-                ExtractionController currentExtraction = ((ExtractionQueue) ((QueueThread) currentThread).getQueue()).getCurrentQueueEntry();
+                final ExtractionController currentExtraction = ((ExtractionQueue) ((QueueThread) currentThread).getQueue()).getCurrentQueueEntry();
                 if (currentExtraction != null) {
                     logger = currentExtraction.getLogger();
                 }
             } else if (currentThread instanceof LinkCheckerThread) {
                 /* we are inside a LinkCheckerThread */
-                LinkCheckerThread lc = (LinkCheckerThread) currentThread;
+                final LinkCheckerThread lc = (LinkCheckerThread) currentThread;
                 logger = lc.getLogger();
             } else if (currentThread instanceof BrowserSettingsThread) {
                 /* we are inside a BrowserSettingsThread */
-                BrowserSettingsThread bst = (BrowserSettingsThread) currentThread;
+                final BrowserSettingsThread bst = (BrowserSettingsThread) currentThread;
                 logger = bst.getLogger();
             }
         }
         if (logger != null && logger instanceof LogSource) {
             final LogSource ret = (LogSource) logger;
             return ret;
+        } else {
+            return null;
         }
-        return null;
     }
 
     public static LogInterface getRebirthLogger(final LogInterface fallbackLogger) {
         if (fallbackLogger == null) {
             throw new IllegalArgumentException("fallbackLogger is null");
-        }
-        final LogInterface ret = getRebirthLogger();
-        if (ret == null) {
-            return fallbackLogger;
         } else {
-            return ret;
+            final LogInterface ret = getRebirthLogger();
+            if (ret == null) {
+                return fallbackLogger;
+            } else {
+                return ret;
+            }
         }
     }
 
-    public static synchronized void setRebirthLogger(LogSource logger) {
+    public static LogInterface setRebirthLogger(LogInterface logger) {
         final Thread currentThread = Thread.currentThread();
-        if (logger == null && !map.containsKey(currentThread)) {
-            return;
-        } else {
-            final WeakHashMap<Thread, LogSource> newMap = new WeakHashMap<Thread, LogSource>(map);
+        synchronized (MAP) {
             if (logger == null) {
-                newMap.remove(currentThread);
+                return MAP.remove(currentThread);
             } else {
-                newMap.put(currentThread, logger);
+                return MAP.put(currentThread, logger);
             }
-            map = newMap;
         }
     }
 

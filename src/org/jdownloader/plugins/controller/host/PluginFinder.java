@@ -129,6 +129,7 @@ public class PluginFinder {
     }
 
     private boolean assign(final DownloadLink link, final PluginForHost pluginForHost) {
+        final LogInterface previousLogger = LogController.setRebirthLogger(logger);
         try {
             if (pluginForHost.assignPlugin(link)) {
                 try {
@@ -143,6 +144,8 @@ public class PluginFinder {
         } catch (final Throwable e) {
             logger.log(e);
             return false;
+        } finally {
+            LogController.setRebirthLogger(previousLogger);
         }
     }
 
