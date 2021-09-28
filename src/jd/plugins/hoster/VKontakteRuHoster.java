@@ -27,6 +27,16 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -58,16 +68,6 @@ import jd.plugins.components.UserAgents.BrowserName;
 import jd.plugins.decrypter.VKontakteRu;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://vkontaktedecrypted\\.ru/(picturelink/(?:-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:-)?\\d+_\\d+)|https?://(?:new\\.)?vk\\.com/(doc[\\d\\-]+_[\\d\\-]+|video[\\d\\-]+_[\\d\\-]+(?:#quality=\\d+p)?)(\\?hash=[a-f0-9]+(\\&dl=[a-f0-9]{18})?)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip).+|[rz][0-9]{2}.+)" })
@@ -127,6 +127,8 @@ public class VKontakteRuHoster extends PluginForHost {
     /* General */
     public static final String  PROPERTY_GENERAL_owner_id                                                   = "owner_id";
     public static final String  PROPERTY_GENERAL_content_id                                                 = "content_id";
+    /* Old handling. TODO: Remove PROPERTY_GENERAL_TITLE in 01-2022 and/or rename it so we can remove PROPERTY_GENERAL_TITLE_PLAIN. */
+    @Deprecated
     public static String        PROPERTY_GENERAL_TITLE                                                      = "title";
     public static String        PROPERTY_GENERAL_TITLE_PLAIN                                                = "title_plain";
     public static String        PROPERTY_GENERAL_DATE                                                       = "date";
@@ -364,7 +366,7 @@ public class VKontakteRuHoster extends PluginForHost {
                             /*
                              * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink
                              * for our ID.
-                             * 
+                             *
                              * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                              */
                             /*
@@ -409,7 +411,12 @@ public class VKontakteRuHoster extends PluginForHost {
                     /* Don't lose filenames if e.g. user resets DownloadLink. */
                     final String linkQuality = link.getStringProperty(VKontakteRuHoster.PROPERTY_VIDEO_SELECTED_QUALITY);
                     if (linkQuality != null) {
-                        link.setFinalFileName(link.getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE) + "_" + linkQuality + ".mp4");
+                        if (link.hasProperty(PROPERTY_GENERAL_TITLE_PLAIN)) {
+                            link.setFinalFileName(link.getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN) + "_" + this.getOwnerID(link) + "_" + this.getContentID(link) + "_" + linkQuality + ".mp4");
+                        } else {
+                            /* Old handling. TODO: Remove this in 01-2022 */
+                            link.setFinalFileName(link.getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE) + "_" + linkQuality + ".mp4");
+                        }
                     }
                     /* Check if directlink is expired */
                     checkstatus = linkOk(link, isDownload);
@@ -465,7 +472,12 @@ public class VKontakteRuHoster extends PluginForHost {
                              */
                             link.setProperty(VKontakteRuHoster.PROPERTY_VIDEO_SELECTED_QUALITY, entry.getKey());
                             /* Correct filename which did not contain any quality modifier before. */
-                            link.setFinalFileName(link.getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE) + "_" + entry.getKey() + ".mp4");
+                            if (link.hasProperty(PROPERTY_GENERAL_TITLE_PLAIN)) {
+                                link.setFinalFileName(link.getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN) + "_" + this.getOwnerID(link) + "_" + this.getContentID(link) + "_" + entry.getKey() + ".mp4");
+                            } else {
+                                /* Old handling. TODO: Remove this in 01-2022 */
+                                link.setFinalFileName(link.getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE) + "_" + entry.getKey() + ".mp4");
+                            }
                         }
                     }
                 } else {
