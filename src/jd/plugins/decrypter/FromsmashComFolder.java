@@ -81,7 +81,6 @@ public class FromsmashComFolder extends PluginForDecrypt {
     }
 
     protected static AtomicReference<String> TOKEN                       = new AtomicReference<String>();
-    protected static AtomicLong              TOKEN_TIMESTAMP             = new AtomicLong(-1);
     protected static AtomicLong              TOKEN_TIMESTAMP_VALID_UNTIL = new AtomicLong(-1);
     protected final static long              TOKEN_EXPIRE                = 60 * 60 * 1000l;
 
@@ -105,7 +104,6 @@ public class FromsmashComFolder extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
                     TOKEN.set(token);
-                    TOKEN_TIMESTAMP.set(Time.systemIndependentCurrentJVMTimeMillis());
                     TOKEN_TIMESTAMP_VALID_UNTIL.set(tokenTimestamp);
                     return token;
                 }
