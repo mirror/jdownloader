@@ -133,8 +133,8 @@ public class MediasetplayMediasetIt extends PluginForHost {
         if (StringUtils.isEmpty(this.mpdMaster)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
-            /* TODO */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* TODO: https://svn.jdownloader.org/issues/89353 */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "MPD split video/audio unsupported");
         }
     }
 
