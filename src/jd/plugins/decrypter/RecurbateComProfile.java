@@ -16,7 +16,9 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.appwork.utils.Regex;
 
@@ -75,6 +77,7 @@ public class RecurbateComProfile extends PluginForDecrypt {
         fp.setName(username);
         fp.addLinks(decryptedLinks);
         int page = 0;
+        final Set<String> dupes = new HashSet<String>();
         do {
             page += 1;
             logger.info("Crawling page " + page);
@@ -82,24 +85,30 @@ public class RecurbateComProfile extends PluginForDecrypt {
             if (videoIDs == null || videoIDs.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            boolean foundNewItemsOnCurrentPage = false;
             for (final String videoID : videoIDs) {
-                final DownloadLink dl = createDownloadlink("https://" + this.getHost() + "/play.php?video=" + videoID);
-                dl.setName(username + "_" + videoID + ".mp4");
-                dl.setAvailable(true);
-                dl._setFilePackage(fp);
-                decryptedLinks.add(dl);
-                distribute(dl);
+                if (dupes.add(videoID)) {
+                    foundNewItemsOnCurrentPage = true;
+                    final DownloadLink dl = createDownloadlink("https://" + this.getHost() + "/play.php?video=" + videoID);
+                    dl.setName(username + "_" + videoID + ".mp4");
+                    dl.setAvailable(true);
+                    dl._setFilePackage(fp);
+                    decryptedLinks.add(dl);
+                    distribute(dl);
+                }
             }
             final String nextpage = br.getRegex("(/performer/[^/]+/page/" + (page + 1) + ")").getMatch(0);
             if (this.isAbort()) {
                 break;
             } else if (videoIDs.length == 0) {
                 logger.warning("Stopping because: Failed to find any items on current page");
+            } else if (!foundNewItemsOnCurrentPage) {
+                logger.warning("Stopping because: Failed to find any NEW items on current page");
             } else if (nextpage == null) {
                 logger.info("Stopping because: Looks like we've reached last page: " + page);
                 break;
             } else {
-                logger.info("Continuing to next page: " + nextpage);
+                logger.info("Found number of items so far: " + decryptedLinks.size() + " | Continuing to next page: " + nextpage);
                 br.getPage(nextpage);
                 continue;
             }
