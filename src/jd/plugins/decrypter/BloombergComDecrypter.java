@@ -13,12 +13,13 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -32,21 +33,16 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bloomberg.com" }, urls = { "http://www\\.bloomberg\\.com/news/videos/\\d{4}\\-\\d{2}\\-\\d{2}/[a-z0-9\\-]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bloomberg.com" }, urls = { "https?://(?:www\\.)?bloomberg\\.com/news/videos/\\d{4}\\-\\d{2}\\-\\d{2}/[a-z0-9\\-]+" })
 public class BloombergComDecrypter extends PluginForDecrypt {
-
     @SuppressWarnings("deprecation")
     public BloombergComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /*
      * Thanks: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/bloomberg.py AND
      * https://github.com/isync/www-video-download/blob/master/bloomberg-downloader.pl
      */
-
     /* Example main: http://www.bloomberg.com/news/videos/2015-04-27/your-future-office-space-might-be-on-wheels */
     /*
      * Example given http url:
@@ -80,7 +76,7 @@ public class BloombergComDecrypter extends PluginForDecrypt {
         final String decryptedhost = "http://" + nicehost + "decrypted";
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
         final boolean fastLinkcheck = cfg.getBooleanProperty(FAST_LINKCHECK, false);
-        this.br.setFollowRedirects(false);
+        this.br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
             final DownloadLink dl = this.createOfflinelink(parameter);
@@ -92,7 +88,7 @@ public class BloombergComDecrypter extends PluginForDecrypt {
         if (vid == null) {
             return null;
         }
-        br.getPage("http://www.bloomberg.com/api/embed?id=" + vid + "&version=v0.8.14&idType=BMMR");
+        br.getPage("https://www.bloomberg.com/api/embed?id=" + vid + "&version=v0.8.14&idType=BMMR");
         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         title = (String) entries.get("title");
         title = encodeUnicode(title);
@@ -109,15 +105,12 @@ public class BloombergComDecrypter extends PluginForDecrypt {
         for (final String xmldata : xmllist) {
             final String audioencodingdata = new Regex(xmldata, "<audioFormat>(.*?)</audioFormat>").getMatch(0);
             final String videoencodingdata = new Regex(xmldata, "<videoFormat>(.*?)</videoFormat>").getMatch(0);
-
             String ext = getXML(xmldata, "containerFormat");
             final String filesize = getXML(xmldata, "packageSize");
             final String type = getXML(xmldata, "mimeType");
             String url = getXML(xmldata, "file");
-
             final String audioCodec = getXML(audioencodingdata, "name");
             final String audioBitrate = getXML(audioencodingdata, "bitRate");
-
             final String videocodec = getXML(videoencodingdata, "name");
             final String videoBitrate = getXML(videoencodingdata, "bitRate");
             final String width = getXML(xmldata, "displayWidth");
@@ -126,7 +119,6 @@ public class BloombergComDecrypter extends PluginForDecrypt {
                 /* We don't want audio files */
                 continue;
             }
-
             if (ext == null || filesize == null || url == null || audioCodec == null || audioBitrate == null || videocodec == null || videoBitrate == null || width == null || height == null) {
                 return null;
             }
@@ -141,7 +133,6 @@ public class BloombergComDecrypter extends PluginForDecrypt {
                 ext = "mpeg2";
             }
             final String videoresolution = width + "x" + height;
-
             /*
              * formatstring_half is e.g. needed for the mpg2 formats as their resolutions- and bitrates vary while the ones of the other
              * formats are always predictable.
@@ -155,7 +146,6 @@ public class BloombergComDecrypter extends PluginForDecrypt {
             if (formatstring_site_full.endsWith("_")) {
                 formatstring_site_full = formatstring_site_full.substring(0, formatstring_site_full.lastIndexOf("_"));
             }
-
             if ((formats.containsKey(formatstring_site_full) && cfg.getBooleanProperty(formatstring_site_full, true)) || (formats.containsKey(formatstring_site_half) && cfg.getBooleanProperty(formatstring_site_half, true))) {
                 final DownloadLink dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
                 final String[] realFormatString;
@@ -165,7 +155,6 @@ public class BloombergComDecrypter extends PluginForDecrypt {
                     realFormatString = formats.get(formatstring_site_half);
                 }
                 final String filename = title + "_" + getFormatString(realFormatString) + "." + ext;
-
                 try {
                     dl.setContentUrl(parameter);
                     if (description != null) {
@@ -230,16 +219,11 @@ public class BloombergComDecrypter extends PluginForDecrypt {
         return new Regex(source, "<" + parameter + "( type=\"[^<>\"/]*?\")?>([^<>]*?)</" + parameter + ">").getMatch(1);
     }
 
-    /**
-     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
-     */
     public boolean isProxyRotationEnabledForLinkCrawler() {
         return false;
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
