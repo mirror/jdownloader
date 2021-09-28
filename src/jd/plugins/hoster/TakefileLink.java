@@ -19,6 +19,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -31,11 +36,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TakefileLink extends XFileSharingProBasic {
     public TakefileLink(final PluginWrapper wrapper) {
@@ -46,7 +46,7 @@ public class TakefileLink extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info:<br />
+     * limit-info: 2021-09-28 <br />
      * captchatype-info: 2019-02-11: null<br />
      * other:<br />
      */
@@ -68,14 +68,14 @@ public class TakefileLink extends XFileSharingProBasic {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 1;
+            return -2;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
             /* 2020-10-02 */
             return -2;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 1;
+            return -2;
         }
     }
 

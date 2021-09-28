@@ -101,7 +101,7 @@ public class RecurbateCom extends antiDDoSForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String performer = br.getRegex("/performer/([^/]+)/?").getMatch(0);
+        final String performer = br.getRegex("/performer/([^/\"<>]+)").getMatch(0);
         if (performer != null) {
             link.setFinalFileName(Encoding.htmlDecode(performer).trim() + "_" + this.getFID(link) + ".mp4");
         } else {

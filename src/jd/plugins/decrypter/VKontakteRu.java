@@ -78,7 +78,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     @Override
     public int getMaxConcurrentProcessingInstances() {
-        return 1;
+        return 2;
     }
 
     private String getBaseURL() {
@@ -1091,13 +1091,18 @@ public class VKontakteRu extends PluginForDecrypt {
                 final int thisOwnerID = ((Number) videoInfos.get(0)).intValue();
                 final int thisContentID = ((Number) videoInfos.get(1)).intValue();
                 String videoTitle = (String) videoInfos.get(3);
+                String uploader = null;
                 /* TODO: Convert this html String to String and set it as a DownloadLink property and/or even make use of it. */
                 final String videoAuthorHTML = (String) videoInfos.get(8);
                 if (videoAuthorHTML != null) {
-                    final String uploader = new Regex(videoAuthorHTML, "<a href=[^>]*>(.*?)</a>").getMatch(0);
-                    if (uploader != null && !uploader.equalsIgnoreCase("DELETED")) {
-                        videoTitle = uploader + "_" + videoTitle;
+                    final String uploaderRaw = new Regex(videoAuthorHTML, "<a href=[^>]*>(.*?)</a>").getMatch(0);
+                    if (uploaderRaw != null && !uploaderRaw.equalsIgnoreCase("DELETED")) {
+                        uploader = uploaderRaw;
+                        videoTitle = uploaderRaw + "_" + videoTitle;
                     }
+                }
+                if (uploader != null) {
+                    videoTitle = uploader + "_" + videoTitle;
                 }
                 if (dupes.add(thisContentID)) {
                     // /* Fail-safe */
@@ -1109,6 +1114,10 @@ public class VKontakteRu extends PluginForDecrypt {
                 final DownloadLink dl = createDownloadlink(completeVideolink);
                 dl.setContainerUrl(containerURL);
                 dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE, Encoding.htmlDecode(videoTitle).trim());
+                dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN, Encoding.htmlDecode(videoTitle).trim());
+                if (uploader != null) {
+                    dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_UPLOADER, uploader);
+                }
                 if (videoInfos.size() >= 12) {
                     /* Check for external content. Fast-crawling is only possible for stuff hosted on vk.com! */
                     final String externalContentProviderName = (String) videoInfos.get(11);
