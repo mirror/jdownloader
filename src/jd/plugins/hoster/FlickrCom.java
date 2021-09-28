@@ -28,6 +28,20 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -52,19 +66,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(?:www\\.)?flickr\\.com/photos/([^<>\"/]+)/(\\d+)(?:/in/album-\\d+|/in/gallery-\\d+@N\\d+-\\d+)?" })
 public class FlickrCom extends PluginForHost {
@@ -140,8 +141,9 @@ public class FlickrCom extends PluginForHost {
             } else if (userCustomFilenameMask.equalsIgnoreCase("*username*_*content_id*_*title**extension*")) {
                 /**
                  * 2021-09-14: Correct defaults just in case user has entered the field so the property has been saved. See new default in:
-                 * defaultCustomFilename </br> username_url = always given </br> username = not always given but previously the same as new
-                 * "username_url" and default.
+                 * defaultCustomFilename </br>
+                 * username_url = always given </br>
+                 * username = not always given but previously the same as new "username_url" and default.
                  */
                 final String correctedUserCustomFilenameMask = userCustomFilenameMask.replace("*username*", "*username_url*");
                 getPluginConfig().setProperty(CUSTOM_FILENAME, correctedUserCustomFilenameMask);
@@ -379,8 +381,9 @@ public class FlickrCom extends PluginForHost {
                 if (datePosted > 0) {
                     link.setProperty(PROPERTY_DATE, datePosted * 1000);
                 }
+                /* TODO: Maybe evaluate "isDateTakenUnknown" too. */
                 final String dateTaken = (String) photoStatsData.get("dateTaken");
-                setStringProperty(this, link, PROPERTY_DATE_TAKEN, dateTaken, false);
+                setDateTakenProperty(link, dateTaken);
             }
             /* Get metadata: This way is safer than via html and it will return more information! */
             final Map<String, Object> photoSizes = (Map<String, Object>) photoData.get("sizes");
@@ -599,7 +602,8 @@ public class FlickrCom extends PluginForHost {
     /** Returns API parameters "extras" containing the needed extra properties for images/videos. */
     public static final String getApiParamExtras() {
         /**
-         * needs_interstitial = show 18+ content </br> media = include media-type (video/photo)
+         * needs_interstitial = show 18+ content </br>
+         * media = include media-type (video/photo)
          */
         String extras = "date_taken%2Cdate_upload%2Cdescription%2Cowner_name%2Cpath_alias%2Crealname%2Cneeds_interstitial%2Cmedia";
         final String[] allPhotoQualities = getPhotoQualityStringsDescending();
@@ -702,9 +706,25 @@ public class FlickrCom extends PluginForHost {
         if (dateUploaded != null && dateUploaded.matches("\\d+")) {
             link.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_DATE, Long.parseLong(dateUploaded) * 1000);
         }
-        setStringProperty(plg, link, jd.plugins.hoster.FlickrCom.PROPERTY_DATE_TAKEN, (String) photo.get("datetaken"), false);
+        setDateTakenProperty(link, (String) photo.get("datetaken"));
         setStringProperty(plg, link, jd.plugins.hoster.FlickrCom.PROPERTY_TITLE, title, false);
         link.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_EXT, extension);
+    }
+
+    public static void setDateTakenProperty(final DownloadLink link, String dateTakenStr) {
+        if (dateTakenStr == null) {
+            return;
+        }
+        if (dateTakenStr.contains("%")) {
+            dateTakenStr = Encoding.htmlDecode(dateTakenStr);
+        }
+        if (dateTakenStr.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
+            /* Convert to milliseconds */
+            link.setProperty(PROPERTY_DATE_TAKEN, TimeFormatter.getMilliSeconds(dateTakenStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
+        } else {
+            /* Set raw String as fallback -> This should never happen */
+            link.setProperty(PROPERTY_DATE_TAKEN, dateTakenStr);
+        }
     }
 
     public static boolean setStringProperty(final Plugin plugin, final DownloadLink link, final String property, String value, final boolean overwrite) {
@@ -1034,21 +1054,9 @@ public class FlickrCom extends PluginForHost {
         String formattedFilename = null;
         final SubConfiguration cfg = SubConfiguration.getConfig("flickr.com");
         final String customStringForEmptyTags = getCustomStringForEmptyTags();
-        String formattedDate = defaultCustomStringForEmptyTags;
-        if (link.hasProperty(PROPERTY_DATE)) {
-            final long date = link.getLongProperty(PROPERTY_DATE, 0);
-            final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, defaultCustomDate);
-            Date theDate = new Date(date);
-            if (userDefinedDateFormat != null) {
-                try {
-                    final SimpleDateFormat formatter = new SimpleDateFormat(userDefinedDateFormat);
-                    formattedDate = formatter.format(theDate);
-                } catch (final Exception ignore) {
-                    /* prevent user error killing the custom filename function. */
-                    formattedDate = defaultCustomStringForEmptyTags;
-                }
-            }
-        }
+        final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, defaultCustomDate);
+        final String formattedDate = formatToUserDefinedDate(link.getLongProperty(PROPERTY_DATE, 0), customStringForEmptyTags, userDefinedDateFormat);
+        final String formattedDateTaken = formatToUserDefinedDate(link.getLongProperty(PROPERTY_DATE_TAKEN, 0), customStringForEmptyTags, userDefinedDateFormat);
         formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
         if (formattedFilename == null || formattedFilename.equals("")) {
             formattedFilename = defaultCustomFilename;
@@ -1063,7 +1071,7 @@ public class FlickrCom extends PluginForHost {
         formattedFilename = formattedFilename.replace("*order_id*", link.getStringProperty(PROPERTY_ORDER_ID, customStringForEmptyTags));
         formattedFilename = formattedFilename.replace("*quality*", link.getStringProperty(PROPERTY_QUALITY, customStringForEmptyTags));
         formattedFilename = formattedFilename.replace("*date*", formattedDate);
-        formattedFilename = formattedFilename.replace("*date_taken*", link.getStringProperty(PROPERTY_DATE_TAKEN, customStringForEmptyTags));
+        formattedFilename = formattedFilename.replace("*date_taken*", formattedDateTaken);
         formattedFilename = formattedFilename.replace("*media*", link.getStringProperty(PROPERTY_MEDIA_TYPE, customStringForEmptyTags));
         final String url = getStoredDirecturl(link);
         String extension = url != null ? getFileNameExtensionFromURL(url) : null;
@@ -1078,6 +1086,20 @@ public class FlickrCom extends PluginForHost {
         formattedFilename = formattedFilename.replace("*real_name*", link.getStringProperty(PROPERTY_REAL_NAME, customStringForEmptyTags));
         formattedFilename = formattedFilename.replace("*title*", link.getStringProperty(PROPERTY_TITLE, customStringForEmptyTags));
         return formattedFilename;
+    }
+
+    public static String formatToUserDefinedDate(final long timestamp, final String fallbackStr, final String targetFormat) {
+        if (timestamp > 0 && targetFormat != null) {
+            Date theDate = new Date(timestamp);
+            try {
+                final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+                return formatter.format(theDate);
+            } catch (final Exception ignore) {
+                /* prevent user error killing the custom filename function. */
+                return fallbackStr;
+            }
+        }
+        return fallbackStr;
     }
 
     public static boolean userPrefersServerFilenames() {
@@ -1360,7 +1382,7 @@ public class FlickrCom extends PluginForHost {
         sbtags.append("*set_id* = ID of album if the photo/video is part of a crawled album or single photo/video URL contains album ID\r\n");
         sbtags.append("*gallery_id* = ID of gallery if the photo/video is part of a crawled gallery or single photo/video URL contains gallery ID\r\n");
         sbtags.append("*date* = date when the photo was uploaded - custom date format will be used here\r\n");
-        sbtags.append("*date_taken* = date when the photo was taken - pre-formatted string (yyyy-MM-dd HH:mm:ss)\r\n");
+        sbtags.append("*date_taken* = date when the photo was taken - custom date format will be used here\r\n");
         sbtags.append("*extension* = Extension of the photo - usually '.jpg'\r\n");
         sbtags.append("*media* = Media type ('video' or 'photo')\r\n");
         sbtags.append("*order_id* = Position of image/video if it was part of a crawled gallery/user-profile\r\n");
