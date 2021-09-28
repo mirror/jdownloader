@@ -133,7 +133,7 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
      * https://instances.joinpeertube.org/instances
      */
     private static ArrayList<String> findNewScriptInstances() {
-        if (true) {
+        if (false) {
             // don't compile into class file
             final ArrayList<String> existingInstances = getAllSupportedPluginDomainsFlat();
             final ArrayList<String> newInstances = new ArrayList<String>();
@@ -187,7 +187,6 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
     /** Using API: https://docs.joinpeertube.org/api-rest-reference.html */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        findNewScriptInstances();
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         dllink = null;
         server_issues = false;
