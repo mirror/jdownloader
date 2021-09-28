@@ -23,16 +23,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.HTTPHeader;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -45,6 +35,16 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.FromsmashCom;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.HTTPHeader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FromsmashComFolder extends PluginForDecrypt {
@@ -146,11 +146,14 @@ public class FromsmashComFolder extends PluginForDecrypt {
         entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final List<Map<String, Object>> files = (List<Map<String, Object>>) entries.get("files");
         for (final Map<String, Object> file : files) {
-            final DownloadLink link = this.createDownloadlink("https://" + this.getHost() + "/" + folderID + "#fileid=" + file.get("id").toString());
+            final String fileid = file.get("id").toString();
+            final DownloadLink link = this.createDownloadlink("https://" + this.getHost() + "/" + folderID + "#fileid=" + fileid);
             link.setFinalFileName(file.get("name").toString());
             link.setVerifiedFileSize(((Number) file.get("size")).longValue());
             link.setAvailable(true);
             link.setProperty(FromsmashCom.PROPERTY_DIRECTURL, file.get("download").toString());
+            link.setProperty("fileid", fileid);
+            link.setProperty("folderid", folderID);
             link._setFilePackage(fp);
             decryptedLinks.add(link);
         }
