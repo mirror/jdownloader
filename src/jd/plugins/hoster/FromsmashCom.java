@@ -40,7 +40,6 @@ import jd.plugins.decrypter.FromsmashComFolder;
 public class FromsmashCom extends PluginForHost {
     public FromsmashCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("");
     }
 
     @Override
@@ -73,10 +72,11 @@ public class FromsmashCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME        = true;
-    private static final int     FREE_MAXCHUNKS     = 0;
-    private static final int     FREE_MAXDOWNLOADS  = 20;
-    public static final String   PROPERTY_DIRECTURL = "directurl";
+    private static final boolean FREE_RESUME                       = true;
+    private static final int     FREE_MAXCHUNKS                    = 0;
+    private static final int     FREE_MAXDOWNLOADS                 = 20;
+    public static final String   PROPERTY_DIRECTURL                = "directurl";
+    public static final String   PROPERTY_STATIC_DOWNLOAD_PASSWORD = "static_download_password";
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -122,6 +122,9 @@ public class FromsmashCom extends PluginForHost {
         final Browser brc = br.cloneBrowser();
         final String token = FromsmashComFolder.getToken(this, brc);
         brc.getHeaders().put("Authorization", "Bearer " + token);
+        if (link.hasProperty(PROPERTY_STATIC_DOWNLOAD_PASSWORD)) {
+            FromsmashComFolder.setPasswordHeader(brc, link.getStringProperty(PROPERTY_STATIC_DOWNLOAD_PASSWORD));
+        }
         FromsmashComFolder.prepBR(brc);
         final PutRequest put = new PutRequest("https://transfer.eu-central-1.fromsmash.co/transfer/" + getFolderID(link) + "/urls?version=07-2020");
         final String reqData = "{\"files\":[{\"id\":\"" + getFileID(link) + "\"}]}";
