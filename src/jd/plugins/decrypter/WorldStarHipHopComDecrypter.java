@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 //Finds and decrypts embedded videos from worldstarhiphop.com
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "worldstarhiphop.com" }, urls = { "https?://(www\\.)?worldstarhiphop\\.com/videos/video(\\d+)?\\.php\\?v=[a-zA-Z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "worldstarhiphop.com" }, urls = { "https?://(?:www\\.)?(?:worldstarhiphop|worldstar)\\.com.*/video(\\d+)?\\.php\\?v=[a-zA-Z0-9]+" })
 public class WorldStarHipHopComDecrypter extends PluginForDecrypt {
     public WorldStarHipHopComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -93,13 +93,12 @@ public class WorldStarHipHopComDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
         }
-        // Probably no external video, pass it over to the hoster plugin
-        final DownloadLink dl = createDownloadlink(parameter.replace("worldstarhiphop.com/", "worldstarhiphopdecrypted.com/"));
+        // Probably no external video but a selfhosted one, pass it over to the hoster plugin
+        final DownloadLink dl = createDownloadlink(parameter);
         decryptedLinks.add(dl);
         return decryptedLinks;
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

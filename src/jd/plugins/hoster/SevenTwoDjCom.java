@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -22,6 +21,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,7 +31,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "72dj.com" }, urls = { "https?://(?:www\\.)?72dj\\.com/(?:down|play)/\\d+\\.htm" })
 public class SevenTwoDjCom extends PluginForHost {
-
     public SevenTwoDjCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -49,6 +48,9 @@ public class SevenTwoDjCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link) + ".mp3");
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("gbk");
@@ -56,7 +58,10 @@ public class SevenTwoDjCom extends PluginForHost {
         if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<TITLE>无法找到该页</TITLE>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<TITLE>下载湛江Dj小帅\\-([^<>\"]*?)</TITLE>").getMatch(0);
+        String filename = br.getRegex("target=\"DJ_Player\">([^<]+)</a>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<TITLE>下载湛江Dj小帅\\-([^<>\"]*?)</TITLE>").getMatch(0);
+        }
         if (filename == null) {
             filename = br.getRegex("<TITLE>([^<>\"]*?)</TITLE>").getMatch(0);
         }
@@ -69,8 +74,8 @@ public class SevenTwoDjCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         String dllink = br.getRegex("\"(http://[^<>\"]*?down_mp3[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("var thunder_url= \"\"\\+durl\\+\"([^<>\"]*?)\"").getMatch(0);
@@ -87,21 +92,39 @@ public class SevenTwoDjCom extends PluginForHost {
                 }
                 dllink = "http://data.72dj.com/mp3/" + Encoding.htmlDecode(dllink) + code;
             } else {
-                /* 2017-03-22: New */
-                final String code = this.getCaptchaCode("http://www.72dj.com/d/imgcode.asp?" + System.currentTimeMillis(), downloadLink);
-                br.getPage(String.format("/d/down_mp3url.asp?CheckCode=%s&id=%s", Encoding.urlEncode(code), this.getFID(downloadLink)));
-                dllink = br.getRegex("\"(http[^<>\"\\']+type=down[^<>\"\\']+)\"").getMatch(0);
-                if (dllink == null) {
-                    if (this.br.containsHTML("window\\.alert\\(")) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                /* Try to get stream URL */
+                /* 2021-09-29: Official downloads require a paid account. */
+                final boolean officialDownloadRequiresAccount = true;
+                if (officialDownloadRequiresAccount) {
+                    br.getPage("/play/" + this.getFID(link) + ".htm");
+                    /* Try stream download */
+                    final String streamURLPath = br.getRegex("var danceFilePath=\"([^\"]+)\"").getMatch(0);
+                    if (streamURLPath != null) {
+                        /* Stream download */
+                        dllink = "https://p21.72dj.com:37373/m4adj/" + streamURLPath + ".m4a";
+                    } else {
+                        throw new AccountRequiredException();
                     }
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    final String code = this.getCaptchaCode("http://www.72dj.com/d/imgcode.asp?" + System.currentTimeMillis(), link);
+                    br.getPage(String.format("/d/down_mp3url.asp?CheckCode=%s&id=%s", Encoding.urlEncode(code), this.getFID(link)));
+                    dllink = br.getRegex("\"(http[^<>\"\\']+type=down[^<>\"\\']+)\"").getMatch(0);
+                    if (dllink == null) {
+                        if (this.br.containsHTML("window\\.alert\\(")) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -123,5 +146,4 @@ public class SevenTwoDjCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

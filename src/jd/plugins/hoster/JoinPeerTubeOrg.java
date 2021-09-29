@@ -92,7 +92,7 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
                 "video.pcf.fr", "kumi.tube", "tube.rsi.cnr.it", "peertube.dc.pini.fr", "befree.nohost.me", "vs.uniter.network", "watch.ignorance.eu", "tube.schleuss.online", "tube.saumon.io", "videos.judrey.eu", "theater.ethernia.net", "alimulama.com", "watch.tubelab.video", "lastbreach.tv", "tube.abolivier.bzh", "video.coales.co", "tuba.lhub.pl", "truetube.media", "film.k-prod.fr", "peertube.francoispelletier.org", "videos.danksquad.org", "v.phreedom.club", "peertube.tweb.tv", "peertube.lestutosdeprocessus.fr", "videos-passages.huma-num.fr", "video.mycrowd.ca", "kodcast.com", "video.altertek.org", "ruraletv.ovh", "videos.weblib.re", "tube.oisux.org", "peertube.louisematic.site", "tv2.cocu.cc", "tv1.cocu.cc", "tube.dev.lhub.pl", "periscope.numenaute.org", "clap.nerv-project.eu", "peertube.kodcast.com", "tube.lacaveatonton.ovh", "peertube.tspu.edu.ru", "p.lu", "serv3.wiki-tube.de",
                 "serv1.wiki-tube.de", "video.lavolte.net", "peertube.r5c3.fr", "mountaintown.video", "ptmir1.inter21.net", "tube.foxden.party", "vod.lumikko.dev", "fotogramas.politicaconciencia.org", "peertube.manalejandro.com", "tube.mrbesen.de", "www4.mir.inter21.net", "tgi.hosted.spacebear.ee", "peertube.genma.fr", "video.csc49.fr", "tube.wolfe.casa", "tube.linkse.media", "video.dresden.network", "peertube.zapashcanon.fr", "maindreieck-tv.de", "40two.tube", "tube.amic37.fr", "video.comptoir.net", "peertube.tux.ovh", "kino.schuerz.at", "peertube.tiennot.net", "tututu.tube", "peertube.interhop.org", "tube.picasoft.net", "wiki-tube.de", "video.stuartbrand.co.uk", "video.internet-czas-dzialac.pl", "peertube.cythin.com", "thecool.tube", "thaitube.in.th", "tv.bitma.st", "peertube.chtisurel.net", "videos.testimonia.org", "peertube.informaction.info", "video.mass-trespass.uk",
                 "v.lastorder.xyz", "daschauher.aksel.rocks", "video.mstddntfdn.online", "tube.cyano.at", "media.skewed.de", "visionon.tv", "peertube.securitymadein.lu", "video.linux.it", "peertube.aventer.biz", "tuktube.com", "v.basspistol.org", "libremedia.video", "mojotube.net", "mytube.kn-cloud.de", "video.nogafam.es", "peertube.stream", "videos.leslionsfloorball.fr", "player.ojamajo.moe", "ftsi.ru", "video.cigliola.com", "xxx.noho.st", "peertube.stefofficiel.me", "video.eradicatinglove.xyz", "canard.tube", "videos.jordanwarne.xyz", "video.anartist.org", "tube.jeena.net", "video.mundodesconocido.com", "video.screamer.wiki", "tube.cloud-libre.eu", "videos.coletivos.org", "videos.wakkerewereld.nu", "peertube.travelpandas.eu", "peertube.runfox.tk", "video.pourpenser.pro", "video.sdm-tools.net", "peertube.anzui.dev", "video.up.edu.ph", "video.igem.org", "worldofvids.com",
-                "peertube.pi2.dev", "video.pony.gallery", "tube.skrep.in", "tube.others.social", "tube-poitiers.beta.education.fr", "peertube.satoshishop.de", "streamsource.video", "vid.wildeboer.net", "battlepenguin.video", "peertube.cloud.sans.pub", "tube.vraphim.com", "refuznik.video", "tube.shela.nu", "video.1146.nohost.me", "peertube.davigge.com", "videos.tankernn.eu", "vod.ksite.de", "tube.grin.hu", "peertube.swarm.solvingmaz.es", "videos.fsci.in", "media.inno3.cricket", "video.livecchi.cloud", "tube.cryptography.dog", "peertube.zergy.net", "vid.ncrypt.at", "watch.krazy.party", "videos.tcit.fr", "video.valme.io", "peertube.patapouf.xyz", "video.violoncello.ch", "peertube.gidikroon.eu", "tubedu.org", "tv.netwhood.online", "watch.breadtube.tv", "video.exodus-privacy.eu.org", "peertube.social", "vidcommons.org" });
+                "peertube.pi2.dev", "video.pony.gallery", "tube.skrep.in", "tube.others.social", "tube-poitiers.beta.education.fr", "peertube.satoshishop.de", "streamsource.video", "vid.wildeboer.net", "battlepenguin.video", "peertube.cloud.sans.pub", "tube.vraphim.com", "refuznik.video", "tube.shela.nu", "video.1146.nohost.me", "peertube.davigge.com", "videos.tankernn.eu", "vod.ksite.de", "tube.grin.hu", "peertube.swarm.solvingmaz.es", "videos.fsci.in", "media.inno3.cricket", "video.livecchi.cloud", "tube.cryptography.dog", "peertube.zergy.net", "vid.ncrypt.at", "watch.krazy.party", "videos.tcit.fr", "video.valme.io", "peertube.patapouf.xyz", "video.violoncello.ch", "peertube.gidikroon.eu", "tubedu.org", "tv.netwhood.online", "watch.breadtube.tv", "video.exodus-privacy.eu.org", "peertube.social", "vidcommons.org", "auf1.tv" });
         return ret;
     }
 
@@ -212,10 +212,35 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
             formattedDate = createdAt;
         }
         /* Grab highest quality downloadurl + filesize */
-        this.dllink = (String) JavaScriptEngineFactory.walkJson(entries, "files/{0}/fileDownloadUrl");
-        final long filesize = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "files/{0}/size"), 0);
-        if (filesize > 0) {
-            link.setDownloadSize(filesize);
+        final List<Map<String, Object>> oficialDownloads = (List<Map<String, Object>>) entries.get("files");
+        if (!oficialDownloads.isEmpty()) {
+            this.dllink = (String) JavaScriptEngineFactory.walkJson(entries, "files/{0}/fileDownloadUrl");
+            final long filesize = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "files/{0}/size"), 0);
+            if (filesize > 0) {
+                link.setDownloadSize(filesize);
+            }
+        } else {
+            logger.info("Official download impossible, checking stream variants");
+            final List<Map<String, Object>> streamingPlaylists = (List<Map<String, Object>>) entries.get("streamingPlaylists");
+            if (!streamingPlaylists.isEmpty()) {
+                playlistLoop: for (final Map<String, Object> streamPlaylist : streamingPlaylists) {
+                    /* Expect array to be pre-sorted best to worst quality. */
+                    final List<Map<String, Object>> streams = (List<Map<String, Object>>) streamPlaylist.get("files");
+                    for (final Map<String, Object> stream : streams) {
+                        final Map<String, Object> resolution = (Map<String, Object>) stream.get("resolution");
+                        final String thisDownloadlink = (String) stream.get("fileDownloadUrl");
+                        if (!StringUtils.isEmpty(thisDownloadlink)) {
+                            this.dllink = thisDownloadlink;
+                            final long filesize = ((Number) stream.get("size")).longValue();
+                            if (filesize > 0) {
+                                link.setVerifiedFileSize(filesize);
+                            }
+                            logger.info("Selected quality: " + resolution.get("label"));
+                            break playlistLoop;
+                        }
+                    }
+                }
+            }
         }
         if (StringUtils.isEmpty(title)) {
             title = this.getFID(link);

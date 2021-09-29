@@ -199,6 +199,7 @@ public class FromsmashComFolder extends PluginForDecrypt {
                     link.setProperty(FromsmashCom.PROPERTY_STATIC_DOWNLOAD_PASSWORD, passCode);
                 }
                 link._setFilePackage(fp);
+                distribute(link);
                 decryptedLinks.add(link);
             }
             logger.info("Progress: Page: " + page + " | Found items " + decryptedLinks.size() + " / " + numberofItems);
