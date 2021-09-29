@@ -23,19 +23,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.FromsmashCom;
-
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -44,7 +31,23 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.FromsmashCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FromsmashComFolder extends PluginForDecrypt {
@@ -120,43 +123,100 @@ public class FromsmashComFolder extends PluginForDecrypt {
         return br;
     }
 
+    /** Puts download password to header. */
+    public static void setPasswordHeader(final Browser br, final String passCode) {
+        br.getHeaders().put("Smash-Authorization", Encoding.Base64Encode(passCode));
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         br.getHeaders().put("Authorization", "Bearer " + getToken(this, this.br));
         prepBR(br);
-        br.getPage("https://transfer.eu-central-1.fromsmash.co/transfer/" + folderID + "/preview?version=07-2020");
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            /*
-             * E.g. {"code":404,"error":"Transfer <folderID> not found","requestId":"<someHash>","details":{"name":"Transfer","primary":
-             * "<folderID>"}}
-             */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        String passCode = null;
+        int passwordAttempt = 0;
+        do {
+            passwordAttempt += 1;
+            br.getPage("https://transfer.eu-central-1.fromsmash.co/transfer/" + folderID + "/preview?version=07-2020");
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                /*
+                 * E.g. {"code":404,"error":"Transfer <folderID> not found","requestId":"<someHash>","details":{"name":"Transfer","primary":
+                 * "<folderID>"}}
+                 */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.getHttpConnection().getResponseCode() == 403) {
+                /* {"code":403,"error":"Password does not match for <folderID>","requestId":"<someHash>"} */
+                logger.info("Password attempt " + passwordAttempt + " failed");
+                if (passwordAttempt > 3) {
+                    /* Too many wrong password attempts */
+                    throw new DecrypterException(DecrypterException.PASSWORD);
+                } else {
+                    passCode = getUserInput("Password?", param);
+                    setPasswordHeader(br, passCode);
+                    continue;
+                }
+            } else {
+                /* Correct password was entered or no password needed */
+                break;
+            }
+        } while (true);
         Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final Map<String, Object> transfer = (Map<String, Object>) entries.get("transfer");
         String fpName = (String) transfer.get("title");
         if (StringUtils.isEmpty(fpName)) {
             fpName = folderID;
         }
+        final int numberofItems = ((Number) transfer.get("filesNumber")).intValue();
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
-        /* TODO: Add pagination if needed */
-        br.getPage("/transfer/" + folderID + "/files/preview?version=07-2020&limit=9");
-        entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final List<Map<String, Object>> files = (List<Map<String, Object>>) entries.get("files");
-        for (final Map<String, Object> file : files) {
-            final String fileid = file.get("id").toString();
-            final DownloadLink link = this.createDownloadlink("https://" + this.getHost() + "/" + folderID + "#fileid=" + fileid);
-            link.setFinalFileName(file.get("name").toString());
-            link.setVerifiedFileSize(((Number) file.get("size")).longValue());
-            link.setAvailable(true);
-            link.setProperty(FromsmashCom.PROPERTY_DIRECTURL, file.get("download").toString());
-            link.setProperty("fileid", fileid);
-            link.setProperty("folderid", folderID);
-            link._setFilePackage(fp);
-            decryptedLinks.add(link);
-        }
+        /* 2021-09-29: Website is using max. 9 items --> Probably because of their 3-pair grid layout. */
+        final int maxItemsPerPage = 9;
+        final UrlQuery query = new UrlQuery();
+        query.add("version", "07-2020");
+        query.add("limit", Integer.toString(maxItemsPerPage));
+        int page = 0;
+        String next = null;
+        do {
+            page += 1;
+            br.getPage("/transfer/" + folderID + "/files/preview?" + query.toString());
+            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final List<Map<String, Object>> files = (List<Map<String, Object>>) entries.get("files");
+            for (final Map<String, Object> file : files) {
+                final String fileid = file.get("id").toString();
+                final DownloadLink link = this.createDownloadlink("https://" + this.getHost() + "/" + folderID + "#fileid=" + fileid);
+                link.setFinalFileName(file.get("name").toString());
+                link.setVerifiedFileSize(((Number) file.get("size")).longValue());
+                link.setAvailable(true);
+                link.setProperty(FromsmashCom.PROPERTY_DIRECTURL, file.get("download").toString());
+                link.setProperty("fileid", fileid);
+                link.setProperty("folderid", folderID);
+                if (passCode != null) {
+                    link.setDownloadPassword(passCode);
+                    /*
+                     * User can modify the other property but we know that the given download password will never change so let's make sure
+                     * we can re-use exactly the password which we know is correct!
+                     */
+                    link.setProperty(FromsmashCom.PROPERTY_STATIC_DOWNLOAD_PASSWORD, passCode);
+                }
+                link._setFilePackage(fp);
+                decryptedLinks.add(link);
+            }
+            logger.info("Progress: Page: " + page + " | Found items " + decryptedLinks.size() + " / " + numberofItems);
+            next = (String) entries.get("next");
+            if (this.isAbort()) {
+                return decryptedLinks;
+            } else if (StringUtils.isEmpty(next)) {
+                logger.info("Stopping because: Reached end (no 'next' token given)");
+                break;
+            } else if (files.size() < maxItemsPerPage) {
+                logger.info("Stopping because: Page contains less items than " + maxItemsPerPage);
+                break;
+            } else {
+                /* Continue to next page */
+                query.addAndReplace("start", Encoding.urlEncode(next));
+                continue;
+            }
+        } while (true);
         return decryptedLinks;
     }
 }
