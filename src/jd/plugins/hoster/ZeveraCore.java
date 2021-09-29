@@ -53,7 +53,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-import jd.plugins.components.PluginJSonUtils;
 
 //IMPORTANT: this class must stay in jd.plugins.hoster because it extends another plugin (UseNet) which is only available through PluginClassLoader
 abstract public class ZeveraCore extends UseNet {
@@ -283,7 +282,8 @@ abstract public class ZeveraCore extends UseNet {
 
     private void handleDLSelfhosted(final DownloadLink link, final Account account) throws Exception {
         this.requestFileInformationSelfhosted(link, account);
-        final String dllink = PluginJSonUtils.getJson(br, "link");
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final String dllink = entries.get("link").toString();
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -386,7 +386,6 @@ abstract public class ZeveraCore extends UseNet {
             final String shortenedCustomerID = customerID.substring(0, customerID.length() / 2) + "****";
             account.setUser(shortenedCustomerID);
         }
-        // final String fair_use_used_str = PluginJSonUtils.getJson(br, "limit_used");
         final Object fair_use_usedO = entries.get("limit_used");
         final Object space_usedO = entries.get("space_used");
         final Object premium_untilO = entries.get("premium_until");
@@ -636,12 +635,13 @@ abstract public class ZeveraCore extends UseNet {
                         logger.info("Token expired or user has revoked access --> Full login required");
                     }
                     this.postPage("https://www." + account.getHoster() + "/token", "response_type=device_code&client_id=" + clientID);
-                    final int interval_seconds = Integer.parseInt(PluginJSonUtils.getJson(br, "interval"));
-                    final int expires_in_seconds = Integer.parseInt(PluginJSonUtils.getJson(br, "expires_in")) - interval_seconds;
+                    Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    final long interval_seconds = ((Number) entries.get("interval")).longValue();
+                    final long expires_in_seconds = ((Number) entries.get("expires_in")).longValue() - interval_seconds;
                     final long expires_in_timestamp = System.currentTimeMillis() + expires_in_seconds * 1000l;
-                    final String verification_uri = PluginJSonUtils.getJson(br, "verification_uri");
-                    final String device_code = PluginJSonUtils.getJson(br, "device_code");
-                    final String user_code = PluginJSonUtils.getJson(br, "user_code");
+                    final String verification_uri = entries.get("verification_uri").toString();
+                    final String device_code = entries.get("device_code").toString();
+                    final String user_code = entries.get("user_code").toString();
                     if (StringUtils.isEmpty(device_code) || StringUtils.isEmpty(user_code) || StringUtils.isEmpty(verification_uri)) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
@@ -655,7 +655,8 @@ abstract public class ZeveraCore extends UseNet {
                             logger.info("Waiting for user to authorize application: " + loop);
                             Thread.sleep(interval_seconds * 1001l);
                             this.postPage("https://www." + account.getHoster() + "/token", "grant_type=device_code&client_id=" + clientID + "&code=" + device_code);
-                            access_token = PluginJSonUtils.getJson(br, "access_token");
+                            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                            access_token = (String) entries.get("access_token");
                             if (!StringUtils.isEmpty(access_token)) {
                                 success = true;
                                 break;
@@ -668,8 +669,7 @@ abstract public class ZeveraCore extends UseNet {
                     } finally {
                         dialog.interrupt();
                     }
-                    final String token_expires_in = PluginJSonUtils.getJson(br, "expires_in");
-                    final String token_type = PluginJSonUtils.getJson(br, "token_type");
+                    final String token_type = (String) entries.get("token_type");
                     if (!success) {
                         final String errormsg = "User did not confirm pairing code!\r\nDo not close the pairing dialog until you've confirmed the code via browser!";
                         if (hasTriedOldToken) {
@@ -686,9 +686,7 @@ abstract public class ZeveraCore extends UseNet {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unsupported token_type", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                     account.setProperty("access_token", access_token);
-                    if (!StringUtils.isEmpty(token_expires_in) && token_expires_in.matches("\\d+")) {
-                        account.setProperty("token_valid_until", System.currentTimeMillis() + Long.parseLong(token_expires_in));
-                    }
+                    account.setProperty("token_valid_until", System.currentTimeMillis() + ((Number) entries.get("expires_in")).longValue());
                     setAuthHeader(br, account);
                     callAPI(br, account, "/api/account/info");
                     this.handleAPIErrors(br, null, account);
