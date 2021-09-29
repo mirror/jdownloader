@@ -381,9 +381,15 @@ public class FlickrCom extends PluginForHost {
                 if (datePosted > 0) {
                     link.setProperty(PROPERTY_DATE, datePosted * 1000);
                 }
-                /* TODO: Maybe evaluate "isDateTakenUnknown" too. */
-                final String dateTaken = (String) photoStatsData.get("dateTaken");
-                setDateTakenProperty(link, dateTaken);
+                /*
+                 * If isDateTakenUnknown == true they will simply but the date when this item was uploaded into "isDateTakenUnknown" so
+                 * effectively there is not "date taken" available!
+                 */
+                final boolean isDateTakenUnknown = ((Boolean) photoStatsData.get("isDateTakenUnknown")).booleanValue();
+                if (!isDateTakenUnknown) {
+                    final String dateTaken = (String) photoStatsData.get("dateTaken");
+                    setDateTakenProperty(link, dateTaken);
+                }
             }
             /* Get metadata: This way is safer than via html and it will return more information! */
             final Map<String, Object> photoSizes = (Map<String, Object>) photoData.get("sizes");
@@ -615,6 +621,8 @@ public class FlickrCom extends PluginForHost {
 
     /** Finds and sets all required information for single photo/video returned by previously done flickr API request. */
     public static void parseInfoAPI(final Plugin plg, final DownloadLink link, final Map<String, Object> photo) {
+        /* This map is now always given. Information can alsoi be in main ("photo") map. */
+        final Map<String, Object> dates = (Map<String, Object>) photo.get("dates");
         final String userPreferredPhotoQualityStr = photoQualityToQualityString(jd.plugins.hoster.FlickrCom.getPreferredPhotoQuality());
         final String thisUsernameSlug = (String) photo.get("pathalias");
         /*
@@ -639,7 +647,7 @@ public class FlickrCom extends PluginForHost {
         } else {
             title = (String) JavaScriptEngineFactory.walkJson(titleO, "_content");
         }
-        final String dateUploaded = (String) photo.get("dateupload");
+        final String dateUploaded = photo.get("dateupload").toString();
         final String description = (String) JavaScriptEngineFactory.walkJson(photo, "description/_content");
         if (!StringUtils.isEmpty(description) && link.getComment() == null) {
             link.setComment(Encoding.htmlDecode(description));
@@ -703,10 +711,20 @@ public class FlickrCom extends PluginForHost {
             setStringProperty(plg, link, jd.plugins.hoster.FlickrCom.PROPERTY_REAL_NAME, realName, true);
             link.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_INTERNAL, thisUsernameInternal);
         }
-        if (dateUploaded != null && dateUploaded.matches("\\d+")) {
-            link.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_DATE, Long.parseLong(dateUploaded) * 1000);
+        link.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_DATE, Long.parseLong(dateUploaded) * 1000);
+        final int takenunknown;
+        if (dates != null) {
+            takenunknown = Integer.parseInt(dates.get("takenunknown").toString());
+        } else {
+            takenunknown = Integer.parseInt(photo.get("datetakenunknown").toString());
         }
-        setDateTakenProperty(link, (String) photo.get("datetaken"));
+        /*
+         * 1 = no "date taken" is known and they will simply put the date when the item was uploaded into "datetaken" --> We do not set it
+         * at all in this case.
+         */
+        if (takenunknown == 0) {
+            setDateTakenProperty(link, (String) photo.get("datetaken"));
+        }
         setStringProperty(plg, link, jd.plugins.hoster.FlickrCom.PROPERTY_TITLE, title, false);
         link.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_EXT, extension);
     }
