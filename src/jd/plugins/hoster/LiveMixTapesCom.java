@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.appwork.utils.DebugMode;
+import org.appwork.utils.Time;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -84,7 +85,7 @@ public class LiveMixTapesCom extends antiDDoSForHost {
         }
         loadAntiCaptchaCookies(prepBr, host);
         prepBr.getHeaders().put("Accept-Encoding", "gzip, deflate, br");
-        prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36");
+        prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.61 Safari/537.36");
         prepBr.setFollowRedirects(true);
         return super.prepBrowser(prepBr, host);
     }
@@ -144,7 +145,7 @@ public class LiveMixTapesCom extends antiDDoSForHost {
                 return AvailableStatus.UNCHECKABLE;
             }
             this.handleUserVerify();
-            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(>Not Found</|The page you requested could not be found\\.<|>This mixtape is no longer available for download.<)")) {
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)(>Not Found</|The page you requested could not be found\\.<|>This mixtape is no longer available for download.<)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String timeRemaining = br.getRegex("TimeRemaining\\s*=\\s*(\\d+);").getMatch(0);
@@ -187,7 +188,8 @@ public class LiveMixTapesCom extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
-    private void doFree(final DownloadLink link, final Account account) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
+        /* TODO: Save- and re-use generated directurls */
         handleUserVerify();
         br.setFollowRedirects(false);
         String dllink = null;
@@ -211,8 +213,7 @@ public class LiveMixTapesCom extends antiDDoSForHost {
             }
             final String timeRemaining = br.getRegex("(?i)TimeRemaining\\s*=\\s*(\\d+);").getMatch(0);
             if (timeRemaining != null) {
-                link.getLinkStatus().setStatusText("Not yet released, cannot download");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not yet released, cannot download");
             }
             Form dlform = br.getFormbyProperty("id", "downloadform");
             if (dlform == null) {
@@ -239,17 +240,42 @@ public class LiveMixTapesCom extends antiDDoSForHost {
                     if (waitStr == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
+                    final long timeBefore = Time.systemIndependentCurrentJVMTimeMillis();
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                     // if (StringUtils.isEmpty(dlform.getAction())) {
                     // dlform.setAction(br.getURL().replace("/mixtapes/", "/download/"));
                     // }
-                    br.getHeaders().put("Origin", "https://www." + this.getHost());
-                    int wait = Integer.parseInt(waitStr);
-                    if (wait > 1000) {
-                        wait = wait / 1000;
+                    // br.getHeaders().put("Accept-Language", "de-DE,de;q=0.9,en;q=0.8,en-US;q=0.7");
+                    // br.getHeaders().put("Accept",
+                    // "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+                    // br.getHeaders().put("Origin", "https://www." + this.getHost());
+                    // br.getHeaders().put("Cache-Control", "max-age=0");
+                    // br.getHeaders().put("Sec-CH-UA", "Sec-Ch-UA \"Chromium\";v=\"94\", \"Google Chrome\";v=\"94\", \";Not A
+                    // Brand\";v=\"99\"");
+                    // br.getHeaders().put("Sec-CH-UA-Mobile", "?0");
+                    // br.getHeaders().put("Sec-CH-UA-Platform", "\"Windows\"");
+                    // br.getHeaders().put("Upgrade-Insecure-Requests", "1");
+                    // br.getHeaders().put("Sec-Fetch-Site", "same-origin");
+                    // br.getHeaders().put("Sec-Fetch-Mode", "navigate");
+                    // br.getHeaders().put("Sec-Fetch-User", "?1");
+                    // br.getHeaders().put("Sec-Fetch-Dest", "document");
+                    long wait = Long.parseLong(waitStr);
+                    if (wait < 1000) {
+                        wait = wait * 1001;
                     }
-                    // sleep(wait * 1001, link);
+                    final long passedTime = Time.systemIndependentCurrentJVMTimeMillis() - timeBefore;
+                    wait -= passedTime;
+                    /* 2021-09-30: Pre download wait is skippable */
+                    final boolean skipPreDownloadWait = true;
+                    if (!skipPreDownloadWait) {
+                        if (wait > 0) {
+                            sleep(wait, link);
+                        } else {
+                            logger.info("Captcha solving took longer than pre-download-wait :)");
+                        }
+                    }
+                    // dlform.put("g-recaptcha-response", "debugtest");
                     this.submitForm(dlform);
                     dllink = br.getRedirectLocation();
                     if (dllink != null) {
@@ -291,14 +317,9 @@ public class LiveMixTapesCom extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (final PluginException e) {
-            return ai;
-        }
+        login(account);
         ai.setUnlimitedTraffic();
         /* 2019-07-29: As far as I know there are no 'premium' accounts available! */
-        ai.setStatus("Registered User");
         account.setType(AccountType.FREE);
         return ai;
     }
@@ -357,7 +378,7 @@ public class LiveMixTapesCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link, true);
-        doFree(link, null);
+        handleDownload(link, null);
     }
 
     @Override
@@ -365,7 +386,7 @@ public class LiveMixTapesCom extends antiDDoSForHost {
         /* First login, then availablecheck --> Avoids captchas in availablecheck! */
         login(account);
         requestFileInformation(link, true);
-        doFree(link, account);
+        handleDownload(link, account);
     }
 
     public void login(final Account account) throws Exception {
