@@ -6,6 +6,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
@@ -28,9 +29,11 @@ import javax.swing.Icon;
 import javax.swing.InputMap;
 import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.text.DefaultEditorKit.CopyAction;
+import javax.swing.text.JTextComponent;
 import javax.swing.text.TextAction;
 
 import jd.controlling.packagecontroller.AbstractNode;
@@ -46,6 +49,7 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtTextArea;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.pathchooser.PathChooser;
 import org.appwork.swing.components.searchcombo.SearchComboBox;
@@ -72,12 +76,10 @@ import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperties> extends MigPanel implements ActionListener, GenericConfigEventListener<Boolean> {
-
     protected final PseudoCombo<BooleanStatus>          autoExtract;
     protected final ExtTextField                        checksum;
-    protected final ExtTextField                        comment;
+    protected final ExtTextArea                         comment;
     protected final LinkgrabberSettings                 config;
-
     protected final PathChooser                         destination;
     protected final ExtTextField                        downloadFrom;
     protected final ExtTextField                        downloadpassword;
@@ -90,7 +92,6 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
     protected final AtomicInteger                       settingLock            = new AtomicInteger(0);
     private final DelayedRunnable                       updateDelayer;
     private static final ScheduledExecutorService       SERVICE                = DelayedRunnable.getNewScheduledExecutorService();
-
     protected volatile E                                abstractNodeProperties = null;
 
     protected E getAbstractNodeProperties() {
@@ -99,7 +100,6 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
 
     protected void setAbstractNodeProperties(final E abstractNodeProperties) {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 save();
@@ -109,13 +109,11 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
                 }
             }
         };
-
     }
 
     public AbstractNodePropertiesPanel() {
         super("ins 0", "[grow,fill]", "[grow,fill]");
         addComponentListener(new ComponentListener() {
-
             @Override
             public void componentShown(ComponentEvent e) {
                 onShowing();
@@ -136,13 +134,10 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
         });
         LAFOptions.getInstance().applyPanelBackground(this);
         config = JsonConfig.create(LinkgrabberSettings.class);
-
         saveDelayer = new DelayedRunnable(SERVICE, 500l, 2000l) {
-
             @Override
             public void delayedrun() {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         save();
@@ -154,10 +149,8 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
             public String getID() {
                 return "PropertiesSaver";
             }
-
         };
         updateDelayer = new DelayedRunnable(SERVICE, 100l, 2000l) {
-
             @Override
             public void delayedrun() {
                 refresh(false);
@@ -167,7 +160,6 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
             public String getID() {
                 return "updateDelayer";
             }
-
         };
         destination = new PathChooser("ADDLinks", true) {
             public File doFileChooser() {
@@ -179,7 +171,6 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
                     e.printStackTrace();
                 }
                 return null;
-
             }
 
             protected String getHelpText() {
@@ -195,7 +186,6 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
             }
 
             protected void onChanged(ExtTextField txt2) {
-
                 // delayedSave();
             }
 
@@ -231,47 +221,38 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
              */
             protected void sortFound(String search, final List<PackageHistoryEntry> found) {
                 Collections.sort(found, new Comparator<PackageHistoryEntry>() {
-
                     @Override
                     public int compare(PackageHistoryEntry o1, PackageHistoryEntry o2) {
                         return o1.getName().compareTo(o2.getName());
                     }
                 });
-
             }
         };
-
         packagename.setBadColor(null);
         packagename.setUnkownTextInputAllowed(true);
         packagename.setHelpText(_GUI.T.AddLinksDialog_layoutDialogContent_packagename_help());
         packagename.setSelectedItem(null);
         setListeners(packagename.getTextField());
-        comment = new ExtTextField() {
-
+        comment = new ExtTextArea() {
             @Override
             public void onChanged() {
                 // delayedSave();
             }
-
         };
         comment.setHelpText(_GUI.T.AddLinksDialog_layoutDialogContent_comment_help());
         comment.setBorder(BorderFactory.createCompoundBorder(comment.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
         setListeners(comment);
         filename = createFileNameTextField();
         setListeners(filename);
-
         filename.setBorder(BorderFactory.createCompoundBorder(filename.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
         //
         downloadpassword = new ExtTextField() {
-
             @Override
             public void onChanged() {
                 // delayedSave();
             }
-
         };
         downloadpassword.addFocusListener(new FocusListener() {
-
             @Override
             public void focusGained(FocusEvent e) {
                 downloadpassword.selectAll();
@@ -283,11 +264,8 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
         });
         downloadpassword.setHelpText(_GUI.T.AddLinksDialog_layoutDialogContent_password_tt());
         setListeners(downloadpassword);
-
         downloadpassword.setBorder(BorderFactory.createCompoundBorder(downloadpassword.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
-
         downloadFrom = new ExtTextField() {
-
             @Override
             public void onChanged() {
                 // delayedSave();
@@ -296,13 +274,10 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
             protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
                 InputMap map = getInputMap(condition);
                 ActionMap am = getActionMap();
-
                 if (map != null && am != null && isEnabled()) {
                     Object binding = map.get(ks);
                     Action action = (binding == null) ? null : am.get(binding);
-
                     if (action != null) {
-
                         if (action instanceof CopyAction) {
                             return super.processKeyBinding(ks, e, condition, pressed);
                         }
@@ -312,17 +287,13 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
                         if (action instanceof TextAction) {
                             return false;
                         }
-
                     }
-
                 }
                 return super.processKeyBinding(ks, e, condition, pressed);
             }
         };
         // downloadFrom.setEditable(false);
-
         downloadFrom.addFocusListener(new FocusListener() {
-
             @Override
             public void focusGained(FocusEvent e) {
                 downloadFrom.selectAll();
@@ -332,18 +303,14 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
             public void focusLost(FocusEvent e) {
             }
         });
-
         downloadFrom.setBorder(BorderFactory.createCompoundBorder(downloadFrom.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
         checksum = new ExtTextField() {
-
             @Override
             public void onChanged() {
                 // delayedSave();
             }
-
         };
         checksum.addFocusListener(new FocusListener() {
-
             @Override
             public void focusGained(FocusEvent e) {
                 checksum.selectAll();
@@ -355,9 +322,7 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
         });
         checksum.setHelpText(_GUI.T.AddLinksDialog_layoutDialogContent_checksum_tt());
         setListeners(checksum);
-
         checksum.setBorder(BorderFactory.createCompoundBorder(checksum.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
-
         // String latest = config.getLatestDownloadDestinationFolder();
         // if (latest == null || !config.isUseLastDownloadDestinationAsDefault()) {
         // destination.setFile(new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()));
@@ -366,17 +331,13 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
         // destination.setFile(new File(latest));
         //
         // }
-
         password = new ExtTextField() {
-
             @Override
             public void onChanged() {
                 // delayedSave();
             }
-
         };
         password.addFocusListener(new FocusListener() {
-
             @Override
             public void focusGained(FocusEvent e) {
                 password.selectAll();
@@ -389,9 +350,7 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
         setListeners(password);
         password.setHelpText(_GUI.T.AddLinksDialog_createExtracOptionsPanel_password());
         password.setBorder(BorderFactory.createCompoundBorder(password.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
-
         priority = new PseudoCombo<Priority>(Priority.values()) {
-
             @Override
             protected Icon getIcon(Priority v, boolean closed) {
                 return v.loadIcon(18);
@@ -409,7 +368,6 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
                 } else {
                     return NewTheme.I().getIcon(IconKey.ICON_POPUPLARGE, -1);
                 }
-
             }
 
             @Override
@@ -417,14 +375,12 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
                 super.onChanged(newValue);
                 save();
             }
-
         };
         priority.setPopDown(true);
         // downloadPassword = new ExtTextField();
         // downloadPassword.setHelpText(_GUI.T.AddLinksDialog_createExtracOptionsPanel_downloadpassword());
         // downloadPassword.setBorder(BorderFactory.createCompoundBorder(downloadPassword.getBorder(), BorderFactory.createEmptyBorder(2, 6,
         // 1, 6)));
-
         autoExtract = new PseudoCombo<BooleanStatus>(BooleanStatus.values()) {
             @Override
             protected Icon getIcon(BooleanStatus v, boolean closed) {
@@ -432,36 +388,28 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
                     switch (v) {
                     case FALSE:
                         return NewTheme.I().getIcon(IconKey.ICON_FALSE, 18);
-
                     case TRUE:
                         return NewTheme.I().getIcon(IconKey.ICON_TRUE, 18);
-
                     case UNSET:
                         if (CFG_LINKGRABBER.AUTO_EXTRACTION_ENABLED.isEnabled()) {
                             return NewTheme.I().getIcon(IconKey.ICON_TRUE_ORANGE, 18);
                         } else {
                             return NewTheme.I().getIcon(IconKey.ICON_FALSE_ORANGE, 18);
                         }
-
                     }
-
                 } else {
                     switch (v) {
                     case FALSE:
                         return NewTheme.I().getIcon(IconKey.ICON_FALSE, 18);
-
                     case TRUE:
                         return NewTheme.I().getIcon(IconKey.ICON_TRUE, 18);
-
                     case UNSET:
                         if (CFG_LINKGRABBER.AUTO_EXTRACTION_ENABLED.isEnabled()) {
                             return NewTheme.I().getIcon(IconKey.ICON_TRUE_ORANGE, 18);
                         } else {
                             return NewTheme.I().getIcon(IconKey.ICON_FALSE_ORANGE, 18);
                         }
-
                     }
-
                 }
                 return null;
             }
@@ -472,38 +420,29 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
                     switch (v) {
                     case FALSE:
                         return _GUI.T.PackagePropertiesPanel_getListCellRendererComponent_autoextractdisabled_closed();
-
                     case TRUE:
                         return _GUI.T.PackagePropertiesPanel_getListCellRendererComponent_autoextractenabled_closed();
-
                     case UNSET:
                         if (CFG_LINKGRABBER.AUTO_EXTRACTION_ENABLED.isEnabled()) {
                             return _GUI.T.PackagePropertiesPanel_getListCellRendererComponent_autoextract_default_true_closed();
                         } else {
                             return _GUI.T.PackagePropertiesPanel_getListCellRendererComponent_autoextract_default_false_closed();
                         }
-
                     }
-
                 } else {
                     switch (v) {
                     case FALSE:
                         return _GUI.T.PackagePropertiesPanel_getListCellRendererComponent_autoextractdisabled();
-
                     case TRUE:
                         return _GUI.T.PackagePropertiesPanel_getListCellRendererComponent_autoextractenabled();
-
                     case UNSET:
                         if (CFG_LINKGRABBER.AUTO_EXTRACTION_ENABLED.isEnabled()) {
                             return _GUI.T.PackagePropertiesPanel_getListCellRendererComponent_autoextract_default_true();
                         } else {
                             return _GUI.T.PackagePropertiesPanel_getListCellRendererComponent_autoextract_default_false();
                         }
-
                     }
-
                 }
-
                 return "";
             }
 
@@ -514,7 +453,6 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
                 } else {
                     return NewTheme.I().getIcon(IconKey.ICON_POPUPLARGE, -1);
                 }
-
             }
 
             @Override
@@ -524,16 +462,12 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
             }
         };
         autoExtract.setPopDown(true);
-
         // p.add(createIconLabel("downloadpassword", _GUI.T.propertiespanel_downloadpassword(),
         // _GUI.T.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "alignx right,aligny center,height " + height + "!");
-
         // p.add(downloadPassword, "height " + height + "!");
-
         // this.getDialog().setLocation(new Point((int) (screenSize.getWidth() -
         // this.getDialog().getWidth()) / 2, (int) (screenSize.getHeight() -
         // this.getDialog().getHeight()) / 2));
-
         layoutComponents();
         autoExtract.setEnabled(false);
         password.setEnabled(false);
@@ -550,12 +484,10 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
 
     protected ExtTextField createFileNameTextField() {
         return new ExtTextField() {
-
             @Override
             public void onChanged() {
                 // delayedSave();
             }
-
         };
     }
 
@@ -568,7 +500,6 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
         p.add(createIconLabel(_GUI.T.propertiespanel_archivepassword(), _GUI.T.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,alignx right,height " + height + "!");
         p.add(password, "pushx,growx,height " + height + "!,growx,width 10:10:n");
         p.add(autoExtract, "sg right,height " + height + "!,aligny top");
-
     }
 
     protected void addChecksum(int height, MigPanel p) {
@@ -580,7 +511,6 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
         p.add(createIconLabel(_GUI.T.propertiespanel_comment(), _GUI.T.AddLinksDialog_layoutDialogContent_comment_tt()), "alignx right,aligny center,height " + height + "!");
         p.add(comment, "height " + height + "!,growx,width 10:10:n");
         p.add(priority, "sg right,height " + height + "!,aligny top");
-
     }
 
     protected void addDownloadFrom(int height, MigPanel p) {
@@ -681,12 +611,10 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
     @Override
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 layoutComponents();
             }
-
         };
     }
 
@@ -700,7 +628,6 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
 
     protected void refresh(final boolean forceRefresh) {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 final E lAbstractNodeProperties = getAbstractNodeProperties();
@@ -714,7 +641,6 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
 
     public void setSelectedItem(final AbstractNode abstractNode) {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 if (isDifferent(abstractNode)) {
@@ -748,7 +674,6 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
 
     public void save() {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 final E lAbstractNodeProperties = getAbstractNodeProperties();
@@ -852,11 +777,11 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
     }
 
     class Listener implements ActionListener, KeyListener, FocusListener {
-        private final JTextField field;
-        private boolean          saveOnFocusLost = true;
-        private String           oldText;
+        private final JTextComponent field;
+        private boolean              saveOnFocusLost = true;
+        private String               oldText;
 
-        public Listener(JTextField filename) {
+        public Listener(JTextComponent filename) {
             this.field = filename;
         }
 
@@ -897,11 +822,20 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
         }
     }
 
-    protected void setListeners(final JTextField filename) {
-        final Listener list = new Listener(filename);
-        filename.addActionListener(list);
-        filename.addKeyListener(list);
-        filename.addFocusListener(list);
+    protected void setListeners(final JTextComponent component) {
+        final Listener list = new Listener(component);
+        if (component instanceof JTextField) {
+            ((JTextField) component).addActionListener(list);
+        } else if (component instanceof JTextArea) {
+            ((JTextArea) component).addFocusListener(new FocusAdapter() {
+                @Override
+                public void focusLost(FocusEvent e) {
+                    list.actionPerformed(new ActionEvent(e.getSource(), e.getID(), "focusLost"));
+                }
+            });
+        }
+        component.addKeyListener(list);
+        component.addFocusListener(list);
     }
 
     protected void loadInEDT(final boolean newData, final AbstractNodeProperties abstractNodes) {
@@ -948,14 +882,12 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
                 updateArchiveInEDT(newData, abstractNodes);
             } else {
                 SERVICE.execute(new Runnable() {
-
                     @Override
                     public void run() {
                         final E current = getAbstractNodeProperties();
                         if (current == abstractNodes) {
                             abstractNodes.loadArchives();
                             new EDTRunner() {
-
                                 @Override
                                 protected void runInEDT() {
                                     final E current = getAbstractNodeProperties();

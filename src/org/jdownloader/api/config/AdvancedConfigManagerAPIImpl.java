@@ -178,13 +178,22 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
                 @Override
                 public void onConfigValueModified(final KeyHandler<Object> keyHandler, final Object newValue) {
                     if (JDGui.bugme(WarnLevel.NORMAL)) {
-                        final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.AdvancedConfigEntry_setValue_restart_warning_title(keyHandler.getKey()), _GUI.T.AdvancedConfigEntry_setValue_restart_warning(keyHandler.getKey()), NewTheme.I().getIcon(IconKey.ICON_WARNING, 32), null, null) {
-                            @Override
-                            public String getDontShowAgainKey() {
-                                return "RestartRequiredAdvancedConfig_" + getKey();
+                        new Thread("RestartRequired:" + keyHandler.getKey()) {
+                            {
+                                setDaemon(true);
                             }
-                        };
-                        d.show();
+
+                            @Override
+                            public void run() {
+                                final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.AdvancedConfigEntry_setValue_restart_warning_title(keyHandler.getKey()), _GUI.T.AdvancedConfigEntry_setValue_restart_warning(keyHandler.getKey()), NewTheme.I().getIcon(IconKey.ICON_WARNING, 32), null, null) {
+                                    @Override
+                                    public String getDontShowAgainKey() {
+                                        return "RestartRequiredAdvancedConfig_" + getKey();
+                                    }
+                                };
+                                d.show();
+                            }
+                        }.start();
                     }
                 }
 
