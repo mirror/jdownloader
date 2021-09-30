@@ -19,11 +19,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.ProgressController;
@@ -40,6 +35,11 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "4shared.com" }, urls = { "https?://(?:www\\.)?4shared(?:\\-china)?\\.com/(?:dir|folder|minifolder)/[A-Za-z0-9\\-_]+/(?:\\d+/)?[A-Za-z0-9\\-_]+" })
 public class FourSharedComFolder extends PluginForDecrypt {
@@ -368,7 +368,7 @@ public class FourSharedComFolder extends PluginForDecrypt {
                         decryptedLinks.add(createDownloadlink(subDir));
                     }
                 } else {
-                    final String dllink = new Regex(entry, "\"(http[^\"]+4shared(\\-china)?\\.com/(?!folder/|dir/)[^\"]+\\.html)").getMatch(0);
+                    final String dllink = new Regex(entry, "\"(https?[^\"]+4shared(\\-china)?\\.com/(?!folder/|dir/)[^\"]+\\.html)").getMatch(0);
                     if (dllink == null) {
                         // logger.warning("Couldn't find dllink!");
                         continue;

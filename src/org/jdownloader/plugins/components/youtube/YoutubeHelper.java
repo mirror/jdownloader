@@ -420,6 +420,17 @@ public class YoutubeHelper {
                 return _GUI.T.YoutubeHelper_getDescription_user();
             }
         });
+        REPLACER.add(new YoutubeReplacer("USERNAME_ALTERNATIVE", "USER_ALTERNATIVE") {
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getStringProperty(YoutubeHelper.YT_USER_NAME_ALTERNATIVE, link.getStringProperty(YoutubeHelper.YT_USER_NAME, ""));
+            }
+
+            @Override
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_user() + " " + _GUI.T.YoutubeHelper_getDescription_alternative();
+            }
+        });
         REPLACER.add(new YoutubeReplacer("PLAYLIST_ID") {
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
@@ -499,6 +510,17 @@ public class YoutubeHelper {
                 return _GUI.T.YoutubeHelper_getDescription_channel();
             }
         });
+        REPLACER.add(new YoutubeReplacer("CHANNEL_ALTERNATIVE", "CHANNELNAME_ALTERNATIVE") {
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getStringProperty(YoutubeHelper.YT_CHANNEL_TITLE_ALTERNATIVE, link.getStringProperty(YoutubeHelper.YT_CHANNEL_TITLE, ""));
+            }
+
+            @Override
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_channel() + " " + _GUI.T.YoutubeHelper_getDescription_alternative();
+            }
+        });
         REPLACER.add(new YoutubeReplacer("VIDEONAME", "VIDEO_NAME", "TITLE") {
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
@@ -508,6 +530,17 @@ public class YoutubeHelper {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_title();
+            }
+        });
+        REPLACER.add(new YoutubeReplacer("VIDEONAME_ALTERNATIVE", "VIDEO_NAME_ALTERNATIVE", "TITLE_ALTERNATIVE") {
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getStringProperty(YoutubeHelper.YT_TITLE_ALTERNATIVE, link.getStringProperty(YoutubeHelper.YT_TITLE, ""));
+            }
+
+            @Override
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_title() + " " + _GUI.T.YoutubeHelper_getDescription_alternative();
             }
         });
         REPLACER.add(new YoutubeReplacer("CATEGORY") {
@@ -778,10 +811,12 @@ public class YoutubeHelper {
         });
     }
     public static final String                YT_TITLE                         = "YT_TITLE";
+    public static final String                YT_TITLE_ALTERNATIVE             = "YT_TITLE_ALTERNATIVE";
     public static final String                YT_CATEGORY                      = "YT_CATEGORY";
     public static final String                YT_PLAYLIST_INT                  = "YT_PLAYLIST_INT";
     public static final String                YT_ID                            = "YT_ID";
     public static final String                YT_CHANNEL_TITLE                 = "YT_CHANNEL";
+    public static final String                YT_CHANNEL_TITLE_ALTERNATIVE     = "YT_CHANNEL_ALTERNATIVE";
     public static final String                YT_DATE                          = "YT_DATE";
     public static final String                YT_VARIANTS                      = "YT_VARIANTS";
     public static final String                YT_VARIANT                       = "YT_VARIANT";
@@ -1211,7 +1246,13 @@ public class YoutubeHelper {
 
     protected String parseTitle(YoutubeClipData vid) {
         if (StringUtils.isEmpty(vid.title)) {
-            vid.title = getVidTitleFromMaps();
+            final String[] titles = getVidTitleFromMaps();
+            if (titles != null && titles.length > 0) {
+                vid.title = titles[0];
+                if (titles.length > 1) {
+                    vid.title_alternative = titles[1];
+                }
+            }
             if (StringUtils.isEmpty(vid.title)) {
                 final String match = br.getRegex("document\\.title\\s*=\\s*\"(.*?) - YouTube\"").getMatch(0);
                 if (StringUtils.isNotEmpty(match)) {
@@ -1224,7 +1265,13 @@ public class YoutubeHelper {
 
     protected String parseDescription(YoutubeClipData vid) {
         if (StringUtils.isEmpty(vid.description)) {
-            vid.description = getVidDescriptionFromMaps();
+            final String[] descriptions = getVidDescriptionFromMaps();
+            if (descriptions != null && descriptions.length > 0) {
+                vid.description = descriptions[0];
+                if (descriptions.length > 1) {
+                    vid.description_alternative = descriptions[1];
+                }
+            }
         }
         return vid.description;
     }
@@ -1265,7 +1312,13 @@ public class YoutubeHelper {
 
     protected String parseUser(YoutubeClipData vid) {
         if (StringUtils.isEmpty(vid.user)) {
-            vid.user = getUserFromMaps();
+            final String[] users = getUserFromMaps();
+            if (users != null && users.length > 0) {
+                vid.user = users[0];
+                if (users.length > 1) {
+                    vid.user_alternative = users[1];
+                }
+            }
             if (StringUtils.isEmpty(vid.user)) {
                 final String match = br.getRegex("temprop=\"url\" href=\"https?://(www\\.)?youtube\\.com/user/([^<>\"]+)\"").getMatch(1);
                 // getVideoInfoWorkaroundUsed
@@ -1291,7 +1344,13 @@ public class YoutubeHelper {
 
     protected String parseChannelTitle(YoutubeClipData vid) {
         if (StringUtils.isEmpty(vid.channelTitle)) {
-            vid.channelTitle = getChannelTitleFromMaps();
+            final String[] titles = getChannelTitleFromMaps();
+            if (titles != null && titles.length > 0) {
+                vid.channelTitle = titles[0];
+                if (titles.length > 1) {
+                    vid.channelTitle_alternative = titles[1];
+                }
+            }
             if (StringUtils.isEmpty(vid.channelTitle)) {
                 String match = br.getRegex("<div class=\"yt-user-info\"><a [^>]*data-name[^>]*>(.*?)</a>").getMatch(0);
                 if (StringUtils.isEmpty(match) && StringUtils.isNotEmpty(vid.channelID)) {
@@ -1322,14 +1381,17 @@ public class YoutubeHelper {
         return result;
     }
 
-    public String getVidDescriptionFromMaps() {
-        String result = null;
+    public String[] getVidDescriptionFromMaps() {
+        final List<String> ret = new ArrayList<String>();
         Map<String, Object> map = getYtInitialPlayerResponse();
         if (map != null) {
-            result = (String) JavaScriptEngineFactory.walkJson(map, "videoDetails/shortDescription");
+            final String shortDescription = (String) JavaScriptEngineFactory.walkJson(map, "videoDetails/shortDescription");
+            if (shortDescription != null) {
+                ret.add(shortDescription);
+            }
         }
         map = getYtInitialData();
-        if (StringUtils.isEmpty(result) && map != null) {
+        if (map != null) {
             // this one is super long and more complicated!
             final List<Object> tmp = (List<Object>) JavaScriptEngineFactory.walkJson(map, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoSecondaryInfoRenderer/description/runs");
             if (tmp != null) {
@@ -1340,9 +1402,6 @@ public class YoutubeHelper {
                     final String url = (String) JavaScriptEngineFactory.walkJson(o, "navigationEndpoint/urlEndpoint/url");
                     final String text = (String) o.get("text");
                     if (text != null) {
-                        if (sb.length() > 0) {
-                            sb.append(" ");
-                        }
                         if (url != null) {
                             try {
                                 sb.append(br.getURL(url).toString());
@@ -1355,11 +1414,14 @@ public class YoutubeHelper {
                     }
                 }
                 if (sb.length() > 0) {
-                    result = sb.toString();
+                    final String description = sb.toString();
+                    if (description != null && !ret.contains(description)) {
+                        ret.add(description);
+                    }
                 }
             }
         }
-        return result;
+        return ret.toArray(new String[0]);
     }
 
     public int getVidDurationFromMaps() {
@@ -1373,24 +1435,34 @@ public class YoutubeHelper {
         return -1;
     }
 
-    public String getChannelTitleFromMaps() {
-        String result = null;
+    public String[] getChannelTitleFromMaps() {
+        final List<String> ret = new ArrayList<String>();
         Map<String, Object> map = getYtInitialPlayerResponse();
         if (map != null) {
-            result = (String) JavaScriptEngineFactory.walkJson(map, "microformat/playerMicroformatRenderer/ownerChannelName");
-            if (StringUtils.isEmpty(result)) {
-                result = (String) JavaScriptEngineFactory.walkJson(map, "videoDetails/author");
+            String title = (String) JavaScriptEngineFactory.walkJson(map, "microformat/playerMicroformatRenderer/ownerChannelName");
+            if (title != null && !ret.contains(title)) {
+                ret.add(title);
+            }
+            title = (String) JavaScriptEngineFactory.walkJson(map, "videoDetails/author");
+            if (title != null && !ret.contains(title)) {
+                ret.add(title);
             }
         }
         map = getYtInitialData();
-        if (StringUtils.isEmpty(result) && map != null) {
-            result = (String) JavaScriptEngineFactory.walkJson(map, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoSecondaryInfoRenderer/owner/videoOwnerRenderer/title/runs/{0}/text");
+        if (map != null) {
+            final String title = (String) JavaScriptEngineFactory.walkJson(map, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoSecondaryInfoRenderer/owner/videoOwnerRenderer/title/runs/{0}/text");
+            if (title != null && !ret.contains(title)) {
+                ret.add(title);
+            }
         }
         map = getYtPlayerConfig();
-        if (StringUtils.isEmpty(result) && map != null) {
-            result = (String) JavaScriptEngineFactory.walkJson(map, "args/author");
+        if (map != null) {
+            final String title = (String) JavaScriptEngineFactory.walkJson(map, "args/author");
+            if (title != null && !ret.contains(title)) {
+                ret.add(title);
+            }
         }
-        return result;
+        return ret.toArray(new String[0]);
     }
 
     public String getCategoryFromMaps() {
@@ -1489,37 +1561,53 @@ public class YoutubeHelper {
         return -1;
     }
 
-    public String getVidTitleFromMaps() {
-        String result = null;
+    public String[] getVidTitleFromMaps() {
+        final List<String> titles = new ArrayList<String>();
         Map<String, Object> map = getYtInitialPlayerResponse();
         if (map != null) {
-            result = (String) JavaScriptEngineFactory.walkJson(map, "videoDetails/title");
+            final String title = (String) JavaScriptEngineFactory.walkJson(map, "videoDetails/title");
+            if (title != null) {
+                titles.add(title);
+            }
         }
         map = getYtInitialData();
-        if (StringUtils.isEmpty(result) && map != null) {
-            result = (String) JavaScriptEngineFactory.walkJson(map, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoPrimaryInfoRenderer/title/simpleText");
-            if (StringUtils.isEmpty(result)) {
-                result = (String) JavaScriptEngineFactory.walkJson(map, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoPrimaryInfoRenderer/title/runs/{0}/text");
+        if (map != null) {
+            String title = (String) JavaScriptEngineFactory.walkJson(map, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoPrimaryInfoRenderer/title/simpleText");
+            if (title != null && !titles.contains(title)) {
+                titles.add(title);
+            }
+            title = (String) JavaScriptEngineFactory.walkJson(map, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoPrimaryInfoRenderer/title/runs/{0}/text");
+            if (title != null && !titles.contains(title)) {
+                titles.add(title);
             }
         }
         map = getYtPlayerConfig();
-        if (StringUtils.isEmpty(result) && map != null) {
-            result = (String) JavaScriptEngineFactory.walkJson(map, "args/title");
+        if (map != null) {
+            final String title = (String) JavaScriptEngineFactory.walkJson(map, "args/title");
+            if (title != null && !titles.contains(title)) {
+                titles.add(title);
+            }
         }
-        return result;
+        return titles.toArray(new String[0]);
     }
 
-    public String getUserFromMaps() {
-        String result = null;
+    public String[] getUserFromMaps() {
+        final List<String> ret = new ArrayList<String>();
         Map<String, Object> map = getYtInitialPlayerResponse();
         if (map != null) {
-            result = (String) JavaScriptEngineFactory.walkJson(map, "videoDetails/author");
+            final String author = (String) JavaScriptEngineFactory.walkJson(map, "videoDetails/author");
+            if (author != null) {
+                ret.add(author);
+            }
         }
         map = getYtInitialData();
-        if (StringUtils.isEmpty(result) && map != null) {
-            result = (String) JavaScriptEngineFactory.walkJson(map, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoSecondaryInfoRenderer/owner/videoOwnerRenderer/title/runs/{0}/text");
+        if (map != null) {
+            final String author = (String) JavaScriptEngineFactory.walkJson(map, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoSecondaryInfoRenderer/owner/videoOwnerRenderer/title/runs/{0}/text");
+            if (author != null && !ret.contains(author)) {
+                ret.add(author);
+            }
         }
-        return result;
+        return ret.toArray(new String[0]);
     }
 
     public String getChannelIdFromMaps() {
@@ -2755,27 +2843,29 @@ public class YoutubeHelper {
         return false;
     }
 
-    public static final String YT_LENGTH_SECONDS     = "YT_LENGTH_SECONDS";
+    public static final String YT_LENGTH_SECONDS          = "YT_LENGTH_SECONDS";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String YT_STREAMURL_DATA     = "YT_STREAMURL_DATA";
+    public static final String YT_STREAMURL_DATA          = "YT_STREAMURL_DATA";
     @Deprecated
-    public static final String YT_SUBTITLE_CODE      = "YT_SUBTITLE_CODE";     // Update YoutubeSubtitleName
+    public static final String YT_SUBTITLE_CODE           = "YT_SUBTITLE_CODE";          // Update YoutubeSubtitleName
     @Deprecated
-    public static final String YT_SUBTITLE_CODE_LIST = "YT_SUBTITLE_CODE_LIST";
-    public static final String YT_BEST_VIDEO         = "YT_BEST_VIDEO";
-    public static final String YT_DESCRIPTION        = "YT_DESCRIPTION";
+    public static final String YT_SUBTITLE_CODE_LIST      = "YT_SUBTITLE_CODE_LIST";
+    public static final String YT_BEST_VIDEO              = "YT_BEST_VIDEO";
+    public static final String YT_DESCRIPTION             = "YT_DESCRIPTION";
+    public static final String YT_DESCRIPTION_ALTERNATIVE = "YT_DESCRIPTION_ALTERNATIVE";
     // public static final String YT_VARIANT_INFO = "YT_VARIANT_INFO";
-    public static final String YT_STREAM_DATA_VIDEO  = "YT_STREAM_DATA_VIDEO";
-    public static final String YT_STREAM_DATA_AUDIO  = "YT_STREAM_DATA_AUDIO";
-    public static final String YT_STREAM_DATA_DATA   = "YT_STREAM_DATA_DATA";
-    public static final String YT_3D                 = "YT_3D";
-    public static final String YT_COLLECTION         = "YT_COLLECTION";
-    public static final String YT_PLAYLIST_TITLE     = "YT_PLAYLIST_TITLE";
-    public static final String YT_PLAYLIST_ID        = "YT_PLAYLIST_ID";
-    public static final String YT_USER_ID            = "YT_USER_ID";
-    public static final String YT_USER_NAME          = "YT_USER_NAME";
+    public static final String YT_STREAM_DATA_VIDEO       = "YT_STREAM_DATA_VIDEO";
+    public static final String YT_STREAM_DATA_AUDIO       = "YT_STREAM_DATA_AUDIO";
+    public static final String YT_STREAM_DATA_DATA        = "YT_STREAM_DATA_DATA";
+    public static final String YT_3D                      = "YT_3D";
+    public static final String YT_COLLECTION              = "YT_COLLECTION";
+    public static final String YT_PLAYLIST_TITLE          = "YT_PLAYLIST_TITLE";
+    public static final String YT_PLAYLIST_ID             = "YT_PLAYLIST_ID";
+    public static final String YT_USER_ID                 = "YT_USER_ID";
+    public static final String YT_USER_NAME               = "YT_USER_NAME";
+    public static final String YT_USER_NAME_ALTERNATIVE   = "YT_USER_NAME_ALTERNATIVE";
 
     public String createFilename(DownloadLink link) {
         AbstractVariant variant = AbstractVariant.get(link);

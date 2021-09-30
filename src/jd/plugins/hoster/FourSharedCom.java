@@ -23,8 +23,6 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -48,7 +46,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "https?://(www\\.)?4shared(?:-china)?\\.com/(account/)?(download|get|file|document|embed|photo|video|audio|mp3|office|rar|zip|archive|music|mobile)/[A-Za-z0-9]+(?:/.*)?|https?://api\\.4shared(-china)?\\.com/download/[A-Za-z0-9]+" })
+import org.appwork.utils.formatter.SizeFormatter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "https?://(www\\.)?4shared(?:-china)?\\.com/(account/)?(download|get|file|document|embed|photo|video|audio|mp3|office|rar|zip|archive|music|mobile)/[A-Za-z0-9\\-_]+(?:/.*)?|https?://api\\.4shared(-china)?\\.com/download/[A-Za-z0-9\\-_]+" })
 public class FourSharedCom extends PluginForHost {
     // DEV NOTES:
     // old versions of JDownloader can have troubles with Java7+ with HTTPS posts.
@@ -56,7 +56,7 @@ public class FourSharedCom extends PluginForHost {
     private final String                   PASSWORDTEXT                              = "enter a password to access";
     private final String                   COOKIE_HOST                               = "http://4shared.com";
     private static final boolean           TRY_FAST_FREE                             = true;
-    private static final String            type_api_direct                           = "https?://api\\.4shared(-china)?\\.com/download/[A-Za-z0-9]+";
+    private static final String            type_api_direct                           = "https?://api\\.4shared(-china)?\\.com/download/[A-Za-z0-9\\-_]+";
     private static AtomicReference<String> agent                                     = new AtomicReference<String>();
     private String                         DLLINK                                    = null;
 
@@ -105,7 +105,7 @@ public class FourSharedCom extends PluginForHost {
             if (linkID != null) {
                 link.setLinkID("download_" + linkID);
             } else {
-                final String[] linkIDs = new Regex(link.getDownloadURL(), "(download|get|file|document|embed|photo|video|audio|mp3|office|rar|zip|archive|music|mobile)/([A-Za-z0-9]+)").getRow(0);
+                final String[] linkIDs = new Regex(link.getDownloadURL(), "(download|get|file|document|embed|photo|video|audio|mp3|office|rar|zip|archive|music|mobile)/([A-Za-z0-9\\-]+)").getRow(0);
                 if (linkIDs != null && linkIDs.length > 0) {
                     link.setLinkID(linkIDs[0].toLowerCase(Locale.ENGLISH) + "_" + linkIDs[1]);
                 }
@@ -488,7 +488,7 @@ public class FourSharedCom extends PluginForHost {
                         handleErrors(account, link);
                         DLLINK = br.getRegex("id=\"btnLink\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
                         if (DLLINK == null) {
-                            DLLINK = br.getRegex("\"(http://dc\\d+\\.4shared\\.com/download/[^<>\"]*?)\"").getMatch(0);
+                            DLLINK = br.getRegex("\"(https?://dc\\d+\\.4shared\\.com/download/[^<>\"]*?)\"").getMatch(0);
                         }
                         if (!isDownloadURLSet(DLLINK)) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -696,7 +696,7 @@ public class FourSharedCom extends PluginForHost {
                         filename += ".mp4";
                     } else {
                         /* Crippled filename WITH extension */
-                        filename = br.getRegex("style=\"background-image: url\\(http://[a-z0-9]+\\.4shared\\.com/img/[A-Za-z0-9]+/[A-Za-z0-9]+/([^<>\"]*?)\\)\"").getMatch(0);
+                        filename = br.getRegex("style=\"background-image: url\\(https?://[a-z0-9]+\\.4shared\\.com/img/[A-Za-z0-9]+/[A-Za-z0-9]+/([^<>\"]*?)\\)\"").getMatch(0);
                     }
                 }
                 if (filename == null) {
@@ -716,7 +716,7 @@ public class FourSharedCom extends PluginForHost {
                 }
                 /* Get filename out of forum img code - seems like the best way so far */
                 if (filename == null) {
-                    filename = br.getRegex("value=\"\\[URL=https?://(www\\.)?4shared(-china)?\\.com/[^<>\"]*?\\.html\\]\\[IMG\\]http://dc\\d+\\.4shared(-china)?\\.com/img/[A-Za-z0-9]+/[A-Za-z0-9]+/([^<>\"]*?)\\[/IMG\\]\\[/URL\\]\" readonly=\"readonly\"").getMatch(3);
+                    filename = br.getRegex("value=\"\\[URL=https?://(www\\.)?4shared(-china)?\\.com/[^<>\"]*?\\.html\\]\\[IMG\\]https?://dc\\d+\\.4shared(-china)?\\.com/img/[A-Za-z0-9]+/[A-Za-z0-9]+/([^<>\"]*?)\\[/IMG\\]\\[/URL\\]\" readonly=\"readonly\"").getMatch(3);
                 }
                 /* Get filename out of forum url code - seems like the best way so far */
                 if (filename == null) {
