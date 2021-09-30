@@ -76,12 +76,22 @@ public class ZaycevNet extends PluginForHost {
         if (br.getRedirectLocation() != null || br.containsHTML("http\\-equiv=\"Refresh\"|>Данная композиция заблокирована, приносим извинения") || responsecode == 404 || responsecode == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("data-qa=\"track-popular-link\" itemProp=\"url\">([^<>\"]+)<").getMatch(0);
-        final String filesize = br.getRegex("Б<meta content=\"(.*?)\" itemprop=\"contentSize\"/>").getMatch(0);
+        final String filename = br.getRegex("itemProp=\"availability\"/></span></section><h1[^>]*>([^<>\"]+)</h1>").getMatch(0);
+        final String filesizeStr = br.getRegex("Б<meta content=\"(.*?)\" itemprop=\"contentSize\"/>").getMatch(0);
         if (filename != null) {
             link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
         }
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesizeStr != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
+        } else {
+            /* Try to calculate filesize */
+            final String bitrateStr = br.getRegex("data-qa=\"TrackPage-bitrate\"[^>]*>(\\d+) kbps</div>").getMatch(0);
+            final Regex durationRegex = br.getRegex("itemProp=\"duration\"[^>]*>(\\d+):(\\d+)</time>");
+            if (bitrateStr != null && durationRegex.matches()) {
+                final int durationSeconds = Integer.parseInt(durationRegex.getMatch(0)) * 60 + Integer.parseInt(durationRegex.getMatch(1));
+                link.setDownloadSize((durationSeconds * Integer.parseInt(bitrateStr) * 1024) / 8);
+            }
+        }
         return AvailableStatus.TRUE;
     }
 

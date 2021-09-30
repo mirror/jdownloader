@@ -3656,18 +3656,26 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          */
         final String mainpage = getMainPage(brc);
         logger.info("Doing login-cookiecheck for: " + mainpage);
-        final boolean login_xfss_CookieOkay = StringUtils.isAllNotEmpty(brc.getCookie(mainpage, "login", Cookies.NOTDELETEDPATTERN), brc.getCookie(mainpage, "xfss", Cookies.NOTDELETEDPATTERN));
+        final String cookieXFSS = brc.getCookie(mainpage, "xfss", Cookies.NOTDELETEDPATTERN);
+        final String cookieXFSTS = brc.getCookie(mainpage, "xfsts", Cookies.NOTDELETEDPATTERN);
+        final boolean login_xfss_CookieOkay = StringUtils.isAllNotEmpty(brc.getCookie(mainpage, "login", Cookies.NOTDELETEDPATTERN), cookieXFSS);
         /* xfsts cookie is mostly used in xvideosharing sites (videohosters) example: vidoza.net */
-        final boolean login_xfsts_CookieOkay = StringUtils.isAllNotEmpty(brc.getCookie(mainpage, "login", Cookies.NOTDELETEDPATTERN), brc.getCookie(mainpage, "xfsts", Cookies.NOTDELETEDPATTERN));
+        final boolean login_xfsts_CookieOkay = StringUtils.isAllNotEmpty(brc.getCookie(mainpage, "login", Cookies.NOTDELETEDPATTERN), cookieXFSTS);
         /* 2019-06-21: Example website which uses rare email cookie: filefox.cc (so far the only known!) */
-        final boolean email_xfss_CookieOkay = StringUtils.isAllNotEmpty(brc.getCookie(mainpage, "email", Cookies.NOTDELETEDPATTERN), brc.getCookie(mainpage, "xfss", Cookies.NOTDELETEDPATTERN));
-        final boolean email_xfsts_CookieOkay = StringUtils.isAllNotEmpty(brc.getCookie(mainpage, "email", Cookies.NOTDELETEDPATTERN), brc.getCookie(mainpage, "xfsts", Cookies.NOTDELETEDPATTERN));
+        final boolean email_xfss_CookieOkay = StringUtils.isAllNotEmpty(brc.getCookie(mainpage, "email", Cookies.NOTDELETEDPATTERN), cookieXFSS);
+        final boolean email_xfsts_CookieOkay = StringUtils.isAllNotEmpty(brc.getCookie(mainpage, "email", Cookies.NOTDELETEDPATTERN), cookieXFSTS);
         /* buttons or sites that are only available for logged in users */
         // remove script tags
         // remove comments, eg ddl.to just comment some buttons/links for expired cookies/non logged in
         final String htmlWithoutScriptTagsAndComments = brc.toString().replaceAll("(?s)(<script.*?</script>)", "").replaceAll("(?s)(<!--.*?-->)", "");
         final String ahref = "<a[^<]*href\\s*=\\s*\"[^\"]*";
-        final boolean logoutOkay = new Regex(htmlWithoutScriptTagsAndComments, ahref + "(&|\\?)op=logout").matches() || new Regex(htmlWithoutScriptTagsAndComments, ahref + "/(user_)?logout\"").matches();
+        /**
+         * Test cases </br>
+         * op=logout: ddownload.com </br>
+         * /(user_)?logout\": ?? </br>
+         * logout\\.html: fastclick.to
+         */
+        final boolean logoutOkay = new Regex(htmlWithoutScriptTagsAndComments, ahref + "(&|\\?)op=logout").matches() || new Regex(htmlWithoutScriptTagsAndComments, ahref + "/(user_)?logout\"").matches() || new Regex(htmlWithoutScriptTagsAndComments, ahref + "/logout\\.html\"").matches();
         // unsafe, not every site does redirect
         final boolean loginURLFailed = brc.getURL().contains("op=") && brc.getURL().contains("op=login");
         /*
