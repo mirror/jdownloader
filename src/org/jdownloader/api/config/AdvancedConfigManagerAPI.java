@@ -3,6 +3,7 @@ package org.jdownloader.api.config;
 import java.util.ArrayList;
 
 import org.appwork.remoteapi.RemoteAPIInterface;
+import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.annotations.APIParameterNames;
 import org.appwork.remoteapi.annotations.AllowNonStorableObjects;
 import org.appwork.remoteapi.annotations.ApiDoc;
@@ -42,11 +43,11 @@ public interface AdvancedConfigManagerAPI extends RemoteAPIInterface {
     @AllowNonStorableObjects
     @ApiDoc("set value to interface by key")
     @APIParameterNames({ "interfaceName", "storage", "key", "value" })
-    public boolean set(String interfaceName, String storage, String key, Object value) throws InvalidValueException;
+    public boolean set(RemoteAPIRequest request, String interfaceName, String storage, String key, Object value) throws InvalidValueException;
 
     @ApiDoc("reset interface by key to its default value")
     @APIParameterNames({ "interfaceName", "storage", "key" })
-    public boolean reset(String interfaceName, String storage, String key);
+    public boolean reset(RemoteAPIRequest request, String interfaceName, String storage, String key);
 
     @AllowStorage(value = { Object.class })
     @ApiDoc("get default value from interface by key")
