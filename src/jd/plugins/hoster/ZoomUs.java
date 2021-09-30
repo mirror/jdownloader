@@ -62,7 +62,7 @@ public class ZoomUs extends antiDDoSForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:[A-Za-z0-9]+\\.)?" + buildHostsPatternPart(domains) + "/rec/play/([A-Za-z0-9\\-_]+)");
+            ret.add("https?://(?:[A-Za-z0-9]+\\.)?" + buildHostsPatternPart(domains) + "/rec/play/([A-Za-z0-9\\-_\\.]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -104,7 +104,7 @@ public class ZoomUs extends antiDDoSForHost {
         }
         /* TODO: Add support for password protected items */
         String filename = br.getRegex("topic\\s*:\\s*\"([^<>\"]+)\"").getMatch(0);
-        final String filesize = br.getRegex("fileSize\\:\\s*(?:\"|')(\\d+ [^\"\\']+)(?:\"|')").getMatch(0);
+        final String filesize = br.getRegex("fileSize\\:\\s*(?:\"|')(\\d+(\\.\\d{1,2})? [^\"\\']+)(?:\"|')").getMatch(0);
         final String ext = ".mp4";
         if (!StringUtils.isEmpty(filename)) {
             filename = Encoding.htmlDecode(filename).trim();

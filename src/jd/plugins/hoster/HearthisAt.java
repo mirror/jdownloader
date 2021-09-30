@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -29,9 +32,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hearthis.at" }, urls = { "https?://(?:www\\.)?hearthis\\.at/([^/]+)/([A-Za-z0-9-]+)/?" })
 public class HearthisAt extends PluginForHost {
@@ -128,7 +128,7 @@ public class HearthisAt extends PluginForHost {
             /* We failed to get a 'real' downloadlink --> Fallback to stream (lower quality) */
             /* Stream urls can be downloaded with multiple connections and resume is possible! */
             free_resume = true;
-            free_maxchunks = 0;
+            free_maxchunks = 1; // 2021-09-30: Disabled chunkload as it causes issues
             dllink = downloadlink_stream;
             logger.info("\n\n-> Failed to get download link -> Checking stream link: " + dllink + "\n");
         }
