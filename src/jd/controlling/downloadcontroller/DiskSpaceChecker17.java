@@ -3,8 +3,13 @@ package jd.controlling.downloadcontroller;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 
+import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadLinkDownloadable;
+
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.Files17;
 import org.appwork.utils.StringUtils;
 
@@ -15,15 +20,46 @@ public class DiskSpaceChecker17 extends DiskSpaceChecker {
         super(diskSpaceReservation, requestor);
     }
 
+    protected Path toPath(final File file) {
+        try {
+            return file.toPath();
+        } catch (InvalidPathException e) {
+            Path alternativeFile = null;
+            try {
+                if (file.equals(getDestination())) {
+                    final Object owner = diskSpaceReservation.getOwner();
+                    if (owner instanceof DownloadLinkDownloadable) {
+                        final DownloadLinkDownloadable downloadLink = (DownloadLinkDownloadable) owner;
+                        alternativeFile = new File(downloadLink.getDownloadLink().getDownloadLinkController().getSessionDownloadDirectory()).toPath();
+                    } else if (owner instanceof PluginForHost) {
+                        final PluginForHost plugin = (PluginForHost) owner;
+                        alternativeFile = new File(plugin.getDownloadLink().getDownloadLinkController().getSessionDownloadDirectory()).toPath();
+                    } else if (owner instanceof SingleDownloadController) {
+                        final SingleDownloadController controller = (SingleDownloadController) owner;
+                        alternativeFile = new File(controller.getSessionDownloadDirectory()).toPath();
+                    }
+                }
+            } catch (InvalidPathException e2) {
+                throw Exceptions.addSuppressed(e2, e);
+            }
+            if (alternativeFile == null) {
+                throw e;
+            } else {
+                getLogger().exception("fallback to download folder:" + alternativeFile, e);
+                return alternativeFile;
+            }
+        }
+    }
+
     @Override
     protected void findRoots() {
         if (!MOUNT_POINT_NOT_FOUND_IN_FSTAB) {
             try {
                 final File dest = getDestination();
-                final Path normalRoot = Files17.guessRoot(dest.toPath());
+                final Path normalRoot = Files17.guessRoot(toPath(dest));
                 if (normalRoot != null) {
                     roots.addIfAbsent(normalRoot.toString());
-                    Path currentPath = dest.toPath();
+                    Path currentPath = toPath(dest);
                     Path realPath = null;
                     while (currentPath != null) {
                         if (Files.exists(currentPath)) {
@@ -59,7 +95,7 @@ public class DiskSpaceChecker17 extends DiskSpaceChecker {
         if (!MOUNT_POINT_NOT_FOUND_IN_FSTAB) {
             final File dest = getDestination();
             try {
-                final Long ret = Files17.getUsableSpace(dest.toPath());
+                final Long ret = Files17.getUsableSpace(toPath(dest));
                 if (ret != null) {
                     return ret.longValue();
                 }
