@@ -20,6 +20,7 @@ import java.util.HashSet;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
@@ -45,6 +46,12 @@ public class Rule34Xxx extends PluginForDecrypt {
 
     public Rule34Xxx(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public void init() {
+        super.init();
+        Browser.setRequestIntervalLimitGlobal(getHost(), 250);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
