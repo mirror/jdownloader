@@ -10,7 +10,11 @@ import java.util.regex.Pattern;
 
 import javax.swing.Icon;
 
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
+
 import org.appwork.exceptions.WTFException;
+import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -18,20 +22,27 @@ import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.annotations.EnumLabel;
 import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.storage.config.annotations.RequiresRestart;
+import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.reflection.Clazz;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.api.RemoteAPIController;
+import org.jdownloader.api.myjdownloader.MyJDownloaderHttpConnection;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.LazyExtension;
 import org.jdownloader.extensions.UninstalledExtension;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.myjdownloader.client.bindings.AdvancedConfigEntryDataStorable.AbstractType;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.AdvancedConfigInterface;
+import org.jdownloader.myjdownloader.client.json.SessionInfoResponse;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.PluginClassLoader;
@@ -97,7 +108,7 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
     }
 
     @Override
-    public boolean set(String interfaceName, String storage, String key, Object value) throws InvalidValueException {
+    public boolean set(final RemoteAPIRequest request, String interfaceName, String storage, String key, Object value) throws InvalidValueException {
         if (EXTENSION.equals(interfaceName)) {
             final String json = JSonStorage.serializeToJson(value);
             for (final LazyExtension ext : ExtensionController.getInstance().getExtensions()) {
@@ -140,13 +151,66 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
                     final String jsonString = JSonStorage.serializeToJson(value);
                     setValue = JSonStorage.restoreFromString(jsonString, typeRef);
                 }
-                keyHandler.setValue(setValue);
+                final GenericConfigEventListener<Object> listener = createRestartRequiredConfigEventListener(request, keyHandler);
+                keyHandler.getEventSender().addListener(listener);
+                try {
+                    keyHandler.setValue(setValue);
+                } finally {
+                    keyHandler.getEventSender().removeListener(listener);
+                }
                 return true;
             } catch (Exception e) {
                 return false;
             }
         }
         return false;
+    }
+
+    protected boolean isMyJDownloaderWebinterface(final RemoteAPIRequest request) {
+        final MyJDownloaderHttpConnection con = MyJDownloaderHttpConnection.getMyJDownloaderHttpConnection(request);
+        final SessionInfoResponse sessionInfo = con != null ? con.getSessionInfo() : null;
+        return sessionInfo != null && StringUtils.startsWithCaseInsensitive(sessionInfo.getAppKey(), "myjd_webinterface");
+    }
+
+    protected GenericConfigEventListener<Object> createRestartRequiredConfigEventListener(final RemoteAPIRequest request, final KeyHandler<Object> keyHandler) {
+        if (isMyJDownloaderWebinterface(request) && keyHandler.getAnnotation(RequiresRestart.class) != null) {
+            return new GenericConfigEventListener<Object>() {
+                @Override
+                public void onConfigValueModified(final KeyHandler<Object> keyHandler, final Object newValue) {
+                    if (JDGui.bugme(WarnLevel.NORMAL)) {
+                        final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.AdvancedConfigEntry_setValue_restart_warning_title(keyHandler.getKey()), _GUI.T.AdvancedConfigEntry_setValue_restart_warning(keyHandler.getKey()), NewTheme.I().getIcon(IconKey.ICON_WARNING, 32), null, null) {
+                            @Override
+                            public String getDontShowAgainKey() {
+                                return "RestartRequiredAdvancedConfig_" + getKey();
+                            }
+                        };
+                        d.show();
+                    }
+                }
+
+                private String getHandlerKey() {
+                    return keyHandler.getKey();
+                }
+
+                private String getKey() {
+                    return getConfigInterfaceName().concat(".").concat(getHandlerKey());
+                }
+
+                private String getConfigInterfaceName() {
+                    String ret = keyHandler.getStorageHandler().getConfigInterface().getSimpleName();
+                    if (ret.contains("Config")) {
+                        ret = ret.replace("Config", "");
+                    }
+                    return ret;
+                }
+
+                @Override
+                public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
+                }
+            };
+        } else {
+            return null;
+        }
     }
 
     @Override
@@ -173,10 +237,16 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
     }
 
     @Override
-    public boolean reset(String interfaceName, String storage, String key) {
-        KeyHandler<Object> kh = getKeyHandler(interfaceName, storage, key);
+    public boolean reset(RemoteAPIRequest request, String interfaceName, String storage, String key) {
+        KeyHandler<Object> keyHandler = getKeyHandler(interfaceName, storage, key);
         try {
-            kh.setValue(kh.getDefaultValue());
+            final GenericConfigEventListener<Object> listener = createRestartRequiredConfigEventListener(request, keyHandler);
+            keyHandler.getEventSender().addListener(listener);
+            try {
+                keyHandler.setValue(keyHandler.getDefaultValue());
+            } finally {
+                keyHandler.getEventSender().removeListener(listener);
+            }
         } catch (ValidationException e) {
             return false;
         }
