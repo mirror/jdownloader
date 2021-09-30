@@ -19,7 +19,12 @@ import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -34,8 +39,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.StringUtils;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PicsVc extends PluginForDecrypt {
     public PicsVc(PluginWrapper wrapper) {
@@ -45,7 +48,7 @@ public class PicsVc extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "pics.vc" });
+        ret.add(new String[] { "pics.vc", "sxypix.com" });
         return ret;
     }
 
@@ -65,7 +68,7 @@ public class PicsVc extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/watch\\?g=([a-f0-9]{32})");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:watch\\?g=|w/)([a-f0-9]{32})");
         }
         return ret.toArray(new String[0]);
     }
@@ -73,15 +76,16 @@ public class PicsVc extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final String galleryID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        final String galleryHash = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        /* 2021-09-30: pics.vc/watch URLs will often redirect to sxypix.com/w URLs. */
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=.gall_not_found")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String fpName = br.getRegex("<title>\\s*([^<>\"]+)\\s*-\\s*PICS\\.VC\\s*</title>").getMatch(0);
-        int offset = 0;
-        int lastNextOffset = 0;
+        final String fpName = br.getRegex("(?i)<title>\\s*([^<>\"]+)\\s*-\\s*(?:PICS\\.VC|SxyPix\\.com)\\s*</title>").getMatch(0);
+        int foundNumberofItems = 0;
         int page = 0;
         final DecimalFormat df = new DecimalFormat("000");
         final FilePackage fp = FilePackage.getInstance();
@@ -93,60 +97,108 @@ public class PicsVc extends PluginForDecrypt {
             }
         } else {
             /* Fallback */
-            fp.setName(galleryID);
+            fp.setName(galleryHash);
         }
-        List<String> dupes = new ArrayList<String>();
+        HashSet<String> dupes = new HashSet<String>();
+        final int maxItemsPerPage = 36;
+        final int maxItems = Integer.parseInt(br.getRegex("total\\s*:\\s*(\\d+)").getMatch(0));
+        final String baseURL = br.getURL();
+        /* 2021-09-30 */
+        final boolean useAjaxHandlingForPageAndMore = false;
         do {
             page += 1;
-            logger.info("Crawling page: " + page);
-            /* 2021-03-24: Avoid grabbing "related" pictures listed below the actual pictures belonging to a category! */
-            String[] links = br.getRegex("(https?://s\\d+\\.pics\\.vc/pics/s/[^\"\\']+\\.jpg)[^>]*pic_loader\\(this\\)").getColumn(0);
-            if (links == null || links.length == 0) {
-                links = br.getRegex("(/cdn/s\\d+/[^\"\\']+\\.jpg)[^>]*pic_loader\\(this\\)").getColumn(0);
-            }
-            if (links == null || links.length == 0) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            for (String singleLink : links) {
-                if (dupes.contains(singleLink)) {
-                    continue;
-                }
-                dupes.add(singleLink);
-                if (singleLink.startsWith("/cdn/")) {
-                    final String server = new Regex(singleLink, "/cdn/(s\\d+)").getMatch(0);
-                    final String rest = new Regex(singleLink, "\\d+/s/(.+)").getMatch(0);
-                    if (server == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else if (rest == null) {
+            int numberofNewItemsThisRun = 0;
+            if (page > 1 && useAjaxHandlingForPageAndMore) {
+                /* json handling */
+                final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                final List<String> htmls = (List<String>) entries.get("r");
+                for (final String html : htmls) {
+                    String singleLink = new Regex(html, "data-src=\\'(/cdn/[^\\']+)'").getMatch(0);
+                    if (singleLink == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    singleLink = "https://" + server + ".pics.vc/pics/n/" + rest;
-                } else {
-                    singleLink = singleLink.replaceFirst("/pics/s/", "/pics/o/");
+                    if (dupes.add(singleLink)) {
+                        singleLink = "https://" + br.getHost() + singleLink;
+                        String filename = Plugin.getFileNameFromURL(new URL(singleLink));
+                        filename = df.format(foundNumberofItems + 1) + "_" + filename;
+                        final DownloadLink dl = createDownloadlink("directhttp://" + singleLink);
+                        dl.setFinalFileName(filename);
+                        dl._setFilePackage(fp);
+                        dl.setAvailable(true);
+                        decryptedLinks.add(dl);
+                        // distribute(dl);
+                        foundNumberofItems += 1;
+                        numberofNewItemsThisRun += 1;
+                    }
                 }
-                String filename = Plugin.getFileNameFromURL(new URL(singleLink));
-                filename = df.format(offset + 1) + "_" + filename;
-                final DownloadLink dl = createDownloadlink("directhttp://" + singleLink);
-                dl.setFinalFileName(filename);
-                dl._setFilePackage(fp);
-                dl.setAvailable(true);
-                decryptedLinks.add(dl);
-                distribute(dl);
-                offset += 1;
-            }
-            final String nextOffsetStr = br.getRegex(galleryID + "\\&off=(\\d+)'[^>]*><div[^>]*class='next_page clip'").getMatch(0);
-            if (nextOffsetStr != null && Integer.parseInt(nextOffsetStr) > lastNextOffset) {
-                // 2021-06-07 website given offset is missing about 2 images per page, use smaller steps (16 instead of website 36) to avoid
-                // missing
-                // images
-                final int nextOffset = Math.min(lastNextOffset + 16, Integer.parseInt(nextOffsetStr));
-                lastNextOffset = nextOffset;
-                br.getPage(parameter + "&off=" + nextOffset);
             } else {
-                logger.info("Stopping because failed to find next page");
-                break;
+                /* 2021-03-24: Avoid grabbing "related" pictures listed below the actual pictures belonging to a category! */
+                String[] links = br.getRegex("(https?://s\\d+\\.pics\\.vc/pics/s/[^\"\\']+\\.jpg)[^>]*pic_loader\\(this\\)").getColumn(0);
+                if (links == null || links.length == 0) {
+                    links = br.getRegex("(/cdn/s\\d+/[^\"\\']+\\.jpg)[^>]*schema\\.org/image").getColumn(0);
+                }
+                if (links == null || links.length == 0) {
+                    if (foundNumberofItems == 0) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else {
+                        logger.info("Stopping because: Failed to find any items on current page");
+                        break;
+                    }
+                }
+                for (String singleLink : links) {
+                    if (dupes.add(singleLink)) {
+                        // if (singleLink.startsWith("/cdn/")) {
+                        // final String server = new Regex(singleLink, "/cdn/(s\\d+)").getMatch(0);
+                        // final String rest = new Regex(singleLink, "\\d+/s/(.+)").getMatch(0);
+                        // if (server == null) {
+                        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        // } else if (rest == null) {
+                        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        // }
+                        // singleLink = "https://" + server + ".pics.vc/pics/n/" + rest;
+                        // } else {
+                        // singleLink = singleLink.replaceFirst("/pics/s/", "/pics/o/");
+                        // }
+                        singleLink = "https://" + br.getHost() + singleLink;
+                        String filename = Plugin.getFileNameFromURL(new URL(singleLink));
+                        filename = df.format(foundNumberofItems + 1) + "_" + filename;
+                        final DownloadLink dl = createDownloadlink("directhttp://" + singleLink);
+                        dl.setFinalFileName(filename);
+                        dl._setFilePackage(fp);
+                        dl.setAvailable(true);
+                        decryptedLinks.add(dl);
+                        // distribute(dl);
+                        foundNumberofItems += 1;
+                        numberofNewItemsThisRun += 1;
+                    }
+                }
             }
-        } while (!this.isAbort());
+            logger.info("Crawled page: " + page + " | Found items: " + numberofNewItemsThisRun + " | Total: " + foundNumberofItems + " / " + maxItems);
+            if (this.isAbort()) {
+                return decryptedLinks;
+            } else if (numberofNewItemsThisRun < maxItemsPerPage) {
+                logger.info("Stopping because: Reached end (current page contains less items than max items)");
+                break;
+            } else {
+                page += 1;
+                if (useAjaxHandlingForPageAndMore) {
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    br.getHeaders().put("Accept", "*/*");
+                    br.getHeaders().put("Origin", "https://" + br.getHost());
+                    br.getHeaders().put("Referer", baseURL);
+                    // br.getHeaders().put("", "");
+                    // br.getHeaders().put("", "");
+                    br.postPage("/php/apg.php", "mode=w&param=%7B%22page%2" + page + "%3A4%2C%22ghash%22%3A%22" + galleryHash + "%22%7D");
+                } else {
+                    /* Old handling */
+                    br.getPage(baseURL + "/" + page);
+                }
+                continue;
+            }
+        } while (true);
+        if (foundNumberofItems < maxItems) {
+            logger.warning("Failed to find all items! Found only: " + foundNumberofItems + " / " + maxItems);
+        }
         return decryptedLinks;
     }
 }
