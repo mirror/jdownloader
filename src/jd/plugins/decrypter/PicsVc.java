@@ -103,7 +103,7 @@ public class PicsVc extends PluginForDecrypt {
         final int maxItemsPerPage = 36;
         final int maxItems = Integer.parseInt(br.getRegex("total\\s*:\\s*(\\d+)").getMatch(0));
         final String baseURL = br.getURL();
-        /* 2021-09-30 */
+        /* 2021-09-30: Ajax handling is new */
         final boolean useAjaxHandlingForPageAndMore = false;
         do {
             page += 1;
@@ -126,7 +126,7 @@ public class PicsVc extends PluginForDecrypt {
                         dl._setFilePackage(fp);
                         dl.setAvailable(true);
                         decryptedLinks.add(dl);
-                        // distribute(dl);
+                        distribute(dl);
                         foundNumberofItems += 1;
                         numberofNewItemsThisRun += 1;
                     }
@@ -167,7 +167,7 @@ public class PicsVc extends PluginForDecrypt {
                         dl._setFilePackage(fp);
                         dl.setAvailable(true);
                         decryptedLinks.add(dl);
-                        // distribute(dl);
+                        distribute(dl);
                         foundNumberofItems += 1;
                         numberofNewItemsThisRun += 1;
                     }
