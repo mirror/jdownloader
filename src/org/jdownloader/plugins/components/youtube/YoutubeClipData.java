@@ -26,27 +26,31 @@ public class YoutubeClipData {
     /**
      *
      */
-    public String                             user                = null;
-    public String                             channelTitle        = null;
-    public long                               datePublished       = -1;
-    public String                             error               = null;
-    public boolean                            ageCheck            = false;
-    public String                             title               = null;
-    public String                             videoID             = null;
-    public int                                playlistEntryNumber = -1;
-    public String                             category            = null;
-    public int                                duration            = -1;
-    public String                             channelID           = null;
-    public long                               dateUploaded        = -1;
-    public String                             userGooglePlusID    = null;
-    public VideoVariant                       bestVideoItag       = null;
-    public String                             description         = null;
+    public String                             user                     = null;
+    public String                             user_alternative         = null;
+    public long                               datePublished            = -1;
+    public String                             error                    = null;
+    public boolean                            ageCheck                 = false;
+    public String                             title                    = null;
+    public String                             title_alternative        = null;
+    public String                             description              = null;
+    public String                             description_alternative  = null;
+    public String                             channelTitle             = null;
+    public String                             channelTitle_alternative = null;
+    public String                             videoID                  = null;
+    public int                                playlistEntryNumber      = -1;
+    public String                             category                 = null;
+    public int                                duration                 = -1;
+    public String                             channelID                = null;
+    public long                               dateUploaded             = -1;
+    public String                             userGooglePlusID         = null;
+    public VideoVariant                       bestVideoItag            = null;
     public Map<YoutubeITAG, StreamCollection> streams;
     public ArrayList<YoutubeSubtitleStorable> subtitles;
     public HashMap<String, String>            keywords3D;
     public HashSet<String>                    keywords;
-    public String                             approxThreedLayout  = null;
-    public String                             views               = null;
+    public String                             approxThreedLayout       = null;
+    public String                             views                    = null;
 
     public YoutubeClipData(final String videoID) {
         this(videoID, -1);
@@ -145,11 +149,14 @@ public class YoutubeClipData {
 
     public void copyToDownloadLink(final DownloadLink dest) {
         setValue(dest, YoutubeHelper.YT_TITLE, title);
+        setValue(dest, YoutubeHelper.YT_TITLE_ALTERNATIVE, title_alternative);
         setValue(dest, YoutubeHelper.YT_CATEGORY, category);
         setValue(dest, YoutubeHelper.YT_PLAYLIST_INT, playlistEntryNumber);
         setValue(dest, YoutubeHelper.YT_3D, is3D());
         setValue(dest, YoutubeHelper.YT_CHANNEL_TITLE, channelTitle);
+        setValue(dest, YoutubeHelper.YT_CHANNEL_TITLE_ALTERNATIVE, channelTitle_alternative);
         setValue(dest, YoutubeHelper.YT_USER_NAME, user);
+        setValue(dest, YoutubeHelper.YT_USER_NAME_ALTERNATIVE, user_alternative);
         if (bestVideoItag != null) {
             setValue(dest, YoutubeHelper.YT_BEST_VIDEO, bestVideoItag.getBaseVariant().getiTagVideo().name());
         }
@@ -160,6 +167,7 @@ public class YoutubeClipData {
         setValue(dest, YoutubeHelper.YT_DATE_UPLOAD, dateUploaded);
         setValue(dest, YoutubeHelper.YT_VIEWS, views);
         dest.getTempProperties().setProperty(YoutubeHelper.YT_DESCRIPTION, description);
+        dest.getTempProperties().setProperty(YoutubeHelper.YT_DESCRIPTION_ALTERNATIVE, description_alternative);
     }
 
     protected boolean setValue(DownloadLink dest, String key, Object value) {
