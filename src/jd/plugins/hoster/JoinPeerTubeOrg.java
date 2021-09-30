@@ -23,7 +23,6 @@ import java.util.Map;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -45,9 +44,6 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
         super(wrapper);
     }
 
-    /* DEV NOTES */
-    // Tags:
-    // other:
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
@@ -130,7 +126,9 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
 
     /**
      * Debug function which can find new instances compatible with this code/plugin/template from:
-     * https://instances.joinpeertube.org/instances
+     * https://instances.joinpeertube.org/instances </br>
+     * Important: Do NOT overwrite old entries with these ones! Looks like this list is not reliably collecting "all" peertube instances
+     * and/or single peertube instances can turn off some kind of "allow my instance to appear on tht list" setting!
      */
     private static ArrayList<String> findNewScriptInstances() {
         if (false) {
@@ -187,25 +185,25 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
     /** Using API: https://docs.joinpeertube.org/api-rest-reference.html */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        if (!link.isNameSet()) {
+            /* Set fallback filename */
+            link.setName(this.getFID(link) + ".mp4");
+        }
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String host = Browser.getHost(link.getPluginPatternMatcher(), true);
-        getPage("https://" + host + "/api/v1/videos/" + this.getFID(link));
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        final Browser brc = br.cloneBrowser();
+        getPage(brc, "https://" + host + "/api/v1/videos/" + this.getFID(link));
+        if (brc.getHttpConnection().getResponseCode() == 404) {
             /* 2020-07-03: E.g. {"error":"Video not found"} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        checkErrorsAPI();
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        checkErrorsAPI(brc);
+        Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
         String title = (String) entries.get("name");
         final String createdAt = (String) entries.get("createdAt");
-        final String description = (String) entries.get("description");
-        if (!StringUtils.isEmpty(description) && link.getComment() == null) {
-            link.setComment(description);
-        }
         final String uploader = (String) JavaScriptEngineFactory.walkJson(entries, "account/name");
         String formattedDate = new Regex(createdAt, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
         if (formattedDate == null) {
@@ -255,10 +253,26 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
         }
         filename += title + ".mp4";
         link.setFinalFileName(filename);
+        String description = (String) entries.get("description");
+        if (!StringUtils.isEmpty(description) && link.getComment() == null) {
+            /* Description is truncated sometimes --> Grab full description if needed */
+            if (description.endsWith("...")) {
+                logger.info("Description seems to be truncated -> Trying to fetch full description");
+                brc.getPage(brc.getURL() + "/description");
+                entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                final Object descriptionO = entries.get("description");
+                if (descriptionO instanceof String) {
+                    description = descriptionO.toString();
+                } else {
+                    logger.warning("Failed to fetch full description");
+                }
+            }
+            link.setComment(description);
+        }
         return AvailableStatus.TRUE;
     }
 
-    protected void checkErrorsAPI() throws PluginException {
+    protected void checkErrorsAPI(final Browser br) throws PluginException {
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final String errorMsg = (String) entries.get("error");
         if (!StringUtils.isEmpty(errorMsg)) {
@@ -280,7 +294,7 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("text")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
