@@ -266,7 +266,7 @@ public class LiveMixTapesCom extends antiDDoSForHost {
                     }
                     final long passedTime = Time.systemIndependentCurrentJVMTimeMillis() - timeBefore;
                     wait -= passedTime;
-                    /* 2021-09-30: Pre download wait is skippable */
+                    /* 2021-09-30: Pre download wait is skippable, at least for single songs */
                     final boolean skipPreDownloadWait = true;
                     if (!skipPreDownloadWait) {
                         if (wait > 0) {
