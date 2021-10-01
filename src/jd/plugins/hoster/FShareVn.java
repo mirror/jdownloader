@@ -518,6 +518,8 @@ public class FShareVn extends PluginForHost {
         br.setAllowedResponseCodes(new int[] { 201, 400, 405, 406, 410, 424, 500 });
         /* Important! According to their API docs, API key ("App Key") is bound to User-Agent! */
         br.setHeader("User-Agent", getApiUserAgent());
+        /* Important: Doing API calls with API URL in Referer will result in error response 400! */
+        br.getHeaders().put("Referer", "https://fshare.vn/");
         return br;
     }
 
@@ -981,37 +983,7 @@ public class FShareVn extends PluginForHost {
                         br.getPage("https://" + getAPIHost() + "/api/user/get");
                         /* 2019-08-29: E.g. failure: {"code":201,"msg":"Not logged in yet!"} */
                         if (br.getHttpConnection().getResponseCode() == 201) {
-                            /* https://www.fshare.vn/api-doc#/Login%20-%20Logout%20-%20User%20info/refresh-token-v2 */
-                            logger.info("Session expired --> Attempting refresh");
-                            final Map<String, Object> map = new HashMap<String, Object>();
-                            map.put("token", token);
-                            map.put("app_key", appKey);
-                            /*
-                             * Important! Use separate Browser instance! Otherwise e.g. remaining Referer will cause error response 400 on
-                             * next request!
-                             */
-                            final Browser refreshLoginBR = br.cloneBrowser();
-                            final PostRequest refreshLoginReq = refreshLoginBR.createJSonPostRequest("https://" + getAPIHost() + "/api/user/refreshToken", JSonStorage.toString(map));
-                            /*
-                             * * 2021-07-26: This API call is broken serverside but we've implemented it nevertheless just in case they fix
-                             * it. If it fails we can still obtain a new token by logging in with mail and password.
-                             */
-                            refreshLoginBR.getPage(refreshLoginReq);
-                            final Map<String, Object> entries = JSonStorage.restoreFromString(refreshLoginBR.toString(), TypeRef.HASHMAP);
-                            if (entries.containsKey("token")) {
-                                logger.info("Successfully refreshed token");
-                                token = entries.get("token").toString();
-                                br.setCookie(getAPIHost(), "session_id", entries.get("session_id").toString());
-                                account.setProperty(PROPERTY_ACCOUNT_TOKEN, token);
-                                account.saveCookies(br.getCookies(getAPIHost()), PROPERTY_ACCOUNT_COOKIES);
-                                return token;
-                            } else {
-                                /*
-                                 * This should never happen and would indicate that the user e.g. has changed his password but let's try
-                                 * full login anyways as a last resort fallback.
-                                 */
-                                logger.info("Token refresh failed");
-                            }
+                            logger.info("Cookie login failed");
                         } else {
                             logger.info("Cookie login successful");
                             return token;
@@ -1019,20 +991,18 @@ public class FShareVn extends PluginForHost {
                     }
                 }
                 logger.info("Performing full login");
-                br.clearCookies(getAPIHost());
+                /* Important: Clear Referer otherwise we may get error 400! */
+                br.clearAll();
+                prepBrowserAPI(br);
                 final Map<String, Object> map = new HashMap<String, Object>();
                 map.put("user_email", account.getUser());
                 map.put("password", account.getPass());
-                // map.put("app_key", "L2S7R6ZMagggC5wWkQhX2+aDi467PPuftWUMRFSn"); --> Their old App API key
+                // map.put("app_key", "L2S7R6ZMagggC5wWkQhX2+aDi467PPuftWUMRFSn"); --> Their old public App API key
                 map.put("app_key", appKey);
-                /*
-                 * Important! Use separate Browser instance! Otherwise e.g. remaining Referer will cause error response 400 on next request!
-                 */
-                final Browser loginbr = br.cloneBrowser();
                 final PostRequest loginReq = br.createJSonPostRequest("https://" + getAPIHost() + "/api/user/login", JSonStorage.toString(map));
-                loginbr.getPage(loginReq);
-                checkErrorsAPI(loginbr, account, null);
-                final Map<String, Object> entries = JSonStorage.restoreFromString(loginbr.toString(), TypeRef.HASHMAP);
+                br.getPage(loginReq);
+                checkErrorsAPI(br, account, null);
+                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 token = (String) entries.get(PROPERTY_ACCOUNT_TOKEN);
                 /*
                  * session_id is valid for 6 hours after last usage which means as long as the users' JD is always running, every default
@@ -1074,6 +1044,9 @@ public class FShareVn extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         /* Only access this page if it has not been accessed before! */
         if (br.getURL() == null || !br.getURL().contains("/account/profile")) {
+            /* Important: Clear Referer otherwise we may get error 400! */
+            br.clearAll();
+            prepBrowserAPI(br);
             br.getPage("https://www." + this.getHost() + "/account/profile");
         }
         final String validUntil = br.getRegex("(?:Expire|Hạn dùng):</a>\\s*<span.*?>([^<>]*?)</span>").getMatch(0); // Version 3 (2018)
@@ -1143,6 +1116,8 @@ public class FShareVn extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         this.loginAPI(account, this.br, true);
         if (br.getURL() == null || !br.getURL().contains("/api/user/get")) {
+            /* Important: Clear Referer otherwise we may get error 400! */
+            prepBrowserAPI(br);
             br.getPage("https://" + getAPIHost() + "/api/user/get");
         }
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
