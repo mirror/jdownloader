@@ -31,18 +31,11 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -52,6 +45,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.ZdfDeMediathek;
 import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "3sat.de", "phoenix.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?zdf\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)", "https?://(?:www\\.)?3sat\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?3sat\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)", "https?://(?:www\\.)?phoenix\\.de/(?:.*?-\\d+\\.html.*|podcast/[A-Za-z0-9]+/video/rss\\.xml)" })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
@@ -83,6 +84,13 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         } else {
             return crawlZdfNew(param);
         }
+    }
+
+    @Override
+    public void init() {
+        super.init();
+        Browser.setRequestIntervalLimitGlobal("api.zdf.de", 750);
+        Browser.setRequestIntervalLimitGlobal("api.3sat.de", 750);
     }
 
     private static enum QUALITY {
@@ -199,9 +207,11 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
     // }
     // return;
     // }
-    private ArrayList<DownloadLink> crawlEmbeddedUrlsZdfNew(final CryptedLink param) throws IOException, PluginException {
+    private ArrayList<DownloadLink> crawlEmbeddedUrlsZdfNew(final CryptedLink param, final String apiToken) throws IOException, PluginException {
         final ArrayList<DownloadLink> results = new ArrayList<DownloadLink>();
-        this.br.getPage(param.getCryptedUrl());
+        final GetRequest request = br.createGetRequest(param.getCryptedUrl());
+        request.getHeaders().put("Api-Auth", "Bearer " + apiToken);
+        br.getPage(request);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
@@ -215,50 +225,30 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
     }
 
     /** Returns API parameters from html. */
-    private String[] getApiParams(final Browser br, final String url, final boolean returnHardcodedData) throws IOException {
-        String apitoken;
-        /* 2020-03-19: apitoken2 not required anymore?! */
-        String apitoken2;
-        String api_base;
-        String profile;
-        if (url == null) {
-            return null;
-        } else if (returnHardcodedData) {
-            if (url.contains("3sat.de")) {
-                /* 3sat.de */
-                /* 2019-11-29 */
-                apitoken = "22918a9c7a733c027addbcc7d065d4349d375825";
-                apitoken2 = "13e717ac1ff5c811c72844cebd11fc59ecb8bc03";
-                api_base = "https://api.3sat.de";
-                /* 2020-03-31 */
-                profile = "player2";
-            } else {
-                /* zdf.de / heute.de and so on */
-                /* 2020-03-19 */
-                apitoken = "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJOVDdrVWFTanNzNTZkaTZ5UjViQk9nbkpqZWw5QXQ1UGszX2JGcVRTMzFJIn0.eyJqdGkiOiJmYzlhZTA1Yi0wYmJhLTQ1YjMtOTU5Mi04YTIzMTAyNTg1Y2YiLCJleHAiOjE1ODUwNjc3MTYsIm5iZiI6MCwiaWF0IjoxNTg0NDYyOTE2LCJpc3MiOiJodHRwczovL3Nzby1yaC1zc28uYXBwcy5vcGVuc2hpZnQuemRmLmRlL2F1dGgvcmVhbG1zLzNzY2FsZSIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiJhY2RmZTZkYy03NGZhLTRlODAtOTNjNC1iZjNlZDNiYzFkMTQiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiIxMjhkNzI2ZSIsImF1dGhfdGltZSI6MCwic2Vzc2lvbl9zdGF0ZSI6IjUyNzlhNGRjLTc0ODItNGJkZS1iOTlhLWIzZTNjZTdiMDNmNCIsImFjciI6IjEiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoicHJvZmlsZSBlbWFpbCIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwiY2xpZW50SG9zdCI6IjE3Mi4yMy43NS4yNDQiLCJjbGllbnRJZCI6IjEyOGQ3MjZlIiwicHJlZmVycmVkX3VzZXJuYW1lIjoic2VydmljZS1hY2NvdW50LTEyOGQ3MjZlIiwiY2xpZW50QWRkcmVzcyI6IjE3Mi4yMy43NS4yNDQiLCJlbWFpbCI6InNlcnZpY2UtYWNjb3VudC0xMjhkNzI2ZUBwbGFjZWhvbGRlci5vcmcifQ.j2ssjrzdAhyOr54D18oYvhb-0LR0tViQZyIwIa9KN40h6pG1E32Dmiu2Rf_6lGNLl4uRO0I-CRIKti9HyIZSNHuH_3Gia5PqHLzWaVhapePMC_weuqdY5qJ5UkZQhD_zO5CFhxruRv7-Bhw3QEG5l8RSuN0Chh9YfD2MKZkpgHdMBO52m4rDSTKsxDuYGBIQlk_gaf3mUQiBdHoxZGTyf4yL9evy8rQUiCa4NgDsBBKaTDbc9cOwsMDlYsWLuqaStWIdJj9PYXjtjBlmCPhJgqO-c_DlFyjGCi2u0-BxMZP15iDGquAPa58LJywHWj-xajcmkN6Q9yDvo_P0zlIjzg";
-                apitoken2 = null;
-                api_base = "https://api.zdf.de";
-                /* 2020-03-31 */
-                profile = "player-3";
-            }
-            return new String[] { apitoken, apitoken2, api_base, profile };
+    private String[] getApiParams(final Browser br, final String url) throws IOException, PluginException {
+        final Browser brc;
+        if (br == null) {
+            brc = this.br;
+        } else if (url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
-            final Browser brc;
-            if (br == null) {
-                brc = this.br;
-            } else {
-                brc = br.cloneBrowser();
-                brc.setFollowRedirects(true);
-                brc.getPage(url);
-            }
-            apitoken = brc.getRegex("\"apiToken\"\\s*:\\s*\"([^\"\\']+)\"").getMatch(0);
-            apitoken2 = null;
-            api_base = brc.getRegex("apiService\\s*:\\s*'(https?://[^<>\"\\']+)'").getMatch(0);
-            profile = brc.getRegex("\\.json\\?profile=([^\"]+)\"").getMatch(0);
-            if (apitoken == null || api_base == null || profile == null) {
-                return null;
-            }
-            return new String[] { apitoken, apitoken2, api_base, profile };
+            brc = br.cloneBrowser();
+            brc.setFollowRedirects(true);
+            brc.getPage(url);
+        }
+        final String apitoken = brc.getRegex("\"apiToken\"\\s*:\\s*\"([^\"\\']+)\"").getMatch(0);
+        final String embed_content = brc.getRegex("\"embed_content\"\\s*:\\s*\"(/.*?)\"").getMatch(0);
+        final String api_base = brc.getRegex("apiService\\s*:\\s*'(https?://[^<>\"\\']+)'").getMatch(0);
+        String profile = brc.getRegex("\\.json\\?profile=([^\"]+)\"").getMatch(0);
+        final String config = brc.getRegex("\"config\"\\s*:\\s*\"(https?://.*?)\"").getMatch(0);
+        if (config != null) {
+            brc.getPage(config);
+            profile = brc.getRegex("\"apiProfile\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+        }
+        if (apitoken == null || api_base == null || profile == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            return new String[] { apitoken, api_base, profile, embed_content };
         }
     }
 
@@ -334,7 +324,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            return handleZdfJson(param, br);
+            return handleZdfJson(param, br, null);
         } else {
             logger.warning("Unsupported type?! --> " + type);
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -355,23 +345,27 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         } else {
             sophoraIDSource = param.getCryptedUrl();
         }
-        final String sophoraID = new Regex(sophoraIDSource, "/([^/]+)\\.html").getMatch(0);
+        String sophoraID = new Regex(sophoraIDSource, "/([^/]+)\\.html").getMatch(0);
         if (sophoraID == null) {
             /* Probably no videocontent - most likely, used added an invalid TYPER_ZDF_REDIRECT url. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String apiParams[] = getApiParams(br, param.getCryptedUrl(), false);
+        final String apiParams[] = getApiParams(br, param.getCryptedUrl());
         /* 2016-12-21: By hardcoding the apitoken we can save one http request thus have a faster crawl process :) */
-        this.br.getHeaders().put("Api-Auth", "Bearer " + apiParams[0]);
-        this.br.getPage(apiParams[2] + "/content/documents/" + sophoraID + ".json?profile=" + apiParams[3]);
+        if (apiParams[3] != null) {
+            sophoraID = apiParams[3];
+        }
+        final GetRequest request = br.createGetRequest(apiParams[1] + "/content/documents/" + sophoraID + ".json?profile=" + apiParams[2]);
+        request.getHeaders().put("Api-Auth", "Bearer " + apiParams[0]);
+        this.br.getPage(request);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        return handleZdfJson(param, br);
+        return handleZdfJson(param, br, apiParams[0]);
     }
 
     /** Handles ZDF json present in given browser after API request has been made before. */
-    private ArrayList<DownloadLink> handleZdfJson(final CryptedLink param, final Browser br) throws Exception {
+    private ArrayList<DownloadLink> handleZdfJson(final CryptedLink param, final Browser br, final String apiToken) throws Exception {
         final ArrayList<DownloadLink> allDownloadLinks = new ArrayList<DownloadLink>();
         Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final String contentType = (String) entries.get("contentType");
@@ -391,7 +385,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         if (mainVideoContent == null) {
             /* Not a single video? Maybe we have a playlist / embedded video(s)! */
             logger.info("Content is not a video --> Scanning html for embedded content");
-            final ArrayList<DownloadLink> results = crawlEmbeddedUrlsZdfNew(param);
+            final ArrayList<DownloadLink> results = crawlEmbeddedUrlsZdfNew(param, apiToken);
             if (results.size() == 0) {
                 results.add(this.createOfflinelink(param.getCryptedUrl(), "NO_DOWNLOADABLE_CONTENT"));
             }
@@ -518,24 +512,28 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         final boolean grabHLS = grabHlsAudio || ((grabHls170 || grabHls270 || grabHls360 || grabHls480 || grabHls570 || grabHls720) && !grabBest);
         final Map<String, Object> audioVideoMap = new HashMap<String, Object>();
         final String filename_packagename_base_title = date_formatted + "_" + tv_station + "_" + base_title;
-        short crawledDownloadTypesCounter = 0;
         boolean grabDownloadUrlsPossible = false;
         final List<String> hlsDupeArray = new ArrayList<String>();
         boolean atLeastOneSelectedVideoAudioVersionIsAvailable = false;
+        final HashSet<String> crawledTypes = new HashSet<String>();
         String internalVideoID = null;
         do {
             /**
              * TODO: Maybe prefer official download over stream download if available. Check if there are disadvantages e.g. lower quality
              * when doing so!
              */
-            if (crawledDownloadTypesCounter == 0) {
+            if (streamsJsonURL != null && crawledTypes.add(streamsJsonURL)) {
                 /* First round: Grab streams */
                 logger.info("Crawling stream URLs");
-                br.getPage(streamsJsonURL);
-            } else if (grabOfficialDownloadUrls && grabDownloadUrlsPossible && downloadsJsonURL != null) {
+                final GetRequest request = br.createGetRequest(streamsJsonURL);
+                request.getHeaders().put("Api-Auth", "Bearer " + apiToken);
+                br.getPage(request);
+            } else if (grabOfficialDownloadUrls && grabDownloadUrlsPossible && downloadsJsonURL != null && crawledTypes.add(downloadsJsonURL)) {
                 /* 2nd round: Grab ffficial video download URLs if possible and wanted by the user */
                 logger.info("Crawling download URLs");
-                br.getPage(downloadsJsonURL);
+                final GetRequest request = br.createGetRequest(downloadsJsonURL);
+                request.getHeaders().put("Api-Auth", "Bearer " + apiToken);
+                br.getPage(request);
             } else {
                 /* Fail safe && case when there are no additional downloadlinks available. */
                 logger.info("Stopping as we've crawled all qualities");
@@ -615,7 +613,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     }
                 }
             }
-            crawledDownloadTypesCounter++;
         } while (!this.isAbort());
         final ArrayList<String> directurlDupesList = new ArrayList<String>();
         final boolean grabUnknownQualities = cfg.isAddUnknownQualitiesEnabled();
@@ -701,7 +698,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     }
                     hlsDupeArray.add(hls_master_dupe_string);
                     /* Access (hls) master. */
-                    br.getPage(uri);
+                    final GetRequest request = br.createGetRequest(uri);
+                    request.getHeaders().put("Api-Auth", "Bearer " + apiToken);
+                    br.getPage(request);
                     final List<HlsContainer> allHlsContainers = HlsContainer.getHlsQualities(this.br);
                     long duration = -1;
                     for (final HlsContainer hlscontainer : allHlsContainers) {
@@ -816,8 +815,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         final DownloadLink dl = createDownloadlink(finalDownloadURL);
                         dl.setContentUrl(param.getCryptedUrl());
                         /**
-                         * Usually filesize is only given for the official downloads.</br>
-                         * Only set it here if we haven't touched the original downloadurls!
+                         * Usually filesize is only given for the official downloads.</br> Only set it here if we haven't touched the
+                         * original downloadurls!
                          */
                         if (filesize > 0) {
                             dl.setAvailable(true);
@@ -1020,15 +1019,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         if (!StringUtils.isEmpty(tv_station)) {
             dl.setProperty(ZdfDeMediathek.PROPERTY_tv_station, tv_station);
         }
-    }
-
-    private void accessPlayerJson(final String api_base, final String player_url_template, final String playerID) throws IOException {
-        /* E.g. "/tmd/2/{playerId}/vod/ptmd/mediathek/161215_sendungroyale065ddm_nmg" */
-        String player_url = player_url_template.replace("{playerId}", playerID);
-        if (player_url.startsWith("/")) {
-            player_url = api_base + player_url;
-        }
-        this.br.getPage(player_url);
     }
 
     public static String formatDateZDF(String input) {

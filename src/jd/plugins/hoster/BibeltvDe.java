@@ -16,7 +16,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -141,22 +140,36 @@ public class BibeltvDe extends PluginForHost {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (useCRNURL) {
-            br.getPage("https://www.bibeltv.de/mediathek/api/videodetails/videos?q=contains(crn,%22" + fid + "%22)&expand=");
+        final String json;
+        if (true) {
+            // new, 01.10.2021
+            br.getPage(link.getPluginPatternMatcher());
+            json = br.getRegex("<script id=\"__NEXT_DATA__\"\\s*type\\s*=\\s*\"application/json\"\\s*>\\s*(.*?)\\s*</script>").getMatch(0);
+            if (json == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         } else {
-            br.getPage(String.format("https://www.bibeltv.de/mediathek/api/videodetails/videos?q=contains(api_id,%s)&expand=", fid));
+            if (useCRNURL) {
+                br.getPage("https://www.bibeltv.de/mediathek/api/videodetails/videos?q=contains(crn,%22" + fid + "%22)&expand=");
+            } else {
+                br.getPage(String.format("https://www.bibeltv.de/mediathek/api/videodetails/videos?q=contains(api_id,%s)&expand=", fid));
+            }
+            json = br.toString();
         }
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         try {
-            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            entries = JavaScriptEngineFactory.jsonToJavaMap(json);
         } catch (final Throwable e) {
             /* 2019-12-17: No parsable json --> Offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
         }
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "items/{0}");
+        entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/videoPageData/videos/{0}");
         String filename = (String) entries.get("name");
+        if (filename == null) {
+            filename = (String) entries.get("title");
+        }
         final String description = (String) entries.get("descriptionLong");
         if (StringUtils.isEmpty(filename)) {
             /* Fallback */
@@ -168,12 +181,15 @@ public class BibeltvDe extends PluginForHost {
         }
         try {
             /* 2019-12-18: They provide HLS, DASH and http(highest quality only) */
-            final List<Object> ressourcelist = (List) entries.get("urls");
-            long max_width = 0;
+            final List<Object> ressourcelist = (List) entries.get("videoUrls");
+            long max_width = -1;
             for (final Object videoo : ressourcelist) {
                 final Map<String, Object> entry = (Map<String, Object>) videoo;
                 final String type = (String) entry.get("type");
-                final String url = (String) entry.get("url");
+                String url = (String) entry.get("url");
+                if (url == null) {
+                    url = (String) entry.get("src");
+                }
                 if (StringUtils.equals("application/x-mpegURL", type)) {
                     if (false) {
                         // split audio/video, not yet supported
@@ -181,7 +197,7 @@ public class BibeltvDe extends PluginForHost {
                     }
                 } else {
                     final long max_width_temp = JavaScriptEngineFactory.toLong(entry.get("width"), 0);
-                    if (StringUtils.isEmpty(url) || max_width_temp == 0 || !"video/mp4".equals(type)) {
+                    if (StringUtils.isEmpty(url) || !"video/mp4".equals(type)) {
                         logger.info("Unsupported:" + url + "|" + type);
                         /* Skip invalid items and only grab http streams, ignore e.g. DASH streams. */
                         continue;
