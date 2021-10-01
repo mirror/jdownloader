@@ -8,3 +8,4 @@ LogTable_onContextMenu_disable_=Deselektuj
 LogTable_onContextMenu_enable_=Selektuj
 SendLogDialog_SendLogDialog_title_=Pošalji izvještaj o Greški
 SendLogDialog_layoutDialogContent_desc_=Kada se problem pojavio? Molimo provjerite sve unose koji su vrijedni razmatranja!
+SendLogDialog_layoutDialogContent_nologs_=Nisu pronađeni dostupni logovi!
