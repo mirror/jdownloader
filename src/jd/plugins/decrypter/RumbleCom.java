@@ -33,6 +33,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -64,28 +66,33 @@ public class RumbleCom extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[^/]+\\.html");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:[^/]+\\.html|embedJS/[a-z0-9]+)");
         }
         return ret.toArray(new String[0]);
     }
 
+    private static final String TYPE_EMBED  = "https?://[^/]+/embedJS/([a-z0-9]+)";
+    private static final String TYPE_NORMAL = "https?://[^/]+/([^/]+)\\.html";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        br.getPage(parameter);
-        final String videoID = br.getRegex("\"video\":\"([a-z0-9]+)\"").getMatch(0);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        } else if (videoID == null) {
-            logger.info("Failed to find any downloadable content");
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        final String videoID;
+        if (param.getCryptedUrl().matches(TYPE_EMBED)) {
+            videoID = new Regex(param.getCryptedUrl(), TYPE_EMBED).getMatch(0);
+        } else {
+            br.getPage(param.getCryptedUrl());
+            videoID = br.getRegex("\"video\":\"([a-z0-9]+)\"").getMatch(0);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (videoID == null) {
+                logger.info("Failed to find any downloadable content");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
-        br.getPage("/embedJS/u3/?request=video&v=" + videoID);
+        br.getPage("https://" + this.getHost() + "/embedJS/u3/?request=video&v=" + videoID);
+        /* Double-check for offline content */
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         String dateFormatted = null;
@@ -120,7 +127,8 @@ public class RumbleCom extends PluginForDecrypt {
                 continue;
             }
             final DownloadLink dl = this.createDownloadlink(url);
-            dl.setContentUrl(parameter);
+            /* Set this so when user copies URL of any video quality he'll get the URL to the main video. */
+            dl.setContentUrl(param.getCryptedUrl());
             dl.setForcedFileName(baseTitle + "_" + qualityModifier + ".mp4");
             dl.setAvailable(true);
             dl._setFilePackage(fp);
