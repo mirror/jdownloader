@@ -17,8 +17,10 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2.TYPE;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
@@ -28,6 +30,7 @@ import org.jdownloader.plugins.components.config.XvideosComConfigCore.PreferredH
 import org.jdownloader.plugins.components.config.XvideosComConfigCore.PreferredHTTPQuality;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -381,7 +384,7 @@ public abstract class XvideosCore extends PluginForHost {
                 logger.info("Looking for official download ...");
                 final Browser brc = br.cloneBrowser();
                 brc.getPage(this.br.getURL("/video-download/" + videoID + "/"));
-                /* TODO: Add user quality selection */
+                /* TODO: Add user preferred quality selection */
                 if (brc.getURL().contains(videoID)) {
                     final String[] qualities = { "URL_MP4_4K", "URL_MP4HD", "URL", "URL_LOW" };
                     for (final String quality : qualities) {
@@ -597,15 +600,26 @@ public abstract class XvideosCore extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
+                logger.info("Performing full login");
+                if (!account.getUser().contains("@")) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Bitte gib deine E-Mail Adresse in das 'Benutzername' Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please enter your e-mail address into the 'username' field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getPage("https://www." + this.getHost() + "/");
                 br.postPage("/account/signinform", "");
-                final String html = PluginJSonUtils.getJson(br, "form");
+                Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                final String html = (String) entries.get("form");
                 if (!StringUtils.isEmpty(html)) {
                     br.getRequest().setHtmlCode(html);
                 }
                 final Form loginform = br.getForm(0);
-                if (loginform == null || !loginform.hasInputFieldByName("signin-form%5Bpassword%5D")) {
+                if (loginform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else if (!loginform.hasInputFieldByName("signin-form%5Bpassword%5D")) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 loginform.setAction("/account/signinform");
@@ -617,32 +631,23 @@ public abstract class XvideosCore extends PluginForHost {
                 loginform.put(Encoding.urlEncode("signin-form[password]"), Encoding.urlEncode(account.getPass()));
                 loginform.put(Encoding.urlEncode("signin-form[rememberme]"), "on");
                 if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(loginform.getHtmlCode()) || loginform.hasInputFieldByName(Encoding.urlEncode("signin-form[hidden_captcha]"))) {
-                    final DownloadLink dlinkbefore = this.getDownloadLink();
-                    try {
-                        final DownloadLink dl_dummy;
-                        if (dlinkbefore != null) {
-                            dl_dummy = dlinkbefore;
-                        } else {
-                            dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
-                            this.setDownloadLink(dl_dummy);
-                        }
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                        /*
-                         * 2020-10-13: TODO: It seems like this is send as a base64 crypted/altered string?? I was able to easily trigger
-                         * login captchas by trying to sign in a german FREE-account via Singapore VPN.
-                         */
+                    final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+                    final String recaptchaV2Response = rc2.getToken();
+                    /* 2021-10-01: psp: Captchas can be easily triggered by using a VPN. Last time I've used a Japan VPN. */
+                    if (rc2.getType() == TYPE.INVISIBLE) {
                         loginform.put(Encoding.urlEncode("signin-form[hidden_captcha]"), Encoding.urlEncode(recaptchaV2Response));
-                        // loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                    } finally {
-                        this.setDownloadLink(dlinkbefore);
+                    } else {
+                        loginform.put(Encoding.urlEncode("g-recaptcha-response"), Encoding.urlEncode(recaptchaV2Response));
                     }
+                    // loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 }
                 br.submitForm(loginform);
-                final String premium_redirect = PluginJSonUtils.getJson(br, "premium_redirect");
-                final String redirect_domain = PluginJSonUtils.getJson(br, "redirect_domain");
-                final String premiumStatus = PluginJSonUtils.getJson(br, "is_premium");
+                entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                final String premium_redirect = (String) entries.get("premium_redirect");
+                final String redirect_domain = (String) entries.get("redirect_domain");
+                final Object premiumStatus = entries.get("is_premium");
                 /* E.g. xnxx.gold response: {"form_valid":true,"form_displayed":"signin","user_main_cat":"straight","is_premium":true} */
-                if (StringUtils.isEmpty(premium_redirect) && StringUtils.isEmpty(redirect_domain) && StringUtils.isEmpty(premiumStatus)) {
+                if (StringUtils.isEmpty(premium_redirect) && StringUtils.isEmpty(redirect_domain) && premiumStatus != null) {
                     invalidLogin();
                 }
                 if (!StringUtils.isEmpty(redirect_domain)) {
