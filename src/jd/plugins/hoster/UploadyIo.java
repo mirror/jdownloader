@@ -27,8 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class ApkadminCom extends XFileSharingProBasic {
-    public ApkadminCom(final PluginWrapper wrapper) {
+public class UploadyIo extends XFileSharingProBasic {
+    public UploadyIo(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -37,13 +37,13 @@ public class ApkadminCom extends XFileSharingProBasic {
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: 2021-02-01: null<br />
+     * captchatype-info: 2021-10-04: reCaptchaV2<br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "apkadmin.com" });
+        ret.add(new String[] { "uploady.io" });
         return ret;
     }
 
@@ -103,16 +103,5 @@ public class ApkadminCom extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
-    }
-
-    @Override
-    public String[] scanInfo(final String[] fileInfo) {
-        super.scanInfo(fileInfo);
-        /* 2021-10-04 */
-        final String betterFilename = br.getRegex("(?i)File\\s*:\\s*<strong>([^<>\"]+)</strong>").getMatch(0);
-        if (betterFilename != null) {
-            fileInfo[0] = betterFilename;
-        }
-        return fileInfo;
     }
 }
