@@ -58,7 +58,7 @@ public class Mangafox extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://fanfox.net/";
+        return "https://fanfox.net/";
     }
 
     @Override
@@ -145,6 +145,8 @@ public class Mangafox extends PluginForHost {
 
     public static boolean isOffline(final Browser br) {
         if (br.containsHTML("cannot be found|not available yet")) {
+            return true;
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
             return true;
         } else {
             return false;
