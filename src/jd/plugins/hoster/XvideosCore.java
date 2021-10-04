@@ -329,55 +329,59 @@ public abstract class XvideosCore extends PluginForHost {
         }
         String videoURL = null;
         if (isDownload || !PluginJsonConfig.get(XvideosComConfig.class).isEnableFastLinkcheckForHostPlugin()) {
-            final String hlsURL = getVideoHLSMaster();
+            final String hlsMaster = br.getRegex("html5player\\.setVideoHLS\\('(.*?)'\\)").getMatch(0);
             /**
              * 2021-01-27: This website can "shadow ban" users who download "too much". They will then deliver all videos in 240p only. This
              * is an attempt to detect this.</br>
              * See also: https://board.jdownloader.org/showthread.php?t=86587
              */
-            if (PluginJsonConfig.get(XvideosComConfig.class).isTryToRecognizeLimit() && isDownload && StringUtils.isEmpty(hlsURL)) {
+            if (PluginJsonConfig.get(XvideosComConfig.class).isTryToRecognizeLimit() && isDownload && StringUtils.isEmpty(hlsMaster)) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Low quality block active", 60 * 60 * 1000l);
             }
             if (PluginJsonConfig.get(XvideosComConfig.class).isPreferHLSDownload()) {
-                if (StringUtils.isNotEmpty(hlsURL)) {
+                if (StringUtils.isNotEmpty(hlsMaster)) {
+                    logger.info("FoundHlsMaster --> Looking for preferred quality");
                     final Browser m3u8 = br.cloneBrowser();
-                    m3u8.getPage(hlsURL);
+                    m3u8.getPage(hlsMaster);
                     final int preferredHLSQuality = getPreferredHLSQuality();
-                    HlsContainer selectedQuality = null;
+                    HlsContainer userPreferredQuality = null;
                     final List<HlsContainer> hlsqualities = HlsContainer.getHlsQualities(m3u8);
                     for (final HlsContainer currentQuality : hlsqualities) {
                         final int width = currentQuality.getHeight();
                         if (width == preferredHLSQuality) {
-                            logger.info("Found user selected HLS quality: " + preferredHLSQuality + ">" + currentQuality);
-                            selectedQuality = currentQuality;
+                            /* We found the quality our user prefers. */
+                            userPreferredQuality = currentQuality;
                             break;
                         }
                     }
-                    if (selectedQuality == null) {
-                        selectedQuality = HlsContainer.findBestVideoByBandwidth(hlsqualities);
-                        logger.info("Failed to find user-selected HLS quality --> Fallback to BEST>" + selectedQuality);
+                    final HlsContainer chosenQuality;
+                    if (userPreferredQuality != null) {
+                        chosenQuality = userPreferredQuality;
+                        logger.info("Found user selected HLS quality: " + preferredHLSQuality + ">" + userPreferredQuality.getHeight());
+                    } else {
+                        chosenQuality = HlsContainer.findBestVideoByBandwidth(hlsqualities);
+                        logger.info("Failed to find user-selected HLS quality --> Fallback to BEST: " + chosenQuality.getHeight());
                     }
-                    if (selectedQuality != null) {
-                        if (isDownload) {
-                            this.hlsContainer = selectedQuality;
-                        }
-                        final List<M3U8Playlist> playLists = M3U8Playlist.loadM3U8(selectedQuality.getDownloadurl(), m3u8);
-                        long estimatedSize = -1;
-                        for (M3U8Playlist playList : playLists) {
-                            if (selectedQuality.getBandwidth() > 0) {
-                                playList.setAverageBandwidth(selectedQuality.getBandwidth());
-                                estimatedSize += playList.getEstimatedSize();
-                            }
-                        }
-                        if (estimatedSize > 0) {
-                            link.setDownloadSize(estimatedSize);
-                        }
-                        return AvailableStatus.TRUE;
+                    if (isDownload) {
+                        this.hlsContainer = chosenQuality;
                     }
+                    final List<M3U8Playlist> playLists = M3U8Playlist.loadM3U8(chosenQuality.getDownloadurl(), m3u8);
+                    long estimatedSize = -1;
+                    for (M3U8Playlist playList : playLists) {
+                        if (chosenQuality.getBandwidth() > 0) {
+                            playList.setAverageBandwidth(chosenQuality.getBandwidth());
+                            estimatedSize += playList.getEstimatedSize();
+                        }
+                    }
+                    if (estimatedSize > 0) {
+                        link.setDownloadSize(estimatedSize);
+                    }
+                    return AvailableStatus.TRUE;
                 } else {
                     logger.info("Failed to find HLS qualities!");
                 }
-            } else if (account != null) {
+            }
+            if (account != null) {
                 /* When logged-in, official downloadlinks can be available */
                 logger.info("Looking for official download ...");
                 final Browser brc = br.cloneBrowser();
@@ -430,10 +434,6 @@ public abstract class XvideosCore extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
-    }
-
-    private String getVideoHLSMaster() {
-        return br.getRegex("html5player\\.setVideoHLS\\('(.*?)'\\)").getMatch(0);
     }
 
     private String getVideoFlv() {

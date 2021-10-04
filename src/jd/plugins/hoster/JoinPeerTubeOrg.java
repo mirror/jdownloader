@@ -23,7 +23,11 @@ import java.util.Map;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.JoinPeerTubeOrgConfig;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -49,6 +53,7 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
+    private String               dllinkHlsMaster   = null;
     private boolean              server_issues     = false;
 
     @Override
@@ -222,6 +227,7 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
             final List<Map<String, Object>> streamingPlaylists = (List<Map<String, Object>>) entries.get("streamingPlaylists");
             if (!streamingPlaylists.isEmpty()) {
                 playlistLoop: for (final Map<String, Object> streamPlaylist : streamingPlaylists) {
+                    dllinkHlsMaster = (String) streamPlaylist.get("playlistUrl");
                     /* Expect array to be pre-sorted best to worst quality. */
                     final List<Map<String, Object>> streams = (List<Map<String, Object>>) streamPlaylist.get("files");
                     for (final Map<String, Object> stream : streams) {
@@ -231,7 +237,12 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
                             this.dllink = thisDownloadlink;
                             final long filesize = ((Number) stream.get("size")).longValue();
                             if (filesize > 0) {
-                                link.setVerifiedFileSize(filesize);
+                                if (PluginJsonConfig.get(JoinPeerTubeOrgConfig.class).isPreferHLS()) {
+                                    /* HLS download size will be different. */
+                                    link.setDownloadSize(filesize);
+                                } else {
+                                    link.setVerifiedFileSize(filesize);
+                                }
                             }
                             logger.info("Selected quality: " + resolution.get("label"));
                             break playlistLoop;
@@ -290,25 +301,33 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
         requestFileInformation(link);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink)) {
+        } else if (StringUtils.isEmpty(dllink) || (StringUtils.isEmpty(dllinkHlsMaster) && PluginJsonConfig.get(JoinPeerTubeOrgConfig.class).isPreferHLS())) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
+        if (PluginJsonConfig.get(JoinPeerTubeOrgConfig.class).isPreferHLS()) {
+            br.getPage(this.dllinkHlsMaster);
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
+            dl.startDownload();
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+                }
             }
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-            }
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     @Override
@@ -347,5 +366,10 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
         } else {
             return null;
         }
+    }
+
+    @Override
+    public Class<? extends JoinPeerTubeOrgConfig> getConfigInterface() {
+        return JoinPeerTubeOrgConfig.class;
     }
 }
