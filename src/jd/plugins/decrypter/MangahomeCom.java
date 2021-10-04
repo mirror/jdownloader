@@ -80,14 +80,11 @@ public class MangahomeCom extends antiDDoSForDecrypt {
             final String chapter_formatted = df_chapter.format(chapter_main);
             final String page_formatted = df_page.format(page);
             // final String finallink = "directhttp://" + server_urlpart + chapter_formatted + chapter_str_extra + "-" + page_formatted +
-            // ext;
             final String singleImageURL = this.br.getBaseURL() + "c" + chapter_str + "/" + page + ".html";
             final DownloadLink dl = this.createDownloadlink(singleImageURL);
             final String filename = url_name + "_" + chapter_formatted + chapter_str_extra + "_" + page_formatted + ext;
             dl.setName(filename);
             dl.setProperty("filename", filename);
-            // dl.setProperty("pageurl", singleImageURL);
-            // dl.setContentUrl(singleImageURL);
             dl.setLinkID(filename);
             dl.setAvailable(true);
             decryptedLinks.add(dl);
