@@ -17,7 +17,6 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Random;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
@@ -37,7 +36,7 @@ public class MangahomeCom extends antiDDoSForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replaceFirst("mangakoi\\.com", "mangahome.com");
         br.setFollowRedirects(true);
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -82,13 +81,13 @@ public class MangahomeCom extends antiDDoSForDecrypt {
             final String page_formatted = df_page.format(page);
             // final String finallink = "directhttp://" + server_urlpart + chapter_formatted + chapter_str_extra + "-" + page_formatted +
             // ext;
-            final String page_url = this.br.getBaseURL() + "c" + chapter_str + "/" + page + ".html";
-            final DownloadLink dl = this.createDownloadlink("http://mangakoidecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
+            final String singleImageURL = this.br.getBaseURL() + "c" + chapter_str + "/" + page + ".html";
+            final DownloadLink dl = this.createDownloadlink(singleImageURL);
             final String filename = url_name + "_" + chapter_formatted + chapter_str_extra + "_" + page_formatted + ext;
             dl.setName(filename);
             dl.setProperty("filename", filename);
-            dl.setProperty("pageurl", page_url);
-            dl.setContentUrl(page_url);
+            // dl.setProperty("pageurl", singleImageURL);
+            // dl.setContentUrl(singleImageURL);
             dl.setLinkID(filename);
             dl.setAvailable(true);
             decryptedLinks.add(dl);

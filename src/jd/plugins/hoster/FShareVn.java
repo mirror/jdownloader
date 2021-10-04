@@ -985,6 +985,8 @@ public class FShareVn extends PluginForHost {
                         if (br.getHttpConnection().getResponseCode() == 201) {
                             logger.info("Cookie login failed");
                         } else {
+                            logger.info("Cookie login looks good --> Checking for other errors");
+                            checkErrorsAPI(br, account, null);
                             logger.info("Cookie login successful");
                             return token;
                         }

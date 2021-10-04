@@ -22,6 +22,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -37,7 +38,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fanfox.net" }, urls = { "https?://fanfox\\.net/manga/[^/]+/(?:v[A-Za-z0-9]+/)?c[\\d\\.]+/\\d+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fanfox.net", "mangahome.com" }, urls = { "https?://(?:www\\.)?fanfox\\.net/manga/[^/]+/(?:v[A-Za-z0-9]+/)?c[\\d\\.]+/\\d+\\.html", "https?://(?:www\\.)?mangahome\\.com/manga/[^/]+/(?:v[A-Za-z0-9]+/)?c[\\d\\.]+/\\d+\\.html" })
 public class Mangafox extends PluginForHost {
     public Mangafox(PluginWrapper wrapper) {
         super(wrapper);
@@ -78,16 +79,25 @@ public class Mangafox extends PluginForHost {
         if (isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Regex urlregex = new Regex(link.getPluginPatternMatcher(), "(manga/[^/]+.*?)/(\\d+)\\.html$");
+        final Regex urlregex = new Regex(link.getPluginPatternMatcher(), "(manga/.*?)/(\\d+)\\.html$");
         final String urlpart = urlregex.getMatch(0);
         final String page = urlregex.getMatch(1);
-        final String chapterID = br.getRegex("var chapterid =(\\d+);").getMatch(0);
+        String chapterID = br.getRegex("var chapterid\\s*=(\\d+);").getMatch(0);
+        if (chapterID == null) {
+            /* 2021-10-04: mangahome.com */
+            chapterID = br.getRegex("var chapter_id\\s*=\\s*(\\d+);").getMatch(0);
+        }
         if (chapterID == null || urlpart == null || page == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Try to get downloadlink for simgle image */
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getPage("http://fanfox.net/" + urlpart + "/chapterfun.ashx?cid=" + chapterID + "&page=" + page + "&key=");
+        final UrlQuery query = new UrlQuery();
+        query.add("cid", chapterID);
+        query.add("page", page);
+        query.add("key", "");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getPage("https://" + br.getHost(true) + "/" + urlpart + "/chapterfun.ashx?" + query.toString());
         dllink = decodeDownloadLink(br.toString());
         final String url_filename = urlpart.replace("/", "_") + "_" + page;
         String filename = link.getFinalFileName();
@@ -136,10 +146,9 @@ public class Mangafox extends PluginForHost {
     public static boolean isOffline(final Browser br) {
         if (br.containsHTML("cannot be found|not available yet")) {
             return true;
-        } else if (!br.containsHTML("class=\"reader\\-main")) {
-            return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     private String decodeDownloadLink(final String s) throws IOException {
