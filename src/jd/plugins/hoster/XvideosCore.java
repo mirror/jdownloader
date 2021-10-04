@@ -275,11 +275,9 @@ public abstract class XvideosCore extends PluginForHost {
             br.getPage(redirect);
             counter += 1;
         }
-        if (br.containsHTML("(This video has been deleted|Page not found|>Sorry, this video is not available\\.|>We received a request to have this video deleted|class=\"inlineError\")")) {
-            logger.info("Content offline by html code");
+        if (br.containsHTML("(?i)(This video has been deleted|Page not found|>Sorry, this video is not available\\.|>We received a request to have this video deleted|class=\"inlineError\")")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection().getResponseCode() == 404) {
-            logger.info("Content offline by response code 404");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!this.canHandle(br.getURL())) {
             /* 2020-12-15: E.g. redirect to mainpage */
@@ -639,7 +637,6 @@ public abstract class XvideosCore extends PluginForHost {
                     } else {
                         loginform.put(Encoding.urlEncode("g-recaptcha-response"), Encoding.urlEncode(recaptchaV2Response));
                     }
-                    // loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 }
                 br.submitForm(loginform);
                 entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
@@ -648,7 +645,7 @@ public abstract class XvideosCore extends PluginForHost {
                 final Object premiumStatus = entries.get("is_premium");
                 /* E.g. xnxx.gold response: {"form_valid":true,"form_displayed":"signin","user_main_cat":"straight","is_premium":true} */
                 if (StringUtils.isEmpty(premium_redirect) && StringUtils.isEmpty(redirect_domain) && premiumStatus != null) {
-                    invalidLogin();
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 if (!StringUtils.isEmpty(redirect_domain)) {
                     /* FREE account */
@@ -661,7 +658,7 @@ public abstract class XvideosCore extends PluginForHost {
                 }
                 /* Double-check! */
                 if (!isLoggedin(br)) {
-                    invalidLogin();
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 if (premium_redirect != null && StringUtils.containsIgnoreCase(br.getHost(), this.getPremiumDomain())) {
                     account.setType(AccountType.PREMIUM);
@@ -670,11 +667,11 @@ public abstract class XvideosCore extends PluginForHost {
                 } else {
                     account.setType(AccountType.FREE);
                 }
-                account.saveCookies(br.getCookies(this.getHost()), "");
                 /*
                  * Always save both types of cookies otherwise cookie-login won't work and/or we'd never be able to notice whenever e.g. a
                  * free account changes to premium status.
                  */
+                account.saveCookies(br.getCookies(this.getHost()), "");
                 account.saveCookies(br.getCookies(this.getPremiumDomain()), "premium");
                 return true;
             } catch (final PluginException e) {
@@ -685,16 +682,6 @@ public abstract class XvideosCore extends PluginForHost {
                 throw e;
             }
         }
-    }
-
-    private void invalidLogin() throws PluginException {
-        final String msg;
-        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-            msg = "Ungültige Zugangsdaten!\r\nPrüfe deine Zugangsdaten und gib deine E-Mail Adresse in das Benutzername Feld ein!";
-        } else {
-            msg = "Invalid logins!\r\nCheck your login credentials and enter your E-Mail address into the username field!";
-        }
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     private boolean attemptCookieLogin(final Plugin plugin, final Account account) throws IOException {
