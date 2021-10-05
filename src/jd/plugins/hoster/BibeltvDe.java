@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -31,12 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bibeltv.de" }, urls = { "https?://(?:www\\.)?bibeltv\\.de/mediathek/(videos/crn/\\d+|videos/([a-z0-9\\-]+-\\d+|\\d+-[a-z0-9\\-]+))" })
 public class BibeltvDe extends PluginForHost {
@@ -100,7 +99,13 @@ public class BibeltvDe extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         /* This website contains video content ONLY! */
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        if (!link.isNameSet()) {
+            final String tempName = new Regex(link.getPluginPatternMatcher(), "/videos/(.+)").getMatch(0);
+            if (tempName == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setName(tempName + ".mp4");
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 500 });
@@ -166,6 +171,10 @@ public class BibeltvDe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
         }
         entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/videoPageData/videos/{0}");
+        if (entries == null) {
+            /* Probably no video item available / video offline --> Website redirects to 404 page. */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = (String) entries.get("name");
         if (filename == null) {
             filename = (String) entries.get("title");
@@ -182,6 +191,10 @@ public class BibeltvDe extends PluginForHost {
         try {
             /* 2019-12-18: They provide HLS, DASH and http(highest quality only) */
             final List<Object> ressourcelist = (List) entries.get("videoUrls");
+            if (ressourcelist == null) {
+                /* Most likely video is not available anymore because current date is > date value in field "schedulingEnd". */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             long max_width = -1;
             for (final Object videoo : ressourcelist) {
                 final Map<String, Object> entry = (Map<String, Object>) videoo;
@@ -210,7 +223,11 @@ public class BibeltvDe extends PluginForHost {
                 }
             }
         } catch (final Throwable e) {
-            logger.warning("Failed to find downloadurl");
+            if (e instanceof PluginException) {
+                throw e;
+            } else {
+                logger.warning("Failed to find downloadurl");
+            }
         }
         if (!StringUtils.isEmpty(mp4URL)) {
             mp4URL = Encoding.htmlDecode(mp4URL);

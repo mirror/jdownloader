@@ -749,7 +749,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      *         false: Website is not in maintenance mode and should usually work fine.
      */
     protected boolean isWebsiteUnderMaintenance(final Browser br) {
-        final String pattern = "(?i)\">\\s*This server is in maintenance mode";
+        final String pattern = "(?i)>\\s*This server is in maintenance mode";
         return br.getHttpConnection().getResponseCode() == 500 || (br.containsHTML(pattern) && new Regex(correctBR(br), pattern).matches());
     }
 
@@ -3112,7 +3112,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         } else if (new Regex(html, ">\\s*Expired download session").matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Expired download session'", 10 * 60 * 1000l);
         } else if (isWebsiteUnderMaintenance(br)) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is under maintenance", 2 * 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is under maintenance", 30 * 60 * 1000l);
         }
         /* Host-type specific errors */
         /* Videohoster */
