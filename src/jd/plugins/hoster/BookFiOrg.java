@@ -22,7 +22,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -31,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bookfi.net" }, urls = { "https?://(www\\.)?([a-z]+\\.)?(?:bookfi\\.(?:org|net)|bookzz\\.org|b-ok\\.org||b-ok\\.cc)/((book|dl)/\\d+(/[a-z0-9]+)?|md5/[A-F0-9]{32})" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "b-ok.cc" }, urls = { "https?://(www\\.)?([a-z]+\\.)?(?:bookfi\\.(?:org|net)|bookzz\\.org|b-ok\\.org||b-ok\\.cc)/((book|dl)/\\d+(/[a-z0-9]+)?|md5/[A-F0-9]{32})" })
 public class BookFiOrg extends antiDDoSForHost {
     // DEV NOTES
     // they share the same template
@@ -45,23 +44,22 @@ public class BookFiOrg extends antiDDoSForHost {
         return "http://" + this.getHost() + "/";
     }
 
-    public void correctDownloadLink(final DownloadLink link) {
-        if (link.getDownloadURL().contains("bookfi.")) {
-            if (link.getDownloadURL().matches("https?://(?:www\\.)?bookfi\\.(?:net|org)/dl/\\d+.+")) {
-                final String fid = new Regex(link.getDownloadURL(), "bookfi\\.(?:net|org)/dl/(\\d+)").getMatch(0);
-                link.setUrlDownload("https://bookfi.net/book/" + fid);
-            } else {
-                link.setUrlDownload(link.getDownloadURL().replaceAll("(?:(www|[a-z]{2})\\.)?" + Browser.getHost(link.getPluginPatternMatcher()) + "/", "en.bookfi.net/"));
-            }
-        }
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
     private static final String TYPE_MD5 = "https?://[^/]+/md5/([a-f0-9]{32})$";
+
+    @Override
+    public String rewriteHost(String host) {
+        /* 2021-10-05: bookifi.net --> b-ok.cc */
+        if (host == null || host.equalsIgnoreCase("bookfi.net")) {
+            return this.getHost();
+        } else {
+            return super.rewriteHost(host);
+        }
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -139,15 +137,8 @@ public class BookFiOrg extends antiDDoSForHost {
         return false;
     }
 
+    @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return false;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return false;
-        }
         return false;
     }
 }
