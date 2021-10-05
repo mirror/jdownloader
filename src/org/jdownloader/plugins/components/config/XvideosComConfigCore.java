@@ -28,28 +28,10 @@ public interface XvideosComConfigCore extends PluginConfigInterface {
     void setPreferHLSDownload(boolean b);
 
     public static enum PreferredHLSQuality implements LabelInterface {
-        BEST {
+        Q2160P {
             @Override
             public String getLabel() {
-                return "Best";
-            }
-        },
-        Q360P {
-            @Override
-            public String getLabel() {
-                return "360p";
-            }
-        },
-        Q480P {
-            @Override
-            public String getLabel() {
-                return "480p";
-            }
-        },
-        Q720P {
-            @Override
-            public String getLabel() {
-                return "720p";
+                return "2160p (4k)";
             }
         },
         Q1080P {
@@ -58,10 +40,22 @@ public interface XvideosComConfigCore extends PluginConfigInterface {
                 return "1080p";
             }
         },
-        Q2160P {
+        Q720P {
             @Override
             public String getLabel() {
-                return "2160p (4k)";
+                return "720p";
+            }
+        },
+        Q480P {
+            @Override
+            public String getLabel() {
+                return "480p";
+            }
+        },
+        Q360P {
+            @Override
+            public String getLabel() {
+                return "360p";
             }
         };
     }
@@ -81,8 +75,35 @@ public interface XvideosComConfigCore extends PluginConfigInterface {
         };
     }
 
+    public static enum PreferredOfficialDownloadQuality implements LabelInterface {
+        Q2160P {
+            @Override
+            public String getLabel() {
+                return "2160p (4k)";
+            }
+        },
+        Q1080P {
+            @Override
+            public String getLabel() {
+                return "1080p";
+            }
+        },
+        Q360P {
+            @Override
+            public String getLabel() {
+                return "360p";
+            }
+        },
+        Q240P {
+            @Override
+            public String getLabel() {
+                return "240p";
+            }
+        };
+    }
+
     @AboutConfig
-    @DefaultEnumValue("BEST")
+    @DefaultEnumValue("Q2160P")
     @DescriptionForConfigEntry("Select preferred HLS download quality. If your preferred HLS quality is not found, best quality will be downloaded instead.")
     @Order(100)
     PreferredHLSQuality getPreferredHLSQuality();
@@ -96,6 +117,14 @@ public interface XvideosComConfigCore extends PluginConfigInterface {
     PreferredHTTPQuality getPreferredHTTPQuality();
 
     void setPreferredHTTPQuality(PreferredHTTPQuality quality);
+
+    @AboutConfig
+    @DefaultEnumValue("Q2160P")
+    @DescriptionForConfigEntry("Select preferred official download quality ('download' button). If your preferred quality is not found, best quality will be downloaded instead.")
+    @Order(130)
+    PreferredOfficialDownloadQuality getPreferredOfficialDownloadQuality();
+
+    void setPreferredOfficialDownloadQuality(PreferredOfficialDownloadQuality quality);
 
     @DefaultBooleanValue(false)
     @DescriptionForConfigEntry("xvideos.com can 'shadow ban' users who download a lot. This will limit the max. available quality to 240p. This experimental setting will make JD try to detect this limit.")

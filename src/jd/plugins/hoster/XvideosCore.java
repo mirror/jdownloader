@@ -28,6 +28,7 @@ import org.jdownloader.plugins.components.config.XvideosComConfig;
 import org.jdownloader.plugins.components.config.XvideosComConfigCore;
 import org.jdownloader.plugins.components.config.XvideosComConfigCore.PreferredHLSQuality;
 import org.jdownloader.plugins.components.config.XvideosComConfigCore.PreferredHTTPQuality;
+import org.jdownloader.plugins.components.config.XvideosComConfigCore.PreferredOfficialDownloadQuality;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -329,7 +330,7 @@ public abstract class XvideosCore extends PluginForHost {
         }
         String videoURL = null;
         if (isDownload || !PluginJsonConfig.get(XvideosComConfig.class).isEnableFastLinkcheckForHostPlugin()) {
-            final String hlsMaster = br.getRegex("html5player\\.setVideoHLS\\('(.*?)'\\)").getMatch(0);
+            final String hlsMaster = br.getRegex("xhtml5player\\.setVideoHLS\\('(.*?)'\\)").getMatch(0);
             /**
              * 2021-01-27: This website can "shadow ban" users who download "too much". They will then deliver all videos in 240p only. This
              * is an attempt to detect this.</br>
@@ -381,22 +382,48 @@ public abstract class XvideosCore extends PluginForHost {
                     logger.info("Failed to find HLS qualities!");
                 }
             }
-            if (account != null) {
+            if (videoURL == null && account != null) {
                 /* When logged-in, official downloadlinks can be available */
                 logger.info("Looking for official download ...");
                 final Browser brc = br.cloneBrowser();
+                brc.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                brc.getHeaders().put("x-Requested-With", "XMLHttpRequest");
                 brc.getPage(this.br.getURL("/video-download/" + videoID + "/"));
-                /* TODO: Add user preferred quality selection */
                 if (brc.getURL().contains(videoID)) {
-                    final String[] qualities = { "URL_MP4_4K", "URL_MP4HD", "URL", "URL_LOW" };
-                    for (final String quality : qualities) {
-                        final String downloadURLTmp = PluginJSonUtils.getJson(brc, quality);
+                    final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
+                    String bestQualityDownloadurl = null;
+                    String bestQualityString = null;
+                    String preferredQualityDownloadurl = null;
+                    final String preferredQualityStr = getPreferredOfficialDownloadQualityStr();
+                    final String[] qualities = getOfficialDownloadQualitiesSorted();
+                    for (final String qualityStrTmp : qualities) {
+                        final String downloadURLTmp = (String) entries.get(qualityStrTmp);
                         if (!StringUtils.isEmpty(downloadURLTmp)) {
-                            logger.info("Found official download - quality = " + quality);
-                            videoURL = downloadURLTmp;
-                            break;
+                            if (bestQualityDownloadurl == null) {
+                                bestQualityDownloadurl = downloadURLTmp;
+                                bestQualityString = qualityStrTmp;
+                            }
+                            if (StringUtils.equals(qualityStrTmp, preferredQualityStr)) {
+                                preferredQualityDownloadurl = downloadURLTmp;
+                                break;
+                            }
                         }
                     }
+                    if (preferredQualityDownloadurl != null) {
+                        logger.info("Using user selected quality: " + preferredQualityStr);
+                        videoURL = preferredQualityDownloadurl;
+                    } else if (bestQualityDownloadurl != null) {
+                        logger.info("Using best quality: " + bestQualityString);
+                        videoURL = bestQualityDownloadurl;
+                    } else {
+                        logger.warning("Failed to find any official downloads -> json has changed?");
+                    }
+                } else {
+                    /*
+                     * Either user has a free account or something with the login went wrong. All premium users should be able to download
+                     * via download button!
+                     */
+                    logger.info("No official video download possible");
                 }
                 if (StringUtils.isEmpty(videoURL)) {
                     logger.info("Failed to find any official downloadlink");
@@ -555,9 +582,43 @@ public abstract class XvideosCore extends PluginForHost {
             return 480;
         case Q360P:
             return 360;
-        case BEST:
         default:
+            /* This should never happen */
             return -1;
+        }
+    }
+
+    /** Get user preferred official download quality as String. */
+    private String getPreferredOfficialDownloadQualityStr() {
+        final PreferredOfficialDownloadQuality preferredOfficialDownloadQuality = PluginJsonConfig.get(XvideosComConfig.class).getPreferredOfficialDownloadQuality();
+        return officialDownloadQualityToString(preferredOfficialDownloadQuality);
+    }
+
+    /** Returns array containing all possible official download qualities sorted from best to worst. */
+    private String[] getOfficialDownloadQualitiesSorted() {
+        final PreferredOfficialDownloadQuality[] allPossibleOfficialDownloadQualities = PreferredOfficialDownloadQuality.values();
+        int index = 0;
+        final String[] allPossibleOfficialDownloadQualitiesStr = new String[allPossibleOfficialDownloadQualities.length];
+        for (final PreferredOfficialDownloadQuality possibleOfficialDownloadQuality : allPossibleOfficialDownloadQualities) {
+            allPossibleOfficialDownloadQualitiesStr[index] = officialDownloadQualityToString(possibleOfficialDownloadQuality);
+            index += 1;
+        }
+        return allPossibleOfficialDownloadQualitiesStr;
+    }
+
+    private String officialDownloadQualityToString(final PreferredOfficialDownloadQuality downloadQuality) {
+        switch (downloadQuality) {
+        case Q2160P:
+            return "URL_MP4_4K";
+        case Q1080P:
+            return "URL_MP4HD";
+        case Q360P:
+            return "URL";
+        case Q240P:
+            return "URL_LOW";
+        default:
+            /* This should never happen */
+            return null;
         }
     }
 
