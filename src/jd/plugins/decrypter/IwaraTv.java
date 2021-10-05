@@ -16,47 +16,117 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?(?:trollvids\\.com|iwara\\.tv)/(?:videos|node)/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?(?:trollvids\\.com|iwara\\.tv)/((?:videos|node)/[A-Za-z0-9]+|users/[^/\\?]+)" })
 public class IwaraTv extends PluginForDecrypt {
     public IwaraTv(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String TYPE_USER = "https?://[^/]+/users/([^/]+)";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        br.setFollowRedirects(true);
-        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("iwara.tv");
-        final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
+        if (param.getCryptedUrl().matches(TYPE_USER)) {
+            return crawlChannel(param);
+        } else {
+            return crawlSingleVideo(param);
+        }
+    }
+
+    /** Crawls all videos of a user/channel. */
+    private ArrayList<DownloadLink> crawlChannel(final CryptedLink param) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String username = new Regex(param.getCryptedUrl(), TYPE_USER).getMatch(0);
+        if (username == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final HashSet<String> dupes = new HashSet<String>();
+        int page = -1;
+        final UrlQuery query = new UrlQuery();
+        query.add("language", "en");
+        final String baseURL = "https://" + Browser.getHost(param.getCryptedUrl(), true) + "/users/" + username + "/videos";
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(username);
+        do {
+            /* Start at page 0 */
+            page += 1;
+            query.addAndReplace("page", Integer.toString(page));
+            br.getPage(baseURL + "?" + query.toString());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String[] videoIDs = br.getRegex("/videos/([A-Za-z0-9]+)").getColumn(0);
+            int foundNumberofItemsThisPage = 0;
+            for (final String videoID : videoIDs) {
+                if (dupes.add(videoID)) {
+                    /* Assume all items are selfhosted and thus do not have to go through this crawler again. */
+                    final String videoURL = "https://" + br.getHost(true) + "/videos/" + videoID;
+                    final DownloadLink dl = createDownloadlink(videoURL.replace("iwara.tv/", "iwaradecrypted.tv/"));
+                    dl.setContentUrl(videoURL);
+                    /* Try to find nice title */
+                    final String videoTitle = br.getRegex("/videos/" + videoID + "[^\"]+\">([^<>\"]+)</a></h3>").getMatch(0);
+                    if (videoTitle != null) {
+                        dl.setName(username + "_" + videoID + "_" + videoTitle + ".mp4");
+                    } else {
+                        dl.setName(username + "_" + videoID + ".mp4");
+                    }
+                    dl.setAvailable(true);
+                    dl._setFilePackage(fp);
+                    decryptedLinks.add(dl);
+                    distribute(dl);
+                    foundNumberofItemsThisPage += 1;
+                }
+            }
+            logger.info("Crawled page " + (page + 1) + " | Found items: " + foundNumberofItemsThisPage + " | Total so far: " + decryptedLinks.size());
+            final boolean nextPageAvailable = br.containsHTML("page=" + (page + 1));
+            if (this.isAbort()) {
+                break;
+            } else if (foundNumberofItemsThisPage == 0) {
+                logger.info("Stopping because: Failed to find any items on current page");
+                break;
+            } else if (!nextPageAvailable) {
+                logger.info("Stopping because: Reached last page");
+                break;
+            }
+        } while (true);
+        return null;
+    }
+
+    private ArrayList<DownloadLink> crawlSingleVideo(final CryptedLink param) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
+        final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
         if (aa != null) {
             /* Login if account is available */
-            try {
-                ((jd.plugins.hoster.IwaraTv) hostPlugin).login(br, aa, false);
-            } catch (final Throwable e) {
-            }
+            ((jd.plugins.hoster.IwaraTv) hostPlugin).login(aa, false);
         }
-        br.getPage(parameter);
+        br.getPage(param.getCryptedUrl());
         /*
          * 2020-09-16: Do not check for the following html for offline as it is always present: <div id="video-processing"
          * class="video-processing hidden">Processing video, please check back in a while</div>
          */
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"cb_error\"|>Sort by:")) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1 class=\"title\">([^<>\"]+)</h1>").getMatch(0);
         if (filename == null) {
