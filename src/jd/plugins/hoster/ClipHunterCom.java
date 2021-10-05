@@ -157,22 +157,25 @@ public class ClipHunterCom extends PluginForHost {
         final String[] encryptedUrls = br.getRegex("\"url\":\"([^<>\"]*?)\"").getColumn(0);
         final String json_full = br.getRegex("var gexoFiles = (\\{.+\\});").getMatch(0);
         // System.out.println("json_full: " + json_full);
-        if (jsUrl == null || ((encryptedUrls == null || encryptedUrls.length == 0) && json_full == null)) {
+        if ((encryptedUrls == null || encryptedUrls.length == 0) && json_full == null) {
             if (!br.containsHTML("var flashVars")) {
                 /* Offline / Player missing */
                 return new LinkedHashMap<String, String>();
             }
             return null;
         }
-        final Browser br2 = br.cloneBrowser();
-        br2.getPage(jsUrl);
-        String decryptAlgo = new Regex(br2, "decrypt\\:\\s?function(.*?\\})(,|;)").getMatch(0);
-        if (decryptAlgo == null) {
-            return null;
+        String decryptAlgo = null;
+        if (jsUrl != null) {
+            final Browser br2 = br.cloneBrowser();
+            br2.getPage(jsUrl);
+            decryptAlgo = new Regex(br2, "decrypt\\:\\s?function(.*?\\})(,|;)").getMatch(0);
+            if (decryptAlgo == null) {
+                return null;
+            }
+            decryptAlgo = "function decrypt" + decryptAlgo + ";";
         }
         // Find available links
         final LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
-        decryptAlgo = "function decrypt" + decryptAlgo + ";";
         String currentSr, tmpUrl, ext;
         if (json_full != null) {
             /* 2016-03-30: New json handling */
@@ -185,7 +188,12 @@ public class ClipHunterCom extends PluginForHost {
                 ext = (String) videoinfo.get("fmt");
                 final String url = (String) videoinfo.get("url");
                 System.out.println("url: " + url);
-                tmpUrl = decryptUrl(decryptAlgo, url);
+                if (decryptAlgo != null) {
+                    tmpUrl = decryptUrl(decryptAlgo, url);
+                } else {
+                    /* 2021-10-05: URLs are not crypted anymore */
+                    tmpUrl = url;
+                }
                 // System.out.println("tmpUrl: " + tmpUrl);
                 if (tmpUrl == null) {
                     tmpUrl = url;
