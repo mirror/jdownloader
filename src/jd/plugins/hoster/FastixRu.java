@@ -21,11 +21,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
@@ -40,6 +35,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 /**
  * @author pspzockerscene
@@ -163,7 +163,7 @@ public class FastixRu extends antiDDoSForHost {
             final HTTPProxy proxyThatWillBeUsed = br.getProxy().getProxiesByURL(new URL(DOMAIN)).get(0);
             final String externalIP = new BalancedWebIPCheck(new StaticProxySelector(proxyThatWillBeUsed)).getExternalIP().getIP();
             /* External IP of the user is needed for this request, also enforce SSL */
-            getAPISafe(DOMAIN + "?apikey=" + getAPIKEY() + "&sub=getdirectlink&link=" + JSonUtils.escape(link.getDownloadURL()) + "&ip=" + JSonUtils.escape(externalIP) + "&ssl=true");
+            getAPISafe(DOMAIN + "?apikey=" + getAPIKEY(account) + "&sub=getdirectlink&link=" + URLEncode.encodeURIComponent(link.getDownloadURL()) + "&ip=" + URLEncode.encodeURIComponent(externalIP) + "&ssl=true");
             dllink = PluginJSonUtils.getJsonValue(br, "downloadlink");
             if (dllink == null) {
                 handleErrorRetries("dllinknull", 5);
@@ -253,14 +253,14 @@ public class FastixRu extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail address in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        getAPISafe(DOMAIN + "?sub=get_apikey&email=" + JSonUtils.escape(account.getUser()) + "&password=" + JSonUtils.escape(account.getPass()));
+        getAPISafe(DOMAIN + "?sub=get_apikey&email=" + URLEncode.encodeURIComponent(account.getUser()) + "&password=" + URLEncode.encodeURIComponent(account.getPass()));
         final String apikey = PluginJSonUtils.getJsonValue(br, "apikey");
         if (apikey == null) {
             // maybe unhandled error reason why apikey is null!
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         account.setProperty("fastixapikey", apikey);
-        getAPISafe(DOMAIN + "?apikey=" + getAPIKEY() + "&sub=getaccountdetails");
+        getAPISafe(DOMAIN + "?apikey=" + getAPIKEY(account) + "&sub=getaccountdetails");
         final String points = PluginJSonUtils.getJsonValue(br, "points");
         // null or parse exceptions will result in 0 traffic, users should complain and we can 'fix'
         long p = 0;
@@ -280,7 +280,7 @@ public class FastixRu extends antiDDoSForHost {
          * Other methods to get this list: allowed_fileshares, allowed_sources - directing_status is the best as they refresh it every 15
          * minutes and it contains lists of working/non working and partially working services
          */
-        getAPISafe(DOMAIN + "?apikey=" + getAPIKEY() + "&sub=directing_status");
+        getAPISafe(DOMAIN + "?apikey=" + getAPIKEY(account) + "&sub=directing_status");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String[] lists = { "partially", "up" };
         for (final String list : lists) {
@@ -304,8 +304,15 @@ public class FastixRu extends antiDDoSForHost {
         return ai;
     }
 
-    private String getAPIKEY() {
-        return JSonUtils.escape(account.getStringProperty("fastixapikey", null));
+    private String getAPIKEY(final Account account) throws PluginException {
+        final String apiKey;
+        synchronized (account) {
+            apiKey = account.getStringProperty("fastixapikey", null);
+            if (apiKey != null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        return URLEncode.encodeURIComponent(apiKey);
     }
 
     private void getAPISafe(final String accesslink) throws IOException, PluginException {

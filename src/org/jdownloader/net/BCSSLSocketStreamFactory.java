@@ -215,8 +215,8 @@ public class BCSSLSocketStreamFactory implements SSLSocketStreamFactory {
         @Override
         public ProtocolVersion[] getProtocolVersions() {
             final ProtocolVersion[] ret = super.getProtocolVersions();
-            final boolean tls13Enabled = options.getCustomFactorySettings().contains(TLS13_ENABLED);
-            final boolean tls10_11Disabled = options.getCustomFactorySettings().contains(TLS10_11_DISABLED);
+            final boolean tls13Enabled = options != null && options.getCustomFactorySettings().contains(TLS13_ENABLED);
+            final boolean tls10_11Disabled = options != null && options.getCustomFactorySettings().contains(TLS10_11_DISABLED);
             if (tls13Enabled || tls10_11Disabled) {
                 final List<ProtocolVersion> protocolVersions = new ArrayList<ProtocolVersion>(Arrays.asList(ret));
                 if (tls13Enabled && !protocolVersions.contains(ProtocolVersion.TLSv13)) {

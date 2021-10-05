@@ -20,17 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.JoinPeerTubeOrgConfig;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -42,6 +31,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.JoinPeerTubeOrgConfig;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class JoinPeerTubeOrg extends antiDDoSForHost {
     public JoinPeerTubeOrg(PluginWrapper wrapper) {
@@ -52,8 +52,8 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
-    private String               dllinkHlsMaster   = null;
+    private String               mp4dllink         = null;
+    private String               m3u8dllink        = null;
     private boolean              server_issues     = false;
 
     @Override
@@ -131,9 +131,9 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
 
     /**
      * Debug function which can find new instances compatible with this code/plugin/template from:
-     * https://instances.joinpeertube.org/instances </br>
-     * Important: Do NOT overwrite old entries with these ones! Looks like this list is not reliably collecting "all" peertube instances
-     * and/or single peertube instances can turn off some kind of "allow my instance to appear on tht list" setting!
+     * https://instances.joinpeertube.org/instances </br> Important: Do NOT overwrite old entries with these ones! Looks like this list is
+     * not reliably collecting "all" peertube instances and/or single peertube instances can turn off some kind of
+     * "allow my instance to appear on tht list" setting!
      */
     private static ArrayList<String> findNewScriptInstances() {
         if (false) {
@@ -194,7 +194,8 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
             /* Set fallback filename */
             link.setName(this.getFID(link) + ".mp4");
         }
-        dllink = null;
+        mp4dllink = null;
+        m3u8dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -217,7 +218,7 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
         /* Grab highest quality downloadurl + filesize */
         final List<Map<String, Object>> oficialDownloads = (List<Map<String, Object>>) entries.get("files");
         if (!oficialDownloads.isEmpty()) {
-            this.dllink = (String) JavaScriptEngineFactory.walkJson(entries, "files/{0}/fileDownloadUrl");
+            this.mp4dllink = (String) JavaScriptEngineFactory.walkJson(entries, "files/{0}/fileDownloadUrl");
             final long filesize = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "files/{0}/size"), 0);
             if (filesize > 0) {
                 link.setDownloadSize(filesize);
@@ -227,14 +228,14 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
             final List<Map<String, Object>> streamingPlaylists = (List<Map<String, Object>>) entries.get("streamingPlaylists");
             if (!streamingPlaylists.isEmpty()) {
                 playlistLoop: for (final Map<String, Object> streamPlaylist : streamingPlaylists) {
-                    dllinkHlsMaster = (String) streamPlaylist.get("playlistUrl");
+                    m3u8dllink = (String) streamPlaylist.get("playlistUrl");
                     /* Expect array to be pre-sorted best to worst quality. */
                     final List<Map<String, Object>> streams = (List<Map<String, Object>>) streamPlaylist.get("files");
                     for (final Map<String, Object> stream : streams) {
                         final Map<String, Object> resolution = (Map<String, Object>) stream.get("resolution");
                         final String thisDownloadlink = (String) stream.get("fileDownloadUrl");
                         if (!StringUtils.isEmpty(thisDownloadlink)) {
-                            this.dllink = thisDownloadlink;
+                            this.mp4dllink = thisDownloadlink;
                             final long filesize = ((Number) stream.get("size")).longValue();
                             if (filesize > 0) {
                                 if (PluginJsonConfig.get(JoinPeerTubeOrgConfig.class).isPreferHLS()) {
@@ -301,17 +302,24 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
         requestFileInformation(link);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink) || (StringUtils.isEmpty(dllinkHlsMaster) && PluginJsonConfig.get(JoinPeerTubeOrgConfig.class).isPreferHLS())) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (PluginJsonConfig.get(JoinPeerTubeOrgConfig.class).isPreferHLS()) {
-            br.getPage(this.dllinkHlsMaster);
+            if (StringUtils.isEmpty(m3u8dllink)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage(this.m3u8dllink);
             final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+            if (hlsbest == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             checkFFmpeg(link, "Download a HLS Stream");
             dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
             dl.startDownload();
         } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+            if (StringUtils.isEmpty(mp4dllink)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, mp4dllink, free_resume, free_maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection(true);
