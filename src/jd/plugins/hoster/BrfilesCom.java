@@ -84,13 +84,17 @@ public class BrfilesCom extends YetiShareCore {
     @Override
     public String getFUIDFromURL(final String url) {
         /* 2020-03-10: Special */
-        try {
-            final String result = new Regex(new URL(url).getPath(), "^/f/([A-Za-z0-9]+)").getMatch(0);
-            return result;
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
+        if (url == null) {
+            return null;
+        } else {
+            try {
+                final String result = new Regex(new URL(url).getPath(), "^/f/([A-Za-z0-9]+)").getMatch(0);
+                return result;
+            } catch (final MalformedURLException ignore) {
+                ignore.printStackTrace();
+                return null;
+            }
         }
-        return null;
     }
 
     @Override
@@ -174,9 +178,10 @@ public class BrfilesCom extends YetiShareCore {
         if (account == null) {
             /* 2020-03-16: Special: Without account, all files will be shown as offline by this website */
             return AvailableStatus.UNCHECKABLE;
+        } else {
+            this.loginWebsite(account, false);
+            return super.requestFileInformationWebsite(link, account, isDownload);
         }
-        this.loginWebsite(account, false);
-        return super.requestFileInformationWebsite(link, account, isDownload);
     }
 
     @Override
