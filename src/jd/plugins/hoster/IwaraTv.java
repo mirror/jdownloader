@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -35,8 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?iwaradecrypted\\.tv/.+" })
 public class IwaraTv extends PluginForHost {
@@ -90,12 +90,17 @@ public class IwaraTv extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, false);
     }
 
     @SuppressWarnings("deprecation")
-    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+        final Account account = AccountController.getInstance().getValidAccount(this);
+        return requestFileInformation(link, account, false);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         dllink = null;
         serverIssue = false;
         this.setBrowserExclusive();
@@ -103,14 +108,9 @@ public class IwaraTv extends PluginForHost {
         /* 2020-10-20: Disabled because their streaming-servers are very slow --> Slowsdown linkcheck dramatically! */
         final boolean findFilesize = false;
         final String fid = getFID(link.getDownloadURL());
-        final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa != null) {
+        if (account != null) {
             /* Login if possible */
-            try {
-                login(this.br, aa, false);
-            } catch (final Throwable e) {
-                logger.log(e);
-            }
+            login(account, false);
         }
         this.br.getPage(link.getDownloadURL());
         br.followRedirect();
@@ -217,7 +217,7 @@ public class IwaraTv extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, null, true);
         doFree(link);
     }
 
@@ -262,7 +262,7 @@ public class IwaraTv extends PluginForHost {
         return free_maxdownloads;
     }
 
-    public void login(Browser br, final Account account, final boolean force) throws Exception {
+    public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
@@ -339,7 +339,7 @@ public class IwaraTv extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(this.br, account, true);
+        login(account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setConcurrentUsePossible(true);
@@ -349,7 +349,7 @@ public class IwaraTv extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, account, true);
         /* No need to log in as we are already logged in */
         doFree(link);
     }

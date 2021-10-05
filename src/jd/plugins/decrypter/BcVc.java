@@ -88,6 +88,8 @@ public class BcVc extends antiDDoSForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.toString().length() <= 100) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("Unable to connect to database")) {
             logger.info("Link can't be decrypted because of server problems: " + param.getCryptedUrl());
             return decryptedLinks;

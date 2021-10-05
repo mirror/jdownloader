@@ -23,6 +23,11 @@ import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.images.IconIO;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -36,11 +41,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.images.IconIO;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "q32.pw" }, urls = { "https?://(?:www\\.)?q32\\.pw/[A-Za-z0-9]+" })
 public class Q32Pw extends PluginForDecrypt {
     public Q32Pw(PluginWrapper wrapper) {
@@ -50,6 +50,7 @@ public class Q32Pw extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -111,9 +112,8 @@ public class Q32Pw extends PluginForDecrypt {
         /* 'link' is another q32.pw URL which redirects to 'slink' --> We take 'slink' right away. */
         // final String finallink = PluginJSonUtils.getJson(br, "link");
         final String finallink = PluginJSonUtils.getJson(br, "slink");
-        if (finallink == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        if (StringUtils.isEmpty(finallink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
@@ -136,7 +136,7 @@ public class Q32Pw extends PluginForDecrypt {
             logger.info("Total passed time during captcha: " + passedTime);
         }
         if (wait > 0) {
-            logger.info("Waiting final waittime: " + wait);
+            logger.info("Waiting final waittime seconds: " + wait);
             sleep(wait * 1000l, param);
         } else if (wait < -extraWaitSeconds) {
             /* User needed more time to solve the captcha so there is no waittime left :) */

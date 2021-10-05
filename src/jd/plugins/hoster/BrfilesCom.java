@@ -267,7 +267,7 @@ public class BrfilesCom extends YetiShareCore {
     }
 
     @Override
-    protected long parseExpireTimeStamp(Account account, final String expireString) {
+    protected long parseExpireTimeStamp(final Account account, final String expireString) {
         if (expireString != null && expireString.matches("\\d{2}/\\d{2}/\\d{4}")) {
             final long timestamp_daysfirst = TimeFormatter.getMilliSeconds(expireString, "dd/MM/yyyy", Locale.ENGLISH);
             return timestamp_daysfirst;
@@ -277,11 +277,12 @@ public class BrfilesCom extends YetiShareCore {
     }
 
     @Override
-    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (account == null) {
             /* Without account its not possible to download any link for this host */
             return false;
+        } else {
+            return true;
         }
-        return true;
     }
 }
