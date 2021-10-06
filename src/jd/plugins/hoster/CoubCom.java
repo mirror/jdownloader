@@ -138,11 +138,11 @@ public class CoubCom extends PluginForHost {
 
     public static String getFilename(final Plugin plugin, final LinkedHashMap<String, Object> entries, final String fid) {
         String filename = (String) entries.get("raw_video_title");
-        if (filename == null) {
+        if (StringUtils.isEmpty(filename)) {
             filename = (String) entries.get("title");
         }
-        if (filename == null) {
-            /* This should never happen! */
+        if (StringUtils.isEmpty(filename)) {
+            /* Fallback: This should never happen! */
             filename = fid;
         }
         if (!StringUtils.endsWithCaseInsensitive(filename, ".mp4") && !StringUtils.endsWithCaseInsensitive(filename, ".mp4")) {
