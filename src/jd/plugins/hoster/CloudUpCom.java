@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -34,7 +36,7 @@ import jd.plugins.components.PluginJSonUtils;
  *
  * @author raztoki
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudup.com" }, urls = { "https://(www\\.)?cloudup\\.com/i[a-zA-Z0-9_\\-]{10}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudup.com" }, urls = { "https://(?:www\\.)?cloudup\\.com/(i[a-zA-Z0-9_\\-]{10})" })
 public class CloudUpCom extends PluginForHost {
     private String  csrfToken      = null;
     private String  mydb_socket_id = null;
@@ -67,9 +69,23 @@ public class CloudUpCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         // offline check
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -82,7 +98,7 @@ public class CloudUpCom extends PluginForHost {
         // we need some session info here, these are not actually verified....
         mydb_socket_id = br.getRegex("mydb_socket_id\\s*=\\s*('|\")(.*?)\\1").getMatch(1);
         csrfToken = br.getRegex("csrfToken\\s*=\\s*('|\")(.*?)\\1").getMatch(1);
-        ajaxGetPage("/files/" + new Regex(downloadLink.getDownloadURL(), "/([^/]+)$").getMatch(0) + "?mydb=1");
+        ajaxGetPage("/files/" + new Regex(link.getDownloadURL(), "/([^/]+)$").getMatch(0) + "?mydb=1");
         // is file
         final String file = PluginJSonUtils.getJsonValue(ajax, "type");
         if (!"file".equals(file)) {
@@ -94,38 +110,50 @@ public class CloudUpCom extends PluginForHost {
         // filesize
         final String filesize = PluginJSonUtils.getJsonValue(ajax, "size");
         // error handling
-        if (filename == null) {
+        if (StringUtils.isEmpty(filename)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setName(filename);
+        link.setName(filename);
         if (filesize != null) {
-            downloadLink.setDownloadSize(Long.parseLong(filesize));
+            link.setDownloadSize(Long.parseLong(filesize));
         }
         // removed?
         final String removed = PluginJSonUtils.getJsonValue(ajax, "removed");
         if (PluginJSonUtils.parseBoolean(removed)) {
-            return AvailableStatus.FALSE;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            return AvailableStatus.TRUE;
         }
-        return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        // to download we need to remote
-        final String remote = PluginJSonUtils.getJsonValue(ajax, "remote");
-        final String filename = PluginJSonUtils.getJsonValue(ajax, "filename");
-        if (remote == null || filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        final String dllink;
+        final boolean useNewWay = true;
+        if (useNewWay) {
+            /* 2021-10-06 */
+            dllink = "https://" + this.getHost() + "/files/" + this.getFID(link) + "/download";
+        } else {
+            final String remote = PluginJSonUtils.getJsonValue(ajax, "remote");
+            final String filename = PluginJSonUtils.getJsonValue(ajax, "filename");
+            if (remote == null || filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dllink = "https://cldup.com/" + remote + "?download=" + Encoding.urlEncode(filename);
         }
-        final String dllink = "https://cldup.com/" + remote + "?download=" + Encoding.urlEncode(filename);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (!dl.getConnection().isContentDisposition()) {
-            br.followConnection();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (br.containsHTML(">The download of this file has been disabled")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
