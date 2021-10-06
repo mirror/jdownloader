@@ -108,8 +108,20 @@ public class FileCryptCc extends PluginForDecrypt {
             final List<String> passwords = getPreSetPasswords();
             final HashSet<String> avoidRetry = new HashSet<String>();
             final String lastUsedPassword = this.getPluginConfig().getStringProperty("last_used_password");
+            String presumedPasswordBasedOnCustomLogo = null;
+            /* Creators can set custom logos on each folder. Each logo has a unique ID. This way we can try specific passwords first. */
+            final String customLogoID = br.getRegex("custom/([a-z0-9]+)\\.png").getMatch(0);
+            if (customLogoID != null) {
+                if (customLogoID.equals("53d1b")) {
+                    presumedPasswordBasedOnCustomLogo = "serienfans.org";
+                }
+            }
             if (StringUtils.isNotEmpty(lastUsedPassword)) {
                 passwords.add(0, lastUsedPassword);
+            }
+            if (presumedPasswordBasedOnCustomLogo != null) {
+                logger.info("Found presumed password by custom logo: " + presumedPasswordBasedOnCustomLogo);
+                passwords.add(0, presumedPasswordBasedOnCustomLogo);
             }
             int generalLoopCounter = 0;
             String usedPassword = null;
@@ -128,7 +140,7 @@ public class FileCryptCc extends PluginForDecrypt {
                 }
                 /* If there is captcha + password, password comes first, then captcha! */
                 if (passwordForm == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Could not find pasword form");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Could not find pasword Form");
                 }
                 final String passCode;
                 if (passwords.size() > 0) {
