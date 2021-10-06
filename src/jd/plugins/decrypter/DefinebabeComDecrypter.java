@@ -19,6 +19,9 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -42,9 +45,24 @@ public class DefinebabeComDecrypter extends PornEmbedParser {
         if (decryptedLinks.size() == 0) {
             /* Pass url to hosterplugin */
             final DownloadLink dl = createDownloadlink(parameter.replaceAll("https?://", "definebabedecrypted://"));
-            dl.setName(jd.plugins.hoster.DesixnxxNet.getFilename(this.br, parameter));
+            dl.setName(getFilename(this.br, parameter));
             decryptedLinks.add(dl);
         }
         return decryptedLinks;
+    }
+
+    public static String getURLTitle(final String url) {
+        return new Regex(url, "([a-z0-9\\-]+)/?$").getMatch(0);
+    }
+
+    public static String getFilename(final Browser br, final String url) {
+        final String url_filename = getURLTitle(url);
+        String filename = br.getRegex("<div id=\"sp\">\\s*?<b>([^<>\"]+)</b>").getMatch(0);
+        if (filename == null) {
+            filename = url_filename;
+        }
+        filename = Encoding.htmlDecode(filename).trim();
+        filename += ".mp4";
+        return filename;
     }
 }
