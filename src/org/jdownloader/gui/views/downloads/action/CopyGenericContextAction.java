@@ -7,22 +7,9 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 import javax.swing.TransferHandler;
-
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.CrawledPackageView;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.gui.swing.jdgui.MainTabbedPane;
-import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.FilePackageView;
-import jd.plugins.download.HashInfo;
 
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
@@ -45,27 +32,42 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 import org.jdownloader.settings.UrlDisplayType;
 import org.jdownloader.translate._JDT;
 
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackageView;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.gui.swing.jdgui.MainTabbedPane;
+import jd.parser.Regex;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.FilePackageView;
+import jd.plugins.download.HashInfo;
+
 public class CopyGenericContextAction extends CustomizableTableContextAppAction implements ActionContext {
-    private static final String PATTERN_NAME             = "{name}";            // depends on type
-    private static final String PATTERN_PACKAGE_NAME     = "{packagename}";     // always package name
-    private static final String PATTERN_NAME_NOEXT       = "{name_noext}";
-    private static final String PATTERN_NEWLINE          = "{newline}";
-    private static final String PATTERN_COMMENT          = "{comment}";
-    private static final String PATTERN_HASH             = "{hash}";
-    private static final String PATTERN_FILESIZE         = "{filesize}";
-    private static final String PATTERN_FILESIZE_KIB     = "{filesize_kib}";
-    private static final String PATTERN_FILESIZE_MIB     = "{filesize_mib}";
-    private static final String PATTERN_FILESIZE_GIB     = "{filesize_gib}";
-    private static final String PATTERN_URL              = "{url}";
-    private static final String PATTERN_HOST             = "{host}";
-    private static final String PATTERN_URL_CONTAINER    = "{url.container}";
-    private static final String PATTERN_URL_ORIGIN       = "{url.origin}";
-    private static final String PATTERN_URL_CONTENT      = "{url.content}";
-    private static final String PATTERN_URL_REFERRER     = "{url.referrer}";
-    private static final String PATTERN_ARCHIVE_PASSWORD = "{archive.password}";
-    private static final String PATTERN_TYPE             = "{type}";
-    private static final String PATTERN_EXTENSION        = "{ext}";
-    private static final String PATTERN_PATH             = "{path}";
+    private static final String PATTERN_NAME                  = "{name}";                      // depends on type
+    private static final String PATTERN_PACKAGE_NAME          = "{packagename}";               // always package name
+    private static final String PATTERN_NAME_NOEXT            = "{name_noext}";
+    private static final String PATTERN_NEWLINE               = "{newline}";
+    private static final String PATTERN_DOWNLOADLINK_PROPERTY = "{jd:prop:yourWishedProperty}";
+    private static final String PATTERN_COMMENT               = "{comment}";
+    private static final String PATTERN_HASH                  = "{hash}";
+    private static final String PATTERN_FILESIZE              = "{filesize}";
+    private static final String PATTERN_FILESIZE_KIB          = "{filesize_kib}";
+    private static final String PATTERN_FILESIZE_MIB          = "{filesize_mib}";
+    private static final String PATTERN_FILESIZE_GIB          = "{filesize_gib}";
+    private static final String PATTERN_URL                   = "{url}";
+    private static final String PATTERN_HOST                  = "{host}";
+    private static final String PATTERN_URL_CONTAINER         = "{url.container}";
+    private static final String PATTERN_URL_ORIGIN            = "{url.origin}";
+    private static final String PATTERN_URL_CONTENT           = "{url.content}";
+    private static final String PATTERN_URL_REFERRER          = "{url.referrer}";
+    private static final String PATTERN_ARCHIVE_PASSWORD      = "{archive.password}";
+    private static final String PATTERN_TYPE                  = "{type}";
+    private static final String PATTERN_EXTENSION             = "{ext}";
+    private static final String PATTERN_PATH                  = "{path}";
 
     public CopyGenericContextAction() {
         super(true, true);
@@ -91,7 +93,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
         sb.append("<html>");
         sb.append(_JDT.T.CopyGenericContextAction_getTranslationForPatternLinks_v3());
         sb.append("<br><ul>");
-        for (final String pattern : new String[] { PATTERN_TYPE, PATTERN_HOST, PATTERN_PATH, PATTERN_COMMENT, PATTERN_FILESIZE, PATTERN_FILESIZE_KIB, PATTERN_FILESIZE_MIB, PATTERN_FILESIZE_GIB, PATTERN_NEWLINE, PATTERN_NAME, PATTERN_PACKAGE_NAME, PATTERN_NAME_NOEXT, PATTERN_EXTENSION, PATTERN_HASH, PATTERN_URL, PATTERN_URL_CONTAINER, PATTERN_URL_CONTENT, PATTERN_URL_ORIGIN, PATTERN_URL_REFERRER, PATTERN_ARCHIVE_PASSWORD }) {
+        for (final String pattern : new String[] { PATTERN_TYPE, PATTERN_HOST, PATTERN_PATH, PATTERN_COMMENT, PATTERN_FILESIZE, PATTERN_FILESIZE_KIB, PATTERN_FILESIZE_MIB, PATTERN_FILESIZE_GIB, PATTERN_NEWLINE, PATTERN_NAME, PATTERN_PACKAGE_NAME, PATTERN_NAME_NOEXT, PATTERN_EXTENSION, PATTERN_HASH, PATTERN_URL, PATTERN_URL_CONTAINER, PATTERN_URL_CONTENT, PATTERN_URL_ORIGIN, PATTERN_URL_REFERRER, PATTERN_ARCHIVE_PASSWORD, PATTERN_DOWNLOADLINK_PROPERTY }) {
             sb.append("<li>").append(pattern).append("</li>");
         }
         sb.append("</ul></html>");
@@ -309,6 +311,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_FILESIZE_MIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.MiB)));
             line = line.replace(PATTERN_FILESIZE_GIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.GiB)));
             line = line.replace(PATTERN_NEWLINE, CrossSystem.getNewLine());
+            line = replaceDownloadLinkProperties(link, line);
             final String name = link.getView().getDisplayName();
             line = line.replace(PATTERN_NAME, nulltoString(name));
             line = line.replace(PATTERN_PACKAGE_NAME, nulltoString(fp.getName()));
@@ -350,6 +353,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_FILESIZE_MIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.MiB)));
             line = line.replace(PATTERN_FILESIZE_GIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.GiB)));
             line = line.replace(PATTERN_NEWLINE, CrossSystem.getNewLine());
+            line = replaceDownloadLinkProperties(link.getDownloadLink(), line);
             final String name = link.getDownloadLink().getView().getDisplayName();
             line = line.replace(PATTERN_NAME, nulltoString(name));
             line = line.replace(PATTERN_PACKAGE_NAME, nulltoString(cp.getName()));
@@ -412,6 +416,24 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             }
             sb.append(line);
         }
+    }
+
+    private static String replaceDownloadLinkProperties(final DownloadLink link, final String input) {
+        String line = input;
+        final Pattern pat = Pattern.compile("(?i)(\\{jd:prop:([^\\}]+)\\})");
+        final String[][] propertiesToReplace = new Regex(input, pat).getMatches();
+        for (final String[] propertyInfo : propertiesToReplace) {
+            final String completeStringToReplace = propertyInfo[0];
+            final String property = propertyInfo[1];
+            final String content;
+            if (link.hasProperty(property)) {
+                content = link.getProperty(property).toString();
+            } else {
+                content = "";
+            }
+            line = line.replace(completeStringToReplace, content);
+        }
+        return line;
     }
 
     private final String nulltoString(final Object comment) {
