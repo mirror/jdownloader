@@ -1215,6 +1215,8 @@ public class HLSDownloader extends DownloadInterface {
                                         getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=" + startByteRange + unMarkedAreas.get(0)[0] + "-" + startByteRange + unMarkedAreas.get(0)[1]);
                                     } else if (byteRange != null) {
                                         getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=" + byteRange[1] + "-" + (byteRange[1] + byteRange[0] - 1));
+                                    } else if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                                        getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=0-");
                                     }
                                     URLConnectionAdapter connection = null;
                                     boolean closeConnection = true;
@@ -1388,30 +1390,41 @@ public class HLSDownloader extends DownloadInterface {
                                                 }
                                             }
                                             if (len > 0) {
+                                                IOException ioe = null;
+                                                int written = 0;
                                                 ffmpeg.updateLastUpdateTimestamp(getRequest.getReadTimeout() + timeoutBuffer);
                                                 try {
-                                                    outputStream.write(readWriteBuffer, 0, len);
-                                                } catch (IOException e) {
-                                                    requestLogger.exception("ReadWriteBuffer:" + len + "|Position:" + position, e);
-                                                    throw e;
-                                                }
-                                                try {
-                                                    fileBytesMap.mark(position, len);
-                                                    if (segment != null) {
-                                                        segment.setLoaded(fileBytesMap.getMarkedBytes());
+                                                    while (written != len) {
+                                                        final int toWrite = Math.min(len - written, 1024);
+                                                        outputStream.write(readWriteBuffer, written, toWrite);
+                                                        written += toWrite;
                                                     }
-                                                } catch (IllegalArgumentException e) {
-                                                    requestLogger.log(e);
-                                                    if (fileBytesMap.getFinalSize() != -1) {
-                                                        requestLogger.info("apply 'Ignore Content-Length' workaround!");
-                                                        fileBytesMap.setFinalSize(-1);
-                                                        fileBytesMap.mark(position, len);
+                                                } catch (IOException e) {
+                                                    requestLogger.exception("ReadWriteBuffer:" + written + "/" + len + "|Position:" + position, e);
+                                                    ioe = e;
+                                                }
+                                                if (written > 0) {
+                                                    try {
+                                                        fileBytesMap.mark(position, written);
                                                         if (segment != null) {
                                                             segment.setLoaded(fileBytesMap.getMarkedBytes());
                                                         }
-                                                    } else {
-                                                        throw e;
+                                                    } catch (IllegalArgumentException e) {
+                                                        requestLogger.log(e);
+                                                        if (fileBytesMap.getFinalSize() != -1) {
+                                                            requestLogger.info("apply 'Ignore Content-Length' workaround!");
+                                                            fileBytesMap.setFinalSize(-1);
+                                                            fileBytesMap.mark(position, written);
+                                                            if (segment != null) {
+                                                                segment.setLoaded(fileBytesMap.getMarkedBytes());
+                                                            }
+                                                        } else {
+                                                            throw e;
+                                                        }
                                                     }
+                                                }
+                                                if (ioe != null) {
+                                                    throw ioe;
                                                 }
                                                 position += len;
                                             } else if (len == -1) {
