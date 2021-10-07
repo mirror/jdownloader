@@ -11,6 +11,20 @@ import java.util.regex.Pattern;
 
 import javax.swing.TransferHandler;
 
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackageView;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.gui.swing.jdgui.MainTabbedPane;
+import jd.parser.Regex;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.FilePackageView;
+import jd.plugins.download.HashInfo;
+
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
@@ -31,20 +45,6 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 import org.jdownloader.settings.UrlDisplayType;
 import org.jdownloader.translate._JDT;
-
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.CrawledPackageView;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.gui.swing.jdgui.MainTabbedPane;
-import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.FilePackageView;
-import jd.plugins.download.HashInfo;
 
 public class CopyGenericContextAction extends CustomizableTableContextAppAction implements ActionContext {
     private static final String PATTERN_NAME                  = "{name}";                      // depends on type
@@ -418,19 +418,15 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
         }
     }
 
-    private static String replaceDownloadLinkProperties(final DownloadLink link, final String input) {
+    private final static Pattern PROPERTIES_TAG_PATTERN = Pattern.compile("(?i)(\\{jd:prop:([^\\}]+)\\})");
+
+    private final String replaceDownloadLinkProperties(final DownloadLink link, final String input) {
         String line = input;
-        final Pattern pat = Pattern.compile("(?i)(\\{jd:prop:([^\\}]+)\\})");
-        final String[][] propertiesToReplace = new Regex(input, pat).getMatches();
+        final String[][] propertiesToReplace = new Regex(input, PROPERTIES_TAG_PATTERN).getMatches();
         for (final String[] propertyInfo : propertiesToReplace) {
             final String completeStringToReplace = propertyInfo[0];
             final String property = propertyInfo[1];
-            final String content;
-            if (link.hasProperty(property)) {
-                content = link.getProperty(property).toString();
-            } else {
-                content = "";
-            }
+            final String content = nulltoString(link.getProperty(property));
             line = line.replace(completeStringToReplace, content);
         }
         return line;
