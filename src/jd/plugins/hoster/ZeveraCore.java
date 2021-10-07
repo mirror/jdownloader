@@ -19,19 +19,8 @@ import java.net.URL;
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -53,6 +42,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //IMPORTANT: this class must stay in jd.plugins.hoster because it extends another plugin (UseNet) which is only available through PluginClassLoader
 abstract public class ZeveraCore extends UseNet {
@@ -185,7 +186,7 @@ abstract public class ZeveraCore extends UseNet {
         this.handleAPIErrors(br, link, account);
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final String filename = (String) entries.get("name");
-        final long filesize = ((Number) entries.get("size")).longValue();
+        final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), -1l);
         if (!StringUtils.isEmpty(filename)) {
             link.setFinalFileName(filename);
         }
@@ -283,7 +284,7 @@ abstract public class ZeveraCore extends UseNet {
     private void handleDLSelfhosted(final DownloadLink link, final Account account) throws Exception {
         this.requestFileInformationSelfhosted(link, account);
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final String dllink = entries.get("link").toString();
+        final String dllink = (String) entries.get("link");
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -335,7 +336,7 @@ abstract public class ZeveraCore extends UseNet {
                  */
                 final boolean forceDisableCRCCheck = true;
                 final long originalSourceFilesize = link.getView().getBytesTotal();
-                long thisFilesize = ((Number) entries.get("filesize")).longValue();
+                long thisFilesize = JavaScriptEngineFactory.toLong(entries.get("filesize"), -1l);
                 if (forceDisableCRCCheck || originalSourceFilesize > 0 && thisFilesize > 0 && thisFilesize != originalSourceFilesize) {
                     logger.info("Dumping existing hashes to prevent errors because of cache download");
                     link.setHashInfo(null);
@@ -389,11 +390,11 @@ abstract public class ZeveraCore extends UseNet {
         final Object fair_use_usedO = entries.get("limit_used");
         final Object space_usedO = entries.get("space_used");
         final Object premium_untilO = entries.get("premium_until");
-        if (space_usedO != null && space_usedO instanceof Long) {
+        if (space_usedO != null && space_usedO instanceof Number) {
             ai.setUsedSpace(((Number) space_usedO).longValue());
-        } else if (space_usedO != null && space_usedO instanceof Double) {
+        } else if (space_usedO != null && space_usedO instanceof Number) {
             /* 2019-06-26: New */
-            ai.setUsedSpace((long) ((Double) space_usedO).doubleValue());
+            ai.setUsedSpace(((Number) space_usedO).longValue());
         }
         /* E.g. free account: "premium_until":false */
         final long currentTime = br.getCurrentServerTime(System.currentTimeMillis());
@@ -405,7 +406,7 @@ abstract public class ZeveraCore extends UseNet {
                 ai.setStatus("Premium | Unlimited Traffic Booster workaround enabled");
                 ai.setUnlimitedTraffic();
             } else {
-                if (fair_use_usedO != null && fair_use_usedO instanceof Double) {
+                if (fair_use_usedO != null && fair_use_usedO instanceof Number) {
                     final double d = ((Number) fair_use_usedO).doubleValue();
                     final int fairUsagePercentUsed = (int) (d * 100.0);
                     final int fairUsagePercentLeft = 100 - fairUsagePercentUsed;
@@ -434,7 +435,7 @@ abstract public class ZeveraCore extends UseNet {
         this.handleAPIErrors(br, null, account);
         entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         // final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final ArrayList<String> directdl = (ArrayList<String>) entries.get("directdl");
+        final List<String> directdl = (List<String>) entries.get("directdl");
         final HashSet<String> list = new HashSet<String>();
         /* 2019-08-05: usenet is not supported when pairing login is used because then we do not have the internal Usenet-Logindata! */
         if (supportsUsenet(account)) {
@@ -448,7 +449,7 @@ abstract public class ZeveraCore extends UseNet {
             list.addAll(directdl);
         }
         /* Debug function to find entries which are on the "cache" list but not on "directdl". */
-        final ArrayList<String> cachehosts = (ArrayList<String>) entries.get("cache");
+        final List<String> cachehosts = (List<String>) entries.get("cache");
         for (final String cachehost : cachehosts) {
             if (!list.contains(cachehost)) {
                 logger.info("Host which is only in cache list but not in directdl list: " + cachehost);
@@ -639,9 +640,9 @@ abstract public class ZeveraCore extends UseNet {
                     final long interval_seconds = ((Number) entries.get("interval")).longValue();
                     final long expires_in_seconds = ((Number) entries.get("expires_in")).longValue() - interval_seconds;
                     final long expires_in_timestamp = System.currentTimeMillis() + expires_in_seconds * 1000l;
-                    final String verification_uri = entries.get("verification_uri").toString();
-                    final String device_code = entries.get("device_code").toString();
-                    final String user_code = entries.get("user_code").toString();
+                    final String verification_uri = (String) entries.get("verification_uri");
+                    final String device_code = (String) entries.get("device_code");
+                    final String user_code = (String) entries.get("user_code");
                     if (StringUtils.isEmpty(device_code) || StringUtils.isEmpty(user_code) || StringUtils.isEmpty(verification_uri)) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
@@ -837,9 +838,8 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     /**
-     * Indicates whether or not to display free account download dialogs which tell the user to activate free mode via website. </br>
-     * Some users find this annoying and will deactivate it. </br>
-     * default = true
+     * Indicates whether or not to display free account download dialogs which tell the user to activate free mode via website. </br> Some
+     * users find this annoying and will deactivate it. </br> default = true
      */
     public boolean displayFreeAccountDownloadDialogs(final Account account) {
         return false;
@@ -847,10 +847,9 @@ abstract public class ZeveraCore extends UseNet {
 
     /**
      * 2019-08-21: Premiumize.me has so called 'booster points' which basically means that users with booster points can download more than
-     * normal users can with their fair use limit: https://www.premiumize.me/booster </br>
-     * Premiumize has not yet integrated this in their API which means accounts with booster points will run into the fair-use-limit in
-     * JDownloader and will not be able to download any more files then. </br>
-     * This workaround can set accounts to unlimited traffic so that users will still be able to download.</br>
+     * normal users can with their fair use limit: https://www.premiumize.me/booster </br> Premiumize has not yet integrated this in their
+     * API which means accounts with booster points will run into the fair-use-limit in JDownloader and will not be able to download any
+     * more files then. </br> This workaround can set accounts to unlimited traffic so that users will still be able to download.</br>
      * Remove this workaround once Premiumize has integrated their booster points into their API.
      */
     public boolean isBoosterPointsUnlimitedTrafficWorkaroundActive(final Account account) {
