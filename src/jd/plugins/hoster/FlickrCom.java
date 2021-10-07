@@ -90,7 +90,9 @@ public class FlickrCom extends PluginForHost {
     private static final String SETTING_SELECTED_VIDEO_QUALITY          = "SELECTED_VIDEO_QUALITY";
     private static final String CUSTOM_DATE                             = "CUSTOM_DATE";
     private static final String CUSTOM_FILENAME                         = "CUSTOM_FILENAME";
-    private static final String CUSTOM_FILENAME_EMPTY_TAG_STRING        = "CUSTOM_FILENAME_EMPTY_TAG_STRING";
+    public static final String  CUSTOM_PACKAGENAME_SET_GALLERY          = "CUSTOM_PACKAGENAME_SET_GALLERY";
+    public static final String  CUSTOM_PACKAGENAME_OTHERS               = "CUSTOM_PACKAGENAME_OTHERS";
+    private static final String CUSTOM_EMPTY_TAG_STRING                 = "CUSTOM_EMPTY_TAG_STRING";
     public static final String  PROPERTY_EXT                            = "ext";
     public static final String  PROPERTY_USERNAME_INTERNAL              = "username_internal";
     public static final String  PROPERTY_USERNAME                       = "username";
@@ -1362,7 +1364,7 @@ public class FlickrCom extends PluginForHost {
 
     public static String getCustomStringForEmptyTags() {
         final SubConfiguration cfg = SubConfiguration.getConfig("flickr.com");
-        String emptytag = cfg.getStringProperty(CUSTOM_FILENAME_EMPTY_TAG_STRING, defaultCustomStringForEmptyTags);
+        String emptytag = cfg.getStringProperty(CUSTOM_EMPTY_TAG_STRING, defaultCustomStringForEmptyTags);
         if (emptytag.equals("")) {
             emptytag = defaultCustomStringForEmptyTags;
         }
@@ -1375,6 +1377,8 @@ public class FlickrCom extends PluginForHost {
     private static final boolean defaultPreferServerFilename         = false;
     private static final String  defaultCustomDate                   = "MM-dd-yyyy";
     private static final String  defaultCustomFilename               = "*username_url*_*content_id*_*title**extension*";
+    public static final String   defaultCustomPackagenameSetGallery  = "*type* - *username_url*_*set_or_gallery_id* - *title*";
+    public static final String   defaultCustomPackagenameOthers      = "*type* - *username_url*";
     public final static String   defaultCustomStringForEmptyTags     = "-";
     public final static String   defaultPhotoExt                     = ".jpg";
 
@@ -1389,30 +1393,48 @@ public class FlickrCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SETTING_SELECTED_VIDEO_QUALITY, getVideoQualityLabels(), "Select preferred video quality. If that is not available, best will be used instead.").setDefaultValue(defaultArrayPosSelectedVideoQuality));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, "Define how dates inside filenames/packagenames should look like:").setDefaultValue(defaultCustomDate));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        /* Packagename settings */
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_PACKAGENAME_SET_GALLERY, "Custom packagename for sets/galleries:").setDefaultValue(defaultCustomPackagenameSetGallery));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_PACKAGENAME_OTHERS, "Custom packagename for users/user favorites/groups:").setDefaultValue(defaultCustomPackagenameOthers));
+        final StringBuilder tagsPackage = new StringBuilder();
+        tagsPackage.append("Explanation of the available packagename tags:\r\n");
+        tagsPackage.append("*type* = Type of url: One of the following: Set, Gallery, Groups, User, Favorites\r\n");
+        tagsPackage.append("*set_id* = ID of album\r\n");
+        tagsPackage.append("*gallery_id* = ID of gallery\r\n");
+        tagsPackage.append("*set_or_gallery_id* = ID of gallery or set\r\n");
+        tagsPackage.append("*title* = Title of gallery or set\r\n");
+        tagsPackage.append("*description* = Description of the gallery/set\r\n");
+        tagsPackage.append("*username* = Short username e.g. 'exampleusername'\r\n");
+        tagsPackage.append("*username_internal* = Internal username e.g. '12345678@N04'\r\n");
+        tagsPackage.append("*username_full* = Full username e.g. 'Example Username'\r\n");
+        tagsPackage.append("*username_url* = Username from inside URL - usually either the same value as 'username' or 'username_internal'");
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, tagsPackage.toString()));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         /* Filename settings */
         final ConfigEntry preferServerFilenames = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_SETTING_PREFER_SERVER_FILENAME, "Prefer server filenames instead of formatted filenames (photos only) e.g. '11112222_574508fa345a_6k.jpg'?").setDefaultValue(defaultPreferServerFilename);
         getConfig().addEntry(preferServerFilenames);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, "Define how dates inside filenames should look like:").setDefaultValue(defaultCustomDate).setEnabledCondidtion(preferServerFilenames, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME, "Custom filename:").setDefaultValue(defaultCustomFilename).setEnabledCondidtion(preferServerFilenames, false));
-        final StringBuilder sbtags = new StringBuilder();
-        sbtags.append("Explanation of the available tags:\r\n");
-        sbtags.append("*content_id* = ID of the photo/video\r\n");
-        sbtags.append("*set_id* = ID of album if the photo/video is part of a crawled album or single photo/video URL contains album ID\r\n");
-        sbtags.append("*gallery_id* = ID of gallery if the photo/video is part of a crawled gallery or single photo/video URL contains gallery ID\r\n");
-        sbtags.append("*date* = date when the photo was uploaded - custom date format will be used here\r\n");
-        sbtags.append("*date_taken* = date when the photo was taken - custom date format will be used here\r\n");
-        sbtags.append("*extension* = Extension of the photo - usually '.jpg'\r\n");
-        sbtags.append("*media* = Media type ('video' or 'photo')\r\n");
-        sbtags.append("*order_id* = Position of image/video if it was part of a crawled gallery/user-profile\r\n");
-        sbtags.append("*quality* = Quality of the photo/video e.g. 'm' or '1080p'\r\n");
-        sbtags.append("*real_name* = Real name of the user (name and surname) e.g. 'Marcus Mueller'\r\n");
-        sbtags.append("*title* = Title of the photo\r\n");
-        sbtags.append("*username* = Short username e.g. 'exampleusername'\r\n");
-        sbtags.append("*username_internal* = Internal username e.g. '12345678@N04'\r\n");
-        sbtags.append("*username_full* = Full username e.g. 'Example Username'\r\n");
-        sbtags.append("*username_url* = Username from inside URL - usually either the same value as 'username' or 'username_internal'");
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sbtags.toString()));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_EMPTY_TAG_STRING, "Char which will be used for empty tags (e.g. missing data):").setDefaultValue(defaultCustomStringForEmptyTags).setEnabledCondidtion(preferServerFilenames, false));
+        final StringBuilder tagsFile = new StringBuilder();
+        tagsFile.append("Explanation of the available filename tags:\r\n");
+        tagsFile.append("*content_id* = ID of the photo/video\r\n");
+        tagsFile.append("*set_id* = ID of album if the photo/video is part of a crawled album or single photo/video URL contains album ID\r\n");
+        tagsFile.append("*gallery_id* = ID of gallery if the photo/video is part of a crawled gallery or single photo/video URL contains gallery ID\r\n");
+        tagsFile.append("*date* = date when the photo was uploaded - custom date format will be used here\r\n");
+        tagsFile.append("*date_taken* = date when the photo was taken - custom date format will be used here\r\n");
+        tagsFile.append("*extension* = Extension of the photo - usually '.jpg'\r\n");
+        tagsFile.append("*media* = Media type ('video' or 'photo')\r\n");
+        tagsFile.append("*order_id* = Position of image/video if it was part of a crawled gallery/user-profile\r\n");
+        tagsFile.append("*quality* = Quality of the photo/video e.g. 'm' or '1080p'\r\n");
+        tagsFile.append("*real_name* = Real name of the user (name and surname) e.g. 'Marcus Mueller'\r\n");
+        tagsFile.append("*title* = Title of the photo\r\n");
+        tagsFile.append("*username* = Short username e.g. 'exampleusername'\r\n");
+        tagsFile.append("*username_internal* = Internal username e.g. '12345678@N04'\r\n");
+        tagsFile.append("*username_full* = Full username e.g. 'Example Username'\r\n");
+        tagsFile.append("*username_url* = Username from inside URL - usually either the same value as 'username' or 'username_internal'");
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, tagsFile.toString()));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_EMPTY_TAG_STRING, "Char which will be used for empty tags (e.g. missing data):").setDefaultValue(defaultCustomStringForEmptyTags).setEnabledCondidtion(preferServerFilenames, false));
     }
 
     @Override
