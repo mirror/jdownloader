@@ -27,8 +27,10 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Cookie;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
+import jd.http.requests.FormData;
+import jd.http.requests.PostFormDataRequest;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -48,7 +50,9 @@ import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.KeyValueStringEntry;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -146,7 +150,7 @@ abstract public class ZeveraCore extends UseNet {
         br.setCookiesExclusive(true);
         prepBrowser(br, getHost());
         br.getHeaders().put("User-Agent", "JDownloader");
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        // br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         br.setFollowRedirects(true);
         return br;
@@ -308,7 +312,7 @@ abstract public class ZeveraCore extends UseNet {
             final String hash_sha1 = link.getSha1Hash();
             final String hash_sha256 = link.getSha256Hash();
             final UrlQuery query = new UrlQuery();
-            query.add("src", Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, hostPlugin)));
+            query.add("src", URLEncode.encodeURIComponent(link.getDefaultPlugin().buildExternalDownloadURL(link, hostPlugin)));
             if (hash_md5 != null) {
                 query.add("hash_md5", hash_md5);
             }
@@ -318,7 +322,17 @@ abstract public class ZeveraCore extends UseNet {
             if (hash_sha256 != null) {
                 query.add("hash_sha256", hash_sha256);
             }
-            callAPI(br, account, "/api/transfer/directdl" + "?" + query.toString());
+            if ("premiumize.me".equals(getHost())) {
+                final String accessToken = getAPIKey(account);
+                final PostFormDataRequest postRequest = br.createPostFormDataRequest("https://www." + account.getHoster() + "/api/transfer/directdl");
+                postRequest.getCookies().add(new Cookie(getHost(), "sdk_login", accessToken));
+                for (final KeyValueStringEntry entry : query.list()) {
+                    postRequest.addFormData(new FormData(entry.getKey(), URLEncode.decodeURIComponent(entry.getValue())));
+                }
+                sendRequest(br, postRequest);
+            } else {
+                callAPI(br, account, "/api/transfer/directdl" + "?" + query.toString());
+            }
             this.handleAPIErrors(br, link, account);
             final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             dllink = (String) entries.get("location");
@@ -741,7 +755,7 @@ abstract public class ZeveraCore extends UseNet {
              * Without pairing login we need an additional parameter. It will also work with pairing mode when that parameter is given with
              * a wrong value but that may change in the future so this is to avoid issues!
              */
-            url += "&pin=" + Encoding.urlEncode(getAPIKey(account));
+            url += "&pin=" + URLEncode.encodeURIComponent(getAPIKey(account));
         }
         getPage(br, url);
     }
