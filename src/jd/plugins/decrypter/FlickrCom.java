@@ -31,6 +31,7 @@ import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -151,16 +152,11 @@ public class FlickrCom extends PluginForDecrypt {
         br.getHeaders().put("Referer", "https://www." + this.getHost());
         br.getHeaders().put("Accept", "*/*");
         String usernameFromURL = null;
-        String usernameSlug = null; // username lowercase (inside URLs) e.g. "exampleusername"
-        String usernameFull = null; // Username full e.g. "Example Username"
+        String username = null; // username lowercase (inside URLs) e.g. "exampleusername"
         String usernameInternal = null; // Internal username e.g. "123456@N04"
         boolean givenUsernameDataIsValidForAllMediaItems;
-        String setID = null;
-        String galleryID = null;
-        String packageDescription = null;
         /* Set this if we pre-access items to e.g. get specific fields in beforehand. */
         boolean alreadyAccessedFirstPage;
-        String fpName = null;
         String nameOfMainMap;
         final UrlQuery query = new UrlQuery();
         query.add("api_key", apikey);
@@ -176,60 +172,53 @@ public class FlickrCom extends PluginForDecrypt {
         } else {
             query.add("csrf", "");
         }
+        final FlickrAlbum album = new FlickrAlbum();
         if (param.getCryptedUrl().matches(TYPE_SET_SINGLE)) {
+            album.setType(AlbumType.SET);
             usernameFromURL = new Regex(param.getCryptedUrl(), TYPE_SET_SINGLE).getMatch(0);
-            setID = new Regex(param.getCryptedUrl(), TYPE_SET_SINGLE).getMatch(1);
+            album.setSetID(new Regex(param.getCryptedUrl(), TYPE_SET_SINGLE).getMatch(1));
             /* This request is only needed to get the title and owner of the photoset */
-            query.add("photoset_id", setID);
+            query.add("photoset_id", album.getSetID());
             final UrlQuery paramsSetInfo = query;
             paramsSetInfo.add("method", "flickr.photosets.getInfo");
             apiGetPage(API_BASE + "services/rest?" + paramsSetInfo.toString());
             final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final Map<String, Object> photoset = (Map<String, Object>) entries.get("photoset");
             usernameInternal = (String) photoset.get("owner");
-            usernameFull = (String) photoset.get("ownername");
-            fpName = (String) JavaScriptEngineFactory.walkJson(photoset, "title/_content");
-            packageDescription = (String) JavaScriptEngineFactory.walkJson(photoset, "description/_content");
-            if (StringUtils.isEmpty(fpName)) {
-                fpName = "flickr.com set " + setID + " of user " + usernameFromURL;
-            } else {
-                fpName = Encoding.unicodeDecode(fpName);
-            }
+            album.setUsernameFull((String) photoset.get("ownername"));
+            album.setTitleOfGalleryOrSet((String) JavaScriptEngineFactory.walkJson(photoset, "title/_content"));
+            album.setDescription((String) JavaScriptEngineFactory.walkJson(photoset, "description/_content"));
             query.addAndReplace("method", "flickr.photosets.getPhotos");
             nameOfMainMap = "photoset";
             alreadyAccessedFirstPage = false;
             givenUsernameDataIsValidForAllMediaItems = true;
         } else if (param.getCryptedUrl().matches(TYPE_GALLERY)) {
+            album.setType(AlbumType.GALLERY);
             usernameFromURL = new Regex(param.getCryptedUrl(), TYPE_GALLERY).getMatch(0);
-            galleryID = new Regex(param.getCryptedUrl(), TYPE_GALLERY).getMatch(1);
+            album.setGalleryID(new Regex(param.getCryptedUrl(), TYPE_GALLERY).getMatch(1));
             query.add("method", "flickr.galleries.getPhotos");
-            query.add("gallery_id", galleryID);
+            query.add("gallery_id", album.getGalleryID());
             final UrlQuery specialQueryForFirstRequest = query;
             specialQueryForFirstRequest.add("get_gallery_info", "1");
             apiGetPage(API_BASE + "services/rest?" + specialQueryForFirstRequest.toString());
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final Map<String, Object> galleryinfo = (Map<String, Object>) entries.get("gallery");
-            usernameSlug = (String) galleryinfo.get("username");
-            final String galleryTitle = (String) JavaScriptEngineFactory.walkJson(entries, "title/_content");
-            if (!StringUtils.isEmpty(galleryTitle)) {
-                fpName = "flickr.com gallery " + fpName + " of user " + usernameFromURL;
-            } else {
-                /* Fallback */
-                fpName = "flickr.com gallery " + galleryID + " of user " + usernameFromURL;
-            }
+            username = (String) galleryinfo.get("username");
+            album.setTitleOfGalleryOrSet((String) JavaScriptEngineFactory.walkJson(entries, "title/_content"));
             nameOfMainMap = "photos";
             alreadyAccessedFirstPage = true;
             givenUsernameDataIsValidForAllMediaItems = false;
         } else if (param.getCryptedUrl().matches(TYPE_FAVORITES)) {
+            album.setType(AlbumType.USER_FAVORITES);
             usernameFromURL = new Regex(param.getCryptedUrl(), TYPE_FAVORITES).getMatch(0);
             usernameInternal = this.lookupUser(usernameFromURL, account);
             query.add("method", "flickr.favorites.getList");
             query.add("user_id", Encoding.urlEncode(usernameInternal));
-            fpName = "flickr.com favourites of user " + usernameFromURL;
             nameOfMainMap = "photos";
             alreadyAccessedFirstPage = false;
             givenUsernameDataIsValidForAllMediaItems = false;
         } else if (param.getCryptedUrl().matches(TYPE_GROUPS)) {
+            album.setType(AlbumType.GROUPS);
             usernameFromURL = new Regex(param.getCryptedUrl(), TYPE_GROUPS).getMatch(0);
             usernameInternal = this.lookupGroup(usernameFromURL, account);
             query.add("group_id", Encoding.urlEncode(usernameInternal));
@@ -240,19 +229,18 @@ public class FlickrCom extends PluginForDecrypt {
             apiGetPage(API_BASE + "services/rest?" + specialQueryForFirstRequest.toString());
             final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final Map<String, Object> group = (Map<String, Object>) entries.get("group");
-            usernameSlug = (String) group.get("pathalias");
-            usernameFull = (String) group.get("name");
-            fpName = "flickr.com images of group " + usernameFromURL;
+            username = (String) group.get("pathalias");
+            album.setUsernameFull((String) group.get("name"));
             nameOfMainMap = "photos";
             alreadyAccessedFirstPage = true;
             givenUsernameDataIsValidForAllMediaItems = false;
         } else if (param.getCryptedUrl().matches(TYPE_USER)) {
+            album.setType(AlbumType.USER);
             /* Crawl all items of a user */
             usernameFromURL = new Regex(param.getCryptedUrl(), TYPE_USER).getMatch(0);
             usernameInternal = this.lookupUser(usernameFromURL, account);
             query.add("user_id", usernameInternal);
             query.add("method", "flickr.people.getPublicPhotos"); // Alternative: flickr.people.getPhotos
-            fpName = "flickr.com images of user " + usernameFromURL;
             nameOfMainMap = "photos";
             alreadyAccessedFirstPage = false;
             givenUsernameDataIsValidForAllMediaItems = true;
@@ -262,14 +250,16 @@ public class FlickrCom extends PluginForDecrypt {
         }
         if (looksLikeInternalUsername(usernameFromURL)) {
             usernameInternal = usernameFromURL;
-        } else if (usernameSlug == null) {
-            usernameSlug = usernameFromURL;
+        } else if (username == null) {
+            username = usernameFromURL;
         }
+        album.setUsernameURL(usernameFromURL);
+        album.setUsernameInternal(usernameInternal);
+        album.setUsername(username);
         final FilePackage fp = FilePackage.getInstance();
-        fpName = encodeUnicode(fpName);
-        fp.setName(fpName);
-        if (!StringUtils.isEmpty(packageDescription)) {
-            fp.setComment(packageDescription);
+        fp.setName(encodeUnicode(this.getFormattedPackagename(album)));
+        if (!StringUtils.isEmpty(album.getDescription())) {
+            fp.setComment(album.getDescription());
         }
         int totalimgs = -1;
         int totalpages = -1;
@@ -318,28 +308,28 @@ public class FlickrCom extends PluginForDecrypt {
                 }
                 String contentURL = buildContentURL(usernameForContentURL, photoID);
                 /* The following is really only to match the URLs exactly like in browser and is not necessary for that URL to be valid! */
-                if (setID != null) {
-                    contentURL += "/in/album-" + setID + "/";
-                } else if (galleryID != null) {
-                    contentURL += "/in/gallery-" + usernameFromURL + "-" + galleryID;
+                if (album.getSetID() != null) {
+                    contentURL += "/in/album-" + album.getSetID() + "/";
+                } else if (album.getGalleryID() != null) {
+                    contentURL += "/in/gallery-" + usernameFromURL + "-" + album.getGalleryID();
                 }
                 final DownloadLink dl = createDownloadlink(contentURL);
                 jd.plugins.hoster.FlickrCom.parseInfoAPI(this, dl, photo);
                 {
                     /* Set different username/name properties in context */
                     if (givenUsernameDataIsValidForAllMediaItems) {
-                        setStringProperty(dl, jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME, usernameSlug, false);
+                        setStringProperty(dl, jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME, username, false);
                         setStringProperty(dl, jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_INTERNAL, usernameInternal, false);
-                        setStringProperty(dl, jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_FULL, usernameFull, false);
+                        setStringProperty(dl, jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_FULL, album.getUsernameFull(), false);
                     }
                     /* Overwrite previously set properties if our "photo" object has them too as we can trust those ones 100%. */
                     dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_URL, usernameForContentURL);
                 }
-                if (setID != null) {
-                    dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_SET_ID, setID);
+                if (album.getSetID() != null) {
+                    dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_SET_ID, album.getSetID());
                 }
-                if (galleryID != null) {
-                    dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_GALLERY_ID, galleryID);
+                if (album.getGalleryID() != null) {
+                    dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_GALLERY_ID, album.getGalleryID());
                 }
                 dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_ORDER_ID, df.format(imagePosition));
                 jd.plugins.hoster.FlickrCom.setFilename(dl);
@@ -368,6 +358,29 @@ public class FlickrCom extends PluginForDecrypt {
     /** Wrapper */
     private String getFormattedFilename(final DownloadLink dl) throws ParseException {
         return jd.plugins.hoster.FlickrCom.getFormattedFilename(dl);
+    }
+
+    private String getFormattedPackagename(final FlickrAlbum album) throws ParseException {
+        String ret;
+        final SubConfiguration cfg = SubConfiguration.getConfig("flickr.com");
+        final String customStringForEmptyTags = jd.plugins.hoster.FlickrCom.getCustomStringForEmptyTags();
+        if (album.getType() == AlbumType.GALLERY || album.getType() == AlbumType.SET) {
+            ret = cfg.getStringProperty(jd.plugins.hoster.FlickrCom.CUSTOM_PACKAGENAME_SET_GALLERY, jd.plugins.hoster.FlickrCom.defaultCustomPackagenameSetGallery);
+        } else {
+            ret = cfg.getStringProperty(jd.plugins.hoster.FlickrCom.CUSTOM_PACKAGENAME_OTHERS, jd.plugins.hoster.FlickrCom.defaultCustomPackagenameOthers);
+        }
+        final String wtf = StringUtils.firstNotEmpty(album.getSetOrGalleryID(), customStringForEmptyTags);
+        ret = ret.replace("*type*", StringUtils.firstNotEmpty(album.getTypeAsString(), customStringForEmptyTags));
+        ret = ret.replace("*set_id*", StringUtils.firstNotEmpty(album.getSetID(), customStringForEmptyTags));
+        ret = ret.replace("*gallery_id*", StringUtils.firstNotEmpty(album.getGalleryID(), customStringForEmptyTags));
+        ret = ret.replace("*set_or_gallery_id*", StringUtils.firstNotEmpty(album.getSetOrGalleryID(), customStringForEmptyTags));
+        ret = ret.replace("*title*", StringUtils.firstNotEmpty(album.getTitleOfGalleryOrSet(), customStringForEmptyTags));
+        ret = ret.replace("*username*", StringUtils.firstNotEmpty(album.getUsername(), customStringForEmptyTags));
+        ret = ret.replace("*username_internal*", StringUtils.firstNotEmpty(album.getUsernameInternal(), customStringForEmptyTags));
+        ret = ret.replace("*username_full*", StringUtils.firstNotEmpty(album.getUsernameFull(), customStringForEmptyTags));
+        ret = ret.replace("*username_url*", StringUtils.firstNotEmpty(album.getUsernameURL(), customStringForEmptyTags));
+        ret = ret.replace("*description*", StringUtils.firstNotEmpty(album.getDescription(), customStringForEmptyTags));
+        return ret;
     }
 
     /** Crawls all sets/albums of a user. */
@@ -812,5 +825,128 @@ public class FlickrCom extends PluginForDecrypt {
 
     public boolean isProxyRotationEnabledForLinkCrawler() {
         return false;
+    }
+
+    private enum AlbumType {
+        SET("Set"),
+        GALLERY("Gallery"),
+        GROUPS("Groups"),
+        USER("User"),
+        USER_FAVORITES("Favorites");
+
+        private final String stringValue;
+
+        private AlbumType(String value) {
+            stringValue = value;
+        }
+
+        public String getNiceName() {
+            return stringValue;
+        }
+    }
+
+    public class FlickrAlbum {
+        protected AlbumType getType() {
+            return albumType;
+        }
+
+        protected String getTypeAsString() {
+            return albumType.getNiceName();
+        }
+
+        protected void setType(AlbumType albumType) {
+            this.albumType = albumType;
+        }
+
+        protected String getUsername() {
+            return username;
+        }
+
+        protected void setUsername(String username) {
+            this.username = username;
+        }
+
+        protected String getUsernameURL() {
+            return usernameURL;
+        }
+
+        protected void setUsernameURL(String usernameURL) {
+            this.usernameURL = usernameURL;
+        }
+
+        protected String getUsernameInternal() {
+            return usernameInternal;
+        }
+
+        protected void setUsernameInternal(String usernameInternal) {
+            this.usernameInternal = usernameInternal;
+        }
+
+        protected String getUsernameFull() {
+            return usernameFull;
+        }
+
+        protected void setUsernameFull(String usernameFull) {
+            this.usernameFull = usernameFull;
+        }
+
+        protected String getGalleryID() {
+            return galleryID;
+        }
+
+        protected void setGalleryID(String galleryID) {
+            this.galleryID = galleryID;
+        }
+
+        protected String getSetID() {
+            return setID;
+        }
+
+        protected void setSetID(String setID) {
+            this.setID = setID;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
+
+        public String getTitleOfGalleryOrSet() {
+            return titleOfGalleryOrSet;
+        }
+
+        public void setTitleOfGalleryOrSet(String titleOfGalleryOrSet) {
+            this.titleOfGalleryOrSet = titleOfGalleryOrSet;
+        }
+
+        protected String getSetOrGalleryID() {
+            if (this.setID != null) {
+                return this.setID;
+            } else if (this.galleryID != null) {
+                return this.galleryID;
+            } else {
+                return null;
+            }
+        }
+
+        private AlbumType albumType           = null;
+        private String    username            = null;
+        private String    usernameURL         = null;
+        private String    usernameInternal    = null;
+        private String    usernameFull        = null;
+        private String    galleryID           = null;
+        private String    setID               = null;
+        private String    titleOfGalleryOrSet = null;
+        private String    description         = null;
+
+        public FlickrAlbum() {
+        }
+
+        public FlickrAlbum(final String usernameURL) {
+            this.usernameURL = usernameURL;
+        }
     }
 }

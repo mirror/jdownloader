@@ -16,12 +16,15 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -30,7 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "b-ok.cc" }, urls = { "https?://(www\\.)?([a-z]+\\.)?(?:bookfi\\.(?:org|net)|bookzz\\.org|b-ok\\.org||b-ok\\.cc)/((book|dl)/\\d+(/[a-z0-9]+)?|md5/[A-F0-9]{32})" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class BookFiOrg extends antiDDoSForHost {
     // DEV NOTES
     // they share the same template
@@ -51,6 +54,50 @@ public class BookFiOrg extends antiDDoSForHost {
 
     private static final String TYPE_MD5 = "https?://[^/]+/md5/([a-f0-9]{32})$";
 
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "b-ok.cc", "b-ok.org", "bookfi.net", "bookfi.org", "bookzz.org", "de1lib.org", "pt1lib.org", "1lib.eu", "1lib.org", "2lib.org", "b-ok.xyz", "b-ok.global", "3lib.net", "4lib.org", "eu1lib.org", "1lib.limited", "1lib.education" });
+        return ret;
+    }
+
+    private static final ArrayList<String> getDeadDomains() {
+        /**
+         * Collect dead domains so we know when we have to alter the domain of added URLs! </br>
+         * KEEP THIS LIST UP2DATE!!
+         */
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("bookfi.org");
+        deadDomains.add("bookfi.net");
+        deadDomains.add("bookzz.org");
+        deadDomains.add("1lib.eu");
+        deadDomains.add("1lib.org");
+        deadDomains.add("2lib.org");
+        deadDomains.add("4lib.org");
+        return deadDomains;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:[a-z]+\\.)?" + buildHostsPatternPart(domains) + "/((book|dl)/\\d+(/[a-z0-9]+)?|md5/[A-F0-9]{32})");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     @Override
     public String rewriteHost(String host) {
         /* 2021-10-05: bookifi.net --> b-ok.cc */
@@ -58,6 +105,17 @@ public class BookFiOrg extends antiDDoSForHost {
             return this.getHost();
         } else {
             return super.rewriteHost(host);
+        }
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        if (link.getPluginPatternMatcher() != null) {
+            final ArrayList<String> deadDomains = getDeadDomains();
+            final String domain = Browser.getHost(link.getPluginPatternMatcher(), true);
+            if (deadDomains.contains(domain)) {
+                link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst(org.appwork.utils.Regex.escape(domain), this.getHost()));
+            }
         }
     }
 
@@ -88,7 +146,8 @@ public class BookFiOrg extends antiDDoSForHost {
             }
             getPage("/" + bookid);
         }
-        final String filesizeStr = br.getRegex("Download\\s*\\([a-z0-9]+,\\s*(\\d+[^<>\"\\'\\)]+)\\)").getMatch(0);
+        /* Try to make this work language independant because website language is determined by domain and/or IP! */
+        final String filesizeStr = br.getRegex("(?i)class=\"glyphicon glyphicon-download-alt\"[^>]*></span>\\s*[^\\(]+\\s*\\([a-z0-9]+,\\s*(\\d+[^<>\"\\'\\)]+)\\)").getMatch(0);
         if (filesizeStr != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
         }
@@ -117,10 +176,12 @@ public class BookFiOrg extends antiDDoSForHost {
             } catch (final IOException e) {
                 logger.log(e);
             }
-            if (br.containsHTML("There are more then \\d+ downloads from this IP during last")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+            /* 2021-10-07: Different domain(and/or IP) = different language --> Try to cover multiple languages here */
+            if (br.containsHTML("There are more th(?:e|a)n \\d+ downloads from this IP during last|ACHTUNG: Es gibt mehr als \\d+ Downloads von Ihrer IP")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily downloadlimit reached");
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
