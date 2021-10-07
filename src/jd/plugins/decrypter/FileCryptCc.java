@@ -24,21 +24,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.captcha.v2.challenge.cutcaptcha.CaptchaHelperCrawlerPluginCutCaptcha;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.FileCryptConfig;
-import org.jdownloader.plugins.components.config.FileCryptConfig.CrawlMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -61,6 +46,21 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.cutcaptcha.CaptchaHelperCrawlerPluginCutCaptcha;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.FileCryptConfig;
+import org.jdownloader.plugins.components.config.FileCryptConfig.CrawlMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecrypt.cc" }, urls = { "https?://(?:www\\.)?filecrypt\\.(?:cc|co)/Container/([A-Z0-9]{10,16})(\\.html\\?mirror=\\d+)?" })
 public class FileCryptCc extends PluginForDecrypt {
@@ -91,7 +91,7 @@ public class FileCryptCc extends PluginForDecrypt {
         cutcaptchaAvoidanceLoop: while (cutCaptchaRetryIndex++ <= cutCaptchaAvoidanceMaxRetries && !this.isAbort()) {
             logger.info("cutcaptchaAvoidanceLoop " + (cutCaptchaRetryIndex + 1) + " / " + (cutCaptchaAvoidanceMaxRetries + 1));
             br.setLoadLimit(br.getLoadLimit() * 2);
-            br.getHeaders().put("Accept-Encoding", "gzip, deflate, sdch");
+            br.getHeaders().put("Accept-Encoding", "gzip, deflate");
             /* Website has no language selection as it auto-chooses based on IP and/or URL but we can force English language. */
             br.setCookie(Browser.getHost(param.getCryptedUrl()), "lang", "en");
             br.setFollowRedirects(true);
@@ -108,20 +108,14 @@ public class FileCryptCc extends PluginForDecrypt {
             final List<String> passwords = getPreSetPasswords();
             final HashSet<String> avoidRetry = new HashSet<String>();
             final String lastUsedPassword = this.getPluginConfig().getStringProperty("last_used_password");
-            String presumedPasswordBasedOnCustomLogo = null;
-            /* Creators can set custom logos on each folder. Each logo has a unique ID. This way we can try specific passwords first. */
-            final String customLogoID = br.getRegex("custom/([a-z0-9]+)\\.png").getMatch(0);
-            if (customLogoID != null) {
-                if (customLogoID.equals("53d1b")) {
-                    presumedPasswordBasedOnCustomLogo = "serienfans.org";
-                }
-            }
             if (StringUtils.isNotEmpty(lastUsedPassword)) {
                 passwords.add(0, lastUsedPassword);
             }
-            if (presumedPasswordBasedOnCustomLogo != null) {
-                logger.info("Found presumed password by custom logo: " + presumedPasswordBasedOnCustomLogo);
-                passwords.add(0, presumedPasswordBasedOnCustomLogo);
+            /* Creators can set custom logos on each folder. Each logo has a unique ID. This way we can try specific passwords first. */
+            final String customLogoID = br.getRegex("custom/([a-z0-9]+)\\.png").getMatch(0);
+            if ("53d1b".equals(customLogoID)) {
+                logger.info("Found presumed password by custom logo: " + customLogoID);
+                passwords.add(0, "serienfans.org");
             }
             int generalLoopCounter = 0;
             String usedPassword = null;
