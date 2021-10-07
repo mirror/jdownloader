@@ -229,6 +229,7 @@ public interface LinkgrabberSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultEnumValue("ASK")
+    @DescriptionForConfigEntry("Defines what to do when user tries to add items from linkgrabber to downloadlist that are already in downloadlist.")
     OnDupesLinksAction getDefaultOnAddedDupesLinksAction();
 
     void setDefaultOnAddedDupesLinksAction(OnDupesLinksAction value);
@@ -288,6 +289,7 @@ public interface LinkgrabberSettings extends ConfigInterface {
     ConfirmIncompleteArchiveAction getHandleIncompleteArchiveOnConfirmLatestSelection();
 
     @AboutConfig
+    @DescriptionForConfigEntry("Defines pre-selected default action in dialog that shows up when user tries to add items from linkgrabber to downloadlist that are already in downloadlist.")
     void setHandleDupesOnConfirmLatestSelection(OnDupesLinksAction handleDupesLoc);
 
     OnDupesLinksAction getHandleDupesOnConfirmLatestSelection();

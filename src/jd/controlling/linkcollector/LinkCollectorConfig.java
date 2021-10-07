@@ -11,13 +11,14 @@ public interface LinkCollectorConfig extends ConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(true)
     @RequiresRestart("A JDownloader Restart is Required")
+    @DescriptionForConfigEntry("Check for duplicates in linkgrabber. Disable this to allow duplicates (not recommended).")
     boolean isDupeManagerEnabled();
 
     void setDupeManagerEnabled(boolean b);
 
     @DefaultBooleanValue(true)
     @AboutConfig
-    @DescriptionForConfigEntry("check links for on/offline status")
+    @DescriptionForConfigEntry("Check links for on/offline status")
     boolean getDoLinkCheck();
 
     void setDoLinkCheck(boolean b);
