@@ -22,6 +22,7 @@ import java.util.List;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -127,6 +128,21 @@ public class BookFiOrg extends antiDDoSForHost {
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
         getPage(parameter);
+        if (br.getURL().contains("redirectUrl")) {
+            /* Redirect to other domain based on GEO-location/IP */
+            logger.info("Redirect to another domain required");
+            final String redirect = br.getRegex("location\\.href = '//' \\+ domain \\+ '(/book/[^\\']+)'").getMatch(0);
+            final String allDomainsJs = br.getRegex("const domains = (\\[[^\\]]+\\]);").getMatch(0);
+            if (redirect == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if (allDomainsJs == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final List<String> ressourcelist = (List<String>) JavaScriptEngineFactory.jsonToJavaObject(allDomainsJs);
+            final String redirectURL = "https://" + ressourcelist.get(0) + redirect;
+            logger.info("Redirect to: " + redirectURL);
+            getPage(redirectURL);
+        }
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"notFound") || br.containsHTML(">\\s*If you did not find the book or it was closed")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
