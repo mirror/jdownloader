@@ -369,7 +369,6 @@ public class FlickrCom extends PluginForDecrypt {
         } else {
             ret = cfg.getStringProperty(jd.plugins.hoster.FlickrCom.CUSTOM_PACKAGENAME_OTHERS, jd.plugins.hoster.FlickrCom.defaultCustomPackagenameOthers);
         }
-        final String wtf = StringUtils.firstNotEmpty(album.getSetOrGalleryID(), customStringForEmptyTags);
         ret = ret.replace("*type*", StringUtils.firstNotEmpty(album.getTypeAsString(), customStringForEmptyTags));
         ret = ret.replace("*set_id*", StringUtils.firstNotEmpty(album.getSetID(), customStringForEmptyTags));
         ret = ret.replace("*gallery_id*", StringUtils.firstNotEmpty(album.getGalleryID(), customStringForEmptyTags));
