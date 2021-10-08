@@ -98,7 +98,7 @@ public class IwaraTv extends PluginForDecrypt {
                     String videoTitle = br.getRegex("/videos/" + videoID + "[^\"]+\">([^<>\"]+)</a></h3>").getMatch(0);
                     videoTitle = Encoding.htmlOnlyDecode(Encoding.htmlOnlyDecode(videoTitle));
                     if (videoTitle != null) {
-                        dl.setName(username + "_" + videoID + "_" + videoTitle.trim().replaceAll("(\\.+)$", "") + ".mp4");
+                        dl.setName(username + "_" + videoID + "_" + videoTitle.trim().replaceAll("([\\(\\s\\._]+)$", "") + ".mp4");
                     } else {
                         dl.setName(username + "_" + videoID + ".mp4");
                     }
