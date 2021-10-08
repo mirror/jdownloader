@@ -51,7 +51,7 @@ public class AdulttimeCom extends EvilangelCore {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://members\\." + buildHostsPatternPart(domains) + "/[a-z]{2}/video/([A-Za-z0-9\\-_]+)(?:/[A-Za-z0-9\\-_]+)?/(\\d+)");
+            ret.add("https?://members\\." + buildHostsPatternPart(domains) + "/[a-z]{2}/video/([^/]+)(?:/[A-Za-z0-9\\-_]+)?/(\\d+)");
         }
         return ret.toArray(new String[0]);
     }
