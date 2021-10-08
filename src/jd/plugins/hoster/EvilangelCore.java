@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
@@ -25,8 +27,10 @@ import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -91,7 +95,7 @@ public abstract class EvilangelCore extends PluginForHost {
     private String              dllink                                 = null;
     private static final String URL_EVILANGEL_FILM                     = "https?://members\\.evilangel.com/[a-z]{2}/([A-Za-z0-9\\-_]+)/film/(\\d+)";
     private static final String URL_EVILANGEL_FREE_TRAILER             = "https?://(?:www\\.)?evilangel\\.com/[a-z]{2}/video/([A-Za-z0-9\\-]+)/(\\d+)";
-    private static final String URL_VIDEO                              = "https?://members\\.[^/]+/[a-z]{2}/video/([A-Za-z0-9\\-_]+)(?:/([A-Za-z0-9\\-_]+))?/(\\d+)";
+    private static final String URL_VIDEO                              = "https?://members\\.[^/]+/[a-z]{2}/video/([^/]+)(?:/([A-Za-z0-9\\-_]+))?/(\\d+)";
     private static final String PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIN = "has_used_cookie_login";
 
     public boolean isProxyRotationEnabledForLinkChecker() {
@@ -185,7 +189,7 @@ public abstract class EvilangelCore extends PluginForHost {
                 /* 2021-09-01: Use title from URL as this should be just fine. */
                 filename = getURLTitle(link);
                 filename = Encoding.htmlDecode(filename.trim());
-                dllink = getDllink(this.br);
+                dllink = getDllink(link, this.br);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -202,7 +206,7 @@ public abstract class EvilangelCore extends PluginForHost {
                 /* 2021-09-01: Use title from URL as this should be just fine. */
                 filename = getURLTitle(link);
                 filename = Encoding.htmlDecode(filename.trim());
-                dllink = getDllink(this.br);
+                dllink = getDllink(link, this.br);
                 if (dllink != null) {
                     final String quality = new Regex(dllink, "(\\d+p)").getMatch(0);
                     if (quality != null) {
@@ -319,8 +323,13 @@ public abstract class EvilangelCore extends PluginForHost {
         }
     }
 
-    /** Find preferred quality downloadurl */
-    private String getDllink(final Browser br) {
+    /**
+     * Find preferred quality downloadurl
+     *
+     * @throws IOException
+     * @throws PluginException
+     */
+    private String getDllink(final DownloadLink link, final Browser br) throws IOException, PluginException {
         final String preferredQualityStr = this.getUserPreferredqualityStr();
         String dllink = null;
         if (preferredQualityStr == null) {
@@ -332,33 +341,67 @@ public abstract class EvilangelCore extends PluginForHost {
          * Users have to buy an extra package to get download buttons (official downloads). For now we'll just always download the streams
          * as this should work fine for all premium accounts.
          */
-        final String json = br.getRegex("window\\.defaultStateScene\\s*=\\s*(\\{.+\\});").getMatch(0);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-        final Map<String, Object> videoInfo = (Map<String, Object>) entries.get(this.getFID(getDownloadLink()));
-        final Map<String, Object> qualityMap = (Map<String, Object>) videoInfo.get("videos");
-        final String[] knownQualities = { "2160p", "1080p", "720p", "540p", "480p", "240p", "160p" };
-        boolean foundSelectedquality = false;
-        for (final String knownQuality : knownQualities) {
-            if (qualityMap.containsKey(knownQuality)) {
-                dllink = (String) qualityMap.get(knownQuality);
-                if (preferredQualityStr == null) {
-                    /* User prefers BEST quality */
-                    foundSelectedquality = true;
-                    break;
-                } else if (knownQuality.equals(preferredQualityStr)) {
-                    foundSelectedquality = true;
-                    break;
+        final String htmlVideoJson = br.getRegex("window\\.defaultStateScene\\s*=\\s*(\\{.+\\});").getMatch(0);
+        if (htmlVideoJson != null) {
+            final Map<String, Object> entries = JSonStorage.restoreFromString(htmlVideoJson, TypeRef.HASHMAP);
+            final Map<String, Object> videoInfo = (Map<String, Object>) entries.get(this.getFID(getDownloadLink()));
+            final Object qualityMapO = videoInfo.get("videos");
+            if (qualityMapO instanceof List) {
+                /*
+                 * Empty list --> User is not allowed to watch this full video -> Trailer only but we do not (yet) have a handling to find
+                 * the trailer streams -> Throw Exception instead
+                 */
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Only trailer available");
+            }
+            final Map<String, Object> qualityMap = (Map<String, Object>) videoInfo.get("videos");
+            final String[] knownQualities = { "2160p", "1080p", "720p", "540p", "480p", "240p", "160p" };
+            boolean foundSelectedquality = false;
+            String chosenQualityStr = null;
+            for (final String knownQuality : knownQualities) {
+                if (qualityMap.containsKey(knownQuality)) {
+                    dllink = (String) qualityMap.get(knownQuality);
+                    chosenQualityStr = knownQuality;
+                    if (preferredQualityStr == null) {
+                        /* User prefers BEST quality */
+                        foundSelectedquality = true;
+                        break;
+                    } else if (knownQuality.equals(preferredQualityStr)) {
+                        foundSelectedquality = true;
+                        break;
+                    }
                 }
             }
-        }
-        if (!StringUtils.isEmpty(dllink)) {
-            if (foundSelectedquality) {
-                logger.info("Found user selected quality");
+            if (!StringUtils.isEmpty(dllink)) {
+                if (foundSelectedquality) {
+                    logger.info("Found user selected quality " + preferredQualityStr);
+                } else {
+                    logger.info("Failed to find user selected quality --> Using fallback (best):" + chosenQualityStr);
+                }
+                return dllink;
             } else {
-                logger.info("Failed to find user selected quality --> Using fallback");
+                return null;
             }
-            return dllink;
         } else {
+            if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            /* TODO: Use this to find additional metadata for the current video AND trailer downloadURLs. */
+            final String jsonAPI = br.getRegex("window\\.env\\s*=\\s*(\\{.*?\\})").getMatch(0);
+            final Map<String, Object> entries = JSonStorage.restoreFromString(jsonAPI, TypeRef.HASHMAP);
+            final Map<String, Object> algoliaAPI = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "api/algolia");
+            final String appID = algoliaAPI.get("applicationID").toString();
+            final Browser brc = br.cloneBrowser();
+            final UrlQuery query = new UrlQuery();
+            query.add("x-algolia-agent", Encoding.urlEncode("Algolia for vanilla JavaScript 3.27.1;JS Helper 2.26.0"));
+            query.add("x-algolia-application-id", Encoding.urlEncode(appID));
+            query.add("x-algolia-api-key", Encoding.urlEncode(algoliaAPI.get("apiKey").toString()));
+            brc.getHeaders().put("Accept", "application/json");
+            brc.getHeaders().put("x-algolia-application-id", appID);
+            brc.getHeaders().put("x-algolia-api-key", algoliaAPI.get("apiKey").toString());
+            final String url = "https://" + appID.toLowerCase(Locale.ENGLISH) + "-dsn.algolia.net/1/indexes/*/queries?" + query.toString();
+            /* TODO: Fill in the required parameters (e.g. videoID) */
+            final String postData = "{\"requests\":[{\"indexName\":\"all_scenes\",\"params\":\"query=&page=0&facets=%5B%5D&tagFilters=&facetFilters=%5B%22sitename%3Atruelesbian.com%22%2C%5B%22clip_id%3A168652%22%5D%5D\"},{\"indexName\":\"all_scenes\",\"params\":\"query=&page=0&hitsPerPage=1&attributesToRetrieve=%5B%5D&attributesToHighlight=%5B%5D&attributesToSnippet=%5B%5D&tagFilters=&analytics=false&clickAnalytics=false&facets=clip_id&facetFilters=%5B%22sitename%3Atruelesbian.com%22%5D\"}]}";
+            brc.postPageRaw(url, postData);
             return null;
         }
     }
@@ -424,7 +467,7 @@ public abstract class EvilangelCore extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.getPage(getNamespaceLogin());
-                if (br.containsHTML("(?i)>We are experiencing some problems\\!<")) {
+                if (br.containsHTML("(?i)>\\s*We are experiencing some problems\\!<")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your IP is banned. Please re-connect to get a new IP to be able to log-in!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 final Form login = br.getFormbyProperty("id", "loginForm");
