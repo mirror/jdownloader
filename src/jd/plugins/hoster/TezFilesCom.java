@@ -16,10 +16,13 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginException;
 
 import org.jdownloader.plugins.components.config.Keep2shareConfig;
 import org.jdownloader.plugins.components.config.Keep2shareConfigTezfiles;
@@ -88,6 +91,17 @@ public class TezFilesCom extends K2SApi {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return maxFree.get();
+    }
+
+    @Override
+    protected void handleErrors(Account account, DownloadLink downloadLink, Browser br, String brString, boolean subErrors) throws PluginException {
+        try {
+            super.handleErrors(account, downloadLink, br, brString, subErrors);
+        } catch (AccountRequiredException e) {
+            if (account != null && downloadLink != null) {
+                throw e;
+            }
+        }
     }
 
     @Override

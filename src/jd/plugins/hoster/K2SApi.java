@@ -488,7 +488,7 @@ public abstract class K2SApi extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         /* required to get overrides to work */
         br = prepAPI(br);
-        postPageRaw(br, "/accountinfo", "{\"auth_token\":\"" + getAuthToken(account) + "\"}", account);
+        postPageRaw(br, "/accountinfo", "{\"auth_token\":\"" + getAuthToken(account, null) + "\"}", account, null);
         final String available_traffic = PluginJSonUtils.getJsonValue(br, "available_traffic");
         /*
          * 2019-11-26: Expired premium accounts will have their old expire-date given thus we'll have to check for that before setting
@@ -625,13 +625,13 @@ public abstract class K2SApi extends PluginForHost {
                     }
                 }
                 final String custom_referer = getCustomReferer(link);
-                postPageRaw(this.br, "/requestcaptcha", "", account);
+                postPageRaw(this.br, "/requestcaptcha", "", account, link);
                 final String challenge = PluginJSonUtils.getJsonValue(br, "challenge");
                 String captcha_url = PluginJSonUtils.getJsonValue(br, "captcha_url");
                 // Dependency
                 if (inValidate(challenge) || inValidate(captcha_url)) {
                     logger.warning("challenge = " + challenge + " | captcha_url = " + captcha_url);
-                    this.handleErrors(account, this.br);
+                    this.handleErrors(account, link, this.br);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 if (captcha_url.startsWith("https://")) {
@@ -659,18 +659,18 @@ public abstract class K2SApi extends PluginForHost {
                 } else {
                     logger.info("Using Referer value: NONE given");
                 }
-                postPageRaw(this.br, "/geturl", JSonStorage.toString(getURL), account);
+                postPageRaw(this.br, "/geturl", JSonStorage.toString(getURL), account, link);
                 final String free_download_key = PluginJSonUtils.getJsonValue(br, "free_download_key");
                 if (inValidate(free_download_key)) {
                     final String url = PluginJSonUtils.getJsonValue(br, "url");
                     if (inValidate(url)) {
-                        this.handleErrors(account, this.br);
+                        this.handleErrors(account, link, this.br);
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 } else {
                     final String wait_seconds_str = PluginJSonUtils.getJsonValue(br, "time_wait");
                     if (wait_seconds_str == null || !wait_seconds_str.matches("\\d+")) {
-                        this.handleErrors(account, this.br);
+                        this.handleErrors(account, link, this.br);
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     } else {
                         /*
@@ -694,17 +694,17 @@ public abstract class K2SApi extends PluginForHost {
                         getURL.put("free_download_key", free_download_key);
                         getURL.remove("captcha_challenge");
                         getURL.remove("captcha_response");
-                        postPageRaw(br, "/geturl", JSonStorage.toString(getURL), account);
+                        postPageRaw(br, "/geturl", JSonStorage.toString(getURL), account, link);
                     }
                 }
             } else {
                 // premium download
-                postPageRaw(br, "/geturl", "{\"auth_token\":\"" + getAuthToken(account) + "\",\"file_id\":\"" + fuid + "\"}", account);
+                postPageRaw(br, "/geturl", "{\"auth_token\":\"" + getAuthToken(account, link) + "\",\"file_id\":\"" + fuid + "\"}", account, link);
                 // private error files happen here, because we can't identify the owner until download sequence starts!
             }
             dllink = PluginJSonUtils.getJsonValue(br, "url");
             if (inValidate(dllink)) {
-                this.handleErrors(account, this.br);
+                this.handleErrors(account, link, this.br);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 logger.info("dllink = " + dllink);
@@ -862,6 +862,10 @@ public abstract class K2SApi extends PluginForHost {
 
     protected static Object REQUESTLOCK = new Object();
 
+    public void postPageRaw(final Browser ibr, String url, final String arg, final Account account) throws Exception {
+        postPageRaw(ibr, url, arg, account, null);
+    }
+
     /**
      * general handling postPage requests! It's stable compliant with various response codes. It then passes to error handling!
      *
@@ -872,7 +876,7 @@ public abstract class K2SApi extends PluginForHost {
      * @author raztoki
      * @throws Exception
      */
-    public void postPageRaw(final Browser ibr, String url, final String arg, final Account account) throws Exception {
+    public void postPageRaw(final Browser ibr, String url, final String arg, final Account account, final DownloadLink link) throws Exception {
         URLConnectionAdapter con = null;
         synchronized (REQUESTLOCK) {
             try {
@@ -893,7 +897,7 @@ public abstract class K2SApi extends PluginForHost {
                     final Browser cbr = new Browser();
                     final String newArg;
                     if (CAPTCHA.REQUESTCAPTCHA.equals(loginCaptcha)) {
-                        postPageRaw(cbr, "/requestcaptcha", "", account);
+                        postPageRaw(cbr, "/requestcaptcha", "", account, link);
                         final String challenge = PluginJSonUtils.getJsonValue(cbr, "challenge");
                         String captcha_url = PluginJSonUtils.getJsonValue(cbr, "captcha_url");
                         if (captcha_url.startsWith("https://")) {
@@ -930,7 +934,7 @@ public abstract class K2SApi extends PluginForHost {
                         }
                         newArg = tmp;
                     } else if (CAPTCHA.REQUESTRECAPTCHA.equals(loginCaptcha)) {
-                        postPageRaw(cbr, "/requestrecaptcha", "", account);
+                        postPageRaw(cbr, "/requestrecaptcha", "", account, link);
                         final String challenge = PluginJSonUtils.getJsonValue(cbr, "challenge");
                         String captcha_url = PluginJSonUtils.getJsonValue(cbr, "captcha_url");
                         // Dependency
@@ -951,7 +955,7 @@ public abstract class K2SApi extends PluginForHost {
                         }
                         if (false) {
                             // returns wrong sitekey, not matching for api domain
-                            postPageRaw(cbr, "/reCaptcha?id=" + URLEncode.encodeURIComponent(challenge), "", account);
+                            postPageRaw(cbr, "/reCaptcha?id=" + URLEncode.encodeURIComponent(challenge), "", account, link);
                         } else {
                             cbr.getPage(captcha_url);
                         }
@@ -983,7 +987,7 @@ public abstract class K2SApi extends PluginForHost {
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported:" + loginCaptcha);
                     }
-                    postPageRaw(ibr, url, newArg, account);
+                    postPageRaw(ibr, url, newArg, account, link);
                     return;
                 }
                 if (sessionTokenInvalid(account, ibr)) {
@@ -996,15 +1000,15 @@ public abstract class K2SApi extends PluginForHost {
                     // The arg contains auth_key, we need to update the original request with new auth_token
                     if (arg.contains("\"auth_token\"")) {
                         logger.info("retry with new auth_token");
-                        final String r = arg.replace(PluginJSonUtils.getJsonValue(arg, "auth_token"), getAuthToken(account));
+                        final String r = arg.replace(PluginJSonUtils.getJsonValue(arg, "auth_token"), getAuthToken(account, link));
                         // re-enter using new auth_token
-                        postPageRaw(ibr, url, r, account);
+                        postPageRaw(ibr, url, r, account, link);
                         // error handling has been done by above re-entry
                         return;
                     }
                 }
                 // we want to process handleErrors after each request. Lets hope centralised approach isn't used against us.
-                handleErrors(account, ibr);
+                handleErrors(account, link, ibr);
             } finally {
                 try {
                     con.disconnect();
@@ -1103,7 +1107,7 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    private String getAuthToken(final Account account) throws Exception {
+    protected String getAuthToken(final Account account, final DownloadLink downloadLink) throws Exception {
         synchronized (account) {
             String currentAuthToken = account.getStringProperty(AUTHTOKEN, authToken);
             try {
@@ -1111,7 +1115,7 @@ public abstract class K2SApi extends PluginForHost {
                     logger.info("fetch new token");
                     // we don't want to pollute this.br
                     final Browser auth = prepBrowser(new Browser());
-                    postPageRaw(auth, "/login", "{\"username\":\"" + JSonUtils.escape(account.getUser()) + "\",\"password\":\"" + JSonUtils.escape(account.getPass() + "") + "\"}", account);
+                    postPageRaw(auth, "/login", "{\"username\":\"" + JSonUtils.escape(account.getUser()) + "\",\"password\":\"" + JSonUtils.escape(account.getPass() + "") + "\"}", account, downloadLink);
                     currentAuthToken = PluginJSonUtils.getJsonValue(auth, "auth_token");
                     if (StringUtils.isEmpty(currentAuthToken)) {
                         account.removeProperty(AUTHTOKEN);
@@ -1130,11 +1134,11 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    private void handleErrors(final Account account, final Browser ibr) throws PluginException {
-        handleErrors(account, ibr, ibr.toString(), false);
+    protected void handleErrors(final Account account, final DownloadLink downloadLink, final Browser ibr) throws PluginException {
+        handleErrors(account, downloadLink, ibr, ibr.toString(), false);
     }
 
-    private void handleErrors(final Account account, final Browser br, final String brString, final boolean subErrors) throws PluginException {
+    protected void handleErrors(final Account account, final DownloadLink downloadLink, final Browser br, final String brString, final boolean subErrors) throws PluginException {
         if (br != null && br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 400) {
             /* 2019-07-17: This may happen after any request even if the request itself is done right. */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 400", 5 * 60 * 1000l);
@@ -1225,7 +1229,7 @@ public abstract class K2SApi extends PluginForHost {
                     // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":7}]}
                     // sub error, pass it back into itself.
                     if (subErrs != null) {
-                        handleErrors(account, br, PluginJSonUtils.getJsonArray(brString, "errors"), true);
+                        handleErrors(account, downloadLink, br, PluginJSonUtils.getJsonArray(brString, "errors"), true);
                     } else {
                         throw new AccountRequiredException();
                     }
@@ -1247,7 +1251,7 @@ public abstract class K2SApi extends PluginForHost {
                     // available","status":"error","code":406,"errorCode":21,"errors":[{"code":2,"message":"Traffic limit exceed"}]}
                     // sub error, pass it back into itself.
                     if (subErrs != null) {
-                        handleErrors(account, br, PluginJSonUtils.getJsonArray(brString, "errors"), true);
+                        handleErrors(account, downloadLink, br, PluginJSonUtils.getJsonArray(brString, "errors"), true);
                     }
                     // ERROR_FILE_IS_BLOCKED = 22;
                     // what does this mean? premium only link ? treating as 'file not found'
