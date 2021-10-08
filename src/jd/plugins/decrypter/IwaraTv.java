@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -35,6 +33,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?(?:trollvids\\.com|iwara\\.tv)/((?:videos|node)/[A-Za-z0-9]+|users/[^/\\?]+)" })
 public class IwaraTv extends PluginForDecrypt {
@@ -55,7 +57,7 @@ public class IwaraTv extends PluginForDecrypt {
     /** Crawls all videos of a user/channel. */
     private ArrayList<DownloadLink> crawlChannel(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String username = new Regex(param.getCryptedUrl(), TYPE_USER).getMatch(0);
+        String username = new Regex(param.getCryptedUrl(), TYPE_USER).getMatch(0);
         if (username == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -65,17 +67,26 @@ public class IwaraTv extends PluginForDecrypt {
         final UrlQuery query = new UrlQuery();
         query.add("language", "en");
         final String baseURL = "https://" + Browser.getHost(param.getCryptedUrl(), true) + "/users/" + username + "/videos";
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(username);
+        username = URLEncode.decodeURIComponent(username);
+        FilePackage fp = null;
         do {
             /* Start at page 0 */
             page += 1;
             query.addAndReplace("page", Integer.toString(page));
             br.getPage(baseURL + "?" + query.toString());
+            if (fp == null) {
+                String title = br.getRegex("<title>\\s*(.*?)\\s*(\\|\\s*Iwara)?\\s*</title>").getMatch(0);
+                if (StringUtils.isEmpty(title)) {
+                    title = URLEncode.decodeURIComponent(username);
+                }
+                fp = FilePackage.getInstance();
+                fp.setName(title);
+            }
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String[] videoIDs = br.getRegex("/videos/([A-Za-z0-9]+)").getColumn(0);
+            dupes.add("thumbnails");
             int foundNumberofItemsThisPage = 0;
             for (final String videoID : videoIDs) {
                 if (dupes.add(videoID)) {
@@ -84,9 +95,10 @@ public class IwaraTv extends PluginForDecrypt {
                     final DownloadLink dl = createDownloadlink(videoURL.replace("iwara.tv/", "iwaradecrypted.tv/"));
                     dl.setContentUrl(videoURL);
                     /* Try to find nice title */
-                    final String videoTitle = br.getRegex("/videos/" + videoID + "[^\"]+\">([^<>\"]+)</a></h3>").getMatch(0);
+                    String videoTitle = br.getRegex("/videos/" + videoID + "[^\"]+\">([^<>\"]+)</a></h3>").getMatch(0);
+                    videoTitle = Encoding.htmlOnlyDecode(Encoding.htmlOnlyDecode(videoTitle));
                     if (videoTitle != null) {
-                        dl.setName(username + "_" + videoID + "_" + videoTitle + ".mp4");
+                        dl.setName(username + "_" + videoID + "_" + videoTitle.trim().replaceAll("(\\.+)$", "") + ".mp4");
                     } else {
                         dl.setName(username + "_" + videoID + ".mp4");
                     }
@@ -109,7 +121,7 @@ public class IwaraTv extends PluginForDecrypt {
                 break;
             }
         } while (true);
-        return null;
+        return decryptedLinks;
     }
 
     private ArrayList<DownloadLink> crawlSingleVideo(final CryptedLink param) throws Exception {
