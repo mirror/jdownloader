@@ -119,7 +119,7 @@ public class ZeveraCom extends ZeveraCore {
          *
          */
         private static final long serialVersionUID = 1L;
-        private final String      PINHELP          = "Enter your Apikey";
+        private final String      APIKEYHELP       = "Enter your API Key";
 
         private String getPassword() {
             if (this.pass == null) {
@@ -149,16 +149,16 @@ public class ZeveraCom extends ZeveraCore {
 
         public ZeveraAccountFactory(final InputChangedCallbackInterface callback) {
             super("ins 0, wrap 2", "[][grow,fill]", "");
-            add(new JLabel("Click here to find your API-Key / PIN:"));
+            add(new JLabel("Click here to find your API Key:"));
             add(new JLink("https://www.zevera.com/account"));
-            add(new JLabel("API-Key / PIN:"));
+            add(new JLabel("API Key:"));
             add(this.pass = new ExtPasswordField() {
                 @Override
                 public void onChanged() {
                     callback.onChangedInput(this);
                 }
             }, "");
-            pass.setHelpText(PINHELP);
+            pass.setHelpText(APIKEYHELP);
         }
 
         @Override

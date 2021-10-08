@@ -22,6 +22,20 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.KeyValueStringEntry;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -44,20 +58,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.KeyValueStringEntry;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //IMPORTANT: this class must stay in jd.plugins.hoster because it extends another plugin (UseNet) which is only available through PluginClassLoader
 abstract public class ZeveraCore extends UseNet {
@@ -313,6 +313,9 @@ abstract public class ZeveraCore extends UseNet {
             final String hash_sha256 = link.getSha256Hash();
             final UrlQuery query = new UrlQuery();
             query.add("src", URLEncode.encodeURIComponent(link.getDefaultPlugin().buildExternalDownloadURL(link, hostPlugin)));
+            // if (!this.usePairingLogin(account)) {
+            // query.add("apikey", getAPIKey(account));
+            // }
             if (hash_md5 != null) {
                 query.add("hash_md5", hash_md5);
             }
@@ -322,17 +325,17 @@ abstract public class ZeveraCore extends UseNet {
             if (hash_sha256 != null) {
                 query.add("hash_sha256", hash_sha256);
             }
-            if ("premiumize.me".equals(getHost())) {
-                final String accessToken = getAPIKey(account);
-                final PostFormDataRequest postRequest = br.createPostFormDataRequest("https://www." + account.getHoster() + "/api/transfer/directdl");
-                postRequest.getCookies().add(new Cookie(getHost(), "sdk_login", accessToken));
-                for (final KeyValueStringEntry entry : query.list()) {
-                    postRequest.addFormData(new FormData(entry.getKey(), URLEncode.decodeURIComponent(entry.getValue())));
-                }
-                sendRequest(br, postRequest);
-            } else {
-                callAPI(br, account, "/api/transfer/directdl" + "?" + query.toString());
+            /* https://app.swaggerhub.com/apis-docs/premiumize.me/api/1.6.7#/transfer/transferDirectdl */
+            final PostFormDataRequest postRequest = br.createPostFormDataRequest("https://www." + account.getHoster() + "/api/transfer/directdl");
+            /*
+             * 2021-10-08: This is required as a workaround (same used in browser). If we're adding the "apikey" parameter according to api
+             * docs, it just won't work...
+             */
+            postRequest.getCookies().add(new Cookie(getHost(), "sdk_login", getAPIKey(account)));
+            for (final KeyValueStringEntry entry : query.list()) {
+                postRequest.addFormData(new FormData(entry.getKey(), URLEncode.decodeURIComponent(entry.getValue())));
             }
+            sendRequest(br, postRequest);
             this.handleAPIErrors(br, link, account);
             final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             dllink = (String) entries.get("location");
@@ -755,7 +758,7 @@ abstract public class ZeveraCore extends UseNet {
              * Without pairing login we need an additional parameter. It will also work with pairing mode when that parameter is given with
              * a wrong value but that may change in the future so this is to avoid issues!
              */
-            url += "&pin=" + URLEncode.encodeURIComponent(getAPIKey(account));
+            url += "&apikey=" + URLEncode.encodeURIComponent(getAPIKey(account));
         }
         getPage(br, url);
     }
@@ -852,8 +855,9 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     /**
-     * Indicates whether or not to display free account download dialogs which tell the user to activate free mode via website. </br> Some
-     * users find this annoying and will deactivate it. </br> default = true
+     * Indicates whether or not to display free account download dialogs which tell the user to activate free mode via website. </br>
+     * Some users find this annoying and will deactivate it. </br>
+     * default = true
      */
     public boolean displayFreeAccountDownloadDialogs(final Account account) {
         return false;
@@ -861,9 +865,10 @@ abstract public class ZeveraCore extends UseNet {
 
     /**
      * 2019-08-21: Premiumize.me has so called 'booster points' which basically means that users with booster points can download more than
-     * normal users can with their fair use limit: https://www.premiumize.me/booster </br> Premiumize has not yet integrated this in their
-     * API which means accounts with booster points will run into the fair-use-limit in JDownloader and will not be able to download any
-     * more files then. </br> This workaround can set accounts to unlimited traffic so that users will still be able to download.</br>
+     * normal users can with their fair use limit: https://www.premiumize.me/booster </br>
+     * Premiumize has not yet integrated this in their API which means accounts with booster points will run into the fair-use-limit in
+     * JDownloader and will not be able to download any more files then. </br>
+     * This workaround can set accounts to unlimited traffic so that users will still be able to download.</br>
      * Remove this workaround once Premiumize has integrated their booster points into their API.
      */
     public boolean isBoosterPointsUnlimitedTrafficWorkaroundActive(final Account account) {
