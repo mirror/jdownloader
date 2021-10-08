@@ -278,23 +278,10 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_FILESIZE_KIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.KiB)));
             line = line.replace(PATTERN_FILESIZE_MIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.MiB)));
             line = line.replace(PATTERN_FILESIZE_GIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.GiB)));
-            line = line.replace(PATTERN_HOST, nulltoString(null));
             line = line.replace(PATTERN_NEWLINE, CrossSystem.getNewLine());
             final String name = pkg.getName();
             line = line.replace(PATTERN_NAME, nulltoString(name));
             line = line.replace(PATTERN_PACKAGE_NAME, nulltoString(name));
-            line = line.replace(PATTERN_ARCHIVE_PASSWORD, nulltoString(null));
-            line = line.replace(PATTERN_NAME_NOEXT, nulltoString(null));
-            line = line.replace(PATTERN_EXTENSION, nulltoString(null));
-            for (final HashInfo.TYPE hashType : HashInfo.TYPE.values()) {
-                line = line.replace("{" + hashType.name().replace("-", "").toLowerCase(Locale.ENGLISH) + "}", nulltoString(null));
-            }
-            line = line.replace(PATTERN_HASH, nulltoString(null));
-            line = line.replace(PATTERN_URL, nulltoString(null));
-            line = line.replace(PATTERN_URL_CONTAINER, nulltoString(null));
-            line = line.replace(PATTERN_URL_CONTENT, nulltoString(null));
-            line = line.replace(PATTERN_URL_ORIGIN, nulltoString(null));
-            line = line.replace(PATTERN_URL_REFERRER, nulltoString(null));
         } else if (pv instanceof DownloadLink) {
             line = getPatternLinks();
             line = replaceDate(line);
@@ -396,19 +383,6 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             final String name = pkg.getName();
             line = line.replace(PATTERN_NAME, nulltoString(name));
             line = line.replace(PATTERN_PACKAGE_NAME, nulltoString(name));
-            line = line.replace(PATTERN_NAME_NOEXT, nulltoString(null));
-            line = line.replace(PATTERN_ARCHIVE_PASSWORD, nulltoString(null));
-            line = line.replace(PATTERN_EXTENSION, nulltoString(null));
-            for (final HashInfo.TYPE hashType : HashInfo.TYPE.values()) {
-                line = line.replace("{" + hashType.name().replace("-", "").toLowerCase(Locale.ENGLISH) + "}", nulltoString(null));
-            }
-            line = line.replace(PATTERN_HASH, nulltoString(null));
-            line = line.replace(PATTERN_URL, nulltoString(null));
-            line = line.replace(PATTERN_URL_CONTAINER, nulltoString(null));
-            line = line.replace(PATTERN_URL_CONTENT, nulltoString(null));
-            line = line.replace(PATTERN_URL_ORIGIN, nulltoString(null));
-            line = line.replace(PATTERN_URL_REFERRER, nulltoString(null));
-            line = line.replace(PATTERN_HOST, nulltoString(null));
         }
         if (StringUtils.isNotEmpty(line)) {
             if (sb.length() > 0) {

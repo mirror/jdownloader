@@ -104,4 +104,10 @@ public class RedBunkerNet extends XFileSharingProBasic {
     public int getMaxSimultanPremiumDownloadNum() {
         return 1;
     }
+
+    @Override
+    protected boolean websiteSupportsHTTPS() {
+        /* 2021-10-08 */
+        return false;
+    }
 }
