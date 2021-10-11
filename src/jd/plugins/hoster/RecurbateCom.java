@@ -141,6 +141,7 @@ public class RecurbateCom extends antiDDoSForHost {
         }
         if (!this.attemptStoredDownloadurlDownload(link, directurlproperty, resume, free_maxchunks)) {
             requestFileInformation(link);
+            checkErrors(br, account);
             final String token = br.getRegex("data-token=\"([a-f0-9]{64})\"").getMatch(0);
             if (token == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -315,6 +316,13 @@ public class RecurbateCom extends antiDDoSForHost {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         ai.setUnlimitedTraffic();
+        final String nickname = br.getRegex("(?i)Nickname\\s*</div>\\s*<div class=\"col-sm-8\">\\s*([^<>\"]+)").getMatch(0);
+        if (nickname != null) {
+            /* User can theoretically enter whatever he wants in username field when doing cookie login --> We prefer unique usernames. */
+            account.setUser(nickname);
+        } else {
+            logger.warning("Failed to find nickname in HTML");
+        }
         final String plan = br.getRegex("<span class=\"plan-name\"[^>]*>([^<>\"<>]*)</span>").getMatch(0);
         if (StringUtils.equalsIgnoreCase(plan, "Premium")) {
             final String expire = br.getRegex("(?i)Expire on\\s*</div>\\s*<div class=\"col-sm-8\">\\s*([A-Za-z]+ \\d{2}, \\d{4})").getMatch(0);
@@ -328,17 +336,13 @@ public class RecurbateCom extends antiDDoSForHost {
             account.setConcurrentUsePossible(true);
             account.setMaxSimultanDownloads(premium_maxdownloads);
             ai.setStatus(plan);
+            ai.setUnlimitedTraffic();
+            ;
         } else {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(free_maxdownloads);
         }
-        final String nickname = br.getRegex("(?i)Nickname\\s*</div>\\s*<div class=\"col-sm-8\">\\s*([^<>\"]+)").getMatch(0);
-        if (nickname != null) {
-            /* User can theoretically enter whatever he wants in username field when doing cookie login --> We prefer unique usernames. */
-            account.setUser(nickname);
-        } else {
-            logger.warning("Failed to find nickname in HTML");
-        }
+        checkErrors(br, account);
         return ai;
     }
 
@@ -357,6 +361,13 @@ public class RecurbateCom extends antiDDoSForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
+    }
+
+    private void checkErrors(final Browser br, final Account account) throws AccountUnavailableException {
+        /* 2021-10-11: Very interesting: While this is happening, users will still get 1 free view without account. */
+        if (account.getType() == AccountType.FREE && br.containsHTML("(?i)Sorry guys, but due to the high load.*Basic \\(Free\\).*accounts are temporary limited to")) {
+            throw new AccountUnavailableException("Free accounts are temporarily limited to 0 video views", 5 * 60 * 1000);
+        }
     }
 
     @Override

@@ -34,7 +34,6 @@ import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.config.EvilangelComConfig;
 import org.jdownloader.plugins.components.config.EvilangelComConfig.Quality;
 import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -96,6 +95,9 @@ public abstract class EvilangelCore extends PluginForHost {
     private static final String URL_EVILANGEL_FILM                     = "https?://members\\.evilangel.com/[a-z]{2}/([A-Za-z0-9\\-_]+)/film/(\\d+)";
     private static final String URL_EVILANGEL_FREE_TRAILER             = "https?://(?:www\\.)?evilangel\\.com/[a-z]{2}/video/([A-Za-z0-9\\-]+)/(\\d+)";
     private static final String URL_VIDEO                              = "https?://members\\.[^/]+/[a-z]{2}/video/([^/]+)(?:/([A-Za-z0-9\\-_]+))?/(\\d+)";
+    private static final String PROPERTY_QUALITY                       = "quality";
+    private static final String PROPERTY_DATE                          = "date";
+    private static final String PROPERTY_ACTORS                        = "actors";
     private static final String PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIN = "has_used_cookie_login";
 
     public boolean isProxyRotationEnabledForLinkChecker() {
@@ -110,6 +112,7 @@ public abstract class EvilangelCore extends PluginForHost {
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         if (!link.isNameSet()) {
+            /* Set fallback filename */
             link.setName(getURLTitle(link) + ".mp4");
         }
         this.dllink = null;
@@ -181,6 +184,7 @@ public abstract class EvilangelCore extends PluginForHost {
                 throw new AccountRequiredException();
             }
             login(account, false);
+            long foundFilesize = -1;
             if (link.getPluginPatternMatcher().matches(URL_EVILANGEL_FILM)) {
                 br.getPage(link.getPluginPatternMatcher());
                 if (this.br.getHttpConnection().getResponseCode() == 404) {
@@ -213,10 +217,76 @@ public abstract class EvilangelCore extends PluginForHost {
                         filename = filename + "-" + quality;
                     }
                 }
+                final String siteName = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/[a-z]{2}/video/([^/]+)/[^/]+/\\d+").getMatch(0);
+                if (!link.hasProperty(PROPERTY_DATE) && siteName != null) {
+                    if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    logger.info("Looking for additional metadata...");
+                    try {
+                        final String jsonAPI = br.getRegex("window\\.env\\s*=\\s*(\\{.*?\\});").getMatch(0);
+                        Map<String, Object> entries = JSonStorage.restoreFromString(jsonAPI, TypeRef.HASHMAP);
+                        final Map<String, Object> algoliaAPI = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "api/algolia");
+                        final String appID = algoliaAPI.get("applicationID").toString();
+                        final Browser brc = br.cloneBrowser();
+                        final UrlQuery query = new UrlQuery();
+                        query.add("x-algolia-agent", Encoding.urlEncode("Algolia for vanilla JavaScript 3.27.1;JS Helper 2.26.0"));
+                        query.add("x-algolia-application-id", Encoding.urlEncode(appID));
+                        query.add("x-algolia-api-key", Encoding.urlEncode(algoliaAPI.get("apiKey").toString()));
+                        brc.getHeaders().put("Accept", "application/json");
+                        brc.getHeaders().put("x-algolia-application-id", appID);
+                        brc.getHeaders().put("x-algolia-api-key", algoliaAPI.get("apiKey").toString());
+                        final String url = "https://" + appID.toLowerCase(Locale.ENGLISH) + "-dsn.algolia.net/1/indexes/*/queries?" + query.toString();
+                        /* TODO: Fill in the required parameters (e.g. videoID) */
+                        final String postData = "{\"requests\":[{\"indexName\":\"all_scenes\",\"params\":\"query=&page=0&facets=%5B%5D&tagFilters=&facetFilters=%5B%22sitename%3A" + siteName + "%22%2C%5B%22clip_id%3A" + this.getFID(link) + "%22%5D%5D\"},{\"indexName\":\"all_scenes\",\"params\":\"query=&page=0&hitsPerPage=1&attributesToRetrieve=%5B%5D&attributesToHighlight=%5B%5D&attributesToSnippet=%5B%5D&tagFilters=&analytics=false&clickAnalytics=false&facets=clip_id&facetFilters=%5B%22sitename%3A" + siteName + "%22%5D\"}]}";
+                        brc.postPageRaw(url, postData);
+                        entries = JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
+                        final Map<String, Object> clipInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "results/{0}/hits/{0}");
+                        /* Prefer title from URL so it's always in the same parttern. */
+                        // filename = (String)clipInfo.get("title");
+                        final String releaseDate = (String) clipInfo.get("release_date");
+                        if (!StringUtils.isEmpty(releaseDate)) {
+                            link.setProperty(PROPERTY_DATE, releaseDate);
+                        }
+                        /* Now try to find the filesize of our previously chosen download quality. */
+                        final Map<String, Object> downloadFileSizes = (Map<String, Object>) clipInfo.get("download_file_sizes");
+                        final String chosenQuality = getQualityFilesizeMapping(link.getStringProperty(PROPERTY_QUALITY));
+                        if (downloadFileSizes != null && link.hasProperty(PROPERTY_QUALITY)) {
+                            if (downloadFileSizes.containsKey(chosenQuality)) {
+                                foundFilesize = ((Number) downloadFileSizes.get(chosenQuality)).longValue();
+                            } else {
+                                logger.warning("Failed filesize for chosen quality: " + chosenQuality);
+                            }
+                        }
+                        final List<Map<String, Object>> actors = (List<Map<String, Object>>) clipInfo.get("actors");
+                        if (actors.size() > 0) {
+                            String actorsCommaSeparated = "";
+                            int index = 0;
+                            for (final Map<String, Object> actor : actors) {
+                                final boolean isLastItem = index == actors.size() - 1;
+                                actorsCommaSeparated += actor.get("name").toString();
+                                if (!isLastItem) {
+                                    actorsCommaSeparated += ",";
+                                }
+                                index += 1;
+                            }
+                            link.setProperty(PROPERTY_ACTORS, actorsCommaSeparated);
+                        }
+                    } catch (final Throwable ignore) {
+                        logger.warning("Error while trying to find additional metadata");
+                        logger.log(ignore);
+                    }
+                }
             } else {
                 dllink = link.getPluginPatternMatcher();
             }
-            if (!isDownload && dllink != null && !dllink.contains(".m3u8")) {
+            if (foundFilesize > 0) {
+                if (filename != null) {
+                    filename = applyFilenameExtension(filename, ".mp4");
+                    link.setFinalFileName(filename);
+                }
+                link.setDownloadSize(foundFilesize);
+            } else if (!isDownload && dllink != null && !dllink.contains(".m3u8")) {
                 URLConnectionAdapter con = null;
                 try {
                     final Browser brc = br.cloneBrowser();
@@ -236,18 +306,13 @@ public abstract class EvilangelCore extends PluginForHost {
                     } catch (Throwable e) {
                     }
                 }
-            } else {
-                if (filename != null) {
-                    filename = applyFilenameExtension(filename, ".mp4");
-                    link.setFinalFileName(filename);
-                }
             }
         }
         return AvailableStatus.TRUE;
     }
 
     private String getUserPreferredqualityStr() {
-        final Quality quality = PluginJsonConfig.get(EvilangelComConfig.class).getPreferredQuality();
+        final Quality quality = PluginJsonConfig.get(getConfigInterface()).getPreferredQuality();
         switch (quality) {
         case Q160:
             return "160p";
@@ -374,35 +439,29 @@ public abstract class EvilangelCore extends PluginForHost {
             if (!StringUtils.isEmpty(dllink)) {
                 if (foundSelectedquality) {
                     logger.info("Found user selected quality " + preferredQualityStr);
+                    link.setProperty(PROPERTY_QUALITY, preferredQualityStr);
                 } else {
                     logger.info("Failed to find user selected quality --> Using fallback (best):" + chosenQualityStr);
+                    link.setProperty(PROPERTY_QUALITY, chosenQualityStr);
                 }
                 return dllink;
             } else {
                 return null;
             }
         } else {
-            if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            /* TODO: Use this to find additional metadata for the current video AND trailer downloadURLs. */
-            final String jsonAPI = br.getRegex("window\\.env\\s*=\\s*(\\{.*?\\})").getMatch(0);
-            final Map<String, Object> entries = JSonStorage.restoreFromString(jsonAPI, TypeRef.HASHMAP);
-            final Map<String, Object> algoliaAPI = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "api/algolia");
-            final String appID = algoliaAPI.get("applicationID").toString();
-            final Browser brc = br.cloneBrowser();
-            final UrlQuery query = new UrlQuery();
-            query.add("x-algolia-agent", Encoding.urlEncode("Algolia for vanilla JavaScript 3.27.1;JS Helper 2.26.0"));
-            query.add("x-algolia-application-id", Encoding.urlEncode(appID));
-            query.add("x-algolia-api-key", Encoding.urlEncode(algoliaAPI.get("apiKey").toString()));
-            brc.getHeaders().put("Accept", "application/json");
-            brc.getHeaders().put("x-algolia-application-id", appID);
-            brc.getHeaders().put("x-algolia-api-key", algoliaAPI.get("apiKey").toString());
-            final String url = "https://" + appID.toLowerCase(Locale.ENGLISH) + "-dsn.algolia.net/1/indexes/*/queries?" + query.toString();
-            /* TODO: Fill in the required parameters (e.g. videoID) */
-            final String postData = "{\"requests\":[{\"indexName\":\"all_scenes\",\"params\":\"query=&page=0&facets=%5B%5D&tagFilters=&facetFilters=%5B%22sitename%3Atruelesbian.com%22%2C%5B%22clip_id%3A168652%22%5D%5D\"},{\"indexName\":\"all_scenes\",\"params\":\"query=&page=0&hitsPerPage=1&attributesToRetrieve=%5B%5D&attributesToHighlight=%5B%5D&attributesToSnippet=%5B%5D&tagFilters=&analytics=false&clickAnalytics=false&facets=clip_id&facetFilters=%5B%22sitename%3Atruelesbian.com%22%5D\"}]}";
-            brc.postPageRaw(url, postData);
+            logger.warning("Failed to find video json");
             return null;
+        }
+    }
+
+    private String getQualityFilesizeMapping(final String str) {
+        if (str == null) {
+            return null;
+        } else if (str.equals("2160p")) {
+            return "4k";
+        } else {
+            /* Given value should be already correct. */
+            return str;
         }
     }
 
@@ -433,8 +492,13 @@ public abstract class EvilangelCore extends PluginForHost {
                     showCookieLoginInformation();
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
+                this.prepBrowser(br);
                 if (cookies != null) {
                     br.setCookies(host_account, cookies);
+                    if (!verifyCookies) {
+                        logger.info("Trust cookies without login");
+                        return;
+                    }
                     br.getPage(getNamespaceMembersMain());
                     if (this.isLoggedIn(br)) {
                         /* Cookie login successful */
@@ -444,14 +508,12 @@ public abstract class EvilangelCore extends PluginForHost {
                         account.setProperty(PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIN, true);
                         return;
                     } else {
-                        if (userCookies != null) {
-                            /* No login password given */
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            br.clearAll();
-                        }
+                        logger.info("Cookie login failed");
+                        br.clearAll();
                     }
-                } else if (userCookies != null) {
+                }
+                if (userCookies != null) {
+                    logger.info("Attempting user cookie login");
                     br.setCookies(userCookies);
                     br.getPage(getNamespaceMembersMain());
                     if (this.isLoggedIn(br)) {
@@ -461,10 +523,16 @@ public abstract class EvilangelCore extends PluginForHost {
                         account.setProperty(PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIN, true);
                         return;
                     } else {
-                        showCookieLoginInformation();
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        if (account.getLastValidTimestamp() == -1) {
+                            /* Only show this dialog when user is trying to add that account for the first time. */
+                            showCookieLoginInformation();
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login cookies expired", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
                 }
+                logger.info("Performing full login");
                 br.setFollowRedirects(true);
                 br.getPage(getNamespaceLogin());
                 if (br.containsHTML("(?i)>\\s*We are experiencing some problems\\!<")) {
@@ -586,8 +654,11 @@ public abstract class EvilangelCore extends PluginForHost {
 
     private boolean isLoggedIn(final Browser br) {
         final boolean loggedIN_html = br.containsHTML("\"siteSection\":\"members\"");
-        final boolean loggedINCookie = br.getCookie(br.getHost(), "autologin_userid", Cookies.NOTDELETEDPATTERN) != null && br.getCookie(br.getHost(), "autologin_hash", Cookies.NOTDELETEDPATTERN) != null;
-        return loggedIN_html || loggedINCookie;
+        // final boolean loggedINCookie = br.getCookie(br.getHost(), "autologin_userid", Cookies.NOTDELETEDPATTERN) != null &&
+        // br.getCookie(br.getHost(), "autologin_hash", Cookies.NOTDELETEDPATTERN) != null;
+        // return loggedIN_html || loggedINCookie;
+        /* 2021-10-11: Based on HTML only is safer than html and/OR cookies! */
+        return loggedIN_html;
     }
 
     @Override
@@ -665,7 +736,9 @@ public abstract class EvilangelCore extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
+        link.removeProperty(PROPERTY_QUALITY);
+        link.removeProperty(PROPERTY_DATE);
     }
 
     public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {

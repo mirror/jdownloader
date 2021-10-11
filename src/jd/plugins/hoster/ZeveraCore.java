@@ -41,6 +41,7 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Cookie;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.FormData;
 import jd.http.requests.PostFormDataRequest;
@@ -323,10 +324,14 @@ abstract public class ZeveraCore extends UseNet {
             }
             /* https://app.swaggerhub.com/apis-docs/premiumize.me/api/1.6.7#/transfer/transferDirectdl */
             String url = "https://www." + account.getHoster() + "/api/transfer/directdl";
-            if (!this.usePairingLogin(account)) {
+            final boolean useWorkaround = true;
+            if (!useWorkaround && !this.usePairingLogin(account)) {
                 url += "?apikey=" + getAPIKey(account);
             }
             final PostFormDataRequest postRequest = br.createPostFormDataRequest(url);
+            if (useWorkaround) {
+                postRequest.getCookies().add(new Cookie(getHost(), "sdk_login", getAPIKey(account)));
+            }
             for (final KeyValueStringEntry entry : query.list()) {
                 postRequest.addFormData(new FormData(entry.getKey(), URLEncode.decodeURIComponent(entry.getValue())));
             }
