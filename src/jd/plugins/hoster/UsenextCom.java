@@ -1,30 +1,37 @@
 package jd.plugins.hoster;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
-import java.util.Locale;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.requests.GetRequest;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
-import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.Regex;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.URLHelper;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "usenext.com" }, urls = { "" })
 public class UsenextCom extends UseNet {
@@ -67,6 +74,25 @@ public class UsenextCom extends UseNet {
         return super.getMaxSimultanDownload(link, account, proxy);
     }
 
+    private long parseNumber(Map<String, Object> map, String id, long def) throws Exception {
+        final Object value = map.get(id);
+        if (value == null) {
+            if (def == -1) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "not available:" + id);
+            }
+            return def;
+        }
+        String unit = (String) map.get("unitResourceStringKey");
+        if (StringUtils.contains(unit, "GIGA")) {
+            unit = "GB";
+        } else if (StringUtils.contains(unit, "MEGA")) {
+            unit = "MB";
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "unsupported:" + unit);
+        }
+        return SizeFormatter.getSize(value + unit);
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         setBrowserExclusive();
@@ -75,6 +101,8 @@ public class UsenextCom extends UseNet {
         final Cookies cookies = account.loadCookies("com");
         try {
             boolean freshLogin = true;
+            String UNX_API_KEY = null;
+            String API_URL = null;
             if (cookies != null) {
                 br.setCookies("usenext.com", cookies);
                 final Cookies de = account.loadCookies("de");
@@ -82,20 +110,35 @@ public class UsenextCom extends UseNet {
                     br.setCookies("usenext.de", de);
                 }
                 getPage(br, "https://www.usenext.com/en-US/ma/dashboard");
-                if (br.getHostCookie("UseNeXT.MemberArea.WebSite.ServerApp_Auth", Cookies.NOTDELETEDPATTERN) == null) {
-                    br.getCookies("usenext.com").clear();
-                    br.getCookies("usenext.de").clear();
-                } else if (br.getHostCookie("UseNeXT.MemberArea.WebSite.ServerApp_Session", Cookies.NOTDELETEDPATTERN) == null) {
-                    br.getCookies("usenext.com").clear();
-                    br.getCookies("usenext.de").clear();
+                if (br.getHostCookie("UseNeXT.AuthorizationServerApp_Auth", Cookies.NOTDELETEDPATTERN) == null) {
+                    freshLogin = true;
+                } else if (br.getHostCookie("UseNeXT.AuthorizationServerApp_Session", Cookies.NOTDELETEDPATTERN) == null) {
+                    freshLogin = true;
                 } else {
-                    freshLogin = false;
+                    UNX_API_KEY = br.getRegex("UNX_API_KEY\\s*:\\s*\"(.*?)\"").getMatch(0);
+                    API_URL = br.getRegex("API_URL\\s*:\\s*\"(https?://.*?)\"").getMatch(0);
+                    if (!StringUtils.isAllNotEmpty(UNX_API_KEY, API_URL)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else {
+                        freshLogin = false;
+                    }
                 }
             }
             if (freshLogin) {
+                br.getCookies("usenext.com").clear();
+                br.getCookies("usenext.de").clear();
                 account.clearCookies("");
                 getPage(br, "https://www.usenext.com/");
-                getPage(br, "https://auth.usenext.de/login");
+                String clientID = br.getRegex("src\\s*=\\s*\"(/App[^\"]*\\.js)\"").getMatch(0);
+                if (clientID != null) {
+                    final Browser brc = br.cloneBrowser();
+                    brc.getPage(clientID);
+                    clientID = brc.getRegex("client_id\\s*:\\s*\"(.*?)\"").getMatch(0);
+                }
+                if (clientID == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                getPage(br, "https://auth.usenext.com/login?ReturnUrl=%2Fauth%3Fredirect_uri%3Dhttps%253A%252F%252Fwww.usenext.com%252Fma%252Fsignin-usenext%26client_id%3D" + URLEncode.encodeURIComponent(clientID) + "%26scope%3Duser%252Cradius%252Cshop%26response_type%3Dcode");
                 final Form login = br.getFormbyKey("username");
                 if (login == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -109,54 +152,49 @@ public class UsenextCom extends UseNet {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 getPage(br, "https://www.usenext.com/en-US/ma/dashboard");
-                if (br.getHostCookie("UseNeXT.MemberArea.WebSite.ServerApp_Auth", Cookies.NOTDELETEDPATTERN) == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else if (br.getHostCookie("UseNeXT.MemberArea.WebSite.ServerApp_Session", Cookies.NOTDELETEDPATTERN) == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                UNX_API_KEY = br.getRegex("UNX_API_KEY\\s*:\\s*\"(.*?)\"").getMatch(0);
+                API_URL = br.getRegex("API_URL\\s*:\\s*\"(https?://.*?)\"").getMatch(0);
+                if (!StringUtils.isAllNotEmpty(UNX_API_KEY, API_URL)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
             account.saveCookies(br.getCookies("usenext.com"), "com");
             account.saveCookies(br.getCookies("usenext.de"), "de");
-            final String currentPlan = br.getRegex("<label>\\s*Current Plan\\s*</label>\\s*<h6>\\s*(.*?)\\s*</h").getMatch(0);
-            if (currentPlan != null) {
-                ai.setStatus(Encoding.htmlDecode(currentPlan));
-            } else {
-                ai.setStatus("Unknown UseNeXT plan");
+            if (false) {
+                final GetRequest getRequest = br.createGetRequest(URLHelper.parseLocation(new URL(API_URL), "/session?ref="));
+                getRequest.getHeaders().put("Origin", "https://www.usenext.com");
+                br.setCurrentURL("https://www.usenext.com/");
+                sendRequest(getRequest);
             }
-            final String availableTraffic[][] = br.getRegex("<span class=\"donut-label-inner\\s*\"\\s*>\\s*([0-9,\\.]+)\\s*<br/>\\s*<small>\\s*([KTMG]B)\\s*<").getMatches();
-            if (availableTraffic == null || availableTraffic.length == 0) {
-                if (br.containsHTML("Upgrade in progress...")) {
-                    throw new AccountUnavailableException("Upgrade in progess...", 60 * 60 * 1000l);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+            final PostRequest postRequest = br
+                    .createJSonPostRequest(
+                            URLHelper.parseLocation(new URL(API_URL), "/graphql"),
+                            "{\"operationName\":\"DashboardInformation\",\"variables\":{},\"query\":\"query DashboardInformation {\\n  radiusData {\\n    volume {\\n      remaining\\n      total\\n      unitResourceStringKey\\n    }\\n    extraBoost {\\n      remaining\\n      total\\n      unitResourceStringKey\\n    }\\n  }\\n  cancellationInformation {\\n    isContractLocked\\n    hasWithdrawableCancellation\\n    isServiceDenied\\n    isInCancellationPeriod\\n    cancellationProcess {\\n      createDate\\n    }\\n  }\\n  currentServiceRoundUpgradeData {\\n    hasPendingUpgrade\\n    isLastUpgrade\\n    accountingPeriod {\\n      remaining\\n      total\\n      unitResourceStringKey\\n    }\\n  }\\n  serviceInformation {\\n    currentServiceRound {\\n      currEndDate\\n      startDate\\n      article {\\n        id\\n        name\\n        articleTypeId\\n        priceNet\\n        priceGross\\n        volumeGb\\n        runtime\\n        runtimeUnit\\n      }\\n      invoice {\\n        id\\n        createDate\\n        uuid\\n        invoiceStatePaths {\\n          invoiceStateId\\n          isCurrent\\n        }\\n      }\\n    }\\n    nextServiceRoundBeginDate\\n    nextArticle {\\n      id\\n      name\\n      articleTypeId\\n      priceNet\\n      priceGross\\n      volumeGb\\n      runtime\\n      runtimeUnit\\n    }\\n  }\\n}\\n\"}");
+            postRequest.getHeaders().put("X-UNX-API-KEY", UNX_API_KEY);
+            postRequest.getHeaders().put("x-ui-language", "en-US");
+            postRequest.getHeaders().put("Origin", "https://www.usenext.com");
+            br.setCurrentURL("https://www.usenext.com/");
+            sendRequest(postRequest);
+            final Map<String, Object> json = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> volume = (Map<String, Object>) JavaScriptEngineFactory.walkJson(json, "data/radiusData/volume");
+            final long trafficTotal = parseNumber(volume, "total", -1);
+            final long trafficRemaining = parseNumber(volume, "remaining", -1);
+            final Map<String, Object> extraBoost = (Map<String, Object>) JavaScriptEngineFactory.walkJson(json, "data/radiusData/extraBoost");
+            if (extraBoost != null) {
+                final long boostTotal = parseNumber(extraBoost, "total", -1);
+                final long boostRemaining = parseNumber(extraBoost, "remaining", -1);
+                ai.setTrafficMax(trafficTotal + boostTotal);
+                ai.setTrafficLeft(trafficRemaining + boostRemaining);
             } else {
-                final long trafficNormal = SizeFormatter.getSize(availableTraffic[0][0] + availableTraffic[0][1]);
-                final long trafficBoost;
-                if (availableTraffic.length == 2) {
-                    trafficBoost = SizeFormatter.getSize(availableTraffic[1][0] + availableTraffic[1][1]);
-                } else {
-                    trafficBoost = 0;
-                }
-                final String dataVolume[] = br.getRegex("<label>\\s*Data Volume\\s*</label>\\s*</div>\\s*<div.*?>\\s*([0-9,\\.]+)\\s*<small>\\s*([KTMG]B)\\s*<").getRow(0);
-                if (dataVolume != null && dataVolume.length == 1) {
-                    ai.setTrafficMax(dataVolume[0] + dataVolume[1]);
-                }
-                ai.setTrafficLeft(trafficNormal + trafficBoost);
+                ai.setTrafficMax(trafficTotal);
+                ai.setTrafficLeft(trafficRemaining);
             }
-            final String duration = br.getRegex("<label>\\s*Duration\\s*</label>\\s*</div>\\s*<div.*?>\\s*(\\d+ (months|days|weeks|years))\\s*<").getMatch(0);
-            final String activationDate = br.getRegex("<label>\\s*Activation Date\\s*</label>\\s*</div>\\s*<div.*?>.*?<span>\\s*(\\d+/\\d+/\\d+)\\s*<").getMatch(0);
-            if (duration != null && activationDate != null) {
-                if (StringUtils.containsIgnoreCase(duration, "months")) {
-                    final String months = new Regex(duration, "(\\d+)").getMatch(0);
-                    final long activationTimeStamp = TimeFormatter.getMilliSeconds(activationDate, "MM/dd/yyyy", Locale.ENGLISH);
-                    if (activationTimeStamp > 0) {
-                        final Calendar cl = Calendar.getInstance(Locale.ENGLISH);
-                        cl.setTimeInMillis(activationTimeStamp);
-                        cl.add(Calendar.MONTH, Integer.parseInt(months));
-                        ai.setValidUntil(cl.getTimeInMillis() + (24 * 60 * 60 * 1000l));
-                    }
-                }
+            final Map<String, Object> currentServiceRound = (Map<String, Object>) JavaScriptEngineFactory.walkJson(json, "data/serviceInformation/currentServiceRound");
+            final String currEndDate = (String) currentServiceRound.get("currEndDate");
+            final Date expireDate = TimeFormatter.parseDateString(currEndDate);
+            if (expireDate != null) {
+                ai.setValidUntil(expireDate.getTime());
+                ai.setStatus((String) JavaScriptEngineFactory.walkJson(currentServiceRound, "article/name"));
             }
             // TODO: check this
             account.setMaxSimultanDownloads(30);

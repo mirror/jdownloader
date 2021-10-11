@@ -586,6 +586,7 @@ public abstract class K2SApi extends PluginForHost {
         }
         logger.info("Trying to generate new directurl");
         // if above has failed, dllink will be null
+        boolean freeAccountReconnectWorkaround = false;
         if (inValidate(dllink)) {
             if ("premium".equalsIgnoreCase(link.getStringProperty("access", null)) && isFree) {
                 // download not possible
@@ -594,21 +595,22 @@ public abstract class K2SApi extends PluginForHost {
                 privateDownloadRestriction(getErrorMessage(8));
             }
             if (isFree) {
-                // free non account, and free account download method.
-                currentIP.set(this.getIP());
-                if (account == null) {
-                    synchronized (CTRLLOCK) {
-                        /* Load list of saved IPs + timestamp of last download */
-                        final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
-                        if (lastdownloadmap != null && lastdownloadmap instanceof HashMap && blockedIPsMap.isEmpty()) {
-                            blockedIPsMap = (HashMap<String, Long>) lastdownloadmap;
+                freeAccountReconnectWorkaround = PluginJsonConfig.get(this.getConfigInterface()).isEnableReconnectWorkaround();
+                if (freeAccountReconnectWorkaround) {
+                    // free non account, and free account download method.
+                    currentIP.set(this.getIP());
+                    if (account == null) {
+                        synchronized (CTRLLOCK) {
+                            /* Load list of saved IPs + timestamp of last download */
+                            final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
+                            if (lastdownloadmap != null && lastdownloadmap instanceof HashMap && blockedIPsMap.isEmpty()) {
+                                blockedIPsMap = (HashMap<String, Long>) lastdownloadmap;
+                            }
                         }
                     }
-                }
-                /**
-                 * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
-                 */
-                if (PluginJsonConfig.get(this.getConfigInterface()).isEnableReconnectWorkaround()) {
+                    /**
+                     * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
+                     */
                     long lastdownload = 0;
                     long passedTimeSinceLastDl = 0;
                     logger.info("New Download: currentIP = " + currentIP.get());
@@ -717,17 +719,20 @@ public abstract class K2SApi extends PluginForHost {
             if (rate_limit != null) {
                 logger.info("Current speedlimit: " + rate_limit);
             }
-            /*
-             * The download attempt already triggers reconnect waittime! Save timestamp here to calculate correct remaining waittime later!
-             */
-            synchronized (CTRLLOCK) {
-                if (account != null) {
-                    account.setProperty(PROPERTY_LASTDOWNLOAD, System.currentTimeMillis());
-                } else {
-                    blockedIPsMap.put(currentIP.get(), System.currentTimeMillis());
-                    getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, blockedIPsMap);
+            if (freeAccountReconnectWorkaround) {
+                /*
+                 * The download attempt already triggers reconnect waittime! Save timestamp here to calculate correct remaining waittime
+                 * later!
+                 */
+                synchronized (CTRLLOCK) {
+                    if (account != null) {
+                        account.setProperty(PROPERTY_LASTDOWNLOAD, System.currentTimeMillis());
+                    } else {
+                        blockedIPsMap.put(currentIP.get(), System.currentTimeMillis());
+                        getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, blockedIPsMap);
+                    }
+                    setIP(link, account);
                 }
-                setIP(link, account);
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
