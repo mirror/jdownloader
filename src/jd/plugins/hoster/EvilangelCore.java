@@ -27,7 +27,6 @@ import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
@@ -95,9 +94,10 @@ public abstract class EvilangelCore extends PluginForHost {
     private static final String URL_EVILANGEL_FILM                     = "https?://members\\.evilangel.com/[a-z]{2}/([A-Za-z0-9\\-_]+)/film/(\\d+)";
     private static final String URL_EVILANGEL_FREE_TRAILER             = "https?://(?:www\\.)?evilangel\\.com/[a-z]{2}/video/([A-Za-z0-9\\-]+)/(\\d+)";
     private static final String URL_VIDEO                              = "https?://members\\.[^/]+/[a-z]{2}/video/([^/]+)(?:/([A-Za-z0-9\\-_]+))?/(\\d+)";
-    private static final String PROPERTY_QUALITY                       = "quality";
-    private static final String PROPERTY_DATE                          = "date";
     private static final String PROPERTY_ACTORS                        = "actors";
+    private static final String PROPERTY_DATE                          = "date";
+    private static final String PROPERTY_QUALITY                       = "quality";
+    private static final String PROPERTY_TITLE                         = "title";
     private static final String PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIN = "has_used_cookie_login";
 
     public boolean isProxyRotationEnabledForLinkChecker() {
@@ -219,9 +219,6 @@ public abstract class EvilangelCore extends PluginForHost {
                 }
                 final String siteName = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/[a-z]{2}/video/([^/]+)/[^/]+/\\d+").getMatch(0);
                 if (!link.hasProperty(PROPERTY_DATE) && siteName != null) {
-                    if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
                     logger.info("Looking for additional metadata...");
                     try {
                         final String jsonAPI = br.getRegex("window\\.env\\s*=\\s*(\\{.*?\\});").getMatch(0);
@@ -237,13 +234,15 @@ public abstract class EvilangelCore extends PluginForHost {
                         brc.getHeaders().put("x-algolia-application-id", appID);
                         brc.getHeaders().put("x-algolia-api-key", algoliaAPI.get("apiKey").toString());
                         final String url = "https://" + appID.toLowerCase(Locale.ENGLISH) + "-dsn.algolia.net/1/indexes/*/queries?" + query.toString();
-                        /* TODO: Fill in the required parameters (e.g. videoID) */
                         final String postData = "{\"requests\":[{\"indexName\":\"all_scenes\",\"params\":\"query=&page=0&facets=%5B%5D&tagFilters=&facetFilters=%5B%22sitename%3A" + siteName + "%22%2C%5B%22clip_id%3A" + this.getFID(link) + "%22%5D%5D\"},{\"indexName\":\"all_scenes\",\"params\":\"query=&page=0&hitsPerPage=1&attributesToRetrieve=%5B%5D&attributesToHighlight=%5B%5D&attributesToSnippet=%5B%5D&tagFilters=&analytics=false&clickAnalytics=false&facets=clip_id&facetFilters=%5B%22sitename%3A" + siteName + "%22%5D\"}]}";
                         brc.postPageRaw(url, postData);
                         entries = JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
                         final Map<String, Object> clipInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "results/{0}/hits/{0}");
                         /* Prefer title from URL so it's always in the same parttern. */
-                        // filename = (String)clipInfo.get("title");
+                        final String title = (String) clipInfo.get("title");
+                        if (!StringUtils.isEmpty(title)) {
+                            link.setProperty(PROPERTY_TITLE, title);
+                        }
                         final String releaseDate = (String) clipInfo.get("release_date");
                         if (!StringUtils.isEmpty(releaseDate)) {
                             link.setProperty(PROPERTY_DATE, releaseDate);
@@ -582,6 +581,7 @@ public abstract class EvilangelCore extends PluginForHost {
                 }
                 if (br.getURL().contains("/reactivate")) {
                     /* TODO: Expired free account(?) */
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Premium subscription expired", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 if (!isLoggedIn(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
