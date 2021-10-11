@@ -29,6 +29,7 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -172,6 +173,11 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                             }
                         }.getToken();
                         form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                        /* Small workaround, see https://svn.jdownloader.org/issues/89825 */
+                        final InputField submit = form.getInputField("submit");
+                        if (submit != null && submit.getValue() == null) {
+                            form.put("submit", "");
+                        }
                     } else if (captchaType == CaptchaType.solvemedia) {
                         final String solvemediaChallengeKey = this.getAppVarsResult("solvemedia_challenge_key");
                         if (StringUtils.isEmpty(solvemediaChallengeKey)) {
@@ -215,6 +221,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                  */
                 // this.submitForm(form);
             }
+            hookAfterCaptcha(this.br);
             final boolean skipWait = waittimeIsSkippable(sourceHost);
             /** TODO: Fix waittime-detection for tmearn.com */
             /* 2018-07-18: It is very important to keep this exact as some websites have "ad-forms" e.g. urlcloud.us !! */
@@ -286,6 +293,10 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             decryptedLinks.add(createDownloadlink(finallink));
         }
         return decryptedLinks;
+    }
+
+    /** Override to do something after the captcha (also gets called when no captcha was needed). */
+    protected void hookAfterCaptcha(final Browser br) throws Exception {
     }
 
     /** Accesses input URL and handles "Pre-AdLinkFly" redirects. */

@@ -20,11 +20,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -33,14 +42,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RosefileNet extends PluginForHost {
     public RosefileNet(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("");
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            this.enablePremium("https://rosefile.net/vip.php");
+        }
     }
 
     @Override
@@ -184,16 +192,7 @@ public class RosefileNet extends PluginForHost {
     }
 
     @Override
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (acc.getType() == AccountType.FREE) {
-            /* Free accounts can have captchas */
-            return true;
-        }
-        /* Premium accounts do not have captchas */
+    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
         return false;
     }
 
@@ -219,6 +218,128 @@ public class RosefileNet extends PluginForHost {
             }
             return false;
         }
+    }
+
+    private boolean login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
+            try {
+                br.setFollowRedirects(true);
+                br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    logger.info("Attempting cookie login");
+                    this.br.setCookies(this.getHost(), cookies);
+                    if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l) {
+                        logger.info("Cookies are still fresh --> Trust cookies without login");
+                        return false;
+                    }
+                    br.getPage("https://" + this.getHost() + "/");
+                    if (this.isLoggedin()) {
+                        logger.info("Cookie login successful");
+                        /* Refresh cookie timestamp */
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return true;
+                    } else {
+                        logger.info("Cookie login failed");
+                    }
+                }
+                logger.info("Performing full login");
+                br.getPage("https://" + this.getHost() + "/account.php?action=login");
+                final Form loginform = br.getFormbyProperty("name", "user_form");
+                if (loginform == null) {
+                    logger.warning("Failed to find loginform");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("username", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                br.submitForm(loginform);
+                br.getPage("/mydisk.php?item=profile&menu=cp");
+                if (!isLoggedin()) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                return true;
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
+            }
+        }
+    }
+
+    private boolean isLoggedin() {
+        return br.containsHTML("action=logout");
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        login(account, true);
+        if (!br.getURL().contains("/mydisk.php?item=profile&menu=cp")) {
+            br.getPage("/mydisk.php?item=profile&menu=cp");
+        }
+        ai.setUnlimitedTraffic();
+        final String accType = br.getRegex("(?i)<td>Account type</td>\\s*<td>\\s*([^<]*)\\s*<a").getMatch(0);
+        if (accType == null || accType.equalsIgnoreCase("free")) {
+            account.setType(AccountType.FREE);
+            ai.setStatus("Registered (free) user");
+        } else {
+            /* TODO */
+            final String expire = br.getRegex("TODO").getMatch(0);
+            if (expire == null) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
+            }
+            account.setType(AccountType.PREMIUM);
+            account.setConcurrentUsePossible(true);
+            ai.setStatus("Premium account");
+        }
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        /* TODO */
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // br.getPage(link.getPluginPatternMatcher());
+        // if (account.getType() == AccountType.FREE) {
+        // doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+        // } else {
+        // String dllink = this.checkDirectLink(link, "premium_directlink");
+        // if (dllink == null) {
+        // dllink = br.getRegex("").getMatch(0);
+        // if (StringUtils.isEmpty(dllink)) {
+        // logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // }
+        // }
+        // dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+        // if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+        // if (dl.getConnection().getResponseCode() == 403) {
+        // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+        // } else if (dl.getConnection().getResponseCode() == 404) {
+        // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        // }
+        // logger.warning("The final dllink seems not to be a file!");
+        // try {
+        // br.followConnection(true);
+        // } catch (final IOException e) {
+        // logger.log(e);
+        // }
+        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // }
+        // link.setProperty("premium_directlink", dl.getConnection().getURL().toString());
+        // dl.startDownload();
+        // }
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
