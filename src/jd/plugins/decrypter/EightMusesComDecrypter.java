@@ -46,13 +46,14 @@ public class EightMusesComDecrypter extends antiDDoSForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        if (fpName == null) {
-            fpName = parameter.substring(parameter.lastIndexOf("/") + 1);
-        }
+        String fpName;
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
         if (parameter.matches("https?://[^/]+/forum/.+")) {
+            fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+            if (fpName == null) {
+                fpName = parameter.substring(parameter.lastIndexOf("/") + 1);
+            }
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
             /* Grab forum attachments */
             final String[] attachments = br.getRegex("(/forum/attachments/[^\"]+)\"").getColumn(0);
             if (attachments.length == 0) {
@@ -82,6 +83,9 @@ public class EightMusesComDecrypter extends antiDDoSForDecrypt {
                 decryptedLinks.add(dl);
             }
         } else {
+            /* Obtain packagename from URL. */
+            fpName = parameter.substring(parameter.lastIndexOf("/") + 1).replace("-", " ");
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
             String[] categories = br.getRegex("(/index/category/[a-z0-9\\-_]+)\" data\\-original\\-title").getColumn(0);
             if (categories == null || categories.length == 0) {
                 categories = br.getRegex("(\"|')(/album(?:/[a-z0-9\\-_]+){2,3})\\1").getColumn(1);
