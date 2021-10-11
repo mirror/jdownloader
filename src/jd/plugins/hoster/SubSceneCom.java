@@ -15,6 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.nutils.encoding.Encoding;
@@ -24,8 +28,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "subscene.com" }, urls = { "https?://(\\w+\\.)?subscene\\.com/(subtitles/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+|[a-z0-9]+/[a-z0-9\\-]+/subtitle\\-\\d+\\.aspx)" })
 public class SubSceneCom extends antiDDoSForHost {
@@ -43,7 +45,7 @@ public class SubSceneCom extends antiDDoSForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         try {
-            getPage(link.getDownloadURL());
+            getPage(link.getPluginPatternMatcher());
         } catch (PluginException e) {
             logger.log(e);
             if (Thread.currentThread() instanceof SingleDownloadController && e.getLinkStatus() == LinkStatus.ERROR_CAPTCHA) {
@@ -53,8 +55,7 @@ public class SubSceneCom extends antiDDoSForHost {
         }
         if (br.containsHTML("(>An error occurred while processing your request|>Server Error|>Page Not Found<)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if ((br.containsHTML("<li class=\"deleted\">")) && (!br.containsHTML("mac"))) {
+        } else if ((br.containsHTML("<li class=\"deleted\">")) && (!br.containsHTML("mac"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String subtitleid = new Regex(link.getDownloadURL(), "subtitles/[a-z0-9\\-_]+/[a-z0-9\\-_]+/(\\d+)").getMatch(0);
@@ -93,8 +94,8 @@ public class SubSceneCom extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         String dllink = br.getRegex("\"(/subtitle/download\\?mac=[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("class=\"download\">\\s*<a href=\"(/subtitles?/[^<>\"]*?)\"").getMatch(0);
@@ -104,12 +105,16 @@ public class SubSceneCom extends antiDDoSForHost {
         }
         // Resume and chunks disabled, not needed for such small files & can't
         // test
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+        link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
     }
 

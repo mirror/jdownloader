@@ -18,10 +18,13 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -34,17 +37,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.parser.UrlQuery;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?(?:trollvids\\.com|iwara\\.tv)/((?:videos|node)/[A-Za-z0-9]+|users/[^/\\?]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?(?:trollvids\\.com|iwara\\.tv)/((?:videos|node)/[A-Za-z0-9]+|users/[^/\\?]+(/videos)?)" })
 public class IwaraTv extends PluginForDecrypt {
     public IwaraTv(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_USER = "https?://[^/]+/users/([^/]+)";
+    private static final String TYPE_USER = "https?://[^/]+/users/([^/]+)(/videos)?";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         if (param.getCryptedUrl().matches(TYPE_USER)) {
@@ -63,10 +62,13 @@ public class IwaraTv extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final HashSet<String> dupes = new HashSet<String>();
+        dupes.add("thumbnails");
         int page = -1;
         final UrlQuery query = new UrlQuery();
         query.add("language", "en");
-        final String baseURL = "https://" + Browser.getHost(param.getCryptedUrl(), true) + "/users/" + username + "/videos";
+        /* 2021-10-11: Not all user profiles have the "/videos" URL available! */
+        // final String baseURL = "https://" + Browser.getHost(param.getCryptedUrl(), true) + "/users/" + username + "/videos";
+        final String baseURL = param.getCryptedUrl();
         username = URLEncode.decodeURIComponent(username);
         FilePackage fp = null;
         do {
@@ -86,7 +88,6 @@ public class IwaraTv extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String[] videoIDs = br.getRegex("/videos/([A-Za-z0-9]+)").getColumn(0);
-            dupes.add("thumbnails");
             int foundNumberofItemsThisPage = 0;
             for (final String videoID : videoIDs) {
                 if (dupes.add(videoID)) {
@@ -96,7 +97,9 @@ public class IwaraTv extends PluginForDecrypt {
                     dl.setContentUrl(videoURL);
                     /* Try to find nice title */
                     String videoTitle = br.getRegex("/videos/" + videoID + "[^\"]+\">([^<>\"]+)</a></h3>").getMatch(0);
-                    videoTitle = Encoding.htmlOnlyDecode(Encoding.htmlOnlyDecode(videoTitle));
+                    if (videoTitle != null) {
+                        videoTitle = Encoding.htmlOnlyDecode(Encoding.htmlOnlyDecode(videoTitle));
+                    }
                     if (videoTitle != null) {
                         dl.setName(username + "_" + videoID + "_" + videoTitle.trim().replaceAll("([\\(\\s\\._]+)$", "") + ".mp4");
                     } else {
@@ -115,7 +118,11 @@ public class IwaraTv extends PluginForDecrypt {
                 break;
             } else if (foundNumberofItemsThisPage == 0) {
                 logger.info("Stopping because: Failed to find any items on current page");
-                break;
+                if (decryptedLinks.isEmpty()) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    break;
+                }
             } else if (!nextPageAvailable) {
                 logger.info("Stopping because: Reached last page");
                 break;
