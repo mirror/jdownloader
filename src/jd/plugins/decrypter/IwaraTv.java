@@ -18,10 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -36,6 +32,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?(?:trollvids\\.com|iwara\\.tv)/((?:videos|node)/[A-Za-z0-9]+|users/[^/\\?]+(/videos)?)" })
 public class IwaraTv extends PluginForDecrypt {
@@ -95,8 +95,10 @@ public class IwaraTv extends PluginForDecrypt {
                     final String videoURL = "https://" + br.getHost(true) + "/videos/" + videoID;
                     final DownloadLink dl = createDownloadlink(videoURL.replace("iwara.tv/", "iwaradecrypted.tv/"));
                     dl.setContentUrl(videoURL);
-                    /* Try to find nice title */
-                    String videoTitle = br.getRegex("/videos/" + videoID + "[^\"]+\">([^<>\"]+)</a></h3>").getMatch(0);
+                    String videoTitle = br.getRegex("<a\\s*href\\s*=\"/videos/" + videoID + "[^\"]+\"\\s*>\\s*<img.*?title\\s*=\\s*\"([^<>\"]+).*?</a></div>").getMatch(0);
+                    if (videoTitle == null) {
+                        videoTitle = br.getRegex("/videos/" + videoID + "[^\"]+\">([^<>\"]+)</a></h3>").getMatch(0);
+                    }
                     if (videoTitle != null) {
                         videoTitle = Encoding.htmlOnlyDecode(Encoding.htmlOnlyDecode(videoTitle));
                     }
