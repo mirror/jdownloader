@@ -35,7 +35,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "links.snahp.it", "protect-link.org", "link.movieswbb.net", "protect.dmd247.com", "isra.click" }, urls = { "https?://(?:www\\.)?links\\.snahp\\.it/[A-Za-z0-9\\-_]+", "https?://(?:www\\.)?protect\\-link\\.org/.+", "https?://(?:www\\.)?link\\.movieswbb\\.(net|com)/\\d+", "https?://(?:www\\.)?protect\\.dmd247\\.com/[^<>\"/]+", "https?://(?:www\\.)?isra\\.click/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "lnk.snahp.eu", "protect-link.org", "link.movieswbb.net", "protect.dmd247.com", "isra.click" }, urls = { "https?://(?:www\\.)?(lnk\\.snahp\\.eu|links\\.snahp\\.it)/[A-Za-z0-9\\-_]+", "https?://(?:www\\.)?protect\\-link\\.org/.+", "https?://(?:www\\.)?link\\.movieswbb\\.(net|com)/\\d+", "https?://(?:www\\.)?protect\\.dmd247\\.com/[^<>\"/]+", "https?://(?:www\\.)?isra\\.click/.+" })
 public class DaddyScriptsDaddysLinkProtector extends antiDDoSForDecrypt {
     public DaddyScriptsDaddysLinkProtector(PluginWrapper wrapper) {
         super(wrapper);
@@ -44,7 +44,10 @@ public class DaddyScriptsDaddysLinkProtector extends antiDDoSForDecrypt {
     /* Tags: Daddy's Link Protector */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        String parameter = param.toString();
+        if ("lnk.snahp.eu".equals(getHost()) && StringUtils.containsIgnoreCase(parameter, "links.snahp.it")) {
+            parameter = parameter.replaceFirst("(?i)(links\\.snahp\\.it)", getHost());
+        }
         br.setFollowRedirects(true);
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"error\"")) {
