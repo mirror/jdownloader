@@ -41,7 +41,6 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.FormData;
 import jd.http.requests.PostFormDataRequest;
@@ -313,9 +312,6 @@ abstract public class ZeveraCore extends UseNet {
             final String hash_sha256 = link.getSha256Hash();
             final UrlQuery query = new UrlQuery();
             query.add("src", URLEncode.encodeURIComponent(link.getDefaultPlugin().buildExternalDownloadURL(link, hostPlugin)));
-            // if (!this.usePairingLogin(account)) {
-            // query.add("apikey", getAPIKey(account));
-            // }
             if (hash_md5 != null) {
                 query.add("hash_md5", hash_md5);
             }
@@ -326,12 +322,11 @@ abstract public class ZeveraCore extends UseNet {
                 query.add("hash_sha256", hash_sha256);
             }
             /* https://app.swaggerhub.com/apis-docs/premiumize.me/api/1.6.7#/transfer/transferDirectdl */
-            final PostFormDataRequest postRequest = br.createPostFormDataRequest("https://www." + account.getHoster() + "/api/transfer/directdl");
-            /*
-             * 2021-10-08: This is required as a workaround (same used in browser). If we're adding the "apikey" parameter according to api
-             * docs, it just won't work...
-             */
-            postRequest.getCookies().add(new Cookie(getHost(), "sdk_login", getAPIKey(account)));
+            String url = "https://www." + account.getHoster() + "/api/transfer/directdl";
+            if (!this.usePairingLogin(account)) {
+                url += "?apikey=" + getAPIKey(account);
+            }
+            final PostFormDataRequest postRequest = br.createPostFormDataRequest(url);
             for (final KeyValueStringEntry entry : query.list()) {
                 postRequest.addFormData(new FormData(entry.getKey(), URLEncode.decodeURIComponent(entry.getValue())));
             }
