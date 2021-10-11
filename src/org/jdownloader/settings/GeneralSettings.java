@@ -338,7 +338,7 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isAutoOpenContainerAfterDownload();
 
     @AboutConfig
-    @DescriptionForConfigEntry("If enabled, filename will be cleaned up of superfluous . and _ characters, and replaced with spaces. Please note plugins can override this setting.")
+    @DescriptionForConfigEntry("If enabled, filenames and packagenames will be cleaned up of superfluous . and _ characters, and replaced with spaces. Please note plugins can override this setting.")
     @DefaultBooleanValue(true)
     boolean isCleanUpFilenames();
 
