@@ -383,7 +383,7 @@ public class FlickrCom extends PluginForDecrypt {
             ret = cfg.getStringProperty(jd.plugins.hoster.FlickrCom.CUSTOM_PACKAGENAME_OTHERS, jd.plugins.hoster.FlickrCom.defaultCustomPackagenameOthers);
         }
         final String userDefinedDateFormat = cfg.getStringProperty(jd.plugins.hoster.FlickrCom.CUSTOM_DATE, jd.plugins.hoster.FlickrCom.defaultCustomDate);
-        final String dateFormatted = jd.plugins.hoster.FlickrCom.formatToUserDefinedDate(album.getCreateDataOfGalleryOrSet(), userDefinedDateFormat, customStringForEmptyTags);
+        final String dateFormatted = jd.plugins.hoster.FlickrCom.formatToUserDefinedDate(album.getCreateTimestamp(), userDefinedDateFormat, customStringForEmptyTags);
         final String dateUpdatedFormatted = jd.plugins.hoster.FlickrCom.formatToUserDefinedDate(album.getLastUpdatedTimestampOfGalleryOrSet(), userDefinedDateFormat, customStringForEmptyTags);
         ret = ret.replace("*type*", StringUtils.firstNotEmpty(album.getTypeAsString(), customStringForEmptyTags));
         ret = ret.replace("*set_id*", StringUtils.firstNotEmpty(album.getSetID(), customStringForEmptyTags));
@@ -939,7 +939,7 @@ public class FlickrCom extends PluginForDecrypt {
             this.titleOfGalleryOrSet = titleOfGalleryOrSet;
         }
 
-        public long getCreateDataOfGalleryOrSet() {
+        public long getCreateTimestamp() {
             return createTimestamp;
         }
 
