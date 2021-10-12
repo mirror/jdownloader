@@ -4,13 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -20,6 +13,13 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangadex.org" }, urls = { "https?://(?:www\\.)?mangadex\\.(?:org|cc)/chapter/[a-f0-9\\-]+" })
 public class MangadexOrg extends antiDDoSForDecrypt {
@@ -64,19 +64,19 @@ public class MangadexOrg extends antiDDoSForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final StringBuilder sb = new StringBuilder();
-        final String mangaTitle = (String) attributes.get("mangaTitle");
+        String mangaTitle = (String) attributes.get("mangaTitle");
         final String volume = (String) attributes.get("volume");
         final String chapter = (String) attributes.get("chapter");
         String title = (String) attributes.get("title");
         String description = null;
         /* Find title (fallback) and description */
-        final List<Map<String, Object>> relationships = (List<Map<String, Object>>) root.get("relationships");
+        final List<Map<String, Object>> relationships = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(root, "data/relationships");
         for (final Map<String, Object> relationship : relationships) {
             final String type = (String) relationship.get("type");
             if (type.equals("manga")) {
                 final Map<String, Object> mangaAttributes = (Map<String, Object>) relationship.get("attributes");
-                if (StringUtils.isEmpty(title)) {
-                    title = (String) JavaScriptEngineFactory.walkJson(mangaAttributes, "title/en");
+                if (StringUtils.isEmpty(mangaTitle)) {
+                    mangaTitle = (String) JavaScriptEngineFactory.walkJson(mangaAttributes, "title/en");
                 }
                 description = (String) JavaScriptEngineFactory.walkJson(mangaAttributes, "description/en");
             }

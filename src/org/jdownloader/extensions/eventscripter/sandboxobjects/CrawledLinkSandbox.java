@@ -298,7 +298,7 @@ public class CrawledLinkSandbox {
                 return "/mnt/Text.txt";
             }
         }
-        return link.getDownloadLink().getFileOutput();
+        return link.getDownloadLink().getFileOutput(getPackage().getDownloadFolder(), false, false);
     }
 
     @ScriptAPI(description = "Sets a new filename", parameters = { "new Name" })
