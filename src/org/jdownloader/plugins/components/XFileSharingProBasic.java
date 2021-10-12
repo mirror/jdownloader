@@ -3714,7 +3714,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      *            false = Set stored cookies and trust them if they're not older than 300000l
      *
      */
-    public boolean loginWebsite(final DownloadLink downloadLink, final Account account, final boolean validateCookies) throws Exception {
+    public boolean loginWebsite(final DownloadLink link, final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
             final boolean followRedirects = br.isFollowingRedirects();
             try {
@@ -3759,10 +3759,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         if (cookiesUsername == null) {
                             cookiesUsername = br.getCookie(br.getHost(), "email", Cookies.NOTDELETEDPATTERN);
                         }
-                        /*
-                         * During cookie login, user can enter whatever he wants into username field. Most users will enter their real
-                         * username but to be sure to have unique usernames we don't trust them and try to get the real username out of our
-                         * cookies.
+                        /**
+                         * During cookie login, user can enter whatever he wants into username field.</br>
+                         * Most users will enter their real username but to be sure to have unique usernames we don't trust them and try to
+                         * get the real username out of our cookies.
                          */
                         if (!StringUtils.isEmpty(cookiesUsername) && !account.getUser().equals(cookiesUsername)) {
                             account.setUser(cookiesUsername);
@@ -3770,10 +3770,17 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         return true;
                     } else {
                         logger.info("Cookie login failed");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        if (account.getLastValidTimestamp() <= 0) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login cookies expired", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login cookies invalid", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
                 } else if (this.requiresCookieLogin()) {
-                    /* Ask user to login via exported browser cookies e.g. xubster.com. */
+                    /**
+                     * Cookie login required but user did not put cookies into the password field: </br>
+                     * Ask user to login via exported browser cookies e.g. xubster.com.
+                     */
                     showCookieLoginInformation();
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }

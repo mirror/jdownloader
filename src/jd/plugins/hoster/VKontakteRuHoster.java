@@ -849,7 +849,9 @@ public class VKontakteRuHoster extends PluginForHost {
     @SuppressWarnings("deprecation")
     private void handleServerErrors(final DownloadLink link) throws PluginException, IOException {
         final URLConnectionAdapter con = dl.getConnection();
-        if (con.getResponseCode() == 416) {
+        if (con.getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
+        } else if (con.getResponseCode() == 416) {
             con.disconnect();
             logger.info("Resume failed --> Retrying from zero");
             link.setChunksProgress(null);
