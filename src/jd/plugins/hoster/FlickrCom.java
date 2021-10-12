@@ -1125,8 +1125,9 @@ public class FlickrCom extends PluginForHost {
                 /* prevent user error killing the custom filename function. */
                 return fallbackStr;
             }
+        } else {
+            return fallbackStr;
         }
-        return fallbackStr;
     }
 
     public static boolean userPrefersServerFilenames() {
