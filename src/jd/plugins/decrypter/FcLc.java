@@ -21,6 +21,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -34,10 +38,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FcLc extends antiDDoSForDecrypt {
@@ -176,6 +176,10 @@ public class FcLc extends antiDDoSForDecrypt {
             logger.info("Sending Form beforeCaptcha2");
             if (beforeCaptcha2.containsHTML("recaptcha") && br.getHost().equalsIgnoreCase("fc.lc")) {
                 /* 2021-05-07: Can contain invisible reCaptchaV2 but not every domain has recaptcha js! */
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                beforeCaptcha2.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            } else if (beforeCaptcha2.containsHTML("g-recaptcha btn btn-primary")) {
+                /* 2021-10-12 */
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
                 beforeCaptcha2.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             }
