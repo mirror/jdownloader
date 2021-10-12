@@ -19,6 +19,7 @@ import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.eventscripter.ScriptAPI;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 
 @ScriptAPI(description = "The context download list package")
 public class FilePackageSandBox {
@@ -173,7 +174,7 @@ public class FilePackageSandBox {
         if (filePackage == null) {
             return Application.getResource("").getAbsolutePath();
         } else {
-            return filePackage.getDownloadDirectory();
+            return LinkTreeUtils.getDownloadDirectory(filePackage).getAbsolutePath();
         }
     }
 
@@ -210,8 +211,9 @@ public class FilePackageSandBox {
     public Object getProperty(String key) {
         if (filePackage != null) {
             return filePackage.getProperty(key);
+        } else {
+            return null;
         }
-        return null;
     }
 
     public Map<String, Object> getProperties() {
