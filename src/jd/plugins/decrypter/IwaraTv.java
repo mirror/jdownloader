@@ -95,7 +95,7 @@ public class IwaraTv extends PluginForDecrypt {
                 if (dupes.add(videoID)) {
                     /* Assume all items are selfhosted and thus do not have to go through this crawler again. */
                     final String videoURL = "https://" + br.getHost(true) + "/videos/" + videoID;
-                    final DownloadLink dl = createDownloadlink(videoURL.replace("iwara.tv/", "iwaradecrypted.tv/"));
+                    final DownloadLink dl = createDownloadlink(videoURL);
                     dl.setContentUrl(videoURL);
                     String videoTitle = br.getRegex("<a\\s*href\\s*=\"/videos/" + videoID + "[^\"]+\"\\s*>\\s*<img.*?title\\s*=\\s*\"([^<>\"]+).*?</a></div>").getMatch(0);
                     if (videoTitle == null) {
@@ -190,7 +190,7 @@ public class IwaraTv extends PluginForDecrypt {
                     return decryptedLinks;
                 }
             }
-            final DownloadLink dl = createDownloadlink(br.getURL().replace("iwara.tv/", "iwaradecrypted.tv/"));
+            final DownloadLink dl = createDownloadlink(br.getURL());
             decryptedLinks.add(dl);
         }
         return decryptedLinks;
