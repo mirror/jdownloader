@@ -88,7 +88,7 @@ public class FlickrCom extends PluginForHost {
     private static final String SETTING_FAST_LINKCHECK                  = "FAST_LINKCHECK";
     private static final String SETTING_SELECTED_PHOTO_QUALITY          = "SELECTED_PHOTO_QUALITY";
     private static final String SETTING_SELECTED_VIDEO_QUALITY          = "SELECTED_VIDEO_QUALITY";
-    private static final String CUSTOM_DATE                             = "CUSTOM_DATE";
+    public static final String  CUSTOM_DATE                             = "CUSTOM_DATE";
     private static final String CUSTOM_FILENAME                         = "CUSTOM_FILENAME";
     public static final String  CUSTOM_PACKAGENAME_SET_GALLERY          = "CUSTOM_PACKAGENAME_SET_GALLERY";
     public static final String  CUSTOM_PACKAGENAME_OTHERS               = "CUSTOM_PACKAGENAME_OTHERS";
@@ -611,9 +611,16 @@ public class FlickrCom extends PluginForHost {
     public static final String getApiParamExtras() {
         /**
          * needs_interstitial = show 18+ content </br>
-         * media = include media-type (video/photo)
+         * media = include media-type (video/photo) </br>
+         * datecreate = get create-date of groups </br>
+         * date_taken = date_taken of photos </br>
          */
-        String extras = "date_taken%2Cdate_upload%2Cdescription%2Cowner_name%2Cpath_alias%2Crealname%2Cneeds_interstitial%2Cmedia";
+        /**
+         * TODO: Stuff we do not obtain at this moment but might be useful in the future: </br>
+         *
+         * date_activity = timestamp of the last activity of a group (given via "dateactivity/_content")
+         */
+        String extras = "datecreate%2Cdate_taken%2Cdate_upload%2Cdescription%2Cowner_name%2Cpath_alias%2Crealname%2Cneeds_interstitial%2Cmedia";
         final String[] allPhotoQualities = getPhotoQualityStringsDescending();
         for (final String qualityStr : allPhotoQualities) {
             extras += "%2Curl_" + qualityStr;
@@ -1075,8 +1082,8 @@ public class FlickrCom extends PluginForHost {
         final SubConfiguration cfg = SubConfiguration.getConfig("flickr.com");
         final String customStringForEmptyTags = getCustomStringForEmptyTags();
         final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, defaultCustomDate);
-        final String formattedDate = formatToUserDefinedDate(link.getLongProperty(PROPERTY_DATE, 0), customStringForEmptyTags, userDefinedDateFormat);
-        final String formattedDateTaken = formatToUserDefinedDate(link.getLongProperty(PROPERTY_DATE_TAKEN, 0), customStringForEmptyTags, userDefinedDateFormat);
+        final String formattedDate = formatToUserDefinedDate(link.getLongProperty(PROPERTY_DATE, 0), userDefinedDateFormat, customStringForEmptyTags);
+        final String formattedDateTaken = formatToUserDefinedDate(link.getLongProperty(PROPERTY_DATE_TAKEN, 0), userDefinedDateFormat, customStringForEmptyTags);
         formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
         if (formattedFilename == null || formattedFilename.equals("")) {
             formattedFilename = defaultCustomFilename;
@@ -1108,7 +1115,7 @@ public class FlickrCom extends PluginForHost {
         return formattedFilename;
     }
 
-    public static String formatToUserDefinedDate(final long timestamp, final String fallbackStr, final String targetFormat) {
+    public static String formatToUserDefinedDate(final long timestamp, final String targetFormat, final String fallbackStr) {
         if (timestamp > 0 && targetFormat != null) {
             Date theDate = new Date(timestamp);
             try {
@@ -1375,7 +1382,7 @@ public class FlickrCom extends PluginForHost {
     private static final int     defaultArrayPosSelectedPhotoQuality = 0;
     private static final int     defaultArrayPosSelectedVideoQuality = 0;
     private static final boolean defaultPreferServerFilename         = false;
-    private static final String  defaultCustomDate                   = "MM-dd-yyyy";
+    public static final String   defaultCustomDate                   = "MM-dd-yyyy";
     private static final String  defaultCustomFilename               = "*username_url*_*content_id*_*title**extension*";
     public static final String   defaultCustomPackagenameSetGallery  = "*type* - *username_url*_*set_or_gallery_id* - *title*";
     public static final String   defaultCustomPackagenameOthers      = "*type* - *username_url*";
@@ -1404,6 +1411,8 @@ public class FlickrCom extends PluginForHost {
         tagsPackage.append("*set_id* = ID of album\r\n");
         tagsPackage.append("*gallery_id* = ID of gallery\r\n");
         tagsPackage.append("*set_or_gallery_id* = ID of gallery or set\r\n");
+        tagsPackage.append("*date* = Create date of gallery, set or group - custom date format will be used here\r\n");
+        tagsPackage.append("*date_update* = Last updated date of gallery or set - custom date format will be used here\r\n");
         tagsPackage.append("*title* = Title of gallery or set\r\n");
         tagsPackage.append("*description* = Description of the gallery/set\r\n");
         tagsPackage.append("*username* = Short username e.g. 'exampleusername'\r\n");
