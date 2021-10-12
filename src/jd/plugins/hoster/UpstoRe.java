@@ -447,10 +447,10 @@ public class UpstoRe extends antiDDoSForHost {
         if (result > 0) {
             // expire at the end of the day, not the beginning
             result = result + (24 * 60 * 60 * 1000l);
+            final long offset = TimeZone.getDefault().getOffset(result);
+            logger.info("Apply Timezone offset:" + offset);
+            result += offset;
         }
-        final long offset = TimeZone.getDefault().getOffset(result);
-        logger.info("Apply Timezone offset:" + offset);
-        result += offset;
         return result;
     }
 
