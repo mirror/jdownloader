@@ -2156,6 +2156,7 @@ settings_linkgrabber_filter_columns_exepriority=Prioritet
 settings_linkgrabber_filter_columns_if=%s1!
 settings_linkgrabber_filter_columns_name=Ime Pravila
 settings_linkgrabber_filter_others=Ostali
+settings_rules_columns_exeorder=Naruči
 skip_file=Preskoči dokument
 special_char_lib_loading_problem=Modul %s2 ne radi ispravno.\r\nIzgleda da postoji problem sa instalacionim direktorijem JDownloader-a.\r\nMolimo provjerite d ali ime instalacionog direktorija sadrži specijalne znakove.\r\nVaš JDownloader instalacioni direktorij je: %s1
 system_download_autostart=Automatsko pokretanje Download-a pri Pokretanju Aplikacije
