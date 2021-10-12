@@ -18,6 +18,10 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -33,10 +37,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.parser.UrlQuery;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?(?:trollvids\\.com|iwara\\.tv)/((?:videos|node)/[A-Za-z0-9]+|users/[^/\\?]+(/videos)?)" })
 public class IwaraTv extends PluginForDecrypt {
     public IwaraTv(PluginWrapper wrapper) {
@@ -46,6 +46,8 @@ public class IwaraTv extends PluginForDecrypt {
     private static final String TYPE_USER = "https?://[^/]+/users/([^/]+)(/videos)?";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        /* Try to make old URLs work too. */
+        param.setCryptedUrl(param.getCryptedUrl().replace("trollvids.com/", "iwara.tv/"));
         if (param.getCryptedUrl().matches(TYPE_USER)) {
             return crawlChannel(param);
         } else {
@@ -103,10 +105,14 @@ public class IwaraTv extends PluginForDecrypt {
                         videoTitle = Encoding.htmlOnlyDecode(Encoding.htmlOnlyDecode(videoTitle));
                     }
                     if (videoTitle != null) {
-                        dl.setName(username + "_" + videoID + "_" + videoTitle.trim().replaceAll("([\\(\\s\\._]+)$", "") + ".mp4");
+                        videoTitle = videoTitle.trim().replaceAll("([\\(\\s\\._]+)$", "");
+                        dl.setProperty(jd.plugins.hoster.IwaraTv.PROPERTY_TITLE, videoTitle);
+                        dl.setName(username + "_" + videoID + "_" + videoTitle + ".mp4");
                     } else {
                         dl.setName(username + "_" + videoID + ".mp4");
                     }
+                    dl.setProperty(jd.plugins.hoster.IwaraTv.PROPERTY_VIDEOID, videoID);
+                    dl.setProperty(jd.plugins.hoster.IwaraTv.PROPERTY_USER, username);
                     dl.setAvailable(true);
                     dl._setFilePackage(fp);
                     decryptedLinks.add(dl);

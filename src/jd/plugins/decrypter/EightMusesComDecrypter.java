@@ -84,7 +84,13 @@ public class EightMusesComDecrypter extends antiDDoSForDecrypt {
             }
         } else {
             /* Obtain packagename from URL. */
-            fpName = parameter.substring(parameter.lastIndexOf("/") + 1).replace("-", " ");
+            /* /album/<category>/<author>/<title> */
+            final Regex album = new Regex(parameter, "(?i)https?://[^/]+/comics/album/(.+)");
+            if (album.matches()) {
+                fpName = album.getMatch(0).replace("/", "-");
+            } else {
+                fpName = parameter.substring(parameter.lastIndexOf("/") + 1).replace("-", " ");
+            }
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             String[] categories = br.getRegex("(/index/category/[a-z0-9\\-_]+)\" data\\-original\\-title").getColumn(0);
             if (categories == null || categories.length == 0) {

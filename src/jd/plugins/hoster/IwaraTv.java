@@ -38,7 +38,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?iwaradecrypted\\.tv/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?iwara\\.tv/videos/([A-Za-z0-9]+)" })
 public class IwaraTv extends PluginForHost {
     public IwaraTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,32 +54,18 @@ public class IwaraTv extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-    private final String         html_privatevideo = ">This video is only available for users that|>Private video<";
+    private final String         html_privatevideo = "(?i)>\\s*This video is only available for users that|>\\s*Private video<";
     public static final String   html_loggedin     = "/user/logout";
     private static final String  type_image        = "https?://[^/]+/images/.+";
     private String               dllink            = null;
     private boolean              serverIssue       = false;
+    public static final String   PROPERTY_USER     = "user";
+    public static final String   PROPERTY_TITLE    = "title";
+    public static final String   PROPERTY_VIDEOID  = "videoid";
 
     @Override
     public String getAGBLink() {
         return "https://www.iwara.tv/";
-    }
-
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        final String fid = getFID(link.getDownloadURL());
-        link.setLinkID(fid);
-        link.setUrlDownload(link.getDownloadURL().replace("iwaradecrypted.tv/", "iwara.tv/"));
-    }
-
-    @Override
-    public String rewriteHost(String host) {
-        if ("trollvids.com".equals(getHost())) {
-            if (host == null || "trollvids.com".equals(host)) {
-                return "iwara.tv";
-            }
-        }
-        return super.rewriteHost(host);
     }
 
     public static Browser prepBR(final Browser br) {
@@ -87,6 +73,20 @@ public class IwaraTv extends PluginForHost {
         br.setCustomCharset("UTF-8");
         br.setCookie("iwara.tv", "show_adult", "1");
         return br;
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
@@ -101,32 +101,36 @@ public class IwaraTv extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        /* Set Packagizer property */
+        link.setProperty(PROPERTY_VIDEOID, this.getFID(link));
         dllink = null;
         serverIssue = false;
         this.setBrowserExclusive();
         prepBR(this.br);
         /* 2020-10-20: Disabled because their streaming-servers are very slow --> Slowsdown linkcheck dramatically! */
         final boolean findFilesize = false;
-        final String fid = getFID(link.getDownloadURL());
         if (account != null) {
             /* Login if possible */
             login(account, false);
         }
-        this.br.getPage(link.getDownloadURL());
+        this.br.getPage(link.getPluginPatternMatcher());
         br.followRedirect();
-        final String uploadername = this.br.getRegex("class=\"username\">([^<>]+)<").getMatch(0);
+        String uploadername = this.br.getRegex("class=\"username\">([^<>]+)<").getMatch(0);
         String filename = "";
         if (uploadername != null) {
+            uploadername = Encoding.htmlDecode(uploadername).trim();
+            /* Set Packagizer property */
+            link.setProperty(PROPERTY_USER, uploadername);
             filename += uploadername + "_";
         }
-        filename += fid + "_";
-        final String title = br.getRegex("<h1 class=\"title\">([^<>\"]+)</h1>").getMatch(0);
+        filename += this.getFID(link) + "_";
+        String title = br.getRegex("<h1 class=\"title\">([^<>\"]+)</h1>").getMatch(0);
         if (title != null) {
+            title = Encoding.htmlDecode(title).trim();
+            /* Set Packagizer property */
+            link.setProperty(PROPERTY_TITLE, title);
             filename += title;
         }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* Offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -243,18 +247,6 @@ public class IwaraTv extends PluginForHost {
             }
         }
         dl.startDownload();
-    }
-
-    /** TODO: Improve this */
-    public static String getFID(final String url) {
-        String fid = new Regex(url, "/videos/(.+)").getMatch(0);
-        if (fid == null) {
-            fid = new Regex(url, "/node/(\\d+)").getMatch(0);
-        }
-        if (fid == null) {
-            fid = new Regex(url, "/images/([^/]+)").getMatch(0);
-        }
-        return fid;
     }
 
     @Override
