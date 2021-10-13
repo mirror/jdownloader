@@ -188,10 +188,10 @@ public class FlickrCom extends PluginForDecrypt {
             final Map<String, Object> setInfo = (Map<String, Object>) entries.get("photoset");
             usernameInternal = (String) setInfo.get("owner");
             album.setUsernameFull((String) setInfo.get("ownername"));
-            album.setTitleOfGalleryOrSet((String) JavaScriptEngineFactory.walkJson(setInfo, "title/_content"));
+            album.setTitle((String) JavaScriptEngineFactory.walkJson(setInfo, "title/_content"));
             album.setDescription((String) JavaScriptEngineFactory.walkJson(setInfo, "description/_content"));
             album.setCreateTimestamp(Long.parseLong(setInfo.get("date_create").toString()) * 1000);
-            album.setLastUpdatedTimestampOfGalleryOrSet(Long.parseLong(setInfo.get("date_update").toString()) * 1000);
+            album.setLastUpdatedTimestamp(Long.parseLong(setInfo.get("date_update").toString()) * 1000);
             query.addAndReplace("method", "flickr.photosets.getPhotos");
             nameOfMainMap = "photoset";
             alreadyAccessedFirstPage = false;
@@ -209,10 +209,10 @@ public class FlickrCom extends PluginForDecrypt {
             final Map<String, Object> galleryInfo = (Map<String, Object>) entries.get("gallery");
             username = (String) galleryInfo.get("username");
             usernameInternal = (String) galleryInfo.get("owner");
-            album.setTitleOfGalleryOrSet((String) JavaScriptEngineFactory.walkJson(galleryInfo, "title/_content"));
+            album.setTitle((String) JavaScriptEngineFactory.walkJson(galleryInfo, "title/_content"));
             album.setDescription((String) JavaScriptEngineFactory.walkJson(galleryInfo, "description/_content"));
             album.setCreateTimestamp(Long.parseLong(galleryInfo.get("date_create").toString()) * 1000);
-            album.setLastUpdatedTimestampOfGalleryOrSet(Long.parseLong(galleryInfo.get("date_update").toString()) * 1000);
+            album.setLastUpdatedTimestamp(Long.parseLong(galleryInfo.get("date_update").toString()) * 1000);
             nameOfMainMap = "photos";
             alreadyAccessedFirstPage = true;
             givenUsernameDataIsValidForAllMediaItems = false;
@@ -240,10 +240,11 @@ public class FlickrCom extends PluginForDecrypt {
             username = (String) groupInfo.get("pathalias");
             album.setUsernameFull((String) groupInfo.get("name"));
             /* Use name of group as title */
-            album.setTitleOfGalleryOrSet((String) groupInfo.get("name"));
+            album.setTitle((String) groupInfo.get("name"));
             /* Get group create date and convert it to timestamp */
             final String groupCreateDate = (String) JavaScriptEngineFactory.walkJson(groupInfo, "datecreate/_content");
             album.setCreateTimestamp(TimeFormatter.getMilliSeconds(groupCreateDate, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
+            album.setLastUpdatedTimestamp(Long.parseLong(JavaScriptEngineFactory.walkJson(groupInfo, "dateactivity/_content").toString()) * 1000);
             nameOfMainMap = "photos";
             alreadyAccessedFirstPage = true;
             givenUsernameDataIsValidForAllMediaItems = false;
@@ -269,12 +270,8 @@ public class FlickrCom extends PluginForDecrypt {
         album.setUsernameURL(usernameFromURL);
         album.setUsernameInternal(usernameInternal);
         album.setUsername(username);
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(encodeUnicode(this.getFormattedPackagename(album)));
-        if (!StringUtils.isEmpty(album.getDescription())) {
-            fp.setComment(album.getDescription());
-        }
-        int totalimgs = -1;
+        FilePackage fp = null;
+        int totalNumberofItems = -1;
         int totalpages = -1;
         int imagePosition = 0;
         DecimalFormat df = null;
@@ -287,14 +284,20 @@ public class FlickrCom extends PluginForDecrypt {
             final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final Map<String, Object> photoInfo = (Map<String, Object>) entries.get(nameOfMainMap);
             totalpages = ((Number) photoInfo.get("pages")).intValue();
-            totalimgs = ((Number) photoInfo.get("total")).intValue();
-            if (totalimgs == 0) {
+            totalNumberofItems = ((Number) photoInfo.get("total")).intValue();
+            if (totalNumberofItems == 0) {
                 logger.info("ZERO items available");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (df == null) {
+            if (df == null || fp == null) {
                 /* Set this on first run. */
-                df = new DecimalFormat(String.valueOf(totalimgs).replaceAll("\\d", "0"));
+                df = new DecimalFormat(String.valueOf(totalNumberofItems).replaceAll("\\d", "0"));
+                album.setTotalNumberofItems(totalNumberofItems);
+                fp = FilePackage.getInstance();
+                fp.setName(encodeUnicode(this.getFormattedPackagename(album)));
+                if (!StringUtils.isEmpty(album.getDescription())) {
+                    fp.setComment(album.getDescription());
+                }
             }
             logger.info("Crawling page " + page + " / " + totalpages);
             final List<Map<String, Object>> photoList = (List<Map<String, Object>>) photoInfo.get("photo");
@@ -351,7 +354,7 @@ public class FlickrCom extends PluginForDecrypt {
                 distribute(dl);
                 decryptedLinks.add(dl);
             }
-            logger.info("Page " + page + " / " + totalpages + " DONE | Progress: " + decryptedLinks.size() + " of " + totalimgs);
+            logger.info("Page " + page + " / " + totalpages + " DONE | Progress: " + decryptedLinks.size() + " of " + totalNumberofItems);
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user");
                 return;
@@ -363,8 +366,8 @@ public class FlickrCom extends PluginForDecrypt {
                 /* continue */
             }
         } while (true);
-        if (decryptedLinks.size() != totalimgs) {
-            logger.warning("Number of results != expected number of results: Found: " + decryptedLinks.size() + " Expected: " + totalimgs);
+        if (decryptedLinks.size() != totalNumberofItems) {
+            logger.warning("Number of results != expected number of results: Found: " + decryptedLinks.size() + " Expected: " + totalNumberofItems);
         }
     }
 
@@ -384,14 +387,15 @@ public class FlickrCom extends PluginForDecrypt {
         }
         final String userDefinedDateFormat = cfg.getStringProperty(jd.plugins.hoster.FlickrCom.CUSTOM_DATE, jd.plugins.hoster.FlickrCom.defaultCustomDate);
         final String dateFormatted = jd.plugins.hoster.FlickrCom.formatToUserDefinedDate(album.getCreateTimestamp(), userDefinedDateFormat, customStringForEmptyTags);
-        final String dateUpdatedFormatted = jd.plugins.hoster.FlickrCom.formatToUserDefinedDate(album.getLastUpdatedTimestampOfGalleryOrSet(), userDefinedDateFormat, customStringForEmptyTags);
+        final String dateUpdatedFormatted = jd.plugins.hoster.FlickrCom.formatToUserDefinedDate(album.getLastUpdatedTimestamp(), userDefinedDateFormat, customStringForEmptyTags);
         ret = ret.replace("*type*", StringUtils.firstNotEmpty(album.getTypeAsString(), customStringForEmptyTags));
+        ret = ret.replace("*total_number_of_items*", Integer.toString(album.getTotalNumberofItems()));
         ret = ret.replace("*set_id*", StringUtils.firstNotEmpty(album.getSetID(), customStringForEmptyTags));
         ret = ret.replace("*gallery_id*", StringUtils.firstNotEmpty(album.getGalleryID(), customStringForEmptyTags));
         ret = ret.replace("*set_or_gallery_id*", StringUtils.firstNotEmpty(album.getSetOrGalleryID(), customStringForEmptyTags));
         ret = ret.replace("*date*", dateFormatted);
         ret = ret.replace("*date_update*", dateUpdatedFormatted);
-        ret = ret.replace("*title*", StringUtils.firstNotEmpty(album.getTitleOfGalleryOrSet(), customStringForEmptyTags));
+        ret = ret.replace("*title*", StringUtils.firstNotEmpty(album.getTitle(), customStringForEmptyTags));
         ret = ret.replace("*username*", StringUtils.firstNotEmpty(album.getUsername(), customStringForEmptyTags));
         ret = ret.replace("*username_internal*", StringUtils.firstNotEmpty(album.getUsernameInternal(), customStringForEmptyTags));
         ret = ret.replace("*username_full*", StringUtils.firstNotEmpty(album.getUsernameFull(), customStringForEmptyTags));
@@ -931,28 +935,36 @@ public class FlickrCom extends PluginForDecrypt {
             this.description = description;
         }
 
-        public String getTitleOfGalleryOrSet() {
-            return titleOfGalleryOrSet;
+        public String getTitle() {
+            return title;
         }
 
-        public void setTitleOfGalleryOrSet(String titleOfGalleryOrSet) {
-            this.titleOfGalleryOrSet = titleOfGalleryOrSet;
+        public void setTitle(String title) {
+            this.title = title;
         }
 
         public long getCreateTimestamp() {
             return createTimestamp;
         }
 
-        public void setCreateTimestamp(long createDataOfGalleryOrSet) {
-            this.createTimestamp = createDataOfGalleryOrSet;
+        public void setCreateTimestamp(long createTimestamp) {
+            this.createTimestamp = createTimestamp;
         }
 
-        public long getLastUpdatedTimestampOfGalleryOrSet() {
-            return lastUpdatedTimestampOfGalleryOrSet;
+        public long getLastUpdatedTimestamp() {
+            return lastUpdatedTimestamp;
         }
 
-        public void setLastUpdatedTimestampOfGalleryOrSet(long lastUpdatedDataOfGalleryOrSet) {
-            this.lastUpdatedTimestampOfGalleryOrSet = lastUpdatedDataOfGalleryOrSet;
+        public void setLastUpdatedTimestamp(long lastUpdatedTimestamp) {
+            this.lastUpdatedTimestamp = lastUpdatedTimestamp;
+        }
+
+        public int getTotalNumberofItems() {
+            return totalNumberofItems;
+        }
+
+        public void setTotalNumberofItems(int totalNumberofItems) {
+            this.totalNumberofItems = totalNumberofItems;
         }
 
         protected String getSetOrGalleryID() {
@@ -965,17 +977,18 @@ public class FlickrCom extends PluginForDecrypt {
             }
         }
 
-        private AlbumType albumType                          = null;
-        private String    username                           = null;
-        private String    usernameURL                        = null;
-        private String    usernameInternal                   = null;
-        private String    usernameFull                       = null;
-        private String    galleryID                          = null;
-        private String    setID                              = null;
-        private String    titleOfGalleryOrSet                = null;
-        private String    description                        = null;
-        private long      createTimestamp                    = -1;
-        private long      lastUpdatedTimestampOfGalleryOrSet = -1;
+        private AlbumType albumType            = null;
+        private String    username             = null;
+        private String    usernameURL          = null;
+        private String    usernameInternal     = null;
+        private String    usernameFull         = null;
+        private String    galleryID            = null;
+        private String    setID                = null;
+        private String    title                = null;
+        private String    description          = null;
+        private long      createTimestamp      = -1;
+        private long      lastUpdatedTimestamp = -1;
+        private int       totalNumberofItems   = -1;
 
         public FlickrAlbum() {
         }

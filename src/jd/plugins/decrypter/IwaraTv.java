@@ -63,6 +63,23 @@ public class IwaraTv extends PluginForDecrypt {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        boolean firstRequestHasAlreadyBeenDone = false;
+        if (param.getCryptedUrl().matches("https?://[^/]+/users/[^/]+$")) {
+            br.getPage(param.getCryptedUrl());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            /* Change "/user/<username>" url to "/user/<username>/videos" if the user has a certain amount of videos. */
+            final String viewMore = br.getRegex("class=\"more-link\">\\s*<a href=\"(/users/[^/]+/videos)\"").getMatch(0);
+            if (viewMore != null) {
+                logger.info("Seems like the user has videos spread over multiple pages -> Using: " + viewMore);
+                param.setCryptedUrl(br.getURL(viewMore).toString());
+            } else {
+                logger.info("Seems like user only has one page of videos");
+                /* We do not need to do this request again below! */
+                firstRequestHasAlreadyBeenDone = true;
+            }
+        }
         final HashSet<String> dupes = new HashSet<String>();
         dupes.add("thumbnails");
         int page = -1;
@@ -76,8 +93,10 @@ public class IwaraTv extends PluginForDecrypt {
         do {
             /* Start at page 0 */
             page += 1;
-            query.addAndReplace("page", Integer.toString(page));
-            br.getPage(baseURL + "?" + query.toString());
+            if (page > 0 || !firstRequestHasAlreadyBeenDone) {
+                query.addAndReplace("page", Integer.toString(page));
+                br.getPage(baseURL + "?" + query.toString());
+            }
             if (fp == null) {
                 String title = br.getRegex("<title>\\s*(.*?)\\s*(\\|\\s*Iwara)?\\s*</title>").getMatch(0);
                 if (StringUtils.isEmpty(title)) {

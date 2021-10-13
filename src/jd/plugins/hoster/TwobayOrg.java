@@ -19,6 +19,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -32,9 +35,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TwobayOrg extends PluginForHost {
@@ -53,6 +53,8 @@ public class TwobayOrg extends PluginForHost {
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "2bay.org" });
         ret.add(new String[] { "byt.su" });
+        /* 2021-10-13 */
+        ret.add(new String[] { "fil.su" });
         return ret;
     }
 
@@ -68,7 +70,7 @@ public class TwobayOrg extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(db/\\d+/files/[^/]+|\\??[a-f0-9]{4,})");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(db/\\d+/files/[^/]+|\\??[a-f0-9]{4,}|/[a-f0-9]{4,}|v/[A-Za-z0-9]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -103,25 +105,38 @@ public class TwobayOrg extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link));
+        }
         this.setBrowserExclusive();
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*File not available")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>\"]+) - 2BAY: [^<>]+</title>").getMatch(0);
+        if (link.getPluginPatternMatcher().matches("https?://[^/]+/v/[A-Za-z0-9]+")) {
+            /* 2021-10-13: fil.su */
+            final String realURL = br.getRegex("window\\.document\\.location=\"(http?://[^/]+/[a-f0-9]+)").getMatch(0);
+            if (realURL != null) {
+                br.getPage(realURL);
+            }
+        }
+        String filename = null;
+        final String title = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
+        if (title != null) {
+            final String cleanTitle = new Regex(title, "(.*?) - [^:]{1,5}: .*").getMatch(0);
+            if (cleanTitle != null) {
+                filename = cleanTitle;
+            }
+        }
         if (filename == null) {
             /* More generic RegEx */
             filename = br.getRegex("download\\s*=\\s*\"([^<>\"]+)\"").getMatch(0);
         }
-        if (StringUtils.isEmpty(filename)) {
-            filename = this.getFID(link);
-        }
         String filesize = br.getRegex("\\[\\s*(\\d+(\\.\\d{2})? (MB|KB|GB))\\s*\\]").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename).trim();
+            link.setName(filename);
         }
-        filename = Encoding.htmlDecode(filename).trim();
-        link.setName(filename);
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -154,7 +169,7 @@ public class TwobayOrg extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Free download is impossible at the moment", 2 * 60 * 1000l);
             }
             br.getPage(dllink);
-            dllink = br.getRegex("([a-z0-9]+\\.2bay\\.org/db/[^<>\"\\']+)").getMatch(0);
+            dllink = br.getRegex("(?:\"|\\')([^/\"\\']+/db/[^<>\"\\']+)").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
