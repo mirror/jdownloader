@@ -22,6 +22,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -35,19 +42,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.GenericM3u8Decrypter;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class LbryTv extends PluginForHost {
     public LbryTv(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium("");
     }
+
+    private static final String PROPERTY_DIRECTURL             = "free_directlink";
+    private static final String PROPERTY_EXPECTED_CONTENT_TYPE = "expected_content_type";
 
     @Override
     public String getAGBLink() {
@@ -123,7 +126,7 @@ public class LbryTv extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         String urlpart = this.getFID(link);
         if (!link.isNameSet()) {
-            link.setName(urlpart + ".mp4");
+            link.setName(urlpart);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -155,7 +158,16 @@ public class LbryTv extends PluginForHost {
         }
         if (!StringUtils.isEmpty(username) && !StringUtils.isEmpty(filename)) {
             final String dateFormatted = new SimpleDateFormat("yyyy-MM-dd").format(new Date(uploadTimestamp * 1000l));
-            link.setFinalFileName(dateFormatted + "_" + username + " - " + filename + ("image".equals(stream_type) ? ".jpg" : ".mp4"));
+            final String ext;
+            if ("document".equals(stream_type)) {
+                ext = ".txt";
+            } else if ("image".equals(stream_type)) {
+                ext = ".jpg";
+            } else {
+                /* Assume we have a video. */
+                ext = ".mp4";
+            }
+            link.setFinalFileName(dateFormatted + "_" + username + " - " + filename + ext);
         }
         final String description = (String) videoInfo.get("description");
         if (!StringUtils.isEmpty(description)) {
@@ -170,8 +182,10 @@ public class LbryTv extends PluginForHost {
             final String sdhash = (String) downloadInfo.get("sd_hash");
             if (!StringUtils.isEmpty(claimID) && !StringUtils.isEmpty(sdhash)) {
                 final String dllink = "https://cdn.lbryplayer.xyz/api/v4/streams/free/" + slug + "/" + claimID + "/" + sdhash.substring(0, 6);
-                link.setProperty("free_directlink", dllink);
+                link.setProperty(PROPERTY_DIRECTURL, dllink);
             }
+            /* E.g. "text/markdown", "video/mp4" */
+            link.setProperty(PROPERTY_EXPECTED_CONTENT_TYPE, downloadInfo.get("media_type").toString());
         }
         return AvailableStatus.TRUE;
     }
@@ -179,12 +193,16 @@ public class LbryTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, PROPERTY_DIRECTURL);
     }
 
-    @Override
-    protected boolean looksLikeDownloadableContent(URLConnectionAdapter urlConnection) {
-        return super.looksLikeDownloadableContent(urlConnection) && !GenericM3u8Decrypter.looksLikeMpegURL(urlConnection);
+    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection, final DownloadLink link) {
+        /* First check if content-type matches the one we expect. */
+        if (StringUtils.equalsIgnoreCase(urlConnection.getContentType(), link.getStringProperty(PROPERTY_EXPECTED_CONTENT_TYPE))) {
+            return true;
+        } else {
+            return super.looksLikeDownloadableContent(urlConnection) && !GenericM3u8Decrypter.looksLikeMpegURL(urlConnection);
+        }
     }
 
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
@@ -197,7 +215,7 @@ public class LbryTv extends PluginForHost {
             final Browser brc = br.cloneBrowser();
             brc.setFollowRedirects(true);
             final URLConnectionAdapter con = brc.openGetConnection(dllink);
-            if (!looksLikeDownloadableContent(con)) {
+            if (!looksLikeDownloadableContent(con, link)) {
                 brc.followConnection();
                 if (GenericM3u8Decrypter.looksLikeMpegURL(con)) {
                     final List<HlsContainer> hls = HlsContainer.getHlsQualities(brc);
@@ -213,7 +231,7 @@ public class LbryTv extends PluginForHost {
                 }
             } else {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, con.getRequest(), resumable, maxchunks);
-                if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                if (!this.looksLikeDownloadableContent(dl.getConnection(), link)) {
                     try {
                         br.followConnection(true);
                     } catch (final IOException e) {
@@ -245,7 +263,7 @@ public class LbryTv extends PluginForHost {
         try {
             final Browser brc = br.cloneBrowser();
             dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resumable, maxchunks);
-            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+            if (this.looksLikeDownloadableContent(dl.getConnection(), link)) {
                 return true;
             } else {
                 brc.followConnection(true);
