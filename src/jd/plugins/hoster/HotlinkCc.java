@@ -25,13 +25,16 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 import org.jdownloader.plugins.components.config.XFSConfigVideoHotlinkCc;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -42,6 +45,8 @@ public class HotlinkCc extends XFileSharingProBasic {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
+
+    private static final String PROPERTY_account_required = "account_required";
 
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
@@ -95,6 +100,72 @@ public class HotlinkCc extends XFileSharingProBasic {
         } else {
             /* Free(anonymous) and unknown account type */
             return 0;
+        }
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final String apikey = getAPIKey();
+        if (this.supportsAPISingleLinkcheck() && apikey != null) {
+            /* API linkcheck */
+            return this.requestFileInformationAPI(link, apikey);
+        } else {
+            /* Website linkcheck */
+            /*
+             * 2021-10-13: Special: Provide account for availablestatus if possible because they have special URLs that will be displayed as
+             * offline for non-premium users.
+             */
+            final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+            if (account != null && isPremium(account)) {
+                this.loginWebsite(link, account, false);
+                return requestFileInformationWebsite(link, account, false);
+            } else {
+                return requestFileInformationWebsite(link, null, false);
+            }
+        }
+    }
+
+    @Override
+    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        final String apikey = getAPIKey();
+        if (this.supportsAPISingleLinkcheck() && apikey != null) {
+            /* API linkcheck */
+            return this.requestFileInformationAPI(link, apikey);
+        } else {
+            /* Website linkcheck */
+            try {
+                final AvailableStatus status = super.requestFileInformationWebsite(link, null, false);
+                /*
+                 * Let's pretend we know that this status can change: Remove premiumonly flag if we're sure that this link (status) can be
+                 * viewed by anyone.
+                 */
+                link.removeProperty(PROPERTY_account_required);
+                return status;
+            } catch (final PluginException e) {
+                /*
+                 * Decide whether or not we want to do the extended check: If premium account is given, we can already trust the first found
+                 * (offline-)status!.
+                 */
+                if (isPremium(account) && e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                    /**
+                     * 2021-10-13: Website has special handling: Some files look like they're offline for free/free account users but we can
+                     * find the real status!
+                     */
+                    logger.info("Checking if link is really offline or only available for premium users");
+                    final AvailableStatus status = requestFileInformationWebsiteMassLinkcheckerSingle(link);
+                    if (status == AvailableStatus.FALSE) {
+                        logger.info("Link really is offline");
+                        link.removeProperty(PROPERTY_account_required);
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else {
+                        logger.info("Link is special premiumonly");
+                        link.setProperty(PROPERTY_account_required, true);
+                    }
+                    return status;
+                } else {
+                    throw e;
+                }
+            }
         }
     }
 
@@ -156,11 +227,25 @@ public class HotlinkCc extends XFileSharingProBasic {
     }
 
     @Override
-    public void doFree(DownloadLink link, Account account) throws Exception, PluginException {
+    public void doFree(final DownloadLink link, final Account account) throws Exception, PluginException {
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
         }
+        /* Check for special premiumonly */
+        if (isPremium(account) && link.hasProperty(PROPERTY_account_required)) {
+            throw new AccountRequiredException();
+        }
         super.doFree(link, account);
+    }
+
+    private boolean isPremium(final Account account) {
+        if (account == null) {
+            return false;
+        } else if (account.getType() == AccountType.PREMIUM) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
