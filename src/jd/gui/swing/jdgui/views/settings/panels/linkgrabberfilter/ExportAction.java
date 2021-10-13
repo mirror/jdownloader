@@ -69,17 +69,19 @@ public class ExportAction extends AppAction {
             d.setMultiSelection(false);
             Dialog.I().showDialog(d);
             File saveto = d.getSelectedFile();
-            if (!saveto.getName().endsWith(ext)) {
-                saveto = new File(saveto.getAbsolutePath() + ext);
-            }
-            try {
-                if (saveto.exists() && !saveto.delete()) {
-                    throw new IOException("Could not delete/overwrite:" + saveto);
+            if (saveto != null) {
+                if (!saveto.getName().endsWith(ext)) {
+                    saveto = new File(saveto.getAbsolutePath() + ext);
                 }
-                IO.writeStringToFile(saveto, JSonStorage.serializeToJson(export));
-            } catch (IOException e1) {
-                LogController.CL().log(e1);
-                Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e1.getMessage(), e1);
+                try {
+                    if (saveto.exists() && !saveto.delete()) {
+                        throw new IOException("Could not delete/overwrite:" + saveto);
+                    }
+                    IO.writeStringToFile(saveto, JSonStorage.serializeToJson(export));
+                } catch (IOException e1) {
+                    LogController.CL().log(e1);
+                    Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e1.getMessage(), e1);
+                }
             }
         } catch (DialogNoAnswerException e1) {
             LogController.CL().log(e1);
