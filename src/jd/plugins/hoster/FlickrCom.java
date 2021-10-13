@@ -614,13 +614,9 @@ public class FlickrCom extends PluginForHost {
          * media = include media-type (video/photo) </br>
          * datecreate = get create-date of groups </br>
          * date_taken = date_taken of photos </br>
+         * date_activity = timestamp of the last activity of a group (given via "dateactivity/_content") </br>
          */
-        /**
-         * TODO: Stuff we do not obtain at this moment but might be useful in the future: </br>
-         *
-         * date_activity = timestamp of the last activity of a group (given via "dateactivity/_content")
-         */
-        String extras = "datecreate%2Cdate_taken%2Cdate_upload%2Cdescription%2Cowner_name%2Cpath_alias%2Crealname%2Cneeds_interstitial%2Cmedia";
+        String extras = "date_activity%2Cdatecreate%2Cdate_taken%2Cdate_upload%2Cdescription%2Cowner_name%2Cpath_alias%2Crealname%2Cneeds_interstitial%2Cmedia";
         final String[] allPhotoQualities = getPhotoQualityStringsDescending();
         for (final String qualityStr : allPhotoQualities) {
             extras += "%2Curl_" + qualityStr;
@@ -1405,15 +1401,16 @@ public class FlickrCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         /* Packagename settings */
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_PACKAGENAME_SET_GALLERY, "Custom packagename for sets/galleries:").setDefaultValue(defaultCustomPackagenameSetGallery));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_PACKAGENAME_OTHERS, "Custom packagename for users/user favorites/groups:").setDefaultValue(defaultCustomPackagenameOthers));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_PACKAGENAME_OTHERS, "Custom packagename for users/user-favorites/groups:").setDefaultValue(defaultCustomPackagenameOthers));
         final StringBuilder tagsPackage = new StringBuilder();
         tagsPackage.append("Explanation of the available packagename tags:\r\n");
         tagsPackage.append("*type* = Type of url: One of the following: Set, Gallery, Groups, User, Favorites\r\n");
+        tagsPackage.append("*total_number_of_items* = Total number of items\r\n");
         tagsPackage.append("*set_id* = ID of album\r\n");
         tagsPackage.append("*gallery_id* = ID of gallery\r\n");
         tagsPackage.append("*set_or_gallery_id* = ID of gallery or set\r\n");
         tagsPackage.append("*date* = Create date of gallery, set or group - custom date format will be used here\r\n");
-        tagsPackage.append("*date_update* = Last updated date of gallery or set - custom date format will be used here\r\n");
+        tagsPackage.append("*date_update* = Last updated date of gallery, set or group - custom date format will be used here\r\n");
         tagsPackage.append("*title* = Title of gallery or set\r\n");
         tagsPackage.append("*description* = Description of the gallery/set\r\n");
         tagsPackage.append("*username* = Short username e.g. 'exampleusername'\r\n");
