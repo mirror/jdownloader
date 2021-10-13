@@ -94,6 +94,10 @@ public class FastPicRu extends PluginForHost {
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
             con = br2.openHeadConnection(dllink);
+            if (con.getURL().toString().contains("/not_found.gif")) {
+                /* https://static.fastpic.org/not_found.gif */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (this.looksLikeDownloadableContent(con)) {
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
