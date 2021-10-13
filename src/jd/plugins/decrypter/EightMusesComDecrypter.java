@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
@@ -30,6 +31,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "8muses.com" }, urls = { "https?://(?:www\\.|comics\\.)?8muses\\.com/((?:comix/|comics/)?(?:index/category/[a-z0-9\\-_]+|album(?:/[a-z0-9\\-_]+){1,6})|forum/(?!.*attachments/).+)" })
 public class EightMusesComDecrypter extends antiDDoSForDecrypt {
@@ -39,37 +42,65 @@ public class EightMusesComDecrypter extends antiDDoSForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
         br.setFollowRedirects(true);
-        getPage(parameter);
+        getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String fpName;
         final FilePackage fp = FilePackage.getInstance();
-        if (parameter.matches("https?://[^/]+/forum/.+")) {
+        if (param.getCryptedUrl().matches("https?://[^/]+/forum/.+")) {
             fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
             if (fpName == null) {
-                fpName = parameter.substring(parameter.lastIndexOf("/") + 1);
+                fpName = param.getCryptedUrl().substring(param.getCryptedUrl().lastIndexOf("/") + 1);
             }
             fp.setName(Encoding.htmlDecode(fpName.trim()));
+            final String urlSlug = new Regex(param.getCryptedUrl(), "https?://[^/]+/forum/[^/]+/\\d+/([a-z0-9\\-]+).*").getMatch(0);
+            /* TODO: Maybe add multi page parser */
+            final String[] pagesStr = br.getRegex(urlSlug + "/page-(\\d+)").getColumn(0);
+            int maxPage = -1;
+            for (final String pageStr : pagesStr) {
+                final int pageTmp = Integer.parseInt(pageStr);
+                if (pageTmp > maxPage) {
+                    maxPage = pageTmp;
+                }
+            }
+            if (maxPage > 0) {
+                logger.info("Thread has " + maxPage + " pages");
+            } else {
+                logger.info("Thread has 1 page");
+            }
+            final String pageInAddedURL = new Regex(param.getCryptedUrl(), "page-(\\d+)").getMatch(0);
+            if (pageInAddedURL != null) {
+                logger.info("Crawling page: " + pageInAddedURL);
+            } else {
+                logger.info("Crawling page 1");
+            }
+            /* TODO: Remove duplicated code below */
             /* Grab forum attachments */
-            final String[] attachments = br.getRegex("(/forum/attachments/[^\"]+)\"").getColumn(0);
-            if (attachments.length == 0) {
-                logger.info("This thread does not seem to have any attachments available");
+            final String[] attachmentURLs = br.getRegex("(/forum/attachments/[^\"]+)\"").getColumn(0);
+            if (attachmentURLs.length == 0) {
+                logger.info("This page inside this thread does not seem to have any attachments available");
                 return decryptedLinks;
             }
-            for (final String attachment : attachments) {
-                final String forumURL = "https://" + br.getHost() + attachment;
+            final HashSet<String> dupes = new HashSet<String>();
+            for (final String attachmentURL : attachmentURLs) {
+                if (!dupes.add(attachmentURL)) {
+                    /* Skip dupes */
+                    continue;
+                }
+                final String forumURL = "https://" + br.getHost() + attachmentURL;
                 final DownloadLink dl = this.createDownloadlink(forumURL);
-                String url_name = jd.plugins.hoster.EightMusesCom.getURLNameForum(forumURL);
+                final String url_name = jd.plugins.hoster.EightMusesCom.getURLNameForum(forumURL);
                 if (url_name != null) {
                     dl.setName(url_name);
+                } else {
+                    logger.warning("WTF");
                 }
                 dl.setAvailable(true);
                 dl._setFilePackage(fp);
                 decryptedLinks.add(dl);
+                distribute(dl);
             }
             /* Grab other URLs/thumbnails/pictures/preview images */
             final String[] urls = br.getRegex("<a href=\"(https[^<>\"]+)\" target=\"_blank\"").getColumn(0);
@@ -77,19 +108,34 @@ public class EightMusesComDecrypter extends antiDDoSForDecrypt {
                 if (new Regex(url, this.getSupportedLinks()).matches()) {
                     /* Skip URLs that would go into this crawler again */
                     continue;
+                } else if (!dupes.add(url)) {
+                    /* Skip dupes */
+                    continue;
                 }
                 final DownloadLink dl = this.createDownloadlink(url);
+                if (url.matches(".*/forum/attachments/[^\"]+")) {
+                    final String url_name = jd.plugins.hoster.EightMusesCom.getURLNameForum(url);
+                    if (url_name != null) {
+                        dl.setName(url_name);
+                    }
+                }
+                /* Assume that those images are online. */
+                dl.setAvailable(true);
                 dl._setFilePackage(fp);
                 decryptedLinks.add(dl);
+                distribute(dl);
+            }
+            if (decryptedLinks.isEmpty()) {
+                logger.info("This thread doesn't contain any downloadable content");
             }
         } else {
             /* Obtain packagename from URL. */
             /* /album/<category>/<author>/<title> */
-            final Regex album = new Regex(parameter, "(?i)https?://[^/]+/comics/album/(.+)");
+            final Regex album = new Regex(param.getCryptedUrl(), "(?i)https?://[^/]+/comics/album/(.+)");
             if (album.matches()) {
                 fpName = album.getMatch(0).replace("/", "-");
             } else {
-                fpName = parameter.substring(parameter.lastIndexOf("/") + 1).replace("-", " ");
+                fpName = param.getCryptedUrl().substring(param.getCryptedUrl().lastIndexOf("/") + 1).replace("-", " ");
             }
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             String[] categories = br.getRegex("(/index/category/[a-z0-9\\-_]+)\" data\\-original\\-title").getColumn(0);
