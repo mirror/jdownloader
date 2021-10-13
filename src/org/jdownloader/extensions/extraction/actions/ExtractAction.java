@@ -33,42 +33,36 @@ import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.images.AbstractIcon;
 
 public class ExtractAction extends AbstractExtractionContextAction {
-
     /**
      *
      */
     private static final long serialVersionUID = 1612595219577059496L;
 
     public static enum ExtractToPathLogic implements LabelInterface {
-
         ASK_FOR_FOR_EVERY_ARCHIVE {
             @Override
             public String getLabel() {
                 return T.T.EXTRACTTOPATHLOGIC_ASK_FOR_EVERY_ARCHIVE();
             }
         },
-
         EXTRACT_TO_ARCHIVE_PARENT {
             @Override
             public String getLabel() {
                 return T.T.EXTRACTTOPATHLOGIC_EXTRACT_TO_ARCHIVE_PARENT();
             }
         },
-
         ASK_ONCE {
             @Override
             public String getLabel() {
                 return T.T.EXTRACTTOPATHLOGIC_ASK_ONCE();
             }
         },
-
         USE_CUSTOMEXTRACTIONPATH {
             @Override
             public String getLabel() {
                 return T.T.EXTRACTTOPATHLOGIC_USE_CUSTOMEXTRACTIONPATH();
             }
         };
-
     }
 
     private ExtractToPathLogic extractToPathLogic = ExtractToPathLogic.EXTRACT_TO_ARCHIVE_PARENT;
@@ -84,7 +78,6 @@ public class ExtractAction extends AbstractExtractionContextAction {
 
     @Override
     protected void requestUpdateSelection() {
-
     }
 
     public void setExtractToPathLogic(ExtractToPathLogic extractToPathLogic) {
@@ -93,10 +86,8 @@ public class ExtractAction extends AbstractExtractionContextAction {
 
     public ExtractAction() {
         super();
-
         setName(T.T.menu_tools_extract_files());
         setIconKey(org.jdownloader.gui.IconKey.ICON_EXTRACT);
-
     }
 
     public boolean isEnabled() {
@@ -106,22 +97,30 @@ public class ExtractAction extends AbstractExtractionContextAction {
     public void actionPerformed(ActionEvent e) {
         new Thread("Extracting") {
             public void run() {
-
                 FileFilter ff = new FileFilter() {
                     @Override
-                    public boolean accept(File pathname) {
+                    public boolean accept(final File pathname) {
                         if (pathname.isDirectory()) {
                             return true;
-                        }
-
-                        for (IExtraction extractor : _getExtension().getExtractors()) {
-                            if (!Boolean.FALSE.equals(extractor.isSupported(new FileArchiveFactory(pathname), false))) {
+                        } else {
+                            final FileArchiveFactory factory = new FileArchiveFactory(pathname);
+                            for (IExtraction extractor : _getExtension().getExtractors()) {
                                 /* no deep inspection to speedup the accept method */
-                                return true;
+                                if (!Boolean.FALSE.equals(extractor.isSupported(factory, false))) {
+                                    try {
+                                        final Archive archive = extractor.buildArchive(factory, false);
+                                        if (archive != null && factory.getName().equals(archive.getArchiveFiles().get(0).getName())) {
+                                            return true;
+                                        } else {
+                                            return false;
+                                        }
+                                    } catch (ArchiveException e) {
+                                        _getExtension().getLogger().log(e);
+                                    }
+                                }
                             }
+                            return false;
                         }
-
-                        return false;
                     }
 
                     @Override
@@ -129,20 +128,16 @@ public class ExtractAction extends AbstractExtractionContextAction {
                         return org.jdownloader.extensions.extraction.translate.T.T.plugins_optional_extraction_filefilter();
                     }
                 };
-
-                File[] files = UserIO.getInstance().requestFileChooser("_EXTRATION_", null, UserIO.FILES_ONLY, ff, true, null, null);
+                final File[] files = UserIO.getInstance().requestFileChooser("_EXTRATION_", null, UserIO.FILES_ONLY, ff, true, null, null);
                 if (files == null || files.length == 0) {
                     return;
                 }
                 try {
                     File extractTo = null;
                     if (getExtractToPathLogic() == ExtractToPathLogic.ASK_ONCE) {
-
                         extractTo = DownloadFolderChooserDialog.open(null, false, "Extract To");
-
                     }
                     for (final File archiveStartFile : files) {
-
                         try {
                             final Archive archive = _getExtension().buildArchive(new FileArchiveFactory(archiveStartFile));
                             if (archive == null) {
@@ -150,17 +145,15 @@ public class ExtractAction extends AbstractExtractionContextAction {
                                 continue;
                             }
                             switch (getExtractToPathLogic()) {
-
                             case USE_CUSTOMEXTRACTIONPATH:
                                 archive.getSettings().setExtractPath(_getExtension().getSettings().getCustomExtractionPath());
                                 break;
                             case ASK_FOR_FOR_EVERY_ARCHIVE:
                                 if (_getExtension().getSettings().isCustomExtractionPathEnabled()) {
-
-                                    File path = DownloadFolderChooserDialog.open(new File(_getExtension().getSettings().getCustomExtractionPath()), false, "Extract To");
+                                    final File path = DownloadFolderChooserDialog.open(new File(_getExtension().getSettings().getCustomExtractionPath()), false, "Extract To");
                                     archive.getSettings().setExtractPath(path.getAbsolutePath());
                                 } else {
-                                    File path = DownloadFolderChooserDialog.open(archiveStartFile.getParentFile(), false, "Extract To");
+                                    final File path = DownloadFolderChooserDialog.open(archiveStartFile.getParentFile(), false, "Extract To");
                                     archive.getSettings().setExtractPath(path.getAbsolutePath());
                                 }
                                 break;
@@ -172,7 +165,6 @@ public class ExtractAction extends AbstractExtractionContextAction {
                                 break;
                             }
                             ProgressDialog dialog = new ProgressDialog(new ProgressGetter() {
-
                                 private volatile ExtractionController controller = null;
 
                                 @Override
@@ -181,7 +173,6 @@ public class ExtractAction extends AbstractExtractionContextAction {
                                         controller = _getExtension().addToQueue(archive, true);
                                         if (controller != null) {
                                             final ExtractionListener listener = new ExtractionListener() {
-
                                                 @Override
                                                 public void onExtractionEvent(ExtractionEvent event) {
                                                     if (event.getCaller() == controller) {
@@ -210,7 +201,6 @@ public class ExtractAction extends AbstractExtractionContextAction {
                                                 controller.kill();
                                                 throw e;
                                             }
-
                                         }
                                     } else {
                                         new ValidateArchiveAction(_getExtension(), archive).actionPerformed(null);
@@ -248,11 +238,9 @@ public class ExtractAction extends AbstractExtractionContextAction {
                                     return ModalityType.MODELESS;
                                 }
                             };
-
                             // UIOManager.I().show(class1, impl)
                             UIOManager.I().show(null, dialog);
                             dialog.throwCloseExceptions();
-
                         } catch (ArchiveException e1) {
                             _getExtension().getLogger().log(e1);
                         }
