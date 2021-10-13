@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -155,11 +156,13 @@ public class EightMusesCom extends antiDDoSForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
+                if (this.looksLikeDownloadableContent(con)) {
                     if (con.getHeaderField("cf-bgj") != null && !link.hasProperty(BYPASS_CLOUDFLARE_BGJ)) {
                         link.setProperty(BYPASS_CLOUDFLARE_BGJ, Boolean.TRUE);
                     }
-                    link.setDownloadSize(con.getLongContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                     if (filename == null) {
                         link.setFinalFileName(Plugin.getFileNameFromHeader(con));
                     }
@@ -195,7 +198,7 @@ public class EightMusesCom extends antiDDoSForHost {
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         }
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 /* 2020-05-14: Typically this means a URL is only downloadable via account */
                 // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -203,7 +206,11 @@ public class EightMusesCom extends antiDDoSForHost {
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {
@@ -298,7 +305,6 @@ public class EightMusesCom extends antiDDoSForHost {
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Registered (free) user");
         return ai;
     }
 

@@ -1186,11 +1186,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return fileInfo;
     }
 
+    /** Check single URL via mass-linkchecker. Throws PluginException if URL has been detected as offline. */
     public AvailableStatus requestFileInformationWebsiteMassLinkcheckerSingle(final DownloadLink link) throws IOException, PluginException {
         massLinkcheckerWebsite(new DownloadLink[] { link });
         if (!link.isAvailabilityStatusChecked()) {
             return AvailableStatus.UNCHECKED;
-        } else if (link.isAvailabilityStatusChecked() && !link.isAvailable()) {
+        } else if (!link.isAvailable()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
             return AvailableStatus.TRUE;
@@ -1469,9 +1470,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /**
      * Get filesize via massLinkchecker/alternative availablecheck.<br />
      * Wrapper for requestFileInformationWebsiteMassLinkcheckerSingle which contains a bit of extra log output </br>
-     * Often used as fallback if o.g. officially only logged-in users can see filesize or filesize is not given in html code for whatever
-     * reason.<br />
-     * Often needed for <b><u>IMAGEHOSTER</u> ' s</b>.<br />
+     * Often used as fallback if e.g. only logged-in users can see filesize or filesize is not given in html code for whatever reason.<br />
+     * Often needed for <b><u>IMAGEHOSTER</u>S</b>.<br />
      * Important: Only call this if <b><u>supports_availablecheck_alt</u></b> is <b>true</b> (meaning omly try this if website supports
      * it)!<br />
      * Some older XFS versions AND videohosts have versions of this linkchecker which only return online/offline and NO FILESIZE!</br>
@@ -1483,13 +1483,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     protected boolean getFilesizeViaAvailablecheckAlt(final String[] fileInfo, final Browser br, final DownloadLink link) throws PluginException, IOException {
         logger.info("Trying getFilesizeViaAvailablecheckAlt");
         requestFileInformationWebsiteMassLinkcheckerSingle(link);
-        final boolean isChecked = link.isAvailabilityStatusChecked();
-        if (isChecked) {
+        if (link.isAvailabilityStatusChecked()) {
             logger.info("Successfully checked URL via website massLinkcheck | filesize: " + link.getView().getBytesTotal());
+            return true;
         } else {
             logger.info("Failed to find filesize via website massLinkcheck");
+            return false;
         }
-        return isChecked;
     }
 
     @Override
