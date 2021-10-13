@@ -106,9 +106,10 @@ public class ExtractAction extends AbstractExtractionContextAction {
                             final FileArchiveFactory factory = new FileArchiveFactory(pathname);
                             for (IExtraction extractor : _getExtension().getExtractors()) {
                                 /* no deep inspection to speedup the accept method */
-                                if (!Boolean.FALSE.equals(extractor.isSupported(factory, false))) {
+                                final boolean deepInspection = false;
+                                if (!Boolean.FALSE.equals(extractor.isSupported(factory, deepInspection))) {
                                     try {
-                                        final Archive archive = extractor.buildArchive(factory, false);
+                                        final Archive archive = extractor.buildArchive(factory, deepInspection);
                                         if (archive != null && factory.getName().equals(archive.getArchiveFiles().get(0).getName())) {
                                             return true;
                                         } else {
