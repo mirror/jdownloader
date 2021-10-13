@@ -2156,6 +2156,7 @@ settings_linkgrabber_filter_columns_exepriority=Prioridade
 settings_linkgrabber_filter_columns_if=%s1!
 settings_linkgrabber_filter_columns_name=Nome da Regra
 settings_linkgrabber_filter_others=Outros
+settings_rules_columns_exeorder=Ordem
 skip_file=Ignorar arquivo
 special_char_lib_loading_problem=O módulo %s2 não está funcionando corretamente.\r\nParece que há um problema com a pasta de instalação do JDownloader.\r\nPor favor, veja se a pasta de instalação não contém nenhum caractere especial.\r\nSua pasta de instalação: %s1
 system_download_autostart=Iniciar Downloads ao iniciar o programa
