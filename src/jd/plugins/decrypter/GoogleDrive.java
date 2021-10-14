@@ -45,7 +45,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drive.google.com" }, urls = { "https?://(?:www\\.)?drive\\.google\\.com/open\\?id=[a-zA-Z0-9\\-_]+|https?://(?:www\\.)?docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+|https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/(?:embedded)?folderview\\?[a-z0-9\\-_=\\&]+|https?://(?:www\\.)?drive\\.google\\.com/drive/(?:[\\w\\-]+/)*folders/[a-zA-Z0-9\\-_=\\&]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drive.google.com" }, urls = { "https?://(?:www\\.)?drive\\.google\\.com/open\\?id=[a-zA-Z0-9\\-_]+|https?://(?:www\\.)?docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+|https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/(?:embedded)?folderview\\?[a-z0-9\\-_=\\&]+|https?://(?:www\\.)?drive\\.google\\.com/drive/(?:[\\w\\-]+/)*folders/[a-zA-Z0-9\\-_=\\&]+(\\?resourcekey=[A-Za-z0-9_\\-]+)?" })
 public class GoogleDrive extends PluginForDecrypt {
     /**
      * @author raztoki
@@ -64,7 +64,7 @@ public class GoogleDrive extends PluginForDecrypt {
     // language determined by the accept-language
     private static final String TYPE_FOLDER_NORMAL               = "https?://(?:www\\.)?docs\\.google\\.com/folder/d/([a-zA-Z0-9\\-_]+)";
     private static final String TYPE_FOLDER_OLD                  = "https?://(?:www\\.)?docs\\.google\\.com/(?:embedded)?folderview\\?(pli=1\\&id=[A-Za-z0-9_]+(\\&tid=[A-Za-z0-9]+)?|id=[A-Za-z0-9_]+\\&usp=sharing)";
-    private static final String TYPE_FOLDER_CURRENT              = "https?://[^/]+/drive/(?:[\\w\\-]+/)*folders/[^/]+";
+    private static final String TYPE_FOLDER_CURRENT              = "https?://[^/]+/drive/(?:[\\w\\-]+/)*folders/([^/?]+)(\\?resourcekey=[A-Za-z0-9_\\-]+)?";
     /* 2021-02-26: Theoretically, "leaf?" does the same but for now we'll only handle "open=" as TYPE_REDIRECT */
     private static final String TYPE_REDIRECT                    = "https?://[^/]+/open\\?id=([a-zA-Z0-9\\-_]+)";
     private final String        PROPERTY_SPECIAL_SHORTCUT_FOLDER = "special_shortcut_folder";
@@ -117,15 +117,26 @@ public class GoogleDrive extends PluginForDecrypt {
     }
 
     private String getFolderID(final String url) {
-        if (url.matches(TYPE_FOLDER_NORMAL) || url.matches(TYPE_FOLDER_CURRENT)) {
-            return new Regex(url, "([^/]+)$").getMatch(0);
+        if (url.matches(TYPE_FOLDER_NORMAL)) {
+            return new Regex(url, TYPE_FOLDER_NORMAL).getMatch(0);
+        } else if (url.matches(TYPE_FOLDER_CURRENT)) {
+            return new Regex(url, TYPE_FOLDER_CURRENT).getMatch(0);
         } else {
             return new Regex(url, "id=([^\\&=]+)").getMatch(0);
         }
     }
 
+    private String getFolderResourceKey(final String url) {
+        try {
+            return UrlQuery.parse(url).get("resourcekey");
+        } catch (final Throwable ignore) {
+            return null;
+        }
+    }
+
     private ArrayList<DownloadLink> crawlAPI(final CryptedLink param) throws Exception {
         String folderID = getFolderID(param.getCryptedUrl());
+        final String folderResourceKey = this.getFolderResourceKey(param.getCryptedUrl());
         if (folderID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -170,6 +181,9 @@ public class GoogleDrive extends PluginForDecrypt {
         queryFolder.appendEncoded("key", jd.plugins.hoster.GoogleDrive.getAPIKey());
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final ArrayList<String> dupes = new ArrayList<String>();
+        if (folderResourceKey != null) {
+            setResourceKeyHeader(br, folderID, folderResourceKey);
+        }
         int page = 0;
         do {
             logger.info("Working on pagination page " + (page + 1));
@@ -298,6 +312,7 @@ public class GoogleDrive extends PluginForDecrypt {
     private ArrayList<DownloadLink> crawlWebsite(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String folderID = this.getFolderID(param.getCryptedUrl());
+        final String folderResourceKey = this.getFolderResourceKey(param.getCryptedUrl());
         if (folderID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -318,13 +333,18 @@ public class GoogleDrive extends PluginForDecrypt {
         logger.info("LoggedIn:" + loggedin);
         br.setFollowRedirects(true);
         /* 2021-05-31: Folders can redirect to other folderIDs. Most likely we got a "Shortcut" then --> Very rare case */
-        br.getPage("https://drive.google.com/drive/folders/" + folderID);
+        final UrlQuery folderInitQuery = new UrlQuery();
+        if (folderResourceKey != null) {
+            folderInitQuery.add("resourcekey", folderResourceKey);
+        }
+        final String folderURL = "https://drive.google.com/drive/folders/" + folderID + "?" + folderInitQuery.toString();
+        br.getPage(folderURL);
         final String newFolderID = this.getFolderID(br.getURL());
         if (newFolderID == null) {
             /*
              * Indication that something is wrong. Maybe offline or private folder - errorhandling down bewlow is supposed to find that out!
              */
-            logger.warning("Failed to find folderID in current URL");
+            logger.warning("Failed to find folderID in current URL --> Possible crawler failure");
         } else if (!newFolderID.equals(folderID)) {
             logger.info("Folder redirected to new folder: Old: " + folderID + " | New: " + newFolderID);
             folderID = newFolderID;
@@ -399,6 +419,9 @@ public class GoogleDrive extends PluginForDecrypt {
         query.add("orderBy", "folder%2Ctitle_natural%20asc");
         // query.add("retryCount", "0");
         query.add("key", key);
+        if (folderResourceKey != null) {
+            query.add("resourcekey", folderResourceKey);
+        }
         /* Optional params (team drives only) */
         if (teamDriveID != null) {
             query.add("supportsTeamDrives", "true");
@@ -415,6 +438,9 @@ public class GoogleDrive extends PluginForDecrypt {
             final String sapisid = br.getCookie(br.getHost(), "SAPISID");
             final String auth = "SAPISIDHASH " + System.currentTimeMillis() * 1000 + "_" + JDHash.getSHA1(sapisid) + "_u";
             brc.getHeaders().put("Authorization", auth);
+        }
+        if (folderResourceKey != null) {
+            setResourceKeyHeader(brc, folderID, folderResourceKey);
         }
         do {
             page++;
@@ -452,6 +478,11 @@ public class GoogleDrive extends PluginForDecrypt {
             return decryptedLinks;
         }
         return decryptedLinks;
+    }
+
+    public static void setResourceKeyHeader(final Browser br, final String resourceID, final String resourceKey) {
+        /* https://developers.google.com/drive/api/v3/resource-keys */
+        br.getHeaders().put("X-Goog-Drive-Resource-Keys", resourceID + "/" + resourceKey);
     }
 
     private static String getCurrentFolderTitleWebsite(final Browser br) {
@@ -564,6 +595,22 @@ public class GoogleDrive extends PluginForDecrypt {
         }
     }
 
+    private String generateFileURL(final String fileID, final String resourceKey) {
+        String url = "https://drive.google.com/file/d/" + fileID;
+        if (resourceKey != null) {
+            url += "?resourcekey=" + resourceKey;
+        }
+        return url;
+    }
+
+    private String generateFolderURL(final String folderID, final String folderResourceKey) {
+        String url = "https://drive.google.com/drive/folders/" + folderID;
+        if (folderResourceKey != null) {
+            url += "?resourcekey=" + folderResourceKey;
+        }
+        return url;
+    }
+
     private void parseFolderJsonAPI(final ArrayList<DownloadLink> decryptedLinks, final ArrayList<String> dupes, Map<String, Object> entries, String subfolder, final String currentFolderTitle) throws PluginException {
         if (!StringUtils.isEmpty(currentFolderTitle) && StringUtils.isEmpty(subfolder)) {
             /* Begin subfolder structure if not given already */
@@ -585,6 +632,7 @@ public class GoogleDrive extends PluginForDecrypt {
             final String kind = mimeType != null && mimeType.contains(".folder") ? "folder" : (String) entries.get("kind");
             final String title = (String) entries.get("name");
             final String id = (String) entries.get("id");
+            final String resourceKey = (String) entries.get("resourceKey");
             if (StringUtils.isEmpty(kind) || StringUtils.isEmpty(title) || StringUtils.isEmpty(id)) {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -606,7 +654,7 @@ public class GoogleDrive extends PluginForDecrypt {
             String folderPath = null;
             if (isFile) {
                 /* Single file */
-                dl = createDownloadlink("https://drive.google.com/file/d/" + id);
+                dl = createDownloadlink(generateFileURL(id, resourceKey));
                 jd.plugins.hoster.GoogleDrive.parseFileInfoAPI(dl, entries);
                 if (subfolder != null) {
                     folderPath = subfolder;
@@ -630,7 +678,7 @@ public class GoogleDrive extends PluginForDecrypt {
                 } else {
                     folderPath = "/" + title;
                 }
-                dl = createDownloadlink("https://drive.google.com/drive/folders/" + id);
+                dl = createDownloadlink(generateFolderURL(id, resourceKey));
                 dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folderPath);
                 if (isShortcutFolder) {
                     dl.setProperty(PROPERTY_SPECIAL_SHORTCUT_FOLDER, true);

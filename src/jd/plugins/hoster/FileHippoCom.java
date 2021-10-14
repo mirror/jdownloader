@@ -120,6 +120,10 @@ public class FileHippoCom extends PluginForHost {
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
         br.setFollowRedirects(false);
+        final String downloadImpossibleURL = br.getRegex("(https?://[^\"]+/post_download/\\?nodl=1)").getMatch(0);
+        if (downloadImpossibleURL != null) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "No mirrors available");
+        }
         final String continueURL = br.getRegex("\"(https?://[^\"]+/post_download/?)\"").getMatch(0);
         if (continueURL != null) {
             /* 2020-11-12 */
@@ -129,7 +133,7 @@ public class FileHippoCom extends PluginForHost {
         if (dllink != null) {
             /* 2020-11-12 */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection(true);
                 } catch (final IOException e) {
@@ -172,8 +176,13 @@ public class FileHippoCom extends PluginForHost {
                 continue;
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
+                    br.followConnection();
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 if (!br.getURL().contains("filehippo.com")) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Download impossible - download-url points to external site");
                 }

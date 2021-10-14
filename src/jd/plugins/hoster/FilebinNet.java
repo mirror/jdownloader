@@ -21,9 +21,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -32,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filebin.net" }, urls = { "https?://(?:www\\.)?filebin\\.net/([a-z0-9]+/([^/]+))" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filebin.net" }, urls = { "https?://(?:www\\.)?filebin\\.net/(?:qr/)?([a-z0-9]+)" })
 public class FilebinNet extends PluginForHost {
     public FilebinNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,11 +42,23 @@ public class FilebinNet extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        if (linkid != null) {
-            return linkid;
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
         } else {
             return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        final Regex qr = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/qr/([a-z0-9]+)");
+        if (qr.matches()) {
+            link.setPluginPatternMatcher("https://" + this.getHost() + "/" + qr.getMatch(0));
         }
     }
 
@@ -60,23 +69,17 @@ public class FilebinNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        link.setFinalFileName(this.getFID(link) + ".zip");
         this.setBrowserExclusive();
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*This bin is empty")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("File name</dt>\\s*?<dd class=\"col\">([^<>\"]+)</dd>").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            /* Fallback */
-            filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
-        }
-        String filesize = br.getRegex("File size</dt>\\s*?<dd class=\"col\">([^<>\"]+)</dd>").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename).trim();
-        link.setName(filename);
+        String filesize = br.getRegex("Total size</dt>\\s*<dd class=\"col-sm-9\">[^\\(]+\\((\\d+) bytes\\)").getMatch(0);
         if (filesize != null) {
+            /* Do not set verifiedFilesize as it may vary! */
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
@@ -88,13 +91,10 @@ public class FilebinNet extends PluginForHost {
     }
 
     private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(link, directlinkproperty);
-        if (dllink == null) {
-            requestFileInformation(link);
-            dllink = br.getRegex("(https://[^/]+/[^\"]+\\?t=[^\"]+)").getMatch(0);
-            if (StringUtils.isEmpty(dllink)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+        requestFileInformation(link);
+        String dllink = "/archive/" + this.getFID(link) + "/zip";
+        if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
@@ -110,36 +110,7 @@ public class FilebinNet extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
-    }
-
-    private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                    return dllink;
-                } else {
-                    throw new IOException();
-                }
-            } catch (final Exception e) {
-                logger.log(e);
-                return null;
-            } finally {
-                if (con != null) {
-                    con.disconnect();
-                }
-            }
-        }
-        return null;
     }
 
     @Override
