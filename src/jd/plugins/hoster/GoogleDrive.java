@@ -66,7 +66,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drive.google.com" }, urls = { "https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/(?:(?:leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+|(?:a/[a-zA-z0-9\\.]+/)?(?:file|document)/d/[A-Za-z0-9\\-_]+)|https?://video\\.google\\.com/get_player\\?docid=[A-Za-z0-9\\-_]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drive.google.com" }, urls = { "https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/(?:(?:leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+(.*)?|(?:a/[a-zA-z0-9\\.]+/)?(?:file|document)/d/[A-Za-z0-9\\-_]+)(\\?.*)?|https?://video\\.google\\.com/get_player\\?docid=[A-Za-z0-9\\-_]+" })
 public class GoogleDrive extends PluginForHost {
     public GoogleDrive(PluginWrapper wrapper) {
         super(wrapper);
@@ -141,6 +141,14 @@ public class GoogleDrive extends PluginForHost {
         }
     }
 
+    private String getFileResourceKey(final DownloadLink link) {
+        try {
+            return UrlQuery.parse(link.getPluginPatternMatcher()).get("resourcekey");
+        } catch (final Throwable ignore) {
+            return null;
+        }
+    }
+
     /** DownloadLink properties */
     /**
      * Contains the quality modifier of the last chosen quality. This property gets reset on reset DownloadLink to ensure that a user cannot
@@ -209,10 +217,14 @@ public class GoogleDrive extends PluginForHost {
 
     private AvailableStatus requestFileInformationAPI(final DownloadLink link, final boolean isDownload) throws Exception {
         final String fid = this.getFID(link);
+        final String fileResourceKey = getFileResourceKey(link);
         if (fid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         prepBrowserAPI(this.br);
+        if (fileResourceKey != null) {
+            jd.plugins.decrypter.GoogleDrive.setResourceKeyHeader(br, fid, fileResourceKey);
+        }
         final UrlQuery queryFile = new UrlQuery();
         queryFile.appendEncoded("fileId", fid);
         queryFile.add("supportsAllDrives", "true");
@@ -227,7 +239,7 @@ public class GoogleDrive extends PluginForHost {
 
     /** Contains all fields we need for file/folder API requests. */
     public static final String getFieldsAPI() {
-        return "kind,mimeType,id,name,size,description,md5Checksum,exportLinks,capabilities(canDownload)";
+        return "kind,mimeType,id,name,size,description,md5Checksum,exportLinks,capabilities(canDownload),resourceKey";
     }
 
     /** Multiple factors decide whether we want to use the API for downloading or use the website. */
@@ -408,7 +420,6 @@ public class GoogleDrive extends PluginForHost {
                 link.setFinalFileName(fileName);
             }
             if (con.getCompleteContentLength() > 0) {
-                link.setDownloadSize(con.getCompleteContentLength());
                 link.setVerifiedFileSize(con.getCompleteContentLength());
             }
             /** There could have been redirects in the meantime -> Be sure to assign the final URL! */
@@ -452,9 +463,9 @@ public class GoogleDrive extends PluginForHost {
             link.setDownloadSize(SizeFormatter.getSize(filesizeStr + "B"));
         }
         /* E.g. "This file is too big for Google to virus-scan it - download anyway?" */
-        dllink = br.getRegex("\"([^\"]*?/uc\\?export=download[^<>\"]+)\"").getMatch(0);
+        dllink = regexConfirmDownloadurl(br);
         if (dllink != null) {
-            dllink = HTMLEntities.unhtmlentities(dllink);
+            br.getPage(dllink);
             logger.info("File is too big for Google v_rus scan but looks like it is downloadable");
             return AvailableStatus.TRUE;
         }
@@ -462,11 +473,11 @@ public class GoogleDrive extends PluginForHost {
         logger.info("Direct download inactive --> Accessing download Overview");
         if (isDownload) {
             synchronized (CAPTCHA_LOCK) {
-                br.getPage("https://drive.google.com/file/d/" + getFID(link) + "/view");
+                br.getPage(getFileViewURL(link));
                 this.handleErrorsWebsite(this.br, link, account);
             }
         } else {
-            br.getPage("https://drive.google.com/file/d/" + getFID(link) + "/view");
+            br.getPage(getFileViewURL(link));
         }
         /** More errorhandling / offline check */
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<p class=\"error\\-caption\">Sorry, we are unable to retrieve this document\\.</p>")) {
@@ -516,6 +527,23 @@ public class GoogleDrive extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String getFileViewURL(final DownloadLink link) {
+        final String fileResourceKey = this.getFileResourceKey(link);
+        String url = "https://drive.google.com/file/d/" + getFID(link) + "/view";
+        if (fileResourceKey != null) {
+            url += "?resourcekey=" + fileResourceKey;
+        }
+        return url;
+    }
+
+    private static String regexConfirmDownloadurl(final Browser br) {
+        String res = br.getRegex("\"([^\"]*?/uc\\?export=download\\&(amp;)?confirm=[^<>\"]+)\"").getMatch(0);
+        if (res != null) {
+            res = HTMLEntities.unhtmlentities(res);
+        }
+        return res;
     }
 
     /**
@@ -729,7 +757,12 @@ public class GoogleDrive extends PluginForHost {
          * </br>
          * Last rev. with this handling: 42866
          */
-        return "https://docs.google.com/uc?id=" + getFID(link) + "&export=download";
+        String url = "https://docs.google.com/uc?id=" + getFID(link) + "&export=download";
+        final String fileResourceKey = this.getFileResourceKey(link);
+        if (fileResourceKey != null) {
+            url += "&resourcekey=" + fileResourceKey;
+        }
+        return url;
     }
 
     @Override
@@ -811,6 +844,21 @@ public class GoogleDrive extends PluginForHost {
                 this.dllink = streamDownloadlink;
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
+            /* 2021-10-14: Unsuccessful bugfix/workaround attempt */
+            // if (dllink.contains("export=download&confirm=") && !this.looksLikeDownloadableContent(dl.getConnection())) {
+            // /* 2021-10-14: Workaround: Also needs two tries in browser */
+            // try {
+            // br.followConnection();
+            // } catch (IOException e) {
+            // logger.log(e);
+            // }
+            // this.dllink = regexConfirmDownloadurl(br);
+            // if (this.dllink == null) {
+            // this.handleErrorsWebsite(this.br, link, account);
+            // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+            // }
+            // dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
+            // }
         }
         /* 2020-03-18: Streams do not have content-disposition but often 206 partial content. */
         // if ((!dl.getConnection().isContentDisposition() && dl.getConnection().getResponseCode() != 206) ||
@@ -877,6 +925,17 @@ public class GoogleDrive extends PluginForHost {
                 errorOriginalFileDownloadTempUnavailableAndOrOnlyViaAccount(account);
             } else if (br.containsHTML("class=\"uc\\-error\\-caption\"")) {
                 errorOriginalFileDownloadTempUnavailableAndOrOnlyViaAccount(account);
+            } else if (br.getURL().contains("accounts.google.com/")) {
+                if (link == null) {
+                    /* Looks like failed login -> Should never happen */
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login failure", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    if (account != null) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Insufficient permissions (private file)?", 30 * 60 * 1000l);
+                    } else {
+                        throw new AccountRequiredException();
+                    }
+                }
             } else if (br.getHttpConnection().getResponseCode() == 403) {
                 /**
                  * Most likely quota error or "Missing permissions" error. </br>
