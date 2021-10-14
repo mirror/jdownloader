@@ -330,7 +330,7 @@ public abstract class XvideosCore extends PluginForHost {
         }
         String videoURL = null;
         if (isDownload || !PluginJsonConfig.get(XvideosComConfig.class).isEnableFastLinkcheckForHostPlugin()) {
-            final String hlsMaster = br.getRegex("xhtml5player\\.setVideoHLS\\('(.*?)'\\)").getMatch(0);
+            final String hlsMaster = br.getRegex("setVideoHLS\\('(.*?)'\\)").getMatch(0);
             /**
              * 2021-01-27: This website can "shadow ban" users who download "too much". They will then deliver all videos in 240p only. This
              * is an attempt to detect this.</br>
