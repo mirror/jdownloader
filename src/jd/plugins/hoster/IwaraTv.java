@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -37,6 +35,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?iwara\\.tv/videos/([A-Za-z0-9]+)" })
 public class IwaraTv extends PluginForHost {
@@ -126,7 +126,7 @@ public class IwaraTv extends PluginForHost {
         filename += this.getFID(link) + "_";
         String title = br.getRegex("<h1 class=\"title\">([^<>\"]+)</h1>").getMatch(0);
         if (title != null) {
-            title = Encoding.htmlDecode(title).trim();
+            title = Encoding.htmlOnlyDecode(Encoding.htmlOnlyDecode(title));
             /* Set Packagizer property */
             link.setProperty(PROPERTY_TITLE, title);
             filename += title;
