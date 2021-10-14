@@ -1003,6 +1003,43 @@ public class YoutubeHelper {
         }
     }
 
+    String descrambleThrottle(final String value) throws IOException, PluginException {
+        if (value == null) {
+            return null;
+        }
+        String function = null;
+        HashMap<String, String> cache = jsCache.get(vid.videoID);
+        if (cache != null && !cache.isEmpty()) {
+            function = cache.get("n_function");
+        }
+        if (function == null) {
+            if (cache == null) {
+                cache = new HashMap<String, String>();
+                jsCache.put(vid.videoID, cache);
+            }
+            final String html5PlayerSource = ensurePlayerSource();
+            function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=a\\.split\\(\"\"\\),c=\\[.*?\\};)").getMatch(0);
+            cache.put("n_function", function);
+        }
+        if (function != null) {
+            try {
+                final ScriptEngineManager manager = org.jdownloader.scripting.JavaScriptEngineFactory.getScriptEngineManager(this);
+                final ScriptEngine engine = manager.getEngineByName("javascript");
+                final String js = "var calculate" + function + " var result=calculate(\"" + value + "\")";
+                engine.eval(js);
+                final String result = StringUtils.valueOfOrNull(engine.get("result"));
+                if (result != null) {
+                    return result;
+                } else {
+                    return value;
+                }
+            } catch (Exception e) {
+                logger.log(e);
+            }
+        }
+        return value;
+    }
+
     String descrambleSignatureNew(final String sig) throws IOException, PluginException {
         if (sig == null) {
             return null;
@@ -1010,7 +1047,6 @@ public class YoutubeHelper {
         String all = null;
         String descrambler = null;
         String des = null;
-        Object result = null;
         HashMap<String, String> cache = jsCache.get(vid.videoID);
         if (cache != null && !cache.isEmpty()) {
             all = cache.get("all");
@@ -1018,9 +1054,11 @@ public class YoutubeHelper {
             des = cache.get("des");
         }
         if (all == null || descrambler == null || des == null) {
-            cache = new HashMap<String, String>();
-            //
-            String html5PlayerSource = ensurePlayerSource();
+            if (cache == null) {
+                cache = new HashMap<String, String>();
+                jsCache.put(vid.videoID, cache);
+            }
+            final String html5PlayerSource = ensurePlayerSource();
             descrambler = new Regex(html5PlayerSource, "\"signature\"\\s*,\\s*([\\$\\w]+)\\([\\$\\w\\.]+\\s*\\)\\s*\\)(\\s*\\)\\s*){0,};").getMatch(0);
             if (descrambler == null) {
                 descrambler = new Regex(html5PlayerSource, "(?:^|[^a-zA-Z0-9$])([a-zA-Z0-9$]{2})\\s*=\\s*function\\((\\w+)\\)\\{\\s*\\2=\\s*\\2\\.split\\(\"\"\\)").getMatch(0);
@@ -1056,16 +1094,15 @@ public class YoutubeHelper {
                 final ScriptEngineManager manager = org.jdownloader.scripting.JavaScriptEngineFactory.getScriptEngineManager(this);
                 final ScriptEngine engine = manager.getEngineByName("javascript");
                 final String debugJS = all + " " + descrambler + "(\"" + sig + "\")";
-                result = engine.eval(debugJS);
+                final String result = StringUtils.valueOfOrNull(engine.eval(debugJS));
                 if (result != null) {
-                    if (cache.isEmpty()) {
+                    if (cache != null) {
                         cache.put("all", all);
                         cache.put("descrambler", descrambler);
                         // not used by js but the failover.
                         cache.put("des", des);
-                        jsCache.put(vid.videoID, cache);
                     }
-                    return result.toString();
+                    return result;
                 }
             } catch (final Throwable e) {
                 if (e.getMessage() != null) {
@@ -1135,7 +1172,6 @@ public class YoutubeHelper {
         String all = null;
         String descrambler = null;
         String des = null;
-        Object result = null;
         HashMap<String, String> cache = jsCache.get(vid.videoID);
         if (cache != null && !cache.isEmpty()) {
             all = cache.get("all");
@@ -1143,7 +1179,10 @@ public class YoutubeHelper {
             des = cache.get("des");
         }
         if (all == null || descrambler == null || des == null) {
-            cache = new HashMap<String, String>();
+            if (cache == null) {
+                cache = new HashMap<String, String>();
+                jsCache.put(vid.videoID, cache);
+            }
             String html5PlayerSource = ensurePlayerSource();
             descrambler = new Regex(html5PlayerSource, "\\.sig\\|\\|([\\$\\w]+)\\(").getMatch(0);
             if (descrambler == null) {
@@ -1173,16 +1212,15 @@ public class YoutubeHelper {
             try {
                 final ScriptEngineManager manager = org.jdownloader.scripting.JavaScriptEngineFactory.getScriptEngineManager(this);
                 final ScriptEngine engine = manager.getEngineByName("javascript");
-                result = engine.eval(all + " " + descrambler + "(\"" + sig + "\")");
+                final String result = StringUtils.valueOfOrNull(engine.eval(all + " " + descrambler + "(\"" + sig + "\")"));
                 if (result != null) {
-                    if (cache.isEmpty()) {
+                    if (cache != null) {
                         cache.put("all", all);
                         cache.put("descrambler", descrambler);
                         // not used by js but the failover.
                         cache.put("des", des);
-                        jsCache.put(vid.videoID, cache);
                     }
-                    return result.toString();
+                    return result;
                 }
             } catch (final Throwable e) {
                 if (e.getMessage() != null) {
@@ -2227,6 +2265,13 @@ public class YoutubeHelper {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     queryURL = URLDecoder.decode(queryURL, "UTF-8");
+                    if (queryURL.contains("&n=")) {
+                        final String value = new Regex(queryURL, "&n=(.*?)(&|$)").getMatch(0);
+                        final String result = descrambleThrottle(value);
+                        if (result != null && !result.equals(value)) {
+                            queryURL = queryURL.replaceFirst("(&n=" + value + ")", "&n=" + result);
+                        }
+                    }
                     if (query.containsKey("signature")) {
                         url = queryURL + "&signature=" + query.get("signature");
                     } else if (query.containsKey("sig")) {
@@ -2966,6 +3011,13 @@ public class YoutubeHelper {
         // if an ei=... parameter is missing, the url is invalid and will probably return a 403 response code
         if (StringUtils.isEmpty(url)) {
             throw new WTFException("No Url found " + query);
+        }
+        if (url.contains("&n=")) {
+            final String value = new Regex(url, "&n=(.*?)(&|$)").getMatch(0);
+            final String result = descrambleThrottle(value);
+            if (result != null && !result.equals(value)) {
+                url = url.replaceFirst("(&n=" + value + ")", "&n=" + result);
+            }
         }
         if (query.containsKey("signature")) {
             url = url + "&signature=" + query.get("signature");
