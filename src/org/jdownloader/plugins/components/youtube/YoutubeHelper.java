@@ -2252,13 +2252,13 @@ public class YoutubeHelper {
                 return null;
             }
             String url = (String) entry.get("url");
-            if (StringUtils.isEmpty(url)) {
-                String cipher = (String) entry.get("cipher");
-                if (cipher == null) {
-                    // 28.05.2020
-                    cipher = (String) entry.get("signatureCipher");
-                }
-                try {
+            try {
+                if (StringUtils.isEmpty(url)) {
+                    String cipher = (String) entry.get("cipher");
+                    if (cipher == null) {
+                        // 28.05.2020
+                        cipher = (String) entry.get("signatureCipher");
+                    }
                     final UrlQuery query = UrlQuery.parse(cipher);
                     String queryURL = query.get("url");
                     if (StringUtils.isEmpty(queryURL)) {
@@ -2286,13 +2286,19 @@ public class YoutubeHelper {
                             url = queryURL + "&signature=" + Encoding.urlEncode(signature);
                         }
                     }
-                } catch (PluginException e) {
-                    logger.log(e);
-                    return null;
-                } catch (IOException e) {
-                    logger.log(e);
-                    return null;
+                } else if (url.contains("&n=")) {
+                    final String value = new Regex(url, "&n=(.*?)(&|$)").getMatch(0);
+                    final String result = descrambleThrottle(value);
+                    if (result != null && !result.equals(value)) {
+                        url = url.replaceFirst("(&n=" + value + ")", "&n=" + result);
+                    }
                 }
+            } catch (PluginException e) {
+                logger.log(e);
+                return null;
+            } catch (IOException e) {
+                logger.log(e);
+                return null;
             }
             if (StringUtils.isEmpty(url)) {
                 logger.info("URL?:" + JSonStorage.toString(entry));
