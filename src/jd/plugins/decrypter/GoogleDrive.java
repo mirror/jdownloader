@@ -333,12 +333,7 @@ public class GoogleDrive extends PluginForDecrypt {
         logger.info("LoggedIn:" + loggedin);
         br.setFollowRedirects(true);
         /* 2021-05-31: Folders can redirect to other folderIDs. Most likely we got a "Shortcut" then --> Very rare case */
-        final UrlQuery folderInitQuery = new UrlQuery();
-        if (folderResourceKey != null) {
-            folderInitQuery.add("resourcekey", folderResourceKey);
-        }
-        final String folderURL = "https://drive.google.com/drive/folders/" + folderID + "?" + folderInitQuery.toString();
-        br.getPage(folderURL);
+        br.getPage(generateFolderURL(folderID, folderResourceKey));
         final String newFolderID = this.getFolderID(br.getURL());
         if (newFolderID == null) {
             /*
@@ -547,7 +542,7 @@ public class GoogleDrive extends PluginForDecrypt {
                 /* Single file */
                 final long fileSize = JavaScriptEngineFactory.toLong(entries.get("fileSize"), 0);
                 /* Single file */
-                dl = createDownloadlink("https://drive.google.com/file/d/" + id);
+                dl = createDownloadlink(generateFileURL(id, null));
                 final String googleDriveDocumentType = new Regex(mimeType, "application/vnd\\.google-apps\\.(.+)").getMatch(0);
                 if (googleDriveDocumentType != null) {
                     jd.plugins.hoster.GoogleDrive.parseGoogleDocumentProperties(dl, title, googleDriveDocumentType, null);
@@ -583,7 +578,7 @@ public class GoogleDrive extends PluginForDecrypt {
                 } else {
                     folderPath = "/" + title;
                 }
-                dl = createDownloadlink("https://drive.google.com/drive/folders/" + id);
+                dl = createDownloadlink(generateFolderURL(id, null));
             }
             if (folderPath != null) {
                 dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folderPath);
