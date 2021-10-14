@@ -66,7 +66,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drive.google.com" }, urls = { "https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/(?:(?:leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+(.*)?|(?:a/[a-zA-z0-9\\.]+/)?(?:file|document)/d/[A-Za-z0-9\\-_]+)(\\?.*)?|https?://video\\.google\\.com/get_player\\?docid=[A-Za-z0-9\\-_]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drive.google.com" }, urls = { "https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/(?:(?:leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+(.*)?|(?:a/[a-zA-z0-9\\.]+/)?(?:file|document)/d/[A-Za-z0-9\\-_]+)(.*\\?.*)?|https?://video\\.google\\.com/get_player\\?docid=[A-Za-z0-9\\-_]+" })
 public class GoogleDrive extends PluginForHost {
     public GoogleDrive(PluginWrapper wrapper) {
         super(wrapper);
@@ -115,10 +115,12 @@ public class GoogleDrive extends PluginForHost {
     /* Connection stuff */
     // private static final boolean FREE_RESUME = true;
     // private static final int FREE_MAXCHUNKS = 0;
-    private static final int    FREE_MAXDOWNLOADS = 20;
-    private static Object       CAPTCHA_LOCK      = new Object();
-    public static final String  API_BASE          = "https://www.googleapis.com/drive/v3";
-    private static final String PATTERN_GDOC      = "https?://[^/]+/document/d/([a-zA-Z0-9\\-_]+)";
+    private static final int    FREE_MAXDOWNLOADS    = 20;
+    private static Object       CAPTCHA_LOCK         = new Object();
+    public static final String  API_BASE             = "https://www.googleapis.com/drive/v3";
+    private static final String PATTERN_GDOC         = "https?://[^/]+/document/d/([a-zA-Z0-9\\-_]+).*";
+    private static final String PATTERN_FILE         = "https?://[^/]+/file/d/([a-zA-Z0-9\\-_]+).*";
+    private static final String PATTERN_VIDEO_STREAM = "https?://video\\.google\\.com/get_player\\?docid=([A-Za-z0-9\\-_]+)";
 
     private String getFID(final DownloadLink link) {
         if (link == null) {
@@ -128,15 +130,12 @@ public class GoogleDrive extends PluginForHost {
         } else {
             if (link.getPluginPatternMatcher().matches(PATTERN_GDOC)) {
                 return new Regex(link.getPluginPatternMatcher(), PATTERN_GDOC).getMatch(0);
+            } else if (link.getPluginPatternMatcher().matches(PATTERN_FILE)) {
+                return new Regex(link.getPluginPatternMatcher(), PATTERN_FILE).getMatch(0);
+            } else if (link.getPluginPatternMatcher().matches(PATTERN_VIDEO_STREAM)) {
+                return new Regex(link.getPluginPatternMatcher(), PATTERN_VIDEO_STREAM).getMatch(0);
             } else {
-                String id = new Regex(link.getPluginPatternMatcher(), "/file/d/([a-zA-Z0-9\\-_]+)").getMatch(0);
-                if (id == null) {
-                    id = new Regex(link.getPluginPatternMatcher(), "video\\.google\\.com/get_player\\?docid=([A-Za-z0-9\\-_]+)").getMatch(0);
-                    if (id == null) {
-                        id = new Regex(link.getPluginPatternMatcher(), "(?!rev)id=([a-zA-Z0-9\\-_]+)").getMatch(0);
-                    }
-                }
-                return id;
+                return new Regex(link.getPluginPatternMatcher(), "(?!rev)id=([a-zA-Z0-9\\-_]+)").getMatch(0);
             }
         }
     }
@@ -211,7 +210,8 @@ public class GoogleDrive extends PluginForHost {
         if (canUseAPI()) {
             return this.requestFileInformationAPI(link, isDownload);
         } else {
-            return this.requestFileInformationWebsite(link, null, isDownload);
+            final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+            return this.requestFileInformationWebsite(link, account, isDownload);
         }
     }
 
@@ -341,12 +341,8 @@ public class GoogleDrive extends PluginForHost {
         }
     }
 
-    private AvailableStatus requestFileInformationWebsite(final DownloadLink link, Account account, final boolean isDownload) throws Exception {
-        this.br = new Browser();
+    private AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         /* Prefer given account over random account */
-        if (account == null) {
-            account = AccountController.getInstance().getValidAccount(this.getHost());
-        }
         if (account != null) {
             login(this.br, account, false);
         }
@@ -758,6 +754,10 @@ public class GoogleDrive extends PluginForHost {
          * Last rev. with this handling: 42866
          */
         String url = "https://docs.google.com/uc?id=" + getFID(link) + "&export=download";
+        /*
+         * 2021-10-14: TODO: psp: Check if this is the right way. I don't think that this parameter is needed in that URL in browser but I
+         * was unable to finish my tests because the public folder I used for testing suddently was changed to a private one.
+         */
         final String fileResourceKey = this.getFileResourceKey(link);
         if (fileResourceKey != null) {
             url += "&resourcekey=" + fileResourceKey;

@@ -407,7 +407,7 @@ public class GoogleDrive extends PluginForDecrypt {
         query.add("syncType", "0");
         query.add("errorRecovery", "false");
         query.add("q", URLEncode.encodeURIComponent("trashed = false and '" + folderID + "' in parents"));
-        query.add("fields", URLEncode.encodeURIComponent("kind,nextPageToken,items(kind,modifiedDate,modifiedByMeDate,lastViewedByMeDate,fileSize,owners(kind,permissionId,displayName,picture),lastModifyingUser(kind,permissionId,displayName,picture),hasThumbnail,thumbnailVersion,title,id,shared,sharedWithMeDate,userPermission(role),explicitlyTrashed,mimeType,quotaBytesUsed,copyable,fileExtension,sharingUser(kind,permissionId,displayName,picture),spaces,version,teamDriveId,hasAugmentedPermissions,createdDate,trashingUser(kind,permissionId,displayName,picture),trashedDate,parents(id),shortcutDetails(targetId,targetMimeType,targetLookupStatus),capabilities(canCopy,canDownload,canEdit,canAddChildren,canDelete,canRemoveChildren,canShare,canTrash,canRename,canReadTeamDrive,canMoveTeamDriveItem),labels(starred,trashed,restricted,viewed)),incompleteSearch"));
+        query.add("fields", URLEncode.encodeURIComponent("kind,nextPageToken,items(kind,modifiedDate,modifiedByMeDate,lastViewedByMeDate,fileSize,owners(kind,permissionId,displayName,picture),lastModifyingUser(kind,permissionId,displayName,picture),hasThumbnail,thumbnailVersion,title,id,shared,sharedWithMeDate,userPermission(role),explicitlyTrashed,mimeType,quotaBytesUsed,copyable,fileExtension,sharingUser(kind,permissionId,displayName,picture),spaces,version,teamDriveId,hasAugmentedPermissions,createdDate,trashingUser(kind,permissionId,displayName,picture),trashedDate,parents(id),shortcutDetails(targetId,targetMimeType,targetLookupStatus),capabilities(canCopy,canDownload,canEdit,canAddChildren,canDelete,canRemoveChildren,canShare,canTrash,canRename,canReadTeamDrive,canMoveTeamDriveItem),labels(starred,trashed,restricted,viewed),resourceKey),incompleteSearch"));
         query.add("appDataFilter", "NO_APP_DATA");
         query.add("spaces", "drive");
         query.add("maxResults", "50");
@@ -523,6 +523,7 @@ public class GoogleDrive extends PluginForDecrypt {
             final String kind = mimeType != null && mimeType.contains(".folder") ? "folder" : (String) entries.get("kind");
             final String title = (String) entries.get("title");
             final String id = (String) entries.get("id");
+            final String resourceKey = (String) entries.get("resourceKey");
             if (kind == null || title == null || id == null) {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -542,7 +543,7 @@ public class GoogleDrive extends PluginForDecrypt {
                 /* Single file */
                 final long fileSize = JavaScriptEngineFactory.toLong(entries.get("fileSize"), 0);
                 /* Single file */
-                dl = createDownloadlink(generateFileURL(id, null));
+                dl = createDownloadlink(generateFileURL(id, resourceKey));
                 final String googleDriveDocumentType = new Regex(mimeType, "application/vnd\\.google-apps\\.(.+)").getMatch(0);
                 if (googleDriveDocumentType != null) {
                     jd.plugins.hoster.GoogleDrive.parseGoogleDocumentProperties(dl, title, googleDriveDocumentType, null);
@@ -578,7 +579,7 @@ public class GoogleDrive extends PluginForDecrypt {
                 } else {
                     folderPath = "/" + title;
                 }
-                dl = createDownloadlink(generateFolderURL(id, null));
+                dl = createDownloadlink(generateFolderURL(id, resourceKey));
             }
             if (folderPath != null) {
                 dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folderPath);
