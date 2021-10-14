@@ -22,25 +22,23 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "file4.net" }, urls = { "https?://(?:www\\.)?file4\\.net/f\\-[a-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "file4.net" }, urls = { "https?://(?:www\\.)?file4\\.net/f\\-([a-z0-9]+)" })
 public class File4Net extends PluginForHost {
     public File4Net(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("");
     }
 
     @Override
@@ -49,40 +47,56 @@ public class File4Net extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final boolean FREE_RESUME                  = false;
-    private final int     FREE_MAXCHUNKS               = 1;
-    private final int     FREE_MAXDOWNLOADS            = 20;
-    private final boolean ACCOUNT_FREE_RESUME          = false;
-    private final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
-    private final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private final boolean ACCOUNT_PREMIUM_RESUME       = false;
-    private final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
-    private final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private final boolean FREE_RESUME       = false;
+    private final int     FREE_MAXCHUNKS    = 1;
+    private final int     FREE_MAXDOWNLOADS = 20;
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = new Regex(link.getPluginPatternMatcher(), "f\\-([a-z0-9]+)$").getMatch(0);
-        if (linkid != null) {
-            return linkid;
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
         } else {
             return super.getLinkID(link);
         }
     }
 
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link));
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (this.br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/404")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>FILE4NET \\| Download ([^<>\"]+)</title>").getMatch(0);
-        String filesize = br.getRegex(">Size: </b>([^<>\"]+)<").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        /* 2021-10-14: Redirect to checkurl.org -> 2 steps -> Back to file4.net/veri?i=... */
+        final String redirect1 = br.getRegex("(/result/[a-f0-9]+)").getMatch(0);
+        if (redirect1 != null) {
+            final Browser brc = br.cloneBrowser();
+            brc.getPage(redirect1);
+            final String redirect2 = brc.getRegex("(https?://[^/]+/veri\\?i=[A-Za-z0-9]+)").getMatch(0);
+            if (redirect2 != null) {
+                br.getPage(redirect2);
+            } else {
+                logger.warning("Failed to find redirect2");
+            }
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        String filename = br.getRegex("<title>FILE4NET \\| Download ([^<>\"]+)</title>").getMatch(0);
+        if (StringUtils.isEmpty(filename)) {
+            /* 2021-10-14 */
+            filename = br.getRegex("</i>([^<>\"]+)<a href='abuse\\?file=").getMatch(0);
+        }
+        String filesize = br.getRegex(">Size: </b>([^<>\"]+)<").getMatch(0);
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename).trim());
+        }
         if (!StringUtils.isEmpty(filesize)) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -90,19 +104,21 @@ public class File4Net extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
-            String continueURL = br.getRegex("(/veri\\?i=[a-zA-Z0-9]+)").getMatch(0);
-            if (StringUtils.isEmpty(continueURL)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            requestFileInformation(link);
+            final boolean isAlreadyOnDesiredPage = br.getURL().matches(".*/veri\\?i=[A-Za-zA-Z0-9]+");
+            if (!isAlreadyOnDesiredPage) {
+                String continueURL = br.getRegex("(/veri\\?i=[a-zA-Z0-9]+)").getMatch(0);
+                if (continueURL != null) {
+                    br.getPage(continueURL);
+                }
             }
-            br.getPage(continueURL);
             Form dlform = br.getFormbyProperty("name", "myform");
             if (dlform == null) {
                 dlform = br.getForm(0);
@@ -110,7 +126,7 @@ public class File4Net extends PluginForHost {
             if (dlform == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+            final String recaptchaV2Response = getRecaptchaV2(this, this.br, br.getURL()).getToken();
             dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             br.submitForm(dlform);
             dllink = br.getRegex("(down\\?i=[a-zA-Z0-9]+)").getMatch(0);
@@ -118,43 +134,63 @@ public class File4Net extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    /**
+     * Special: Ability to provide custom URL because pluginpatternmatcher (file4.net/f-...) may redirect to external website so it is not
+     * suitable!
+     */
+    private CaptchaHelperHostPluginRecaptchaV2 getRecaptchaV2(final Plugin plg, final Browser br, final String url) {
+        return new CaptchaHelperHostPluginRecaptchaV2(this, br) {
+            @Override
+            protected String getSiteUrl() {
+                return url;
+            }
+        };
+    }
+
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    return dllink;
+                } else {
+                    throw new IOException();
                 }
             } catch (final Exception e) {
                 logger.log(e);
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                return null;
             } finally {
-                try {
+                if (con != null) {
                     con.disconnect();
-                } catch (final Throwable e) {
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override
@@ -162,132 +198,9 @@ public class File4Net extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    // private static Object LOCK = new Object();
-    //
-    // private void login(final Account account, final boolean force) throws Exception {
-    // synchronized (LOCK) {
-    // try {
-    // br.setFollowRedirects(true);
-    // br.setCookiesExclusive(true);
-    // final Cookies cookies = account.loadCookies("");
-    // if (cookies != null && !force) {
-    // this.br.setCookies(this.getHost(), cookies);
-    // return;
-    // }
-    // br.getPage("");
-    // br.postPage("", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-    // if (br.getCookie(this.getHost(), "") == null) {
-    // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu
-    // bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es
-    // und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // } else {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username
-    // and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // }
-    // }
-    // account.saveCookies(this.br.getCookies(this.getHost()), "");
-    // } catch (final PluginException e) {
-    // account.clearCookies("");
-    // throw e;
-    // }
-    // }
-    // }
-    //
-    // @SuppressWarnings("deprecation")
-    // @Override
-    // public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-    // final AccountInfo ai = new AccountInfo();
-    // try {
-    // login(account, true);
-    // } catch (PluginException e) {
-    // account.setValid(false);
-    // throw e;
-    // }
-    // String space = br.getRegex("").getMatch(0);
-    // if (space != null) {
-    // ai.setUsedSpace(space.trim());
-    // }
-    // ai.setUnlimitedTraffic();
-    // if (account.getBooleanProperty("free", false)) {
-    // account.setType(AccountType.FREE);
-    // /* free accounts can still have captcha */
-    // account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-    // account.setConcurrentUsePossible(false);
-    // ai.setStatus("Registered (free) user");
-    // } else {
-    // final String expire = br.getRegex("").getMatch(0);
-    // if (expire == null) {
-    // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account
-    // Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort
-    // Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // } else {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or unsupported account type!\r\nQuick
-    // help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change
-    // it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // }
-    // } else {
-    // ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
-    // }
-    // account.setType(AccountType.PREMIUM);
-    // account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-    // account.setConcurrentUsePossible(true);
-    // ai.setStatus("Premium account");
-    // }
-    // account.setValid(true);
-    // return ai;
-    // }
-    //
-    // @Override
-    // public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-    // requestFileInformation(link);
-    // login(account, false);
-    // br.getPage(link.getDownloadURL());
-    // if (account.getType() == AccountType.FREE) {
-    // doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
-    // } else {
-    // String dllink = this.checkDirectLink(link, "premium_directlink");
-    // if (dllink == null) {
-    // dllink = br.getRegex("").getMatch(0);
-    // if (StringUtils.isEmpty(dllink)) {
-    // logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    // }
-    // }
-    // dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-    // if (dl.getConnection().getContentType().contains("html")) {
-    // if (dl.getConnection().getResponseCode() == 403) {
-    // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-    // } else if (dl.getConnection().getResponseCode() == 404) {
-    // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-    // }
-    // logger.warning("The final dllink seems not to be a file!");
-    // br.followConnection();
-    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    // }
-    // link.setProperty("premium_directlink", dl.getConnection().getURL().toString());
-    // dl.startDownload();
-    // }
-    // }
     @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (acc.getType() == AccountType.FREE) {
-            /* Free accounts can have captchas */
-            return true;
-        }
-        /* Premium accounts do not have captchas */
-        return false;
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
+        return true;
     }
 
     @Override

@@ -21,8 +21,10 @@ import java.util.regex.Pattern;
 
 import org.appwork.utils.net.URLHelper;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.EightMusesComConfig;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -62,7 +64,8 @@ public class EightMusesCom extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, false);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return requestFileInformation(link, account, false);
     }
 
     private String getFilenameURL(final DownloadLink link) {
@@ -92,7 +95,7 @@ public class EightMusesCom extends antiDDoSForHost {
         return urlname;
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         dllink = null;
         /* 2020-05-27: Don't do this as handlePremium could have authorized us in beforehand! */
         // this.setBrowserExclusive();
@@ -104,6 +107,9 @@ public class EightMusesCom extends antiDDoSForHost {
         final String filename_url = getFilenameURL(link);
         if (filename_url != null) {
             link.setName(filename_url);
+        }
+        if (account != null) {
+            this.login(account, false);
         }
         String filename = null;
         if (link.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
@@ -190,7 +196,11 @@ public class EightMusesCom extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link, true);
+        handleDownload(link, null);
+    }
+
+    public void handleDownload(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link, account, true);
         if (link.getProperty(BYPASS_CLOUDFLARE_BGJ) != null) {
             logger.info("Apply Cloudflare BGJ bypass");
             dllink = URLHelper.parseLocation(br.getURL(dllink), "&bpcfbgj=" + System.nanoTime());
@@ -310,8 +320,7 @@ public class EightMusesCom extends antiDDoSForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        login(account, false);
-        this.handleFree(link);
+        handleDownload(link, account);
     }
 
     @Override
@@ -340,5 +349,10 @@ public class EightMusesCom extends antiDDoSForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    public Class<? extends EightMusesComConfig> getConfigInterface() {
+        return EightMusesComConfig.class;
     }
 }
