@@ -34,11 +34,13 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "8muses.com" }, urls = { "https?://(?:www\\.|comics\\.)?8muses\\.com/((?:comix/|comics/)?(?:index/category/[a-z0-9\\-_]+|album(?:/[a-z0-9\\-_]+){1,6})|forum/(?!.*attachments/).+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "8muses.com" }, urls = { "https?://(?:www\\.|comics\\.)?8muses\\.com/((?:comix/|comics/)?(?:index/category/[a-z0-9\\-_]+|album(?:/[a-z0-9\\-_]+){1,6})|forum/[a-z0-9\\-]+/\\d+/[a-z0-9\\-]+/(page-\\d+)?)" })
 public class EightMusesComDecrypter extends antiDDoSForDecrypt {
     public EightMusesComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    private static final String TYPE_FORUM = "https?://[^/]+/forum/[a-z0-9\\-]+/(\\d+)/([a-z0-9\\-]+)/(page-(\\d+))?";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -49,13 +51,14 @@ public class EightMusesComDecrypter extends antiDDoSForDecrypt {
         }
         String fpName;
         final FilePackage fp = FilePackage.getInstance();
-        if (param.getCryptedUrl().matches("https?://[^/]+/forum/.+")) {
-            fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        if (param.getCryptedUrl().matches(TYPE_FORUM)) {
+            final Regex urlinfo = new Regex(param.getCryptedUrl(), TYPE_FORUM);
+            final String urlSlug = urlinfo.getMatch(1);
+            fpName = br.getRegex("property=\"og:title\" content=\"([^\"]+)\"").getMatch(0);
             if (fpName == null) {
-                fpName = param.getCryptedUrl().substring(param.getCryptedUrl().lastIndexOf("/") + 1);
+                fpName = urlSlug.replace("-", " ");
             }
             fp.setName(Encoding.htmlDecode(fpName.trim()));
-            final String urlSlug = new Regex(param.getCryptedUrl(), "https?://[^/]+/forum/[^/]+/\\d+/([a-z0-9\\-]+).*").getMatch(0);
             /* TODO: Maybe add multi page parser */
             final String[] pagesStr = br.getRegex(urlSlug + "/page-(\\d+)").getColumn(0);
             int maxPage = -1;
@@ -70,7 +73,7 @@ public class EightMusesComDecrypter extends antiDDoSForDecrypt {
             } else {
                 logger.info("Thread has 1 page");
             }
-            final String pageInAddedURL = new Regex(param.getCryptedUrl(), "page-(\\d+)").getMatch(0);
+            final String pageInAddedURL = urlinfo.getMatch(3);
             if (pageInAddedURL != null) {
                 logger.info("Crawling page: " + pageInAddedURL);
             } else {
