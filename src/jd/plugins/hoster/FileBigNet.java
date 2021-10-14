@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -28,11 +27,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebig.net" }, urls = { "http://(www\\.)?filebig\\.net/files/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebig.net" }, urls = { "https?://(?:www\\.)?filebig\\.net/files/([A-Za-z0-9]+)" })
 public class FileBigNet extends PluginForHost {
-
     public FileBigNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -43,29 +39,62 @@ public class FileBigNet extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>File not found<|>File has been deleted)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.containsHTML("(?i)(>File not found<|>File has been deleted)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<p>File: <strong>([^<>\"]*?)</strong>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>Download ([^<>\"]*?) file</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>Download ([^<>\"]*?) file</title>").getMatch(0);
+        }
         String filesize = br.getRegex("Size: <strong>(\\d+)</strong> bytes</p>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize + "bytes"));
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (filename != null) {
+            link.setFinalFileName(Encoding.htmlDecode(filename).trim());
+        }
+        if (filesize != null) {
+            // link.setDownloadSize(SizeFormatter.getSize(filesize + "bytes"));
+            link.setVerifiedFileSize(Long.parseLong(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         String dllink = br.getRegex("type=\"hidden\" name=\"t\" value=\"([^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = "http://www.filebig.net/files/" + new Regex(downloadLink.getDownloadURL(), "filebig\\.net/files/(.+)").getMatch(0) + "?t=" + dllink;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dllink = "http://www.filebig.net/files/" + new Regex(link.getDownloadURL(), "filebig\\.net/files/(.+)").getMatch(0) + "?t=" + dllink;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -83,5 +112,4 @@ public class FileBigNet extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

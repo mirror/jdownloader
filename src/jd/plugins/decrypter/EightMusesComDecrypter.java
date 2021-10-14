@@ -21,6 +21,9 @@ import java.util.HashSet;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.components.config.EightMusesComConfig;
+import org.jdownloader.plugins.components.config.EightMusesComConfig.CrawlMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -33,6 +36,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "8muses.com" }, urls = { "https?://(?:www\\.|comics\\.)?8muses\\.com/((?:comix/|comics/)?(?:index/category/[a-z0-9\\-_]+|album(?:/[a-z0-9\\-_]+){1,6})|forum/[a-z0-9\\-]+/\\d+/[a-z0-9\\-]+/(page-\\d+)?)" })
 public class EightMusesComDecrypter extends antiDDoSForDecrypt {
@@ -52,6 +57,7 @@ public class EightMusesComDecrypter extends antiDDoSForDecrypt {
         String fpName;
         final FilePackage fp = FilePackage.getInstance();
         if (param.getCryptedUrl().matches(TYPE_FORUM)) {
+            final CrawlMode mode = PluginJsonConfig.get(getConfigInterface()).getCrawlMode();
             final Regex urlinfo = new Regex(param.getCryptedUrl(), TYPE_FORUM);
             final String urlSlug = urlinfo.getMatch(1);
             fpName = br.getRegex("property=\"og:title\" content=\"([^\"]+)\"").getMatch(0);
@@ -61,73 +67,93 @@ public class EightMusesComDecrypter extends antiDDoSForDecrypt {
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             /* TODO: Maybe add multi page parser */
             final String[] pagesStr = br.getRegex(urlSlug + "/page-(\\d+)").getColumn(0);
-            int maxPage = -1;
+            int maxPage = 1;
             for (final String pageStr : pagesStr) {
                 final int pageTmp = Integer.parseInt(pageStr);
                 if (pageTmp > maxPage) {
                     maxPage = pageTmp;
                 }
             }
-            if (maxPage > 0) {
+            if (maxPage > 1) {
                 logger.info("Thread has " + maxPage + " pages");
             } else {
                 logger.info("Thread has 1 page");
             }
-            final String pageInAddedURL = urlinfo.getMatch(3);
-            if (pageInAddedURL != null) {
-                logger.info("Crawling page: " + pageInAddedURL);
+            /* Grab this from the real current URL as added URL could e.g. contain "page-32" while last page is lower. */
+            final int pageStart;
+            final int pageMaxDesired;
+            final String pageInURL = new Regex(br.getURL(), TYPE_FORUM).getMatch(3);
+            if (pageInURL != null) {
+                logger.info("Crawl starts from page " + pageInURL);
+                pageStart = Integer.parseInt(pageInURL);
             } else {
-                logger.info("Crawling page 1");
+                logger.info("Crawl starts from first page");
+                pageStart = 1;
             }
-            /* TODO: Remove duplicated code below */
-            /* Grab forum attachments */
-            final String[] attachmentURLs = br.getRegex("(/forum/attachments/[^\"]+)\"").getColumn(0);
-            if (attachmentURLs.length == 0) {
-                logger.info("This page inside this thread does not seem to have any attachments available");
-                return decryptedLinks;
+            if (mode == CrawlMode.SINGLE_PAGE) {
+                pageMaxDesired = pageStart;
+            } else {
+                pageMaxDesired = maxPage;
             }
+            logger.info("Crawl ends on page: " + pageMaxDesired);
+            final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
             final HashSet<String> dupes = new HashSet<String>();
-            for (final String attachmentURL : attachmentURLs) {
-                if (!dupes.add(attachmentURL)) {
-                    /* Skip dupes */
-                    continue;
-                }
-                final String forumURL = "https://" + br.getHost() + attachmentURL;
-                final DownloadLink dl = this.createDownloadlink(forumURL);
-                final String url_name = jd.plugins.hoster.EightMusesCom.getURLNameForum(forumURL);
-                if (url_name != null) {
-                    dl.setName(url_name);
-                } else {
-                    logger.warning("WTF");
-                }
-                dl.setAvailable(true);
-                dl._setFilePackage(fp);
-                decryptedLinks.add(dl);
-                distribute(dl);
-            }
-            /* Grab other URLs/thumbnails/pictures/preview images */
-            final String[] urls = br.getRegex("<a href=\"(https[^<>\"]+)\" target=\"_blank\"").getColumn(0);
-            for (final String url : urls) {
-                if (new Regex(url, this.getSupportedLinks()).matches()) {
-                    /* Skip URLs that would go into this crawler again */
-                    continue;
-                } else if (!dupes.add(url)) {
-                    /* Skip dupes */
-                    continue;
-                }
-                final DownloadLink dl = this.createDownloadlink(url);
-                if (url.matches(".*/forum/attachments/[^\"]+")) {
-                    final String url_name = jd.plugins.hoster.EightMusesCom.getURLNameForum(url);
-                    if (url_name != null) {
-                        dl.setName(url_name);
+            int loopNumber = 0;
+            int currentPage = pageStart;
+            do {
+                /* Grab other URLs/thumbnails/pictures/preview images */
+                int numberofActuallyAddedItemsThisLoop = 0;
+                final String[] urls = br.getRegex("<a [^>]*href=\"((https?://|/)[^<>\"]+)\" target=\"_blank\"").getColumn(0);
+                for (String url : urls) {
+                    /* Convert relative URLs --> Absolute URLs */
+                    url = br.getURL(url).toString();
+                    if (this.canHandle(url)) {
+                        /* Skip URLs that would go into this crawler again */
+                        continue;
+                    } else if (!dupes.add(url)) {
+                        /* Skip dupes */
+                        continue;
                     }
+                    final DownloadLink dl = this.createDownloadlink(url);
+                    if (plg.canHandle(url)) {
+                        if (url.matches(".*/forum/attachments/[^\"]+")) {
+                            final String url_name = jd.plugins.hoster.EightMusesCom.getURLNameForum(url);
+                            if (url_name != null) {
+                                dl.setName(url_name);
+                            }
+                        }
+                        /* Assume that those images are online. */
+                        dl.setAvailable(true);
+                    }
+                    dl._setFilePackage(fp);
+                    decryptedLinks.add(dl);
+                    distribute(dl);
+                    numberofActuallyAddedItemsThisLoop += 1;
                 }
-                /* Assume that those images are online. */
-                dl.setAvailable(true);
-                dl._setFilePackage(fp);
-                decryptedLinks.add(dl);
-                distribute(dl);
-            }
+                logger.info("Loop: " + loopNumber + " | Page: " + currentPage + "/" + pageMaxDesired + " | Real max. page: " + maxPage + " | Number of items found on this page: " + numberofActuallyAddedItemsThisLoop);
+                final String nextPageURL = br.getRegex("(/forum/[^/]+/\\d+/" + urlSlug + "/page-" + (currentPage + 1) + ")").getMatch(0);
+                if (this.isAbort()) {
+                    break;
+                } else if (numberofActuallyAddedItemsThisLoop == 0) {
+                    logger.info("Stopping because: Failed to find any items on current page");
+                    break;
+                } else if (currentPage >= maxPage) {
+                    logger.info("Stopping because: Reached last page");
+                    break;
+                } else if (currentPage >= pageMaxDesired) {
+                    logger.info("Stopping because: Reached last DESIRED page");
+                    break;
+                } else if (nextPageURL == null) {
+                    /* This should never happen */
+                    logger.warning("Stopping because: Failed to find nextPageURL");
+                    break;
+                } else {
+                    /* Continue to next page */
+                    loopNumber += 1;
+                    currentPage += 1;
+                    br.getPage(nextPageURL);
+                }
+            } while (true);
             if (decryptedLinks.isEmpty()) {
                 logger.info("This thread doesn't contain any downloadable content");
             }
@@ -182,5 +208,10 @@ public class EightMusesComDecrypter extends antiDDoSForDecrypt {
             }
         }
         return decryptedLinks;
+    }
+
+    @Override
+    public Class<? extends EightMusesComConfig> getConfigInterface() {
+        return EightMusesComConfig.class;
     }
 }
