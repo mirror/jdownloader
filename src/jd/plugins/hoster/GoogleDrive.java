@@ -163,7 +163,10 @@ public class GoogleDrive extends PluginForHost {
         }
     }
 
-    /** Google has added this parameter to some long time shared URLs as of october 2021 to make those safer. */
+    /**
+     * Google has added this parameter to some long time shared URLs as of october 2021 to make those safer. </br>
+     * https://support.google.com/a/answer/10685032?p=update_drives&visit_id=637698313083783702-233025620&rd=1
+     */
     private String getFileResourceKey(final DownloadLink link) {
         try {
             return UrlQuery.parse(link.getPluginPatternMatcher()).get("resourcekey");
