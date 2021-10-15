@@ -66,7 +66,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drive.google.com" }, urls = { "https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/(?:(?:leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+(.*)?|(?:a/[a-zA-z0-9\\.]+/)?(?:file|document)/d/[A-Za-z0-9\\-_]+)(.*\\?.*)?|https?://video\\.google\\.com/get_player\\?docid=[A-Za-z0-9\\-_]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GoogleDrive extends PluginForHost {
     public GoogleDrive(PluginWrapper wrapper) {
         super(wrapper);
@@ -83,43 +83,59 @@ public class GoogleDrive extends PluginForHost {
         return new String[] { "drive.google.com", "docs.google.com", "googledrive" };
     }
 
-    @Override
-    public String rewriteHost(final String host) {
-        if (host == null || host.equalsIgnoreCase("docs.google.com")) {
-            return this.getHost();
-        } else {
-            return super.rewriteHost(host);
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "drive.google.com", "docs.google.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            String regex = "https?://" + buildHostsPatternPart(domains) + "/(?:";
+            regex += "(?:leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+(.*)?";
+            regex += "|(?:a/[a-zA-z0-9\\.]+/)?(?:file|document)/d/[A-Za-z0-9\\-_]+.*";
+            regex += ")";
+            /*
+             * Special case: Embedded video URLs with subdomain that is not given in our list of domains because it only supports this
+             * pattern!
+             */
+            regex += "|https?://video\\.google\\.com/get_player\\?docid=[A-Za-z0-9\\-_]+";
+            ret.add(regex);
         }
+        return ret.toArray(new String[0]);
     }
 
     @Override
-    public boolean isSpeedLimited(DownloadLink link, Account account) {
+    public boolean isSpeedLimited(final DownloadLink link, final Account account) {
         return false;
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return -1;
     }
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String id = getFID(link);
-        if (id != null) {
-            return getHost().concat("://".concat(id));
+        final String fileID = getFID(link);
+        if (fileID != null) {
+            return getHost().concat("://".concat(fileID));
         } else {
             return super.getLinkID(link);
         }
     }
 
-    /* Connection stuff */
-    // private static final boolean FREE_RESUME = true;
-    // private static final int FREE_MAXCHUNKS = 0;
-    private static final int    FREE_MAXDOWNLOADS    = 20;
     private static Object       CAPTCHA_LOCK         = new Object();
     public static final String  API_BASE             = "https://www.googleapis.com/drive/v3";
-    private static final String PATTERN_GDOC         = "https?://[^/]+/document/d/([a-zA-Z0-9\\-_]+).*";
-    private static final String PATTERN_FILE         = "https?://[^/]+/file/d/([a-zA-Z0-9\\-_]+).*";
+    private static final String PATTERN_GDOC         = "https?://.*/document/d/([a-zA-Z0-9\\-_]+).*";
+    private static final String PATTERN_FILE         = "https?://.*/file/d/([a-zA-Z0-9\\-_]+).*";
+    private static final String PATTERN_FILE_OLD     = "https?://[^/]+/(?:leaf|open|uc)\\?([^<>\"/]+)?id=([A-Za-z0-9\\-_]+).*";
     private static final String PATTERN_VIDEO_STREAM = "https?://video\\.google\\.com/get_player\\?docid=([A-Za-z0-9\\-_]+)";
 
     private String getFID(final DownloadLink link) {
@@ -134,12 +150,16 @@ public class GoogleDrive extends PluginForHost {
                 return new Regex(link.getPluginPatternMatcher(), PATTERN_FILE).getMatch(0);
             } else if (link.getPluginPatternMatcher().matches(PATTERN_VIDEO_STREAM)) {
                 return new Regex(link.getPluginPatternMatcher(), PATTERN_VIDEO_STREAM).getMatch(0);
+            } else if (link.getPluginPatternMatcher().matches(PATTERN_FILE_OLD)) {
+                return new Regex(link.getPluginPatternMatcher(), PATTERN_FILE_OLD).getMatch(0);
             } else {
-                return new Regex(link.getPluginPatternMatcher(), "(?!rev)id=([a-zA-Z0-9\\-_]+)").getMatch(0);
+                logger.warning("Developer mistake!! URL with unknown pattern:" + link.getPluginPatternMatcher());
+                return null;
             }
         }
     }
 
+    /** Google has added this parameter to some long time shared URLs as of october 2021 to make those safer. */
     private String getFileResourceKey(final DownloadLink link) {
         try {
             return UrlQuery.parse(link.getPluginPatternMatcher()).get("resourcekey");
@@ -461,7 +481,6 @@ public class GoogleDrive extends PluginForHost {
         /* E.g. "This file is too big for Google to virus-scan it - download anyway?" */
         dllink = regexConfirmDownloadurl(br);
         if (dllink != null) {
-            br.getPage(dllink);
             logger.info("File is too big for Google v_rus scan but looks like it is downloadable");
             return AvailableStatus.TRUE;
         }
