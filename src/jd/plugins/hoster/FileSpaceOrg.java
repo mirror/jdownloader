@@ -13,13 +13,13 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
+
+import java.io.IOException;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -33,7 +33,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file-space.org" }, urls = { "http://(www\\.)?file\\-space\\.org/files/(free|new)?get/[A-Za-z0-9\\-_]+/[^<>\"/]+\\.html" })
 public class FileSpaceOrg extends PluginForHost {
-
     public FileSpaceOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -51,8 +50,8 @@ public class FileSpaceOrg extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("File Link Error<")) {
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.containsHTML("(?i)File Link Error<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex(">Имя файла:</td>\\s*<td[^>]*><span[^>]*>([^<>\"]+)\\s*</span").getMatch(0);
@@ -72,18 +71,18 @@ public class FileSpaceOrg extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        String dllink = checkDirectLink(downloadLink, "directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        String dllink = checkDirectLink(link, "directlink");
         if (dllink == null) {
-            br.getPage(downloadLink.getDownloadURL().replace("/get/", "/freeget/"));
+            br.getPage(link.getPluginPatternMatcher().replace("/get/", "/freeget/"));
             int wait = 30;
             final String waittime = br.getRegex("var time_load_link = (\\d+);").getMatch(0);
             if (waittime != null) {
                 wait = Integer.parseInt(waittime);
             }
-            sleep(wait * 1001l, downloadLink);
-            final String fid = new Regex(downloadLink.getDownloadURL(), "/get/([A-Za-z0-9\\-_]+)").getMatch(0);
+            sleep(wait * 1001l, link);
+            final String fid = new Regex(link.getPluginPatternMatcher(), "/get/([A-Za-z0-9\\-_]+)").getMatch(0);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getPage("/files/getlink2/" + fid + ".html");
             dllink = br.getRegex("<a [^>]*href=\"([^\"]+)\"[^>]*>СКАЧАТЬ ФАЙЛ БЕСПЛАТНО").getMatch(0);
@@ -91,32 +90,45 @@ public class FileSpaceOrg extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty("directlink", dllink);
+        link.setProperty("directlink", dllink);
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    return dllink;
+                } else {
+                    throw new IOException();
                 }
-                con.disconnect();
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                logger.log(e);
+                return null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override
@@ -131,5 +143,4 @@ public class FileSpaceOrg extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }

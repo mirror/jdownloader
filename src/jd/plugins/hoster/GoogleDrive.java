@@ -799,10 +799,6 @@ public class GoogleDrive extends PluginForHost {
             url += "/uc";
         }
         url += "?id=" + getFID(link) + "&export=download";
-        /*
-         * 2021-10-14: TODO: psp: Check if this is the right way. I don't think that this parameter is needed in that URL in browser but I
-         * was unable to finish my tests because the public folder I used for testing suddently was changed to a private one.
-         */
         final String fileResourceKey = this.getFileResourceKey(link);
         if (fileResourceKey != null) {
             url += "&resourcekey=" + fileResourceKey;
