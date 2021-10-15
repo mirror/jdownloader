@@ -26,6 +26,8 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FilePupNet extends FlexShareCore {
@@ -118,5 +120,13 @@ public class FilePupNet extends FlexShareCore {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    protected void handleErrors() throws PluginException {
+        super.handleErrors();
+        if (br.containsHTML("(?i)>\\s*This file does not exist")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 }

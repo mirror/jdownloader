@@ -78,7 +78,12 @@ public class File2HostCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.containsHTML("HTTP-EQUIV=\"Refresh\"") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("HTTP-EQUIV=\"Refresh\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.containsHTML("class=\"fa fa-download\"")) {
+            /* Invalid URL e.g.https://f2h.io/en */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Regex info = br.getRegex("<div itemprop=\"name\">\\s*([^<>\"]*?)\\s*</div>\\s*<font dir=\"ltr\"><br>\\s*\\(([^<>\"]*?)\\)\\s*</font>");
