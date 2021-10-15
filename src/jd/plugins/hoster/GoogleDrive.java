@@ -98,7 +98,8 @@ public class GoogleDrive extends PluginForHost {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
             String regex = "https?://" + buildHostsPatternPart(domains) + "/(?:";
-            regex += "(?:leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+(.*)?";
+            regex += "(?:leaf|open)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+.*";
+            regex += "|(?:u/\\d+/)?uc\\?id=[A-Za-z0-9\\-_]+.*";
             regex += "|(?:a/[a-zA-z0-9\\.]+/)?(?:file|document)/d/[A-Za-z0-9\\-_]+.*";
             regex += ")";
             /*
@@ -131,12 +132,13 @@ public class GoogleDrive extends PluginForHost {
         }
     }
 
-    private static Object       CAPTCHA_LOCK         = new Object();
-    public static final String  API_BASE             = "https://www.googleapis.com/drive/v3";
-    private static final String PATTERN_GDOC         = "https?://.*/document/d/([a-zA-Z0-9\\-_]+).*";
-    private static final String PATTERN_FILE         = "https?://.*/file/d/([a-zA-Z0-9\\-_]+).*";
-    private static final String PATTERN_FILE_OLD     = "https?://[^/]+/(?:leaf|open|uc)\\?([^<>\"/]+)?id=([A-Za-z0-9\\-_]+).*";
-    private static final String PATTERN_VIDEO_STREAM = "https?://video\\.google\\.com/get_player\\?docid=([A-Za-z0-9\\-_]+)";
+    private static Object       CAPTCHA_LOCK               = new Object();
+    public static final String  API_BASE                   = "https://www.googleapis.com/drive/v3";
+    private static final String PATTERN_GDOC               = "https?://.*/document/d/([a-zA-Z0-9\\-_]+).*";
+    private static final String PATTERN_FILE               = "https?://.*/file/d/([a-zA-Z0-9\\-_]+).*";
+    private static final String PATTERN_FILE_OLD           = "https?://[^/]+/(?:leaf|open)\\?([^<>\"/]+)?id=([A-Za-z0-9\\-_]+).*";
+    private static final String PATTERN_FILE_DOWNLOAD_PAGE = "https?://[^/]+/(?:u/\\d+/)?uc\\?id=([A-Za-z0-9\\-_]+).*";
+    private static final String PATTERN_VIDEO_STREAM       = "https?://video\\.google\\.com/get_player\\?docid=([A-Za-z0-9\\-_]+)";
 
     private String getFID(final DownloadLink link) {
         if (link == null) {
@@ -152,6 +154,8 @@ public class GoogleDrive extends PluginForHost {
                 return new Regex(link.getPluginPatternMatcher(), PATTERN_VIDEO_STREAM).getMatch(0);
             } else if (link.getPluginPatternMatcher().matches(PATTERN_FILE_OLD)) {
                 return new Regex(link.getPluginPatternMatcher(), PATTERN_FILE_OLD).getMatch(0);
+            } else if (link.getPluginPatternMatcher().matches(PATTERN_FILE_DOWNLOAD_PAGE)) {
+                return new Regex(link.getPluginPatternMatcher(), PATTERN_FILE_DOWNLOAD_PAGE).getMatch(0);
             } else {
                 logger.warning("Developer mistake!! URL with unknown pattern:" + link.getPluginPatternMatcher());
                 return null;
@@ -427,8 +431,10 @@ public class GoogleDrive extends PluginForHost {
                 con = br.openGetConnection("https://docs.google.com/feeds/download/documents/export/Export?id=" + this.getFID(link) + "&exportFormat=zip");
             }
         } else {
-            con = br.openGetConnection(constructDownloadUrl(link));
+            /* File download */
+            con = br.openGetConnection(constructDownloadUrl(link, account));
         }
+        /* We hope for the file to be direct-downloadable. */
         if (this.looksLikeDownloadableContent(con)) {
             logger.info("Direct download active");
             final String fileName = getFileNameFromHeader(con);
@@ -443,7 +449,7 @@ public class GoogleDrive extends PluginForHost {
             con.disconnect();
             return AvailableStatus.TRUE;
         }
-        logger.info("Direct download failed -> Continuing linkcheck");
+        logger.info("Direct download not possible -> Continuing linkcheck");
         br.followConnection();
         /**
          * 2021-02-02: Interesting behavior of offline content: </br>
@@ -762,7 +768,7 @@ public class GoogleDrive extends PluginForHost {
         }
     }
 
-    private String constructDownloadUrl(final DownloadLink link) throws PluginException {
+    private String constructDownloadUrl(final DownloadLink link, final Account account) throws PluginException {
         final String fid = getFID(link);
         if (fid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -772,7 +778,14 @@ public class GoogleDrive extends PluginForHost {
          * </br>
          * Last rev. with this handling: 42866
          */
-        String url = "https://docs.google.com/uc?id=" + getFID(link) + "&export=download";
+        String url = "https://drive.google.com";
+        /* Minor difference when user is logged in. They don#t really check that but let's mimic browser behavior. */
+        if (account != null) {
+            url += "/u/0/uc";
+        } else {
+            url += "/uc";
+        }
+        url += "?id=" + getFID(link) + "&export=download";
         /*
          * 2021-10-14: TODO: psp: Check if this is the right way. I don't think that this parameter is needed in that URL in browser but I
          * was unable to finish my tests because the public folder I used for testing suddently was changed to a private one.
