@@ -438,17 +438,17 @@ public abstract class XvideosCore extends PluginForHost {
                 final PreferredHTTPQuality qualityhttp = getPreferredHTTPQuality();
                 switch (qualityhttp) {
                 case HIGH:
-                    videoURL = getVideoHigh();
+                    videoURL = getVideoHigh(br);
                     if (isValidVideoURL(link, videoURL)) {
                         break;
                     }
                 case LOW:
-                    videoURL = getVideoLow();
+                    videoURL = getVideoLow(br);
                     if (isValidVideoURL(link, videoURL)) {
                         break;
                     }
                 default:
-                    videoURL = getVideoFlv();
+                    videoURL = getVideoFlv(br);
                     if (isValidVideoURL(link, videoURL)) {
                         break;
                     }
@@ -467,7 +467,7 @@ public abstract class XvideosCore extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private String getVideoFlv() {
+    private String getVideoFlv(final Browser br) {
         final String dllink = br.getRegex("flv_url=(.*?)\\&").getMatch(0);
         if (dllink == null) {
             return decode(br.getRegex("encoded=(.*?)\\&").getMatch(0));
@@ -476,11 +476,11 @@ public abstract class XvideosCore extends PluginForHost {
         }
     }
 
-    private String getVideoHigh() {
+    private String getVideoHigh(final Browser br) {
         return br.getRegex("html5player\\.setVideoUrlHigh\\('(.*?)'\\)").getMatch(0);
     }
 
-    private String getVideoLow() {
+    private String getVideoLow(final Browser br) {
         return br.getRegex("html5player\\.setVideoUrlLow\\('(.*?)'\\)").getMatch(0);
     }
 

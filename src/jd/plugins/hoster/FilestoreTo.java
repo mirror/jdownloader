@@ -163,7 +163,7 @@ public class FilestoreTo extends PluginForHost {
 
     private static AtomicReference<String> agent = new AtomicReference<String>(null);
 
-    private Browser prepBrowser(Browser prepBr) {
+    private Browser prepBrowser(final Browser prepBr) {
         if (agent.get() == null) {
             agent.set(UserAgents.stringUserAgent(BrowserName.Chrome));
         }
@@ -207,13 +207,13 @@ public class FilestoreTo extends PluginForHost {
                 link.setDownloadSize(SizeFormatter.getSize(filesizeStr.replaceAll(",", "\\.").trim()));
             }
             /** 2020-02-08: File information can be available for offline files too! */
-            if (br.containsHTML(">\\s*Datei nicht gefunden")) {
+            if (br.containsHTML("(?i)>\\s*Datei nicht gefunden")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.containsHTML(">\\s*Datei gesperrt")) {
+            } else if (br.containsHTML("(?i)>\\s*Datei gesperrt")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.containsHTML("Entweder wurde die Datei von unseren Servern entfernt oder der Download-Link war")) {
+            } else if (br.containsHTML("(?i)Entweder wurde die Datei von unseren Servern entfernt oder der Download-Link war")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.containsHTML(">\\s*Für diese Datei ist eine Take Down-Meldung eingegangen")) {
+            } else if (br.containsHTML("(?i)>\\s*Für diese Datei ist eine Take Down-Meldung eingegangen")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             return AvailableStatus.TRUE;
@@ -237,20 +237,20 @@ public class FilestoreTo extends PluginForHost {
             }
         }
         // form 1
-        Form f = br.getFormByRegex(">Download</button>");
+        Form f = br.getFormByRegex("(?i)>Download</button>");
         if (f != null) {
             br.submitForm(f);
         }
         // form 2
-        f = br.getFormByRegex(">Download starten</button>");
+        f = br.getFormByRegex("(?i)>Download starten</button>");
         if (f != null) {
             // not enforced
             if (account == null || AccountType.FREE.equals(account.getType())) {
-                processWait();
+                processWait(br);
             }
             br.submitForm(f);
         }
-        final String dllink = getDllink();
+        final String dllink = getDllink(br);
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -283,7 +283,7 @@ public class FilestoreTo extends PluginForHost {
         download(link, null, true, 1);
     }
 
-    private void processWait() throws PluginException {
+    private void processWait(final Browser br) throws PluginException {
         final String waittime = br.getRegex("data-wait=\"(\\d+)\"").getMatch(0);
         int wait = 10;
         if (waittime != null && Integer.parseInt(waittime) < 61) {
@@ -292,7 +292,7 @@ public class FilestoreTo extends PluginForHost {
         sleep(wait * 1001l, getDownloadLink());
     }
 
-    private String getDllink() {
+    private String getDllink(final Browser br) {
         String dllink = br.getRegex("<a href=(\"|')([^>]*)\\1>hier</a>").getMatch(1);
         if (dllink == null) {
             dllink = br.getRegex("<iframe class=\"downframe\" src=\"(.*?)\"").getMatch(0);
