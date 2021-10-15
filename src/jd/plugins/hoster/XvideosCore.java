@@ -334,12 +334,16 @@ public abstract class XvideosCore extends PluginForHost {
             /**
              * 2021-01-27: This website can "shadow ban" users who download "too much". They will then deliver all videos in 240p only. This
              * is an attempt to detect this.</br>
-             * See also: https://board.jdownloader.org/showthread.php?t=86587
+             * See also: https://board.jdownloader.org/showthread.php?t=86587 </br>
+             * Do not check when premium account is given because it usually allows official downloads so downloads will work fine even if
+             * HLS streaming is not available.
              */
-            if (PluginJsonConfig.get(XvideosComConfig.class).isTryToRecognizeLimit() && isDownload && StringUtils.isEmpty(hlsMaster)) {
+            final boolean allowLimitCheck = (account == null || account.getType() != AccountType.PREMIUM) && PluginJsonConfig.get(XvideosComConfig.class).isTryToRecognizeLimit() && isDownload;
+            if (allowLimitCheck && StringUtils.isEmpty(hlsMaster)) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Low quality block active", 60 * 60 * 1000l);
             }
             if (PluginJsonConfig.get(XvideosComConfig.class).isPreferHLSDownload()) {
+                logger.info("User prefers HLS download");
                 if (StringUtils.isNotEmpty(hlsMaster)) {
                     logger.info("FoundHlsMaster --> Looking for preferred quality");
                     final Browser m3u8 = br.cloneBrowser();

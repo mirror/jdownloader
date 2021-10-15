@@ -184,13 +184,13 @@ public class GoogleDrive extends PluginForHost {
     private static final String PROPERTY_GOOGLE_DOCUMENT                       = "IS_GOOGLE_DOCUMENT";
     private static final String PROPERTY_FORCED_FINAL_DOWNLOADURL              = "FORCED_FINAL_DOWNLOADURL";
     private static final String PROPERTY_CAN_DOWNLOAD                          = "CAN_DOWNLOAD";
+    private static final String PROPERTY_CAN_STREAM                            = "CAN_STREAM";
     /* Packagizer property */
     public static final String  PROPERTY_ROOT_DIR                              = "root_dir";
     /* Account properties */
     private static final String PROPERTY_ACCOUNT_ACCESS_TOKEN                  = "ACCESS_TOKEN";
     private static final String PROPERTY_ACCOUNT_REFRESH_TOKEN                 = "REFRESH_TOKEN";
     private static final String PROPERTY_ACCOUNT_ACCESS_TOKEN_EXPIRE_TIMESTAMP = "ACCESS_TOKEN_EXPIRE_TIMESTAMP";
-    private boolean             isStreamable                                   = false;
     private String              dllink                                         = null;
 
     public Browser prepBrowser(final Browser pbr) {
@@ -208,7 +208,7 @@ public class GoogleDrive extends PluginForHost {
 
     private boolean isGoogleDocument(final DownloadLink link) {
         if (link.hasProperty(PROPERTY_GOOGLE_DOCUMENT)) {
-            /* Return stored property */
+            /* Return stored property (= do not care about the URL). */
             return link.getBooleanProperty(PROPERTY_GOOGLE_DOCUMENT, false);
         } else if (link.getPluginPatternMatcher().matches(PATTERN_GDOC)) {
             /* URL looks like GDoc */
@@ -302,7 +302,6 @@ public class GoogleDrive extends PluginForHost {
             link.setFinalFileName(filename);
         }
         if (fileSize > 0) {
-            link.setDownloadSize(fileSize);
             link.setVerifiedFileSize(fileSize);
         }
         link.setAvailable(true);
@@ -369,7 +368,7 @@ public class GoogleDrive extends PluginForHost {
     }
 
     private AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        /* Prefer given account over random account */
+        /* Login whenever possible */
         if (account != null) {
             login(this.br, account, false);
         }
@@ -379,7 +378,6 @@ public class GoogleDrive extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String filename = null;
-        String filesizeStr = null;
         /* 2020-12-01: Only for testing! */
         final boolean allowExperimentalLinkcheck = false;
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && allowExperimentalLinkcheck) {
@@ -483,9 +481,9 @@ public class GoogleDrive extends PluginForHost {
         if (filename != null) {
             link.setName(Encoding.htmlDecode(filename).trim());
         }
-        filesizeStr = br.getRegex("\\((\\d+(?:[,\\.]\\d)?\\s*[KMGT])\\)</span>").getMatch(0);
-        if (filesizeStr != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesizeStr + "B"));
+        final String filesizeUnsafe = br.getRegex("\\((\\d+(?:[,\\.]\\d)?\\s*[KMGT])\\)</span>").getMatch(0);
+        if (filesizeUnsafe != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesizeUnsafe + "B"));
         }
         /* E.g. "This file is too big for Google to virus-scan it - download anyway?" */
         dllink = regexConfirmDownloadurl(br);
@@ -513,7 +511,11 @@ public class GoogleDrive extends PluginForHost {
             logger.info("Captcha required during availablecheck");
             return AvailableStatus.UNCHECKABLE;
         }
-        isStreamable = br.containsHTML("video\\.google\\.com/get_player\\?docid=" + Encoding.urlEncode(this.getFID(link)));
+        if (br.containsHTML("video\\.google\\.com/get_player\\?docid=" + Encoding.urlEncode(this.getFID(link)))) {
+            link.setProperty(PROPERTY_CAN_STREAM, true);
+        } else {
+            link.removeProperty(PROPERTY_CAN_STREAM);
+        }
         /** Only look for/set filename/filesize if it hasn't been done before! */
         if (StringUtils.isEmpty(filename)) {
             filename = br.getRegex("'title'\\s*:\\s*'([^<>\"\\']*?)'").getMatch(0);
@@ -536,19 +538,16 @@ public class GoogleDrive extends PluginForHost {
                 link.setName(filename);
             }
         }
-        if (filesizeStr == null) {
-            filesizeStr = br.getRegex("\"sizeInBytes\"\\s*:\\s*(\\d+),").getMatch(0);
-            if (filesizeStr == null) {
-                // value is within html or a subquent ajax request to fetch json..
-                // devnote: to fix, look for the json request to https://clients\d+\.google\.com/drive/v2internal/files/ + fuid and find the
-                // filesize, then search for the number within the base page. It's normally there. just not referenced as such.
-                filesizeStr = br.getRegex("\\[null,\"" + (filename != null ? Pattern.quote(filename) : "[^\"]") + "\"[^\r\n]+\\[null,\\d+,\"(\\d+)\"\\]").getMatch(0);
-            }
-            if (filesizeStr != null) {
-                final long filesize = Long.parseLong(filesizeStr);
-                link.setDownloadSize(filesize);
-                link.setVerifiedFileSize(filesize);
-            }
+        /* Try to find precise filesize */
+        String filesizeBytes = br.getRegex("\"sizeInBytes\"\\s*:\\s*(\\d+),").getMatch(0);
+        if (filesizeUnsafe == null) {
+            // value is within html or a subquent ajax request to fetch json..
+            // devnote: to fix, look for the json request to https://clients\d+\.google\.com/drive/v2internal/files/ + fuid and find the
+            // filesize, then search for the number within the base page. It's normally there. just not referenced as such.
+            filesizeBytes = br.getRegex("\\[null,\"" + (filename != null ? Pattern.quote(filename) : "[^\"]") + "\"[^\r\n]+\\[null,\\d+,\"(\\d+)\"\\]").getMatch(0);
+        }
+        if (filesizeBytes != null) {
+            link.setVerifiedFileSize(Long.parseLong(filesizeBytes));
         }
         return AvailableStatus.TRUE;
     }
@@ -591,12 +590,20 @@ public class GoogleDrive extends PluginForHost {
     private boolean streamShouldBeAvailable(final DownloadLink link) {
         if (this.isGoogleDocument(link)) {
             return false;
+        } else if (link.hasProperty(PROPERTY_CAN_STREAM)) {
+            /* We know that file is streamable. */
+            return true;
         } else {
             String filename = link.getFinalFileName();
             if (filename == null) {
                 filename = link.getName();
             }
-            return this.isStreamable || isVideoFile(filename);
+            if (isVideoFile(filename)) {
+                /* Assume that file is streamable. */
+                return true;
+            } else {
+                return false;
+            }
         }
     }
 
@@ -616,9 +623,11 @@ public class GoogleDrive extends PluginForHost {
         if (filename == null) {
             filename = link.getName();
         }
-        final boolean streamShouldBeAvailable = streamShouldBeAvailable(link);
-        if (preferredQualityHeight <= -1 || !streamShouldBeAvailable) {
-            logger.info("Downloading original file");
+        if (preferredQualityHeight <= -1) {
+            logger.info("User prefers original file");
+            return null;
+        } else if (!streamShouldBeAvailable(link)) {
+            logger.info("File is not streamable");
             return null;
         }
         logger.info("Looking for stream download");
@@ -771,6 +780,7 @@ public class GoogleDrive extends PluginForHost {
         }
     }
 
+    /** Returns URL which should redirect to file download in website mode. */
     private String constructDownloadUrl(final DownloadLink link, final Account account) throws PluginException {
         final String fid = getFID(link);
         if (fid == null) {
@@ -820,17 +830,16 @@ public class GoogleDrive extends PluginForHost {
                 errorCannotDownload();
             }
             if (this.isGoogleDocument(link)) {
-                this.dllink = link.getStringProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, null);
+                /* Expect stored directurl to be available. */
+                this.dllink = link.getStringProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL);
                 if (StringUtils.isEmpty(this.dllink)) {
                     this.errorDocumentDownloadImpossible();
                 }
-                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.dllink, resume, maxChunks);
             } else {
                 streamDownloadlink = this.handleStreamQualitySelection(link, account);
                 if (streamDownloadlink != null) {
                     /* Yeah it's silly but we keep using this variable as it is required for website mode download. */
                     this.dllink = streamDownloadlink;
-                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.dllink, resume, maxChunks);
                 } else {
                     /* Only check for API errors if */
                     checkForAPIErrors = true;
@@ -842,10 +851,10 @@ public class GoogleDrive extends PluginForHost {
                     queryFile.appendEncoded("alt", "media");
                     /* Yeah it's silly but we keep using this variable as it is required for website mode download. */
                     this.dllink = jd.plugins.hoster.GoogleDrive.API_BASE + "/files/" + this.getFID(link) + "?" + queryFile.toString();
-                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.dllink, resume, maxChunks);
                 }
             }
         } else {
+            /* Website download: Still allow linkcheck via API if possible as it is more reliable. */
             if (canUseAPI()) {
                 /* Additionally use API for availablecheck if possible. */
                 this.requestFileInformationAPI(link, true);
@@ -878,7 +887,6 @@ public class GoogleDrive extends PluginForHost {
             if (streamDownloadlink != null) {
                 this.dllink = streamDownloadlink;
             }
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
             /* 2021-10-14: Unsuccessful bugfix/workaround attempt */
             // if (dllink.contains("export=download&confirm=") && !this.looksLikeDownloadableContent(dl.getConnection())) {
             // /* 2021-10-14: Workaround: Also needs two tries in browser */
@@ -895,9 +903,7 @@ public class GoogleDrive extends PluginForHost {
             // dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
             // }
         }
-        /* 2020-03-18: Streams do not have content-disposition but often 206 partial content. */
-        // if ((!dl.getConnection().isContentDisposition() && dl.getConnection().getResponseCode() != 206) ||
-        // (dl.getConnection().getResponseCode() != 200 && dl.getConnection().getResponseCode() != 206)) {
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
@@ -1276,7 +1282,11 @@ public class GoogleDrive extends PluginForHost {
     }
 
     public static final boolean canUseAPI() {
-        return !StringUtils.isEmpty(getAPIKey());
+        if (StringUtils.isEmpty(getAPIKey())) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     public static final String getAPIKey() {
@@ -1299,7 +1309,6 @@ public class GoogleDrive extends PluginForHost {
         login(br, account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
-        /* Free accounts cannot have captchas */
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(20);
         return ai;
@@ -1315,7 +1324,7 @@ public class GoogleDrive extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
         if (link != null) {
             link.setProperty("ServerComaptibleForByteRangeRequest", true);
             link.removeProperty(GoogleDrive.PROPERTY_USED_QUALITY);
