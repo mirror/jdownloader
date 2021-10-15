@@ -883,21 +883,6 @@ public class GoogleDrive extends PluginForHost {
             if (streamDownloadlink != null) {
                 this.dllink = streamDownloadlink;
             }
-            /* 2021-10-14: Unsuccessful bugfix/workaround attempt */
-            // if (dllink.contains("export=download&confirm=") && !this.looksLikeDownloadableContent(dl.getConnection())) {
-            // /* 2021-10-14: Workaround: Also needs two tries in browser */
-            // try {
-            // br.followConnection();
-            // } catch (IOException e) {
-            // logger.log(e);
-            // }
-            // this.dllink = regexConfirmDownloadurl(br);
-            // if (this.dllink == null) {
-            // this.handleErrorsWebsite(this.br, link, account);
-            // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
-            // }
-            // dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
-            // }
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
