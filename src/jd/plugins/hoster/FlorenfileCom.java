@@ -113,7 +113,7 @@ public class FlorenfileCom extends XFileSharingProBasic {
     protected void checkErrors(final Browser br, final String correctedBR, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         /* 2020-03-16: Special */
         super.checkErrors(br, correctedBR, link, account, checkAll);
-        if (new Regex(correctedBR, ">\\s*There is not enough traffic available to download this file").matches()) {
+        if (new Regex(correctedBR, "(?i)>\\s*There is not enough traffic available to download this file").matches()) {
             /* 2020-03-16: Typically for account (premium?) users */
             if (account != null) {
                 throw new AccountUnavailableException("Download limit reached", 5 * 60 * 1000l);
@@ -121,8 +121,16 @@ public class FlorenfileCom extends XFileSharingProBasic {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
             }
         }
+        final String maxFilesPerDayLimit = br.getRegex("(?i)>\\s*(You can download \\d+ files per day only)").getMatch(0);
+        if (maxFilesPerDayLimit != null) {
+            if (account != null) {
+                throw new AccountUnavailableException(maxFilesPerDayLimit, 5 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
+            }
+        }
         /* 2020-12-14: Typo on website thus a different errormessage than what our template can handle. Happened in premium mode. */
-        final String preciseWaittime = new Regex(correctedBR, "((You have reached download(\\-| )limit|You have to wait)[^<>]+)").getMatch(0);
+        final String preciseWaittime = new Regex(correctedBR, "(?i)((You have reached download(\\-| )limit|You have to wait)[^<>]+)").getMatch(0);
         if (preciseWaittime != null) {
             /* Reconnect waittime with given (exact) waittime usually either up to the minute or up to the second. */
             final String tmphrs = new Regex(preciseWaittime, "\\s*(\\d+)\\s*hours?").getMatch(0);

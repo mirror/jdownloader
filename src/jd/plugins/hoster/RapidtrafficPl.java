@@ -50,7 +50,6 @@ import jd.plugins.PluginForHost;
 public class RapidtrafficPl extends PluginForHost {
     private String                                         MAINPAGE           = "http://rapidtraffic.pl/";
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static Object                                  LOCK               = new Object();
 
     public RapidtrafficPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -62,8 +61,8 @@ public class RapidtrafficPl extends PluginForHost {
         return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
-    private void login(Account account) throws PluginException, IOException {
-        synchronized (LOCK) {
+    private void login(final Account account) throws PluginException, IOException {
+        synchronized (account) {
             try {
                 br.setCustomCharset("utf-8");
                 br.setCookiesExclusive(true);
@@ -109,7 +108,6 @@ public class RapidtrafficPl extends PluginForHost {
         final String hosterNames = " " + br.getRegex("Tutaj wklej linki do plików z <strong>(.*)</strong>, które chcesz ściągnąć").getMatch(0) + ",";
         final String[] hostDomains = new Regex(hosterNames, " ([^,<>\"]*?),").getColumn(0);
         final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hostDomains));
-        account.setValid(true);
         ai.setMultiHostSupport(this, supportedHosts);
         String transferLeft = br.getRegex("Pozostały transfer: <b>(\\d+\\.\\d+ [GM]B)</b>").getMatch(0).replace(".", ",");
         long trafficLeftLong = ((transferLeft == null) ? 0 : SizeFormatter.getSize(transferLeft));
@@ -144,11 +142,11 @@ public class RapidtrafficPl extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
-    private void showMessage(DownloadLink link, String message) {
+    private void showMessage(final DownloadLink link, final String message) {
         link.getLinkStatus().setStatusText(message);
     }
 
@@ -238,7 +236,7 @@ public class RapidtrafficPl extends PluginForHost {
         }
         sleep(1 * 1000l, link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedLink, resume, 0);
-        if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) // unknown
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) // unknown
         // error
         {
             br.followConnection();
