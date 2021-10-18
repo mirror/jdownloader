@@ -113,7 +113,8 @@ public class ExtractAction extends AbstractExtractionContextAction {
                                         if (archive != null && factory.getName().equals(archive.getArchiveFiles().get(0).getName())) {
                                             return true;
                                         } else {
-                                            return false;
+                                            // some extensions, eg zip, are supported by multiple IExtraction
+                                            // return false;
                                         }
                                     } catch (ArchiveException e) {
                                         _getExtension().getLogger().log(e);
