@@ -116,7 +116,7 @@ public class IwaraTv extends PluginForDecrypt {
                     final String videoURL = "https://" + br.getHost(true) + "/videos/" + videoID;
                     final DownloadLink dl = createDownloadlink(videoURL);
                     dl.setContentUrl(videoURL);
-                    String videoTitle = br.getRegex("<a\\s*href\\s*=\\s*\"/videos/" + videoID + "[^\"]*\"\\s*>\\s*<img.*?title\\s*=\\s*\"([^\"]+).*?</a>\\s*</div>").getMatch(0);
+                    String videoTitle = br.getRegex("<a\\s*href\\s*=\\s*\"/videos/" + videoID + "[^\"]*\"\\s*>\\s*<img[^>]*?title\\s*=\\s*\"([^\"]+).*?</a>\\s*</div>").getMatch(0);
                     if (videoTitle == null) {
                         videoTitle = br.getRegex("/videos/" + videoID + "[^\"]*\">([^<>\"]+)</a></h3>").getMatch(0);
                     }
@@ -178,7 +178,9 @@ public class IwaraTv extends PluginForDecrypt {
         if (filename == null) {
             filename = new Regex(br.getURL(), "/videos/(.+)").getMatch(0);
         }
-        filename = Encoding.htmlDecode(filename).trim();
+        if (filename != null) {
+            filename = Encoding.htmlOnlyDecode(Encoding.htmlOnlyDecode(filename));
+        }
         String externID = br.getRegex("\"(https?://docs\\.google\\.com/file/d/[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
