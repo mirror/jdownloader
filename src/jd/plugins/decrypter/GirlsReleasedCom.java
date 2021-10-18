@@ -130,7 +130,7 @@ public class GirlsReleasedCom extends antiDDoSForDecrypt {
         if (apiResult != null && apiResult.length() > 0) {
             apiResult = apiResult.replaceAll("\\\\/", "/");
             if (pageType == PageType.GR_SET) {
-                links = new Regex(apiResult, "\\[[^,\\]]+,[^,\\]]+,[^,\\]]+,[^,\\]]+,\"([^\"]+)\"").getColumn(0);
+                links = new Regex(apiResult, "\\[[^\\]]*?,\"((/|https?)[^\"]+)\"").getColumn(0);
                 String[] fpLookup = new Regex(apiResult, "\"site\":\"([^\"]+)\",\"models\":\\[\\[(\\d+),\"([^\"]+)\"").getRow(0);
                 if (fpLookup != null && fpLookup.length > 2) {
                     fpName = fpLookup[0] + " - " + fpLookup[2] + " - " + "Set " + setID;

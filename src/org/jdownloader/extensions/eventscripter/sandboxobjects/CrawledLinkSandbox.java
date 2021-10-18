@@ -1,5 +1,6 @@
 package org.jdownloader.extensions.eventscripter.sandboxobjects;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -298,7 +299,12 @@ public class CrawledLinkSandbox {
                 return "/mnt/Text.txt";
             }
         }
-        return link.getDownloadLink().getFileOutput(getPackage().getDownloadFolder(), false, false);
+        final String downloadFolder = getPackage().getDownloadFolder();
+        if (link.isNameSet()) {
+            return new File(downloadFolder, link.getName()).getAbsolutePath();
+        } else {
+            return link.getDownloadLink().getFileOutput(downloadFolder, false, false);
+        }
     }
 
     @ScriptAPI(description = "Sets a new filename", parameters = { "new Name" })
