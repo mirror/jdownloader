@@ -114,8 +114,12 @@ public class PornhdCom extends PluginForHost {
                 dllink = br.getRegex("<source[^>]*src=\"([^\"]+)\"[^>]*label='" + quality + "").getMatch(0);
             }
             if (dllink != null) {
+                logger.info("Chosen quality: " + quality);
                 break;
             }
+        }
+        if (dllink != null) {
+            dllink = Encoding.htmlDecode(dllink);
         }
         if (filename != null) {
             filename = Encoding.htmlDecode(filename);
