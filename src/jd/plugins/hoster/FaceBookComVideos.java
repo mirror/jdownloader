@@ -1086,7 +1086,7 @@ public class FaceBookComVideos extends PluginForHost {
                         prepBR(br);
                     }
                 }
-                logger.info("Performing full login");
+                logger.info("Full login required");
                 if (userCookies != null) {
                     logger.info("Trying to login via user-cookies");
                     br.setCookies(userCookies);
@@ -1115,7 +1115,11 @@ public class FaceBookComVideos extends PluginForHost {
                         return;
                     } else {
                         logger.info("User-Cookie login failed");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        if (account.getLastValidTimestamp() > 0) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login cookies expired", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
                 } else if (enforceCookieLogin) {
                     showCookieLoginInformation();

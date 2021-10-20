@@ -924,6 +924,18 @@ public class GoogleDrive extends PluginForHost {
         this.dl.startDownload();
     }
 
+    @Override
+    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
+        if (urlConnection.isContentDisposition()) {
+            /* 2021-10-20: Allow empty files. */
+            return true;
+        } else if (super.looksLikeDownloadableContent(urlConnection)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     private void checkErrorBlockedByGoogle(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         if (br.getHttpConnection().getResponseCode() == 403 && br.containsHTML("but your computer or network may be sending automated queries")) {
             /* 2021-01-18 */
@@ -936,9 +948,8 @@ public class GoogleDrive extends PluginForHost {
      * in an attempt to avoid having to solve multiple captchas!
      */
     private void handleErrorsWebsite(final Browser br, final DownloadLink link, final Account account) throws PluginException, InterruptedException, IOException {
-        if (requiresSpecialCaptcha(br)) {
-            handleSpecialCaptcha(link, account);
-        } else if (br.getHttpConnection().getResponseCode() == 429) {
+        handleSpecialCaptcha(br, link, account);
+        if (br.getHttpConnection().getResponseCode() == 429) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "429 too many requests");
         } else {
             /* Check for other errors */
@@ -1034,50 +1045,53 @@ public class GoogleDrive extends PluginForHost {
         return br.getHttpConnection().getResponseCode() == 429 && br.getURL().contains("/sorry/index");
     }
 
-    private void handleSpecialCaptcha(final DownloadLink link, final Account account) throws PluginException, IOException, InterruptedException {
-        if (link == null) {
-            /* 2020-11-29: This captcha should never happen during account-check! It should only happen when requesting files. */
-            throw new AccountUnavailableException("Captcha blocked", 5 * 60 * 1000l);
-        } else {
-            /*
-             * 2020-09-09: Google is sometimes blocking users/whole ISP IP subnets so they need to go through this step in order to e.g.
-             * continue downloading.
-             */
-            logger.info("Google 'ISP/IP block captcha' detected");
-            /*
-             * 2020-09-14: TODO: This handling doesn't work so we'll at least display a meaningful errormessage. The captcha should never
-             * occur anyways as upper handling will try to avoid it!
-             */
-            final boolean canSolveCaptcha = false;
-            if (!canSolveCaptcha) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Google blocked your IP - captcha required but not implemented yet");
-            }
-            final Form captchaForm = br.getForm(0);
-            if (captchaForm == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-            captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-            /* This should now redirect back to where we initially wanted to got to! */
-            // br.getHeaders().put("X-Client-Data", "0");
-            br.submitForm(captchaForm);
-            /* Double-check to make sure access was granted */
-            if (br.getHttpConnection().getResponseCode() == 429) {
-                logger.info("Captcha failed");
-                /*
-                 * Do not invalidate captcha result because most likely that was correct but our plugin somehow failed -> Try again later
-                 */
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "429 too many requests: Captcha failed");
+    private void handleSpecialCaptcha(final Browser br, final DownloadLink link, final Account account) throws PluginException, IOException, InterruptedException {
+        if (requiresSpecialCaptcha(br)) {
+            if (link == null) {
+                /* 2020-11-29: This captcha should never happen during account-check! It should only happen when requesting files. */
+                throw new AccountUnavailableException("Captcha blocked", 5 * 60 * 1000l);
             } else {
-                logger.info("Captcha success");
-                if (account != null) {
+                /*
+                 * 2020-09-09: Google is sometimes blocking users/whole ISP IP subnets so they need to go through this step in order to e.g.
+                 * continue downloading.
+                 */
+                logger.info("Google 'ISP/IP block captcha' detected");
+                /*
+                 * 2020-09-14: TODO: This handling doesn't work so we'll at least display a meaningful errormessage. The captcha should
+                 * never occur anyways as upper handling will try to avoid it!
+                 */
+                final boolean canSolveCaptcha = false;
+                if (!canSolveCaptcha) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Google blocked your IP - captcha required but not implemented yet");
+                }
+                final Form captchaForm = br.getForm(0);
+                if (captchaForm == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                /* This should now redirect back to where we initially wanted to got to! */
+                // br.getHeaders().put("X-Client-Data", "0");
+                br.submitForm(captchaForm);
+                /* Double-check to make sure access was granted */
+                if (br.getHttpConnection().getResponseCode() == 429) {
+                    logger.info("Captcha failed");
                     /*
-                     * Cookies have changed! Store new cookies so captcha won't happen again immediately. This is stored on the current
-                     * session and not just IP!
+                     * Do not invalidate captcha result because most likely that was correct but our plugin somehow failed -> Try again
+                     * later
                      */
-                    account.saveCookies(br.getCookies(br.getHost()), "");
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "429 too many requests: Captcha failed");
                 } else {
-                    /* TODO: Save- and restore session cookies - this captcha only has to be solved once per session per X time! */
+                    logger.info("Captcha success");
+                    if (account != null) {
+                        /*
+                         * Cookies have changed! Store new cookies so captcha won't happen again immediately. This is stored on the current
+                         * session and not just IP!
+                         */
+                        account.saveCookies(br.getCookies(br.getHost()), "");
+                    } else {
+                        /* TODO: Save- and restore session cookies - this captcha only has to be solved once per session per X time! */
+                    }
                 }
             }
         }

@@ -114,7 +114,7 @@ public class UploadgigCom extends antiDDoSForHost {
             directlinkproperty = "freelink2";
         } else if (AccountType.PREMIUM.equals(account.getType())) {
             // prem account
-            chunks = -3;
+            chunks = 0; // 2021-10-20
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
@@ -138,7 +138,7 @@ public class UploadgigCom extends antiDDoSForHost {
         correctDownloadLink(link);
         this.setBrowserExclusive();
         prepBR(br);
-        final String url_filename = new Regex(link.getDownloadURL(), "([^/]+)$").getMatch(0);
+        final String url_filename = new Regex(link.getPluginPatternMatcher(), "([^/]+)$").getMatch(0);
         if (!link.isNameSet() && url_filename != null) {
             /* Set temp name */
             link.setName(url_filename);
@@ -183,7 +183,7 @@ public class UploadgigCom extends antiDDoSForHost {
         if (dllink == null) {
             if (account != null) {
                 // login method might have validated cookies
-                getPage(link.getDownloadURL());
+                getPage(link.getPluginPatternMatcher());
             }
             /* 2020-07-10: See http://uploadgig.com/static/tpl2/js/f45862367.js?v=0.0.2 */
             // premium only content
@@ -514,7 +514,7 @@ public class UploadgigCom extends antiDDoSForHost {
         } else {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy/MM/dd", Locale.ENGLISH));
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(10);
+            account.setMaxSimultanDownloads(-1);
             account.setConcurrentUsePossible(true);
         }
         if (traffic_used_str != null && traffic_max_str != null) {
