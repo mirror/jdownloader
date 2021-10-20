@@ -20,16 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -46,16 +36,26 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RecurbateCom extends antiDDoSForHost {
     public RecurbateCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://recurbate.com/signup");
     }
+
     /* DEV NOTES */
     // Tags: Porn plugin
     // other:
-
     /* Connection stuff */
     /* Global limits */
     private static final boolean resume               = true;
@@ -337,7 +337,6 @@ public class RecurbateCom extends antiDDoSForHost {
             account.setMaxSimultanDownloads(premium_maxdownloads);
             ai.setStatus(plan);
             ai.setUnlimitedTraffic();
-            ;
         } else {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(free_maxdownloads);
@@ -365,7 +364,7 @@ public class RecurbateCom extends antiDDoSForHost {
 
     private void checkErrors(final Browser br, final Account account) throws AccountUnavailableException {
         /* 2021-10-11: Very interesting: While this is happening, users will still get 1 free view without account. */
-        if (account.getType() == AccountType.FREE && br.containsHTML("(?i)Sorry guys, but due to the high load.*Basic \\(Free\\).*accounts are temporary limited to")) {
+        if ((account == null || account.getType() == AccountType.FREE) && br.containsHTML("(?i)Sorry guys, but due to the high load.*Basic \\(Free\\).*accounts are temporary limited to")) {
             throw new AccountUnavailableException("Free accounts are temporarily limited to 0 video views", 5 * 60 * 1000);
         }
     }
