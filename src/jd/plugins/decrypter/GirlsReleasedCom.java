@@ -16,9 +16,19 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.requests.PostRequest;
@@ -29,10 +39,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "girlsreleased.com" }, urls = { "https?://(?:www\\.)?girlsreleased\\.com/#(set|site|model)s?/?.*" })
 public class GirlsReleasedCom extends antiDDoSForDecrypt {
@@ -47,6 +53,7 @@ public class GirlsReleasedCom extends antiDDoSForDecrypt {
         GR_MODEL,
         GR_MODELS,
         GR_UNKNOWN;
+
         private static PageType parse(final String link) {
             if (StringUtils.containsIgnoreCase(link, "/#set/")) {
                 return GR_SET;
@@ -75,8 +82,6 @@ public class GirlsReleasedCom extends antiDDoSForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         getPage(parameter);
-        String fpName = null; // Sill be set further down, most logical approach is to group by sets.
-        String[] links = null;
         // Build API payload
         String[][] idList = null;
         String payload = null;
@@ -113,8 +118,28 @@ public class GirlsReleasedCom extends antiDDoSForDecrypt {
         // Get API result
         final Browser br2 = br.cloneBrowser();
         if (pageType == PageType.GR_SET) {
-            final Request request = br2.createGetRequest("https://girlsreleased.com/api/0.1/sets/" + setID);
+            final Request request = br2.createGetRequest("https://girlsreleased.com/api/0.1/set/" + setID);
             sendRequest(br2, request);
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br2.toString(), TypeRef.HASHMAP);
+            Map<String, Object> infomap = (Map<String, Object>) entries.get("set");
+            List<List<Object>> imgs = (List<List<Object>>) infomap.get("images");
+            for (final List<Object> imgInfo : imgs) {
+                String link = Encoding.htmlDecode(imgInfo.get(4).toString());
+                if (link.startsWith("/")) {
+                    link = br.getURL(link).toString();
+                }
+                if (this.canHandle(link)) {
+                    continue;
+                } else {
+                    decryptedLinks.add(createDownloadlink(link));
+                }
+            }
+            final List<Object> modelInfo = (List<Object>) JavaScriptEngineFactory.walkJson(infomap, "models/{0}");
+            final String fpName = infomap.get("site") + " - " + modelInfo.get(1) + " - " + "Set " + setID;
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
+            fp.addLinks(decryptedLinks);
         } else {
             // TODO timestamp/signature
             final String postURL = "https://girlsreleased.com/";
@@ -124,18 +149,10 @@ public class GirlsReleasedCom extends antiDDoSForDecrypt {
             post.setPostDataString(payload);
             br2.setRequest(post);
             postPage(br2, postURL, payload);
-        }
-        String apiResult = br2.toString();
-        // Filter/build links
-        if (apiResult != null && apiResult.length() > 0) {
+            String apiResult = br2.toString();
             apiResult = apiResult.replaceAll("\\\\/", "/");
-            if (pageType == PageType.GR_SET) {
-                links = new Regex(apiResult, "\\[[^\\]]*?,\"((/|https?)[^\"]+)\"").getColumn(0);
-                String[] fpLookup = new Regex(apiResult, "\"site\":\"([^\"]+)\",\"models\":\\[\\[(\\d+),\"([^\"]+)\"").getRow(0);
-                if (fpLookup != null && fpLookup.length > 2) {
-                    fpName = fpLookup[0] + " - " + fpLookup[2] + " - " + "Set " + setID;
-                }
-            } else if (pageType == PageType.GR_SITE || pageType == PageType.GR_MODELS) {
+            String[] links = null;
+            if (pageType == PageType.GR_SITE || pageType == PageType.GR_MODELS) {
                 String[][] rawLlinks = new Regex(apiResult, "\\[(\\d+),\"([^,\\]]+)\"").getMatches();
                 links = new String[rawLlinks.length];
                 for (int i = 0; i < rawLlinks.length; i++) {
@@ -154,20 +171,14 @@ public class GirlsReleasedCom extends antiDDoSForDecrypt {
                     links[i] = "https://girlsreleased.com/#set/" + rawLlinks[i];
                 }
             }
-        }
-        if (links != null && links.length > 0) {
-            for (String link : links) {
-                link = Encoding.htmlDecode(link);
-                if (link.startsWith("/")) {
-                    link = br.getURL(link).toString();
+            if (links != null && links.length > 0) {
+                for (String link : links) {
+                    link = Encoding.htmlDecode(link);
+                    if (link.startsWith("/")) {
+                        link = br.getURL(link).toString();
+                    }
+                    decryptedLinks.add(createDownloadlink(link));
                 }
-                decryptedLinks.add(createDownloadlink(link));
-            }
-            if (fpName != null) {
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName.trim()));
-                fp.setProperty("ALLOW_MERGE", true);
-                fp.addLinks(decryptedLinks);
             }
         }
         return decryptedLinks;
