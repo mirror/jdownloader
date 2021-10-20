@@ -372,12 +372,10 @@ public class GoogleDrive extends PluginForDecrypt {
                 currentFolderTitle = Encoding.htmlDecode(currentFolderTitle.trim()).trim();
             }
         }
-        String[] results = null;
         // old type
         String json_src = br.getRegex("window\\['_DRIVE_ivd'\\]\\s*=\\s*'\\[(.*?)';").getMatch(0);
         if (json_src != null) {
             // json_src = JSonUtils.unescape(json_src);
-            results = json_src.split("\\\\n,\\[\\\\x22");
         }
         // new type 20170709-raz
         if (json_src == null) {
@@ -385,7 +383,6 @@ public class GoogleDrive extends PluginForDecrypt {
             // hex encoded
             if (json_src != null) {
                 json_src = Encoding.unicodeDecode(json_src);
-                results = json_src.split("\\][\r\n]+,\\[");
             }
         }
         /* Handle the json way. */
@@ -417,9 +414,9 @@ public class GoogleDrive extends PluginForDecrypt {
         if (folderResourceKey != null) {
             query.add("resourcekey", folderResourceKey);
         }
+        query.add("supportsTeamDrives", "true");
         /* Optional params (team drives only) */
         if (teamDriveID != null) {
-            query.add("supportsTeamDrives", "true");
             query.add("includeTeamDriveItems", "true");
             query.add("teamDriveId", teamDriveID);
             query.add("corpora", "teamDrive");
