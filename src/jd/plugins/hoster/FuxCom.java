@@ -16,9 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import java.util.HashSet;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -32,6 +30,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fux.com", "4tube.com", "porntube.com", "pornerbros.com" }, urls = { "https?://(?:www\\.)?fux\\.com/(?:videos?|embed)/\\d+/?(?:[\\w-]+)?", "https?://(?:www\\.)?4tube\\.com/(?:embed|videos)/\\d+/?(?:[\\w-]+)?|https?://m\\.4tube\\.com/videos/\\d+/?(?:[\\w-]+)?", "https?://(?:www\\.)?(?:porntube\\.com/videos/[a-z0-9\\-]+_\\d+|embed\\.porntube\\.com/\\d+|porntube\\.com/embed/\\d+)", "https?://(?:www\\.)?(?:pornerbros\\.com/videos/[a-z0-9\\-]+_\\d+|embed\\.pornerbros\\.com/\\d+|pornerbros\\.com/embed/\\d+)" })
 public class FuxCom extends PluginForHost {
@@ -111,6 +112,7 @@ public class FuxCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().matches(".+/videos?\\?error=\\d+")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final boolean mightBeOffline = br.containsHTML("This video is no longer available");
         if (!br.getURL().contains(this.getFID(link))) {
             /* 2020-07-31: On offline (?) they sometimes do random redirects to other content (?) */
             logger.info("Content might have changed");
@@ -174,6 +176,13 @@ public class FuxCom extends PluginForHost {
             }
         }
         link.setFinalFileName(filename + ext);
+        if (dllink == null) {
+            if (mightBeOffline) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
         // In case the link redirects to the finallink
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
@@ -250,18 +259,23 @@ public class FuxCom extends PluginForHost {
 
     final String getDllink() {
         String finallink = null;
+        final HashSet<String> tested = new HashSet<String>();
         final String[] qualities = new String[] { "1080", "720", "480", "360", "240" };
         for (final String quality : qualities) {
             if (br.containsHTML("\"" + quality + "\"")) {
-                finallink = br.getRegex("\"" + quality + "\":\\{\"status\":\"success\",\"token\":\"(http[^<>\"]*?)\"").getMatch(0);
-                if (finallink != null && checkDirectLink(finallink) != null) {
+                final String link = br.getRegex("\"" + quality + "\":\\{\"status\":\"success\",\"token\":\"(http[^<>\"]*?)\"").getMatch(0);
+                if (link != null && tested.add(link) && checkDirectLink(link) != null) {
+                    finallink = link;
                     break;
                 }
             }
         }
         /* Hm probably this is only needed if only one quality exists */
         if (finallink == null) {
-            finallink = br.getRegex("\"token\":\"(https?://[^<>\"]*?)\"").getMatch(0);
+            final String link = br.getRegex("\"token\":\"(https?://[^<>\"]*?)\"").getMatch(0);
+            if (link != null && tested.add(link) && checkDirectLink(link) != null) {
+                finallink = link;
+            }
         }
         return finallink;
     }

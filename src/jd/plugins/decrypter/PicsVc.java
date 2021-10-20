@@ -23,10 +23,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -39,6 +35,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PicsVc extends PluginForDecrypt {
@@ -128,7 +128,7 @@ public class PicsVc extends PluginForDecrypt {
                 if (dupes.add(singleLink)) {
                     singleLink = "https://" + br.getHost() + singleLink;
                     String filename = Plugin.getFileNameFromURL(new URL(singleLink));
-                    filename = df.format(foundNumberofItems + 1) + "_" + filename;
+                    filename = df.format(++foundNumberofItems) + "_" + filename;
                     final DownloadLink dl = createDownloadlink("directhttp://" + singleLink);
                     dl.setFinalFileName(filename);
                     dl._setFilePackage(fp);
@@ -162,15 +162,14 @@ public class PicsVc extends PluginForDecrypt {
                         if (dupes.add(singleLink)) {
                             singleLink = "https://" + br.getHost() + singleLink;
                             String filename = Plugin.getFileNameFromURL(new URL(singleLink));
-                            filename = df.format(foundNumberofItems + 1) + "_" + filename;
+                            filename = df.format(++foundNumberofItems) + "_" + filename;
                             final DownloadLink dl = createDownloadlink("directhttp://" + singleLink);
                             dl.setFinalFileName(filename);
                             dl._setFilePackage(fp);
                             dl.setAvailable(true);
                             decryptedLinks.add(dl);
                             distribute(dl);
-                            foundNumberofItems += 1;
-                            numberofNewItemsThisRun += 1;
+                            numberofNewItemsThisRun++;
                         }
                     }
                 } else {
@@ -203,15 +202,14 @@ public class PicsVc extends PluginForDecrypt {
                             // }
                             singleLink = "https://" + br.getHost() + singleLink;
                             String filename = Plugin.getFileNameFromURL(new URL(singleLink));
-                            filename = df.format(foundNumberofItems + 1) + "_" + filename;
+                            filename = df.format(++foundNumberofItems) + "_" + filename;
                             final DownloadLink dl = createDownloadlink("directhttp://" + singleLink);
                             dl.setFinalFileName(filename);
                             dl._setFilePackage(fp);
                             dl.setAvailable(true);
                             decryptedLinks.add(dl);
                             distribute(dl);
-                            foundNumberofItems += 1;
-                            numberofNewItemsThisRun += 1;
+                            numberofNewItemsThisRun++;
                         }
                     }
                 }
