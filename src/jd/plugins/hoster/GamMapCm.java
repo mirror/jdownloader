@@ -15,10 +15,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.HashMap;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -35,9 +33,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamemaps.com" }, urls = { "https?://(?:www\\.)?gamemaps\\.com/(?:details/|mirrors/|mirrors/mirror/(?:\\d+/)?)\\d+" })
 public class GamMapCm extends antiDDoSForHost {
-    private String         fuid      = null;
     private String         ddlink    = null;
     private final String   cacheLink = "cacheLink";
     private final String[] servers   = new String[] { "USA", "LONDON" };
@@ -53,21 +53,18 @@ public class GamMapCm extends antiDDoSForHost {
     @Override
     public void correctDownloadLink(DownloadLink link) throws PluginException {
         // get id
-        fuid = getFUID(link);
+        final String fuid = getFUID(link);
         // set unique id
         if (fuid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Error could not determine fuid");
-        }
-        final String linkID = getHost() + "://" + fuid;
-        try {// JD2 Only Code!
+        } else {
+            final String linkID = getHost() + "://" + fuid;
             link.setLinkID(linkID);
-        } catch (Throwable e) {
-            link.setProperty("LINKDUPEID", linkID);
+            // get host
+            final String host = new Regex(link.getDownloadURL(), "https?://[^/]+").getMatch(-1);
+            // set formatted host, details has the only page with full filename
+            link.setUrlDownload(host + "/details/" + fuid);
         }
-        // get host
-        final String host = new Regex(link.getDownloadURL(), "https?://[^/]+").getMatch(-1);
-        // set formatted host, details has the only page with full filename
-        link.setUrlDownload(host + "/details/" + fuid);
     }
 
     private String getFUID(DownloadLink link) {
@@ -92,26 +89,34 @@ public class GamMapCm extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+        ddlink = null;
         correctDownloadLink(downloadLink);
         br.setFollowRedirects(true);
         getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(404 Not Found|This file could not be found on our system)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex(">File: <span class=\"content\">(.*?)</span>").getMatch(0);
+        final String filenameSize = br.getRegex("<i>\\s*([^>]*\\s*\\([0-9\\,\\.GKMB]+\\))\\s*</i").getMatch(0);
+        String filename = new Regex(filenameSize, "(.*?)\\s*\\(").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("blocktitle\">\\s*<span>(.*?)</span>").getMatch(0);
-        }
-        if (filename == null) {
-            // down the bottom you get filename with extension
-            filename = br.getRegex("<span class=\"tag nohover\">(.*?)</span>").getMatch(0);
+            filename = br.getRegex(">File: <span class=\"content\">(.*?)</span>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("blocktitle\">\\s*<span>(.*?)</span>").getMatch(0);
+                if (filename == null) {
+                    // down the bottom you get filename with extension
+                    filename = br.getRegex("<span class=\"tag nohover\">(.*?)</span>").getMatch(0);
+                }
+            }
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filesize = br.getRegex(">Size: <span class=\"content\">(.*?)</span>").getMatch(0);
+        String filesize = new Regex(filenameSize, "\\((.*?)\\)\\s*$").getMatch(0);
         if (filesize == null) {
-            filesize = br.getRegex("<div class=\"filesize\">(.*?)</div>").getMatch(0);
+            filesize = br.getRegex(">Size: <span class=\"content\">(.*?)</span>").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("<div class=\"filesize\">(.*?)</div>").getMatch(0);
+            }
         }
         downloadLink.setName(filename.trim());
         if (filesize != null) {
@@ -130,13 +135,14 @@ public class GamMapCm extends antiDDoSForHost {
         requestFileInformation(link);
         checkCacheLink(link);
         if (ddlink == null) {
+            final String fuid = getFUID(link);
             // details : background info
             // mirrors : first download page, choose a mirror
             // mirrors/mirror/\d+ : loading page, dl starts in x, if not dling click here...
             // mirrors/mirror/\d+/\d+ : redirect to dl server
             getPage("/mirrors/" + fuid);
             // prefer region over servers numbers?
-            HashMap<String, String> d = new HashMap<String, String>();
+            final HashMap<String, String> d = new HashMap<String, String>();
             final String[] filter = br.getRegex("<div class=\"mirror (?:themecolor\")?.*?<div class=\"location\">.*?(</div>\\s*){3}").getColumn(-1);
             if (filter != null) {
                 for (final String f : filter) {
@@ -149,15 +155,13 @@ public class GamMapCm extends antiDDoSForHost {
             }
             if (!d.isEmpty()) {
                 // preference link first,
-                String prefs = prefsLocation();
-                // when null, we will make it return the first entry
-                if (prefs == null) {
-                    prefs = "";
-                }
-                for (String k : d.keySet()) {
-                    if (k.contains(prefs)) {
-                        ddlink = d.get(k);
-                        break;
+                final String prefs = prefsLocation();
+                if (prefs != null) {
+                    for (String k : d.keySet()) {
+                        if (k.contains(prefs)) {
+                            ddlink = d.get(k);
+                            break;
+                        }
                     }
                 }
                 // when none of the locations match user preference
@@ -184,9 +188,18 @@ public class GamMapCm extends antiDDoSForHost {
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, ddlink, true, -10);
-        link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
-        link.setProperty(cacheLink, br.getURL());
-        dl.startDownload();
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+            link.setProperty(cacheLink, br.getURL());
+            dl.startDownload();
+        }
     }
 
     private String prefsLocation() {
@@ -203,18 +216,24 @@ public class GamMapCm extends antiDDoSForHost {
     private String checkCacheLink(final DownloadLink downloadLink) {
         ddlink = downloadLink.getStringProperty(cacheLink);
         if (ddlink != null) {
+            URLConnectionAdapter con = null;
             try {
                 Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
-                URLConnectionAdapter con = br2.openGetConnection(ddlink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(cacheLink, Property.NULL);
-                    ddlink = null;
+                con = br2.openGetConnection(ddlink);
+                if (!looksLikeDownloadableContent(dl.getConnection())) {
+                    throw new IOException();
+                } else {
+                    return ddlink;
                 }
-                con.disconnect();
             } catch (Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(cacheLink, Property.NULL);
                 ddlink = null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
             }
         }
         return ddlink;
