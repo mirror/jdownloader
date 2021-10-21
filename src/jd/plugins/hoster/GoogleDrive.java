@@ -924,18 +924,6 @@ public class GoogleDrive extends PluginForHost {
         this.dl.startDownload();
     }
 
-    @Override
-    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
-        if (urlConnection.isContentDisposition()) {
-            /* 2021-10-20: Allow empty files. */
-            return true;
-        } else if (super.looksLikeDownloadableContent(urlConnection)) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     private void checkErrorBlockedByGoogle(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         if (br.getHttpConnection().getResponseCode() == 403 && br.containsHTML("but your computer or network may be sending automated queries")) {
             /* 2021-01-18 */

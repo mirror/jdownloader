@@ -70,15 +70,32 @@ public class FiletransferIo extends PluginForHost {
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filetitle = br.getRegex("(?i)<title>([^<>\"]+) \\- FileTransfer\\.io</title>").getMatch(0);
-        final String filesize = br.getRegex("data\\-bytes=\"(\\d+)\"").getMatch(0);
+        String filetitle = br.getRegex("(?i)<title>([^<>\"]+) \\- FileTransfer\\.io</title>").getMatch(0);
+        final String filesizeBytes = br.getRegex("data\\-bytes=\"(\\d+)\"").getMatch(0);
+        final String filesizeStr = br.getRegex("(?i)Size:\\s*<span[^>]*>([^<>\"]+)</span>").getMatch(0);
         if (filetitle != null) {
-            link.setName(Encoding.htmlDecode(filetitle).trim() + ".zip");
+            filetitle = Encoding.htmlDecode(filetitle).trim();
+            if (filetitle.endsWith(".") || !filetitle.contains(".")) {
+                link.setName(filetitle + ".zip");
+            } else {
+                /* Assume file-extension is given. */
+                link.setName(filetitle);
+            }
         }
-        if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesizeBytes != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesizeBytes));
+        } else if (filesizeStr != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
         }
-        return AvailableStatus.TRUE;
+        /*
+         * 2021-10-21: For some deleted items they will not return error 404. They will still return the file information along with the
+         * offline errormessage so first set file info, then check for this message.
+         */
+        if (br.containsHTML("(?i)The data package cannot be downloaded anymore, it was deleted from the server")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            return AvailableStatus.TRUE;
+        }
     }
 
     @Override
