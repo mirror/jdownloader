@@ -48,7 +48,8 @@ import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidtraffic.pl" }, urls = { "" })
 public class RapidtrafficPl extends PluginForHost {
-    private static MultiHosterManagement mhm = new MultiHosterManagement("rapidtraffic.pl");
+    private static MultiHosterManagement mhm                              = new MultiHosterManagement("rapidtraffic.pl");
+    private static final String          PROPERTY_ACCOUNTINFO_TRAFFICLEFT = "traffic_left";
 
     public RapidtrafficPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -139,12 +140,26 @@ public class RapidtrafficPl extends PluginForHost {
         final String[] hostDomains = new Regex(hosterNames, " ([^,<>\"]*?),").getColumn(0);
         final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hostDomains));
         ai.setMultiHostSupport(this, supportedHosts);
-        String transferLeft = br.getRegex("Pozostały transfer: <b>(\\d+\\.\\d+ [GM]B)</b>").getMatch(0).replace(".", ",");
-        long trafficLeftLong = ((transferLeft == null) ? 0 : SizeFormatter.getSize(transferLeft));
+        String transferLeftStr = br.getRegex("(?i)Pozostały transfer: <b>(-?\\d+\\.\\d+ [GM]B)</b>").getMatch(0).replace(".", ",");
+        String trafficLeftHumanReadable = "Unknown";
+        if (transferLeftStr != null) {
+            transferLeftStr = transferLeftStr.replace(".", ",").trim();
+            final long trafficLeftLong;
+            if (transferLeftStr.startsWith("-")) {
+                trafficLeftLong = -SizeFormatter.getSize(transferLeftStr);
+            } else {
+                trafficLeftLong = SizeFormatter.getSize(transferLeftStr);
+            }
+            /* Do not set this value on accountInfo as we cannot trust it 100%!!! */
+            // ai.setTrafficLeft(trafficLeftLong);
+            ai.setProperty(PROPERTY_ACCOUNTINFO_TRAFFICLEFT, trafficLeftLong);
+            trafficLeftHumanReadable = SIZEUNIT.formatValue((SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue(), trafficLeftLong);
+        }
+        /* Inactive --> Free account --> Free accounts can still have leftover "traffic left" values though (can be negative values). */
         if (br.containsHTML("(?i)Konto ważne do: <b>nieaktywne</b>")) {
             ai.setExpired(true);
             account.setType(AccountType.FREE);
-            ai.setTrafficLeft(trafficLeftLong);
+            ai.setTrafficLeft(0);
             return ai;
         } else {
             validUntil = br.getRegex("(?i)Konto ważne do: <b>(\\d{4}\\-\\d{2}\\-\\d{2})</b>").getMatch(0);
@@ -154,8 +169,7 @@ public class RapidtrafficPl extends PluginForHost {
             account.setType(AccountType.PREMIUM);
             ai.setUnlimitedTraffic();
             ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "yyyy-MM-dd", Locale.ENGLISH));
-            ai.setProperty("Available traffic", trafficLeftLong);
-            ai.setStatus(getPhrase("PREMIUM") + " (" + getPhrase("TRAFFIC_LEFT") + ": " + SIZEUNIT.formatValue((SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue(), trafficLeftLong) + ")");
+            ai.setStatus(getPhrase("PREMIUM") + " (" + getPhrase("TRAFFIC_LEFT") + ": " + trafficLeftHumanReadable + ")");
         }
         return ai;
     }
@@ -324,10 +338,10 @@ public class RapidtrafficPl extends PluginForHost {
     }
 
     @Override
-    public void extendAccountSettingsPanel(Account account, PluginConfigPanelNG panel) {
+    public void extendAccountSettingsPanel(final Account account, final PluginConfigPanelNG panel) {
         AccountInfo ai = account.getAccountInfo();
         if (ai != null) {
-            final long availableTraffic = Long.parseLong(ai.getProperty("Available traffic").toString(), 10);
+            final long availableTraffic = ai.getLongProperty(PROPERTY_ACCOUNTINFO_TRAFFICLEFT, 0);
             if (availableTraffic >= 0) {
                 panel.addStringPair(_GUI.T.lit_traffic_left(), SIZEUNIT.formatValue((SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue(), availableTraffic));
             }

@@ -20,14 +20,14 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GamovideoCom extends XFileSharingProBasic {
@@ -144,5 +144,11 @@ public class GamovideoCom extends XFileSharingProBasic {
     protected boolean supports_availablecheck_filesize_html() {
         /* 2020-03-24: Special */
         return false;
+    }
+
+    @Override
+    public ArrayList<String> getCleanupHTMLRegexes() {
+        /* 2021-10-21: Special */
+        return new ArrayList<String>();
     }
 }
