@@ -603,18 +603,25 @@ public abstract class Plugin implements ActionListener {
     public abstract Matcher getMatcher();
 
     public void clean() {
-        for (final Plugin plugin : pluginInstances) {
+        while (pluginInstances.size() > 0) {
             try {
-                plugin.clean();
+                final Plugin plugin = pluginInstances.remove(0);
+                if (plugin != null) {
+                    plugin.clean();
+                }
             } catch (final Throwable e) {
                 logger.log(e);
             }
         }
-        cleanupLastChallengeResponse();
-        br = null;
-        for (final File clean : cleanUpCaptchaFiles) {
-            if (clean != null && !clean.delete()) {
-                clean.deleteOnExit();
+        try {
+            cleanupLastChallengeResponse();
+        } finally {
+            br = null;
+            while (cleanUpCaptchaFiles.size() > 0) {
+                final File clean = cleanUpCaptchaFiles.remove(0);
+                if (clean != null && !clean.delete() && clean.exists()) {
+                    clean.deleteOnExit();
+                }
             }
         }
     }
@@ -712,7 +719,7 @@ public abstract class Plugin implements ActionListener {
         final Calendar calendar = Calendar.getInstance();
         final String date = String.format("%1$td.%1$tm.%1$tY_%1$tH.%1$tM.%1$tS.", calendar) + new Random().nextInt(999);
         final File dest = JDUtilities.getResourceFile("captchas/" + this.getHost() + "_" + date + extension, true);
-        cleanUpCaptchaFiles.add(dest);
+        cleanUpCaptchaFiles.addIfAbsent(dest);
         return dest;
     }
 
@@ -969,7 +976,7 @@ public abstract class Plugin implements ActionListener {
         if (lazyPlugin != null) {
             try {
                 final Plugin plugin = lazyPlugin.newInstance(PluginClassLoader.getThreadPluginClassLoaderChild());
-                pluginInstances.add(plugin);
+                pluginInstances.add(0, plugin);
                 plugin.setLogger(getLogger());
                 plugin.setBrowser(getBrowser());
                 plugin.init();

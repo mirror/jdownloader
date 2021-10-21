@@ -25,6 +25,24 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
+import jd.config.SubConfiguration;
+import jd.controlling.ProgressController;
+import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
+import jd.controlling.linkcrawler.LinkCrawlerDistributer;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.DecrypterRetryException.RetryReason;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.timetracker.TimeTracker;
 import org.appwork.timetracker.TrackerJob;
@@ -68,24 +86,6 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.translate._JDT;
-
-import jd.PluginWrapper;
-import jd.config.SubConfiguration;
-import jd.controlling.ProgressController;
-import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.captcha.SkipException;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
-import jd.controlling.linkcrawler.LinkCrawlerDistributer;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.DecrypterRetryException.RetryReason;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Links entschlüsseln können
@@ -140,8 +140,8 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     /**
-     * Use this when e.g. crawling folders & subfolders from cloud-services. </br>
-     * Use this to find the last path in order to continue to build the path until all subfolders are crawled.
+     * Use this when e.g. crawling folders & subfolders from cloud-services. </br> Use this to find the last path in order to continue to
+     * build the path until all subfolders are crawled.
      */
     protected final String getAdoptedCloudFolderStructure() {
         String subfolderPath = null;
@@ -601,6 +601,10 @@ public abstract class PluginForDecrypt extends Plugin {
         return getCaptchaClickedPoint(getHost(), captchaFile, param, null, null);
     }
 
+    protected ClickedPoint getCaptchaClickedPoint(final String captchaAddress, final CryptedLink param) throws Exception {
+        return getCaptchaClickedPoint(captchaAddress, param, null);
+    }
+
     protected String getCaptchaCode(String method, File file, CryptedLink param) throws Exception {
         final File copy = copyCaptcha(method, file);
         final BasicCaptchaChallenge c = createChallenge(method, copy, 0, null, null);
@@ -619,21 +623,11 @@ public abstract class PluginForDecrypt extends Plugin {
         }
     }
 
-    protected ClickedPoint getCaptchaClickedPoint(final String captchaAddress, final CryptedLink param) throws Exception {
-        return getCaptchaClickedPoint(captchaAddress, param, null);
-    }
-
     protected ClickedPoint getCaptchaClickedPoint(final String captchaAddress, CryptedLink param, final String explain) throws Exception {
         final File captchaFile = this.getLocalCaptchaFile();
-        try {
-            final Browser brc = getCaptchaBrowser(br);
-            brc.getDownload(captchaFile, captchaAddress);
-            return getCaptchaClickedPoint(getHost(), captchaFile, param, null, explain);
-        } finally {
-            if (captchaFile != null) {
-                FileCreationManager.getInstance().delete(captchaFile, null);
-            }
-        }
+        final Browser brc = getCaptchaBrowser(br);
+        brc.getDownload(captchaFile, captchaAddress);
+        return getCaptchaClickedPoint(getHost(), captchaFile, param, null, explain);
     }
 
     protected ClickedPoint getCaptchaClickedPoint(String method, File file, final CryptedLink link, String defaultValue, String explain) throws Exception {
@@ -653,7 +647,7 @@ public abstract class PluginForDecrypt extends Plugin {
     protected <ReturnType> ReturnType handleCaptchaChallenge(Challenge<ReturnType> c) throws PluginException, CaptchaException, InterruptedException {
         if (c instanceof ImageCaptchaChallenge) {
             final File captchaFile = ((ImageCaptchaChallenge) c).getImageFile();
-            cleanUpCaptchaFiles.add(captchaFile);
+            cleanUpCaptchaFiles.addIfAbsent(captchaFile);
         }
         if (Thread.currentThread() instanceof SingleDownloadController) {
             logger.severe("PluginForDecrypt.getCaptchaCode inside SingleDownloadController!?");
