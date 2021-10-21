@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.Locale;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -27,6 +28,7 @@ import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -38,8 +40,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4share.vn" }, urls = { "https?://(?:www\\.)?(?:up\\.)?4share\\.vn/f/[a-f0-9]{16}" })
 public class FourShareVn extends PluginForHost {
-    private static Object LOCK = new Object();
-
     public FourShareVn(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://up.4share.vn/?act=gold");
@@ -77,6 +77,10 @@ public class FourShareVn extends PluginForHost {
             /* 2019-08-28 */
             filesize = br.getRegex("</h1>\\s*<strong>([^<>\"]+)</strong>").getMatch(0);
         }
+        if (filesize == null) {
+            /* 2021-10-21 */
+            filesize = br.getRegex("/strong>\\s*</h1>\\s*(\\d+[^<>\"]+)<br/>").getMatch(0);
+        }
         if (filename != null) {
             link.setName(filename.trim());
         }
@@ -90,7 +94,6 @@ public class FourShareVn extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -112,7 +115,6 @@ public class FourShareVn extends PluginForHost {
         final String expire = br.getRegex("Ngày hết hạn: <b>(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
         if (expire == null) {
             ai.setExpired(true);
-            account.setValid(false);
             return ai;
         } else {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH));
@@ -137,8 +139,8 @@ public class FourShareVn extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         br.setFollowRedirects(false);
         String dllink = null;
         // Can be skipped
@@ -153,6 +155,9 @@ public class FourShareVn extends PluginForHost {
             if (captchaform == null) {
                 captchaform = new Form();
                 captchaform.setMethod(MethodType.POST);
+            }
+            final InputField ifield = captchaform.getInputField("free_download");
+            if (ifield == null || ifield.getValue() == null) {
                 captchaform.put("free_download", "");
             }
             final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
@@ -175,9 +180,13 @@ public class FourShareVn extends PluginForHost {
             handleErrorsGeneral();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             handleErrorsGeneral();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -213,7 +222,7 @@ public class FourShareVn extends PluginForHost {
     }
 
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             boolean redirect = this.br.isFollowingRedirects();
             try {
                 /* Load cookies */
@@ -313,12 +322,12 @@ public class FourShareVn extends PluginForHost {
         if (acc == null) {
             /* no account, yes we can expect captcha */
             return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        } else if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
             /* free accounts also have captchas */
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     public boolean hasAutoCaptcha() {
