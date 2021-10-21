@@ -21,9 +21,6 @@ public abstract class LinkCrawlerDeepInspector {
     public boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
         if (urlConnection.getResponseCode() == 200 || urlConnection.getResponseCode() == 206) {
             final long completeContentLength = urlConnection.getCompleteContentLength();
-            if (completeContentLength == 0) {
-                return false;
-            }
             final String contentType = urlConnection.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE);
             final boolean hasContentType = StringUtils.isNotEmpty(contentType);
             final boolean hasContentLength = StringUtils.isNotEmpty(urlConnection.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH));
@@ -48,6 +45,8 @@ public abstract class LinkCrawlerDeepInspector {
                 } else {
                     return true;
                 }
+            } else if (completeContentLength == 0) {
+                return false;
             } else if (hasContentType && (!isTextContent(urlConnection) && contentType.matches("(?i)^(application|audio|video|image)/.+"))) {
                 if (contentType.matches("(?i)application/vnd.apple.mpegurl") || contentType.matches("(?i)application/x-mpegurl")) {
                     return false;
