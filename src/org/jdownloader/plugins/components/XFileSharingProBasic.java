@@ -745,10 +745,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * @return true: Website is in maintenance mode - downloads are not possible but linkcheck may be possible. <br />
-     *         false: Website is not in maintenance mode and should usually work fine.
+     * @return true: Downloadserver is in maintenance mode - downloads are not possible but linkcheck may be possible. <br />
+     *         false: Downloadserver is not in maintenance mode and should be possible.
      */
-    protected boolean isWebsiteUnderMaintenance(final Browser br) {
+    protected boolean isServerUnderMaintenance(final Browser br) {
         final String pattern = "(?i)>\\s*This server is in maintenance mode";
         return br.getHttpConnection().getResponseCode() == 500 || (br.containsHTML(pattern) && new Regex(correctBR(br), pattern).matches());
     }
@@ -3011,7 +3011,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      */
     protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
-            if (new Regex(html, ">\\s*Wrong password").matches()) {
+            if (new Regex(html, "(?i)>\\s*Wrong password").matches()) {
                 final boolean websiteDidAskForPassword = link.getBooleanProperty(PROPERTY_pw_required, false);
                 if (!websiteDidAskForPassword) {
                     /*
@@ -3027,7 +3027,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     link.setDownloadPassword(null);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                 }
-            } else if (new Regex(html, ">\\s*Wrong captcha").matches()) {
+            } else if (new Regex(html, "(?i)>\\s*Wrong captcha").matches()) {
                 logger.warning("Wrong captcha (or wrong password as well)!");
                 /*
                  * TODO: Find a way to avoid using a property for this or add the property in very plugin which overrides handleCaptcha e.g.
@@ -3037,6 +3037,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 if (websiteDidAskForCaptcha) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 } else {
+                    /* This should never happen. Either developer mistake or broken filehost website. */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server says 'wrong captcha' but never prompted for one");
                 }
             } else if (new Regex(html, ">\\s*Skipped countdown\\s*<").matches()) {
@@ -3045,14 +3046,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
         }
         /** Wait time reconnect handling */
-        final String limitBasedOnNumberofFilesAndTime = new Regex(html, ">(You have reached the maximum limit \\d+ files in \\d+ hours)").getMatch(0);
+        final String limitBasedOnNumberofFilesAndTime = new Regex(html, "(?i)>\\s*(You have reached the maximum limit \\d+ files in \\d+ hours)").getMatch(0);
         final String preciseWaittime = new Regex(html, "((You have reached the download(\\-| )limit|You have to wait)[^<>]+)").getMatch(0);
         if (preciseWaittime != null) {
             /* Reconnect waittime with given (exact) waittime usually either up to the minute or up to the second. */
-            final String tmphrs = new Regex(preciseWaittime, "\\s*(\\d+)\\s*hours?").getMatch(0);
-            final String tmpmin = new Regex(preciseWaittime, "\\s*(\\d+)\\s*minutes?").getMatch(0);
-            final String tmpsec = new Regex(preciseWaittime, "\\s*(\\d+)\\s*seconds?").getMatch(0);
-            final String tmpdays = new Regex(preciseWaittime, "\\s*(\\d+)\\s*days?").getMatch(0);
+            final String tmphrs = new Regex(preciseWaittime, "(?i)\\s*(\\d+)\\s*hours?").getMatch(0);
+            final String tmpmin = new Regex(preciseWaittime, "(?i)\\s*(\\d+)\\s*minutes?").getMatch(0);
+            final String tmpsec = new Regex(preciseWaittime, "(?i)\\s*(\\d+)\\s*seconds?").getMatch(0);
+            final String tmpdays = new Regex(preciseWaittime, "(?i)\\s*(\\d+)\\s*days?").getMatch(0);
             int waittime;
             if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
                 /* This should not happen! This is an indicator of developer-failure! */
@@ -3093,10 +3094,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
              * files per 24 hours
              */
             /* Typically '>You have reached the maximum limit 150 files in 24 hours' */
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, limitBasedOnNumberofFilesAndTime);
-        } else if (html.contains("You're using all download slots for IP")) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Server error 'You're using all download slots for IP'", 10 * 60 * 1001l);
-        } else if (html.contains("Error happened when generating Download Link")) {
+            ipBlockedOrAccountLimit(link, account, limitBasedOnNumberofFilesAndTime, 15 * 60 * 1000l);
+        } else if (StringUtils.containsIgnoreCase(html, "You're using all download slots for IP")) {
+            ipBlockedOrAccountLimit(link, account, "You're using all download slots for IP...", 5 * 60 * 1000l);
+        } else if (StringUtils.containsIgnoreCase(html, "Error happened when generating Download Link")) {
+            /* Rare issue */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Error happened when generating Download Link'", 10 * 60 * 1000l);
         }
         /** Error handling for premiumonly links */
@@ -3109,14 +3111,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 logger.info("Only downloadable via premium");
                 throw new AccountRequiredException();
             }
-        } else if (new Regex(html, ">\\s*Expired download session").matches()) {
+        } else if (new Regex(html, "(?i)>\\s*Expired download session").matches()) {
+            /* Rare error */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Expired download session'", 10 * 60 * 1000l);
-        } else if (isWebsiteUnderMaintenance(br)) {
+        } else if (isServerUnderMaintenance(br)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is under maintenance", 30 * 60 * 1000l);
         }
         /* Host-type specific errors */
         /* Videohoster */
-        if (new Regex(html, ">\\s*Video is processing now").matches()) {
+        if (new Regex(html, "(?i)>\\s*Video is processing now").matches()) {
             /* E.g. '<div id="over_player_msg">Video is processing now. <br>Conversion stage: <span id='enc_pp'>...</span></div>' */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not (yet) downloadable: Video is still being encoded or broken", 10 * 60 * 1000l);
         }
@@ -3136,6 +3139,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             throw new AccountUnavailableException(accountErrorMsg, 10 * 60 * 1000l);
         }
         checkResponseCodeErrors(br.getHttpConnection());
+    }
+
+    /** Throws appropriate Exception depending on whether or not an account is given. */
+    private void ipBlockedOrAccountLimit(final DownloadLink link, final Account account, final String errorMsg, final long waitMillis) throws PluginException {
+        if (account != null) {
+            throw new AccountUnavailableException(errorMsg, waitMillis);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsg, waitMillis);
+        }
     }
 
     /** Use this during download handling instead of just throwing PluginException with LinkStatus ERROR_PLUGIN_DEFECT! */
