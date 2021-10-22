@@ -21,8 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -33,6 +31,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.parser.UrlQuery;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class LibGenInfo extends PluginForHost {
@@ -77,7 +77,7 @@ public class LibGenInfo extends PluginForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(ads\\.php|comics/get\\.php)\\?md5=([A-Fa-f0-9]{32})");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(ads\\.php|comics/get\\.php|get\\.php)\\?md5=([A-Fa-f0-9]{32})");
         }
         return ret.toArray(new String[0]);
     }
@@ -111,7 +111,7 @@ public class LibGenInfo extends PluginForHost {
     private static final boolean FREE_RESUME       = false;
     private static final int     FREE_MAXCHUNKS    = 1;
     private static final int     FREE_MAXDOWNLOADS = 2;
-    private static final String  TYPE_COMICS       = "https?://[^/]+/comics/.+";
+    private static final String  TYPE_DIRECT       = "https?://[^/]+/(comics/.+|get\\.php\\?.+)";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -120,15 +120,16 @@ public class LibGenInfo extends PluginForHost {
         br.setCustomCharset("utf-8");
         final String md5 = getFID(link);
         link.setMD5Hash(md5);
-        if (link.getPluginPatternMatcher().matches(TYPE_COMICS)) {
+        if (link.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(link.getPluginPatternMatcher());
                 if (!this.looksLikeDownloadableContent(con)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
-                    // link.setDownloadSize(con.getCompleteContentLength());
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                     link.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con));
                 }
             } finally {
@@ -174,7 +175,7 @@ public class LibGenInfo extends PluginForHost {
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
         final String dllink;
-        if (link.getPluginPatternMatcher().matches(TYPE_COMICS)) {
+        if (link.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
             dllink = link.getPluginPatternMatcher();
         } else {
             br.getPage("/ads.php?md5=" + this.getFID(link));
