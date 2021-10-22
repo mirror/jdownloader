@@ -38,6 +38,7 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
 import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.FileChooserType;
@@ -400,7 +401,7 @@ public class UserIO {
                 }
             }
         }
-        ExtFileChooserDialog d = new ExtFileChooserDialog(0, title, null, null);
+        final ExtFileChooserDialog d = new ExtFileChooserDialog(0, title, null, null);
         d.setStorageID(id);
         d.setFileSelectionMode(fsm);
         d.setFileFilter(fileFilter);
@@ -409,14 +410,11 @@ public class UserIO {
         d.setPreSelection(startDirectory);
         try {
             Dialog.I().showDialog(d);
-        } catch (DialogClosedException e) {
-            // TODO Auto-generated catch block
+            return d.getSelection();
+        } catch (DialogNoAnswerException e) {
             e.printStackTrace();
-        } catch (DialogCanceledException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            return null;
         }
-        return d.getSelection();
     }
 
     /**
