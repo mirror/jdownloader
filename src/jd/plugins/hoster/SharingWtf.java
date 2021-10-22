@@ -26,7 +26,6 @@ import org.jdownloader.plugins.components.YetiShareCore;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountRequiredException;
@@ -142,13 +141,14 @@ public class SharingWtf extends YetiShareCore {
         /* 2020-01-18: Special */
         String continue_link = null;
         if (continue_link == null) {
-            /* 2020-02-17: For premium mode */
-            continue_link = br.getRegex("(https?://transfer[a-z0-9]*?\\.[^/]+/jdb\\?url=[^\"]+)").getMatch(0);
-            if (continue_link != null) {
-                continue_link = Encoding.htmlDecode(continue_link);
-                final String[] urls = HTMLParser.getHttpLinks(continue_link, "");
-                if (urls.length > 1) {
-                    continue_link = urls[urls.length - 1];
+            /* 2020-02-17: For premium mode: URL inside URL */
+            final String specialURL = br.getRegex("(https?://transfer[a-z0-9]*\\.[^/]+/[^<>\"\\']*\\?url=[^\"]+)").getMatch(0);
+            if (specialURL != null) {
+                try {
+                    final UrlQuery query = UrlQuery.parse(specialURL);
+                    continue_link = Encoding.htmlDecode(query.get("url"));
+                } catch (final Throwable ignore) {
+                    logger.warning("Special premium downloadurl handling failed");
                 }
             }
         }

@@ -571,16 +571,6 @@ public class YetiShareCore extends antiDDoSForHost {
         /* First try to re-use stored directurl */
         checkDirectLink(link, account);
         if (this.dl == null) {
-            // try {
-            // requestFileInformationWebsite(link, account, true);
-            // br.getPage(link.getPluginPatternMatcher());
-            // if (isOfflineWebsite(this.br, link)) {
-            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // }
-            // this.checkErrors(br, link, account);
-            // } catch (final PluginException e) {
-            // ignorePluginException(e, this.br, link, account);
-            // }
             /* Access downloadurl */
             br.setFollowRedirects(false);
             getPage(link.getPluginPatternMatcher());
@@ -1151,7 +1141,7 @@ public class YetiShareCore extends antiDDoSForHost {
         } else if (url != null && new Regex(url, Pattern.compile(".*?(You must register for a premium account to|Ten plik jest za duży do pobrania dla darmowego użytkownika|/register\\.).+", Pattern.CASE_INSENSITIVE)).matches()) {
             throw new AccountRequiredException();
         } else if (StringUtils.containsIgnoreCase(errorMsgURL, "You have reached the maximum permitted downloads in")) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 3 * 60 * 60 * 1001l);
+            ipBlockedOrAccountLimit(link, account, errorMsgURL, 3 * 60 * 60 * 1001l);
         } else if (StringUtils.containsIgnoreCase(errorMsgURL, "File not found") || StringUtils.containsIgnoreCase(errorMsgURL, "File has been removed")) {
             /* 2020-01-08: letsupload.io & oxycloud.com */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -1167,10 +1157,8 @@ public class YetiShareCore extends antiDDoSForHost {
             /* Not enough wait time to reconnect -> Wait short and retry */
             if (waittime < 180000) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait until new downloads can be started", waittime);
-            } else if (account != null) {
-                throw new AccountUnavailableException("Download limit reached", waittime);
             } else {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
+                ipBlockedOrAccountLimit(link, account, errorMsgURL, waittime);
             }
         } else if (errorMsgURL != null) {
             logger.info("Unidentified error happened: " + errorMsgURL);
@@ -1184,6 +1172,8 @@ public class YetiShareCore extends antiDDoSForHost {
     /**
      * Checks for reasons to ignore given PluginExceptions. </br>
      * Example: Certain errors thay may happen during availablecheck when user is not yet logged in but won't happen when user is logged in.
+     * </br>
+     * TODO: Remove this once "fastdrive.io" is no more.
      */
     @Deprecated
     protected void ignorePluginException(final PluginException exception, final Browser br, final DownloadLink link, final Account account) throws PluginException {
@@ -1268,24 +1258,25 @@ public class YetiShareCore extends antiDDoSForHost {
                 throw new AccountRequiredException(errorMsgURL);
             } /** Limit errorhandling */
             else if (errorkey.equalsIgnoreCase(error_you_have_reached_the_download_limit)) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsgURL, default_waittime);
+                ipBlockedOrAccountLimit(link, account, errorMsgURL, default_waittime);
             } else if (errorkey.equalsIgnoreCase(error_you_have_reached_the_download_limit_this_file)) {
                 /* "You do not have enough bandwidth left to download this file." */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsgURL, default_waittime);
             } else if (errorkey.equalsIgnoreCase(error_you_have_reached_the_maximum_daily_download_limit)) {
                 /* "You have reached the maximum download bandwidth today, please upgrade or try again later." */
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsgURL, default_waittime);
+                ipBlockedOrAccountLimit(link, account, errorMsgURL, default_waittime);
             } else if (errorkey.equalsIgnoreCase(error_you_have_reached_the_maximum_band_width_per_day_in_the_last_24_hours)) {
                 /* 2020-12-11: sundryshare.com */
                 /* "You have reached the maximum permitted downloads  band width per day." */
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsgURL, 1 * 60 * 60 * 1000l);
+                ipBlockedOrAccountLimit(link, account, errorMsgURL, default_waittime);
             } else if (errorkey.equalsIgnoreCase(error_you_have_reached_the_maximum_daily_download_limit_this_file)) {
                 /* "You do not have enough bandwidth left today to download this file." */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsgURL, default_waittime);
             } else if (errorkey.equalsIgnoreCase(error_you_have_reached_the_maximum_permitted_downloads_in_the_last_24_hours)) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsgURL, default_waittime);
+                ipBlockedOrAccountLimit(link, account, errorMsgURL, default_waittime);
             } else if (errorkey.equalsIgnoreCase(error_you_have_reached_the_max_permitted_downloads)) {
                 /*
+                 * Limit per file -> All we can do is wait.
                  * "You have reached the maximum concurrent downloads. Please wait for your existing downloads to complete or register for a premium account above."
                  */
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errorMsgURL, 5 * 60 * 1000l);
@@ -1299,10 +1290,8 @@ public class YetiShareCore extends antiDDoSForHost {
                 }
                 if (waittime < 180000) {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errorMsgURL, waittime);
-                } else if (account != null) {
-                    throw new AccountUnavailableException(errorMsgURL, waittime);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsgURL, waittime);
+                    ipBlockedOrAccountLimit(link, account, errorMsgURL, waittime);
                 }
             } else {
                 logger.warning("Unknown errorkey: " + errorkey + " --> Trying checkErrorsURL");
@@ -1313,13 +1302,22 @@ public class YetiShareCore extends antiDDoSForHost {
         }
     }
 
+    /** Throws appropriate Exception depending on whether or not an account is given. */
+    private void ipBlockedOrAccountLimit(final DownloadLink link, final Account account, final String errorMsg, final long waitMillis) throws PluginException {
+        if (account != null) {
+            throw new AccountUnavailableException(errorMsg, waitMillis);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsg, waitMillis);
+        }
+    }
+
     private long parseWaittime(final String src) {
         /*
          * Important: URL Might contain htmlencoded parts! Be sure that these RegExes are tolerant enough to get the information we need!
          */
-        final String wait_hours = new Regex(src, "(\\d+)\\s*?hours?").getMatch(0);
-        final String wait_minutes = new Regex(src, "(\\d+)\\s*?minutes?").getMatch(0);
-        final String wait_seconds = new Regex(src, "(\\d+)\\s*?(?:seconds?|segundos)").getMatch(0);
+        final String wait_hours = new Regex(src, "(?i)(\\d+)\\s*?hours?").getMatch(0);
+        final String wait_minutes = new Regex(src, "(?i)(\\d+)\\s*?minutes?").getMatch(0);
+        final String wait_seconds = new Regex(src, "(?i)(\\d+)\\s*?(?:seconds?|segundos)").getMatch(0);
         int minutes = 0, seconds = 0, hours = 0;
         if (wait_hours != null) {
             hours = Integer.parseInt(wait_hours);
@@ -1345,9 +1343,9 @@ public class YetiShareCore extends antiDDoSForHost {
          * Now check for errors which checkErrorsLanguageIndependant failed to handle
          */
         checkErrorsURL(br, link, account);
-        if (br.toString().equals("unknown user")) {
+        if (br.toString().equalsIgnoreCase("unknown user")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Unknown user'", 30 * 60 * 1000l);
-        } else if (br.toString().equals("ERROR: Wrong IP")) {
+        } else if (br.toString().equalsIgnoreCase("ERROR: Wrong IP")) {
             /*
              * 2019-07-05: New: rare case but this can either happen randomly or when you try to resume a stored downloadurl with a new IP.
              */
@@ -1356,7 +1354,7 @@ public class YetiShareCore extends antiDDoSForHost {
         /* 2020-10-12: New YetiShare */
         final String waittimeBetweenDownloadsStr = br.getRegex("(?i)>\\s*You must wait (\\d+) minutes? between downloads").getMatch(0);
         if (waittimeBetweenDownloadsStr != null) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Wait between downloads", Integer.parseInt(waittimeBetweenDownloadsStr) * 60 * 1001l);
+            ipBlockedOrAccountLimit(link, account, "Wait between downloads", Integer.parseInt(waittimeBetweenDownloadsStr) * 60 * 1001l);
         }
     }
 
