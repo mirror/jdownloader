@@ -52,7 +52,7 @@ public class StreamsbNet extends XFileSharingProBasic {
          * streamsb.com is basically only a dummy entry here as no downloadlinks exist that can be used via this domain.
          */
         ret.add(new String[] { "streamsb.com" });
-        ret.add(new String[] { "streamsb.net", "sbembed1.com", "sbembed2.com" });
+        ret.add(new String[] { "streamsb.net", "sbembed.com", "sbembed1.com", "sbembed2.com", "sbcloud1.com", "tubesb.com" });
         return ret;
     }
 
