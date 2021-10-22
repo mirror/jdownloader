@@ -90,7 +90,7 @@ public class Q32Pw extends PluginForDecrypt {
             }
             final BufferedImage[] images = new BufferedImage[captchas_b64.length];
             final File stitchedImageOutput = getStitchedImage(captchas_b64, images);
-            final ClickedPoint c = getCaptchaClickedPoint(getHost(), stitchedImageOutput, param, null, captchaQuestion);
+            final ClickedPoint c = getCaptchaClickedPoint(getHost(), stitchedImageOutput, param, captchaQuestion);
             if (c == null) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }

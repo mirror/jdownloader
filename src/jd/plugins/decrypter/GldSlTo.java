@@ -192,7 +192,8 @@ public class GldSlTo extends antiDDoSForDecrypt {
                     } else {
                         click_on = "Click in the dashed circle!";
                     }
-                    final ClickedPoint cp = getCaptchaClickedPoint(br.getHost(), file, param, "Goldesel\r\nDecrypting: " + fpName + "\r\nClick-Captcha | Mirror " + counter + " / " + maxc + " : " + decryptID, click_on);
+                    logger.info("Click-Captcha | Mirror " + counter + " / " + maxc + " : " + decryptID);
+                    final ClickedPoint cp = getCaptchaClickedPoint(br.getHost(), file, param, click_on);
                     if (cp == null) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }

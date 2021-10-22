@@ -104,7 +104,7 @@ public class CriptTo extends PluginForDecrypt {
                 if (captcha != null && captcha.contains("circlecaptcha")) {
                     final File file = this.getLocalCaptchaFile();
                     getCaptchaBrowser(br).getDownload(file, captcha);
-                    final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, null, "Click on the open circle");
+                    final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, "Click on the open circle");
                     if (cp == null) {
                         if (i < 3) {
                             continue;
@@ -199,7 +199,7 @@ public class CriptTo extends PluginForDecrypt {
                         if (captcha != null && captcha.contains("circlecaptcha")) {
                             final File file = this.getLocalCaptchaFile();
                             getCaptchaBrowser(br).getDownload(file, captcha);
-                            final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, null, "Click on the open circle or single color circle");
+                            final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, "Click on the open circle or single color circle");
                             if (cp == null) {
                                 if (i < 3) {
                                     continue;
