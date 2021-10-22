@@ -11,7 +11,7 @@ import org.jdownloader.plugins.config.Type;
 public interface BsToConfig extends PluginConfigInterface {
     @AboutConfig
     // @DefaultStringValue("")
-    @DescriptionForConfigEntry("Define priority of sources e.g. 'VOE, MIXdrop, Vidoza'. Only the first available source will be added. If none found, all will be added!")
+    @DescriptionForConfigEntry("Define priority of sources e.g. 'VOE, MIXdrop, Vidoza'. Only the first available source will be added. If none of the preferred mirrors are found, all will be added!")
     @Order(10)
     String getHosterPriorityString();
 
