@@ -48,20 +48,35 @@ public class GetComics extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         // Load page
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         final GetRequest request = br.createGetRequest(parameter);
-        final URLConnectionAdapter con = openAntiDDoSRequestConnection(br, request);
+        URLConnectionAdapter con = openAntiDDoSRequestConnection(br, request);
         try {
-            if (this.looksLikeDownloadableContent(con)) {
-                final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(request, con);
-                decryptedLinks.add(direct.getDownloadLink());
-                // return decryptedLinks;
-            } else {
-                br.followConnection();
+            while (true) {
+                if (this.looksLikeDownloadableContent(con)) {
+                    final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(request, con);
+                    decryptedLinks.add(direct.getDownloadLink());
+                    // return decryptedLinks;
+                    break;
+                } else {
+                    final String redirect = con.getRequest().getLocation();
+                    if (redirect != null) {
+                        if (!canHandle(redirect)) {
+                            decryptedLinks.add(createDownloadlink(redirect));
+                            return decryptedLinks;
+                        }
+                        br.followRedirect(false);
+                        con = br.getRequest().getHttpConnection();
+                    } else {
+                        br.followConnection();
+                        break;
+                    }
+                }
             }
         } finally {
             con.disconnect();
         }
+        br.setFollowRedirects(true);
         if (br.containsHTML("You have been redirected through this website from a suspicious source")) {
             String base64 = new Regex(parameter, "((aHR0c|ZnRwOi).+)($|\\?)").getMatch(0);
             if (base64 != null) {
