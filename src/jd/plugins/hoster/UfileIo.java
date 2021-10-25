@@ -42,7 +42,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ufile.io" }, urls = { "https?://(?:www\\.)?(?:uploadfiles|ufile)\\.io/([A-Za-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ufile.io" }, urls = { "https?://(?:\\w+\\.)?(?:uploadfiles|ufile)\\.io/([A-Za-z0-9]+)" })
 public class UfileIo extends antiDDoSForHost {
     public UfileIo(PluginWrapper wrapper) {
         super(wrapper);
