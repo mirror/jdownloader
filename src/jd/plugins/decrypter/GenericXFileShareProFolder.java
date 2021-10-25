@@ -51,10 +51,10 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
     private static final String[] domains        = new String[] { "up-4.net", "up-4ever.com", "up-4ever.net", "subyshare.com", "brupload.net", "koofile.com", "powvideo.net", "lunaticfiles.com", "youwatch.org", "up.media1fire.com", "salefiles.com", "ortofiles.com", "restfile.ca", "restfilee.com", "storagely.com", "free-uploading.com", "rapidfileshare.net", "fireget.com", "mixshared.com", "longfiles.com", "novafile.com", "qtyfiles.com", "free-uploading.com", "free-uploading.com", "uppit.com", "downloadani.me", "faststore.org", "clicknupload.org", "isra.cloud", "world-files.com", "katfile.com", "filefox.cc", "cosmobox.org", "easybytez.com", "userupload.net",
-                                                 /** file-up.org domains */
-                                                 "file-up.org", "file-up.io", "file-up.cc", "file-up.com", "file-upload.org", "file-upload.io", "file-upload.cc", "file-upload.com", "tstorage.info", "fastfile.cc" };
+        /** file-up.org domains */
+        "file-up.org", "file-up.io", "file-up.cc", "file-up.com", "file-upload.org", "file-upload.io", "file-upload.cc", "file-upload.com", "tstorage.info", "fastfile.cc" };
     /* This list contains all hosts which need special Patterns (see below) - all other XFS hosts have the same folder patterns! */
-    private static final String[] specialDomains = { "usersfiles.com", "userscloud.com", "hotlink.cc", "ex-load.com", "imgbaron.com", "filespace.com", "spaceforfiles.com", "prefiles.com", "imagetwist.com", "file.al", "send.cm", "takefile.link" };
+    private static final String[] specialDomains = { "usersfiles.com", "userscloud.com", "hotlink.cc", "ex-load.com", "imgbaron.com", "filespace.com", "spaceforfiles.com", "prefiles.com", "imagetwist.com", "file.al", "send.cm", "takefile.link", "mega-rip.takefile.link" };
 
     public static String[] getAnnotationNames() {
         return getAllDomains();
@@ -102,7 +102,8 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         ret.add("https?://(?:www\\.)?file\\.al/public/\\d+/.+");
         /* send.cm */
         ret.add("https?://(?:www\\.)?send\\.cm/s/.+");
-        ret.add("https?://(?:[a-z0-9\\-]+\\.)?takefile\\.link/folder/[a-f0-9\\-]+");
+        ret.add("https?://(?:www\\.)?takefile\\.link/folder/[a-f0-9\\-]+");
+        ret.add("https?://(?:www\\.)?mega-rip\\.takefile\\.link/folder/[a-f0-9\\-]+");
         return ret.toArray(new String[0]);
     }
 
