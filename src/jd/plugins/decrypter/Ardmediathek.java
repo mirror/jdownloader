@@ -70,7 +70,7 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "sandmann.de", "wdr.de", "sportschau.de", "wdrmaus.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "ndr.de" }, urls = { "https?://(?:[A-Z0-9]+\\.)?ardmediathek\\.de/.+", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/.*?\\.html", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html|https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js", "https?://(?:\\w+\\.)?sportschau\\.de/.*?\\.html", "https?://(?:www\\.)?wdrmaus\\.de/.+", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html",
-        "https?://(?:www\\.)?ndr\\.de/[^<>\"]+\\.html" })
+"https?://(?:www\\.)?ndr\\.de/[^<>\"]+\\.html" })
 public class Ardmediathek extends PluginForDecrypt {
     private static final String                 EXCEPTION_GEOBLOCKED                       = "EXCEPTION_GEOBLOCKED";
     /* Constants */
@@ -152,43 +152,34 @@ public class Ardmediathek extends PluginForDecrypt {
          * 2018-03-06: TODO: Maybe add option to download hls audio as hls master playlist will often contain a mp4 stream without video (==
          * audio only).
          */
-        final boolean addHLS180 = cfg.isGrabHLS180pVideoEnabled();
-        final boolean addHLS270 = cfg.isGrabHLS270pVideoEnabled();
-        final boolean addHLS270lower = cfg.isGrabHLS270pLowerVideoEnabled();
-        final boolean addHLS280 = cfg.isGrabHLS280pVideoEnabled();
-        final boolean addHLS360 = cfg.isGrabHLS360pVideoEnabled();
-        final boolean addHLS540 = cfg.isGrabHLS540pVideoEnabled();
-        final boolean addHLS576 = cfg.isGrabHLS576pVideoEnabled();
-        final boolean addHLS720 = cfg.isGrabHLS720pVideoEnabled();
-        final boolean addHLS1080 = cfg.isGrabHTTP1080pVideoEnabled();
-        grabHLS = addHLS180 || addHLS270lower || addHLS270 || addHLS280 || addHLS360 || addHLS540 || addHLS576 || addHLS720 || addHLS1080;
-        if (addHLS180) {
+        if (cfg.isGrabHLS180pVideoEnabled()) {
             selectedQualities.add("hls_" + heigth_to_bitrate.get("180") + "_180");
         }
-        if (addHLS270lower) {
+        if (cfg.isGrabHLS270pLowerVideoEnabled()) {
             selectedQualities.add("hls_317000_270");
         }
-        if (addHLS270) {
+        if (cfg.isGrabHLS270pVideoEnabled()) {
             selectedQualities.add("hls_" + heigth_to_bitrate.get("270") + "_270");
         }
-        if (addHLS280) {
+        if (cfg.isGrabHLS280pVideoEnabled()) {
             selectedQualities.add("hls_" + heigth_to_bitrate.get("280") + "_280");
         }
-        if (addHLS360) {
+        if (cfg.isGrabHLS360pVideoEnabled()) {
             selectedQualities.add("hls_" + heigth_to_bitrate.get("360") + "_360");
         }
-        if (addHLS540) {
+        if (cfg.isGrabHLS540pVideoEnabled()) {
             selectedQualities.add("hls_" + heigth_to_bitrate.get("540") + "_540");
         }
-        if (addHLS576) {
+        if (cfg.isGrabHLS576pVideoEnabled()) {
             selectedQualities.add("hls_" + heigth_to_bitrate.get("576") + "_576");
         }
-        if (addHLS720) {
+        if (cfg.isGrabHLS720pVideoEnabled()) {
             selectedQualities.add("hls_" + heigth_to_bitrate.get("720") + "_720");
         }
-        if (addHLS1080) {
+        if (cfg.isGrabHLS1080pVideoEnabled()) {
             selectedQualities.add("hls_" + heigth_to_bitrate.get("1080") + "_1080");
         }
+        grabHLS = selectedQualities.size() > 0;
         if (cfg.isGrabHTTP180pVideoEnabled()) {
             selectedQualities.add("http_" + heigth_to_bitrate.get("180") + "_180");
         }
