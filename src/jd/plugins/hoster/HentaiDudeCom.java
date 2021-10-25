@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -30,6 +28,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hentaidude.com" }, urls = { "https?://(?:www\\.)?hentaidude\\.com/.*(-episode-[0-9]+|ova)/" })
 public class HentaiDudeCom extends antiDDoSForHost {
@@ -53,7 +53,10 @@ public class HentaiDudeCom extends antiDDoSForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("404 - Sorry, nothing found. But feel free to jerk off to one of these videos:")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<meta (?:name|property)=\"og:(?:title|description)\" content=[\"']([^<>\"]*?)(?: ?\\| Hentaidude.com)").getMatch(0);
+        String filename = br.getRegex("<meta (?:name|property)=\"og:(?:title|description)\" content=[\"']([^<>\"]*?)(?:\\s*(\\||-)\\s*Hentaidude.com)").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>\\s*([^<>\"]*?)(?:\\s*(\\||-)\\s*Hentaidude.com)\\s*</title").getMatch(0);
+        }
         link.setName(Encoding.htmlOnlyDecode(filename) + ".mp4");
         String[][] source = br.getRegex("action:[\r\n\t ]+'msv-get-sources',[\r\n\t ]+id:[\r\n\t ]+'([0-9]+)',[\r\n\t ]+nonce:[\r\n\t ]+'([0-9a-fA-F]+)'").getMatches();
         final PostRequest post = new PostRequest(br.getURL("/wp-admin/admin-ajax.php"));
@@ -75,7 +78,9 @@ public class HentaiDudeCom extends antiDDoSForHost {
                     con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(result));
                     if (this.looksLikeDownloadableContent(con)) {
                         dllink = result;
-                        link.setDownloadSize(con.getLongContentLength());
+                        if (con.getCompleteContentLength() > 0) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        }
                     } else {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
@@ -117,8 +122,9 @@ public class HentaiDudeCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();

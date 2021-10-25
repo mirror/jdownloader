@@ -36,6 +36,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -253,14 +254,18 @@ public class FastixRu extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail address in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        getAPISafe(DOMAIN + "?sub=get_apikey&email=" + URLEncode.encodeURIComponent(account.getUser()) + "&password=" + URLEncode.encodeURIComponent(account.getPass()));
-        final String apikey = PluginJSonUtils.getJsonValue(br, "apikey");
-        if (apikey == null) {
-            // maybe unhandled error reason why apikey is null!
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String apiKey;
+        synchronized (account) {
+            getAPISafe(DOMAIN + "?sub=get_apikey&email=" + URLEncode.encodeURIComponent(account.getUser()) + "&password=" + URLEncode.encodeURIComponent(account.getPass()));
+            apiKey = PluginJSonUtils.getJsonValue(br, "apikey");
+            if (StringUtils.isEmpty(apiKey)) {
+                // maybe unhandled error reason why apikey is null!
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                account.setProperty("fastixapikey", apiKey);
+            }
         }
-        account.setProperty("fastixapikey", apikey);
-        getAPISafe(DOMAIN + "?apikey=" + getAPIKEY(account) + "&sub=getaccountdetails");
+        getAPISafe(DOMAIN + "?apikey=" + apiKey + "&sub=getaccountdetails");
         final String points = PluginJSonUtils.getJsonValue(br, "points");
         // null or parse exceptions will result in 0 traffic, users should complain and we can 'fix'
         long p = 0;
@@ -280,7 +285,7 @@ public class FastixRu extends antiDDoSForHost {
          * Other methods to get this list: allowed_fileshares, allowed_sources - directing_status is the best as they refresh it every 15
          * minutes and it contains lists of working/non working and partially working services
          */
-        getAPISafe(DOMAIN + "?apikey=" + getAPIKEY(account) + "&sub=directing_status");
+        getAPISafe(DOMAIN + "?apikey=" + apiKey + "&sub=directing_status");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String[] lists = { "partially", "up" };
         for (final String list : lists) {
@@ -308,7 +313,7 @@ public class FastixRu extends antiDDoSForHost {
         final String apiKey;
         synchronized (account) {
             apiKey = account.getStringProperty("fastixapikey", null);
-            if (apiKey != null) {
+            if (StringUtils.isEmpty(apiKey)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
