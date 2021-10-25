@@ -276,8 +276,9 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         final String name = Plugin.extractFileNameFromURL(url);
         if (name != null) {
             return name;
+        } else {
+            return "RAWURL:" + url;
         }
-        return "RAWURL:" + url;
     }
 
     public int getChunks() {

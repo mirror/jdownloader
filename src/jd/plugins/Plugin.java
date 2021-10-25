@@ -68,6 +68,7 @@ import org.appwork.utils.Exceptions;
 import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
@@ -271,24 +272,26 @@ public abstract class Plugin implements ActionListener {
         if (StringUtils.isEmpty(filename)) {
             return null;
         }
-        int index = filename.indexOf("?");
+        final int query = filename.indexOf("?");
         /*
          * cut off get url parameters
          */
-        if (index > 0) {
-            filename = filename.substring(0, index);
+        if (query > 0) {
+            filename = filename.substring(0, query);
         }
-        index = filename.indexOf("#");
+        final int anchor = filename.indexOf("#");
         /* cut off anchor */
-        if (index > 0) {
-            filename = filename.substring(0, index);
+        if (anchor > 0) {
+            filename = filename.substring(0, anchor);
         }
-        index = Math.max(filename.lastIndexOf("/"), filename.lastIndexOf("\\"));
+        final int file = Math.max(filename.lastIndexOf("/"), filename.lastIndexOf("\\"));
         /*
          * use filename
          */
-        filename = filename.substring(index + 1);
-        return Encoding.htmlDecode(filename);
+        filename = filename.substring(file + 1);
+        filename = URLEncode.decodeURIComponent(filename);
+        filename = Encoding.htmlOnlyDecode(filename);
+        return filename;
     }
 
     public static String getFileNameFromDispositionHeader(final URLConnectionAdapter urlConnection) {
