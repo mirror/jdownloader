@@ -3464,9 +3464,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     protected String findExpireDate(final Browser br) {
-        final String preciseExpireHTML = new Regex(getCorrectBR(br), "<div[^>]*class=\"accexpire\"[^>]*>.*?</div>").getMatch(-1);
+        boolean allHTML = false;
+        String preciseExpireHTML = new Regex(getCorrectBR(br), "<div[^>]*class=\"accexpire\"[^>]*>.*?</div>").getMatch(-1);
+        if (preciseExpireHTML == null) {
+            allHTML = true;
+            preciseExpireHTML = getCorrectBR(br);
+        }
+        // pattern good enough for all html
         String expireSecond = new Regex(preciseExpireHTML, "Premium(-| )Account expires?\\s*:\\s*(?:</span>)?\\s*(?:<span>)?\\s*([a-zA-Z0-9, ]+)\\s*</").getMatch(-1);
-        if (StringUtils.isEmpty(expireSecond)) {
+        if (StringUtils.isEmpty(expireSecond) && !allHTML) {
             /*
              * Last attempt - wider RegEx but we expect the 'second(s)' value to always be present!! Example: file-up.org:
              * "<p style="direction: ltr; display: inline-block;">1 year, 352 days, 22 hours, 36 minutes, 45 seconds</p>"
