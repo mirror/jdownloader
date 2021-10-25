@@ -19,10 +19,6 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.YetiShareCore;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -32,6 +28,10 @@ import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.YetiShareCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class SharingWtf extends YetiShareCore {
@@ -188,7 +188,9 @@ public class SharingWtf extends YetiShareCore {
         try {
             final UrlQuery query = UrlQuery.parse(br.getURL());
             errorMsg = query.get("e");
-            errorMsg = URLDecoder.decode(errorMsg, "UTF-8");
+            if (errorMsg != null) {
+                errorMsg = URLDecoder.decode(errorMsg, "UTF-8");
+            }
         } catch (final Throwable e) {
             logger.log(e);
         }

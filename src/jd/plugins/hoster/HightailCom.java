@@ -56,10 +56,17 @@ public class HightailCom extends PluginForHost {
         final String versionid = link.getStringProperty("versionid", null);
         if (fileid == null || spaceid == null || versionid == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            if (link.getFinalFileName() == null) {
+                link.setFinalFileName(link.getStringProperty("directname", null));
+            }
+            if (link.getVerifiedFileSize() == -1) {
+                link.setVerifiedFileSize(link.getLongProperty("directsize", -1l));
+            }
+            br.setFollowRedirects(true);
+            dllink = "https://download.spaces.hightail.com/api/v1/download/" + spaceid + "/" + fileid + "/" + versionid;
+            return AvailableStatus.TRUE;
         }
-        br.setFollowRedirects(true);
-        dllink = "https://download.spaces.hightail.com/api/v1/download/" + spaceid + "/" + fileid + "/" + versionid;
-        return AvailableStatus.TRUE;
     }
 
     @Override

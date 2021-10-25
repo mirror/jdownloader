@@ -21,11 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -39,6 +34,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hightail.com" }, urls = { "https?://(?:www\\.)?(?:yousendit|hightail)\\.com/download/[A-Za-z0-9\\-_]+|https?://spaces\\.hightail\\.com/(?:space|receive)/[A-Za-z0-9]+" })
 public class HighTailComDecrypter extends PluginForDecrypt {
@@ -80,7 +80,7 @@ public class HighTailComDecrypter extends PluginForDecrypt {
         if (StringUtils.isEmpty(spaceID)) {
             return null;
         }
-        br.getPage("https://api.spaces." + this.getHost() + "/api/v1/spaces/url/" + spaceID + "?status=ACTIVE");
+        br.getPage("https://api.spaces." + this.getHost() + "/api/v1/spaces/url/" + spaceID + "?status=SEND");
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final String errorMessage = (String) entries.get("errorMessage");
         if (!StringUtils.isEmpty(errorMessage)) {
@@ -109,8 +109,7 @@ public class HighTailComDecrypter extends PluginForDecrypt {
                 final String filename = (String) entries.get("name");
                 final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), -1);
                 if (StringUtils.isEmpty(filename) || filesize == -1) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Decrypter broken for link: " + parameter);
                 }
                 dl.setFinalFileName(filename);
                 dl.setDownloadSize(filesize);
