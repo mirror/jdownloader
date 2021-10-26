@@ -17,9 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -33,6 +30,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "4share.vn" }, urls = { "https?://(?:www\\.)?(?:up\\.)?4share\\.vn/(?:d|dlist)/[a-f0-9]{16}" })
 public class FourShareVnFolder extends PluginForDecrypt {
     public FourShareVnFolder(PluginWrapper wrapper) {
@@ -45,7 +45,7 @@ public class FourShareVnFolder extends PluginForDecrypt {
         br.setConnectTimeout(2 * 60 * 1000);
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if ((br.containsHTML(">Error: Not valid ID") && !br.containsHTML("up\\.4share\\.vn/f/")) || br.containsHTML("File suspended:") || br.containsHTML(">\\s*Empty folder") || !this.br.getURL().matches(".+[a-f0-9]{16}$")) {
+        if ((br.containsHTML(">\\s*Error: Not valid ID") && !br.containsHTML("up\\.4share\\.vn/f/")) || br.containsHTML("File suspended:") || br.containsHTML(">\\s*Empty folder") || br.containsHTML(">\\s*ErrorWeb: Not found folder") || !this.br.getURL().matches(".+[a-f0-9]{16}$")) {
             final DownloadLink offline = this.createOfflinelink(parameter);
             decryptedLinks.add(offline);
             return decryptedLinks;
