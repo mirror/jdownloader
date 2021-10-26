@@ -153,6 +153,7 @@ public class TakefileLink extends XFileSharingProBasic {
         final List<String[]> ret = new ArrayList<String[]>();
         // virtual file hosting
         ret.add(new String[] { "vip.takefile.link" });
+        ret.add(new String[] { "erofullsets.takefile.link" });
         ret.add(new String[] { "musiclibrary.takefile.link" });
         ret.add(new String[] { "mega-rip.takefile.link" });
         ret.add(new String[] { "webcam.takefile.link" });

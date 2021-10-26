@@ -19,6 +19,8 @@ import jd.plugins.PluginException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.usenet.InvalidAuthException;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -54,16 +56,25 @@ public class NewsAstraWebCom extends UseNet {
     public static interface NewsAstraWebComConfigInterface extends UsenetAccountConfigInterface {
     };
 
-    private Map<String, Object> createPostRequest(Browser br, final String url, final String jwtToken) throws IOException {
+    private Map<String, Object> createPostRequest(Browser br, final String url, final String jwtToken, final Map<String, Object> customJson) throws IOException {
         final Map<String, Object> json = new HashMap<String, Object>();
-        json.put("brandName", "astraweb");
-        json.put("userId", jwtToken);
+        if (customJson != null) {
+            json.putAll(customJson);
+        } else {
+            json.put("brandName", "astraweb");
+            json.put("userId", jwtToken);
+        }
         final PostRequest postRequest = br.createJSonPostRequest(url, JSonStorage.toString(json));
         postRequest.getHeaders().put("Origin", "https://www.astraweb.com");
         postRequest.getHeaders().put("Authorization", "Bearer " + jwtToken);
         final Browser brc = br.cloneBrowser();
+        brc.setAllowedResponseCodes(403);
         final String response = brc.getPage(postRequest);
-        return JSonStorage.restoreFromString(response, TypeRef.HASHMAP);
+        if (brc.getRequest().getHttpConnection().getResponseCode() == 403) {
+            return new HashMap<String, Object>();
+        } else {
+            return JSonStorage.restoreFromString(response, TypeRef.HASHMAP);
+        }
     }
 
     private final String jwtTokenProperty = "jwt_token";
@@ -77,21 +88,54 @@ public class NewsAstraWebCom extends UseNet {
             Map<String, Object> response = null;
             try {
                 if (jwtToken != null) {
-                    response = createPostRequest(br, "https://middleware.astraweb.com/subscription/getSubscriptionsForUser?XDEBUG_SESSION_START=PHPSTORM", jwtToken);
-                    if (!StringUtils.equalsIgnoreCase("running", (String) response.get("status"))) {
-                        account.removeProperty(jwtTokenProperty);
-                        jwtToken = null;
+                    if (true) {
+                        try {
+                            verifyUseNetLogins(account);
+                            return ai;
+                        } catch (InvalidAuthException e) {
+                            logger.log(e);
+                            account.removeProperty(jwtTokenProperty);
+                            jwtToken = null;
+                        }
+                    } else {
+                        // session expire very fast
+                        response = createPostRequest(br, "https://middleware.astraweb.com/subscription/getSubscriptionsForUser?XDEBUG_SESSION_START=PHPSTORM", jwtToken, null);
+                        if (response.containsKey("errorCode")) {
+                            switch (((Number) response.get("errorCode")).intValue()) {
+                            case 1002:
+                                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            case 1014:
+                                // {"function":"..........","errorType":"ExpiredException","errorCode":1014}
+                                account.removeProperty(jwtTokenProperty);
+                                jwtToken = null;
+                                break;
+                            default:
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Response:" + response.toString());
+                            }
+                        } else if (response.isEmpty()) {
+                            account.removeProperty(jwtTokenProperty);
+                            jwtToken = null;
+                        }
                     }
                 }
                 if (jwtToken == null) {
                     final String userName = account.getUser();
                     br.getPage("https://www.astraweb.com/login?redirect=%2Fmember");
+                    final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LcXsloaAAAAAHEnpDmiuFfOw61pHmms9Wt_aH0x") {
+                        @Override
+                        public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2.TYPE getType() {
+                            return TYPE.INVISIBLE;
+                        }
+                    };
                     final Map<String, Object> loginJSON = new HashMap<String, Object>();
                     loginJSON.put("brandName", "astraweb");
                     loginJSON.put("username", userName);
                     loginJSON.put("password", account.getPass());
+                    loginJSON.put("reCaptchaToken", rc2.getToken());
                     final Browser brc = br.cloneBrowser();
                     final PostRequest loginRequest = brc.createJSonPostRequest("https://middleware.astraweb.com/user/authenticate?XDEBUG_SESSION_START=PHPSTORM", JSonStorage.toString(loginJSON));
+                    loginRequest.getHeaders().put("Origin", "https://www.astraweb.com");
+                    loginRequest.getHeaders().put("Referer", "https://www.astraweb.com");
                     final String responseString = brc.getPage(loginRequest);
                     response = JSonStorage.restoreFromString(responseString, TypeRef.HASHMAP);
                     if (response.containsKey("errorCode")) {
@@ -99,7 +143,7 @@ public class NewsAstraWebCom extends UseNet {
                         case 1002:
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                         default:
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Response:" + response.toString());
                         }
                     } else if (!response.containsKey("user") || !response.containsKey(jwtTokenProperty)) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -116,22 +160,37 @@ public class NewsAstraWebCom extends UseNet {
                         } else {
                             account.setProperty(USENET_USERNAME, username.trim());
                         }
-                        response = createPostRequest(br, "https://middleware.astraweb.com/subscription/getSubscriptionsForUser?XDEBUG_SESSION_START=PHPSTORM", jwtToken);
-                        if (!StringUtils.equalsIgnoreCase("running", (String) response.get("status"))) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
+                        response = createPostRequest(br, "https://middleware.astraweb.com/subscription/getSubscriptionsForUser?XDEBUG_SESSION_START=PHPSTORM", jwtToken, null);
                     }
                 }
-                final int threads = (int) JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(response, "current_package/meta_data/threads"), 1);
-                account.setMaxSimultanDownloads(threads);
+                final Number subscription_id = (Number) response.get("subscription_id");
+                if (subscription_id == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String status = (String) response.get("status");
+                final Number threads = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(response, "current_package/meta_data/threads"), 1);
+                account.setMaxSimultanDownloads(threads.intValue());
                 if (StringUtils.equalsIgnoreCase("Unlimited", (String) JavaScriptEngineFactory.walkJson(response, "current_package/meta_data/bandwidth"))) {
                     ai.setUnlimitedTraffic();
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                // TODO: expire date
-                // https://middleware.astraweb.com/billing/getBillingEventsForUser?XDEBUG_SESSION_START=PHPSTORM
-                // [{"billing_event_id":xyz,"billing_method_name":"Creditcard","currency_code":"USD","amount":35.88,"created_at":"2020-09-09T10:01:31+00:00","status":"success","description":"12 Months"}
+                final String package_identifier = (String) JavaScriptEngineFactory.walkJson(response, "current_package/package_identifier");
+                ai.setStatus(package_identifier);
+                if (StringUtils.containsIgnoreCase(package_identifier, "BLOCK")) {
+                    // TODO: traffic left
+                    // https://middleware.astraweb.com/subscription/subscriptionCallSpi?XDEBUG_SESSION_START=PHPSTORM
+                    // {brandName":"astraweb","subscriptionId":number,"reCaptchaToken":...
+                    // {"used":"203417977305","allowed":"798199167657","remaining":594781190352,"success":true}
+                    // unlimited, prepaid traffic
+                } else if (!StringUtils.equalsIgnoreCase(status, "running")) {
+                    // TODO check expire date
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    // TODO: expire date
+                    // https://middleware.astraweb.com/billing/getBillingEventsForUser?XDEBUG_SESSION_START=PHPSTORM
+                    // [{"billing_event_id":xyz,"billing_method_name":"Creditcard","currency_code":"USD","amount":35.88,"created_at":"2020-09-09T10:01:31+00:00","status":"success","description":"12 Months"}
+                }
                 account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 5 * 60 * 60 * 1000l);
                 ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
                 return ai;
@@ -147,12 +206,12 @@ public class NewsAstraWebCom extends UseNet {
     @Override
     public List<UsenetServer> getAvailableUsenetServer() {
         final List<UsenetServer> ret = new ArrayList<UsenetServer>();
-        ret.addAll(UsenetServer.createServerList("news.astraweb.com", false, 119, 23, 1818, 8080));
-        ret.addAll(UsenetServer.createServerList("us.news.astraweb.com", false, 119, 23, 1818, 8080));
-        ret.addAll(UsenetServer.createServerList("eu.news.astraweb.com", false, 119, 23, 1818, 8080));
-        ret.addAll(UsenetServer.createServerList("ssl.astraweb.com", true, 563, 443));
-        ret.addAll(UsenetServer.createServerList("ssl-eu.astraweb.com", true, 563, 443));
-        ret.addAll(UsenetServer.createServerList("ssl-us.astraweb.com", true, 563, 443));
+        ret.addAll(UsenetServer.createServerList("news.astraweb.com", new int[] { 119, 23, 1818, 8080 }, new int[] { 563, 443 }));
+        ret.addAll(UsenetServer.createServerList("us.astraweb.com", new int[] { 119, 23, 1818, 8080 }, new int[] { 563, 443 }));
+        ret.addAll(UsenetServer.createServerList("eu.astraweb.com", new int[] { 119, 23, 1818, 8080 }, new int[] { 563, 443 }));
+        ret.addAll(UsenetServer.createServerList("news6.astraweb.com", new int[] { 119, 23, 1818, 8080 }, new int[] { 563, 443 }));
+        ret.addAll(UsenetServer.createServerList("us6.astraweb.com", new int[] { 119, 23, 1818, 8080 }, new int[] { 563, 443 }));
+        ret.addAll(UsenetServer.createServerList("eu6.astraweb.com", new int[] { 119, 23, 1818, 8080 }, new int[] { 563, 443 }));
         return ret;
     }
 }
