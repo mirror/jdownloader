@@ -17,8 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,7 +28,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shrtfly.vip" }, urls = { "https?://(?:www\\.)?(?:shrtfly\\.vip|shrtvip\\.com|stfly\\.me)/([A-Za-z0-9]+)" })
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shrtfly.vip" }, urls = { "https?://(?:www\\.)?(?:shrtfly\\.vip|shrtvip\\.com|stfly\\.me|smwebs\\.xyz)/([A-Za-z0-9]+)" })
 public class ShrtflyVip extends MightyScriptAdLinkFly {
     public ShrtflyVip(PluginWrapper wrapper) {
         super(wrapper);

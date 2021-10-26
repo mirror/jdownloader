@@ -40,7 +40,11 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 public class TakefileLink extends XFileSharingProBasic {
     public TakefileLink(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://takefile.link/upgrade");
+        this.enablePremium(super.getPurchasePremiumURL());
+    }
+
+    public String getPurchasePremiumURL() {
+        return this.getMainPage() + "/upgrade";
     }
 
     /**
@@ -141,7 +145,20 @@ public class TakefileLink extends XFileSharingProBasic {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "takefile.link", "filecheck.link" });
+        ret.addAll(getVirtualPluginDomains());
+        return ret;
+    }
+
+    public static List<String[]> getVirtualPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // virtual file hosting
+        ret.add(new String[] { "vip.takefile.link" });
+        ret.add(new String[] { "musiclibrary.takefile.link" });
         ret.add(new String[] { "mega-rip.takefile.link" });
+        ret.add(new String[] { "webcam.takefile.link" });
+        ret.add(new String[] { "pwc.takefile.link" });
+        ret.add(new String[] { "scat.takefile.link" });
+        ret.add(new String[] { "rare.takefile.link" });
         return ret;
     }
 
@@ -192,7 +209,8 @@ public class TakefileLink extends XFileSharingProBasic {
         }
         if (account.getType() == AccountType.PREMIUM && !account.hasProperty("takefileVip")) {
             return aiNormal;
-        } else {
+        } else if ("takefile.link".equals(getHost())) {
+            // workaround for old takefile -> vip accounts
             /*
              * 2021-01-13: Special: They got accounts which are only premium when accessing their website via specified subdomain
              * vip.takefile.link so always check both!
@@ -226,6 +244,8 @@ public class TakefileLink extends XFileSharingProBasic {
                 /* Return result of first check */
                 return aiNormal;
             }
+        } else {
+            return aiNormal;
         }
     }
 }

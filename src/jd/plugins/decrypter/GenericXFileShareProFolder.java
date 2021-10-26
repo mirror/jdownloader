@@ -40,6 +40,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+import jd.plugins.hoster.TakefileLink;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -54,7 +55,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         /** file-up.org domains */
         "file-up.org", "file-up.io", "file-up.cc", "file-up.com", "file-upload.org", "file-upload.io", "file-upload.cc", "file-upload.com", "tstorage.info", "fastfile.cc" };
     /* This list contains all hosts which need special Patterns (see below) - all other XFS hosts have the same folder patterns! */
-    private static final String[] specialDomains = { "usersfiles.com", "userscloud.com", "hotlink.cc", "ex-load.com", "imgbaron.com", "filespace.com", "spaceforfiles.com", "prefiles.com", "imagetwist.com", "file.al", "send.cm", "takefile.link", "mega-rip.takefile.link" };
+    private static final String[] specialDomains = { "usersfiles.com", "userscloud.com", "hotlink.cc", "ex-load.com", "imgbaron.com", "filespace.com", "spaceforfiles.com", "prefiles.com", "imagetwist.com", "file.al", "send.cm", "takefile.link" };
 
     public static String[] getAnnotationNames() {
         return getAllDomains();
@@ -70,6 +71,9 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         final List<String> ret = new ArrayList<String>();
         ret.addAll(Arrays.asList(domains));
         ret.addAll(Arrays.asList(specialDomains));
+        for (String[] takeFileVirtual : TakefileLink.getVirtualPluginDomains()) {
+            ret.add(takeFileVirtual[0]);
+        }
         return ret.toArray(new String[0]);
     }
 
@@ -103,7 +107,9 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         /* send.cm */
         ret.add("https?://(?:www\\.)?send\\.cm/s/.+");
         ret.add("https?://(?:www\\.)?takefile\\.link/folder/[a-f0-9\\-]+");
-        ret.add("https?://(?:www\\.)?mega-rip\\.takefile\\.link/folder/[a-f0-9\\-]+");
+        for (String[] takeFileVirtual : TakefileLink.getVirtualPluginDomains()) {
+            ret.add("https?://" + Pattern.quote(takeFileVirtual[0]) + "/folder/[a-f0-9\\-]+");
+        }
         return ret.toArray(new String[0]);
     }
 
@@ -267,7 +273,10 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
 
     private boolean parsePage(final ArrayList<DownloadLink> decryptedLinks, final ArrayList<String> dupes, final FilePackage fp, final CryptedLink param) throws PluginException {
         boolean foundNewItems = false;
-        final String[] links = br.getRegex("href=(\"|')(https?://(?:www\\.)?" + Pattern.quote(br.getHost()) + "/[a-z0-9]{12}(?:/.*?)?)\\1").getColumn(1);
+        String[] links = br.getRegex("href=(\"|')(https?://(?:www\\.)?" + Pattern.quote(br.getHost(true)) + "/[a-z0-9]{12}(?:/.*?)?)\\1").getColumn(1);
+        if (links == null && links.length == 0) {
+            links = br.getRegex("href=(\"|')(https?://(?:www\\.)?" + Pattern.quote(br.getHost(false)) + "/[a-z0-9]{12}(?:/.*?)?)\\1").getColumn(1);
+        }
         if (links != null && links.length > 0) {
             String html = br.toString();
             html = html.replaceAll("</?font[^>]*>", "");
@@ -378,7 +387,10 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         }
         /* These should only be shown when its a /user/ decrypt task */
         final String cleanedUpAddedFolderLink = new Regex(param.getCryptedUrl(), "https?://[^/]+/(.+)").getMatch(0);
-        final String folders[] = br.getRegex("folder.?\\.gif.*?<a href=\"(.+?" + Pattern.quote(br.getHost()) + "[^\"]+users/[^\"]+)").getColumn(0);
+        String folders[] = br.getRegex("folder.?\\.gif.*?<a href=\"(.+?" + Pattern.quote(br.getHost(true)) + "[^\"]+users/[^\"]+)").getColumn(0);
+        if (folders == null || folders.length == 0) {
+            folders = br.getRegex("folder.?\\.gif.*?<a href=\"(.+?" + Pattern.quote(br.getHost(false)) + "[^\"]+users/[^\"]+)").getColumn(0);
+        }
         if (folders != null && folders.length > 0) {
             for (final String folderlink : folders) {
                 final String cleanedUpFoundFolderLink = new Regex(folderlink, "https?://[^/]+/(.+)").getMatch(0);
