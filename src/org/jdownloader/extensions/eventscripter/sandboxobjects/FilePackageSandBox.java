@@ -216,6 +216,14 @@ public class FilePackageSandBox {
         }
     }
 
+    public long getModified() {
+        if (filePackage == null) {
+            return filePackage.getModified();
+        } else {
+            return -1;
+        }
+    }
+
     public Map<String, Object> getProperties() {
         if (filePackage != null) {
             return filePackage.getProperties();
