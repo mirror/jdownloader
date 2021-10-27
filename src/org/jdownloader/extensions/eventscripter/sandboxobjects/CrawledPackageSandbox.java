@@ -154,6 +154,14 @@ public class CrawledPackageSandbox {
         }
     }
 
+    public long getModified() {
+        if (filePackage == null) {
+            return filePackage.getModified();
+        } else {
+            return -1;
+        }
+    }
+
     public void setDownloadFolder(String downloadFolder) {
         if (filePackage != null) {
             filePackage.setDownloadFolder(downloadFolder);
