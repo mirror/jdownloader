@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -24,13 +25,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -53,6 +47,13 @@ import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 /**
  * Note: prem.link redirects to grab8
@@ -482,11 +483,27 @@ public class Grab8Com extends antiDDoSForHost {
                 // new browser
                 Browser superbrbefore = this.br;
                 final Browser br = new Browser();
+                br.setFollowRedirects(true);
+                boolean freshLogin = true;
                 if (!fetchAccountInfo && cachedLogin && loadCookies(account, this.br)) {
                     return currAcc.getAccountInfo();
                 } else if (cachedLogin && loadCookies(account, br)) {
-                    // empty
-                } else {
+                    try {
+                        getPage(br, "https://" + getHost() + "/");
+                        getPage(br, "https://" + getHost() + "/account");
+                        if (br.getHttpConnection().getResponseCode() == 524) {
+                            // The connection to the origin web server was made, but the origin web server timed out before responding.
+                            // <title>grab8.com | 524: A timeout occurred</title>
+                            br.clearCookies("https://" + getHost() + "/");
+                            throw new IOException("524: A timeout occurred");
+                        } else {
+                            freshLogin = false;
+                        }
+                    } catch (IOException e) {
+                        logger.log(e);
+                    }
+                }
+                if (freshLogin) {
                     getPage(br, "https://" + getHost() + "/");
                     // find the form
                     final Form login = br.getFormByInputFieldKeyValue("username", null);
@@ -513,11 +530,14 @@ public class Grab8Com extends antiDDoSForHost {
                         final DownloadLink odl = this.getDownloadLink();
                         this.setDownloadLink(dummyLink);
                         this.br = br;
-                        final String code = this.getCaptchaCode(url_ordinary_captcha, dummyLink);
-                        this.br = superbrbefore;
-                        login.put("icaptcha", Encoding.urlEncode(code));
-                        if (odl != null) {
-                            this.setDownloadLink(odl);
+                        try {
+                            final String code = this.getCaptchaCode(url_ordinary_captcha, dummyLink);
+                            login.put("icaptcha", Encoding.urlEncode(code));
+                        } finally {
+                            this.br = superbrbefore;
+                            if (odl != null) {
+                                this.setDownloadLink(odl);
+                            }
                         }
                     }
                     if (login.getAction() == null) {
@@ -531,10 +551,9 @@ public class Grab8Com extends antiDDoSForHost {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
                     }
+                    // following ensures account is premium still, and expire time/hosts are set.
+                    getPage(br, "https://" + getHost() + "/account");
                 }
-                // following ensures account is premium still, and expire time/hosts are set.
-                br.setFollowRedirects(true);
-                getPage(br, "https://" + getHost() + "/account");
                 if (br.containsHTML("You are currently a FREE User")) {
                     // this code is when user adds prem.link account to grab8 it will give you this error message. It's not that free
                     // accounts are not supported!
