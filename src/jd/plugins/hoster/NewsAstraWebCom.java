@@ -83,6 +83,7 @@ public class NewsAstraWebCom extends UseNet {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         synchronized (account) {
             final AccountInfo ai = new AccountInfo();
+            final AccountInfo previousai = account.getAccountInfo();
             br.setFollowRedirects(true);
             String jwtToken = account.getStringProperty(jwtTokenProperty, null);
             Map<String, Object> response = null;
@@ -91,6 +92,14 @@ public class NewsAstraWebCom extends UseNet {
                     if (true) {
                         try {
                             verifyUseNetLogins(account);
+                            if (previousai != null) {
+                                ai.setStatus(previousai.getStatus());
+                            }
+                            ai.setUnlimitedTraffic();
+                            ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
+                            // https://www.astraweb.com/, 50
+                            account.setMaxSimultanDownloads(50);
+                            account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 5 * 60 * 60 * 1000l);
                             return ai;
                         } catch (InvalidAuthException e) {
                             logger.log(e);
@@ -169,10 +178,12 @@ public class NewsAstraWebCom extends UseNet {
                 }
                 final String status = (String) response.get("status");
                 final Number threads = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(response, "current_package/meta_data/threads"), 1);
+                // https://www.astraweb.com/, 50
                 account.setMaxSimultanDownloads(threads.intValue());
                 if (StringUtils.equalsIgnoreCase("Unlimited", (String) JavaScriptEngineFactory.walkJson(response, "current_package/meta_data/bandwidth"))) {
                     ai.setUnlimitedTraffic();
                 } else {
+                    // not yet supported
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final String package_identifier = (String) JavaScriptEngineFactory.walkJson(response, "current_package/package_identifier");
