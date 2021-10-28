@@ -18,10 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Locale;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.http.Browser.BrowserException;
 import jd.http.Cookies;
@@ -37,6 +33,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4share.vn" }, urls = { "https?://(?:www\\.)?(?:up\\.)?4share\\.vn/f/[a-f0-9]{16}" })
 public class FourShareVn extends PluginForHost {
@@ -76,14 +76,15 @@ public class FourShareVn extends PluginForHost {
         if (filesize == null) {
             /* 2019-08-28 */
             filesize = br.getRegex("</h1>\\s*<strong>([^<>\"]+)</strong>").getMatch(0);
+            if (filesize == null) {
+                /* 2021-10-21 */
+                filesize = br.getRegex("/strong>\\s*</h1>\\s*(\\d+[^<>\"]+)<br/>").getMatch(0);
+            }
         }
-        if (filesize == null) {
-            /* 2021-10-21 */
-            filesize = br.getRegex("/strong>\\s*</h1>\\s*(\\d+[^<>\"]+)<br/>").getMatch(0);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (filename != null) {
-            link.setName(filename.trim());
-        }
+        link.setName(filename.trim());
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -97,29 +98,41 @@ public class FourShareVn extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
+        synchronized (account) {
             login(account, true);
-        } catch (final PluginException e) {
-            throw e;
+            getPage("/member");
+            /*
+             * TODO
+             *
+             * Ngày đăng ký: 2012-xx-xx 10:10:10 Ngày hết hạn: 2012-xx-xx 10:10:10 , còn 59 ngày sử dụng - Gold còn lại: 293 (293 - TKC + 0
+             * - TKP ) Gold TKC - Tài khoản Chính, là loại gold nạp tiền trực tiếp; Gold TKP - Tài khoản Phụ, là loại Gold được thưởng Gold
+             * đã dùng: 607 (607 + 0) Gold đã nạp: 900 (900 + ) Bạn đã download từ 4Share hôm nay : 91.01 GB [Tất cả: 1.34 TB]
+             *
+             * Feedback from customer: My account pays a monthly fee. Looks like there's a limit to it, I'm not sure how many GB it is. Gold
+             * = Monthly renew
+             */
+            final String[] traffic = br.getRegex("<strong>\\s*([0-9\\.,]+ [GMKB]+)\\s*</strong>\\s*/Tổng số\\s*:\\s*<strong>\\s*([0-9\\.,]+ [GMKB]+)\\s*</strong>").getRow(0);
+            if (traffic != null) {
+                final long max = SizeFormatter.getSize(traffic[1]);
+                final long left = SizeFormatter.getSize(traffic[0]);
+                ai.setTrafficMax(max);
+                ai.setTrafficLeft(left);
+            } else {
+                ai.setUnlimitedTraffic();
+            }
+            final String expire = br.getRegex("Ngày hết hạn: <b>(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+            if (expire == null) {
+                ai.setExpired(true);
+                return ai;
+            } else {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH));
+            }
+            if (br.containsHTML("Gold TKC")) {
+                ai.setStatus("Premium (Gold) User");
+            } else {
+                ai.setStatus("Premium (VIP) User");
+            }
         }
-        getPage("/member");
-        final String[] traffic = br.getRegex("<strong>\\s*([0-9\\.,]+ [GMKB]+)\\s*</strong>\\s*/Tổng số\\s*:\\s*<strong>\\s*([0-9\\.,]+ [GMKB]+)\\s*</strong>").getRow(0);
-        if (traffic != null) {
-            final long max = SizeFormatter.getSize(traffic[1]);
-            final long left = SizeFormatter.getSize(traffic[0]);
-            ai.setTrafficMax(max);
-            ai.setTrafficLeft(left);
-        } else {
-            ai.setUnlimitedTraffic();
-        }
-        final String expire = br.getRegex("Ngày hết hạn: <b>(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
-        if (expire == null) {
-            ai.setExpired(true);
-            return ai;
-        } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH));
-        }
-        ai.setStatus("Premium (VIP) User");
         return ai;
     }
 
@@ -175,13 +188,13 @@ public class FourShareVn extends PluginForHost {
         }
         if (dllink == null && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
-        if (dllink == null) {
+        } else if (dllink == null) {
             handleErrorsGeneral();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            logger.warning("The final dllink seems not to be a file!");
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
@@ -190,7 +203,7 @@ public class FourShareVn extends PluginForHost {
             handleErrorsGeneral();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        this.dl.startDownload();
+        dl.startDownload();
     }
 
     @SuppressWarnings("deprecation")
@@ -201,20 +214,24 @@ public class FourShareVn extends PluginForHost {
         getPage(link.getDownloadURL());
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = br.getRegex("class=''> <a href='(https?://.*?)'").getMatch(0);
+            dllink = br.getRegex("class=''> <a href\\s*=\\s*'(https?://.*?)'").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("('|\")(https?://sv\\d+\\.4share\\.vn/[^<>\"]*?)\\1").getMatch(1);
+                if (dllink == null) {
+                    handleErrorsGeneral();
+                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
-        if (dllink == null) {
-            handleErrorsGeneral();
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             handleErrorsGeneral();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -228,29 +245,51 @@ public class FourShareVn extends PluginForHost {
                 /* Load cookies */
                 this.setBrowserExclusive();
                 prepBR();
+                boolean refresh = true;
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                if (cookies != null) {
                     br.setCookies(account.getHoster(), cookies);
-                    return;
-                }
-                br.setFollowRedirects(true);
-                getPage("https://4share.vn/");
-                br.getHeaders().put("Accept", "application/json, text/plain, */*");
-                postPage("https://4share.vn/a_p_i/public-common/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                final String lang = System.getProperty("user.language");
-                if (br.getCookie(br.getHost(), "currentUser", Cookies.NOTDELETEDPATTERN) == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                if (!br.containsHTML("TK <b>VIP") && !br.containsHTML("Hạn sử dụng VIP: \\d{2}-\\d{2}-\\d{4}") && !br.containsHTML("Còn hạn sử dụng VIP đến: \\d{2}-\\d{2}-\\d{4}")) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Account Typ!\r\nDas ist ein kostenloser Account.\r\nJDownloader unterstützt keine kostenlosen Accounts für diesen Hoster!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (!force) {
+                        refresh = false;
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid account type!\r\nThis is a free account. JDownloader only supports premium (VIP) accounts for this host!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        getPage("https://4share.vn/");
+                        if (!br.containsHTML("TK <b>VIP") && !br.containsHTML("Hạn sử dụng VIP: \\d{2,4}-\\d{2}-\\d{2,4}") && !br.containsHTML("Còn hạn sử dụng VIP đến: \\d{2,4}-\\d{2}-\\d{2,4}") && !br.containsHTML("Hạn dùng: \\d{2,4}-\\d{2}-\\d{2,4}")) {
+                            refresh = true;
+                        } else {
+                            refresh = false;
+                        }
+                    }
+                }
+                if (refresh) {
+                    br.setFollowRedirects(true);
+                    getPage("https://4share.vn/");
+                    getPage("https://4share.vn/default/login");
+                    final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lfnb8YUAAAAAElE9DwwEWA881UX3-chISAQZApu") {
+                        @Override
+                        public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2.TYPE getType() {
+                            return TYPE.INVISIBLE;
+                        }
+                    };
+                    br.getHeaders().put("Accept", "application/json, text/plain, */*");
+                    postPage("https://4share.vn/a_p_i/public-common/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&captcha=" + Encoding.urlEncode(rc2.getToken()));
+                    final String lang = System.getProperty("user.language");
+                    if (br.getCookie(br.getHost(), "currentUser", Cookies.NOTDELETEDPATTERN) == null) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                    getPage("https://4share.vn/");
+                    if (!br.containsHTML("TK <b>VIP") && !br.containsHTML("Hạn sử dụng VIP: \\d{2,4}-\\d{2}-\\d{2,4}") && !br.containsHTML("Còn hạn sử dụng VIP đến: \\d{2,4}-\\d{2}-\\d{2,4}") && !br.containsHTML("Hạn dùng: \\d{2,4}-\\d{2}-\\d{2,4}")) {
+                        if ("de".equalsIgnoreCase(lang)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Account Typ!\r\nDas ist ein kostenloser Account.\r\nJDownloader unterstützt keine kostenlosen Accounts für diesen Hoster!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid account type!\r\nThis is a free account. JDownloader only supports premium (VIP) accounts for this host!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
                 }
                 account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             } finally {
                 this.br.setFollowRedirects(redirect);

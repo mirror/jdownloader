@@ -216,7 +216,7 @@ public class FilePackageSandBox {
         }
     }
 
-    public long getModified() {
+    public long getModifiedDate() {
         if (filePackage == null) {
             return filePackage.getModified();
         } else {

@@ -154,7 +154,7 @@ public class CrawledPackageSandbox {
         }
     }
 
-    public long getModified() {
+    public long getModifiedDate() {
         if (filePackage == null) {
             return filePackage.getModified();
         } else {
