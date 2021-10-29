@@ -50,7 +50,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
@@ -1414,20 +1413,23 @@ public abstract class SimpleFTP {
         if (port <= 0) {
             port = url.getDefaultPort();
         }
-        final List<Login> logins = getLogins(url);
-        final Iterator<Login> it = logins.iterator();
-        while (it.hasNext()) {
-            final Login login = it.next();
+        final List<Login> logins = new ArrayList<Login>(getLogins(url));
+        boolean anonymousOnly = false;
+        while (logins.size() > 0) {
+            final Login login = logins.remove(0);
             try {
                 connect(host, port, login.getUsername(), login.getPassword());
                 login.validate();
                 return login;
             } catch (IOException e) {
                 disconnect();
-                if (it.hasNext() && isWrongLoginException(e)) {
+                if (logins.size() > 0 && isWrongLoginException(e)) {
                     logger.log(e);
                     continue;
-                } else if (it.hasNext() && isAnonymousOnlyLoginException(e) && isAnonymousLoginSupported(url)) {
+                } else if (isAnonymousOnlyLoginException(e) && !anonymousOnly) {
+                    anonymousOnly = true;
+                    logins.clear();
+                    logins.add(new Login(Type.FTP, url.getHost(), null, "anonymous", "anonymous", false));
                     logger.log(e);
                     continue;
                 } else {
