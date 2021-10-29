@@ -22,18 +22,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.ArchiveOrgConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -51,6 +39,18 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.ArchiveOrgConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org", "subdomain.archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/(?:details|download|stream|embed)/(?!copyrightrecords)@?.+", "https?://[^/]+\\.archive\\.org/view_archive\\.php\\?archive=[^\\&]+(?:\\&file=[^\\&]+)?" })
 public class ArchiveOrg extends PluginForDecrypt {
@@ -95,13 +95,13 @@ public class ArchiveOrg extends PluginForDecrypt {
             try {
                 /* Check if we have a direct URL --> Host plugin */
                 con = br.openGetConnection(parameter);
-                isArchiveContent = con.getURL().toString().contains("view_archive.php");
+                isArchiveContent = isArchiveURL(con.getURL().toString());
                 /*
                  * 2020-03-04: E.g. directurls will redirect to subdomain e.g. ia800503.us.archive.org --> Sometimes the only way to differ
                  * between a file or expected html.
                  */
                 final String host = Browser.getHost(con.getURL(), true);
-                if ((this.looksLikeDownloadableContent(con) || con.getLongContentLength() > br.getLoadLimit() || !host.equals("archive.org"))) {
+                if (!isArchiveContent && (this.looksLikeDownloadableContent(con) || con.getLongContentLength() > br.getLoadLimit() || !host.equals("archive.org"))) {
                     // final DownloadLink fina = this.createDownloadlink(parameter.replace("archive.org", host_decrypted));
                     final DownloadLink dl = new DownloadLink(hostPlugin, null, "archive.org", parameter, true);
                     if (this.looksLikeDownloadableContent(con)) {
@@ -117,7 +117,13 @@ public class ArchiveOrg extends PluginForDecrypt {
                     decryptedLinks.add(dl);
                     return decryptedLinks;
                 } else {
-                    br.followConnection();
+                    final int loadLimit = br.getLoadLimit();
+                    try {
+                        br.setLoadLimit(-1);
+                        br.followConnection();
+                    } finally {
+                        br.setLoadLimit(loadLimit);
+                    }
                 }
             } finally {
                 if (con != null) {
@@ -189,7 +195,7 @@ public class ArchiveOrg extends PluginForDecrypt {
                 }
             }
         } else if (isArchiveContent) {
-            /* 2020-09-07: Contents of a .zip file are also accessible and downloadable separately. */
+            /* 2020-09-07: Contents of a .zip/.rar file are also accessible and downloadable separately. */
             final String archiveName = new Regex(br.getURL(), ".*/([^/]+)$").getMatch(0);
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(archiveName));
@@ -273,56 +279,57 @@ public class ArchiveOrg extends PluginForDecrypt {
                     this.crawlXML(brc, subfolderPath);
                 }
                 return decryptedLinks;
-            }
-            /* Old/harder way */
-            for (final String htmlsnippet : htmls) {
-                String name = new Regex(htmlsnippet, "<a href=\"([^<>\"]+)\"").getMatch(0);
-                final String[] rows = new Regex(htmlsnippet, "<td>(.*?)</td>").getColumn(0);
-                if (name == null || rows.length < 3) {
-                    /* Skip invalid items */
-                    continue;
-                }
-                String filesize = rows[rows.length - 1];
-                if (StringUtils.endsWithCaseInsensitive(name, "_files.xml") || StringUtils.endsWithCaseInsensitive(name, "_meta.sqlite") || StringUtils.endsWithCaseInsensitive(name, "_meta.xml") || StringUtils.endsWithCaseInsensitive(name, "_reviews.xml")) {
-                    /* Skip invalid content */
-                    continue;
-                } else if (xmlSource != null && preferOriginal) {
-                    /* Skip non-original content if user only wants original content. */
-                    if (!new Regex(xmlSource, "<file name=\"" + Pattern.quote(name) + "\" source=\"original\"").matches()) {
+            } else {
+                /* Old/harder way */
+                for (final String htmlsnippet : htmls) {
+                    String name = new Regex(htmlsnippet, "<a href=\"([^<>\"]+)\"").getMatch(0);
+                    final String[] rows = new Regex(htmlsnippet, "<td>(.*?)</td>").getColumn(0);
+                    if (name == null || rows.length < 3) {
+                        /* Skip invalid items */
                         continue;
                     }
-                }
-                if (filesize.equals("-")) {
-                    /* Folder --> Goes back into decrypter */
-                    final DownloadLink fina = createDownloadlink("https://archive.org/download/" + subfolderPath + "/" + name);
-                    decryptedLinks.add(fina);
-                } else {
-                    /* File */
-                    filesize += "b";
-                    final String filename = Encoding.urlDecode(name, false);
-                    final DownloadLink fina = createDownloadlink("https://archive.org/download/" + subfolderPath + "/" + name);
-                    fina.setDownloadSize(SizeFormatter.getSize(filesize));
-                    fina.setAvailable(true);
-                    fina.setFinalFileName(filename);
-                    if (xmlSource != null) {
-                        final String sha1 = new Regex(xmlSource, "<file name=\"" + Pattern.quote(filename) + "\".*?<sha1>([a-f0-9]{40})</sha1>").getMatch(0);
-                        if (sha1 != null) {
-                            fina.setSha1Hash(sha1);
-                        }
-                        final String size = new Regex(xmlSource, "<file name=\"" + Pattern.quote(filename) + "\".*?<size>(\\d+)</size>").getMatch(0);
-                        if (size != null) {
-                            fina.setVerifiedFileSize(Long.parseLong(size));
+                    String filesize = rows[rows.length - 1];
+                    if (StringUtils.endsWithCaseInsensitive(name, "_files.xml") || StringUtils.endsWithCaseInsensitive(name, "_meta.sqlite") || StringUtils.endsWithCaseInsensitive(name, "_meta.xml") || StringUtils.endsWithCaseInsensitive(name, "_reviews.xml")) {
+                        /* Skip invalid content */
+                        continue;
+                    } else if (xmlSource != null && preferOriginal) {
+                        /* Skip non-original content if user only wants original content. */
+                        if (!new Regex(xmlSource, "<file name=\"" + Pattern.quote(name) + "\" source=\"original\"").matches()) {
+                            continue;
                         }
                     }
-                    fina.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath);
-                    decryptedLinks.add(fina);
+                    if (filesize.equals("-")) {
+                        /* Folder --> Goes back into decrypter */
+                        final DownloadLink fina = createDownloadlink("https://archive.org/download/" + subfolderPath + "/" + name);
+                        decryptedLinks.add(fina);
+                    } else {
+                        /* File */
+                        filesize += "b";
+                        final String filename = Encoding.urlDecode(name, false);
+                        final DownloadLink fina = createDownloadlink("https://archive.org/download/" + subfolderPath + "/" + name);
+                        fina.setDownloadSize(SizeFormatter.getSize(filesize));
+                        fina.setAvailable(true);
+                        fina.setFinalFileName(filename);
+                        if (xmlSource != null) {
+                            final String sha1 = new Regex(xmlSource, "<file name=\"" + Pattern.quote(filename) + "\".*?<sha1>([a-f0-9]{40})</sha1>").getMatch(0);
+                            if (sha1 != null) {
+                                fina.setSha1Hash(sha1);
+                            }
+                            final String size = new Regex(xmlSource, "<file name=\"" + Pattern.quote(filename) + "\".*?<size>(\\d+)</size>").getMatch(0);
+                            if (size != null) {
+                                fina.setVerifiedFileSize(Long.parseLong(size));
+                            }
+                        }
+                        fina.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath);
+                        decryptedLinks.add(fina);
+                    }
                 }
-            }
-            /* 2020-03-04: Setting packagenames makes no sense anymore as packages will get split by subfolderpath. */
-            final FilePackage fp = FilePackage.getInstance();
-            if (fpName != null) {
-                fp.setName(fpName);
-                fp.addLinks(decryptedLinks);
+                /* 2020-03-04: Setting packagenames makes no sense anymore as packages will get split by subfolderpath. */
+                final FilePackage fp = FilePackage.getInstance();
+                if (fpName != null) {
+                    fp.setName(fpName);
+                    fp.addLinks(decryptedLinks);
+                }
             }
         }
         return decryptedLinks;
@@ -330,6 +337,7 @@ public class ArchiveOrg extends PluginForDecrypt {
 
     private void crawlXML(final Browser br, final String root) {
         final boolean preferOriginal = PluginJsonConfig.get(ArchiveOrgConfig.class).isPreferOriginal();
+        final boolean crawlArchiveView = PluginJsonConfig.get(ArchiveOrgConfig.class).isCrawlArchiveView();
         final String[] items = new Regex(br.toString(), "<file\\s*(.*?)\\s*</file>").getColumn(0);
         /*
          * 2020-03-04: Prefer crawling xml if possible as we then get all contents of that folder including contents of subfolders via only
@@ -340,6 +348,7 @@ public class ArchiveOrg extends PluginForDecrypt {
             final boolean isOldVersion = item.contains("old_version");
             final boolean isOriginal = item.contains("source=\"original\"");
             final boolean isMetadata = item.contains("<format>Metadata</format>");
+            final boolean isArchiveViewSupported = item.matches("(?i)(?s).*<format>\\s*(RAR|ZIP)\\s*</format>.*");
             String pathWithFilename = new Regex(item, "name=\"([^\"]+)").getMatch(0);
             final String filesizeStr = new Regex(item, "<size>(\\d+)</size>").getMatch(0);
             final String sha1hash = new Regex(item, "<sha1>([a-f0-9]+)</sha1>").getMatch(0);
@@ -383,10 +392,10 @@ public class ArchiveOrg extends PluginForDecrypt {
             }
             final String url = "https://archive.org/download/" + root + "/" + pathEncoded;
             if (dups.add(url)) {
-                final DownloadLink fina = createDownloadlink(url);
-                fina.setDownloadSize(SizeFormatter.getSize(filesizeStr));
-                fina.setAvailable(true);
-                fina.setFinalFileName(filename);
+                final DownloadLink downloadURL = createDownloadlink(url);
+                downloadURL.setDownloadSize(SizeFormatter.getSize(filesizeStr));
+                downloadURL.setAvailable(true);
+                downloadURL.setFinalFileName(filename);
                 // final String subfolderPathInName = new Regex(pathWithFilename, "(.+)/[^/]+$").getMatch(0);
                 final String thisPath;
                 if (pathWithoutFilename != null) {
@@ -394,14 +403,18 @@ public class ArchiveOrg extends PluginForDecrypt {
                 } else {
                     thisPath = root;
                 }
-                fina.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, thisPath);
+                downloadURL.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, thisPath);
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(thisPath);
-                fina._setFilePackage(fp);
+                downloadURL._setFilePackage(fp);
                 if (sha1hash != null) {
-                    fina.setSha1Hash(sha1hash);
+                    downloadURL.setSha1Hash(sha1hash);
                 }
-                decryptedLinks.add(fina);
+                decryptedLinks.add(downloadURL);
+                if (crawlArchiveView && isArchiveViewSupported) {
+                    final DownloadLink archiveViewURL = createDownloadlink(url + "/");
+                    decryptedLinks.add(archiveViewURL);
+                }
             }
         }
     }

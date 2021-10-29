@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -34,6 +32,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "archive.org" }, urls = { "https?://(?:[\\w\\.]+)?archive\\.org/download/[^/]+/[^/]+(/.+)?" })
 public class ArchiveOrg extends PluginForHost {
@@ -139,7 +139,7 @@ public class ArchiveOrg extends PluginForHost {
         if (registered_only) {
             throw new AccountRequiredException();
         }
-        if (link.getPluginPatternMatcher().matches("(?i).+\\.zip/.+")) {
+        if (link.getPluginPatternMatcher().matches("(?i).+\\.(zip|rar)/.+")) {
             doDownload(null, link, false, 1, "free_directlink");
         } else {
             doDownload(null, link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
