@@ -491,6 +491,10 @@ public abstract class SimpleFTP {
         return StringUtils.containsIgnoreCase(e.getMessage(), "530 Login or Password incorrect");
     }
 
+    public boolean isAnonymousOnlyLoginException(IOException e) {
+        return StringUtils.containsIgnoreCase(e.getMessage(), "530 This FTP server is anonymous only");
+    }
+
     public Integer getConnectionLimitByException(IOException e) {
         final String msg = e.getMessage();
         if ((StringUtils.containsIgnoreCase(msg, "530 No more connection allowed"))) {
@@ -1421,6 +1425,9 @@ public abstract class SimpleFTP {
             } catch (IOException e) {
                 disconnect();
                 if (it.hasNext() && isWrongLoginException(e)) {
+                    logger.log(e);
+                    continue;
+                } else if (it.hasNext() && isAnonymousOnlyLoginException(e) && isAnonymousLoginSupported(url)) {
                     logger.log(e);
                     continue;
                 } else {
