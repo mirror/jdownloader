@@ -19,10 +19,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -37,6 +33,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -100,7 +100,11 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         appVars = regexAppVars(this.br);
         Form form = getCaptchaForm();
         if (form == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (decryptedLinks.size() > 0) {
+                return decryptedLinks;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         // form.remove("_Token%5Bunlocked%5D");
         // form.put("_Token%5Bunlocked%5D", "adcopy_challenge%7Cadcopy_response%7Ccoinhive-captcha-token%7Cg-recaptcha-response");
@@ -307,7 +311,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         // 2019-11-13: http->https->different domain(http)->different domain(https)
         while (true) {
             if (isAbort()) {
-                return;
+                throw new InterruptedException();
             }
             String redirect = br.getRedirectLocation();
             if (redirect == null) {

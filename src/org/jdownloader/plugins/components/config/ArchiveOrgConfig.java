@@ -12,6 +12,10 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
         public String isPreferOriginal_label() {
             return "Prefer original?";
         }
+
+        public String isCrawlArchiveView_label() {
+            return "Also crawl archive view?";
+        }
     }
 
     public static final TRANSLATION TRANSLATION = new TRANSLATION();
@@ -21,4 +25,10 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
     boolean isPreferOriginal();
 
     void setPreferOriginal(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    boolean isCrawlArchiveView();
+
+    void setCrawlArchiveView(boolean b);
 }

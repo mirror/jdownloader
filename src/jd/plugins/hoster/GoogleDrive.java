@@ -99,7 +99,7 @@ public class GoogleDrive extends PluginForHost {
         for (final String[] domains : getPluginDomains()) {
             String regex = "https?://" + buildHostsPatternPart(domains) + "/(?:";
             regex += "(?:leaf|open)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+.*";
-            regex += "|(?:u/\\d+/)?uc\\?id=[A-Za-z0-9\\-_]+.*";
+            regex += "|(?:u/\\d+/)?uc(?:\\?|.*?&)id=[A-Za-z0-9\\-_]+.*";
             regex += "|(?:a/[a-zA-z0-9\\.]+/)?(?:file|document)/d/[A-Za-z0-9\\-_]+.*";
             regex += ")";
             /*
