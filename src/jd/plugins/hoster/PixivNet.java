@@ -21,28 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import jd.PluginWrapper;
-import jd.controlling.AccountController;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.http.Browser;
-import jd.http.Cookies;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
-
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -55,6 +33,29 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.config.PixivNetConfig;
+
+import jd.PluginWrapper;
+import jd.controlling.AccountController;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.http.Browser;
+import jd.http.Cookies;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "decryptedpixivnet://(?:www\\.)?.+|https?://(?:www\\.)?pixiv\\.net/ajax/illust/\\d+/ugoira_meta" })
 public class PixivNet extends PluginForHost {
@@ -371,10 +372,8 @@ public class PixivNet extends PluginForHost {
                 }
                 plugin.getLogger().info("Performing full login");
                 br.getPage("https://accounts." + account.getHoster() + "/login?lang=en&source=pc&view_type=page&ref=wwwtop_accounts_index");
-                final Form loginform = br.getFormbyActionRegex(".*/login");
-                if (loginform == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+                final Form loginform = new Form("https://accounts.pixiv.net/api/login?lang=en");
+                loginform.setMethod(MethodType.POST);
                 String postkey = br.getRegex("name\\s*=\\s*\"post_key\"\\s*value\\s*=\\s*\"([a-f0-9]+)\"").getMatch(0);
                 if (postkey == null) {
                     postkey = br.getRegex("pixivAccount\\.postKey\"\\s*:\\s*\"([a-f0-9]+)\"").getMatch(0);
@@ -457,8 +456,9 @@ public class PixivNet extends PluginForHost {
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 loginform.put("pixiv_id", Encoding.urlEncode(account.getUser()));
                 loginform.put("post_key", Encoding.urlEncode(postkey));
-                // loginform.put("source", "pc");
-                loginform.put("ref", "");
+                loginform.put("tt", Encoding.urlEncode(postkey));
+                loginform.put("source", "pc");
+                loginform.put("ref", "wwwtop_accounts_index");
                 loginform.put("return_to", Encoding.urlEncode("https://www.pixiv.net/en/"));
                 loginform.setAction("https://accounts.pixiv.net/api/login?lang=en");
                 final Request loginRequest = br.createFormRequest(loginform);
