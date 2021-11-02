@@ -1178,6 +1178,8 @@ public abstract class K2SApi extends PluginForHost {
                     // assume non account/free account
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, msg);
                 case 2:
+                    // {"message":"Invalid request params","status":"error","code":400,"errorCode":2}
+                    // IP temp. blocked on login
                     // DOWNLOAD_TRAFFIC_EXCEEDED = 2; "Traffic limit exceed"
                     // assume all types
                     if (account == null) {

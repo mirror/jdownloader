@@ -439,6 +439,9 @@ public class BCSSLSocketStreamFactory implements SSLSocketStreamFactory {
             } else if (options.getCustomFactorySettings().add(TLS10_11_DISABLED)) {
                 // disable old TLS1.0 and TLS1.1 and retry with TLS1.2
                 return options.addRetryReason("(Handshake)disable TLS1.0/TLS1.1");
+            } else if (options.getCustomFactorySettings().add(TLS13_ENABLED)) {
+                // retry with TLS1.3 enabled
+                return options.addRetryReason("(Handshake)enable TLS1.3");
             }
         }
         if (options.isConnectionResetException(e)) {
@@ -449,6 +452,9 @@ public class BCSSLSocketStreamFactory implements SSLSocketStreamFactory {
             } else if (options.getCustomFactorySettings().add(TLS10_11_DISABLED)) {
                 // disable old TLS1.0 and TLS1.1 and retry with TLS1.2
                 return options.addRetryReason("(Reset)disable TLS1.0/TLS1.1");
+            } else if (options.getCustomFactorySettings().add(TLS13_ENABLED)) {
+                // retry with TLS1.3 enabled
+                return options.addRetryReason("(Reset)enable TLS1.3");
             }
         }
         return null;
