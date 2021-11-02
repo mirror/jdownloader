@@ -51,7 +51,6 @@ GenericVariants_FLV_TO_MP3_=提取 MP3 音频
 GenericVariants_ORIGINAL=原始视频
 ImportAction_tt=从 *.jdfilter (*.jdregexfilter) 文件导入规则
 LinkCollector_addCrawledLink_offlinepackage=离线文件
-LinkCollector_addCrawledLink_unknownpackage=未知文件
 LinkCollector_addCrawledLink_variouspackage=各种文件
 LinkCollector_archiv=%s1
 LinkCollector_onShutdownRequest_=链接收集器仍在处理中!
@@ -165,6 +164,7 @@ jd_controlling_reconnect_Reconnector_progress_failed2=重新连接失败太频�
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>未选择重新连接</u></b><br/><p>重新连接是跳过某些强制免费用户长时间等待的高级方式。<br>在使用付费账户时这个没什么用途。</p><p>在<a href='https://support.jdownloader.org/Knowledgebase/Article/View/1'>这里</a>阅读更多关于重新连接的信息</p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=无重新连接
 jd_plugins_PluginUtils_askPassword=请输入 %s1 的密码
+lit_add_subtitles=添加字幕
 lit_hide=隐藏
 lit_please_wait=请稍等....
 literally_offline=离线
