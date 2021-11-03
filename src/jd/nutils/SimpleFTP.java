@@ -487,7 +487,7 @@ public abstract class SimpleFTP {
     }
 
     public boolean isWrongLoginException(IOException e) {
-        return StringUtils.containsIgnoreCase(e.getMessage(), "530 Login or Password incorrect");
+        return StringUtils.containsIgnoreCase(e.getMessage(), "530 Login or Password incorrect") || StringUtils.containsIgnoreCase(e.getMessage(), "530 Login authentication failed");
     }
 
     public boolean isAnonymousOnlyLoginException(IOException e) {
@@ -1384,13 +1384,35 @@ public abstract class SimpleFTP {
 
     protected List<Login> getLogins(URL url) {
         final List<Login> logins = new ArrayList<Login>();
+        Login noPassword = null;
         if (url.getUserInfo() != null) {
             final String[] auth = url.getUserInfo().split(":");
-            final String username = auth.length > 0 ? auth[0] : null;
-            final String password = auth.length == 2 ? auth[1] : null;
-            logins.add(new Login(Type.FTP, url.getHost(), null, username, password, true));
+            final boolean hasUsername = auth.length > 0 && StringUtils.isNotEmpty(auth[0]);
+            final boolean hasPassword = auth.length == 2 && StringUtils.isNotEmpty(auth[1]);
+            final String username = hasUsername ? auth[0] : (isAnonymousLoginSupported(url) ? "anonymous" : null);
+            final String password = hasPassword ? auth[1] : (isAnonymousLoginSupported(url) ? "anonymous" : null);
+            if (username != null && password != null) {
+                final Login login = new Login(Type.FTP, url.getHost(), null, username, password, true);
+                if (hasPassword) {
+                    logins.add(login);
+                } else {
+                    noPassword = login;
+                }
+            }
         }
         logins.addAll(AuthenticationController.getInstance().getSortedLoginsList(url, null));
+        if (noPassword != null) {
+            for (final Login login : logins) {
+                if (StringUtils.equals(login.getUsername(), noPassword.getUsername())) {
+                    logins.add(noPassword);
+                    noPassword = null;
+                    break;
+                }
+            }
+            if (noPassword != null) {
+                logins.add(0, noPassword);
+            }
+        }
         if (isAnonymousLoginSupported(url)) {
             logins.add(new Login(Type.FTP, url.getHost(), null, "anonymous", "anonymous", false));
         }
