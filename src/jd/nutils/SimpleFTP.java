@@ -378,11 +378,13 @@ public abstract class SimpleFTP {
         connect(host, 21);
     }
 
+    public static String FTP_ANONYMOUS_LOGIN = "anonymous";
+
     /**
      * Connects to an FTP server and logs in as anonymous/anonymous.
      */
     public void connect(String host, int port) throws IOException {
-        connect(host, port, "anonymous", "anonymous");
+        connect(host, port, FTP_ANONYMOUS_LOGIN, FTP_ANONYMOUS_LOGIN);
     }
 
     private String[] getLines(String lines) {
@@ -1122,7 +1124,7 @@ public abstract class SimpleFTP {
 
     protected String getURL(final String path) {
         final String auth;
-        if (!StringUtils.equals("anonymous", getUser()) || !StringUtils.equals("anonymous", getUser())) {
+        if (!StringUtils.equals(FTP_ANONYMOUS_LOGIN, getUser()) || !StringUtils.equals(FTP_ANONYMOUS_LOGIN, getUser())) {
             auth = getUser() + ":" + getPass() + "@";
         } else {
             auth = "";
@@ -1389,8 +1391,8 @@ public abstract class SimpleFTP {
             final String[] auth = url.getUserInfo().split(":");
             final boolean hasUsername = auth.length > 0 && StringUtils.isNotEmpty(auth[0]);
             final boolean hasPassword = auth.length == 2 && StringUtils.isNotEmpty(auth[1]);
-            final String username = hasUsername ? auth[0] : (isAnonymousLoginSupported(url) ? "anonymous" : null);
-            final String password = hasPassword ? auth[1] : (isAnonymousLoginSupported(url) ? "anonymous" : null);
+            final String username = hasUsername ? auth[0] : (isAnonymousLoginSupported(url) ? FTP_ANONYMOUS_LOGIN : null);
+            final String password = hasPassword ? auth[1] : (isAnonymousLoginSupported(url) ? FTP_ANONYMOUS_LOGIN : null);
             if (username != null && password != null) {
                 final Login login = new Login(Type.FTP, url.getHost(), null, username, password, true);
                 if (hasPassword) {
@@ -1414,7 +1416,7 @@ public abstract class SimpleFTP {
             }
         }
         if (isAnonymousLoginSupported(url)) {
-            logins.add(new Login(Type.FTP, url.getHost(), null, "anonymous", "anonymous", false));
+            logins.add(new Login(Type.FTP, url.getHost(), null, FTP_ANONYMOUS_LOGIN, FTP_ANONYMOUS_LOGIN, false));
         }
         return logins;
     }
@@ -1451,7 +1453,7 @@ public abstract class SimpleFTP {
                 } else if (isAnonymousOnlyLoginException(e) && !anonymousOnly) {
                     anonymousOnly = true;
                     logins.clear();
-                    logins.add(new Login(Type.FTP, url.getHost(), null, "anonymous", "anonymous", false));
+                    logins.add(new Login(Type.FTP, url.getHost(), null, FTP_ANONYMOUS_LOGIN, FTP_ANONYMOUS_LOGIN, false));
                     logger.log(e);
                     continue;
                 } else {
