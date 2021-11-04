@@ -43,9 +43,9 @@ public class VipergirlsToBoard extends PluginForDecrypt {
                 }
             }
             // Get all post content and then filter it for the href links
-            String postContent = new Regex(post, "<h2 class=\"title icon\">\\s*(.*?)\\s*<div\\s*class\\s*=\\s*\"after_content\"").getMatch(0);
+            String postContent = new Regex(post, "<h2 class=\"title icon\">\\s*(.*?)\\s*<div\\s*class\\s*=\\s*\"(after_content|postfoot)\"").getMatch(0);
             if (postContent == null) {
-                postContent = new Regex(post, "<div\\s*class\\s*=\\s*\"content\"\\s*>\\s*(.*?)\\s*<div\\s*class\\s*=\\s*\"after_content\"").getMatch(0);
+                postContent = new Regex(post, "<div\\s*class\\s*=\\s*\"content\"\\s*>\\s*(.*?)\\s*<div\\s*class\\s*=\\s*\"(after_content|postfoot)\"").getMatch(0);
             }
             final String[] results = new Regex(postContent, "<a href=\"(https?://[^\"]+)").getColumn(0);
             for (final String result : results) {
