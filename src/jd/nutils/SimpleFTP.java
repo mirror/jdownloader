@@ -56,6 +56,7 @@ import java.util.Map.Entry;
 import java.util.StringTokenizer;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -64,6 +65,7 @@ import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.JavaSSLSocketStreamFactory;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamFactory;
 import org.appwork.utils.net.httpconnection.SocketStreamInterface;
 import org.jdownloader.auth.AuthenticationController;
@@ -780,8 +782,10 @@ public abstract class SimpleFTP {
         final SSLSocketStreamFactory ret = defaultSSLSocketStreamFactory;
         if (ret != null) {
             return ret;
-        } else {
+        } else if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             return new BCSSLSocketStreamFactory();
+        } else {
+            return new JavaSSLSocketStreamFactory();
         }
     }
 
