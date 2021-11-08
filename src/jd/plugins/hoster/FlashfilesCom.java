@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,11 +42,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FlashfilesCom extends PluginForHost {
@@ -117,8 +117,8 @@ public class FlashfilesCom extends PluginForHost {
             /* 2020-06-02: Not a file e.g.: https://flash-files.com/faq */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex(">FileName\\s*:\\s*(?:\\&nbsp)?([^<>\"]+)<").getMatch(0);
-        String filesize = br.getRegex(">FileSize\\s*:([^<>\"]+)<").getMatch(0);
+        String filename = br.getRegex(">\\s*FileName\\s*:\\s*(?:\\&nbsp)?([^<>\"]+)<").getMatch(0);
+        String filesize = br.getRegex(">\\s*FileSize\\s*:([^<>\"]+)<").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
             filename = this.getFID(link);
         }
@@ -131,11 +131,15 @@ public class FlashfilesCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleFreeDownloads(link, null, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleFreeDownloads(final DownloadLink link, final Account account, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        requestFileInformation(link);
+        if (account != null) {
+            login(account, false);
+        }
+        br.getPage(link.getPluginPatternMatcher());
         Form freeform = br.getFormbyActionRegex(".*?freedownload\\.php");
         if (freeform == null) {
             /* 2020-05-01: E.g. free.flash-files.com */
@@ -162,7 +166,7 @@ public class FlashfilesCom extends PluginForHost {
             logger.warning("Failed to find freeform2");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String waitStr = br.getRegex("counter\\s*=\\s*(\\d+);").getMatch(0);
+        final String waitStr = br.getRegex("counter\\s*=\\s*(\\d+);").getMatch(0);
         int waittime = 30;
         if (waitStr != null) {
             logger.info("Found pre-download-waittime: " + waitStr);
@@ -207,7 +211,7 @@ public class FlashfilesCom extends PluginForHost {
     /**
      * Handles pre download (pre-captcha) waittime.
      */
-    protected void waitTime(final DownloadLink downloadLink, final long timeBefore, final String waitStr) throws PluginException {
+    protected void waitTime(final DownloadLink link, final long timeBefore, final String waitStr) throws PluginException {
         final int extraWaitSeconds = 1;
         int wait;
         if (waitStr != null && waitStr.matches("\\d+")) {
@@ -218,10 +222,10 @@ public class FlashfilesCom extends PluginForHost {
              * Check how much time has passed during eventual captcha event before this function has been called and see how much time is
              * left to wait.
              */
-            wait -= passedTime;
             if (passedTime > 0) {
                 /* This usually means that the user had to solve a captcha which cuts down the remaining time we have to wait. */
                 logger.info("Total passed time during captcha: " + passedTime);
+                wait -= passedTime;
             }
         } else {
             /* No waittime at all */
@@ -229,7 +233,7 @@ public class FlashfilesCom extends PluginForHost {
         }
         if (wait > 0) {
             logger.info("Waiting final waittime: " + wait);
-            sleep(wait * 1000l, downloadLink);
+            sleep(wait * 1000l, link);
         } else if (wait < -extraWaitSeconds) {
             /* User needed more time to solve the captcha so there is no waittime left :) */
             logger.info("Congratulations: Time to solve captcha was higher than waittime --> No waittime left");
@@ -276,34 +280,32 @@ public class FlashfilesCom extends PluginForHost {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
-                boolean isLoggedin = false;
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     logger.info("Attempting cookie login");
                     this.br.setCookies(this.getHost(), cookies);
                     br.getPage("https://" + this.getHost() + "/");
-                    if (this.isLoggedin()) {
+                    if (this.isLoggedin(br)) {
                         logger.info("Cookie login successful");
-                        isLoggedin = true;
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return;
                     } else {
                         logger.info("Cookie login failed");
-                        isLoggedin = false;
+                        br.clearCookies(br.getHost());
                     }
                 }
-                if (!isLoggedin) {
-                    logger.info("Performing full login");
-                    br.getPage("https://" + this.getHost() + "/login.php");
-                    final Form loginform = br.getFormbyProperty("name", "login");
-                    if (loginform == null) {
-                        logger.warning("Failed to find loginform");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    loginform.put("username", Encoding.urlEncode(account.getUser()));
-                    loginform.put("password", Encoding.urlEncode(account.getPass()));
-                    br.submitForm(loginform);
-                    if (!isLoggedin()) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                logger.info("Performing full login");
+                br.getPage("https://" + this.getHost() + "/login.php");
+                final Form loginform = br.getFormbyProperty("name", "login");
+                if (loginform == null) {
+                    logger.warning("Failed to find loginform");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("username", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                br.submitForm(loginform);
+                if (!isLoggedin(br)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
@@ -315,7 +317,7 @@ public class FlashfilesCom extends PluginForHost {
         }
     }
 
-    private boolean isLoggedin() {
+    private boolean isLoggedin(final Browser br) {
         return br.containsHTML("href\\s*=\\s*('|\")(logout\\.php|logout)\\1") || br.getURL().contains("/myfiles.php");
     }
 
@@ -355,41 +357,82 @@ public class FlashfilesCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        login(account, false);
+        login(account, false); // 2021-11-08: Login required to re-use stored directurls
         if (account.getType() == AccountType.FREE) {
-            br.getPage(link.getPluginPatternMatcher());
-            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+            handleFreeDownloads(link, account, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
+            requestFileInformation(link);
+            final String directurlproperty = "premium_directlink";
             String dllink = this.checkDirectLink(link, "premium_directlink");
-            if (dllink == null) {
-                // br.getPage(link.getPluginPatternMatcher());
-                br.postPage("/alternate-download.php", "h=" + this.getFID(link));
-                final String id = PluginJSonUtils.getJson(br, "id");
-                final String downloadtoken = PluginJSonUtils.getJson(br, "downloadtoken");
-                if (StringUtils.isEmpty(id) || StringUtils.isEmpty(downloadtoken)) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                dllink = id + "&downloadtoken=" + Encoding.urlEncode(downloadtoken);
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (!looksLikeDownloadableContent(dl.getConnection())) {
-                logger.warning("The final dllink seems not to be a file!");
-                try {
-                    br.followConnection(true);
-                } catch (IOException e) {
-                    logger.log(e);
-                }
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            if (!attemptStoredDownloadurlDownload(link, directurlproperty, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS)) {
+                final boolean useNewHandling = true;
+                if (useNewHandling) {
+                    /* 2021-11-08: New */
+                    br.setFollowRedirects(true);
+                    br.getPage(link.getPluginPatternMatcher());
+                    final Form premiumDl = br.getFormbyProperty("id", "premiumdownload");
+                    if (StringUtils.isEmpty(premiumDl.getAction())) {
+                        premiumDl.setAction("/pre-down-file.php");
+                    }
+                    br.submitForm(premiumDl);
+                    final String id = PluginJSonUtils.getJson(br, "filehash"); // == fid
+                    final String downloadtoken = PluginJSonUtils.getJson(br, "downloadtoken");
+                    if (StringUtils.isEmpty(id) || StringUtils.isEmpty(downloadtoken)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    dllink = "/pd.php?id=" + id + "&downloadtoken=" + downloadtoken;
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    br.postPage("/alternate-download.php", "h=" + this.getFID(link));
+                    final String id = PluginJSonUtils.getJson(br, "id");
+                    final String downloadtoken = PluginJSonUtils.getJson(br, "downloadtoken");
+                    if (StringUtils.isEmpty(id) || StringUtils.isEmpty(downloadtoken)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    dllink = id + "&downloadtoken=" + Encoding.urlEncode(downloadtoken);
                 }
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+                if (!looksLikeDownloadableContent(dl.getConnection())) {
+                    logger.warning("The final dllink seems not to be a file!");
+                    try {
+                        br.followConnection(true);
+                    } catch (IOException e) {
+                        logger.log(e);
+                    }
+                    if (dl.getConnection().getResponseCode() == 403) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                    } else if (dl.getConnection().getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+                link.setProperty(directurlproperty, dl.getConnection().getURL().toString());
             }
-            link.setProperty("premium_directlink", dl.getConnection().getURL().toString());
             dl.startDownload();
+        }
+    }
+
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directurlproperty, final boolean resumes, final int maxchunks) throws Exception {
+        final String url = link.getStringProperty(directurlproperty);
+        if (StringUtils.isEmpty(url)) {
+            return false;
+        }
+        try {
+            final Browser brc = br.cloneBrowser();
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resumes, maxchunks);
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                return true;
+            } else {
+                brc.followConnection(true);
+                throw new IOException();
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+            try {
+                dl.getConnection().disconnect();
+            } catch (Throwable ignore) {
+            }
+            return false;
         }
     }
 
@@ -403,13 +446,13 @@ public class FlashfilesCom extends PluginForHost {
         if (acc == null) {
             /* no account, yes we can expect captcha */
             return true;
-        }
-        if (acc.getType() == AccountType.FREE) {
+        } else if (acc.getType() == AccountType.FREE) {
             /* Free accounts can have captchas */
             return true;
+        } else {
+            /* Premium accounts do not have captchas */
+            return false;
         }
-        /* Premium accounts do not have captchas */
-        return false;
     }
 
     @Override

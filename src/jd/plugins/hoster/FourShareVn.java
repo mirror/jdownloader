@@ -24,6 +24,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -76,7 +77,7 @@ public class FourShareVn extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         correctDownloadLink(link);
-        prepBR();
+        prepBR(br);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
@@ -259,7 +260,7 @@ public class FourShareVn extends PluginForHost {
             try {
                 /* Load cookies */
                 this.setBrowserExclusive();
-                prepBR();
+                prepBR(br);
                 boolean refresh = true;
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
@@ -352,13 +353,14 @@ public class FourShareVn extends PluginForHost {
         }
     }
 
-    private void prepBR() {
-        this.br.setReadTimeout(2 * 60 * 1000);
-        this.br.setConnectTimeout(2 * 60 * 1000);
+    private Browser prepBR(final Browser br) {
+        br.setReadTimeout(2 * 60 * 1000);
+        br.setConnectTimeout(2 * 60 * 1000);
+        return br;
     }
 
     private void handleErrorsGeneral() throws PluginException {
-        if (this.br.containsHTML("File này tạm dừng Download do yêu cầu của Người upload|Thông báo với Administrator\\!")) {
+        if (this.br.containsHTML("(?i)File này tạm dừng Download do yêu cầu của Người upload|Thông báo với Administrator\\!")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 30 * 60 * 1000l);
         }
     }
