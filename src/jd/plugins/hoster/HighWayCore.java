@@ -588,7 +588,7 @@ public abstract class HighWayCore extends UseNet {
         final AccountInfo ai = new AccountInfo();
         this.login(account, true);
         this.getPage(this.getAPIBase() + "?hoster&user");
-        this.checkErrors(this.br, null, account);
+        this.checkErrors(this.br, this.getDownloadLink(), account);
         final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final Map<String, Object> accountInfo = (Map<String, Object>) entries.get("user");
         final int accountResume = ((Number) accountInfo.get("resume")).intValue();
@@ -739,7 +739,7 @@ public abstract class HighWayCore extends UseNet {
                         logger.info("Cookie login successful");
                         return true;
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nCookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 } catch (final Exception ignore) {
                     logger.log(ignore);
@@ -753,7 +753,7 @@ public abstract class HighWayCore extends UseNet {
         } else {
             br.postPage(this.getAPIBase() + "?login", "pass=" + Encoding.urlEncode(account.getPass()) + "&user=" + Encoding.urlEncode(account.getUser()));
         }
-        this.checkErrors(this.br, null, account);
+        this.checkErrors(this.br, this.getDownloadLink(), account);
         /* No Exception --> Assume that login was successful */
         account.saveCookies(this.br.getCookies(this.br.getHost()), "");
         return true;
@@ -833,7 +833,7 @@ public abstract class HighWayCore extends UseNet {
         }
         int retrySeconds = 180;
         final Object retryInSecondsO = entries.get("retry_in_seconds");
-        if (retryInSecondsO != null && ((retryInSecondsO instanceof Number) || retryInSecondsO.toString().matches("\\d+"))) {
+        if (retryInSecondsO != null && (retryInSecondsO instanceof Number || retryInSecondsO.toString().matches("\\d+"))) {
             retrySeconds = Integer.parseInt(retryInSecondsO.toString());
         }
         switch (code) {
