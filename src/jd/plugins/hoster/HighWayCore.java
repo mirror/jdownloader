@@ -371,11 +371,18 @@ public abstract class HighWayCore extends UseNet {
                     br.getPage(getWebsiteBase() + "load.php?json&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)) + "&pass=" + Encoding.urlEncode(passCode));
                     entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                     statuscode = ((Number) entries.get("code")).intValue();
-                    if (counter >= 2) {
+                    if (statuscode != STATUSCODE_PASSWORD_NEEDED_OR_WRONG) {
                         break;
-                    } else if (statuscode != STATUSCODE_PASSWORD_NEEDED_OR_WRONG) {
+                    } else if (counter >= 2) {
+                        logger.info("Password loop exceeded max retries");
                         break;
                     } else {
+                        if (passCode != null) {
+                            logger.info("Wrong password");
+                        } else {
+                            logger.info("Password required");
+                        }
+                        link.setPasswordProtected(true);
                         counter++;
                     }
                 } while (true);
@@ -386,7 +393,7 @@ public abstract class HighWayCore extends UseNet {
                     /* Password has been entered correctly or previously given password was correct --> Save it */
                     link.setDownloadPassword(passCode);
                 }
-                this.checkErrors(this.br, account);
+                this.checkErrors(this.br, link, account);
                 final Object infoMsgO = entries.get("info");
                 if (infoMsgO instanceof String) {
                     /* Low traffic warning message: Usually something like "Less than 10% traffic remaining" */
@@ -431,7 +438,7 @@ public abstract class HighWayCore extends UseNet {
                     } catch (final IOException e) {
                         logger.log(e);
                     }
-                    this.checkErrors(this.br, account);
+                    this.checkErrors(this.br, link, account);
                     mhm.handleErrorGeneric(account, this.getDownloadLink(), "unknowndlerror", 1, 3 * 60 * 1000l);
                 }
             }
@@ -539,7 +546,7 @@ public abstract class HighWayCore extends UseNet {
                     return;
                 } else {
                     br.getPage(cachePollingURL);
-                    this.checkErrors(br, account);
+                    this.checkErrors(br, link, account);
                     entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                     final int retryInSecondsThisRound = ((Number) entries.get("retry_in_seconds")).intValue();
                     if (blockDownloadSlotsForCloudDownloads(account)) {
@@ -581,7 +588,7 @@ public abstract class HighWayCore extends UseNet {
         final AccountInfo ai = new AccountInfo();
         this.login(account, true);
         this.getPage(this.getAPIBase() + "?hoster&user");
-        this.checkErrors(this.br, account);
+        this.checkErrors(this.br, null, account);
         final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final Map<String, Object> accountInfo = (Map<String, Object>) entries.get("user");
         final int accountResume = ((Number) accountInfo.get("resume")).intValue();
@@ -746,7 +753,7 @@ public abstract class HighWayCore extends UseNet {
         } else {
             br.postPage(this.getAPIBase() + "?login", "pass=" + Encoding.urlEncode(account.getPass()) + "&user=" + Encoding.urlEncode(account.getUser()));
         }
-        this.checkErrors(this.br, account);
+        this.checkErrors(this.br, null, account);
         /* No Exception --> Assume that login was successful */
         account.saveCookies(this.br.getCookies(this.br.getHost()), "");
         return true;
@@ -812,7 +819,7 @@ public abstract class HighWayCore extends UseNet {
         }
     }
 
-    private void checkErrors(final Browser br, final Account account) throws PluginException, InterruptedException {
+    private void checkErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException, InterruptedException {
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final int code = getAPIErrorcode(entries);
         if (code == -1) {
@@ -821,11 +828,13 @@ public abstract class HighWayCore extends UseNet {
         }
         String msg = (String) entries.get("error");
         if (StringUtils.isEmpty(msg)) {
+            /* This should never happen */
             msg = "Unknown error";
         }
         int retrySeconds = 180;
-        if (entries.containsKey("retry_in_seconds")) {
-            retrySeconds = ((Number) entries.get("retry_in_seconds")).intValue();
+        final Object retryInSecondsO = entries.get("retry_in_seconds");
+        if (retryInSecondsO != null && ((retryInSecondsO instanceof Number) || retryInSecondsO.toString().matches("\\d+"))) {
+            retrySeconds = Integer.parseInt(retryInSecondsO.toString());
         }
         switch (code) {
         case 1:
@@ -858,8 +867,13 @@ public abstract class HighWayCore extends UseNet {
             /* Host is not supported or not supported for free account users */
             mhm.putError(account, this.getDownloadLink(), retrySeconds * 1000l, msg);
         case 11:
-            /* Host (not multihost) is currently under maintenance or offline --> Disable it for some time */
-            mhm.putError(account, this.getDownloadLink(), retrySeconds * 1000l, msg);
+            /**
+             * Host (not multihost) is currently under maintenance or offline --> Disable it for some time </br>
+             * 2021-11-08: Admin asked us not to disable host right away when this error happens as it seems like this error is more rleated
+             * to single files/fileservers -> Done accordingly.
+             */
+            // mhm.putError(account, this.getDownloadLink(), retrySeconds * 1000l, msg);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, retrySeconds * 1000l);
         case 12:
             /* Multihost itself is currently under maintenance --> Temp. disable account for some minutes */
             throw new AccountUnavailableException(msg, retrySeconds * 1000l);
@@ -879,8 +893,12 @@ public abstract class HighWayCore extends UseNet {
             /* Error, user is supposed to contact support of this multihost. */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, retrySeconds * 1000l);
         default:
-            /* Treat unknown/other erors as account errors */
-            throw new AccountUnavailableException("Unexpected error: " + msg, retrySeconds * 1000l);
+            /* Unknown/other errorcodes */
+            if (link != null) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, retrySeconds * 1000l);
+            } else {
+                throw new AccountUnavailableException("Unexpected error: " + msg, retrySeconds * 1000l);
+            }
         }
     }
 
