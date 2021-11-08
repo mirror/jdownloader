@@ -23,6 +23,12 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.TiktokConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -33,13 +39,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.TiktokConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tiktok.com" }, urls = { "https?://(?:www\\.)?tiktok\\.com/((@[^/]+)/video/|embed/)(\\d+)|https?://m\\.tiktok\\.com/v/(\\d+)\\.html" })
 public class TiktokCom extends antiDDoSForHost {
@@ -102,7 +101,6 @@ public class TiktokCom extends antiDDoSForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         this.setBrowserExclusive();
         /**
          * 2021-04-09: Doesn't work as their video directurls are only valid one time or (more reasonable) are bound to cookies -> We'd have
@@ -116,6 +114,9 @@ public class TiktokCom extends antiDDoSForHost {
         final String fid = getFID(link);
         if (fid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (!link.isNameSet()) {
+            link.setName(fid + ".mp4");
         }
         if (link.getPluginPatternMatcher().matches(".+/@[^/]+/video/\\d+.*?")) {
             username = new Regex(link.getPluginPatternMatcher(), "/(@[^/]+)/").getMatch(0);
@@ -233,11 +234,16 @@ public class TiktokCom extends antiDDoSForHost {
                 createDate = Long.toString(JavaScriptEngineFactory.toLong(itemInfos.get("createTime"), 0));
                 description = (String) itemInfos.get("text");
                 dllink = (String) JavaScriptEngineFactory.walkJson(itemInfos, "video/urls/{0}");
-                if (username == null && entries.containsKey("authorInfos")) {
+                /* Always look for username --> Username given inside URL which user added can be wrong! */
+                if (entries.containsKey("authorInfos")) {
                     final Map<String, Object> authorInfos = (Map<String, Object>) entries.get("authorInfos");
-                    username = (String) authorInfos.get("uniqueId");
-                    if (!StringUtils.isEmpty(username) && !username.startsWith("@")) {
-                        username = "@" + username;
+                    final String usernameTmp = (String) authorInfos.get("uniqueId");
+                    if (!StringUtils.isEmpty(usernameTmp)) {
+                        if (usernameTmp.startsWith("@")) {
+                            username = usernameTmp;
+                        } else {
+                            username = "@" + usernameTmp;
+                        }
                     }
                 }
                 /* Set more Packagizer properties */

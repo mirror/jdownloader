@@ -28,7 +28,6 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -47,7 +46,7 @@ import jd.plugins.PluginException;
  * @version raz_Template-pastebin-201508200000
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "spaste.com" }, urls = { "https?://(?:www\\.)?spaste\\.com/(?:(?:site/checkPasteUrl|p/?)\\?c=[a-zA-Z0-9]{10}|s/[a-zA-Z0-9]{6}|r/[a-zA-Z0-9]{6}\\?link=.+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "spaste.com", "binbucks.com" }, urls = { "https?://(?:www\\.)?spaste\\.com/(?:(?:site/checkPasteUrl|p/?)\\?c=[a-zA-Z0-9]{10}|s/[a-zA-Z0-9]{6}|r/[a-zA-Z0-9]{6}\\?link=.+)", "https?://(?:www\\.)?(?:binbucks\\.com|binb\\.me)/(?:shrinker/)?[A-Za-z0-9]+" })
 public class SpasteCom extends antiDDoSForDecrypt {
     public SpasteCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -56,7 +55,6 @@ public class SpasteCom extends antiDDoSForDecrypt {
     /* DEV NOTES */
     // Tags: pastebin
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
@@ -66,14 +64,25 @@ public class SpasteCom extends antiDDoSForDecrypt {
         }
         getPage(parameter);
         /* Error handling */
-        if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br._getURL().getPath().equals("/site/index") || br.containsHTML("Page Not Found|<h4>\\s*Oops\\s*!\\s*</h4>|>\\s*The requested paste has been deleted by")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br._getURL().getPath().equals("/site/index")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)Page Not Found|<h4>\\s*Oops\\s*!\\s*</h4>|>\\s*The requested paste has been deleted by")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         int zz = -1;
         while (true) {
             zz++;
-            final Form form = br.getFormbyProperty("id", "spasteCaptcha");
+            Form form = null;
+            for (final Form tmpForm : br.getForms()) {
+                final String formID = tmpForm.getStringProperty("id");
+                /* E.g. "binbucksCaptcha" or "spasteCaptcha" */
+                if (formID != null && formID.matches("[a-z]+Captcha")) {
+                    form = tmpForm;
+                    break;
+                }
+            }
             if (form == null) {
                 // need a way to break.
                 if (zz == 0) {
@@ -85,7 +94,7 @@ public class SpasteCom extends antiDDoSForDecrypt {
             if (zz > 4) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            // they can have captcha, ive seen solvemedia and there own
+            // they can have captcha, I've seen Solvemedia and their own
             String captchaScript = null;
             {
                 final String[] mm = form.getRegex("<script[^>]*>.*?</script>").getColumn(-1);
@@ -98,6 +107,7 @@ public class SpasteCom extends antiDDoSForDecrypt {
                     }
                 }
             }
+            final String captchaImageURL = br.getRegex("id=\"my-captcha-image\" src=\"(/site/captcha\\?v=[^\"]+)\"").getMatch(0);
             if (form.containsHTML("g-recaptcha")) {
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
                 // form only has one input...its static
@@ -166,6 +176,13 @@ public class SpasteCom extends antiDDoSForDecrypt {
                 form.put("sPasteCaptcha", Encoding.urlEncode(hash));
                 form.put("userEnterHashHere", result);
                 form.put("pasteUrlForm%5Bsubmit%5D", "submit");
+                submitForm(form);
+            } else if (captchaImageURL != null) {
+                /* Simple image captcha */
+                final String code = this.getCaptchaCode(captchaImageURL, param);
+                /* TODO */
+                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                form.put("DynamicModel%5BverificationCode%5D", code);
                 submitForm(form);
             } else {
                 break;
