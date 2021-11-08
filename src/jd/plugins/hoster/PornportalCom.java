@@ -297,7 +297,7 @@ public class PornportalCom extends PluginForHost {
                 }
                 /* We should already be loggedIN at this stage! */
                 this.login(this.br, account, link.getHost(), false);
-                final LinkedHashMap<String, DownloadLink> qualities = jd.plugins.decrypter.PornportalComCrawler.crawlContentAPI(this, this.br, videoID, account);
+                final HashMap<String, DownloadLink> qualities = jd.plugins.decrypter.PornportalComCrawler.crawlContentAPI(this, this.br, videoID, account);
                 final Iterator<Entry<String, DownloadLink>> iteratorQualities = qualities.entrySet().iterator();
                 while (iteratorQualities.hasNext()) {
                     final DownloadLink video = iteratorQualities.next().getValue();
@@ -724,7 +724,16 @@ public class PornportalCom extends PluginForHost {
                     ai.setCreateTime(TimeFormatter.getMilliSeconds(joinDate, "yyyy'-'MM'-'dd'T'HH':'mm':'ss", null));
                 }
                 if ((Boolean) map.get("isBanned")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account banned", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    /*
+                     * 2021-11-08: This may randomly be "true" (also via website) although the account is definitely not banned! Tested with
+                     * a brazzers.com account. --> Ignore this for now!
+                     */
+                    final boolean trustBannedFlag = false;
+                    if (trustBannedFlag) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account banned", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        logger.info("Account might be banned??");
+                    }
                 }
                 final Boolean isExpired = (Boolean) map.get("isExpired");
                 final Boolean isTrial = (Boolean) map.get("isTrial");

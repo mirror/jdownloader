@@ -16,9 +16,10 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.appwork.utils.StringUtils;
@@ -133,7 +134,7 @@ public class PornportalComCrawler extends PluginForDecrypt {
             return null;
         }
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost(this.getHost());
-        final LinkedHashMap<String, DownloadLink> qualities = crawlContentAPI(hostPlugin, this.br, contentID, acc);
+        final HashMap<String, DownloadLink> qualities = crawlContentAPI(hostPlugin, this.br, contentID, acc);
         final Iterator<Entry<String, DownloadLink>> iteratorQualities = qualities.entrySet().iterator();
         while (iteratorQualities.hasNext()) {
             decryptedLinks.add(iteratorQualities.next().getValue());
@@ -178,9 +179,9 @@ public class PornportalComCrawler extends PluginForDecrypt {
         return aa;
     }
 
-    public static LinkedHashMap<String, DownloadLink> crawlContentAPI(final PluginForHost plg, final Browser br, final String contentID, final Account account) throws Exception {
+    public static HashMap<String, DownloadLink> crawlContentAPI(final PluginForHost plg, final Browser br, final String contentID, final Account account) throws Exception {
         final String host = plg.getHost();
-        final LinkedHashMap<String, DownloadLink> foundQualities = new LinkedHashMap<String, DownloadLink>();
+        final HashMap<String, DownloadLink> foundQualities = new HashMap<String, DownloadLink>();
         String api_base = PluginJSonUtils.getJson(br, "dataApiUrl");
         if (StringUtils.isEmpty(api_base)) {
             /* Fallback to static value e.g. loggedIN --> html containing json API information has not been accessed before */
@@ -190,29 +191,29 @@ public class PornportalComCrawler extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        entries = (LinkedHashMap<String, Object>) entries.get("result");
+        Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Map<String, Object> result = (Map<String, Object>) root.get("result");
         final ArrayList<Object> videoObjects = new ArrayList<Object>();
         /* Add current object */
-        videoObjects.add(entries);
+        videoObjects.add(result);
         /* Look for more objects */
-        final Object childrenO = entries.get("children");
-        if (childrenO != null) {
-            final ArrayList<Object> children = (ArrayList<Object>) entries.get("children");
+        final Object videoChildrenO = result.get("children");
+        if (videoChildrenO != null) {
+            final ArrayList<Object> children = (ArrayList<Object>) videoChildrenO;
             videoObjects.addAll(children);
         }
         final boolean isPremium = account != null && account.getType() == AccountType.PREMIUM;
         for (final Object videoO : videoObjects) {
-            entries = (LinkedHashMap<String, Object>) videoO;
+            final Map<String, Object> clipInfo = (Map<String, Object>) videoO;
             // final String type = (String) entries.get("type");
-            final String videoID = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), 0));
+            final String videoID = Long.toString(JavaScriptEngineFactory.toLong(clipInfo.get("id"), 0));
             if (StringUtils.isEmpty(videoID) || videoID.equals("0")) {
                 /* Skip invalid objects */
                 continue;
             }
-            final boolean isTrailer = "trailer".equals(entries.get("type"));
-            String title = (String) entries.get("title");
-            String description = (String) entries.get("description");
+            final boolean isTrailer = "trailer".equals(clipInfo.get("type"));
+            String title = (String) clipInfo.get("title");
+            String description = (String) clipInfo.get("description");
             if (StringUtils.isEmpty(title)) {
                 /* Fallback */
                 title = contentID;
@@ -229,68 +230,91 @@ public class PornportalComCrawler extends PluginForDecrypt {
                 fp.setComment(description);
             }
             final String format_filename = "%s_%s_%s.mp4";
-            LinkedHashMap<String, Object> files = null;
+            final List<Map<String, Object>> videoTypes = new ArrayList<Map<String, Object>>();
             try {
-                entries = (LinkedHashMap<String, Object>) entries.get("videos");
-                files = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "full/files");
-                if (files == null) {
-                    /* E.g. not logged in --> Trailer */
-                    files = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "mediabook/files");
-                }
-                if (files == null) {
+                final Map<String, Object> videoTypesMap = (Map<String, Object>) clipInfo.get("videos");
+                final Map<String, Object> fullVideos = (Map<String, Object>) JavaScriptEngineFactory.walkJson(videoTypesMap, "full/files");
+                final Map<String, Object> trailers = (Map<String, Object>) JavaScriptEngineFactory.walkJson(videoTypesMap, "mediabook/files");
+                if (fullVideos == null && trailers == null) {
                     /* Skip non-video objects */
                     continue;
+                } else {
+                    if (fullVideos != null) {
+                        videoTypes.add(fullVideos);
+                    }
+                    if (trailers != null) {
+                        videoTypes.add(trailers);
+                    }
                 }
             } catch (final Throwable e) {
                 /* Skip non-video objects */
                 continue;
             }
-            final Iterator<Entry<String, Object>> qualities = files.entrySet().iterator();
-            while (qualities.hasNext()) {
-                final Entry<String, Object> entry = qualities.next();
-                LinkedHashMap<String, Object> videoInfo = (LinkedHashMap<String, Object>) entry.getValue();
-                String format = (String) videoInfo.get("format");
-                final long filesize = JavaScriptEngineFactory.toLong(videoInfo.get("sizeBytes"), 0);
-                videoInfo = (LinkedHashMap<String, Object>) videoInfo.get("urls");
-                String downloadurl = (String) videoInfo.get("download");
-                if (StringUtils.isEmpty(downloadurl)) {
-                    /* Fallback to stream-URL (most times, an official downloadurl is available!) */
-                    downloadurl = (String) videoInfo.get("view");
+            /* Now walk through all qualities in all types */
+            for (final Map<String, Object> files : videoTypes) {
+                final Iterator<Entry<String, Object>> qualities = files.entrySet().iterator();
+                while (qualities.hasNext()) {
+                    final Entry<String, Object> entry = qualities.next();
+                    final Map<String, Object> videoInfo = (Map<String, Object>) entry.getValue();
+                    final Object urlsO = videoInfo.get("urls");
+                    if (urlsO instanceof List) {
+                        /* Usually empty list --> Usually means that current clip is not available as full clip -> Trailer only */
+                        continue;
+                    }
+                    String format = (String) videoInfo.get("format");
+                    final long filesize = JavaScriptEngineFactory.toLong(videoInfo.get("sizeBytes"), 0);
+                    final Map<String, Object> downloadInfo = (Map<String, Object>) urlsO;
+                    String downloadurl = (String) downloadInfo.get("download");
+                    if (StringUtils.isEmpty(downloadurl)) {
+                        /* Fallback to stream-URL (most times, an official downloadurl is available!) */
+                        downloadurl = (String) videoInfo.get("view");
+                    }
+                    if (StringUtils.isEmpty(downloadurl)) {
+                        continue;
+                    } else if (StringUtils.isEmpty(format) || !format.matches("\\d+p")) {
+                        /* Skip invalid entries and hls and dash streams */
+                        continue;
+                    }
+                    /* E.g. '1080p' --> '1080' */
+                    format = format.replace("p", "");
+                    String contentURL;
+                    final String patternMatcher;
+                    final PluginForHost pluginToUse;
+                    if (account != null) {
+                        /* Download with account */
+                        patternMatcher = "https://decrypted" + host + "/" + videoID + "/" + format;
+                        contentURL = "https://site-ma." + host + "/scene/" + videoID;
+                        pluginToUse = plg;
+                    } else {
+                        /* Without account users can only download trailers and their directurls never expire. */
+                        patternMatcher = downloadurl;
+                        contentURL = patternMatcher;
+                        pluginToUse = JDUtilities.getPluginForHost("DirectHTTP");
+                    }
+                    final DownloadLink dl = new DownloadLink(pluginToUse, "pornportal", host, patternMatcher, true);
+                    dl.setContentUrl(contentURL);
+                    dl.setFinalFileName(String.format(format_filename, videoID, title, format));
+                    dl.setProperty("videoid", videoID);
+                    dl.setProperty("quality", format);
+                    dl.setProperty("directurl", downloadurl);
+                    if (filesize > 0) {
+                        dl.setDownloadSize(filesize);
+                    }
+                    dl.setAvailable(true);
+                    dl._setFilePackage(fp);
+                    foundQualities.put(format, dl);
                 }
-                if (StringUtils.isEmpty(downloadurl)) {
+                if (!foundQualities.isEmpty()) {
+                    break;
+                } else if (videoTypes.size() > 1) {
+                    /* Possibly no full clips available although user may be premium -> Continue and hope that trailers are available. */
+                    plg.getLogger().info("Failed to find full clips -> Adding trailer for current videoID: " + videoID);
                     continue;
-                } else if (StringUtils.isEmpty(format) || !format.matches("\\d+p")) {
-                    /* Skip invalid entries and hls and dash streams */
-                    continue;
-                }
-                /* E.g. '1080p' --> '1080' */
-                format = format.replace("p", "");
-                String contentURL;
-                final String patternMatcher;
-                final PluginForHost plugin_to_use;
-                if (account != null) {
-                    /* Download with account */
-                    patternMatcher = "https://decrypted" + host + "/" + videoID + "/" + format;
-                    contentURL = "https://site-ma." + host + "/scene/" + videoID;
-                    plugin_to_use = plg;
                 } else {
-                    /* Without account users can only download trailers and their directurls never expire. */
-                    patternMatcher = downloadurl;
-                    contentURL = patternMatcher;
-                    plugin_to_use = JDUtilities.getPluginForHost("DirectHTTP");
+                    /* This should never happen! */
+                    plg.getLogger().warning("Failed to find any downloadable content for videoID: " + videoID);
+                    break;
                 }
-                final DownloadLink dl = new DownloadLink(plugin_to_use, "pornportal", host, patternMatcher, true);
-                dl.setContentUrl(contentURL);
-                dl.setFinalFileName(String.format(format_filename, videoID, title, format));
-                dl.setProperty("videoid", videoID);
-                dl.setProperty("quality", format);
-                dl.setProperty("directurl", downloadurl);
-                if (filesize > 0) {
-                    dl.setDownloadSize(filesize);
-                }
-                dl.setAvailable(true);
-                dl._setFilePackage(fp);
-                foundQualities.put(format, dl);
             }
         }
         return foundQualities;

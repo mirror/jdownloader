@@ -881,8 +881,8 @@ public abstract class HighWayCore extends UseNet {
             /* Password required or sent password was wrong --> This should never happen here as upper handling should handle this! */
             throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
         case 14:
-            /* Host specific (= account specific) download limit has been reached --> Disable that particular host for some time */
-            mhm.putError(account, this.getDownloadLink(), retrySeconds * 1000l, msg);
+            /* Host specific (= account specific) download limit has been reached --> Try file later */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, retrySeconds * 1000l);
         case 15:
             /*
              * Host specific download request limit has been reahed. This is basically the protection of this multihost against users trying
