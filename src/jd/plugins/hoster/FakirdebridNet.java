@@ -127,8 +127,12 @@ public class FakirdebridNet extends PluginForHost {
                 br.postPage(API_BASE + "/generate.php?pin=" + Encoding.urlEncode(account.getPass()), postData);
                 entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 final Object errorCodeO = entries.get("code");
-                if (errorCodeO != null && errorCodeO instanceof String && errorCodeO.toString().matches("(?i)(Wrong_Password|Password_Required)")) {
-                    logger.info("Password required or wrong password");
+                if (errorCodeO != null && errorCodeO instanceof String && errorCodeO.toString().equalsIgnoreCase("Password_Required")) {
+                    logger.info("Password required");
+                    counter += 1;
+                    // continue;
+                } else if (errorCodeO != null && errorCodeO instanceof String && errorCodeO.toString().equalsIgnoreCase("Wrong_Password")) {
+                    logger.info("Wrong password");
                     counter += 1;
                     // continue;
                 } else {
