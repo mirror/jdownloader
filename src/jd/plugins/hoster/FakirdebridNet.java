@@ -128,6 +128,7 @@ public class FakirdebridNet extends PluginForHost {
                 entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 final Object errorCodeO = entries.get("code");
                 if (errorCodeO != null && errorCodeO instanceof String && errorCodeO.toString().matches("(?i)(Wrong_Password|Password_Required)")) {
+                    logger.info("Password required or wrong password");
                     counter += 1;
                     // continue;
                 } else {
@@ -135,9 +136,9 @@ public class FakirdebridNet extends PluginForHost {
                     break;
                 }
             } while (counter <= 2);
-            this.handleErrorsAPI(this.br, account);
+            this.handleErrorsAPI(this.br, link, account);
             if (passCode != null) {
-                /* Save password for the next time */
+                /* Save password for the next time. */
                 link.setDownloadPassword(passCode);
             }
             entries = (Map<String, Object>) entries.get("data");
@@ -152,7 +153,7 @@ public class FakirdebridNet extends PluginForHost {
                 /* 2021-06-21: Testing */
                 final String apilink = (String) entries.get("apilink");
                 br.getPage(apilink);
-                this.handleErrorsAPI(this.br, account);
+                this.handleErrorsAPI(this.br, link, account);
                 entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 entries = (Map<String, Object>) entries.get("data");
                 final int files_done = ((Number) entries.get("files_done")).intValue();
@@ -308,7 +309,7 @@ public class FakirdebridNet extends PluginForHost {
                     throw new AccountInvalidException("Invalid API PIN format.\r\n Find your API PIN here: " + pinURLWithoutProtocol);
                 }
                 br.getPage(API_BASE + "/info.php?pin=" + Encoding.urlEncode(account.getPass()));
-                handleErrorsAPI(br, account);
+                handleErrorsAPI(br, this.getDownloadLink(), account);
                 /* Assume successful login if no error has happened! */
             }
         }
@@ -344,7 +345,7 @@ public class FakirdebridNet extends PluginForHost {
      * 'Banned_Account' => 'Banned Account',</br>
      * 'Free_Account' => 'Not supported for free members.',
      */
-    private void handleErrorsAPI(final Browser br, final Account account) throws PluginException, InterruptedException {
+    private void handleErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException, InterruptedException {
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final Object errorO = entries.get("error");
         if (errorO instanceof Boolean && errorO == Boolean.TRUE) {
@@ -379,11 +380,16 @@ public class FakirdebridNet extends PluginForHost {
                 } else if (errorStr.equalsIgnoreCase("Limit_Error_Transfer") || errorStr.equalsIgnoreCase("Limit_Error_Premium")) {
                     /* Temp. account error */
                     throw new AccountUnavailableException(errorStr, 5 * 60 * 1000l);
-                } else if (errorStr.equalsIgnoreCase("Password_Required") || errorStr.equalsIgnoreCase("Wrong_Password")) {
+                } else if (errorStr.equalsIgnoreCase("Password_Required")) {
+                    link.setPasswordProtected(true);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Password required");
+                } else if (errorStr.equalsIgnoreCase("Wrong_Password")) {
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                } else if (errorStr.equalsIgnoreCase("File_not_found")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
                     logger.info("Unknown error happened: " + errorStr);
-                    if (this.getDownloadLink() == null) {
+                    if (link == null) {
                         throw new AccountUnavailableException(errorStr, 5 * 60 * 1000l);
                     } else {
                         mhm.handleErrorGeneric(account, this.getDownloadLink(), errorStr, 10);
