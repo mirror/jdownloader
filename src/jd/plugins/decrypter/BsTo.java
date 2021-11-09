@@ -167,13 +167,12 @@ public class BsTo extends PluginForDecrypt {
             }
             final String[] mirrorURLs = new Regex(mirrorlist, "<a[^>]*href=\"(serie/[^/]+/\\d+/[^/]+/[a-z]{2}/[^/\"]+)\"").getColumn(0);
             if (mirrorURLs == null || mirrorURLs.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Number of possible downloadlinks TOTAL: " + mirrorURLs.length);
             /* Add only user preferred host or all available hosts. */
             String userHosterPrioListStr = PluginJsonConfig.get(BsToConfig.class).getHosterPriorityString();
-            if (userHosterPrioListStr != null && userHosterPrioListStr.contains(",")) {
+            if (userHosterPrioListStr != null) {
                 userHosterPrioListStr = userHosterPrioListStr.replace(" ", "").toLowerCase(Locale.ENGLISH);
                 final String[] hosterPrioList = userHosterPrioListStr.split(",");
                 logger.info("Trying to add only one user priorized host");
