@@ -64,7 +64,6 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
         /* websites using the OLD style: */
         ret.add(new String[] { "upfordown.xyz" });
         ret.add(new String[] { "fireload.com" });
-        ret.add(new String[] { "easylinkz.net" });
         /* Websites using the NEW style: */
         ret.add(new String[] { "oxycloud.com" });
         ret.add(new String[] { "erai-ddl3.info" });

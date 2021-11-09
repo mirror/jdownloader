@@ -32,6 +32,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
+import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -71,6 +72,7 @@ public class SpasteCom extends antiDDoSForDecrypt {
         } else if (br.containsHTML("(?i)Page Not Found|<h4>\\s*Oops\\s*!\\s*</h4>|>\\s*The requested paste has been deleted by")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        br.setFollowRedirects(false);
         int zz = -1;
         while (true) {
             zz++;
@@ -91,9 +93,23 @@ public class SpasteCom extends antiDDoSForDecrypt {
                     break;
                 }
             }
+            if (StringUtils.equalsIgnoreCase(form.getAction(), "bj/site")) {
+                /* 2021-11-09: Workaround for binbucks.com */
+                form.setAction(br.getURL());
+            }
             if (zz > 4) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
+            final InputField fieldOpen = form.getInputField("open");
+            if (fieldOpen != null && fieldOpen.getValue() == null) {
+                /* 2021-11-09: Small workaround for parser failure/bad upper handling. */
+                fieldOpen.setValue("");
+            }
+            /**
+             * possible 'captcha' field values: </br>
+             * 2= captchaScript </br>
+             * 6 = image
+             */
             // they can have captcha, I've seen Solvemedia and their own
             String captchaScript = null;
             {
@@ -140,9 +156,10 @@ public class SpasteCom extends antiDDoSForDecrypt {
             } else if (captchaScript != null) {
                 // hello!
                 final String hash = getJS(captchaScript, "myCaptchaHash");
+                final String captchaAnswerFieldName = getJS(captchaScript, "globalCaptchaHashName");
                 final String[] getQuestion = getJSArray(captchaScript, "myCaptchaAns");
                 final String[] getImgArray = getJSArray(captchaScript, "myCaptchaImages");
-                if (hash == null || getQuestion == null || getImgArray == null) {
+                if (hash == null || captchaAnswerFieldName == null || getQuestion == null || getImgArray == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 // stupid
@@ -162,6 +179,7 @@ public class SpasteCom extends antiDDoSForDecrypt {
                             result += count;
                             continue c;
                         }
+                        /* 2021-11-09: No idea what this was for */
                         if ("building".equalsIgnoreCase(q) && "14291865221429186522index.jpg".equals(filename)) {
                             result += count;
                             continue c;
@@ -173,59 +191,64 @@ public class SpasteCom extends antiDDoSForDecrypt {
                     getPage(parameter);
                     continue;
                 }
-                form.put("sPasteCaptcha", Encoding.urlEncode(hash));
+                /* E.g. "techCaptcha" or "sPasteCaptcha" */
+                form.put(captchaAnswerFieldName, Encoding.urlEncode(hash));
                 form.put("userEnterHashHere", result);
                 form.put("pasteUrlForm%5Bsubmit%5D", "submit");
                 submitForm(form);
             } else if (captchaImageURL != null) {
                 /* Simple image captcha */
                 final String code = this.getCaptchaCode(captchaImageURL, param);
-                /* TODO */
-                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 form.put("DynamicModel%5BverificationCode%5D", code);
                 submitForm(form);
             } else {
                 break;
             }
         }
-        final String plaintxt;
-        // /s links have a different format
-        if (parameter.contains("spaste.com/s/") || parameter.contains("spaste.com/r/")) {
-            // we need some info
-            final String id = br.getRegex("\\$\\.post\\(\"/site/getRedirectLink\",\\{id:'(\\d+)'\\}").getMatch(0);
-            if (id == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            // ajax request
-            br.getHeaders().put("Accept", "*/*");
-            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-            br.getHeaders().put("Accept", "*/*");
-            sleep(5000, param);
-            postPage("/site/getRedirectLink", "id=" + Encoding.urlEncode(id));
-            plaintxt = br.toString();
+        final String directRedirect = br.getRedirectLocation();
+        if (directRedirect != null) {
+            decryptedLinks.add(this.createDownloadlink(directRedirect));
         } else {
-            // look for content! within '/p/c=? + uid', by the way you cant just jump to it.
-            plaintxt = br.getRegex("class=\"required input-block-level pasteContent\"(.*?)(?:</div>\\s*){3}").getMatch(0);
-        }
-        if (plaintxt == null) {
-            // this isn't always an error! there might not be any links!
-            logger.info("Could not find 'plaintxt' : " + parameter);
-            return decryptedLinks;
-        }
-        final Set<String> pws = PasswordUtils.getPasswords(plaintxt);
-        final String[] links = HTMLParser.getHttpLinks(plaintxt, "");
-        if (links == null || links.length == 0) {
-            logger.info("Found no links[] from 'plaintxt' : " + parameter);
-            return decryptedLinks;
-        }
-        /* avoid recursion */
-        for (final String link : links) {
-            if (!this.canHandle(link)) {
-                final DownloadLink dl = createDownloadlink(link);
-                if (pws != null && pws.size() > 0) {
-                    dl.setSourcePluginPasswordList(new ArrayList<String>(pws));
+            /* Look for other/multiple URLs. */
+            final String plaintxt;
+            // /s links have a different format
+            if (parameter.contains("spaste.com/s/") || parameter.contains("spaste.com/r/")) {
+                // we need some info
+                final String id = br.getRegex("\\$\\.post\\(\"/site/getRedirectLink\",\\{id:'(\\d+)'\\}").getMatch(0);
+                if (id == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                decryptedLinks.add(dl);
+                // ajax request
+                br.getHeaders().put("Accept", "*/*");
+                br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                br.getHeaders().put("Accept", "*/*");
+                sleep(5000, param);
+                postPage("/site/getRedirectLink", "id=" + Encoding.urlEncode(id));
+                plaintxt = br.toString();
+            } else {
+                // look for content! within '/p/c=? + uid', by the way you cant just jump to it.
+                plaintxt = br.getRegex("class=\"required input-block-level pasteContent\"(.*?)(?:</div>\\s*){3}").getMatch(0);
+            }
+            if (plaintxt == null) {
+                // this isn't always an error! there might not be any links!
+                logger.info("Could not find 'plaintxt' : " + parameter);
+                return decryptedLinks;
+            }
+            final Set<String> pws = PasswordUtils.getPasswords(plaintxt);
+            final String[] links = HTMLParser.getHttpLinks(plaintxt, "");
+            if (links == null || links.length == 0) {
+                logger.info("Found no links[] from 'plaintxt' : " + parameter);
+                return decryptedLinks;
+            }
+            /* Avoid recursion */
+            for (final String link : links) {
+                if (!this.canHandle(link)) {
+                    final DownloadLink dl = createDownloadlink(link);
+                    if (pws != null && pws.size() > 0) {
+                        dl.setSourcePluginPasswordList(new ArrayList<String>(pws));
+                    }
+                    decryptedLinks.add(dl);
+                }
             }
         }
         return decryptedLinks;

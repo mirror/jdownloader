@@ -49,6 +49,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
@@ -206,11 +207,7 @@ public class ChoMikujPl extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            throw e;
-        }
+        login(account, true);
         final String remainingTraffic = br.getRegex("<strong>([^<>\"]*?)</strong>[\t\n\r ]+transferu").getMatch(0);
         if (remainingTraffic != null) {
             if (this.getPluginConfig().getBooleanProperty("IGNORE_TRAFFIC_LIMIT", false) || this.getPluginConfig().getBooleanProperty(ChoMikujPl.AVOIDPREMIUMMP3TRAFFICUSAGE, false)) {
@@ -380,40 +377,9 @@ public class ChoMikujPl extends antiDDoSForHost {
         } else {
             thislock = PWLOCK;
         }
+        final PluginForDecrypt plg = this.getNewPluginForDecryptInstance(this.getHost());
         synchronized (thislock) {
-            final Form passForm = br.getFormbyProperty("id", "LoginToFolder");
-            if (passForm == null) {
-                logger.info("Content is NOT password protected or there was no password prompt because we still got valid password cookies");
-                return false;
-            }
-            logger.info("Content is password protected");
-            String passCode = link.getDownloadPassword();
-            if (passCode == null) {
-                passCode = getUserInput("Password?", link);
-            }
-            passForm.put("Password", passCode);
-            passForm.remove("Remember");
-            if (account != null) {
-                passForm.put("Remember", "true");
-            } else {
-                passForm.put("Remember", "false");
-            }
-            this.submitForm(passForm);
-            /* Important! The other parts of this plugin cannot handle escaped results! */
-            br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
-            final String success = PluginJSonUtils.getJson(br, "IsSuccess");
-            if (!"true".equals(success)) {
-                logger.info("User entered wrong password");
-                link.setDownloadPassword(null);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
-            }
-            logger.info("User entered correct password");
-            link.setDownloadPassword(passCode);
-            if (account != null) {
-                /* Save cookies and hope that all other links will not require us to enter password again --> Downloadstart is faster */
-                account.saveCookies(br.getCookies(br.getURL()), "");
-            }
-            return true;
+            return ((jd.plugins.decrypter.ChoMikujPl) plg).passwordHandling(link);
         }
     }
 

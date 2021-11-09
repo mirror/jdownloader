@@ -72,6 +72,10 @@ public class ImageNetzDe extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("data-title=\"([^<>\"]+)\"").getMatch(0);
         }
+        if (filename == null && !br.containsHTML("class='dwnin'")) {
+            /* E.g. https://www.imagenetz.de/contact */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filesize = br.getRegex("<small>(\\d+([\\.,0-9]+)? MB)</small>").getMatch(0);
         if (filename != null) {
             link.setName(filename.trim());
@@ -100,8 +104,12 @@ public class ImageNetzDe extends PluginForHost {
             this.sleep(3000l, link);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

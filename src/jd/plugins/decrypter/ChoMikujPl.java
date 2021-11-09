@@ -49,7 +49,6 @@ public class ChoMikujPl extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String       PASSWORDTEXT             = "Ten folder jest (<b>)?zabezpieczony oddzielnym hasłem";
     private String             FOLDERPASSWORD           = null;
     private ArrayList<Integer> REGEXSORT                = new ArrayList<Integer>();
     private String             ERROR                    = "Decrypter broken for link: ";
@@ -586,59 +585,100 @@ public class ChoMikujPl extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private boolean passwordHandling(final CryptedLink param) throws Exception {
+    public boolean passwordHandling(final Object param) throws Exception {
         synchronized (LOCK) {
             logger.info("Entered password handling");
-            if (br.containsHTML(PASSWORDTEXT)) {
-                logger.info("Content is password protected");
-                // prevent more than one password from processing and displaying at
-                // any point in time!
-                prepareBrowser(param.toString(), br);
-                final Form pass = br.getFormbyProperty("id", "LoginToFolder");
-                if (pass == null) {
-                    logger.warning(ERROR + " :: Can't find Password Form --> Possible plugin failure");
-                    return false;
-                }
-                for (int i = 0; i <= 3; i++) {
-                    FOLDERPASSWORD = param.getDecrypterPassword();
-                    if (FOLDERPASSWORD == null) {
-                        /* Try last working password first */
-                        FOLDERPASSWORD = this.getPluginConfig().getStringProperty("password");
+            if (isPasswordProtected(br)) {
+                final boolean followRedirectBefore = br.isFollowingRedirects();
+                try {
+                    br.setFollowRedirects(true);
+                    logger.info("Content is password protected");
+                    // prevent more than one password from processing and displaying at
+                    // any point in time!
+                    prepareBrowser(param.toString(), br);
+                    Form pass = br.getFormbyProperty("id", "LoginToFolder");
+                    if (pass == null) {
+                        /* 2021-11-09 */
+                        pass = br.getFormbyActionRegex("(?i).*/action/UserAccess/LoginToProtectedWindow");
                     }
-                    if (FOLDERPASSWORD == null) {
-                        FOLDERPASSWORD = getUserInput(null, param);
-                    }
-                    // you should exit if they enter blank password!
-                    if (FOLDERPASSWORD == null || FOLDERPASSWORD.length() == 0) {
+                    if (pass == null) {
+                        logger.warning(ERROR + " :: Can't find Password Form --> Possible plugin failure");
                         return false;
                     }
-                    pass.put("Password", FOLDERPASSWORD);
-                    pass.remove("Remember");
-                    /* This is set to true in host plugin - we will try to save- and re-use cookies there! */
-                    pass.put("Remember", "False");
-                    submitForm(pass);
-                    /* Important! The other parts of this plugin cannot handle escaped results! */
-                    br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
-                    if (br.containsHTML("\\{\"IsSuccess\":true")) {
-                        param.setDecrypterPassword(FOLDERPASSWORD);
+                    boolean success = false;
+                    for (int i = 0; i <= 3; i++) {
+                        if (param instanceof CryptedLink) {
+                            FOLDERPASSWORD = ((CryptedLink) param).getDecrypterPassword();
+                        } else {
+                            FOLDERPASSWORD = ((DownloadLink) param).getDownloadPassword();
+                        }
+                        if (FOLDERPASSWORD == null) {
+                            /* Try last working password first */
+                            FOLDERPASSWORD = this.getPluginConfig().getStringProperty("password");
+                        }
+                        if (FOLDERPASSWORD == null) {
+                            if (param instanceof CryptedLink) {
+                                FOLDERPASSWORD = getUserInput(null, (CryptedLink) param);
+                            } else {
+                                FOLDERPASSWORD = getUserInput(null, new CryptedLink(((DownloadLink) param).getPluginPatternMatcher()));
+                            }
+                        }
+                        // you should exit if they enter blank password!
+                        if (FOLDERPASSWORD == null || FOLDERPASSWORD.length() == 0) {
+                            return false;
+                        }
+                        pass.put("Password", FOLDERPASSWORD);
+                        pass.remove("Remember");
+                        /* This is set to true in host plugin - we will try to save- and re-use cookies there! */
+                        pass.put("Remember", "False");
+                        submitForm(pass);
+                        /* Important! The other parts of this plugin cannot handle escaped results! */
+                        br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
+                        if (br.containsHTML("\\{\"IsSuccess\":true")) {
+                            success = true;
+                            break;
+                        } else if (!this.isPasswordProtected(br)) {
+                            break;
+                        } else {
+                            continue;
+                        }
+                    }
+                    if (success) {
+                        if (param instanceof CryptedLink) {
+                            ((CryptedLink) param).setDecrypterPassword(FOLDERPASSWORD);
+                        } else {
+                            ((DownloadLink) param).setDownloadPassword(FOLDERPASSWORD);
+                        }
                         this.getPluginConfig().setProperty("password", FOLDERPASSWORD);
-                        break;
+                        return true;
                     } else {
                         // Last working password was saved before but has changed in the meantime!
+                        if (param instanceof CryptedLink) {
+                            ((CryptedLink) param).setDecrypterPassword(null);
+                        } else {
+                            ((DownloadLink) param).setDownloadPassword(null);
+                        }
                         this.getPluginConfig().setProperty("password", Property.NULL);
-                        param.setDecrypterPassword(null);
-                        continue;
+                        throw new DecrypterException(DecrypterException.PASSWORD);
                     }
+                } finally {
+                    br.setFollowRedirects(followRedirectBefore);
                 }
-                if (!br.containsHTML("\\{\"IsSuccess\":true")) {
-                    logger.warning("Wrong password!");
-                    throw new DecrypterException(DecrypterException.PASSWORD);
-                }
-                return true;
             } else {
                 logger.info("Content is NOT password protected");
                 return false;
             }
+        }
+    }
+
+    public boolean isPasswordProtected(final Browser br) {
+        if (br.containsHTML("Ten folder jest (<b>)?zabezpieczony oddzielnym hasłem")) {
+            return true;
+        } else if (br.containsHTML("(?i)>\\s*Dostęp do tego konta wymaga podania hasła")) {
+            /* 2021-11-09 */
+            return true;
+        } else {
+            return false;
         }
     }
 

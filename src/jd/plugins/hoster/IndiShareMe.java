@@ -18,13 +18,13 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class IndiShareMe extends XFileSharingProBasic {
@@ -56,7 +56,7 @@ public class IndiShareMe extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "indishare.org", "indishare.co", "indishare.com", "indishare.me" });
+        ret.add(new String[] { "indishare.cc", "indi-share.com", "indishare.org", "indishare.co", "indishare.com", "indishare.me" });
         return ret;
     }
 
