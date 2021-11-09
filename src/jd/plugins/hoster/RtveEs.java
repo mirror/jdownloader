@@ -47,14 +47,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtve.es" }, urls = { "https?://(?:www\\.)?rtve\\.es/(?:(?:alacarta|play)/(?!audios/)videos/[\\w\\-]+/[\\w\\-]+/\\d+/?(\\?modl=COMTS)?|infantil/serie/[^/]+/video/[^/]+/\\d+/)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtve.es" }, urls = { "https?://(?:www\\.)?rtve\\.es/(?:(?:alacarta|play)/(?:videos|audios)/[\\w\\-]+/[\\w\\-]+/\\d+/?(\\?modl=COMTS)?|infantil/serie/[^/]+/video/[^/]+/\\d+/)" })
 public class RtveEs extends PluginForHost {
     /*
      * 2020-03-23: Attention: Do not accept 'audios' URLs in host plugin anymore as they may lead to 'overview' pages with a lot of content
      * (direct URLs) e.g.:
      * https://www.rtve.es/alacarta/audios/documentos-rne/documentos-rne-antoine-saint-exupery-conquista-del-cielo-20-03-20/4822098/
      */
-    private static final String TYPE_NORMAL         = "https?://[^/]+/(?:alacarta|play)/(?:audios|videos)/[\\w\\-]+/[\\w\\-]+/(\\d+)/?(?:\\?modl=COMTS)?";
+    private static final String TYPE_NORMAL         = "https?://[^/]+/(?:alacarta|play)/(audios|videos)/[\\w\\-]+/[\\w\\-]+/(\\d+)/?(?:\\?modl=COMTS)?";
     private static final String TYPE_SERIES         = "https?://[^/]+/infantil/serie/[^/]+/video/[^/]+/(\\d+)/";
     private String              dllink              = null;
     private String              BLOWFISHKEY         = "eWVMJmRhRDM=";
@@ -115,10 +115,33 @@ public class RtveEs extends PluginForHost {
         if (link.getPluginPatternMatcher() == null) {
             return null;
         } else if (link.getPluginPatternMatcher().matches(TYPE_NORMAL)) {
-            return new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(0);
+            return new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(1);
         } else {
             /* TYPE_SERIES */
             return new Regex(link.getPluginPatternMatcher(), TYPE_SERIES).getMatch(0);
+        }
+    }
+
+    private String getTypeStringPluralByURL(final String url) {
+        if (url == null) {
+            return null;
+        } else if (url.matches(TYPE_NORMAL)) {
+            return new Regex(url, TYPE_NORMAL).getMatch(0);
+        } else {
+            /* TYPE_SERIES */
+            return "videos";
+        }
+    }
+
+    /** Wrapper */
+    private String getTypeStringSingularByURL(final String url) {
+        final String typeStringPlural = getTypeStringPluralByURL(url);
+        if (typeStringPlural == null) {
+            return null;
+        } else if (typeStringPlural.equalsIgnoreCase("videos")) {
+            return "video";
+        } else {
+            return "audio";
         }
     }
 
@@ -133,13 +156,19 @@ public class RtveEs extends PluginForHost {
     private AvailableStatus requestVideo(final DownloadLink link) throws IOException, PluginException {
         br.setFollowRedirects(true);
         String filename = null;
+        final String ext;
+        if (getTypeStringSingularByURL(link.getPluginPatternMatcher()).equalsIgnoreCase("audio")) {
+            ext = ".mp3";
+        } else {
+            ext = ".mp4";
+        }
         if (use_api_for_availablecheck) {
             final String fid = getFID(link);
             if (fid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* Alternative (older) request: http://www.rtve.es/api/videos/%s/config/alacarta_videos.json */
-            br.getPage(String.format("https://www.rtve.es/api/videos/%s.json", fid));
+            br.getPage("https://www.rtve.es/api/" + getTypeStringPluralByURL(link.getPluginPatternMatcher()) + "/" + fid + ".json");
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -196,11 +225,11 @@ public class RtveEs extends PluginForHost {
             dl_not_possible_now = br.getRegex(">(Lunes a jueves a las \\d{2}\\.\\d{2} y \\d{2}\\.\\d{2} horas)<").getMatch(0);
             if (dl_not_possible_now != null) {
                 link.getLinkStatus().setStatusText("Server error: " + dl_not_possible_now);
-                link.setName(filename + ".mp4");
+                link.setName(filename + ext);
                 return AvailableStatus.TRUE;
             }
         }
-        link.setName(filename + ".mp4");
+        link.setName(filename + ext);
         return AvailableStatus.TRUE;
     }
 
@@ -230,11 +259,14 @@ public class RtveEs extends PluginForHost {
             /* 2021-07-13: Required as assetIDs are not in current html anymore. */
             final boolean useWorkaroundForAssetID = true;
             if (useWorkaroundForAssetID) {
-                final String alternativeContentURL = br.getRegex("(https://(?:secure\\.|www\\.)?rtve\\.es/drmn/embed/video/\\d+[^<>\"\\']+)").getMatch(0);
-                if (alternativeContentURL == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                final String alternativeContentURL = br.getRegex("(https://(?:secure\\.|www\\.)?rtve\\.es/drmn/embed/(?:video|audio)/\\d+[^<>\"\\']+)").getMatch(0);
+                if (alternativeContentURL != null) {
+                    br.getPage(alternativeContentURL);
+                } else {
+                    /* 2021-11-09 */
+                    logger.warning("Using manual last chance workaround");
+                    br.getPage("https://secure2.rtve.es/drmn/embed/" + getTypeStringSingularByURL(link.getPluginPatternMatcher()) + "/" + this.getFID(link));
                 }
-                br.getPage(alternativeContentURL);
             }
             /* E.g. "1234567_es_videos" */
             String[] flashVars = br.getRegex("assetID\\s*=\\s*(?:\"|')?(\\d+)_([a-z]{2,3})_(audios|videos)(\\&location=alacarta)?").getRow(0);

@@ -80,6 +80,7 @@ public class TwitterCom extends PornEmbedParser {
     public static final String             PROPERTY_MEDIA_INDEX = "mediaindex";
     public static final String             PROPERTY_MEDIA_ID    = "mediaid";
     public static final String             PROPERTY_BITRATE     = "bitrate";
+    public static final String             PROPERTY_POST_TEXT   = "post_text";
 
     protected DownloadLink createDownloadlink(final String link, final String tweetid) {
         final DownloadLink ret = super.createDownloadlink(link);
@@ -209,10 +210,10 @@ public class TwitterCom extends PornEmbedParser {
             final Map<String, Object> user = (Map<String, Object>) entries.get("user");
             final String username = (String) user.get("screen_name");
             final String formattedDate = formatTwitterDate((String) entries.get("created_at"));
-            final String description = (String) entries.get("full_text");
+            final String postText = (String) entries.get("full_text");
             fp.setName(formattedDate + "_" + username);
-            if (!StringUtils.isEmpty(description)) {
-                fp.setComment(description);
+            if (!StringUtils.isEmpty(postText)) {
+                fp.setComment(postText);
             }
             final boolean useOriginalFilenames = PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class).isUseOriginalFilenames();
             final List<Map<String, Object>> medias = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "extended_entities/media");
@@ -277,6 +278,9 @@ public class TwitterCom extends PornEmbedParser {
                     dl.setProperty(PROPERTY_DATE, formattedDate);
                     dl.setProperty(PROPERTY_MEDIA_INDEX, mediaIndex);
                     dl.setProperty(PROPERTY_MEDIA_ID, media.get("id_str").toString());
+                    if (!StringUtils.isEmpty(postText)) {
+                        dl.setProperty(PROPERTY_POST_TEXT, postText);
+                    }
                     if (fp != null) {
                         fp.add(dl);
                     }
