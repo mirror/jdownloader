@@ -148,7 +148,7 @@ public class RosefileNet extends PluginForHost {
                 this.login(account, false);
                 /* Extra check! */
                 br.getPage(link.getPluginPatternMatcher());
-                if (!this.isLoggedin()) {
+                if (!this.isLoggedin(br)) {
                     throw new AccountUnavailableException("Session expired?", 30 * 1000l);
                 }
             }
@@ -245,7 +245,7 @@ public class RosefileNet extends PluginForHost {
                         return false;
                     }
                     br.getPage("https://" + this.getHost() + "/");
-                    if (this.isLoggedin()) {
+                    if (this.isLoggedin(br)) {
                         logger.info("Cookie login successful");
                         /* Refresh cookie timestamp */
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -265,7 +265,7 @@ public class RosefileNet extends PluginForHost {
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 br.submitForm(loginform);
                 br.getPage("/mydisk.php?item=profile&menu=cp");
-                if (!isLoggedin()) {
+                if (!isLoggedin(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -279,7 +279,7 @@ public class RosefileNet extends PluginForHost {
         }
     }
 
-    private boolean isLoggedin() {
+    private boolean isLoggedin(final Browser br) {
         return br.containsHTML("action=logout");
     }
 
