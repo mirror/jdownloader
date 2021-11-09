@@ -17,9 +17,20 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+
+import org.appwork.utils.Regex;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.SerienStreamToConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -27,24 +38,51 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "s.to" }, urls = { "https?://(?:www\\.)?(?:s\\.to|serienstream\\.sx)/[^/]+/.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SerienStreamTo extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public SerienStreamTo(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "s.to", "serienstream.sx", "serienstream.to", "serien.sx", "190.115.18.20" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[^/]+/.*");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace("http:", "https:").replaceAll("[/]+$", "");
+        /* 2021-11-08: Do NOT enforce HTTPS! */
+        final String parameter = param.toString().replaceAll("[/]+$", "");
         br.setFollowRedirects(true);
-        final String page = br.getPage(parameter);
+        br.getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String title = br.getRegex("<meta property=\"og:title\" content=\"(?:Episode \\d+\\s|Staffel \\d+\\s|von+\\s)+([^\"]+)\"/>").getMatch(0);
         final String itemTitle = new Regex(parameter, Regex.escape(br.getHost()) + "/[^/]+/[^/]+/(.*)").getMatch(0);
         // If we're on a show site, add the seasons, if we're on a season page, add the episodes and so on ...
@@ -52,41 +90,185 @@ public class SerienStreamTo extends PluginForDecrypt {
         for (String[] itemLink : itemLinks) {
             decryptedLinks.add(createDownloadlink(br.getURL(Encoding.htmlDecode(itemLink[0])).toString()));
         }
-        // Videos are on external sites (not in embeds), so harvest those if we can get our hands on them.
-        String[][] videoLinks = br.getRegex("itemprop=\"url\" href=\"([^\"]+redirect[^\"]+)\" target=\"_blank\"").getMatches();
-        for (String[] videoLink : videoLinks) {
-            final Browser br2 = br.cloneBrowser();
-            String videoURL = br.getURL(Encoding.htmlDecode(videoLink[0])).toString();
-            br2.setFollowRedirects(true);
-            String redirectPage = br2.getPage(videoURL);
-            if (br2.getRedirectLocation() != null) {
-                videoURL = br2.getRedirectLocation();
-            } else if (br2.containsHTML("grecaptcha")) {
-                Form captcha = br2.getForm(0);
-                String sitekey = new Regex(redirectPage, "grecaptcha.execute\\('([^']+)'").getMatch(0);
-                String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br2, sitekey) {
-                    @Override
-                    public TYPE getType() {
-                        return TYPE.INVISIBLE;
+        /* Videos are on external sites (not in embeds), so harvest those if we can get our hands on them. */
+        final String[] episodeHTMLs = br.getRegex("<li class=\"[^\"]*episodeLink\\d+\"(.*?)</a>").getColumn(0);
+        if (episodeHTMLs.length > 0) {
+            final ArrayList<String> userLanguageIDsPrioList = new ArrayList<String>();
+            final ArrayList<String> userHosterPrioList = new ArrayList<String>();
+            /* Collect language name -> ID mapping if needed */
+            final String userLanguagePrioListStr = PluginJsonConfig.get(SerienStreamToConfig.class).getLanguagePriorityString();
+            if (userLanguagePrioListStr != null) {
+                /* Find internal ID of user preferred languages e.g. */
+                final ArrayList<String> userAllowedLanguageTitles = new ArrayList<String>();
+                userAllowedLanguageTitles.addAll(Arrays.asList(userLanguagePrioListStr.replace(" ", "").split(",")));
+                final String languageFlagsHTML = br.getRegex("<div class=\"changeLanguage\">(.*?)</div>").getMatch(0);
+                if (languageFlagsHTML != null) {
+                    final HashMap<String, String> languageTitleToIDMapping = new HashMap<String, String>();
+                    final String[][] languageTitleIDMappings = new Regex(languageFlagsHTML, "<img[^>]*data-lang-key=\"(\\d+)\" title=\"([^\"]+)\"").getMatches();
+                    if (languageTitleIDMappings.length > 0) {
+                        /* Collect mappings e.g. "Deutsch" -> "0" */
+                        for (final String[] languageInfo : languageTitleIDMappings) {
+                            languageTitleToIDMapping.put(languageInfo[1].toLowerCase(Locale.ENGLISH), languageInfo[0]);
+                        }
+                        /* Find available languages which are wanted by user (keep prio/original sort) */
+                        final String[] userPreferredLanguageTitles = userLanguagePrioListStr.toLowerCase(Locale.ENGLISH).replace(" ", "").split(",");
+                        for (final String userPreferredLanguageTitle : userPreferredLanguageTitles) {
+                            if (languageTitleToIDMapping.containsKey(userPreferredLanguageTitle)) {
+                                userLanguageIDsPrioList.add(languageTitleToIDMapping.get(userPreferredLanguageTitle));
+                            }
+                        }
+                        logger.info("Found " + userLanguageIDsPrioList.size() + "/" + userAllowedLanguageTitles.size() + " user preferred languages");
+                    } else {
+                        logger.warning("Failed to find any languageTitleIDMappings");
                     }
-                }.getToken();
-                captcha.put("original", "");
-                captcha.put("token", Encoding.urlEncode(recaptchaV2Response));
-                try {
-                    redirectPage = br2.submitForm(captcha);
-                } catch (IOException e) {
-                    logger.log(e);
+                } else {
+                    logger.warning("Failed to find languagesFlagsHTML");
                 }
-                videoURL = br2.getURL().toString();
             }
-            decryptedLinks.add(createDownloadlink(videoURL));
+            String userHosterPrioListStr = PluginJsonConfig.get(SerienStreamToConfig.class).getHosterPriorityString();
+            if (userHosterPrioListStr != null) {
+                userHosterPrioListStr = userHosterPrioListStr.replace(" ", "").toLowerCase(Locale.ENGLISH);
+                userHosterPrioList.addAll(Arrays.asList(userHosterPrioListStr.split(",")));
+            }
+            /* Now check which URLs/mirrors our user prefers --> If configured properly, user will need to enter less captchas this way */
+            final ArrayList<String> allRedirectURLs = new ArrayList<String>();
+            /* Group results by host */
+            final HashMap<String, List<String>> packagesByHoster = new HashMap<String, List<String>>();
+            final HashMap<String, List<String>> packagesByLanguageKey = new HashMap<String, List<String>>();
+            for (final String episodeHTML : episodeHTMLs) {
+                final String redirectURL = new Regex(episodeHTML, "href=\"([^\"]+redirect[^\"]+)\" target=\"_blank\"").getMatch(0);
+                final String languageKey = new Regex(episodeHTML, "data-lang-key=\"(\\d+)\"").getMatch(0);
+                final String hoster = new Regex(episodeHTML, "(?i)title=\"Hoster ([^\"]+)\"").getMatch(0).toLowerCase(Locale.ENGLISH);
+                // boolean allowByPrio;
+                // if (!userLanguageIDsPrioList.isEmpty() && userLanguageIDsPrioList.contains(languageKey) && !userHosterPrioList.isEmpty()
+                // && userHosterPrioList.contains(hoster)) {
+                // /* Hoster + language */
+                // allowByPrio = true;
+                // } else if (!userHosterPrioList.isEmpty() && userLanguageIDsPrioList.isEmpty() && userHosterPrioList.contains(hoster)) {
+                // /* Allow only by host */
+                // allowByPrio = true;
+                // } else if (!userLanguageIDsPrioList.isEmpty() && userHosterPrioList.isEmpty() &&
+                // userLanguageIDsPrioList.contains(languageKey)) {
+                // /* Allow only by languageKey */
+                // allowByPrio = true;
+                // } else {
+                // /* Not preferred by user not in prio at all) */
+                // allowByPrio = false;
+                // }
+                allRedirectURLs.add(redirectURL);
+                /* Update language-packages */
+                if (packagesByLanguageKey.containsKey(languageKey)) {
+                    packagesByLanguageKey.get(languageKey).add(redirectURL);
+                } else {
+                    final List<String> newList = new ArrayList<String>();
+                    newList.add(redirectURL);
+                    packagesByLanguageKey.put(languageKey, newList);
+                }
+                /* Update hoster packages */
+                if (packagesByHoster.containsKey(hoster)) {
+                    packagesByHoster.get(hoster).add(redirectURL);
+                } else {
+                    final List<String> newList = new ArrayList<String>();
+                    newList.add(redirectURL);
+                    packagesByHoster.put(hoster, newList);
+                }
+                allRedirectURLs.add(redirectURL);
+            }
+            List<String> urlsToProcess = null;
+            if (!userHosterPrioList.isEmpty()) {
+                /* Get user preferred mirrors by host (+ language) */
+                List<String> preferredMirrorsByHost = null;
+                for (final String userAllowedHoster : userHosterPrioList) {
+                    if (packagesByHoster.containsKey(userAllowedHoster)) {
+                        preferredMirrorsByHost = packagesByHoster.get(userAllowedHoster);
+                        break;
+                    }
+                }
+                if (preferredMirrorsByHost != null) {
+                    logger.info("Found user priorized mirrors by host");
+                    /* Combine this with users' language priority if given. */
+                    List<String> preferredMirrorsByLanguage = null;
+                    for (final String languageKey : userLanguageIDsPrioList) {
+                        if (packagesByLanguageKey.containsKey(languageKey)) {
+                            preferredMirrorsByLanguage = packagesByLanguageKey.get(languageKey);
+                            break;
+                        }
+                    }
+                    if (preferredMirrorsByLanguage != null) {
+                        logger.info("Combining users preferred mirrors by host + language");
+                        urlsToProcess = new ArrayList<String>();
+                        for (final String preferredMirrorByHost : preferredMirrorsByHost) {
+                            if (preferredMirrorsByLanguage.contains(preferredMirrorByHost)) {
+                                urlsToProcess.add(preferredMirrorByHost);
+                            }
+                        }
+                    } else {
+                        urlsToProcess = preferredMirrorsByHost;
+                    }
+                } else {
+                    logger.info("Failed to find user priorized mirrors by host");
+                }
+            } else if (!userLanguageIDsPrioList.isEmpty()) {
+                /* Get user preferred mirrors by language only */
+                for (final String languageKey : userLanguageIDsPrioList) {
+                    if (packagesByLanguageKey.containsKey(languageKey)) {
+                        urlsToProcess = packagesByLanguageKey.get(languageKey);
+                    }
+                }
+                if (urlsToProcess != null) {
+                    logger.info("Found user priorized mirrors by language");
+                } else {
+                    logger.info("Failed to find user priorized mirrors by language");
+                }
+            }
+            if (urlsToProcess != null) {
+                logger.info("Crawling " + urlsToProcess.size() + "/" + allRedirectURLs.size() + " URLs");
+            } else {
+                logger.info("Crawling ALL URLs: " + allRedirectURLs.size());
+                urlsToProcess = allRedirectURLs;
+            }
+            int index = 0;
+            for (String videoURL : urlsToProcess) {
+                logger.info("Working on item " + index + "/" + urlsToProcess.size());
+                final Browser br2 = br.cloneBrowser();
+                videoURL = br.getURL(Encoding.htmlDecode(videoURL)).toString();
+                br2.setFollowRedirects(true);
+                String redirectPage = br2.getPage(videoURL);
+                if (br2.getRedirectLocation() != null) {
+                    videoURL = br2.getRedirectLocation();
+                } else if (br2.containsHTML("grecaptcha")) {
+                    Form captcha = br2.getForm(0);
+                    String sitekey = new Regex(redirectPage, "grecaptcha.execute\\('([^']+)'").getMatch(0);
+                    String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br2, sitekey) {
+                        @Override
+                        public TYPE getType() {
+                            return TYPE.INVISIBLE;
+                        }
+                    }.getToken();
+                    captcha.put("original", "");
+                    captcha.put("token", Encoding.urlEncode(recaptchaV2Response));
+                    try {
+                        redirectPage = br2.submitForm(captcha);
+                    } catch (IOException e) {
+                        logger.log(e);
+                    }
+                    videoURL = br2.getURL().toString();
+                }
+                decryptedLinks.add(createDownloadlink(videoURL));
+                index += 1;
+            }
         }
         if (title != null) {
             final FilePackage filePackage = FilePackage.getInstance();
             filePackage.setName(title);
-            filePackage.setProperty("ALLOW_MERGE", true);
+            filePackage.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
             filePackage.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return SerienStreamToConfig.class;
     }
 }
