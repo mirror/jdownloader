@@ -21,9 +21,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,8 +34,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.parser.UrlQuery;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class LibGenInfo extends PluginForHost {
@@ -112,6 +113,7 @@ public class LibGenInfo extends PluginForHost {
     private static final int     FREE_MAXCHUNKS    = 1;
     private static final int     FREE_MAXDOWNLOADS = 2;
     private static final String  TYPE_DIRECT       = "https?://[^/]+/(comics/.+|get\\.php\\?.+)";
+    private static final String  TYPE_ADS          = "https?://[^/]+/ads\\.php\\?md5=([A-Fa-f0-9]{32})";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -138,6 +140,12 @@ public class LibGenInfo extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
+        } else if (link.getPluginPatternMatcher().matches(TYPE_ADS)) {
+            br.getPage(link.getPluginPatternMatcher());
+            if (br.containsHTML("(?i)>\\s*File not found in DB")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            parseFileInfo(link, this.br);
         } else {
             br.getPage("http://" + this.getHost() + "/item/index.php?md5=" + md5);
             if (br.getHttpConnection().getResponseCode() == 404) {
@@ -150,19 +158,23 @@ public class LibGenInfo extends PluginForHost {
 
     public static void parseFileInfo(final DownloadLink link, final Browser br) throws MalformedURLException {
         final String md5 = UrlQuery.parse(link.getPluginPatternMatcher()).get("md5");
-        String filesizeStr = null;
-        filesizeStr = br.getRegex("\\((\\d+) B\\)").getMatch(0);
+        String filesizeBytesStr = null;
+        filesizeBytesStr = br.getRegex("\\((\\d+) B\\)").getMatch(0);
         String filename = br.getRegex("ed2k://\\|file\\|([^\\|]+)\\|\\d+\\|").getMatch(0);
+        if (filename == null && br.getURL().matches(TYPE_ADS)) {
+            final String title = br.getRegex("series\\s*=\\s*\\{([^\\}]+)\\}").getMatch(0);
+            if (title != null) {
+                filename = Encoding.htmlDecode(title).trim() + ".pdf";
+            }
+        }
         if (filename != null) {
             link.setName(filename);
         } else if (md5 != null && !link.isNameSet()) {
             /* Fallback */
             link.setName(md5);
         }
-        if (filesizeStr != null) {
-            final long filesize = Long.parseLong(filesizeStr);
-            link.setDownloadSize(filesize);
-            link.setVerifiedFileSize(filesize);
+        if (filesizeBytesStr != null) {
+            link.setVerifiedFileSize(Long.parseLong(filesizeBytesStr));
         }
     }
 
@@ -178,8 +190,11 @@ public class LibGenInfo extends PluginForHost {
         if (link.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
             dllink = link.getPluginPatternMatcher();
         } else {
-            br.getPage("/ads.php?md5=" + this.getFID(link));
-            dllink = br.getRegex("<a\\s*href\\s*=\\s*(\"|')((?:https?:)?(?://[\\w\\-\\./]+)?/get\\.php\\?md5=[a-f0-9]{32}.*?)\\1").getMatch(1);
+            /* Access TYPE_ADS URL if that hasn't already happened. */
+            if (br.getURL() == null || !br.getURL().matches(TYPE_ADS)) {
+                br.getPage("/ads.php?md5=" + this.getFID(link));
+            }
+            dllink = br.getRegex("<a\\s*href\\s*=\\s*(\"|')((?:https?:)?(?://[\\w\\-\\./]+)?/?get\\.php\\?md5=[a-f0-9]{32}.*?)\\1").getMatch(1);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
