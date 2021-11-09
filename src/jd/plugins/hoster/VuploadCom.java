@@ -216,4 +216,15 @@ public class VuploadCom extends XFileSharingProBasic {
         }
         return fileInfo;
     }
+
+    @Override
+    protected boolean isOffline(final DownloadLink link, final Browser br, final String correctedBR) {
+        if (super.isOffline(link, br, correctedBR)) {
+            return true;
+        } else if (br.containsHTML("(?i)>\\s*We can't find the file you are looking for")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

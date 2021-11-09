@@ -20,15 +20,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -52,6 +49,7 @@ public class AkwamOrg extends PluginForHost {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "akwam.org" });
+        ret.add(new String[] { "akwam.cx", "akwam.cc" });
         return ret;
     }
 
@@ -99,6 +97,9 @@ public class AkwamOrg extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link));
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
@@ -106,18 +107,13 @@ public class AkwamOrg extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("class=\"sub_title sub_download_title\"><h1>([^<>\"]+)<").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            /* Fallback */
-            filename = this.getFID(link);
+        if (filename == null) {
+            /* 2021-11-09 */
+            filename = br.getRegex("download class=\"[^\"]+\"[^>]*>([^<>\"]+)<").getMatch(0);
         }
-        String filesize = null;
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename).trim();
-        link.setName(filename);
-        if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (!StringUtils.isEmpty(filename)) {
+            filename = Encoding.htmlDecode(filename).trim();
+            link.setName(filename);
         }
         return AvailableStatus.TRUE;
     }
@@ -131,16 +127,20 @@ public class AkwamOrg extends PluginForHost {
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
-            br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-            br.postPage(br.getURL(), "");
-            dllink = PluginJSonUtils.getJson(br, "direct_link");
-            if (StringUtils.isEmpty(dllink)) {
-                logger.warning("Failed to find final downloadurl");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dllink = br.getRegex("class=\"btn-loader\">\\s*<a href=\"(https?://[^\"]+)\"").getMatch(0);
+            if (dllink == null) {
+                /* Old way */
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.postPage(br.getURL(), "");
+                dllink = PluginJSonUtils.getJson(br, "direct_link");
+                if (StringUtils.isEmpty(dllink)) {
+                    logger.warning("Failed to find final downloadurl");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
@@ -161,34 +161,28 @@ public class AkwamOrg extends PluginForHost {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    link.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    return dllink;
+                } else {
+                    throw new IOException();
                 }
             } catch (final Exception e) {
                 logger.log(e);
-                link.setProperty(property, Property.NULL);
-                dllink = null;
+                return null;
             } finally {
                 if (con != null) {
                     con.disconnect();
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (acc.getType() == AccountType.FREE) {
-            /* Free accounts can have captchas */
-            return true;
-        }
-        /* Premium accounts do not have captchas */
         return false;
     }
 
