@@ -26,7 +26,10 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.LbryTvConfig;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -223,9 +226,29 @@ public class LbryTv extends PluginForHost {
                     if (best == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
+                    final HlsContainer chosenQuality;
+                    final int userPreferredQualityHeight = this.getPreferredQualityHeight();
+                    if (userPreferredQualityHeight == -1) {
+                        chosenQuality = best;
+                    } else {
+                        HlsContainer userPreferred = null;
+                        for (final HlsContainer hlsTmp : hls) {
+                            if (hlsTmp.getHeight() == userPreferredQualityHeight) {
+                                userPreferred = hlsTmp;
+                                break;
+                            }
+                        }
+                        if (userPreferred != null) {
+                            logger.info("Using user selected quality: " + userPreferredQualityHeight + "p");
+                            chosenQuality = userPreferred;
+                        } else {
+                            logger.info("Failed to find user preferred quality -> Using BEST instead");
+                            chosenQuality = best;
+                        }
+                    }
                     link.setVerifiedFileSize(-1);
                     checkFFmpeg(link, "Download a HLS Stream");
-                    dl = new HLSDownloader(link, br, best.getStreamURL());
+                    dl = new HLSDownloader(link, br, chosenQuality.getStreamURL());
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -277,6 +300,26 @@ public class LbryTv extends PluginForHost {
             }
             return false;
         }
+    }
+
+    private int getPreferredQualityHeight() {
+        switch (PluginJsonConfig.get(LbryTvConfig.class).getPreferredStreamQuality()) {
+        case BEST:
+            return -1;
+        case Q360P:
+            return 360;
+        case Q720P:
+            return 720;
+        case Q1080P:
+            return 1080;
+        default:
+            return -1;
+        }
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return LbryTvConfig.class;
     }
 
     @Override

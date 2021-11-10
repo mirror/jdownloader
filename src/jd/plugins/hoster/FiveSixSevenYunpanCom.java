@@ -111,13 +111,17 @@ public class FiveSixSevenYunpanCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             down2Params += fid;
-            final Browser brAjax = this.br.cloneBrowser();
-            brAjax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            brAjax.postPage("/ajax.php", down2Params);
-            dllink = brAjax.getRegex("href=\"(https?://[^/]+/dl\\.php[^\"]+)").getMatch(0);
+            final Browser brc = this.br.cloneBrowser();
+            brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            brc.postPage("/ajax.php", down2Params);
+            dllink = brc.getRegex("href=\"(https?://[^/]+/dl\\.php[^\"]+)").getMatch(0);
             if (dllink == null) {
-                if (brAjax.containsHTML("vip\\.php")) {
+                if (brc.containsHTML("vip\\.php")) {
+                    /* Only 'downloadurls' leading to 'buy premium' page. */
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Premiumonly or download limit reached");
+                } else if (brc.containsHTML("true\\|")) {
+                    /* No downloadurls available at all -> File should be downloadable as premium user */
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Premiumonly");
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }

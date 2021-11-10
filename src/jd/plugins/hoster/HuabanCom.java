@@ -15,10 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -39,7 +38,6 @@ import jd.utils.locale.JDL;
 public class HuabanCom extends PluginForHost {
     public HuabanCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("https://www.huaban.com/");
         setConfigElements();
     }
 
@@ -87,11 +85,7 @@ public class HuabanCom extends PluginForHost {
             if (json == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (json.contains("undefined") && !json.contains("\"undefined\"")) {
-                /* 2020-11-17: Fix broken json */
-                json = json.replace("undefined", "\"undefined\"");
-            }
-            final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
             dllink = getDirectlinkFromJson(entries);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -119,8 +113,12 @@ public class HuabanCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty(directlinkproperty, dllink);
@@ -164,87 +162,6 @@ public class HuabanCom extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
-    // private static final String MAINPAGE = "http://huaban.com";
-    // private static Object LOCK = new Object();
-    //
-    // @SuppressWarnings("unchecked")
-    // public static void login(final Browser br, final Account account, final boolean force) throws Exception {
-    // synchronized (LOCK) {
-    // try {
-    // // Load cookies
-    // br.setCookiesExclusive(true);
-    // final Cookies cookies = account.loadCookies("");
-    // if (cookies != null && !force) {
-    // br.setCookies(account.getHoster(), cookies);
-    // return;
-    // }
-    // br.setFollowRedirects(true);
-    // br.getPage("http://huaban.com/");
-    // try {
-    // br.postPageRaw("http://huaban.com/", "");
-    // } catch (final BrowserException e) {
-    // if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 401) {
-    // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername
-    // und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // } else {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your
-    // password contains special characters, change it (remove them) and try again!",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // }
-    // }
-    // throw e;
-    // }
-    // if (br.containsHTML("jax CsrfErrorPage Module") || br.getCookie(MAINPAGE, "_b") == null) {
-    // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername
-    // und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // } else {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your
-    // password contains special characters, change it (remove them) and try again!",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // }
-    // }
-    // account.saveCookies(br.getCookies(account.getHoster()), "");
-    // } catch (final PluginException e) {
-    // account.clearCookies("");
-    // throw e;
-    // }
-    // }
-    // }
-    //
-    // @SuppressWarnings("deprecation")
-    // @Override
-    // public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-    // final AccountInfo ai = new AccountInfo();
-    // try {
-    // login(this.br, account, true);
-    // } catch (PluginException e) {
-    // account.setValid(false);
-    // throw e;
-    // }
-    // ai.setUnlimitedTraffic();
-    // account.setType(AccountType.FREE);
-    // account.setMaxSimultanDownloads(-1);
-    // account.setConcurrentUsePossible(false);
-    // ai.setStatus("Free Account");
-    // account.setValid(true);
-    // return ai;
-    // }
-    //
-    // @Override
-    // public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-    // requestFileInformation(link);
-    // /* We already logged in in requestFileInformation */
-    // br.setFollowRedirects(false);
-    // doFree(link, false, 1, "account_free_directlink");
-    // }
 
     @Override
     public String getDescription() {
