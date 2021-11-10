@@ -45,11 +45,8 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "https?://(?:www\\.)?filer\\.net/(?:app\\.php/)?(?:get|dl)/([a-z0-9]+)" })
 public class FilerNet extends PluginForHost {
-    private static Object       LOCK                                                   = new Object();
     private int                 statusCode                                             = 0;
     private String              statusMessage                                          = null;
-    private String              fuid                                                   = null;
-    private String              recapID                                                = null;
     private static final int    STATUSCODE_APIDISABLED                                 = 400;
     private static final String ERRORMESSAGE_APIDISABLEDTEXT                           = "API is disabled, please wait or use filer.net from your browser";
     private static final int    STATUSCODE_DOWNLOADTEMPORARILYDISABLED                 = 500;
@@ -121,11 +118,7 @@ public class FilerNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         prepBrowser();
-        fuid = getFID(link);
-        if (fuid == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        callAPI(null, "http://api.filer.net/api/status/" + fuid + ".json");
+        callAPI(null, "http://api.filer.net/api/status/" + getFID(link) + ".json");
         if (statusCode == STATUSCODE_APIDISABLED) {
             link.getLinkStatus().setStatusText(ERRORMESSAGE_APIDISABLEDTEXT);
             return AvailableStatus.UNCHECKABLE;
@@ -159,14 +152,14 @@ public class FilerNet extends PluginForHost {
         }
     }
 
-    private void doFreeAPI(final Account account, final DownloadLink downloadLink) throws Exception {
+    private void doFreeAPI(final Account account, final DownloadLink link) throws Exception {
         handleDownloadErrors();
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
         }
-        String dllink = checkDirectLink(downloadLink, DIRECT_API);
+        String dllink = checkDirectLink(link, DIRECT_API);
         if (dllink == null) {
-            callAPI(null, "http://filer.net/get/" + fuid + ".json");
+            callAPI(null, "http://filer.net/get/" + getFID(link) + ".json");
             handleErrorsAPI(account);
             if (statusCode == 203) {
                 // they can repeat this twice
@@ -177,8 +170,8 @@ public class FilerNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     final int wait = getWait();
-                    sleep(wait * 1001l + 1000l, downloadLink);
-                    callAPI(null, "http://filer.net/get/" + fuid + ".json?token=" + token);
+                    sleep(wait * 1001l + 1000l, link);
+                    callAPI(null, "http://filer.net/get/" + getFID(link) + ".json?token=" + token);
                     // they can make you wait again...
                     handleErrorsAPI(account);
                 } while (statusCode == 203 && ++i <= 2);
@@ -193,12 +186,12 @@ public class FilerNet extends PluginForHost {
                     if (recaptchaV2Response == null) {
                         continue;
                     }
-                    br.postPage("http://filer.net/get/" + fuid + ".json", "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response) + "&hash=" + fuid);
+                    br.postPage("http://filer.net/get/" + getFID(link) + ".json", "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response) + "&hash=" + getFID(link));
                     dllink = br.getRedirectLocation();
                     if (dllink == null) {
                         updateStatuscode();
                         if (statusCode == 501) {
-                            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", 2 * 60 * 1000l);
+                            errorNoFreeSlotsAvailable();
                         } else if (statusCode == 502) {
                             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Max free simultan-downloads-limit reached, please finish running downloads before starting new ones!", 1 * 60 * 1000l);
                         } else {
@@ -217,7 +210,7 @@ public class FilerNet extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
@@ -228,8 +221,12 @@ public class FilerNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.setAllowFilenameFromURL(true);
-        downloadLink.setProperty(DIRECT_API, dl.getConnection().getURL().toString());
+        link.setProperty(DIRECT_API, dl.getConnection().getURL().toString());
         this.dl.startDownload();
+    }
+
+    private void errorNoFreeSlotsAvailable() throws PluginException {
+        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", 10 * 60 * 1000l);
     }
 
     private void doFreeWebsite(final Account account, final DownloadLink downloadLink) throws Exception {
@@ -318,7 +315,7 @@ public class FilerNet extends PluginForHost {
     }
 
     public void login(final Account account) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             /** Load cookies */
             br.setCookiesExclusive(true);
             prepBrowser();
@@ -332,7 +329,7 @@ public class FilerNet extends PluginForHost {
 
     /* E.g. used for free account downloads */
     private void loginWebsite(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
@@ -405,7 +402,7 @@ public class FilerNet extends PluginForHost {
             requestFileInformation(link);
             handleDownloadErrors();
             br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
-            callAPI(account, "http://filer.net/api/dl/" + fuid + ".json");
+            callAPI(account, "http://filer.net/api/dl/" + getFID(link) + ".json");
             if (statusCode == 504) {
                 if (StringUtils.isEmpty(statusMessage)) {
                     throw new AccountUnavailableException("Traffic limit reached", 60 * 60 * 1000l);
@@ -498,15 +495,15 @@ public class FilerNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (afterDownload && br.containsHTML("filer\\.net/register")) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", 10 * 60 * 1000l);
+            errorNoFreeSlotsAvailable();
         }
-        if (br.containsHTML(">Maximale Verbindungen erreicht<")) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", 10 * 60 * 1000l);
-        } else if (br.containsHTML(">\\s*Leider sind alle kostenlosen Download-Slots belegt|Im Moment sind leider alle Download-Slots für kostenlose Downloads belegt|Bitte versuche es später erneut oder behebe das Problem mit einem Premium")) {
+        if (br.containsHTML("(?i)>\\s*Maximale Verbindungen erreicht")) {
+            errorNoFreeSlotsAvailable();
+        } else if (br.containsHTML("(?i)>\\s*Leider sind alle kostenlosen Download-Slots belegt|Im Moment sind leider alle Download-Slots für kostenlose Downloads belegt|Bitte versuche es später erneut oder behebe das Problem mit einem Premium")) {
             /* 2020-05-01 */
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", 10 * 60 * 1000l);
+            errorNoFreeSlotsAvailable();
         }
-        if (br.containsHTML(">Free Download Limit erreicht<")) {
+        if (br.containsHTML("(?i)>\\s*Free Download Limit erreicht\\s*<")) {
             final String time = br.getRegex("<span id=\"time\">(\\d+)<").getMatch(0);
             if (account != null) {
                 if (time != null) {
@@ -535,7 +532,7 @@ public class FilerNet extends PluginForHost {
 
     private void handleErrorsAPI(final Account account) throws PluginException {
         if (statusCode == 501) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", 10 * 60 * 1000l);
+            errorNoFreeSlotsAvailable();
         } else if (statusCode == 502) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Max free simultan-downloads-limit reached, please finish running downloads before starting new ones!", 1 * 60 * 1000l);
         } else if (statusCode == 504) {
