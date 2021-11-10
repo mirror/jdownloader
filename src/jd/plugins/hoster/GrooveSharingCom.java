@@ -15,6 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
+import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
@@ -31,7 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "groovesharing.com" }, urls = { "http://(www\\.)?(groovesharing|groovestreams)\\.com/\\?d=[A-Z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "groovesharing.com" }, urls = { "https?://(?:www\\.)?(?:groovesharing|groovestreams)\\.com/\\?d=([A-Z0-9]+)" })
 public class GrooveSharingCom extends PluginForHost {
     public GrooveSharingCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,21 +44,32 @@ public class GrooveSharingCom extends PluginForHost {
     // MhfScriptBasic 1.5
     @Override
     public String getAGBLink() {
-        return COOKIE_HOST + "/rules.php";
+        return "https://groovesharing.com/rules.php";
     }
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("groovestreams.com/", "groovesharing.com/"));
     }
 
-    private static final String COOKIE_HOST = "http://groovesharing.com";
-
-    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(parameter.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getURL().contains("&code=DL_FileNotFound") || br.containsHTML("(Your requested file is not found|No file found)") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -64,22 +78,22 @@ public class GrooveSharingCom extends PluginForHost {
         if (filename == null || filename.matches("")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        parameter.setFinalFileName(filename.trim());
+        link.setFinalFileName(filename.trim());
         if (filesize != null) {
-            parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        requestFileInformation(downloadLink);
-        String dllink = checkDirectLink(downloadLink, "directlink");
+        requestFileInformation(link);
+        String dllink = checkDirectLink(link, "directlink");
         if (dllink == null) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage(downloadLink.getDownloadURL(), "downloadverify=1&d=1");
+            br.postPage(link.getDownloadURL(), "downloadverify=1&d=1");
             if (this.br.containsHTML("Vous avez atteint la quantite maximum de bande passante permise|groovesharing\\.com/limitsfree/")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
             }
@@ -92,22 +106,30 @@ public class GrooveSharingCom extends PluginForHost {
             if (waittime != null) {
                 wait = Integer.parseInt(waittime);
             }
-            sleep(wait * 1001l, downloadLink);
+            sleep(wait * 1001l, link);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML(">AccessKey is expired, please request")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            if (br.containsHTML("(?i)>\\s*AccessKey is expired, please request")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL server error, waittime skipped?");
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty("directlink", dllink);
+        link.setProperty("directlink", dllink);
         dl.startDownload();
     }
 
     private String findLink() throws Exception {
-        String finalLink = br.getRegex("(http://.{5,30}getfile\\.php\\?id=\\d+[^<>\"\\']*?)(\"|\\')").getMatch(0);
+        String finalLink = br.getRegex("(https?://.{5,30}getfile\\.php\\?id=\\d+[^<>\"\\']*?)(\"|\\')").getMatch(0);
+        if (finalLink == null) {
+            /* 2021-11-10 */
+            finalLink = br.getRegex("(https?://[^/]+/file/[^<>\"\\']+)(\"|\\')").getMatch(0);
+        }
         if (finalLink == null) {
             String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
             if (sitelinks == null || sitelinks.length == 0) {
@@ -148,11 +170,6 @@ public class GrooveSharingCom extends PluginForHost {
         return dllink;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasAutoCaptcha() {
-        return false;
-    }
-
     @Override
     public void reset() {
     }
@@ -166,16 +183,7 @@ public class GrooveSharingCom extends PluginForHost {
         return -1;
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
         return false;
     }
 
