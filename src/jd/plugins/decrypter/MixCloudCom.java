@@ -126,6 +126,10 @@ public class MixCloudCom extends antiDDoSForDecrypt {
                         + username + "\"}}}");
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/user");
+        if (entries == null) {
+            /* Offline or invalid URL e.g. "https://www.mixcloud.com/about/" */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String userIDb64 = (String) entries.get("id");
         final int totalItems = ((Number) JavaScriptEngineFactory.walkJson(entries, "uploads/totalCount")).intValue();
         if (totalItems <= 0) {

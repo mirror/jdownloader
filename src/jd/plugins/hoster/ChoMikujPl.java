@@ -29,7 +29,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -148,10 +147,7 @@ public class ChoMikujPl extends antiDDoSForHost {
             /* Try to find better filename - usually only needed for single links. */
             getPage(mainlink);
             if (isDownload) {
-                if (this.passwordHandling(link, account)) {
-                    /* We need to access URL again in case there way a password prompt. */
-                    getPage(mainlink);
-                }
+                this.passwordHandling(link, account);
             }
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -370,7 +366,7 @@ public class ChoMikujPl extends antiDDoSForHost {
 
     private static Object PWLOCK = new Object();
 
-    private boolean passwordHandling(final DownloadLink link, final Account account) throws Exception {
+    private void passwordHandling(final DownloadLink link, final Account account) throws Exception {
         final Object thislock;
         if (account != null) {
             thislock = account;
@@ -379,7 +375,7 @@ public class ChoMikujPl extends antiDDoSForHost {
         }
         final PluginForDecrypt plg = this.getNewPluginForDecryptInstance(this.getHost());
         synchronized (thislock) {
-            return ((jd.plugins.decrypter.ChoMikujPl) plg).passwordHandling(link);
+            ((jd.plugins.decrypter.ChoMikujPl) plg).passwordHandling(link);
         }
     }
 
@@ -610,35 +606,36 @@ public class ChoMikujPl extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final Account account) {
+    private String checkDirectLink(final DownloadLink link, final Account account) {
         final String directlinkproperty;
         if (account != null) {
             directlinkproperty = "dllink_account";
         } else {
             directlinkproperty = "dllink_free";
         }
-        String dllink = downloadLink.getStringProperty(directlinkproperty);
+        final String dllink = link.getStringProperty(directlinkproperty);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(directlinkproperty, Property.NULL);
-                    dllink = null;
+                if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                    return dllink;
+                } else {
+                    link.removeProperty(directlinkproperty);
+                    return null;
                 }
             } catch (final Exception e) {
                 logger.log(e);
-                downloadLink.setProperty(directlinkproperty, Property.NULL);
-                dllink = null;
+                link.removeProperty(directlinkproperty);
             } finally {
                 if (con != null) {
                     con.disconnect();
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
     private void handleServerErrors() throws PluginException {
