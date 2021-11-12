@@ -558,9 +558,44 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                         }
                     }
                     if (apiMode) {
+                        br.getPage("/showcase/" + videoID + "/auth");
+                        String passCode = null;
+                        if (br.getHttpConnection().getResponseCode() == 401) {
+                            logger.info("Password required");
+                            /* Extra token required TODO: This is ugly and should be part of "getJWT()"! */
+                            final Browser brc = br.cloneBrowser();
+                            brc.getPage("https://vimeo.com/_rv/viewer");
+                            final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                            final String xsrft_token = (String) entries.get("xsrft");
+                            boolean success = false;
+                            int attempt = 0;
+                            do {
+                                passCode = getUserInput("Password?", param);
+                                final Form pwform = new Form();
+                                pwform.setMethod(MethodType.POST);
+                                pwform.setAction(br.getURL());
+                                pwform.put("password", Encoding.urlEncode(passCode));
+                                pwform.put("token", Encoding.urlEncode(xsrft_token));
+                                pwform.put("referer_url", "/showcase/" + videoID);
+                                logger.info("Password attempt " + attempt + ":" + passCode);
+                                br.submitForm(pwform);
+                                if (br.getHttpConnection().getResponseCode() == 401) {
+                                    attempt++;
+                                    continue;
+                                } else {
+                                    /* Correct password */
+                                    success = true;
+                                    break;
+                                }
+                            } while (attempt <= 2);
+                            if (!success) {
+                                throw new DecrypterException(DecrypterException.PASSWORD);
+                            }
+                        }
                         final String jwtToken = VimeoCom.getJWT(this, br);
                         String nextPage = "/albums/" + videoID + "/videos?fields=link&page=1&per_page=10";
-                        while (nextPage != null) {
+                        while (!this.isAbort() && nextPage != null) {
+                            logger.info("Crawling video album page: " + nextPage);
                             final Browser brc = br.cloneBrowser();
                             brc.getHeaders().put("Authorization", "jwt " + jwtToken);
                             String response = brc.getPage("//api.vimeo.com" + nextPage);
@@ -1114,7 +1149,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         final List<String> passwords = getPreSetPasswords();
         // check for a password. Store latest password in DB
         /* Try stored password first */
-        final String lastUsedPass = getPluginConfig().getStringProperty("lastusedpass", null);
+        final String lastUsedPass = getPluginConfig().getStringProperty("lastusedpass");
         if (StringUtils.isNotEmpty(lastUsedPass) && !passwords.contains(lastUsedPass)) {
             passwords.add(lastUsedPass);
         }
@@ -1133,7 +1168,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 }
                 pwform.setAction("/" + videoID + "/password");
                 /* First get "xsrft" token ... */
-                br.getPage("https://vimeo.com/_rv/viewer");
+                jd.plugins.hoster.VimeoCom.getJWT(this, br);
                 final String vuid = PluginJSonUtils.getJson(br, "vuid");
                 token = PluginJSonUtils.getJson(br, "xsrft");
                 if (StringUtils.isEmpty(token)) {
