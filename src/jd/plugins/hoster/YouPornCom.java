@@ -177,6 +177,11 @@ public class YouPornCom extends PluginForHost {
              */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        /* 2021-11-12: E.g. "Video is unavailable pending review." */
+        final String otherReasonForTempUnavailable = br.getRegex("<div class=\"video-disabled-wrapper\">\\s*<h1>([^<>\"]+)</h1>").getMatch(0);
+        if (otherReasonForTempUnavailable != null) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, otherReasonForTempUnavailable, 5 * 60 * 1000l);
+        }
         String filename = br.getRegex("<title>(.*?) \\- Free Porn Videos[^<>]+</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?) Video \\- Youporn\\.com</title>").getMatch(0);

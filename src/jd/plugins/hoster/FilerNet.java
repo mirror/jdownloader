@@ -57,6 +57,8 @@ public class FilerNet extends PluginForHost {
     private static final String DIRECT_API                                             = "directlinkApi";
     private static final String SETTING_ENABLE_API_FOR_FREE_AND_FREE_ACCOUNT_DOWNLOADS = "ENABLE_API_FOR_FREE_AND_FREE_ACCOUNT_DOWNLOADS";
     private static final String SETTING_ENABLE_HTTP                                    = "ENABLE_HTTP";
+    private static final String SETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS                  = "WAIT_MINUTES_ON_NO_FREE_SLOTS";
+    private static final int    defaultSETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS           = 10;
 
     @SuppressWarnings("deprecation")
     public FilerNet(PluginWrapper wrapper) {
@@ -226,7 +228,8 @@ public class FilerNet extends PluginForHost {
     }
 
     private void errorNoFreeSlotsAvailable() throws PluginException {
-        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", 10 * 60 * 1000l);
+        final int waitMinutes = this.getPluginConfig().getIntegerProperty(SETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS, defaultSETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS);
+        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", waitMinutes * 60 * 1000l);
     }
 
     private void doFreeWebsite(final Account account, final DownloadLink downloadLink) throws Exception {
@@ -496,8 +499,7 @@ public class FilerNet extends PluginForHost {
         }
         if (afterDownload && br.containsHTML("filer\\.net/register")) {
             errorNoFreeSlotsAvailable();
-        }
-        if (br.containsHTML("(?i)>\\s*Maximale Verbindungen erreicht")) {
+        } else if (br.containsHTML("(?i)>\\s*Maximale Verbindungen erreicht")) {
             errorNoFreeSlotsAvailable();
         } else if (br.containsHTML("(?i)>\\s*Leider sind alle kostenlosen Download-Slots belegt|Im Moment sind leider alle Download-Slots für kostenlose Downloads belegt|Bitte versuche es später erneut oder behebe das Problem mit einem Premium")) {
             /* 2020-05-01 */
@@ -608,6 +610,7 @@ public class FilerNet extends PluginForHost {
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_ENABLE_API_FOR_FREE_AND_FREE_ACCOUNT_DOWNLOADS, "Enable API for free- and free account downloads?\r\nBy disabling this you will force JD to use the website instead.\r\nThis could lead to unexpected errors.").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_ENABLE_HTTP, "Use HTTP instead of HTTPS").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS, "Wait minutes on error 'no free slots available'", 10, 600, 1).setDefaultValue(defaultSETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS));
     }
 
     @Override
