@@ -127,6 +127,9 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             /* "Review" --> Also just a single video but with a special additional ID */
             pattern.append("[a-z0-9]+/review/\\d+/[a-f0-9]+");
             pattern.append(")");
+            /* Showcase video URLs (= single videos with special URL pattern) */
+            pattern.append("|");
+            pattern.append("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/showcase/\\d+/video/(\\d+)");
             /* Showcase URLs */
             pattern.append("|");
             pattern.append("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/showcase/\\d+(?:/embed)?");
@@ -150,10 +153,11 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private final String LINKTYPE_USER           = "https?://(?:www\\.)?vimeo\\.com/[A-Za-z0-9\\-_]+/videos";
-    private final String LINKTYPE_GROUP          = "https?://(?:www\\.)?vimeo\\.com/groups/[A-Za-z0-9\\-_]+(?!videos/\\d+)";
-    private final String LINKTYPE_SHOWCASE       = "https?://(?:www\\.)?vimeo\\.com/showcase/\\d+(?:/embed)?";
-    private final String LINKTYPE_SHORT_REDIRECT = "https?://(?:www\\.)?vimeo\\.com/shortest/.+";
+    public static final String LINKTYPE_USER           = "https?://(?:www\\.)?vimeo\\.com/[A-Za-z0-9\\-_]+/videos";
+    public static final String LINKTYPE_GROUP          = "https?://(?:www\\.)?vimeo\\.com/groups/[A-Za-z0-9\\-_]+(?!videos/\\d+)";
+    public static final String LINKTYPE_SHOWCASE       = "https?://(?:www\\.)?vimeo\\.com/showcase/(\\d+)(?:/embed)?";
+    public static final String LINKTYPE_SHOWCASE_VIDEO = "https?://(?:www\\.)?vimeo\\.com/showcase/(\\d+)/video/(\\d+)";
+    public static final String LINKTYPE_SHORT_REDIRECT = "https?://(?:www\\.)?vimeo\\.com/shortest/.+";
 
     private String guessReferer(CryptedLink param) {
         CrawledLink check = getCurrentLink().getSourceLink();
@@ -437,6 +441,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         } else {
             final VIMEO_URL_TYPE urlType = jd.plugins.hoster.VimeoCom.getUrlType(parameter);
             if (VIMEO_URL_TYPE.EXTERNAL.equals(urlType)) {
+                /* 2021-11-12: Unsupported pattern? */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* Check if we got a forced Referer - if so, extract it, clean url, use it and set it on our DownloadLinks for later usage. */
@@ -502,7 +507,12 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     lock = acc;
                 }
             }
-            final Map<String, Object> properties = new HashMap<String, Object>();
+            final Map<String, Object> properties;
+            if (param.getDownloadLink() != null) {
+                properties = param.getDownloadLink().getProperties();
+            } else {
+                properties = new HashMap<String, Object>();
+            }
             synchronized (lock) {
                 try {
                     try {
@@ -533,6 +543,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     password = handlePW(param, this.br);
                 }
                 if (VIMEO_URL_TYPE.SHOWCASE.equals(urlType)) {
+                    final String showcaseID = new Regex(parameter, LINKTYPE_SHOWCASE).getMatch(0);
                     final String refURL = referer.get();
                     final String appendReferer;
                     if (refURL != null) {
@@ -558,7 +569,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                         }
                     }
                     if (apiMode) {
-                        br.getPage("/showcase/" + videoID + "/auth");
+                        br.getPage("/showcase/" + showcaseID + "/auth");
                         String passCode = null;
                         if (br.getHttpConnection().getResponseCode() == 401) {
                             logger.info("Password required");
@@ -576,7 +587,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                                 pwform.setAction(br.getURL());
                                 pwform.put("password", Encoding.urlEncode(passCode));
                                 pwform.put("token", Encoding.urlEncode(xsrft_token));
-                                pwform.put("referer_url", "/showcase/" + videoID);
+                                pwform.put("referer_url", "/showcase/" + showcaseID);
                                 logger.info("Password attempt " + attempt + ":" + passCode);
                                 br.submitForm(pwform);
                                 if (br.getHttpConnection().getResponseCode() == 401) {
@@ -592,8 +603,13 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                                 throw new DecrypterException(DecrypterException.PASSWORD);
                             }
                         }
+                        final String passwordCookieKey = showcaseID + "_albumpassword";
+                        String passwordCookieValue = null;
+                        if (passCode != null) {
+                            passwordCookieValue = br.getCookie(br.getHost(), passwordCookieKey);
+                        }
                         final String jwtToken = VimeoCom.getJWT(this, br);
-                        String nextPage = "/albums/" + videoID + "/videos?fields=link&page=1&per_page=10";
+                        String nextPage = "/albums/" + showcaseID + "/videos?fields=link&page=1&per_page=10";
                         while (!this.isAbort() && nextPage != null) {
                             logger.info("Crawling video album page: " + nextPage);
                             final Browser brc = br.cloneBrowser();
@@ -606,6 +622,14 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                                     for (Map<String, Object> entry : data) {
                                         final String link = (String) entry.get("link");
                                         final DownloadLink clipEntry = this.createDownloadlink(link + appendReferer);
+                                        if (passCode != null) {
+                                            /* Store this for faster post-processing */
+                                            clipEntry.setDownloadPassword(passCode);
+                                            if (passwordCookieValue != null) {
+                                                clipEntry.setProperty(VimeoCom.PROPERTY_PASSWORD_COOKIE_KEY, passwordCookieKey);
+                                                clipEntry.setProperty(VimeoCom.PROPERTY_PASSWORD_COOKIE_VALUE, passwordCookieValue);
+                                            }
+                                        }
                                         decryptedLinks.add(clipEntry);
                                     }
                                     nextPage = (String) JavaScriptEngineFactory.walkJson(map, "paging/next");
@@ -954,14 +978,18 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     }
 
     public static String getVideoidFromURL(final String url) {
-        String ret = new Regex(url, "https?://[^/]+/play/[^/]*s=(\\d+)").getMatch(0);
-        if (ret == null) {
-            ret = new Regex(url, "https?://[^/]+/(?:video|external|play/)?(\\d+)").getMatch(0);
+        if (url.matches(LINKTYPE_SHOWCASE_VIDEO)) {
+            return new Regex(url, LINKTYPE_SHOWCASE_VIDEO).getMatch(1);
+        } else {
+            String ret = new Regex(url, "https?://[^/]+/play/[^/]*s=(\\d+)").getMatch(0);
             if (ret == null) {
-                ret = new Regex(url, "/(\\d+)").getMatch(0);
+                ret = new Regex(url, "https?://[^/]+/(?:video|external|play/)?(\\d+)").getMatch(0);
+                if (ret == null) {
+                    ret = new Regex(url, "/(\\d+)").getMatch(0);
+                }
             }
+            return ret;
         }
-        return ret;
     }
 
     public static String getPlayerConfigTokenFromURL(final String url) {

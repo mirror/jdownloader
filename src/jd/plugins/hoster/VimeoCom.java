@@ -73,27 +73,29 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin://.+" })
 public class VimeoCom extends PluginForHost {
-    private static final String MAINPAGE        = "https://vimeo.com";
+    private static final String MAINPAGE                       = "https://vimeo.com";
     private String              finalURL;
-    public static final String  Q_MOBILE        = "Q_MOBILE";
-    public static final String  Q_ORIGINAL      = "Q_ORIGINAL";
-    public static final String  Q_HD            = "Q_HD";
-    public static final String  Q_SD            = "Q_SD";
-    public static final String  Q_BEST          = "Q_BEST";
-    public static final String  SUBTITLE        = "SUBTITLE";
-    private static final String CUSTOM_DATE     = "CUSTOM_DATE_3";
-    private static final String CUSTOM_FILENAME = "CUSTOM_FILENAME_3";
-    public static final String  ALWAYS_LOGIN    = "ALWAYS_LOGIN";
-    public static final String  VVC             = "VVC_1";
-    public static final String  P_240           = "P_240";
-    public static final String  P_360           = "P_360";
-    public static final String  P_480           = "P_480";
-    public static final String  P_540           = "P_540";
-    public static final String  P_720           = "P_720";
-    public static final String  P_1080          = "P_1080";
-    public static final String  P_1440          = "P_1440";
-    public static final String  P_2560          = "P_2560";
-    public static final String  ASK_REF         = "ASK_REF";
+    public static final String  Q_MOBILE                       = "Q_MOBILE";
+    public static final String  Q_ORIGINAL                     = "Q_ORIGINAL";
+    public static final String  Q_HD                           = "Q_HD";
+    public static final String  Q_SD                           = "Q_SD";
+    public static final String  Q_BEST                         = "Q_BEST";
+    public static final String  SUBTITLE                       = "SUBTITLE";
+    private static final String CUSTOM_DATE                    = "CUSTOM_DATE_3";
+    private static final String CUSTOM_FILENAME                = "CUSTOM_FILENAME_3";
+    public static final String  ALWAYS_LOGIN                   = "ALWAYS_LOGIN";
+    public static final String  VVC                            = "VVC_1";
+    public static final String  P_240                          = "P_240";
+    public static final String  P_360                          = "P_360";
+    public static final String  P_480                          = "P_480";
+    public static final String  P_540                          = "P_540";
+    public static final String  P_720                          = "P_720";
+    public static final String  P_1080                         = "P_1080";
+    public static final String  P_1440                         = "P_1440";
+    public static final String  P_2560                         = "P_2560";
+    public static final String  ASK_REF                        = "ASK_REF";
+    public static final String  PROPERTY_PASSWORD_COOKIE_KEY   = "password_cookie_key";
+    public static final String  PROPERTY_PASSWORD_COOKIE_VALUE = "password_cookie_value";
 
     public VimeoCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -394,6 +396,7 @@ public class VimeoCom extends PluginForHost {
         PLAY, // https://player.vimeo.com/play/, links do expire!
         EXTERNAL, // https://player.vimeo.com/external/
         SHOWCASE,
+        SHOWCASE_VIDEO,
         RAW,
         PLAYER,
         CONFIG_TOKEN,
@@ -420,6 +423,8 @@ public class VimeoCom extends PluginForHost {
                     } else {
                         return VIMEO_URL_TYPE.PLAYER;
                     }
+                } else if (url.matches(jd.plugins.decrypter.VimeoComDecrypter.LINKTYPE_SHOWCASE_VIDEO)) {
+                    return VIMEO_URL_TYPE.SHOWCASE_VIDEO;
                 } else if (url.matches("^https?://(www\\.)?vimeo.com/showcase/\\d+(/embed)?")) {
                     return VIMEO_URL_TYPE.SHOWCASE;
                 }
@@ -498,7 +503,7 @@ public class VimeoCom extends PluginForHost {
     }
 
     /**
-     * Use this to access a vimeo URL for the first time! Make sure to call password handling afterwards! <br />
+     * Core function to access a vimeo URL for the first time! Make sure to call password handling afterwards! <br />
      * Important: Execute password handling afterwards!!
      */
     public static VIMEO_URL_TYPE accessVimeoURL(final Plugin plugin, final Browser br, final String url_source, final AtomicReference<String> forced_referer, final VIMEO_URL_TYPE urlTypeRequested, final Map<String, Object> properties) throws Exception {
@@ -520,9 +525,9 @@ public class VimeoCom extends PluginForHost {
                 br.getHeaders().put("Referer", referer);
             }
             plugin.getLogger().info("urlTypeRequested:" + urlTypeRequested);
-            final VIMEO_URL_TYPE ret;
+            final VIMEO_URL_TYPE newUrlType;
             if (reviewHash != null) {
-                ret = getUrlType(url_source);
+                newUrlType = getUrlType(url_source);
                 br.getPage(url_source.replace("/review/", "/review/data/"));
                 final String jwt = PluginJSonUtils.getJson(br, "jwtToken");
                 if (false && jwt != null && apiMode) {
@@ -543,8 +548,8 @@ public class VimeoCom extends PluginForHost {
                  * 2019-02-20: Special: We have to access 'review' URLs same way as via browser - if we don't, we will get response 403/404!
                  * Review-URLs may contain a reviewHash which is required! If then, inside their json, the unlistedHash is present,
                  */
-                ret = getUrlType(url_source);
-                plugin.getLogger().info("getUrlType:" + url_source + "->" + ret);
+                newUrlType = getUrlType(url_source);
+                plugin.getLogger().info("getUrlType:" + url_source + "->" + newUrlType);
                 if (apiMode && videoID != null && reviewHash == null) {
                     Browser brc = br.cloneBrowser();
                     if (accessVimeoAPI(plugin, brc, properties, videoID, unlistedHash, null) != null) {
@@ -556,16 +561,16 @@ public class VimeoCom extends PluginForHost {
                     br.getPage(url_source);
                 }
             } else if (urlTypeRequested == VIMEO_URL_TYPE.SHOWCASE) {
-                ret = VIMEO_URL_TYPE.SHOWCASE;
+                newUrlType = VIMEO_URL_TYPE.SHOWCASE;
                 br.getPage(url_source);
                 if (br.containsHTML("\"clips\"\\s*:\\s*\\[\\s*\\]")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Maybe wrong referer:" + referer);
                 }
             } else if (configToken != null || urlTypeRequested == VIMEO_URL_TYPE.CONFIG_TOKEN) {
-                ret = VIMEO_URL_TYPE.CONFIG_TOKEN;
+                newUrlType = VIMEO_URL_TYPE.CONFIG_TOKEN;
                 br.getPage(url_source);
             } else if (unlistedHash == null && (urlTypeRequested == VIMEO_URL_TYPE.PLAYER || (urlTypeRequested == null && referer != null))) {
-                ret = VIMEO_URL_TYPE.PLAYER;
+                newUrlType = VIMEO_URL_TYPE.PLAYER;
                 if (apiMode) {
                     Browser brc = br.cloneBrowser();
                     if (accessVimeoAPI(plugin, brc, properties, videoID, unlistedHash, null) != null) {
@@ -577,7 +582,7 @@ public class VimeoCom extends PluginForHost {
                     br.getPage("https://player.vimeo.com/video/" + videoID);
                 }
             } else if (unlistedHash != null && (urlTypeRequested == VIMEO_URL_TYPE.UNLISTED || urlTypeRequested == VIMEO_URL_TYPE.PLAYER || urlTypeRequested == null)) {
-                ret = VIMEO_URL_TYPE.UNLISTED;
+                newUrlType = VIMEO_URL_TYPE.UNLISTED;
                 Browser brc = br.cloneBrowser();
                 final Map<String, Object> apiResponse = accessVimeoAPI(plugin, brc, properties, videoID, unlistedHash, null);
                 if (apiResponse != null) {
@@ -588,12 +593,22 @@ public class VimeoCom extends PluginForHost {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+            } else if (urlTypeRequested == VIMEO_URL_TYPE.SHOWCASE_VIDEO) {
+                newUrlType = VIMEO_URL_TYPE.SHOWCASE_VIDEO;
+                /*
+                 * This will grant access to single video items based on previous session when password was needed and user entered correct
+                 * password e.g. to crawl a password protected 'showcase' video album.
+                 */
+                if (properties.containsKey(PROPERTY_PASSWORD_COOKIE_KEY)) {
+                    br.setCookie(plugin.getHost(), properties.get(PROPERTY_PASSWORD_COOKIE_KEY).toString(), properties.get(PROPERTY_PASSWORD_COOKIE_VALUE).toString());
+                }
+                br.getPage(url_source);
             } else {
                 if (unlistedHash != null) {
-                    ret = VIMEO_URL_TYPE.UNLISTED;
+                    newUrlType = VIMEO_URL_TYPE.UNLISTED;
                     br.getPage(String.format("https://vimeo.com/%s/%s", videoID, unlistedHash));
                 } else {
-                    ret = VIMEO_URL_TYPE.NORMAL;
+                    newUrlType = VIMEO_URL_TYPE.NORMAL;
                     br.getPage("https://vimeo.com/" + videoID);
                 }
             }
@@ -614,7 +629,7 @@ public class VimeoCom extends PluginForHost {
             } else if (br.containsHTML(">\\s*Private Video on Vimeo\\s*<")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Private video");
             } else {
-                return ret;
+                return newUrlType;
             }
         } finally {
             final String vuid = br.getRegex("document\\.cookie\\s*=\\s*'vuid='\\s*\\+\\s*encodeURIComponent\\('(\\d+\\.\\d+)'\\)").getMatch(0);
