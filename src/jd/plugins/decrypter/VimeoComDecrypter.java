@@ -417,7 +417,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 }
                 for (final String videoID : videoIDs) {
                     if (dups.add(videoID)) {
-                        decryptedLinks.add(createDownloadlink("http://vimeo.com/" + videoID));
+                        decryptedLinks.add(createDownloadlink("http://" + this.getHost() + "/" + videoID));
                     } else {
                         logger.info("duplicate video detected:" + videoID);
                     }
