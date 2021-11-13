@@ -39,6 +39,7 @@ public class FEmbedDecrypter extends PluginForDecrypt {
         final List<String[]> ret = new ArrayList<String[]>();
         /* Always add current domain to first position! */
         ret.add(new String[] { "fembed.com", "there.to", "gcloud.live", "plycdn.xyz", "hlsmp4.com", "svpri.xyz", "asianclub.nl", "asianclub.tv", "javcl.me", "javjav.top", "feurl.com", "zidiplay.com", "embed.media", "javideo.pw", "playvideo.best", "ffem.club", "dunbed.xyz", "embed.casa", "sexhd.co", "fileone.tv", "luxubu.review", "anime789.com", "femax20.com", "smartshare.tv", "cercafilm.net", "watchjavnow.xyz" });
+        ret.add(new String[] { "watch-jav-english.live", "dutrag.com", "nekolink.site", "pornhole.club", "javip.pro", "javlove.club", "javguru.tk", "diasfem.com", "cloudrls.com", "embedaio.com", "fakyutube.com", "javhdfree.icu" });
         return ret;
     }
 
