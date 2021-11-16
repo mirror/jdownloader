@@ -13,10 +13,11 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -29,11 +30,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hyperfileshare.com" }, urls = { "http://[\\w\\.]*?hyperfileshare\\.com/(d/|download\\.php\\?code=)[a-fA-F0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hyperfileshare.com" }, urls = { "https?://[\\w\\.]*?hyperfileshare\\.com/(?:d/|download\\.php\\?code=)[a-fA-F0-9]+" })
 public class HyperFileShareCom extends PluginForHost {
-
     public HyperFileShareCom(PluginWrapper wrapper) {
         super(wrapper);
         // Actually we only got support for free accounts, not for premium!
@@ -44,7 +42,6 @@ public class HyperFileShareCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account);
-        account.setValid(true);
         ai.setUnlimitedTraffic();
         ai.setStatus("Registered (free) User");
         return ai;
@@ -68,10 +65,10 @@ public class HyperFileShareCom extends PluginForHost {
     private static final String MAINTENANCE = ">Servers Maintenance<";
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         br.setFollowRedirects(true);
         final String properlink = br.getRegex("The document has moved <a href=\"(.*?)\"").getMatch(0);
         if (properlink != null) {
@@ -91,18 +88,18 @@ public class HyperFileShareCom extends PluginForHost {
         if (filename == null || size == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(size + "B"));
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(size + "B"));
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (br.containsHTML(MAINTENANCE)) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is in maintenance mode!", 3 * 60 * 60 * 1000l);
         }
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         String url = br.getRegex("href=\"(download\\.php\\?code=[a-f0-9]+&sid=[a-f0-9]+&s=\\d)\"").getMatch(0);
         if (url == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -114,9 +111,13 @@ public class HyperFileShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         url = "http://download.hyperfileshare.com/" + url;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (br.containsHTML("(You exceeded your download size limit|>You exceeded your download quota)")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
             }
@@ -126,10 +127,10 @@ public class HyperFileShareCom extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         String url = br.getRegex("href=\"(download\\.php\\?code=[a-f0-9]+&sid=[a-f0-9]+&s=\\d)\"").getMatch(0);
         if (url == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -143,8 +144,12 @@ public class HyperFileShareCom extends PluginForHost {
         }
         url = "http://download.hyperfileshare.com/" + url;
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (br.containsHTML("You exceeded your download size limit")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
             }

@@ -44,7 +44,7 @@ public class ImfbXyz extends antiDDoSForHost {
     }
     /* DEV NOTES */
     // Tags: Porn plugin
-    // other: Helper plugin for URLs from fbjav.com
+    // other: Helper plugin for URLs from fbjav.net, fbjav.com
 
     /* Connection stuff */
     private static final boolean free_resume       = true;
