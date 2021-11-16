@@ -77,6 +77,8 @@ public class TiktokCom extends antiDDoSForHost {
     private String              dllink               = null;
     private boolean             server_issues        = false;
     private static final String PROPERTY_DIRECTURL   = "directurl";
+    private static final String PROPERTY_USERNAME    = "username";
+    private static final String PROPERTY_VIDEO_ID    = "videoid";
     private static final String PROPERTY_DATE        = "date";
     private static final String PROPERTY_DESCRIPTION = "description";
     private static final String PROPERTY_HASHTAGS    = "hashtags";
@@ -115,6 +117,7 @@ public class TiktokCom extends antiDDoSForHost {
         if (fid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        link.setProperty(PROPERTY_VIDEO_ID, fid);
         if (!link.isNameSet()) {
             link.setName(fid + ".mp4");
         }
@@ -338,6 +341,7 @@ public class TiktokCom extends antiDDoSForHost {
             }
         }
         if (!StringUtils.isEmpty(username)) {
+            link.setProperty(PROPERTY_USERNAME, username);
             filename += "_" + username;
         }
         filename += "_" + fid + ".mp4";

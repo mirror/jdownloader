@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -35,8 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?iwara\\.tv/videos/([A-Za-z0-9]+)" })
 public class IwaraTv extends PluginForHost {
@@ -138,6 +138,9 @@ public class IwaraTv extends PluginForHost {
             /* Private video */
             link.setName(filename + ".mp4");
             return AvailableStatus.TRUE;
+        } else if (!br.containsHTML("id=\"video-player\"")) {
+            /* Invalid URL and webpage does not display any kind of error e.g. "https://www.iwara.tv/videos/0" */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         boolean usedApi = false;
         boolean isVideo = true;
