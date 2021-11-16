@@ -18,13 +18,16 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -54,6 +57,30 @@ public class StreamsbNet extends XFileSharingProBasic {
         ret.add(new String[] { "streamsb.com" });
         ret.add(new String[] { "streamsb.net", "embedsb.com", "sbembed.com", "sbembed1.com", "sbembed2.com", "sbcloud1.com", "tubesb.com" });
         return ret;
+    }
+
+    private static final String EXTENDED_FILENAME_RESULT = "extended_filename_result";
+
+    @Override
+    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        final AvailableStatus result = super.requestFileInformationWebsite(link, account, isDownload);
+        if (link.getPluginPatternMatcher().matches("https?://[^/]+/d/[a-z0-9]{12}.*") && !link.hasProperty(EXTENDED_FILENAME_RESULT)) {
+            /*
+             * 2021-11-18: Workaround e.g. for items for which uploader has disabled download button because upper handling will fail to
+             * find a nice filename.
+             */
+            final Browser brc = br.cloneBrowser();
+            this.getPage(brc, "https://" + this.getHost() + "/" + this.getFUIDFromURL(link));
+            final String[] fileInfo = super.scanInfo(brc.toString(), super.internal_getFileInfoArray());
+            if (!StringUtils.isEmpty(fileInfo[0])) {
+                logger.info("Found nice file-title: " + fileInfo[0]);
+                link.setProperty(EXTENDED_FILENAME_RESULT, fileInfo[0]);
+            }
+        }
+        if (link.hasProperty(EXTENDED_FILENAME_RESULT)) {
+            setFilename(link.getStringProperty(EXTENDED_FILENAME_RESULT), link);
+        }
+        return result;
     }
 
     @Override

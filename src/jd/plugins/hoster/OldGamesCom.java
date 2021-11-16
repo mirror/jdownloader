@@ -42,7 +42,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "old-games.com" }, urls = { "https?://(?:www\\.)?old\\-games\\.com/(?:getfile|getfree)/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "old-games.com" }, urls = { "https?://(?:www\\.)?old\\-games\\.com/(?:getfile|getfree)/(\\d+)" })
 public class OldGamesCom extends PluginForHost {
     public OldGamesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -66,18 +66,33 @@ public class OldGamesCom extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    private String               fuid                         = null;
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        fuid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
-        link.setLinkID(this.getHost() + "://" + fuid);
+        if (!link.isNameSet()) {
+            /* Set fallback-filename */
+            link.setName(this.getFID(link));
+        }
         br.setFollowRedirects(true);
-        br.getPage(getGetfileURL());
+        br.getPage(getGetfileURL(link));
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -98,7 +113,7 @@ public class OldGamesCom extends PluginForHost {
             }
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
-        link.setName(this.fuid + "_" + Encoding.htmlDecode(filename.trim()));
+        link.setName(this.getFID(link) + "_" + Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
     }
 
@@ -111,9 +126,9 @@ public class OldGamesCom extends PluginForHost {
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
-            this.br.getPage("/getfree/" + this.fuid);
-            if (this.br.containsHTML("Download limit exceeded")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+            this.br.getPage("/getfree/" + this.getFID(link));
+            if (this.br.containsHTML("(?i)Download limit exceeded")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download limit exceeded");
             }
             dllink = getFinalDownloadlink();
         }
@@ -129,7 +144,10 @@ public class OldGamesCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
+            } else if (br.getHttpConnection().getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download limit exceeded");
+            }
+            {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
@@ -138,8 +156,8 @@ public class OldGamesCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String getGetfileURL() {
-        return "https://www.old-games.com/getfile/" + this.fuid;
+    private String getGetfileURL(final DownloadLink link) {
+        return "https://www.old-games.com/getfile/" + this.getFID(link);
     }
 
     private String getFinalDownloadlink() throws PluginException, MalformedURLException {
@@ -232,7 +250,7 @@ public class OldGamesCom extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
-        br.getPage(getGetfileURL());
+        br.getPage(getGetfileURL(link));
         final String dllink = getFinalDownloadlink();
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
