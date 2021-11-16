@@ -865,16 +865,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         processFileInfo(fileInfo, altbr, link);
         if (!StringUtils.isEmpty(fileInfo[0])) {
             /* Correct- and set filename */
-            if (Encoding.isHtmlEntityCoded(fileInfo[0])) {
-                fileInfo[0] = Encoding.htmlDecode(fileInfo[0]);
-            }
-            /* Remove some html tags - in most cases not necessary! */
-            fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "").trim();
-            if (this.internal_isVideohoster_enforce_video_filename()) {
-                /* For videohosts we often get ugly filenames such as 'some_videotitle.avi.mkv.mp4' --> Correct that! */
-                fileInfo[0] = this.correctOrApplyFileNameExtension(fileInfo[0], "." + "mp4");
-            }
-            link.setName(fileInfo[0]);
+            setFilename(fileInfo[0], link);
         }
         {
             /* Set filesize */
@@ -893,6 +884,21 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             link.setMD5Hash(fileInfo[2].trim());
         }
         return AvailableStatus.TRUE;
+    }
+
+    /** Does some fixed on given name string and sets it as filename on given DownloadLink. */
+    protected void setFilename(String name, final DownloadLink link) {
+        /* Correct- and set filename */
+        if (Encoding.isHtmlEntityCoded(name)) {
+            name = Encoding.htmlDecode(name);
+        }
+        /* Remove some html tags - in most cases not necessary! */
+        name = name.replaceAll("(</b>|<b>|\\.html)", "").trim();
+        if (this.internal_isVideohoster_enforce_video_filename()) {
+            /* For videohosts we often get ugly filenames such as 'some_videotitle.avi.mkv.mp4' --> Correct that! */
+            name = this.correctOrApplyFileNameExtension(name, "." + "mp4");
+        }
+        link.setName(name);
     }
 
     protected void processFileInfo(String[] fileInfo, Browser altbr, DownloadLink link) {
@@ -1058,6 +1064,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * case: filespace.com)
      */
     public String[] scanInfo(final String[] fileInfo) {
+        return scanInfo(correctedBR, fileInfo);
+    }
+
+    public String[] scanInfo(final String html, final String[] fileInfo) {
         /*
          * 2019-04-17: TODO: Improve sharebox RegExes (also check if we can remove/improve sharebox0 and sharebox1 RegExes) as this may save
          * us from having to use other time-comsuming fallbacks such as getFilesizeViaAvailablecheckAlt or getFnameViaAbuseLink. E.g. new
@@ -1077,14 +1087,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         /* standard traits from base page */
         if (StringUtils.isEmpty(fileInfo[0])) {
             /* 2019-06-12: TODO: Update this RegEx for e.g. up-4ever.org */
-            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(?:www\\.)?[^/]+/" + this.getFUIDFromURL(this.getDownloadLink()) + "/([^<>\"]+)<").getMatch(0);
+            fileInfo[0] = new Regex(html, "You have requested.*?https?://(?:www\\.)?[^/]+/" + this.getFUIDFromURL(this.getDownloadLink()) + "/([^<>\"]+)<").getMatch(0);
             if (StringUtils.isEmpty(fileInfo[0])) {
-                fileInfo[0] = new Regex(correctedBR, "name=\"fname\" (?:type=\"hidden\" )?value=\"(.*?)\"").getMatch(0);
+                fileInfo[0] = new Regex(html, "name=\"fname\" (?:type=\"hidden\" )?value=\"(.*?)\"").getMatch(0);
                 if (StringUtils.isEmpty(fileInfo[0])) {
-                    fileInfo[0] = new Regex(correctedBR, "<h2>.*?Download File(?:<span>)?\\s*(.*?)\\s*(</span>)?\\s*</h2>").getMatch(0);
+                    fileInfo[0] = new Regex(html, "<h2>.*?Download File(?:<span>)?\\s*(.*?)\\s*(</span>)?\\s*</h2>").getMatch(0);
                     /* traits from download1 page below */
                     if (StringUtils.isEmpty(fileInfo[0])) {
-                        fileInfo[0] = new Regex(correctedBR, "Filename:?\\s*(<[^>]+>\\s*)+?([^<>\"]+)").getMatch(1);
+                        fileInfo[0] = new Regex(html, "Filename:?\\s*(<[^>]+>\\s*)+?([^<>\"]+)").getMatch(1);
                     }
                 }
             }
@@ -1095,36 +1105,36 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         /* Next - details from sharing boxes (new RegExes to old) */
         if (StringUtils.isEmpty(fileInfo[0])) {
-            fileInfo[0] = new Regex(correctedBR, sharebox2).getMatch(0);
+            fileInfo[0] = new Regex(html, sharebox2).getMatch(0);
             if (StringUtils.isEmpty(fileInfo[0])) {
-                fileInfo[0] = new Regex(correctedBR, sharebox2_without_filesize).getMatch(0);
+                fileInfo[0] = new Regex(html, sharebox2_without_filesize).getMatch(0);
             }
             if (StringUtils.isEmpty(fileInfo[0])) {
-                fileInfo[0] = new Regex(correctedBR, sharebox1).getMatch(0);
+                fileInfo[0] = new Regex(html, sharebox1).getMatch(0);
                 if (StringUtils.isEmpty(fileInfo[0])) {
-                    fileInfo[0] = new Regex(correctedBR, sharebox0).getMatch(0);
+                    fileInfo[0] = new Regex(html, sharebox0).getMatch(0);
                 }
                 if (StringUtils.isEmpty(fileInfo[0])) {
                     /* Link of the box without filesize */
-                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">https?://(?:www\\.)?[^/]+/" + this.getFUIDFromURL(this.getDownloadLink()) + "/([^<>\"]*?)</textarea").getMatch(0);
+                    fileInfo[0] = new Regex(html, "onFocus=\"copy\\(this\\);\">https?://(?:www\\.)?[^/]+/" + this.getFUIDFromURL(this.getDownloadLink()) + "/([^<>\"]*?)</textarea").getMatch(0);
                 }
             }
         }
         /* Next - RegExes for videohosts */
         if (StringUtils.isEmpty(fileInfo[0])) {
-            fileInfo[0] = new Regex(correctedBR, sharebox3_videohost).getMatch(0);
+            fileInfo[0] = new Regex(html, sharebox3_videohost).getMatch(0);
             if (StringUtils.isEmpty(fileInfo[0])) {
                 /* 2017-04-11: Typically for XVideoSharing sites */
-                fileInfo[0] = new Regex(correctedBR, Pattern.compile("<title>\\s*Watch(?:ing)?\\s*([^<>\"]+)\\s*</title>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                fileInfo[0] = new Regex(html, Pattern.compile("<title>\\s*Watch(?:ing)?\\s*([^<>\"]+)\\s*</title>", Pattern.CASE_INSENSITIVE)).getMatch(0);
             }
             if (StringUtils.isEmpty(fileInfo[0]) && isImagehoster()) {
                 /* Imagehoster site title */
                 final String websiteName = Browser.getHost(getHost()).replaceAll("(\\..+)$", "");
-                fileInfo[0] = new Regex(correctedBR, Pattern.compile("<title>\\s*(.*?\\.(png|jpe?g|gif))\\s*-\\s*(" + Pattern.quote(getHost()) + "|" + Pattern.quote(websiteName) + ")\\s*</title>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                fileInfo[0] = new Regex(html, Pattern.compile("<title>\\s*(.*?\\.(png|jpe?g|gif))\\s*-\\s*(" + Pattern.quote(getHost()) + "|" + Pattern.quote(websiteName) + ")\\s*</title>", Pattern.CASE_INSENSITIVE)).getMatch(0);
             }
         }
         if (StringUtils.isEmpty(fileInfo[0])) {
-            fileInfo[0] = new Regex(correctedBR, "class=\"dfilename\">([^<>\"]*?)<").getMatch(0);
+            fileInfo[0] = new Regex(html, "class=\"dfilename\">([^<>\"]*?)<").getMatch(0);
         }
         if (internal_isVideohosterEmbed(this.br) && (StringUtils.isEmpty(fileInfo[0]) || StringUtils.equalsIgnoreCase("No title", fileInfo[0]))) {
             /* 2019-10-15: E.g. vidoza.net */
@@ -1138,15 +1148,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          * 'supports_availablecheck_filesize_html' setting:
          */
         if (StringUtils.isEmpty(fileInfo[1])) {
-            fileInfo[1] = new Regex(correctedBR, sharebox2).getMatch(1);
+            fileInfo[1] = new Regex(html, sharebox2).getMatch(1);
         }
         /* 2019-07-12: Example: Katfile.com */
         if (StringUtils.isEmpty(fileInfo[1])) {
-            fileInfo[1] = new Regex(correctedBR, "id\\s*=\\s*\"fsize[^\"]*\"\\s*>\\s*([0-9\\.]+\\s*[MBTGK]+)\\s*<").getMatch(0);
+            fileInfo[1] = new Regex(html, "id\\s*=\\s*\"fsize[^\"]*\"\\s*>\\s*([0-9\\.]+\\s*[MBTGK]+)\\s*<").getMatch(0);
         }
         if (StringUtils.isEmpty(fileInfo[1])) {
             /* 2019-07-12: Example: Katfile.com */
-            fileInfo[1] = new Regex(correctedBR, "class\\s*=\\s*\"statd\"\\s*>\\s*size\\s*</span>\\s*<span>\\s*([0-9\\.]+\\s*[MBTGK]+)\\s*<").getMatch(0);
+            fileInfo[1] = new Regex(html, "class\\s*=\\s*\"statd\"\\s*>\\s*size\\s*</span>\\s*<span>\\s*([0-9\\.]+\\s*[MBTGK]+)\\s*<").getMatch(0);
         }
         if (StringUtils.isEmpty(fileInfo[1])) {
             /* 2020-08-10: E.g. myqloud.org */
@@ -1161,27 +1171,27 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             /** TODO: Clean this up */
             /* Starting from here - more unsafe attempts */
             if (StringUtils.isEmpty(fileInfo[1])) {
-                fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
+                fileInfo[1] = new Regex(html, "\\(([0-9]+ bytes)\\)").getMatch(0);
                 if (StringUtils.isEmpty(fileInfo[1])) {
-                    fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
+                    fileInfo[1] = new Regex(html, "</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
                 }
             }
             /* Next - unsafe details from sharing box */
             if (StringUtils.isEmpty(fileInfo[1])) {
-                fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
+                fileInfo[1] = new Regex(html, sharebox0).getMatch(1);
                 if (StringUtils.isEmpty(fileInfo[1])) {
-                    fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
+                    fileInfo[1] = new Regex(html, sharebox1).getMatch(1);
                 }
             }
             /* Generic failover */
             if (StringUtils.isEmpty(fileInfo[1])) {
                 // sync with YetiShareCore.scanInfo- Generic failover
-                fileInfo[1] = new Regex(correctedBR, "(?:>\\s*|\\(\\s*|\"\\s*|\\[\\s*|\\s+)([0-9\\.]+(?:\\s+|\\&nbsp;)?(TB|GB|MB|KB)(?!ps|/s|\\s*Storage|\\s*Disk|\\s*Space))").getMatch(0);
+                fileInfo[1] = new Regex(html, "(?:>\\s*|\\(\\s*|\"\\s*|\\[\\s*|\\s+)([0-9\\.]+(?:\\s+|\\&nbsp;)?(TB|GB|MB|KB)(?!ps|/s|\\s*Storage|\\s*Disk|\\s*Space))").getMatch(0);
             }
         }
         /* MD5 is only available in very very rare cases! */
         if (StringUtils.isEmpty(fileInfo[2])) {
-            fileInfo[2] = new Regex(correctedBR, "<b>\\s*MD5.*?</b>.*?nowrap>\\s*(.*?)\\s*<").getMatch(0);
+            fileInfo[2] = new Regex(html, "<b>\\s*MD5.*?</b>.*?nowrap>\\s*(.*?)\\s*<").getMatch(0);
         }
         return fileInfo;
     }

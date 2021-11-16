@@ -104,6 +104,10 @@ public class ARDMediathek extends PluginForHost {
         return con != null && con.getResponseCode() == 200 && StringUtils.containsIgnoreCase(con.getContentType(), "video") && con.getCompleteContentLength() > 512 * 1024l;
     }
 
+    public static boolean isAudioContent(final URLConnectionAdapter con) {
+        return con != null && con.getResponseCode() == 200 && StringUtils.containsIgnoreCase(con.getContentType(), "audio") && con.getCompleteContentLength() > 512 * 1024l;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = link.getDownloadURL();
@@ -144,7 +148,7 @@ public class ARDMediathek extends PluginForHost {
             try {
                 final Browser brc = br.cloneBrowser();
                 con = brc.openHeadConnection(dllink);
-                if (isVideoContent(con)) {
+                if (isVideoContent(con) || isAudioContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
