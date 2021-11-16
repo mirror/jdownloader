@@ -17,6 +17,11 @@ package jd.plugins.decrypter;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.appwork.utils.Regex;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -36,38 +41,41 @@ public class JavhdCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String fpName = br.getRegex("var item_title = \"([^\"]+)\"").getMatch(0);
-        final String[] links = br.getRegex("<img alt=\"[^\"]+\"\\s*?src=\"(https[^<>\"]+)\"").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        String fpName = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
+        if (fpName == null) {
+            /* Fallback */
+            fpName = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
         }
-        for (final String singleLink : links) {
-            final DownloadLink dl = createDownloadlink(singleLink);
-            String filename = fpName;
-            final String name_url = getFileNameFromURL(new URL(singleLink));
-            if (name_url != null) {
-                filename += "_" + name_url;
-            } else {
-                /* Assume fileextension */
-                filename += ".jpg";
+        final String picsJson = br.getRegex(":images=\"([^\"]+)").getMatch(0);
+        if (picsJson != null) {
+            final List<Map<String, Object>> pics = (List<Map<String, Object>>) JavaScriptEngineFactory.jsonToJavaObject(Encoding.htmlDecode(picsJson));
+            for (final Map<String, Object> pic : pics) {
+                final String url = (String) pic.get("src");
+                final DownloadLink dl = createDownloadlink(url);
+                String filename = fpName;
+                final String name_url = getFileNameFromURL(new URL(url));
+                if (name_url != null) {
+                    filename += "_" + name_url;
+                } else {
+                    /* Assume fileextension */
+                    filename += ".jpg";
+                }
+                dl.setAvailable(true);
+                dl.setFinalFileName(filename);
+                decryptedLinks.add(dl);
             }
-            dl.setAvailable(true);
-            dl.setFinalFileName(filename);
-            decryptedLinks.add(dl);
-        }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
         }
         /* Add main URL for hosterplugin to download video */
         decryptedLinks.add(this.createDownloadlink(parameter));
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(Encoding.htmlDecode(fpName.trim()));
+        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 }

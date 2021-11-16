@@ -203,7 +203,9 @@ public class NewgroundsCom extends antiDDoSForHost {
                 }
                 link.setFinalFileName(filename);
                 if (this.looksLikeDownloadableContent(con)) {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 } else {
                     server_issues = true;
                 }
@@ -271,8 +273,12 @@ public class NewgroundsCom extends antiDDoSForHost {
             final boolean art_zip_download_broken_serverside = true;
             if (link.getName().contains(".zip") && art_zip_download_broken_serverside) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download broken serverside please wait for a fix, then contact us to fix our plugin");
+            } else if (link.getName().contains(".mp3")) {
+                /* For audios, assume this is what prevented us from downloading them at this stage. */
+                throw new PluginException(LinkStatus.ERROR_FATAL, "The author of this submission has disabled direct downloads");
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }

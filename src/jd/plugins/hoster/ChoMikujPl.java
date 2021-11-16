@@ -72,8 +72,6 @@ public class ChoMikujPl extends antiDDoSForHost {
     /* TODO: Verify if premium users really can resume */
     private static final boolean account_resume                                        = true;
     private static final int     account_maxdls                                        = -1;
-    private boolean              serverIssue                                           = false;
-    private boolean              premiumonly                                           = false;
     private boolean              plus18                                                = false;
 
     public ChoMikujPl(PluginWrapper wrapper) {
@@ -99,7 +97,12 @@ public class ChoMikujPl extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, null, false);
+        /*
+         * Always try to login even if this is not called from handlePremium as some content is only available when user is logged in which
+         * he usually isn't during availablecheck and we do not want to have that content displayed as offline!
+         */
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return requestFileInformation(link, account, false);
     }
 
     private String getMainlink(final DownloadLink link) {
@@ -122,8 +125,6 @@ public class ChoMikujPl extends antiDDoSForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        serverIssue = false;
-        premiumonly = false;
         plus18 = false;
         br.setFollowRedirects(true);
         final String fid = getFID(link);
@@ -133,15 +134,8 @@ public class ChoMikujPl extends antiDDoSForHost {
             logger.info("Failed to find fileid");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /*
-         * Workaround: Always try to login even if this is not called from handlePremium as some content is only available when user is
-         * logged in which he usually isn't during availablecheck and we do not want to have that content displayed as offline!
-         */
-        final Account accWorkaround = AccountController.getInstance().getValidAccount(this.getHost());
         if (account != null) {
             this.login(account, false);
-        } else if (accWorkaround != null) {
-            this.login(accWorkaround, false);
         }
         if (mainlink != null) {
             /* Try to find better filename - usually only needed for single links. */
@@ -151,6 +145,9 @@ public class ChoMikujPl extends antiDDoSForHost {
             }
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (requiresPasswordPrompt(br)) {
+                logger.info("Cannot fetch file information because password is required");
+                return AvailableStatus.TRUE;
             } else if (!br.containsHTML(fid)) {
                 /* html must contain fileid - if not, content should be offline (e.g. redirect to upper folder or errorpage) */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -179,8 +176,10 @@ public class ChoMikujPl extends antiDDoSForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (con.isOK() && (con.isContentDisposition() || !con.getContentType().contains("html"))) {
-                    link.setDownloadSize(con.getLongContentLength());
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                     /* Only set final filename if it wasn't set before as video and */
                     /* audio streams can have bad filenames */
                     if (link.getFinalFileName() == null) {
@@ -188,7 +187,7 @@ public class ChoMikujPl extends antiDDoSForHost {
                     }
                 } else {
                     /* Just because we get html here that doesn't mean that the file is offline ... */
-                    serverIssue = true;
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to file");
                 }
             } finally {
                 try {
@@ -379,6 +378,16 @@ public class ChoMikujPl extends antiDDoSForHost {
         }
     }
 
+    private static boolean requiresPasswordPrompt(final Browser br) {
+        if (jd.plugins.decrypter.ChoMikujPl.isFolderPasswordProtected(br)) {
+            return true;
+        } else if (jd.plugins.decrypter.ChoMikujPl.isSpecialUserPasswordProtected(br)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     private boolean isVideo(final DownloadLink dl) {
         String filename = dl.getFinalFileName();
         if (filename == null) {
@@ -552,8 +561,6 @@ public class ChoMikujPl extends antiDDoSForHost {
             if (plus18) {
                 logger.info("Adult content only downloadable when logged in");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } else if (serverIssue) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
             }
             this.dllink = this.getDllink(link, this.br, false);
             if (StringUtils.isEmpty(this.dllink)) {
@@ -592,9 +599,13 @@ public class ChoMikujPl extends antiDDoSForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
         dl.setFilenameFix(true);
         final URLConnectionAdapter con = dl.getConnection();
-        if (!con.isContentDisposition() && ((StringUtils.containsIgnoreCase(con.getContentType(), "text") && con.getResponseCode() == 200) || !con.isOK())) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             handleServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -640,7 +651,7 @@ public class ChoMikujPl extends antiDDoSForHost {
 
     private void handleServerErrors() throws PluginException {
         if (br.getURL().contains("Error.aspx")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 15 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
         }
     }
 
@@ -835,7 +846,7 @@ public class ChoMikujPl extends antiDDoSForHost {
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ChoMikujPl.AVOIDPREMIUMMP3TRAFFICUSAGE, "Account download: Prefer download of stream versions of .mp3 files in account mode?\r\n<html><b>Avoids premium traffic usage for .mp3 files!</b></html>").setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ChoMikujPl.FREE_ANONYMOUS_MODE_ALLOW_STREAM_DOWNLOAD_AS_FALLBACK, "Free (anonymous) download: Allow fallback to stream download if real file is not downloadable without account?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ChoMikujPl.DECRYPTFOLDERS, "Decrypt subfolders in folders").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ChoMikujPl.DECRYPTFOLDERS, "Crawl subfolders in folders").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "IGNORE_TRAFFIC_LIMIT", "Ignore trafficlimit in account (e.g. useful to download self uploaded files or stream download)?").setDefaultValue(false));
     }
 
