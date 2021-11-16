@@ -13,8 +13,9 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
+
+import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -29,7 +30,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "microsoft.com" }, urls = { "https?://(?:www\\.)?(?:download\\.microsoft\\.com/download/|download\\.windowsupdate\\.com)[^<>\"]+" })
 public class MicrosoftCom extends PluginForHost {
-
     public MicrosoftCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -39,41 +39,44 @@ public class MicrosoftCom extends PluginForHost {
         return "http://www.microsoft.com/en-us/legal/intellectualproperty/copyright/default.aspx";
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        final String dllink = link.getPluginPatternMatcher();
-        final String sha1 = new Regex(dllink, "_([a-f0-9]{40})\\.").getMatch(0);
+        final String sha1 = new Regex(link.getPluginPatternMatcher(), "_([a-f0-9]{40})\\.").getMatch(0);
         if (sha1 != null) {
             link.setSha1Hash(sha1);
         }
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br.openHeadConnection(link.getDownloadURL());
-            if (!con.getContentType().contains("html")) {
+            con = br.openHeadConnection(link.getPluginPatternMatcher());
+            if (this.looksLikeDownloadableContent(con)) {
                 link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con).trim()));
-                link.setDownloadSize(con.getLongContentLength());
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, link.getPluginPatternMatcher(), true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -91,5 +94,4 @@ public class MicrosoftCom extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
