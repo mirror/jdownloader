@@ -184,12 +184,9 @@ public class MixCloudCom extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         getPage(parameter);
         if (br.getRedirectLocation() != null) {
-            logger.info("Unsupported or offline link: " + parameter);
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>404 Error page|class=\"message-404\"|class=\"record-error record-404")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* TODO: Fix thumbnail support */
         final String url_thumbnail = br.getRegex("class=\"album-art\"\\s*?src=\"(http[^<>\"\\']+)\"").getMatch(0);
@@ -401,10 +398,7 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             dupes.add(id);
             String filename_prefix = "";
             String downloadurl = null;
-            if (cloudcastStreamInfo == null && !StringUtils.isEmpty(url_preview)) {
-                downloadurl = url_preview;
-                filename_prefix = "[preview] ";
-            } else {
+            if (cloudcastStreamInfo != null) {
                 /* We should have found the correct object here! */
                 // final String url_mp3_preview = (String) entries.get("previewUrl");
                 entries = (Map<String, Object>) cloudcastStreamInfo;
@@ -412,15 +406,21 @@ public class MixCloudCom extends antiDDoSForDecrypt {
                  * 2017-11-15: We can chose between dash, http or hls
                  */
                 downloadurl = (String) entries.get("url");
-                if (downloadurl == null) {
-                    /* Skip objects without streams */
-                    continue;
-                }
+            }
+            if (StringUtils.isEmpty(url_preview) && StringUtils.isEmpty(downloadurl)) {
+                /* Skip objects without streams */
+                continue;
+            }
+            if (!StringUtils.isEmpty(downloadurl)) {
                 downloadurl = decode(downloadurl);
                 if (StringUtils.isEmpty(downloadurl) || downloadurl.contains("test")) {
-                    /* Skip teststreams */
+                    /* Skip test-streams */
                     continue;
                 }
+            } else {
+                /* E.g. paid content */
+                downloadurl = url_preview;
+                filename_prefix = "[preview] ";
             }
             final String ext = getFileNameExtensionFromString(downloadurl, ".mp3");
             if (!StringUtils.endsWithCaseInsensitive(ext, ".mp3") && !StringUtils.endsWithCaseInsensitive(ext, ".m4a")) {
