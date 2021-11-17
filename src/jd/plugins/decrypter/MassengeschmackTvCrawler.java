@@ -195,8 +195,8 @@ public class MassengeschmackTvCrawler extends PluginForDecrypt {
                      * http://forum.massengeschmack.tv/showthread.php?17604-Api&p=439951#post439951
                      */
                     con = this.br.openHeadConnection(api_best_url);
-                    if (con.isOK() && !con.getContentType().contains("html")) {
-                        filesize = con.getLongContentLength();
+                    if (this.looksLikeDownloadableContent(con)) {
+                        filesize = con.getCompleteContentLength();
                         dllink = api_best_url;
                     }
                     try {
@@ -339,8 +339,8 @@ public class MassengeschmackTvCrawler extends PluginForDecrypt {
                              * http://forum.massengeschmack.tv/showthread.php?17604-Api&p=439951#post439951
                              */
                             con = br2.openHeadConnection(api_best_url);
-                            if (con.isOK() && !con.getContentType().contains("html")) {
-                                filesize = con.getLongContentLength();
+                            if (this.looksLikeDownloadableContent(con)) {
+                                filesize = con.getCompleteContentLength();
                                 dllink = api_best_url;
                             }
                             try {
@@ -394,13 +394,13 @@ public class MassengeschmackTvCrawler extends PluginForDecrypt {
                 }
             }
         }
-        boolean premiumonly_forced = false;
+        boolean premiumonlyForced = false;
         if (variants.isEmpty()) {
             /* There is only one variant (e.g. free download or hls download) */
             if (dllink == null) {
-                /* No downloadlink found --> Content is probably not available for freeusers at all */
+                /* No downloadlink found --> Content is probably not available for freeusers at all (or trailer-only) */
                 dllink = "https://massengeschmack.tv/dl/" + System.currentTimeMillis();
-                premiumonly_forced = true;
+                premiumonlyForced = true;
             } else {
                 /* TODO: Find quality-string via URL */
             }
@@ -424,8 +424,8 @@ public class MassengeschmackTvCrawler extends PluginForDecrypt {
         for (final VariantInfoMassengeschmackTv variant : variants) {
             final DownloadLink dl = this.createDownloadlink(variant.getUrl());
             setDownloadLinkProperties(dl, variant, date, channel, episodename, episodenumber, url_videoid_without_episodenumber, url_videoid, description);
-            if (premiumonly_forced) {
-                dl.setProperty("premiumonly", true);
+            if (premiumonlyForced) {
+                dl.setProperty(MassengeschmackTv.PROPERTY_PREMIUMONLY, true);
             }
             all_found_downloadlinks.put(variant.getQualityName(), dl);
         }

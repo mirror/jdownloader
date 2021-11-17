@@ -16,7 +16,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.regex.Pattern;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -24,10 +23,7 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
-import jd.http.requests.HeadRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -39,7 +35,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boyfriendtv.com", "ashemaletube.com", "pornoxo.com", "worldsex.com", "bigcamtube.com", "xogogo.com", "porneq.com" }, urls = { "https?://(?:www\\.)?boyfriendtv\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?ashemaletube\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?pornoxo\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?worldsex\\.com/videos/[a-z0-9\\-]+\\-\\d+(?:\\.html|/)?", "https?://(?:www\\.)?bigcamtube\\.com/videos/[a-z0-9\\-]+/", "https?://(?:www\\.)?xogogo\\.com/videos/\\d+/[a-z0-9\\-;]+\\.html", "https?://(?:www\\.)?porneq\\.com/video/\\d+/[a-z0-9\\-]+/?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boyfriendtv.com", "ashemaletube.com", "pornoxo.com", "worldsex.com", "bigcamtube.com", "porneq.com" }, urls = { "https?://(?:www\\.)?boyfriendtv\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?ashemaletube\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?pornoxo\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?worldsex\\.com/videos/[a-z0-9\\-]+\\-\\d+(?:\\.html|/)?", "https?://(?:www\\.)?bigcamtube\\.com/videos/[a-z0-9\\-]+/", "https?://(?:www\\.)?porneq\\.com/video/\\d+/[a-z0-9\\-]+/?" })
 public class UnknownPornScript5 extends PluginForHost {
     public UnknownPornScript5(PluginWrapper wrapper) {
         super(wrapper);
@@ -65,13 +61,8 @@ public class UnknownPornScript5 extends PluginForHost {
 
     private void setConstants(final Account account) {
         if (account == null) {
-            if ("xogogo.com".equals(getHost())) {
-                resumes = true;
-                chunks = 1;
-            } else {
-                resumes = true;
-                chunks = 0;
-            }
+            resumes = true;
+            chunks = 0;
         }
     }
 
@@ -148,9 +139,6 @@ public class UnknownPornScript5 extends PluginForHost {
             filename = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
         }
         if (filename == null) {
-            filename = br.getRegex("<title>XOgogo.com - ([^<>]+)</title>").getMatch(0);
-        }
-        if (filename == null) {
             filename = url_filename;
         }
         filename = Encoding.htmlDecode(filename).trim();
@@ -178,13 +166,7 @@ public class UnknownPornScript5 extends PluginForHost {
             final Browser br2 = br.cloneBrowser();
             br2.setFollowRedirects(true);
             try {
-                if ("xogogo.com".equals(getHost())) {
-                    dllink = Encoding.urlDecode(dllink, true) + "&start=0";
-                    final HeadRequest gr = new HeadRequest(new URL(dllink));
-                    con = br2.openRequestConnection(gr);
-                } else {
-                    con = br2.openHeadConnection(dllink);
-                }
+                con = br2.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
                     link.setDownloadSize(con.getCompleteContentLength());
                     link.setVerifiedFileSize(con.getCompleteContentLength());
@@ -307,13 +289,7 @@ public class UnknownPornScript5 extends PluginForHost {
             dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
             dl.startDownload();
         } else {
-            if ("xogogo.com".equals(getHost())) {
-                dllink = Encoding.urlDecode(dllink, true) + "&start=0";
-                final Request gr = new GetRequest(new URL(dllink));
-                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, gr, resumes, chunks);
-            } else {
-                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
-            }
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection(true);
