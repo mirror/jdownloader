@@ -42,6 +42,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -97,7 +98,7 @@ public class MassengeschmackTv extends PluginForHost {
     public static final String  default_EXT                               = ".mp4";
     private static Object       LOCK                                      = new Object();
     private String              dllink                                    = null;
-    private boolean             is_premiumonly_content                    = false;
+    public static final String  PROPERTY_PREMIUMONLY                      = "premiumonly";
 
     /**
      * Using API wherever possible:<br />
@@ -107,31 +108,31 @@ public class MassengeschmackTv extends PluginForHost {
      * Example: https://massengeschmack.tv/dlr/sakura-1/best.mp4<br />
      */
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        /* TODO: Improve this case because at the moment, such URLs are not downloadable at all! */
-        this.is_premiumonly_content = downloadLink.getBooleanProperty("premiumonly", false);
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         /* URLs added until revision 39587 are not compatible with the current revision anymore */
-        if (!new Regex(downloadLink.getPluginPatternMatcher(), this.getSupportedLinks()).matches()) {
+        if (!new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* TODO: Check for expiring direct-urls! */
-        dllink = downloadLink.getPluginPatternMatcher();
+        dllink = link.getPluginPatternMatcher();
         if (dllink.contains(".m3u8") || dllink.contains(".mp4")) {
-            downloadLink.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+            link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         }
         this.br.setFollowRedirects(true);
-        if (!dllink.contains(".m3u8") && !this.is_premiumonly_content) {
+        if (!dllink.contains(".m3u8") && !isPremiumOnly(link)) {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
                 if (con.getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                if (!con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
-                    if (downloadLink.getFinalFileName() == null) {
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    if (link.getFinalFileName() == null) {
                         /* E.g. user added direct-URLs directly, without decrypter. */
-                        downloadLink.setFinalFileName(getFileNameFromHeader(con));
+                        link.setFinalFileName(getFileNameFromHeader(con));
                     }
                 }
             } finally {
@@ -142,6 +143,14 @@ public class MassengeschmackTv extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private boolean isPremiumOnly(final DownloadLink link) {
+        if (link.hasProperty(PROPERTY_PREMIUMONLY)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -395,20 +404,27 @@ public class MassengeschmackTv extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
+        if (this.isPremiumOnly(link)) {
+            throw new AccountRequiredException();
+        }
         requestFileInformation(link);
         if (inValidate(dllink)) {
             /* 2018-07-19: Keep it simple: No downloadlink --> Probably premiumonly content! */
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            throw new AccountRequiredException();
         }
         if (dllink.contains(".m3u8")) {
             downloadHLS(link);
         } else {
             /* More chunks work but download will stop at random point! */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 handleKnownServerResponsecodes(dl.getConnection().getResponseCode());
                 logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unbekannter Serverfehler", 30 * 60 * 1000l);
             }
             dl.startDownload();
@@ -423,7 +439,7 @@ public class MassengeschmackTv extends PluginForHost {
          * This may not necessarily mean that it is only for premium. Sometimes a free account might be enough to download such content e.g.
          * https://massengeschmack.tv/play/fktv148
          */
-        if (this.is_premiumonly_content) {
+        if (isPremiumOnly(link) && account.getType() != AccountType.PREMIUM) {
             /*
              * Different accounts have different shows - so a premium account must not necessarily have the rights to view/download
              * everything!
@@ -440,9 +456,13 @@ public class MassengeschmackTv extends PluginForHost {
             /* http download */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
             handleKnownServerResponsecodes(dl.getConnection().getResponseCode());
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unbekannter Serverfehler", 30 * 60 * 1000l);
             }
             dl.startDownload();
