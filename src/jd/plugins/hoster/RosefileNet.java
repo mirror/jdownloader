@@ -317,7 +317,7 @@ public class RosefileNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
     @Override
