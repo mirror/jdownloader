@@ -60,16 +60,16 @@ public class ChoMikujPl extends antiDDoSForHost {
     private static final String  ACCESSDENIED                                          = "Nie masz w tej chwili uprawnień do tego pliku lub dostęp do niego nie jest w tej chwili możliwy z innych powodów\\.";
     private final String         VIDEOENDINGS                                          = "\\.(avi|flv|mp4|mpg|rmvb|divx|wmv|mkv)";
     private static final String  MAINPAGE                                              = "https://chomikuj.pl/";
-    /* Pluging settings */
+    /* Plugin settings */
     public static final String   DECRYPTFOLDERS                                        = "DECRYPTFOLDERS";
     private static final String  AVOIDPREMIUMMP3TRAFFICUSAGE                           = "AVOIDPREMIUMMP3TRAFFICUSAGE";
     private static final String  FREE_ANONYMOUS_MODE_ALLOW_STREAM_DOWNLOAD_AS_FALLBACK = "FREE_ANONYMOUS_MODE_ALLOW_STREAM_DOWNLOAD_AS_FALLBACK";
+    private static final String  IGNORE_TRAFFIC_LIMIT                                  = "IGNORE_TRAFFIC_LIMIT";
     private Browser              cbr                                                   = null;
     private static final int     free_maxchunks                                        = 1;
     private static final boolean free_resume                                           = false;
     private static final int     free_maxdls                                           = -1;
     private static final int     account_maxchunks                                     = 0;
-    /* TODO: Verify if premium users really can resume */
     private static final boolean account_resume                                        = true;
     private static final int     account_maxdls                                        = -1;
     private boolean              plus18                                                = false;
@@ -106,12 +106,12 @@ public class ChoMikujPl extends antiDDoSForHost {
     }
 
     private String getMainlink(final DownloadLink link) {
-        String mainlink = link.getStringProperty("mainlink", null);
-        if (mainlink == null) {
-            /* 2020-02-27 */
-            mainlink = link.getContentUrl();
+        final String mainlink = link.getStringProperty(jd.plugins.decrypter.ChoMikujPl.PROPERTY_MAINLINK);
+        if (mainlink != null) {
+            return mainlink;
+        } else {
+            return link.getContentUrl();
         }
-        return mainlink;
     }
 
     @Override
@@ -131,7 +131,6 @@ public class ChoMikujPl extends antiDDoSForHost {
         final String mainlink = getMainlink(link);
         if (fid == null) {
             /* This should never happen! */
-            logger.info("Failed to find fileid");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (account != null) {
@@ -143,13 +142,13 @@ public class ChoMikujPl extends antiDDoSForHost {
             if (isDownload) {
                 this.passwordHandling(link, account);
             }
-            if (this.br.getHttpConnection().getResponseCode() == 404) {
+            if (this.br.getHttpConnection() != null && this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (requiresPasswordPrompt(br)) {
                 logger.info("Cannot fetch file information because password is required");
                 return AvailableStatus.TRUE;
             } else if (!br.containsHTML(fid)) {
-                /* html must contain fileid - if not, content should be offline (e.g. redirect to upper folder or errorpage) */
+                /* html must contain fileid - if not, content is assumed to be offline (e.g. redirect to upper folder or errorpage) */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String filesize = br.getRegex("<p class=\"fileSize\">([^<>\"]*?)</p>").getMatch(0);
@@ -205,7 +204,7 @@ public class ChoMikujPl extends antiDDoSForHost {
         login(account, true);
         final String remainingTraffic = br.getRegex("<strong>([^<>\"]*?)</strong>[\t\n\r ]+transferu").getMatch(0);
         if (remainingTraffic != null) {
-            if (this.getPluginConfig().getBooleanProperty("IGNORE_TRAFFIC_LIMIT", false) || this.getPluginConfig().getBooleanProperty(ChoMikujPl.AVOIDPREMIUMMP3TRAFFICUSAGE, false)) {
+            if (this.getPluginConfig().getBooleanProperty(ChoMikujPl.IGNORE_TRAFFIC_LIMIT, false) || this.getPluginConfig().getBooleanProperty(ChoMikujPl.AVOIDPREMIUMMP3TRAFFICUSAGE, false)) {
                 /*
                  * Uploaders can always download their OWN files no matter how much traffic they have left and downloading streams does not
                  * use up any traffic.
@@ -378,6 +377,7 @@ public class ChoMikujPl extends antiDDoSForHost {
         }
     }
 
+    /** Returns true if some kind of folder password needs to be entered into a Form according to given browsers' HTML code. */
     private static boolean requiresPasswordPrompt(final Browser br) {
         if (jd.plugins.decrypter.ChoMikujPl.isFolderPasswordProtected(br)) {
             return true;
@@ -393,7 +393,7 @@ public class ChoMikujPl extends antiDDoSForHost {
         if (filename == null) {
             filename = dl.getName();
         }
-        if (filename.contains(".")) {
+        if (filename != null && filename.contains(".")) {
             final String ext = filename.substring(filename.lastIndexOf("."));
             if (ext.matches(VIDEOENDINGS)) {
                 return true;
@@ -539,7 +539,7 @@ public class ChoMikujPl extends antiDDoSForHost {
     }
 
     private String getFID(final DownloadLink dl) {
-        return dl.getStringProperty("fileid");
+        return dl.getStringProperty(jd.plugins.decrypter.ChoMikujPl.PROPERTY_FILEID);
     }
 
     @Override
@@ -729,6 +729,7 @@ public class ChoMikujPl extends antiDDoSForHost {
         }
     }
 
+    /** Checks for presence of logged-in cookie. */
     private boolean isLoggedIn(final Browser br) {
         return br.getCookie(MAINPAGE, "RememberMe", Cookies.NOTDELETEDPATTERN) != null;
     }
@@ -847,7 +848,7 @@ public class ChoMikujPl extends antiDDoSForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ChoMikujPl.AVOIDPREMIUMMP3TRAFFICUSAGE, "Account download: Prefer download of stream versions of .mp3 files in account mode?\r\n<html><b>Avoids premium traffic usage for .mp3 files!</b></html>").setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ChoMikujPl.FREE_ANONYMOUS_MODE_ALLOW_STREAM_DOWNLOAD_AS_FALLBACK, "Free (anonymous) download: Allow fallback to stream download if real file is not downloadable without account?").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ChoMikujPl.DECRYPTFOLDERS, "Crawl subfolders in folders").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "IGNORE_TRAFFIC_LIMIT", "Ignore trafficlimit in account (e.g. useful to download self uploaded files or stream download)?").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ChoMikujPl.IGNORE_TRAFFIC_LIMIT, "Ignore trafficlimit in account (e.g. useful to download self uploaded files or stream download)?").setDefaultValue(false));
     }
 
     @Override
