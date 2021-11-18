@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.io.IOException;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
@@ -54,12 +55,12 @@ public class LinkzGe extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
         br.setCookie(COOKIE_HOST, "yab_mylang", "en");
-        br.getPage(parameter.getDownloadURL());
+        br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("&code=DL_FileNotFound") || br.containsHTML("(Your requested file is not found|No file found)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -68,19 +69,19 @@ public class LinkzGe extends PluginForHost {
         if (filename == null || filename.matches("")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        parameter.setFinalFileName(filename.trim());
+        link.setFinalFileName(filename.trim());
         if (filesize != null) {
-            parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        requestFileInformation(downloadLink);
+        requestFileInformation(link);
         if (br.containsHTML("value=\"Free Users\"")) {
-            br.postPage(downloadLink.getDownloadURL(), "Free=Free+Users");
+            br.postPage(link.getDownloadURL(), "Free=Free+Users");
         } else if (br.getFormbyProperty("name", "entryform1") != null) {
             br.submitForm(br.getFormbyProperty("name", "entryform1"));
         }
@@ -93,19 +94,19 @@ public class LinkzGe extends PluginForHost {
             rc.setId(rcID);
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode("recaptcha", cf, downloadLink);
-            ajaxBR.postPage(downloadLink.getDownloadURL(), "downloadverify=1&d=1&recaptcha_response_field=" + c + "&recaptcha_challenge_field=" + rc.getChallenge());
+            String c = getCaptchaCode("recaptcha", cf, link);
+            ajaxBR.postPage(link.getDownloadURL(), "downloadverify=1&d=1&recaptcha_response_field=" + c + "&recaptcha_challenge_field=" + rc.getChallenge());
             if (ajaxBR.containsHTML("incorrect\\-captcha\\-sol")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         } else if (br.containsHTML(this.getHost() + "/captcha\\.php\"")) {
-            final String code = getCaptchaCode("mhfstandard", "/captcha.php?rand=" + System.currentTimeMillis(), downloadLink);
-            ajaxBR.postPage(downloadLink.getDownloadURL(), "downloadverify=1&d=1&captchacode=" + code);
+            final String code = getCaptchaCode("mhfstandard", "/captcha.php?rand=" + System.currentTimeMillis(), link);
+            ajaxBR.postPage(link.getDownloadURL(), "downloadverify=1&d=1&captchacode=" + code);
             if (ajaxBR.containsHTML("Captcha number error or expired")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         } else {
-            ajaxBR.postPage(downloadLink.getDownloadURL(), "downloadverify=1&d=1");
+            ajaxBR.postPage(link.getDownloadURL(), "downloadverify=1&d=1");
         }
         if (ajaxBR.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Host issue");
@@ -129,11 +130,15 @@ public class LinkzGe extends PluginForHost {
         if (waittime != null) {
             wait = Integer.parseInt(waittime);
         }
-        sleep(wait * 1001l, downloadLink);
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, finalLink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML(">AccessKey is expired, please request")) {
+        sleep(wait * 1001l, link);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finalLink, false, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            if (br.containsHTML(">\\s*AccessKey is expired, please request")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL server error, waittime skipped?");
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -147,7 +152,7 @@ public class LinkzGe extends PluginForHost {
     }
 
     private String findLink(final Browser br) throws Exception {
-        return br.getRegex("(http://[a-z0-9\\-\\.]{5,30}/getfile\\.php\\?id=\\d+[^<>\"\\']*?)(\"|\\')").getMatch(0);
+        return br.getRegex("(http://[a-z0-9\\-\\.]{5,30}/getfile\\.php\\?id=[A-Za-z0-9]+[^<>\"\\']*?)(\"|\\')").getMatch(0);
     }
 
     private String getData(final String data) {
