@@ -81,9 +81,9 @@ public class PcWeltDe extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        final String undefined_downloadlink = br.getRegex("itemprop=\"url\"(?: rel=\"nofollow\")? href=\"(http[^<>\"]*?)\"").getMatch(0);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        final String undefined_downloadlink = br.getRegex("itemprop=\"url\"(?: rel=\"nofollow[^\"]*\")? href=\"(http[^<>\"]*?)\"").getMatch(0);
         String dllink = br.getRegex("href=\"(http[^<>\"]+?download\\.pcwelt\\.de[^<>\"]+)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("(http[^<>\"]+?pcwelt.de[^<>\"]+?download_file[^<>\"]+?)\"").getMatch(0);
@@ -97,12 +97,21 @@ public class PcWeltDe extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            /* Check for redirect to external website */
+            if (!br.getHost().contains(this.getHost())) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Nicht downloadbar: externe Downloadquelle");
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+        link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
     }
 
