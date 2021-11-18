@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
@@ -57,7 +58,11 @@ public class PandafilesCom extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:d/[A-Za-z0-9]+|(?:embed-)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?|[A-Za-z0-9]+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -87,6 +92,24 @@ public class PandafilesCom extends XFileSharingProBasic {
         } else {
             /* Free(anonymous) and unknown account type */
             return -2;
+        }
+    }
+
+    @Override
+    protected URL_TYPE getURLType(final String url) {
+        if (url == null) {
+            return null;
+        } else {
+            final String fileID = new Regex(url, "^https?://[^/]+/([A-Za-z0-9]+)$").getMatch(0);
+            if (url.matches("(?i)^https?://[^/]+/d/([a-z0-9]+).*")) {
+                return URL_TYPE.SHORT;
+            } else if (fileID != null && !fileID.matches("[a-z0-9]{12}")) {
+                /* E.g. https://pandafiles.com/1Gh7 */
+                return URL_TYPE.SHORT;
+            } else {
+                /* Resign to upper handling -> We should have a known URL-Type. */
+                return super.getURLType(url);
+            }
         }
     }
 

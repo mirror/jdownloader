@@ -38,7 +38,6 @@ import jd.plugins.PluginForHost;
 public class PdfdriveCom extends PluginForHost {
     public PdfdriveCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("");
     }
 
     @Override
@@ -65,7 +64,7 @@ public class PdfdriveCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-z0-9\\-]+)-e(\\d+)\\.html");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-z0-9\\-]+)-(?:e|d)(\\d+)\\.html");
         }
         return ret.toArray(new String[0]);
     }
@@ -75,12 +74,6 @@ public class PdfdriveCom extends PluginForHost {
     /* 2020-12-01: More chunks possible but let's not stress their servers too much. */
     private static final int     FREE_MAXCHUNKS    = 1;
     private static final int     FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -104,7 +97,7 @@ public class PdfdriveCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
+        br.getPage(buildContentURL(link));
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.toString().length() < 100) {
@@ -130,15 +123,22 @@ public class PdfdriveCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @Override
-    public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    private String buildContentURL(final DownloadLink link) {
+        final Regex linkinfo = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks());
+        final String countryCode = linkinfo.getMatch(0);
+        final String fileID = linkinfo.getMatch(1);
+        return "https://www." + this.getHost() + "/" + countryCode + "-e" + fileID + ".html";
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    }
+
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
+            requestFileInformation(link);
             /* This will skip one download step + pre-download-waittime! */
             final String session = br.getRegex("session=([a-f0-9]+)").getMatch(0);
             if (session == null) {
@@ -166,8 +166,12 @@ public class PdfdriveCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else if (br.toString().length() <= 100) {
+                /* Text errormessage e.g. 'Preview not available for this file, try downloading instead' --> Broken file/download */
+                throw new PluginException(LinkStatus.ERROR_FATAL, br.toString());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
@@ -182,7 +186,12 @@ public class PdfdriveCom extends PluginForHost {
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                     return dllink;
+                } else {
+                    throw new IOException();
                 }
             } catch (final Exception e) {
                 logger.log(e);

@@ -1343,7 +1343,13 @@ public class YetiShareCore extends antiDDoSForHost {
          * Now check for errors which checkErrorsLanguageIndependant failed to handle
          */
         checkErrorsURL(br, link, account);
-        if (br.toString().equalsIgnoreCase("unknown user")) {
+        if (br.containsHTML(">\\s*File is not publicly available")) {
+            /*
+             * 2021-11-18: Spotted on YetiShareNew (oxyclod.com) on file info page (URL ending with "~i") --> Treat file as offline if this
+             * happens!
+             */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.toString().equalsIgnoreCase("unknown user")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Unknown user'", 30 * 60 * 1000l);
         } else if (br.toString().equalsIgnoreCase("ERROR: Wrong IP")) {
             /*
@@ -1407,7 +1413,8 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * @return true = file is offline, false = file is online </br>
-     *         Be sure to always call checkErrors before calling this!
+     *         Be sure to always call checkErrors before calling this! </br>
+     *         Do not call this on file info page (URL ending with "~i")!
      * @throws Exception
      */
     protected boolean isOfflineWebsite(final Browser br, final DownloadLink link) throws Exception {

@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -33,9 +35,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "HTTPDirectoryCrawler" }, urls = { "" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "HTTPDirectoryCrawler", "brooksideepisodes.com" }, urls = { "", "https?://(?:www\\.)brooksideepisodes\\.com/.+" })
 public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
     public GenericHTTPDirectoryIndexCrawler(PluginWrapper wrapper) {
         super(wrapper);
