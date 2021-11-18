@@ -45,7 +45,7 @@ public class MyFilesSu extends PluginForHost {
 
     /* Connection stuff */
     private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 0;
+    private static final int     FREE_MAXCHUNKS    = -10; // 2021-11-18
     private static final int     FREE_MAXDOWNLOADS = 20;
 
     @Override
@@ -77,7 +77,7 @@ public class MyFilesSu extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(500);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!this.br.containsHTML("FileProperties")) {
@@ -109,13 +109,13 @@ public class MyFilesSu extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
+            requestFileInformation(link);
             dllink = new Regex(this.br.toString(), Pattern.compile("\"(https?://[^/]+/Save/[^<>\"\\']+)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("itemprop=\"url\" href=\"(http[^<>\"]+)\"").getMatch(0);
