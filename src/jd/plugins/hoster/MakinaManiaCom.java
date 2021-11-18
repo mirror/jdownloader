@@ -16,14 +16,11 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -36,9 +33,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "makinamania.net" }, urls = { "https?://(?:www\\.)?makinamania\\.(com|net)/((download/|descargar\\-).+|index\\.php\\?action=dlattach;topic=\\d+(?:\\.0)?;attach=\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "makinamania.net" }, urls = { "https?://(?:www\\.)?makinamania\\.(?:com|net)/((download/|descargar\\-).+|index\\.php\\?action=dlattach;topic=\\d+(?:\\.0)?;attach=\\d+)" })
 public class MakinaManiaCom extends PluginForHost {
     public MakinaManiaCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -50,12 +46,10 @@ public class MakinaManiaCom extends PluginForHost {
         return "http://www.makinamania.net/";
     }
 
-    private static final String NOCHUNKS         = "NOCHUNKS";
     private static final String ATTACHEDFILELINK = ".+/index\\.php\\?action=dlattach;topic=\\d+(?:\\.0)?;attach=\\d+";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
         br.setFollowRedirects(true);
         if (link.getPluginPatternMatcher().matches(ATTACHEDFILELINK)) {
             URLConnectionAdapter con = null;
@@ -76,16 +70,18 @@ public class MakinaManiaCom extends PluginForHost {
                 }
             }
         } else {
-            br.getPage(link.getDownloadURL());
+            br.getPage(link.getPluginPatternMatcher());
             if (br.getURL().contains("descargas-busca=")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-            final String filesize = br.getRegex("\\&nbsp;\\&nbsp;Tamaño: ([^<>\"]*?)<br").getMatch(0);
-            if (filename == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String filesize = br.getRegex("(?i)\\&nbsp;\\&nbsp;Tamaño\\s*: ([^<>\"]*?)<br").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("Tama.o\\s*:\\s*(\\d+[^<>\"]+)<").getMatch(0);
             }
-            link.setName(Encoding.htmlDecode(filename.trim()));
+            if (filename != null) {
+                link.setName(Encoding.htmlDecode(filename.trim()));
+            }
             if (filesize != null) {
                 link.setDownloadSize(SizeFormatter.getSize(filesize));
             }
@@ -93,62 +89,27 @@ public class MakinaManiaCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        if (link.getPluginPatternMatcher().matches(ATTACHEDFILELINK)) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), false, 1);
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                logger.warning("The final dllink seems not to be a file!");
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl.startDownload();
-        } else {
-            throw new AccountRequiredException();
-        }
+        this.handleDownload(link, null);
     }
 
-    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
-                // Load cookies
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(this.getHost(), key, value);
-                        }
-                        return;
-                    }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    /* TODO: Add cookie-check if force == true */
+                    logger.info("Trust cookies without login");
+                    br.setCookies(cookies);
+                    return;
                 }
                 br.postPage("http://www.makinamania.net/index.php?action=login2", "&user=" + Encoding.urlEncode(account.getUser()) + "&passwrd=" + Encoding.urlEncode(account.getPass()) + "&cookielength=999&hash_passwrd=");
                 if (br.getRedirectLocation() == null || !br.getRedirectLocation().contains("sa=check")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(this.getHost());
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
@@ -178,7 +139,7 @@ public class MakinaManiaCom extends PluginForHost {
             br.setFollowRedirects(false);
             dllink = br.getRegex("\"javascript:download\\(\\'(https?://[^<>\"]*?)\\'\\)").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("(\"|\\')(https?://machines\\.makinamania\\.(?:com|net)/descargas/descarga\\.php\\?id=[^<>\"]*?)(\"|\\')").getMatch(1);
+                dllink = br.getRegex("(\"|\\')(https?://machines\\.[^/]+/descargas/descarga\\.php\\?id=[^<>\"]*?)(\"|\\')").getMatch(1);
             }
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
@@ -197,11 +158,7 @@ public class MakinaManiaCom extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        int chunks = 0;
-        if (link.getBooleanProperty(MakinaManiaCom.NOCHUNKS, false)) {
-            chunks = 1;
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, chunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
             try {
@@ -215,21 +172,65 @@ public class MakinaManiaCom extends PluginForHost {
         if (dl.getConnection().getLongContentLength() == 0) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
         }
-        if (!this.dl.startDownload()) {
-            try {
-                if (dl.externalDownloadStop()) {
-                    return;
-                }
-            } catch (final Throwable e) {
+        dl.startDownload();
+    }
+
+    public void handleDownload(final DownloadLink link, final Account account) throws Exception {
+        if (account != null) {
+            login(account, false);
+        }
+        requestFileInformation(link);
+        String dllink = null;
+        if (link.getPluginPatternMatcher().matches(ATTACHEDFILELINK)) {
+            dllink = link.getPluginPatternMatcher();
+        } else {
+            br.setFollowRedirects(true);
+            br.getPage(link.getPluginPatternMatcher());
+            dllink = br.getRegex("\"javascript:download\\(\\'(https?://[^<>\"]*?)\\'\\)").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("(\"|\\')(https?://machines\\.[^/]+/descargas/descarga\\.php\\?id=[^<>\"]*?)(\"|\\')").getMatch(1);
             }
-            if (link.getLinkStatus().getErrorMessage() != null && link.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
-                /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(MakinaManiaCom.NOCHUNKS, false) == false) {
-                    link.setProperty(MakinaManiaCom.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
+            if (dllink == null) {
+                if (account != null) {
+                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    /* Assume that account is required to download this file. */
+                    throw new AccountRequiredException();
                 }
+            }
+            br.setFollowRedirects(false);
+            br.getPage(dllink);
+            if (br.containsHTML("No se ha encontrado el archivo")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            dllink = br.getRedirectLocation();
+            if (dllink == null) {
+                logger.warning("Failed to find expected redirect to final downloadurl");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            logger.warning("The final dllink seems not to be a file!");
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String filenameHeader = getFileNameFromHeader(dl.getConnection());
+        if (filenameHeader != null) {
+            link.setFinalFileName(Encoding.htmlDecode(filenameHeader));
+        }
+        if (dl.getConnection().getLongContentLength() == 0) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+        }
+        dl.startDownload();
     }
 
     @Override

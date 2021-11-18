@@ -398,7 +398,7 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
         final Browser js = br.cloneBrowser();
         js.getHeaders().put("Accept", "*/*");
         /* E.g. working fine for stern.de */
-        String bcJSURL = br.getRegex("<script src=(\"|')(//players\\.brightcove\\.net/" + accountID + "/.*?)\\1></script>").getMatch(1);
+        String bcJSURL = br.getRegex("<script src=(\"|')(//players\\.brightcove\\.net/" + accountID + "/[^>]*?)\\1[^>]*></script>").getMatch(1);
         if (StringUtils.isEmpty(bcJSURL)) {
             /* E.g. required for about.com */
             final String dataPlayer = br.getRegex("data\\-player=\"([^<>\"]+)\"").getMatch(0);
