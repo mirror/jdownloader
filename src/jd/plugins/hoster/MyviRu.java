@@ -15,11 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.LinkedHashMap;
+import java.io.IOException;
+import java.util.Map;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -29,8 +31,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvi.ru" }, urls = { "https?://(?:www\\.)?myvi\\.ru/(watch/[^/#\\?]+|[A-Za-z]{2}/flash/player/[A-Za-z0-9_\\-]+|player/embed/html/[A-Za-z0-9_\\-]+)" })
 public class MyviRu extends PluginForHost {
@@ -60,16 +60,16 @@ public class MyviRu extends PluginForHost {
 
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
         temp_unavailable = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String filename = null;
         final String html_embed_url;
-        if (downloadLink.getDownloadURL().matches(TYPE_NORMAL)) {
+        if (link.getDownloadURL().matches(TYPE_NORMAL)) {
             /* Normal video url */
-            br.getPage(downloadLink.getDownloadURL());
+            br.getPage(link.getDownloadURL());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (this.br.getURL().contains("myvi.ru/coming-soon?aspxerrorpath")) {
@@ -78,7 +78,7 @@ public class MyviRu extends PluginForHost {
             }
             filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             if (filename == null) {
-                filename = new Regex(downloadLink.getDownloadURL(), "myvi\\.ru/watch/(.+)").getMatch(0);
+                filename = new Regex(link.getDownloadURL(), "myvi\\.ru/watch/(.+)").getMatch(0);
             }
             html_embed_url = br.getRegex("(//(myvi|netvi)\\.ru/player/embed/html/[^<>\"/]+)").getMatch(0);
             if (html_embed_url == null) {
@@ -91,7 +91,7 @@ public class MyviRu extends PluginForHost {
              * Embed url --> We could simply find the normal URL and continue from there but we can save 1 request by directly accessing our
              * html_embed_url
              */
-            final String video_embed_id = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9_\\-]+)$").getMatch(0);
+            final String video_embed_id = new Regex(link.getDownloadURL(), "([A-Za-z0-9_\\-]+)$").getMatch(0);
             html_embed_url = "http://myvi.ru/player/embed/html/" + video_embed_id;
             this.br.getPage(html_embed_url);
             if (br.getHttpConnection().getResponseCode() == 404) {
@@ -99,7 +99,7 @@ public class MyviRu extends PluginForHost {
             }
             final String videojson = this.br.getRegex("sprutoData:(\\{.+\\}),").getMatch(0);
             try {
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(videojson);
+                final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(videojson);
                 /*
                  * This is a possible direct way to find our final downloadlink but lets prefer the API as formats of this json can differ
                  * (last time I got a .flv - API usually delivers .mp4).
@@ -125,23 +125,20 @@ public class MyviRu extends PluginForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        downloadLink.setFinalFileName(filename);
+        link.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            try {
-                con = br2.openHeadConnection(dllink);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            con = br2.openHeadConnection(dllink);
+            if (this.looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -152,19 +149,23 @@ public class MyviRu extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (temp_unavailable) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is not available at the moment", 30 * 60 * 1000l);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {
