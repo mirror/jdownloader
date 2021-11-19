@@ -22,6 +22,8 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "perfectgirls.net", "perfektdamen.co" }, urls = { "https?://([a-z]+\\.)?(perfectgirls\\.net/\\d{2,}/|(www|wwr|ipad|m)\\.perfectgirls\\.net/gal/\\d+/[A-Za-z0-9\\-_]+)", "https?://(?:www\\.)?perfektdamen\\.co/gal/\\d+/[A-Za-z0-9\\-_]+" })
 public class PerfectGirlsNet extends PornEmbedParser {
@@ -31,12 +33,12 @@ public class PerfectGirlsNet extends PornEmbedParser {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replaceAll("(ipad|m)\\.perfectgirls\\.net/", "perfectgirls.net/").replace("perfektdamen.co/", "perfectgirls.net/");
+        final String newurl = correctURL(param.getCryptedUrl());
+        param.setCryptedUrl(newurl);
         br.setFollowRedirects(true);
-        br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("No htmlCode read")) {
-            decryptedLinks.add(createOfflinelink(parameter, "Offline Content"));
-            return decryptedLinks;
+        br.getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404 || br.toString().length() <= 100) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?) ::: PERFECT GIRLS</title>").getMatch(0);
         if (!br.containsHTML("<source src=[^<>]+cdn\\.perfectgirls\\.net")) {
@@ -45,7 +47,7 @@ public class PerfectGirlsNet extends PornEmbedParser {
                 return decryptedLinks;
             }
         }
-        final DownloadLink main = createDownloadlink(parameter);
+        final DownloadLink main = createDownloadlink(param.getCryptedUrl());
         if (br.containsHTML("src=\"http://(www\\.)?dachix\\.com/flashplayer/flvplayer\\.swf\"|\"http://(www\\.)?deviantclip\\.com/flashplayer/flvplayer\\.swf\"|thumbs/misc/not_available\\.gif")) {
             main.setAvailable(false);
             main.setProperty("offline", true);
@@ -55,6 +57,10 @@ public class PerfectGirlsNet extends PornEmbedParser {
         }
         decryptedLinks.add(main);
         return decryptedLinks;
+    }
+
+    public static String correctURL(final String input) {
+        return input.replaceAll("(ipad|m)\\.perfectgirls\\.net/", "perfectgirls.net/").replace("perfektdamen.co/", "perfectgirls.net/");
     }
 
     public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {

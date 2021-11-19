@@ -21,10 +21,14 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class IndiShareMe extends XFileSharingProBasic {
@@ -56,7 +60,7 @@ public class IndiShareMe extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "indishare.cc", "indi-share.com", "indishare.org", "indishare.co", "indishare.com", "indishare.me" });
+        ret.add(new String[] { "indishare.org", "indishare.cc", "indi-share.com", "indishare.co", "indishare.com", "indishare.me" });
         return ret;
     }
 
@@ -107,5 +111,68 @@ public class IndiShareMe extends XFileSharingProBasic {
     public boolean requiresWWW() {
         /* 2019-06-05: Special */
         return true;
+    }
+
+    private boolean workaround1Done = false;
+    private boolean workaround2Done = false;
+
+    @Override
+    protected void getPage(final Browser ibr, final String page) throws Exception {
+        super.getPage(ibr, page);
+        if (!workaround1Done) {
+            /* Usually to "https://dl.indishare.cc/..." */
+            final String newURL = br.getRegex(">\\s*Site Moved to New Address\\s*<a href=\"(https?://[^/]+/[a-z0-9]{12})\"").getMatch(0);
+            if (newURL != null) {
+                final boolean oldFollowRedirects = br.isFollowingRedirects();
+                br.setFollowRedirects(true);
+                br.getPage(newURL);
+                workaround1Done = true;
+                br.setFollowRedirects(oldFollowRedirects);
+            }
+        }
+    }
+
+    @Override
+    protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        if (containsFakeError(br)) {
+            /* Workaround */
+            return;
+        } else {
+            super.checkErrors(br, html, link, account, checkAll);
+        }
+    }
+
+    @Override
+    protected boolean isOffline(final DownloadLink link, final Browser br, final String correctedBR) {
+        if (containsFakeError(br)) {
+            return false;
+        } else if (super.isOffline(link, br, correctedBR)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private boolean containsFakeError(final Browser br) {
+        if (br.getHttpConnection().getResponseCode() == 404 && br.getHost(true).equals("indi-share.com")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public Form findFormDownload1Free(final Browser br) throws Exception {
+        final String specialAction = br.getRegex("<a href=\"(https?://techmyntra\\.net/[a-z0-9]{12})\"").getMatch(0);
+        if (!workaround2Done && specialAction != null) {
+            /* 2021-11-19: Redirect to fake blog containing download2 Form. */
+            final Form form = new Form();
+            form.setAction(specialAction);
+            form.setMethod(MethodType.GET);
+            workaround2Done = true;
+            return form;
+        } else {
+            return super.findFormDownload1Free(br);
+        }
     }
 }

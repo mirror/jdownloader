@@ -58,6 +58,13 @@ public class PerfectGirlsNet extends PluginForHost {
     }
 
     @Override
+    public void correctDownloadLink(final DownloadLink link) throws Exception {
+        if (link.getPluginPatternMatcher() != null) {
+            link.setPluginPatternMatcher(jd.plugins.decrypter.PerfectGirlsNet.correctURL(link.getPluginPatternMatcher()));
+        }
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
