@@ -829,7 +829,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 /* Wider attempt */
                 foundQualities = 0;
                 logger.info("Crawling crypted qualities 2");
-                final String functions[] = br.getRegex("(function/0/https?://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"]*?)(?:\\&amp|'|\")").getColumn(0);
+                final String functions[] = br.getRegex("(function/0/https?://[A-Za-z0-9\\.\\-/]+/get_file/[^<>\"]*?)(?:\\&amp|'|\")").getColumn(0);
                 if (functions.length > 0) {
                     logger.info("Found " + functions.length + " possible crypted downloadurls");
                     for (final String cryptedDllinkTmp : functions) {
@@ -869,7 +869,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
              * required): fapality.com, xcum.com, camwhoresbay.com
              */
             /* Example relative URLs: shooshtime.com */
-            final String[] dlURLs = br.getRegex("((?:https?://[A-Za-z0-9\\.\\-]+)?/get_file/[^<>\"]*?)(?:'|\")").getColumn(0);
+            final String[] dlURLs = br.getRegex("((?:https?://[A-Za-z0-9\\.\\-/]+)?/get_file/[^<>\"\\']*?)(?:'|\")").getColumn(0);
             int foundQualities = 0;
             for (final String dllinkTmp : dlURLs) {
                 if (!isValidDirectURL(dllinkTmp)) {

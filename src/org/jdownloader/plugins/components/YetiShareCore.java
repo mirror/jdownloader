@@ -443,11 +443,31 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * Tries to find filename and filesize inside html. On Override, make sure to first use your special RegExes e.g. fileInfo[0]="bla",
-     * THEN, if needed, call super.scanInfo(fileInfo). <br />
-     * fileInfo[0] = filename, fileInfo[1] = filesize
+     * THEN, if needed, call super.scanInfo(fileInfo). </br>
+     * fileInfo[0] = filename, fileInfo[1] = filesize </br>
+     * TODO: 2021-11-19: Clean this up - it is a mess!
      */
     public String[] scanInfo(final DownloadLink link, final String[] fileInfo) {
         if (supports_availablecheck_over_info_page(link)) {
+            if (this.isNewYetiShareVersion(null)) {
+                /*
+                 * 2021-11-19: YetiShare sometimes have a bug where it URL-encodes "_20" to "%20" but at this place this bug does not occur
+                 * --> Prefer to get filename from here.
+                 */
+                final String betterFilename = br.getRegex("(?i)>\\s*File Page Link\\s*</span>\\s*<pre>https?://[^/]+/[A-Za-z0-9]+/([^<]+)</pre>").getMatch(0);
+                if (betterFilename != null) {
+                    fileInfo[0] = betterFilename;
+                }
+                /** 2021-01-07: Traits for the new style YetiShare layout --> See {@link #isNewYetiShareVersion()} */
+                /* 2020-10-12: Special */
+                final String betterFilesize = br.getRegex("Filesize\\s*:\\s*</span>\\s*<span>([^<>\"]+)<").getMatch(0);
+                if (!StringUtils.isEmpty(betterFilesize)) {
+                    fileInfo[1] = betterFilesize;
+                }
+                if (betterFilename != null && betterFilesize != null) {
+                    return fileInfo;
+                }
+            }
             final List<String> fileNameCandidates = new ArrayList<String>();
             /* Add pre given candidate */
             if (!StringUtils.isEmpty(fileInfo[0])) {
@@ -502,16 +522,6 @@ public class YetiShareCore extends antiDDoSForHost {
             }
             if (StringUtils.isEmpty(fileInfo[1])) {
                 fileInfo[1] = br.getRegex("(?:Filesize|Dateigröße|حجم الملف|Tamanho|Boyut|Rozmiar Pliku)\\s*:\\s*</td>\\s*?<td(?:\\s*class=\"responsiveInfoTable\")?>\\s*([^<>\"]*?)\\s*<").getMatch(0);
-            }
-            {
-                /** 2021-01-07: Traits for the new style YetiShare layout --> See {@link #isNewYetiShareVersion()} */
-                if (supports_availablecheck_over_info_page(link)) {
-                    /* 2020-10-12: Special */
-                    final String betterFilesize = br.getRegex("Filesize\\s*:\\s*</span>\\s*<span>([^<>\"]+)<").getMatch(0);
-                    if (!StringUtils.isEmpty(betterFilesize)) {
-                        fileInfo[1] = betterFilesize;
-                    }
-                }
             }
             try {
                 /* Language-independant attempt ... */
@@ -1126,20 +1136,25 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * It was intended to replace this with checkErrorsLanguageIndependant but this doesn't work out as different templates/versions of
-     * YetiShare are using different errors and not all have their full language keys available. Newer versions of YetiShare don't provide
-     * any language keys at all.
+     * YetiShare are using different errors and not all have their full language keys available. </br>
+     * Newer versions of YetiShare don't provide any language keys at all but provide mostly English errors inside URLs ("?e=...").
      */
-    protected void checkErrorsURL(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+    private void checkErrorsURL(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         final String errorMsgURL = this.getErrorMsgURL(br);
-        final String url = getCurrentURLDecoded(br);
         if (br.containsHTML("(?i)Error: Too many concurrent download requests")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
         } else if (StringUtils.containsIgnoreCase(errorMsgURL, "You have reached the maximum concurrent downloads")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Max. simultan downloads limit reached, wait to start more downloads", 1 * 60 * 1000l);
         } else if (StringUtils.containsIgnoreCase(errorMsgURL, "Could not open file for reading")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 'Could not open file for reading'", 60 * 60 * 1000l);
-        } else if (url != null && new Regex(url, Pattern.compile(".*?(You must register for a premium account to|Ten plik jest za duży do pobrania dla darmowego użytkownika|/register\\.).+", Pattern.CASE_INSENSITIVE)).matches()) {
-            throw new AccountRequiredException();
+        } else if (new Regex(errorMsgURL, "(?i).*(You must register for a premium account to|Ten plik jest za duży do pobrania dla darmowego użytkownika).*").matches()) {
+            throw new AccountRequiredException(errorMsgURL);
+        } else if (new Regex(errorMsgURL, "(?i).*You must register for a premium account to download files of this size.*").matches()) {
+            /*
+             * 2021-11-19: YetiShareNew (first seen for: thotdrive.com): You must register for a premium account to download files of this
+             * size. Please use the links above to register or login.
+             */
+            throw new AccountRequiredException(errorMsgURL);
         } else if (StringUtils.containsIgnoreCase(errorMsgURL, "You have reached the maximum permitted downloads in")) {
             ipBlockedOrAccountLimit(link, account, errorMsgURL, 3 * 60 * 60 * 1001l);
         } else if (StringUtils.containsIgnoreCase(errorMsgURL, "File not found") || StringUtils.containsIgnoreCase(errorMsgURL, "File has been removed")) {
@@ -1433,21 +1448,6 @@ public class YetiShareCore extends antiDDoSForHost {
         } else {
             return false;
         }
-    }
-
-    protected String getCurrentURLDecoded(final Browser br) {
-        if (br.getURL() != null) {
-            String currentURL = br.getURL();
-            if (Encoding.isUrlCoded(currentURL)) {
-                try {
-                    currentURL = URLDecoder.decode(currentURL, "UTF-8");
-                } catch (final Throwable e) {
-                    logger.info("Failed to urldecode current URL: " + br.getURL());
-                }
-            }
-            return currentURL;
-        }
-        return null;
     }
 
     /** Returns pre-download-waittime (seconds) from inside HTML. */
