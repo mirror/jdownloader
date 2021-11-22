@@ -17,21 +17,26 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.jdownloader.plugins.components.config.IssuuComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.PluginJSonUtils;
-
-import org.jdownloader.plugins.components.config.IssuuComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "issuu.com" }, urls = { "https?://(?:www\\.)?issuu\\.com/[a-z0-9\\-_\\.]+/docs/[a-z0-9\\-_\\.]+|https?://e\\.issuu\\.com/embed\\.html#\\d+/\\d+" })
 public class IssuuCom extends PluginForDecrypt {
@@ -39,75 +44,88 @@ public class IssuuCom extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String TYPE_NORMAL = "https?://(?:www\\.)?issuu\\.com/([a-z0-9\\-_\\.]+)/docs/([a-z0-9\\-_\\.]+)";
+    private static final String TYPE_EMBED  = "https?://e\\.issuu\\.com/embed\\.html#(\\d+)/(\\d+)";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace("http://www.", "http://").toLowerCase().replace("http://", "https://");
-        final String embed_ids = new Regex(parameter, "embed\\.html#(\\d+/\\d+)").getMatch(0);
+        final Regex embed = new Regex(param.getCryptedUrl(), TYPE_EMBED);
         final IssuuComConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
         this.br.setFollowRedirects(true);
-        final String documentID;
-        if (embed_ids != null) {
-            /* 2017-01-21: New - added embed support */
-            br.getPage("http://e." + this.getHost() + "/embed/" + embed_ids + ".json?v=1.0.0");
-            if (isOffline()) {
-                final DownloadLink offline = this.createOfflinelink(parameter);
-                decryptedLinks.add(offline);
-                return decryptedLinks;
+        String documentID = null;
+        final String ownerUsername;
+        final String documentURI;
+        if (embed.matches()) {
+            /* 2021-11-22: This internal ID is now only given for embed objects! Also we don't really need it anymore. */
+            documentID = embed.getMatch(1);
+            final boolean useNewMethod = true;
+            if (useNewMethod) {
+                final Browser brc = br.cloneBrowser();
+                brc.getPage("https://e.issuu.com/config/" + documentID + ".json");
+                if (isOffline(brc)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                ownerUsername = entries.get("ownerUsername").toString();
+                documentURI = entries.get("documentURI").toString();
+            } else {
+                final String embedIDs = embed.getMatch(0) + "/" + embed.getMatch(1);
+                /* 2017-01-21: New - added embed support */
+                br.getPage("http://e." + this.getHost() + "/embed/" + embedIDs + ".json?v=1.0.0");
+                if (isOffline(br)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
             }
-            documentID = PluginJSonUtils.getJsonValue(this.br, "id");
         } else {
-            br.getPage(parameter);
-            if (isOffline()) {
-                final DownloadLink offline = this.createOfflinelink(parameter);
-                decryptedLinks.add(offline);
-                return decryptedLinks;
-            }
-            documentID = br.getRegex("\"documentId\":\"([^<>\"]*?)\"").getMatch(0);
+            final Regex urlinfo = new Regex(param.getCryptedUrl(), TYPE_NORMAL);
+            ownerUsername = urlinfo.getMatch(0);
+            documentURI = urlinfo.getMatch(1);
         }
-        if (documentID == null || documentID.equals("")) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        br.getPage("https://api.issuu.com/call/backend-reader3/dynamic/" + ownerUsername + "/" + documentURI);
+        if (isOffline(br)) {
+            /* E.g. {"message":"Document does not exist"} */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        br.getPage("https://s3.amazonaws.com/document.issuu.com/" + documentID + "/document.xml");
-        final String username = br.getRegex("username=\"([^<>\"]*?)\"").getMatch(0);
-        final String rareTitle = br.getRegex("title=\"([^<>\"]*?)\"").getMatch(0);
-        String originalDocName = br.getRegex("orgDocName=\"([^<>\"]*?)\"").getMatch(0);
-        if (username == null || rareTitle == null || originalDocName == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        originalDocName = Encoding.htmlDecode(originalDocName.trim());
+        final Map<String, Object> docInfo = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> metadata = (Map<String, Object>) docInfo.get("metadata");
+        br.getPage("https://reader3.isu.pub/" + ownerUsername + "/" + documentURI + "/reader3_4.json");
+        Map<String, Object> docInfo2 = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> document = (Map<String, Object>) docInfo2.get("document");
+        final List<Map<String, Object>> pages = (List<Map<String, Object>>) document.get("pages");
+        // final String username = docInfo.get("userDisplayName").toString();
+        final String title = metadata.get("title").toString();
         final DecimalFormat df = new DecimalFormat("0000");
-        final String[] pageInfos = br.getRegex("<page(.*?)</page>").getColumn(0);
-        if (pageInfos == null || pageInfos.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        final String general_naming = Encoding.htmlDecode(rareTitle.trim()) + " by " + Encoding.htmlDecode(username.trim()) + " [" + originalDocName + "] (" + pageInfos.length + " pages)";
-        final boolean preferImagesOverPDF = cfg.isPreferImagesOverPDF();
-        if (AccountController.getInstance().hasAccount(getHost(), Boolean.TRUE, Boolean.TRUE, null, null) && br.containsHTML("downloadable=\"true\"") && !preferImagesOverPDF) {
-            final DownloadLink mainDownloadlink = createDownloadlink(parameter.replace("issuu.com/", "issuudecrypted.com/"));
-            mainDownloadlink.setAvailable(true);
-            final String pdfName = general_naming + ".pdf";
-            mainDownloadlink.setFinalFileName(pdfName);
-            mainDownloadlink.setProperty("finalname", pdfName);
-            decryptedLinks.add(mainDownloadlink);
+        final String generalNaming = title + " by " + ownerUsername + " [" + title + "] (" + pages.size() + " pages)";
+        if (AccountController.getInstance().hasAccount(getHost(), Boolean.TRUE, Boolean.TRUE, null, null) && ((Boolean) metadata.get("downloadable")) && cfg.isPreferImagesOverPDF()) {
+            final DownloadLink pdf = createDownloadlink(param.getCryptedUrl());
+            pdf.setAvailable(true);
+            final String pdfFilename = generalNaming + ".pdf";
+            pdf.setFinalFileName(pdfFilename);
+            pdf.setProperty(jd.plugins.hoster.IssuuCom.PROPERTY_FINAL_NAME, pdfFilename);
+            if (documentID != null) {
+                pdf.setProperty(jd.plugins.hoster.IssuuCom.PROPERTY_DOCUMENT_ID, documentID);
+            }
+            decryptedLinks.add(pdf);
         } else {
-            for (int i = 1; i <= pageInfos.length; i++) {
-                final DownloadLink dl = createDownloadlink("https://image.issuu.com/" + documentID + "/jpg/page_" + i + ".jpg");
-                dl.setFinalFileName("page_" + df.format(i) + ".jpg");
+            /* Old format of directURLs: "https://image.issuu.com/<documentID>/jpg/page_<pageNumberStartingFromOne>.jpg" */
+            int pagenumber = 0;
+            for (final Map<String, Object> page : pages) {
+                pagenumber++;
+                // final boolean isPagePaywalled = ((Boolean) page.get("isPagePaywalled")).booleanValue();
+                final DownloadLink dl = createDownloadlink("https://" + page.get("imageUri"));
+                dl.setFinalFileName(title + "_page_" + df.format(pagenumber) + ".jpg");
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(general_naming);
+        fp.setName(generalNaming);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 
-    private boolean isOffline() {
-        return br.getHttpConnection().getResponseCode() == 404;
+    private boolean isOffline(final Browser br) {
+        return br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404;
     }
 
     @Override

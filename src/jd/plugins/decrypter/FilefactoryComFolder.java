@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -26,8 +28,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "https?://(?:www\\.)?filefactory\\.com/((?:folder|f)/[\\w]+|share/fi[a-z0-9,:]+)" })
 public class FilefactoryComFolder extends PluginForDecrypt {
@@ -37,6 +40,7 @@ public class FilefactoryComFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(true);
         final String parameter = param.toString();
         if (parameter.matches(".+/share/fi.+")) {
             /* 2019-08-17: New type of folder which contains all fileIDs inside URL */
@@ -45,42 +49,39 @@ public class FilefactoryComFolder extends PluginForDecrypt {
                 final String url = "http://www." + this.getHost() + "/file/" + fileid;
                 decryptedLinks.add(this.createDownloadlink(url));
             }
-            return decryptedLinks;
-        }
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
-        br.getPage(parameter + "/?sort=filename&order=ASC&show=100&page=1");
-        if (br.getRedirectLocation() != null) {
-            /* to follow domain redirects */
-            br.getPage(br.getRedirectLocation());
-        }
-        /* Error handling */
-        if (br.containsHTML("No Files found in this folder")) {
-            logger.warning("The requested document was not found on this server.");
-            logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            return new ArrayList<DownloadLink>();
-        }
-        final String fpName = br.getRegex("<h1>Files in <span>(.*?)</span>").getMatch(0);
-        int maxPagenum = 1;
-        final String maxPage = br.getRegex("data\\-paginator\\-totalPages=\"(\\d+)\"").getMatch(0);
-        if (maxPage != null) {
-            maxPagenum = Integer.parseInt(maxPage);
-        }
-        for (int i = 1; i <= maxPagenum; i++) {
-            if (i > 1) {
-                br.getPage(parameter + "/?sort=filename&order=ASC&show=100&page=" + i);
+        } else {
+            br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+            br.getPage(parameter + "/?sort=filename&order=ASC&show=100&page=1");
+            /* Error handling */
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML("No Files found in this folder")) {
+                /* Empty folder */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            add(decryptedLinks);
-        }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            final String fpName = br.getRegex("<h1>Files in <span>(.*?)</span>").getMatch(0);
+            int maxPage = 1;
+            final String maxPageStr = br.getRegex("data\\-paginator\\-totalPages=\"(\\d+)\"").getMatch(0);
+            if (maxPageStr != null) {
+                maxPage = Integer.parseInt(maxPageStr);
+            }
+            for (int i = 1; i <= maxPage; i++) {
+                if (i > 1) {
+                    br.getPage(parameter + "/?sort=filename&order=ASC&show=100&page=" + i);
+                }
+                add(decryptedLinks);
+            }
+            if (!StringUtils.isEmpty(fpName)) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName.trim()));
+                fp.addLinks(decryptedLinks);
+            }
         }
         return decryptedLinks;
     }
 
-    private void add(ArrayList<DownloadLink> declinks) {
-        final String links[] = br.getRegex(Pattern.compile("\"(https?://(www\\.)?filefactory\\.com/file/[^<>\"]*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
+    private void add(final ArrayList<DownloadLink> declinks) {
+        final String links[] = br.getRegex(Pattern.compile("\"(https?://(?:www\\.)?filefactory\\.com/file/[^<>\"]*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
         for (String element : links) {
             declinks.add(createDownloadlink(element));
         }

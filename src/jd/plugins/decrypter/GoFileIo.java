@@ -35,7 +35,6 @@ public class GoFileIo extends PluginForDecrypt {
         query.add("contentId", folderID);
         query.add("websiteToken", "websiteToken");
         query.add("cache", "true");
-        // query.add("", "");
         String passCode = null;
         boolean passwordCorrect = true;
         boolean passwordRequired = false;

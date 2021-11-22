@@ -16,6 +16,11 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.jdownloader.plugins.components.config.IssuuComConfig;
 
 import jd.PluginWrapper;
 import jd.http.Cookies;
@@ -23,6 +28,7 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,9 +37,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.jdownloader.plugins.components.config.IssuuComConfig;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "issuu.com" }, urls = { "https?://issuudecrypted\\.com/[a-z0-9\\-_\\.]+/docs/[a-z0-9\\-_]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "issuu.com" }, urls = { "https?://issuu\\.com/([a-z0-9\\-_\\.]+)/docs/([a-z0-9\\-_]+)" })
 public class IssuuCom extends PluginForHost {
     public IssuuCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,46 +49,42 @@ public class IssuuCom extends PluginForHost {
         return "https://issuu.com/acceptterms";
     }
 
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("issuudecrypted.com/", "issuu.com/"));
-    }
-
-    private String DOCUMENTID = null;
+    private String             DOCUMENTID           = null;
+    public static final String PROPERTY_FINAL_NAME  = "finalname";
+    public static final String PROPERTY_DOCUMENT_ID = "document_id";
 
     /** Using oembed API: http://developers.issuu.com/api/oembed.html */
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         /* Tyically this oembed API returns 501 for offline content */
         this.br.setAllowedResponseCodes(501);
         this.br.setFollowRedirects(true);
-        final String filename = link.getStringProperty("finalname", null);
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = link.getStringProperty("finalname");
+        if (filename != null) {
+            link.setFinalFileName(filename);
         }
-        this.br.getPage("https://issuu.com/oembed?format=json&url=" + Encoding.urlEncode(link.getDownloadURL()));
+        this.br.getPage("https://issuu.com/oembed?format=json&url=" + Encoding.urlEncode(link.getPluginPatternMatcher()));
         if (this.br.getHttpConnection().getResponseCode() != 200) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        link.setFinalFileName(filename);
+        if (filename == null) {
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            link.setFinalFileName(entries.get("title") + ".pdf");
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        /* Account required to download */
+        throw new AccountRequiredException();
     }
 
-    private static final String MAINPAGE = "http://issuu.com";
-    private static Object       LOCK     = new Object();
-
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
-                // Load cookies
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
@@ -92,7 +92,7 @@ public class IssuuCom extends PluginForHost {
                     return;
                 }
                 final String lang = System.getProperty("user.language");
-                if (isValidMailAdress(account.getUser())) {
+                if (isMailAdress(account.getUser())) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte den Benutzername und nicht die Mailadresse in das 'Benutzername' Feld eingeben!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -112,7 +112,7 @@ public class IssuuCom extends PluginForHost {
                     postdata += "&loginCsrf=" + Encoding.urlEncode(csrf);
                 }
                 br.postPage("https://" + this.br.getHost() + "/query", postdata);
-                if (br.getCookie(MAINPAGE, "site.model.token") == null || br.containsHTML("\"message\":\"Login failed\"")) {
+                if (br.getCookie(this.getHost(), "site.model.token", Cookies.NOTDELETEDPATTERN) == null || br.containsHTML("\"message\":\"Login failed\"")) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -129,11 +129,10 @@ public class IssuuCom extends PluginForHost {
         }
     }
 
-    private boolean isValidMailAdress(final String value) {
+    private static boolean isMailAdress(final String value) {
         return value.matches(".+@.+");
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -160,7 +159,7 @@ public class IssuuCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         login(account, true);
-        final String token = br.getCookie(MAINPAGE, "site.model.token");
+        final String token = br.getCookie(this.getHost(), "site.model.token", Cookies.NOTDELETEDPATTERN);
         br.getPage("http://api." + this.getHost() + "/query?documentId=" + this.DOCUMENTID + "&username=" + Encoding.urlEncode(account.getUser()) + "&token=" + Encoding.urlEncode(token) + "&action=issuu.document.download&format=json&jsonCallback=_jqjsp&_" + System.currentTimeMillis() + "=");
         final String code = PluginJSonUtils.getJsonValue(br, "code");
         final String message = PluginJSonUtils.getJsonValue(br, "message");
@@ -177,10 +176,10 @@ public class IssuuCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = dllink.replace("\\", "");
-        // We HAVE to wait here, otherwise we'll get an 0 b file
+        // We HAVE to wait here, otherwise we'll get an empty file
         sleep(3 * 1000l, link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
             try {
                 br.followConnection(true);
