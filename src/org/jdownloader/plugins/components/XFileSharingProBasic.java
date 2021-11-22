@@ -1048,9 +1048,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         if (findFilesize && !StringUtils.isEmpty(dllink) && !dllink.contains(".m3u8")) {
             /* Get- and set filesize from directurl */
-            final boolean dllink_is_valid = checkDirectLinkAndSetFilesize(link, dllink, true) != null;
-            /* Store directurl if it is valid */
-            if (dllink_is_valid) {
+            if (checkDirectLinkAndSetFilesize(link, dllink, true) != null) {
+                /* Directurl is valid -> Store it */
                 storeDirecturl(link, account, dllink);
             }
         }
@@ -2195,9 +2194,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     protected final String checkDirectLink(final DownloadLink link, final String property) {
         final String dllink = link.getStringProperty(property);
         if (dllink != null) {
-            final String ret = checkDirectLinkAndSetFilesize(link, dllink, false);
-            if (ret != null) {
-                return ret;
+            final String validDirecturl = checkDirectLinkAndSetFilesize(link, dllink, false);
+            if (validDirecturl != null) {
+                return validDirecturl;
             } else {
                 link.removeProperty(property);
                 return null;

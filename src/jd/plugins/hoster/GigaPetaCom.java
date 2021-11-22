@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -34,10 +37,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigapeta.com" }, urls = { "https?://[\\w\\.]*?gigapeta\\.com/dl/\\w+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigapeta.com" }, urls = { "https?://[\\w\\.]*?gigapeta\\.com/dl/(\\w+)" })
 public class GigaPetaCom extends PluginForHost {
     // Gehört zu tenfiles.com/tenfiles.info
     public GigaPetaCom(PluginWrapper wrapper) {
@@ -45,29 +45,52 @@ public class GigaPetaCom extends PluginForHost {
         enablePremium("http://gigapeta.com/premium/");
     }
 
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        br = new Browser();
-        br.setCookie("http://gigapeta.com", "lang", "us");
-        br.getPage(downloadLink.getDownloadURL());
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (!link.isNameSet()) {
+            link.setName(getFID(link));
+        }
+        br.setCookie(this.getHost(), "lang", "us");
+        br.setFollowRedirects(true);
+        /* 2021-11-22: https unsupported */
+        br.getPage(link.getPluginPatternMatcher().replace("https://", "http://"));
+        /* 2021-11-22: File information is sometimes even given for offline items! */
+        final Regex infos = br.getRegex(Pattern.compile("<img src=\".*\" alt=\"file\" />\\-\\->(.*?)</td>.*?</tr>.*?<tr>.*?<th>.*?</th>.*?<td>(.*?)</td>", Pattern.DOTALL));
+        String fileName = infos.getMatch(0);
+        String fileSize = infos.getMatch(1);
+        if (fileName != null) {
+            link.setName(Encoding.htmlDecode(fileName).trim());
+        }
+        if (fileSize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(fileSize.trim()));
+        }
         if (br.containsHTML("All threads for IP")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.gigapeta.unavailable", "Your IP is already downloading a file"));
-        } else if (br.containsHTML("Due to technical reasons, file is temporarily not available.")) {
+        } else if (br.containsHTML("Due to technical reasons, file is temporarily not available")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Due to technical reasons, file is temporarily not available.");
         } else if (br.containsHTML("<div id=\"page_error\">") && !br.containsHTML("To download this file please <a")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        Regex infos = br.getRegex(Pattern.compile("<img src=\".*\" alt=\"file\" />\\-\\->(.*?)</td>.*?</tr>.*?<tr>.*?<th>.*?</th>.*?<td>(.*?)</td>", Pattern.DOTALL));
-        String fileName = infos.getMatch(0);
-        String fileSize = infos.getMatch(1);
         if (fileName == null || fileSize == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        downloadLink.setName(fileName.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize.trim()));
         return AvailableStatus.TRUE;
     }
 
-    public void doFree(DownloadLink downloadLink) throws Exception {
+    public void doFree(final DownloadLink link) throws Exception {
         if (this.br.containsHTML("To download this file please")) {
             /*
              * E.g. html:
@@ -78,7 +101,7 @@ public class GigaPetaCom extends PluginForHost {
         String captchaKey = (int) (Math.random() * 100000000) + "";
         String captchaUrl = "/img/captcha.gif?x=" + captchaKey;
         for (int i = 1; i <= 3; i++) {
-            String captchaCode = getCaptchaCode(captchaUrl, downloadLink);
+            String captchaCode = getCaptchaCode(captchaUrl, link);
             br.postPage(br.getURL(), "download=&captcha_key=" + captchaKey + "&captcha=" + captchaCode);
             if (br.containsHTML("class=\"big_error\">404</h1>")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (404)", 60 * 60 * 1000l);
@@ -111,8 +134,8 @@ public class GigaPetaCom extends PluginForHost {
         if (br.getRedirectLocation() == null) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, br.getRedirectLocation(), false, 1);
-        if (dl.getConnection().getContentType().contains("text")) {
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, br.getRedirectLocation(), false, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
@@ -138,12 +161,7 @@ public class GigaPetaCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        try {
-            return login(account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        return login(account, true);
     }
 
     public String getAGBLink() {
@@ -154,9 +172,9 @@ public class GigaPetaCom extends PluginForHost {
         return 1;
     }
 
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        doFree(link);
     }
 
     @Override
@@ -164,7 +182,7 @@ public class GigaPetaCom extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (AccountType.FREE.equals(account.getType())) {
             doFree(link);
         } else {
@@ -185,7 +203,7 @@ public class GigaPetaCom extends PluginForHost {
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, -6);
-            if (!(dl.getConnection().isContentDisposition())) {
+            if (!(!this.looksLikeDownloadableContent(dl.getConnection()))) {
                 try {
                     br.followConnection(true);
                 } catch (final IOException e) {
@@ -245,7 +263,6 @@ public class GigaPetaCom extends PluginForHost {
             account.setType(AccountType.FREE);
             ai.setStatus("Free Account");
         }
-        account.setValid(true);
         ai.setUnlimitedTraffic();
         if (!fromFetchAccount) {
             account.setAccountInfo(ai);
@@ -269,11 +286,11 @@ public class GigaPetaCom extends PluginForHost {
         if (acc == null) {
             /* no account, yes we can expect captcha */
             return true;
-        }
-        if (AccountType.FREE.equals(acc.getType())) {
+        } else if (AccountType.FREE.equals(acc.getType())) {
             /* free accounts also have captchas */
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 }
