@@ -95,7 +95,6 @@ public class Ardmediathek extends PluginForDecrypt {
         heigth_to_bitrate.put("1080", 6666000l);
     }
     private String             subtitleLink   = null;
-    private String             parameter      = null;
     private String             title          = null;
     private String             show           = null;
     private String             provider       = null;
@@ -144,7 +143,6 @@ public class Ardmediathek extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        parameter = Encoding.htmlDecode(param.toString());
         br.setFollowRedirects(true);
         cfg = PluginJsonConfig.get(getConfigInterface());
         final List<String> selectedQualities = new ArrayList<String>();
@@ -214,10 +212,10 @@ public class Ardmediathek extends PluginForDecrypt {
              */
             final String host = this.getHost();
             if (host.equalsIgnoreCase("daserste.de") || host.equalsIgnoreCase("kika.de") || host.equalsIgnoreCase("sputnik.de") || host.equalsIgnoreCase("mdr.de")) {
-                decryptDasersteVideo();
+                decryptDasersteVideo(param);
             } else if (host.equalsIgnoreCase("ardmediathek.de")) {
                 /* 2020-05-26: Separate handling required */
-                this.decryptArdmediathekDeNew();
+                this.decryptArdmediathekDeNew(param);
             } else {
                 this.decryptMediathek(param);
             }
@@ -225,7 +223,7 @@ public class Ardmediathek extends PluginForDecrypt {
         } catch (final DecrypterException e) {
             try {
                 if (e.getMessage().equals(EXCEPTION_GEOBLOCKED)) {
-                    decryptedLinks.add(this.createOfflinelink(parameter, "GEO-blocked_" + getURLPart(this.parameter), "GEO-blocked_" + getURLPart(this.parameter)));
+                    decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "GEO-blocked_" + getURLPart(param.getCryptedUrl()), "GEO-blocked_" + getURLPart(param.getCryptedUrl())));
                     return decryptedLinks;
                 }
             } catch (final Exception ignore) {
@@ -233,12 +231,11 @@ public class Ardmediathek extends PluginForDecrypt {
             throw e;
         }
         if (decryptedLinks == null) {
-            logger.warning("Decrypter out of date for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (decryptedLinks.size() == 0) {
             logger.info("Failed to find any links");
-            decryptedLinks.add(this.createOfflinelink(parameter));
+            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
             return decryptedLinks;
         }
         return decryptedLinks;
@@ -414,19 +411,19 @@ public class Ardmediathek extends PluginForDecrypt {
     }
 
     /** Find xml URL which leads to subtitle and video stream URLs. */
-    private String getVideoXMLURL() throws Exception {
+    private String getVideoXMLURL(final CryptedLink param) throws Exception {
         final String host = getHost();
         String url_xml = null;
         if (host.equalsIgnoreCase("daserste.de")) {
             /* The fast way - we do not even have to access the main URL which the user has added :) */
-            url_xml = parameter.replace(".html", "~playerXml.xml");
-        } else if (this.parameter.matches(".+mdr\\.de/.+/((?:video|audio)\\-\\d+)\\.html")) {
+            url_xml = param.getCryptedUrl().replace(".html", "~playerXml.xml");
+        } else if (param.getCryptedUrl().matches(".+mdr\\.de/.+/((?:video|audio)\\-\\d+)\\.html")) {
             /* Some special mdr.de URLs --> We do not have to access main URL so this way we can speed up the crawl process a bit :) */
-            this.contentID = new Regex(this.parameter, "((?:audio|video)\\-\\d+)\\.html$").getMatch(0);
+            this.contentID = new Regex(param.getCryptedUrl(), "((?:audio|video)\\-\\d+)\\.html$").getMatch(0);
             url_xml = String.format("https://www.mdr.de/mediathek/mdr-videos/d/%s-avCustom.xml", this.contentID);
         } else {
             /* E.g. kika.de, sputnik.de, mdr.de */
-            br.getPage(this.parameter);
+            br.getPage(param.getCryptedUrl());
             if (isOffline(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -535,21 +532,21 @@ public class Ardmediathek extends PluginForDecrypt {
         return http_url_format;
     }
 
-    private void decryptArdmediathekDeNew() throws Exception {
+    private void decryptArdmediathekDeNew(final CryptedLink param) throws Exception {
         /* E.g. old classic.ardmediathek.de URLs */
         final boolean requiresOldContentIDHandling;
-        String ardDocumentID = new Regex(this.parameter, "documentId=(\\d+)").getMatch(0);
+        String ardDocumentID = new Regex(param.getCryptedUrl(), "documentId=(\\d+)").getMatch(0);
         Map<String, Object> entries = null;
         if (ardDocumentID != null) {
             requiresOldContentIDHandling = true;
             this.title = ardDocumentID;
             this.contentID = ardDocumentID;
         } else {
-            final URL url = new URL(this.parameter);
+            final URL url = new URL(param.getCryptedUrl());
             requiresOldContentIDHandling = false;
             String ardBase64;
             final String pattern_player = ".+/player/([^/]+).*";
-            if (parameter.matches(pattern_player)) {
+            if (param.getCryptedUrl().matches(pattern_player)) {
                 /* E.g. URLs that are a little bit older */
                 ardBase64 = new Regex(url.getPath(), pattern_player).getMatch(0);
             } else {
@@ -620,17 +617,17 @@ public class Ardmediathek extends PluginForDecrypt {
         } else {
             entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         }
-        crawlARDJson(entries);
+        crawlARDJson(param, entries);
     }
 
     /** Last revision with old handling: 38658 */
     private void decryptMediathek(final CryptedLink param) throws Exception {
-        br.getPage(parameter);
+        br.getPage(param.getCryptedUrl());
         if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Browser brBefore = br.cloneBrowser();
-        if (this.parameter.matches(type_embedded)) {
+        if (param.getCryptedUrl().matches(type_embedded)) {
             /* Embedded content --> json URL has already been accessed */
             // brJSON = br.cloneBrowser();
             /* Do nothing */
@@ -710,7 +707,7 @@ public class Ardmediathek extends PluginForDecrypt {
             entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         } catch (final Throwable e) {
         }
-        crawlARDJson(entries);
+        crawlARDJson(param, entries);
     }
 
     private static String regexOldJson(final String html) {
@@ -726,7 +723,7 @@ public class Ardmediathek extends PluginForDecrypt {
         return ret;
     }
 
-    private void crawlARDJson(final Object mediaCollection) throws Exception {
+    private void crawlARDJson(final CryptedLink param, final Object mediaCollection) throws Exception {
         /* We know how their http urls look - this way we can avoid HDS/HLS/RTMP */
         /*
          * http://adaptiv.wdr.de/z/medp/ww/fsk0/104/1046579/,1046579_11834667,1046579_11834665,1046579_11834669,.mp4.csmil/manifest.f4
@@ -781,7 +778,7 @@ public class Ardmediathek extends PluginForDecrypt {
                     final List<Map<String, Object>> mediaArray = (List<Map<String, Object>>) map.get("_mediaArray");
                     mediaArray: for (Map<String, Object> media : mediaArray) {
                         final List<Map<String, Object>> mediaStreamArray = (List<Map<String, Object>>) media.get("_mediaStreamArray");
-                        for (int mediaStreamIndex = mediaStreamArray.size() - 1; mediaStreamIndex >= 0; mediaStreamIndex--) {
+                        for (int mediaStreamIndex = 0; mediaStreamIndex < mediaStreamArray.size(); mediaStreamIndex++) {
                             // list is sorted from best to lowest quality, first one is m3u8
                             final Map<String, Object> mediaStream = mediaStreamArray.get(mediaStreamIndex);
                             final int quality;
@@ -941,7 +938,7 @@ public class Ardmediathek extends PluginForDecrypt {
                                         }
                                     }
                                 }
-                                final DownloadLink download = addQuality(foundQualitiesMap, url, null, 0, widthInt, heightInt, false);
+                                final DownloadLink download = addQuality(param, foundQualitiesMap, url, null, 0, widthInt, heightInt, false);
                                 if (download != null) {
                                     httpStreamsQualityIdentifiers.add(getQualityIdentifier(url, 0, widthInt, heightInt));
                                     if (cfg.isGrabBESTEnabled()) {
@@ -967,8 +964,7 @@ public class Ardmediathek extends PluginForDecrypt {
         String http_url_audio = br.getRegex("((?:https?:)?//[^<>\"]+\\.mp3)\"").getMatch(0);
         final String quality_string = new Regex(hlsMaster, ".*?/i/.*?,([A-Za-z0-9_,\\-\\.]+),?\\.mp4\\.csmil.*?").getMatch(0);
         if (StringUtils.isEmpty(hlsMaster) && http_url_audio == null && httpStreamsQualityIdentifiers.size() == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            throw new DecrypterException("Plugin broken");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /*
          * This is a completely different attempt to find HTTP URLs. As long as it works, this may be more reliable than everything above
@@ -1014,7 +1010,7 @@ public class Ardmediathek extends PluginForDecrypt {
                         final String qualityIdentifier = getQualityIdentifier(final_url, 0, widthInt, heightInt);
                         if (!httpStreamsQualityIdentifiers_2_over_hls_master.contains(qualityIdentifier)) {
                             logger.info("Found (additional) http quality via HLS Master: " + qualityIdentifier);
-                            addQuality(foundQualitiesMap_http_urls_via_HLS_master, final_url, null, 0, widthInt, heightInt, false);
+                            addQuality(param, foundQualitiesMap_http_urls_via_HLS_master, final_url, null, 0, widthInt, heightInt, false);
                             httpStreamsQualityIdentifiers_2_over_hls_master.add(qualityIdentifier);
                         }
                     }
@@ -1038,14 +1034,14 @@ public class Ardmediathek extends PluginForDecrypt {
             }
         }
         if (hlsMaster != null) {
-            addHLS(br, hlsMaster, false);
+            addHLS(param, br, hlsMaster, false);
         }
         if (http_url_audio != null) {
             if (http_url_audio.startsWith("//")) {
                 /* 2019-04-11: Workaround for missing protocol */
                 http_url_audio = "https:" + http_url_audio;
             }
-            addQuality(foundQualitiesMap, http_url_audio, null, 0, 0, 0, false);
+            addQuality(param, foundQualitiesMap, http_url_audio, null, 0, 0, 0, false);
         }
     }
 
@@ -1053,14 +1049,14 @@ public class Ardmediathek extends PluginForDecrypt {
      * Handling for older ARD websites. </br>
      * INFORMATION: network = akamai or limelight == RTMP
      */
-    private void decryptDasersteVideo() throws Exception {
-        br.getPage(parameter);
+    private void decryptDasersteVideo(final CryptedLink param) throws Exception {
+        br.getPage(param.getCryptedUrl());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String xml_URL = getVideoXMLURL();
+        final String xml_URL = getVideoXMLURL(param);
         if (xml_URL == null) {
             /* Probably no downloadable content available */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -1096,7 +1092,7 @@ public class Ardmediathek extends PluginForDecrypt {
             final String fskRating = this.br.getRegex("<fskRating>fsk(\\d+)</fskRating>").getMatch(0);
             if (fskRating != null && Short.parseShort(fskRating) >= 12) {
                 /* Video is age restricted --> Only available from >=8PM. */
-                final String filenameURL = Plugin.getFileNameFromURL(new URL(this.parameter));
+                final String filenameURL = Plugin.getFileNameFromURL(new URL(param.getCryptedUrl()));
                 if (filenameURL != null) {
                     throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "FSK_BLOCKED_" + filenameURL, "FSK_BLOCKED", null);
                 } else {
@@ -1164,7 +1160,7 @@ public class Ardmediathek extends PluginForDecrypt {
             /* HLS master url may exist in every XML item --> We only have to add all HLS qualities once! */
             if (!StringUtils.isEmpty(hls_master) && !hls_master_dupelist.contains(hls_master)) {
                 /* HLS */
-                addHLS(this.br, hls_master, isAudioDescription);
+                addHLS(param, this.br, hls_master, isAudioDescription);
                 hls_master_dupelist.add(hls_master);
             }
             if (!StringUtils.isEmpty(http_url)) {
@@ -1181,13 +1177,13 @@ public class Ardmediathek extends PluginForDecrypt {
                 } else {
                     bitrate = 0;
                 }
-                addQualityDasersteVideo(http_url, filesize, bitrate, width, height, isAudioDescription);
+                addQualityDasersteVideo(param, http_url, filesize, bitrate, width, height, isAudioDescription);
             }
         }
         return;
     }
 
-    private void addHLS(final Browser br, final String hlsMaster, final boolean isAudioDescription) throws Exception {
+    private void addHLS(final CryptedLink param, final Browser br, final String hlsMaster, final boolean isAudioDescription) throws Exception {
         if (!this.grabHLS) {
             /* Avoid this http request if user hasn't selected any hls qualities */
             return;
@@ -1208,12 +1204,12 @@ public class Ardmediathek extends PluginForDecrypt {
                 continue;
             }
             final String final_download_url = hlscontainer.getDownloadurl();
-            addQuality(foundQualitiesMap, final_download_url, null, hlscontainer.getBandwidth(), hlscontainer.getWidth(), hlscontainer.getHeight(), isAudioDescription);
+            addQuality(param, foundQualitiesMap, final_download_url, null, hlscontainer.getBandwidth(), hlscontainer.getWidth(), hlscontainer.getHeight(), isAudioDescription);
         }
     }
 
     /* Especially for video.daserste.de */
-    private void addQualityDasersteVideo(final String directurl, final String filesize_str, long bitrate, int width, int height, final boolean isAudioDescription) {
+    private void addQualityDasersteVideo(final CryptedLink param, final String directurl, final String filesize_str, long bitrate, int width, int height, final boolean isAudioDescription) {
         /* Try to get/Fix correct width/height values. */
         /* Type 1 */
         String width_URL = new Regex(directurl, "(hi|hq|ln|lo|mn)\\.mp4$").getMatch(0);
@@ -1231,7 +1227,7 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         width = getWidth(width_URL, width);
         height = getHeight(width_URL, width, height);
-        addQuality(foundQualitiesMap, directurl, filesize_str, bitrate, width, height, isAudioDescription);
+        addQuality(param, foundQualitiesMap, directurl, filesize_str, bitrate, width, height, isAudioDescription);
     }
 
     /* Returns quality identifier String, compatible with quality selection values. Format: protocol_bitrateCorrected_heightCorrected */
@@ -1254,7 +1250,7 @@ public class Ardmediathek extends PluginForDecrypt {
         return qualityStringForQualitySelection;
     }
 
-    private DownloadLink addQuality(final HashMap<String, DownloadLink> qualitiesMap, final String directurl, final String filesize_str, long bitrate, int width, int height, final boolean isAudioDescription) {
+    private DownloadLink addQuality(final CryptedLink param, final HashMap<String, DownloadLink> qualitiesMap, final String directurl, final String filesize_str, long bitrate, int width, int height, final boolean isAudioDescription) {
         /* Errorhandling */
         final String ext;
         if (directurl == null) {
@@ -1319,7 +1315,7 @@ public class Ardmediathek extends PluginForDecrypt {
             data.setShow(show);
         }
         link.setFinalFileName(MediathekHelper.getMediathekFilename(link, data, true, true));
-        link.setContentUrl(this.parameter);
+        link.setContentUrl(param.getCryptedUrl());
         if (this.contentID == null) {
             logger.log(new Exception("FixMe!"));
         } else {
@@ -1344,7 +1340,6 @@ public class Ardmediathek extends PluginForDecrypt {
             finalSelectedQualityMap = findBESTInsideGivenMap(this.foundQualitiesMap);
         } else {
             final boolean grabUnknownQualities = cfg.isAddUnknownQualitiesEnabled();
-            final boolean grab_best_out_of_user_selection = cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled();
             boolean atLeastOneSelectedItemExists = false;
             for (final String quality : all_known_qualities) {
                 if (selectedQualities.contains(quality) && foundQualitiesMap.containsKey(quality)) {
@@ -1376,8 +1371,8 @@ public class Ardmediathek extends PluginForDecrypt {
                     finalSelectedQualityMap.put(quality, dl);
                 }
             }
-            /* Check if user maybe only wants the best quality inside his selected videoqualities. */
-            if (grab_best_out_of_user_selection) {
+            /* Check if user maybe only wants the best quality inside his selected video qualities. */
+            if (cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled()) {
                 finalSelectedQualityMap = findBESTInsideGivenMap(finalSelectedQualityMap);
             }
         }
@@ -1407,7 +1402,7 @@ public class Ardmediathek extends PluginForDecrypt {
                 dl_subtitle.setAvailable(true);
                 dl_subtitle.setFinalFileName(MediathekHelper.getMediathekFilename(dl_subtitle, data_subtitle, true, true));
                 dl_subtitle.setProperty("itemId", dl.getProperty("itemId", null));
-                dl_subtitle.setContentUrl(parameter);
+                dl_subtitle.setContentUrl(dl.getContentUrl());
                 decryptedLinks.add(dl_subtitle);
             }
             decryptedLinks.add(dl);

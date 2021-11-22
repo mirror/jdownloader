@@ -28,6 +28,12 @@ import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -47,12 +53,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upstore.net", "upsto.re" }, urls = { "https?://(www\\.)?(upsto\\.re|upstore\\.net)/[A-Za-z0-9]+", "ejnz905rj5o0jt69pgj50ujz0zhDELETE_MEew7th59vcgzh59prnrjhzj0" })
 public class UpstoRe extends antiDDoSForHost {
@@ -121,7 +121,7 @@ public class UpstoRe extends antiDDoSForHost {
         if (link.getDownloadURL().matches(INVALIDLINKS)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        getPage(link.getDownloadURL());
+        getPage(link.getPluginPatternMatcher());
         if (isOffline1()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!this.br.containsHTML("name=\"hash\"") && !this.br.containsHTML("class=\"features (minus|plus)\"")) {
@@ -134,11 +134,8 @@ public class UpstoRe extends antiDDoSForHost {
             filename = br.getRegex("<title>Download file ([^<>\"]*?) \\&mdash; Upload, store \\& share your files on").getMatch(0);
         }
         String filesize = fileInfo.getMatch(1);
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         if (filename != null) {
-            link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+            link.setFinalFileName(Encoding.htmlDecode(filename).trim());
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -147,7 +144,7 @@ public class UpstoRe extends antiDDoSForHost {
     }
 
     private boolean isOffline1() {
-        return br.containsHTML(">File not found<|>File was deleted by owner or due to a violation of service rules\\.|not found|>SmartErrors powered by");
+        return br.containsHTML("(?i)>\\s*File not found<|>File was deleted by owner or due to a violation of service rules\\.|not found|>SmartErrors powered by");
     }
 
     @SuppressWarnings({ "unchecked", "deprecation" })
@@ -292,16 +289,26 @@ public class UpstoRe extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.containsHTML("File size is larger than|it can be downloaded only with premium")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } else if (br.containsHTML(">This file is available only for Premium users<")) {
+        } else if (br.containsHTML(">\\s*This file is available only for Premium users")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         /* Here some errors that should only happen in free(account) mode: */
-        if (br.containsHTML(">Server for free downloads is overloaded<")) {
+        if (br.containsHTML(">\\s*Server for free downloads is overloaded<")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Server for free downloads is overloaded'", 30 * 60 * 1000l);
         }
         // Same server error (displayed differently) also exists for premium users
-        if (br.containsHTML(">Server with file not found<")) {
+        if (br.containsHTML(">\\s*Server with file not found<")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Server with file not found'", 60 * 60 * 1000l);
+        }
+        /* 2021-11-22: New attempt */
+        final String otherError = br.getRegex("<span class=\"error\">([^<>\"]+)</span>").getMatch(0);
+        if (otherError != null) {
+            /* 2021-11-22 e.g. <span class="error">Under maintenance. Free downloads are not available at the moment.</span> */
+            if (otherError.matches("(?i)Under maintenance.*Free downloads are not available at the moment.*")) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, otherError, 30 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, otherError, 5 * 60 * 1000l);
+            }
         }
     }
 
