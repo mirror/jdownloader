@@ -85,13 +85,14 @@ public class TiktokCom extends antiDDoSForHost {
     private static final String PROPERTY_LIKE_COUNT  = "like_count";
     private static final String PROPERTY_PLAY_COUNT  = "play_count";
     private static final String PROPERTY_SHARE_COUNT = "share_count";
+    private static final String TYPE_VIDEO           = "https?://[^/]+/(@[^/]+)/video/(\\d+).*?";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, false);
     }
 
-    private static String toHumanReadableNumber(Number number) {
+    private static String toHumanReadableNumber(final Number number) {
         final long num = number.longValue();
         if (num > 1000000) {
             return new DecimalFormat("0.00m").format((1.0f * num) / 1000000);
@@ -121,15 +122,15 @@ public class TiktokCom extends antiDDoSForHost {
         if (!link.isNameSet()) {
             link.setName(fid + ".mp4");
         }
-        if (link.getPluginPatternMatcher().matches(".+/@[^/]+/video/\\d+.*?")) {
-            username = new Regex(link.getPluginPatternMatcher(), "/(@[^/]+)/").getMatch(0);
+        if (link.getPluginPatternMatcher().matches(TYPE_VIDEO)) {
+            username = new Regex(link.getPluginPatternMatcher(), TYPE_VIDEO).getMatch(0);
         } else {
-            /* 2nd + 3rd linktype which does not contain username --> Find username by finding original URL */
+            /* 2nd + 3rd linktype which does not contain username --> Find username by finding original URL. */
             br.setFollowRedirects(false);
-            br.getPage(String.format("https://m.tiktok.com/v/%s.html", fid));
+            br.getPage("https://m.tiktok.com/v/" + fid + ".html");
             final String redirect = br.getRedirectLocation();
             if (redirect != null) {
-                username = new Regex(redirect, "/(@[^/]+)/").getMatch(0);
+                username = new Regex(redirect, TYPE_VIDEO).getMatch(0);
                 if (username == null) {
                     /* Redirect to unsupported URL -> Most likely mainpage -> Offline! */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
