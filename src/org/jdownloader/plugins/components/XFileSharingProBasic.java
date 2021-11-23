@@ -441,6 +441,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
+     * Use HEAD or GET request for checking directurls? </br>
+     * Example HEAD request unsupported: imgflare.com
+     */
+    protected boolean supportsHEADRequest() {
+        return true;
+    }
+
+    /**
      * Implies that a host supports login via 'API Mod'[https://sibsoft.net/xfilesharing/mods/api.html] via one of these APIs:
      * https://xvideosharing.docs.apiary.io/ OR https://xfilesharingpro.docs.apiary.io/ <br />
      * Enabling this will do the following: </br>
@@ -554,7 +562,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return buildURLPath(link, fuid, URL_TYPE.SHORT);
     }
 
-    protected String buildURLPath(DownloadLink link, final String fuid, URL_TYPE type) {
+    protected String buildURLPath(final DownloadLink link, final String fuid, final URL_TYPE type) {
         switch (type) {
         case EMBED:
             return "/embed-" + fuid + ".html";
@@ -925,7 +933,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             } else if (url.matches("(?i)^https?://[A-Za-z0-9\\-\\.:]+/embed-([a-z0-9]{12}).*")) {
                 return URL_TYPE.EMBED;
             } else {
-                logger.info("Unknown type:" + url);
+                logger.info("Unknown URL_TYPE:" + url);
             }
         }
         return null;
@@ -1538,7 +1546,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         logger.info("Trying to get link via embed");
                         dllink = requestFileInformationVideoEmbed(link, account, false);
                         if (StringUtils.isEmpty(dllink)) {
-                            logger.info("FAILED to get link via embed");
+                            logger.info("Failed to get link via embed");
                         } else {
                             logger.info("Successfully found link via embed");
                         }
@@ -1549,28 +1557,40 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         logger.info("Failed to get link via embed");
                     }
                 }
-                /* Do we have an imagehost? */
+                /* Extra handling for imagehosts */
                 if (StringUtils.isEmpty(dllink) && this.isImagehoster()) {
                     checkErrors(br, getCorrectBR(br), link, account, false);
-                    int counter = 0;
-                    final int countermax = 3;
-                    Form imghost_next_form = null;
-                    do {
-                        logger.info(String.format("imghost_next_form loop %d / %d", counter + 1, countermax));
-                        imghost_next_form = findImageForm(this.br);
-                        if (imghost_next_form != null) {
-                            /* end of backward compatibility */
+                    Form imghost_next_form = findImageForm(this.br);
+                    if (imghost_next_form != null) {
+                        int counter = -1;
+                        final int countermax = 3;
+                        do {
+                            counter++;
+                            logger.info(String.format("imghost_next_form loop %d / %d", counter + 1, countermax));
+                            // this.handleCaptcha(link, imghost_next_form);
                             submitForm(imghost_next_form);
                             checkErrors(br, getCorrectBR(br), link, account, false);
                             dllink = getDllink(link, account, br, getCorrectBR(br));
                             /* For imagehosts, filenames are often not given until we can actually see/download the image! */
-                            final String image_filename = regexImagehosterFilename(br);
-                            if (image_filename != null) {
-                                link.setName(Encoding.htmlOnlyDecode(image_filename));
+                            final String imageFilename = regexImagehosterFilename(br);
+                            if (imageFilename != null) {
+                                link.setName(Encoding.htmlOnlyDecode(imageFilename));
                             }
-                        }
-                        counter++;
-                    } while (StringUtils.isEmpty(dllink) && imghost_next_form != null && counter < countermax);
+                            if (!StringUtils.isEmpty(dllink)) {
+                                logger.info("Found image directurl: " + dllink);
+                                break;
+                            } else if (counter >= countermax) {
+                                logger.warning("Imagehost handling exceeded max tries");
+                                break;
+                            } else {
+                                imghost_next_form = findImageForm(this.br);
+                                if (imghost_next_form == null) {
+                                    logger.warning("Failed to find next imghost_next_form and no directurl present -> Stepping out of imagehost handling");
+                                    break;
+                                }
+                            }
+                        } while (true);
+                    }
                 }
                 /* Check for errors and download1 Form. Only execute this once! */
                 if (StringUtils.isEmpty(dllink) && download1counter == 0) {
@@ -1587,6 +1607,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         dllink = getDllink(link, account, br, getCorrectBR(br));
                     } else {
                         logger.info("Failed to find download1 Form");
+                        break;
                     }
                 }
                 download1counter++;
@@ -1844,9 +1865,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
              * 2019-05-30: Test - worked for: xvideosharing.com - not exactly required as getDllink will usually already return a result.
              */
             dllink = brc.getRegex("<a href=\"(https?[^\"]+)\"[^>]*>Direct Download Link</a>").getMatch(0);
-        }
-        if (StringUtils.isEmpty(dllink)) {
-            logger.info("Failed to find final downloadurl");
         }
         if (StringUtils.isEmpty(dllink)) {
             logger.warning("Failed to find dllink via official video download");
@@ -2224,7 +2242,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
-                con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(directurl));
+                if (supportsHEADRequest()) {
+                    con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(directurl));
+                } else {
+                    con = openAntiDDoSRequestConnection(br2, br2.createGetRequest(directurl));
+                }
                 /* For video streams we often don't get a Content-Disposition header. */
                 if (con.getResponseCode() == 503) {
                     try {
@@ -2951,7 +2973,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * In some cases, URL may contain filename which can be used as fallback e.g. 'https://host.tld/<fuid>/<filename>(\\.html)?'. </br>
      * Examples without '.html' ending: vipfile.cc, prefiles.com
      */
-    public String getFilenameFromURL(final DownloadLink dl) {
+    public String getFilenameFromURL(final DownloadLink link) {
         try {
             String result = null;
             final String url_name_RegEx = "/[a-z0-9]{12}/(.*?)(?:\\.html)?$";
@@ -2959,11 +2981,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
              * It's important that we check the contentURL too as we do alter pluginPatternMatcher in { @link
              * #correctDownloadLink(DownloadLink) }
              */
-            if (dl.getContentUrl() != null) {
-                result = new Regex(new URL(dl.getContentUrl()).getPath(), url_name_RegEx).getMatch(0);
+            if (link.getContentUrl() != null) {
+                result = new Regex(new URL(link.getContentUrl()).getPath(), url_name_RegEx).getMatch(0);
             }
             if (result == null) {
-                result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), url_name_RegEx).getMatch(0);
+                result = new Regex(new URL(link.getPluginPatternMatcher()).getPath(), url_name_RegEx).getMatch(0);
             }
             return result;
         } catch (MalformedURLException e) {
@@ -2975,18 +2997,18 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /**
      * Tries to get filename from URL and if this fails, will return <fuid> as filename. <br/>
      */
-    protected String getFallbackFilename(final DownloadLink dl) {
-        String filenameURL = this.getFilenameFromURL(dl);
+    protected String getFallbackFilename(final DownloadLink link) {
+        String filenameURL = this.getFilenameFromURL(link);
         if (filenameURL != null) {
             return filenameURL;
         } else {
-            String fallbackFilename = this.getFUIDFromURL(dl);
             if (this.isVideohoster_enforce_video_filename()) {
-                fallbackFilename += ".mp4";
+                return this.getFUIDFromURL(link) + ".mp4";
             } else if (this.isImagehoster()) {
-                fallbackFilename += ".jpg";
+                return this.getFUIDFromURL(link) + ".jpg";
+            } else {
+                return this.getFUIDFromURL(link);
             }
-            return fallbackFilename;
         }
     }
 

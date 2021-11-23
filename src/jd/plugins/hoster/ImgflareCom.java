@@ -23,6 +23,7 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -60,8 +61,14 @@ public class ImgflareCom extends XFileSharingProBasic {
         return buildSupportedNames(getPluginDomains());
     }
 
+    private static final String TYPE_SPECIAL = "https?//[^/]+/f/([a-z0-9]{12,})(?:/([^/]+)(?:\\.html)?)?";
+
     public static String[] getAnnotationUrls() {
-        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:d/[A-Za-z0-9]+|(?:embed-)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?|f/[a-z0-9]{12,}(/[^/]+(?:\\.html)?)?)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -117,11 +124,12 @@ public class ImgflareCom extends XFileSharingProBasic {
 
     @Override
     protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
-        String dllink = new Regex(correctedBR, "\"(https?://[^/]+/i\\.php[^\"]+)\"").getMatch(0);
-        if (StringUtils.isEmpty(dllink)) {
-            dllink = super.getDllink(link, account, br, src);
+        final String dllink = new Regex(correctedBR, "\"(https?://[^/]+/i\\.php[^\"]+)\"").getMatch(0);
+        if (!StringUtils.isEmpty(dllink)) {
+            return dllink;
+        } else {
+            return super.getDllink(link, account, br, src);
         }
-        return dllink;
     }
 
     @Override
@@ -134,12 +142,57 @@ public class ImgflareCom extends XFileSharingProBasic {
             }
             if (imghost_next_form != null) {
                 try {
-                    this.sleep(3000, this.getDownloadLink());
+                    this.sleep(3500, this.getDownloadLink());
                 } catch (final Throwable e) {
                     return imghost_next_form;
                 }
             }
         }
         return imghost_next_form;
+    }
+
+    @Override
+    public String getFUIDFromURL(final DownloadLink link) {
+        if (link != null && link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches(TYPE_SPECIAL)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_SPECIAL).getMatch(0);
+        } else {
+            return super.getFUIDFromURL(link);
+        }
+    }
+
+    @Override
+    public String getFilenameFromURL(final DownloadLink link) {
+        if (link != null && link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches(TYPE_SPECIAL)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_SPECIAL).getMatch(1);
+        } else {
+            return super.getFilenameFromURL(link);
+        }
+    }
+
+    protected String buildURLPath(final DownloadLink link, final String fuid, final URL_TYPE type) {
+        if (type == URL_TYPE.NORMAL) {
+            return "/f/" + fuid;
+        } else {
+            return super.buildURLPath(link, fuid, type);
+        }
+    }
+
+    @Override
+    public String[] scanInfo(final String html, final String[] fileInfo) {
+        super.scanInfo(html, fileInfo);
+        final String filenameURL = this.getFilenameFromURL(getDownloadLink());
+        final String filenameHTML = br.getRegex("<title>Viewing ([^<>\"]+) - IMGFlare</title>").getMatch(0);
+        if (filenameURL != null) {
+            fileInfo[0] = filenameURL;
+        } else if (filenameHTML != null) {
+            fileInfo[0] = Encoding.htmlDecode(filenameHTML);
+        }
+        return fileInfo;
+    }
+
+    @Override
+    protected boolean supportsHEADRequest() {
+        /* 2021-11-23: Special */
+        return false;
     }
 }

@@ -23,6 +23,7 @@ import org.appwork.storage.TypeRef;
 import org.jdownloader.plugins.components.config.IssuuComConfig;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
@@ -87,9 +88,18 @@ public class IssuuCom extends PluginForHost {
             try {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
-                    return;
+                    if (!force) {
+                        br.getPage("https://" + this.getHost() + "/");
+                        if (isLoggedIn(br)) {
+                            logger.info("Cookie login successful");
+                            return;
+                        } else {
+                            logger.info("Cookie login failed");
+                            br.clearCookies(br.getHost());
+                        }
+                    }
                 }
                 final String lang = System.getProperty("user.language");
                 if (isMailAdress(account.getUser())) {
@@ -99,6 +109,7 @@ public class IssuuCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInstead of using your mailadress, please enter your username in the 'username' field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
+                logger.info("Performing full login");
                 br.setFollowRedirects(false);
                 br.getHeaders().put("Accept", "*/*");
                 // br.getPage("https://api.issuu.com/query?username=" + Encoding.urlEncode(account.getUser()) + "&password=" +
@@ -126,6 +137,14 @@ public class IssuuCom extends PluginForHost {
                 }
                 throw e;
             }
+        }
+    }
+
+    private boolean isLoggedIn(final Browser br) {
+        if (br.containsHTML("data-track=\"logout\"")) {
+            return true;
+        } else {
+            return false;
         }
     }
 
