@@ -32,8 +32,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class ImgflareCom extends XFileSharingProBasic {
-    public ImgflareCom(final PluginWrapper wrapper) {
+public class ImgflareCom_ImgBabesCom extends XFileSharingProBasic {
+    public ImgflareCom_ImgBabesCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -49,6 +49,7 @@ public class ImgflareCom extends XFileSharingProBasic {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "imgflare.com" });
+        ret.add(new String[] { "imgbabes.com" });
         return ret;
     }
 
@@ -181,7 +182,7 @@ public class ImgflareCom extends XFileSharingProBasic {
     public String[] scanInfo(final String html, final String[] fileInfo) {
         super.scanInfo(html, fileInfo);
         final String filenameURL = this.getFilenameFromURL(getDownloadLink());
-        final String filenameHTML = br.getRegex("<title>Viewing ([^<>\"]+) - IMGFlare</title>").getMatch(0);
+        final String filenameHTML = br.getRegex("<title>Viewing ([^<>\"]+) - (?:IMGFlare|IMGBabes)</title>").getMatch(0);
         if (filenameURL != null) {
             fileInfo[0] = filenameURL;
         } else if (filenameHTML != null) {

@@ -38,7 +38,7 @@ public class PornktuBe extends KernelVideoSharingComV2 {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "pornktube.com", "pornktu.be" });
+        ret.add(new String[] { "pornktube.vip", "pornktube.com", "pornktu.be" });
         return ret;
     }
 
@@ -62,6 +62,18 @@ public class PornktuBe extends KernelVideoSharingComV2 {
         final String redirect = br.getRegex("http-equiv=\"Refresh\" content=\"0; URL=(http[^<>\"]+)").getMatch(0);
         if (redirect != null) {
             this.getPage(redirect);
+        }
+    }
+
+    @Override
+    protected boolean isOffline(final Browser br) {
+        if (br.containsHTML("(?i)>\\s*Video removed at request of the owner")) {
+            /* 2021-11-23: Special */
+            return true;
+        } else if (super.isOffline(br)) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -98,7 +110,7 @@ public class PornktuBe extends KernelVideoSharingComV2 {
             }
         }
         if (dllink != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            this.getDownloadLink().setComment("SelectedQuality: " + best + "p");
+            this.getDownloadLink().setComment("ChosenQuality: " + best + "p");
         }
         return dllink;
     }
