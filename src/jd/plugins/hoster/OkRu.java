@@ -382,20 +382,20 @@ public class OkRu extends PluginForHost {
                         return false;
                     }
                     br.getPage("https://" + this.getHost() + "/");
-                    if (this.isLoggedin()) {
+                    if (isLoggedin(br)) {
                         logger.info("Cookie login successful");
                         /* Refresh cookie timestamp */
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
                         return true;
                     } else {
                         logger.info("Cookie login failed");
+                        br.clearCookies(br.getHost());
                     }
                 }
                 logger.info("Performing full login");
                 br.getPage("https://" + this.getHost());
                 final Form loginform = br.getFormbyActionRegex(".*AnonymLogin.*");
                 if (loginform == null) {
-                    logger.warning("Failed to find loginform");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 loginform.put("st.email", Encoding.urlEncode(account.getUser()));
@@ -404,7 +404,7 @@ public class OkRu extends PluginForHost {
                     loginform.put("st.st.flashVer", "0.0.0");
                 }
                 br.submitForm(loginform);
-                if (!isLoggedin()) {
+                if (!isLoggedin(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -418,8 +418,12 @@ public class OkRu extends PluginForHost {
         }
     }
 
-    private boolean isLoggedin() {
-        return br.containsHTML("logoutCurrentUser\"");
+    private static boolean isLoggedin(final Browser br) {
+        if (br.containsHTML("class=\"toolbar_accounts\"")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
