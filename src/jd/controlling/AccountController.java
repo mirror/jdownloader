@@ -790,13 +790,12 @@ public class AccountController implements AccountControllerListener, AccountProp
         synchronized (AccountController.this) {
             final String host = account.getHoster().toLowerCase(Locale.ENGLISH);
             List<Account> accs = ACCOUNTS.get(host);
-            if (accs == null) {
-                accs = new ArrayList<Account>();
-                ACCOUNTS.put(host, accs);
-            }
-            for (final Account acc : accs) {
-                if (acc.equals(account)) {
-                    return acc;
+            if (accs != null) {
+                /* Prevent NPE */
+                for (final Account acc : accs) {
+                    if (acc.equals(account)) {
+                        return acc;
+                    }
                 }
             }
         }

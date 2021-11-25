@@ -191,8 +191,12 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
                 message = _GUI.T.lit_yes();
             }
             Dialog.getInstance().showMessageDialog(_GUI.T.accountdialog_check_valid(message));
-            if (existingAccount == null) {
-                /* Only do this for new accounts otherwise existing accounts (which we checked just now) will be checked again. */
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                if (existingAccount == null) {
+                    /* Only do this for new accounts otherwise existing accounts (which we checked just now) will be checked again. */
+                    AccountController.getInstance().addAccount(ac, false);
+                }
+            } else {
                 AccountController.getInstance().addAccount(ac, false);
             }
             return true;
