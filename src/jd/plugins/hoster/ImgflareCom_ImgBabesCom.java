@@ -192,7 +192,7 @@ public class ImgflareCom_ImgBabesCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean supportsHEADRequest() {
+    protected boolean supportsHEADRequestForDirecturlCheck() {
         /* 2021-11-23: Special */
         return false;
     }

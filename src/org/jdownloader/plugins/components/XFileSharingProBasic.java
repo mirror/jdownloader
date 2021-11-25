@@ -444,7 +444,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Use HEAD or GET request for checking directurls? </br>
      * Example HEAD request unsupported: imgflare.com
      */
-    protected boolean supportsHEADRequest() {
+    protected boolean supportsHEADRequestForDirecturlCheck() {
         return true;
     }
 
@@ -2242,7 +2242,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
-                if (supportsHEADRequest()) {
+                if (supportsHEADRequestForDirecturlCheck()) {
                     con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(directurl));
                 } else {
                     con = openAntiDDoSRequestConnection(br2, br2.createGetRequest(directurl));
