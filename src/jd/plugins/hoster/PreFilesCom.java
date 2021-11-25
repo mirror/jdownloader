@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -25,13 +28,12 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountUnavailableException;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
+import jd.plugins.PluginForDecrypt;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PreFilesCom extends XFileSharingProBasic {
@@ -197,12 +199,30 @@ public class PreFilesCom extends XFileSharingProBasic {
 
     @Override
     protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
-        final String dllink = super.getDllink(link, account, br, src);
+        String dllink = super.getDllink(link, account, br, src);
         if (dllink != null) {
             return dllink;
         } else {
             /* 2020-12-11: They're using simple redirectors here e.g. "pro.sh" */
-            return new Regex(src, "href=\"(https?://[^\"]+)\"[^>]*>\\s*Click here to Download").getMatch(0);
+            dllink = new Regex(src, "href=\"(https?://[^\"]+)\"[^>]*>\\s*Click here to Download").getMatch(0);
+            if (dllink != null && dllink.matches("https?://[^/]+/[A-Za-z0-9]+")) {
+                /* pro.sh --> Use dedicated crawler plugin. */
+                logger.info("Processing special redirect URL");
+                try {
+                    final Browser brc = br.cloneBrowser();
+                    final PluginForDecrypt plg = this.getNewPluginForDecryptInstance("pro.sh");
+                    plg.setBrowser(brc);
+                    /* We expect exactly one result. */
+                    final ArrayList<DownloadLink> results = plg.decryptIt(new CryptedLink(dllink), null);
+                    dllink = results.get(0).getPluginPatternMatcher();
+                    return dllink;
+                } catch (final Throwable e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            } else {
+                return dllink;
+            }
         }
     }
 }

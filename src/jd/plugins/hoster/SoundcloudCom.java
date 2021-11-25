@@ -107,6 +107,7 @@ public class SoundcloudCom extends PluginForHost {
     public static final String   PROPERTY_directurl                                                    = "directurl";
     /* Account properties */
     private static final String  PROPERTY_ACCOUNT_oauthtoken                                           = "oauthtoken";
+    private static final String  PROPERTY_ACCOUNT_userid                                               = "userid";
     /* API base URLs */
     public static final String   API_BASEv2                                                            = "https://api-v2.soundcloud.com";
 
@@ -582,10 +583,10 @@ public class SoundcloudCom extends PluginForHost {
 
     public void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (account) {
+            prepBR(br);
+            String oauthtoken = account.getStringProperty(PROPERTY_ACCOUNT_oauthtoken);
+            br.setCookiesExclusive(true);
             try {
-                prepBR(br);
-                String oauthtoken = account.getStringProperty(PROPERTY_ACCOUNT_oauthtoken, null);
-                br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
                 /* 2020-12-15: Website/API login is broken thus only cookie login is possible */
@@ -606,7 +607,7 @@ public class SoundcloudCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed: Oauth token missing", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                     br.setCookies(this.getHost(), userCookies);
-                    oauthtoken = userCookies.get("oauth_token").getValue();
+                    oauthtoken = userCookies.get("oauth_token").getValue(); // Exception will occur if this cookie is not given!
                     br.getHeaders().put("Authorization", "OAuth " + oauthtoken);
                     if (this.cookieCheck(br)) {
                         account.saveCookies(br.getCookies(this.getHost()), "");
@@ -677,6 +678,16 @@ public class SoundcloudCom extends PluginForHost {
                     account.removeProperty(PROPERTY_ACCOUNT_oauthtoken);
                 }
                 throw e;
+            } finally {
+                /* Store userID separately as we might need it later. */
+                if (oauthtoken != null) {
+                    final Regex oauthInfo = new Regex(oauthtoken, "(\\d+)-(\\d+)-(\\d+)-([A-Za-z0-9]+)");
+                    if (oauthInfo.matches()) {
+                        account.setProperty(PROPERTY_ACCOUNT_userid, oauthInfo.getMatch(2));
+                    } else {
+                        logger.warning("Unexpected oauthtoken format");
+                    }
+                }
             }
         }
     }
@@ -987,7 +998,7 @@ public class SoundcloudCom extends PluginForHost {
         return SubConfiguration.getConfig("soundcloud.com").getBooleanProperty(ENFORCE_FILESIZE_CALCULATION_EVEN_FOR_OFFICIALLY_DOWNLOADABLE_CONTENT, defaultENFORCE_FILESIZE_CALCULATION_EVEN_FOR_OFFICIALLY_DOWNLOADABLE_CONTENT);
     }
 
-    private static final int     defaultArrayPosAUDIO_QUALITY_SELECTION_MODE                                          = 0;
+    private static final int     defaultArrayPosAUDIO_QUALITY_SELECTION_MODE                                  = 0;
     private static final boolean defaultALLOW_PREVIEW_DOWNLOAD                                                = false;
     public static final boolean  defaultGRAB_PURCHASE_URL                                                     = false;
     public static final boolean  defaultGRAB500THUMB                                                          = false;
