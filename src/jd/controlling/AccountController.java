@@ -28,22 +28,6 @@ import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
-import jd.controlling.accountchecker.AccountChecker;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.WarnLevel;
-import jd.http.Browser;
-import jd.http.BrowserSettingsThread;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
-import jd.plugins.Account.AccountPropertyChangeHandler;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountProperty;
-import jd.plugins.PluginForHost;
-
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
@@ -72,6 +56,22 @@ import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChi
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.AccountData;
 import org.jdownloader.settings.AccountSettings;
+
+import jd.controlling.accountchecker.AccountChecker;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
+import jd.http.Browser;
+import jd.http.BrowserSettingsThread;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
+import jd.plugins.Account.AccountPropertyChangeHandler;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountProperty;
+import jd.plugins.PluginForHost;
 
 public class AccountController implements AccountControllerListener, AccountPropertyChangeHandler {
     private static final long                                                    serialVersionUID = -7560087582989096645L;
@@ -616,6 +616,7 @@ public class AccountController implements AccountControllerListener, AccountProp
         addAccount(account, true);
     }
 
+    /** Adds account to accountlist. If account already exists, it will be enabled (and checked) if it is currently disabled. */
     public void addAccount(final Account account, boolean forceCheck) {
         if (account != null) {
             if (account.getPlugin() == null) {
@@ -624,19 +625,11 @@ public class AccountController implements AccountControllerListener, AccountProp
             if (account.getHoster() != null) {
                 Account existingAccount = null;
                 synchronized (AccountController.this) {
-                    final String host = account.getHoster().toLowerCase(Locale.ENGLISH);
-                    List<Account> accs = ACCOUNTS.get(host);
-                    if (accs == null) {
-                        accs = new ArrayList<Account>();
-                        ACCOUNTS.put(host, accs);
-                    }
-                    for (final Account acc : accs) {
-                        if (acc.equals(account)) {
-                            existingAccount = acc;
-                            break;
-                        }
-                    }
+                    existingAccount = this.getExistingAccount(account);
+                    /* 2021-11-25: TODO: Lowercase required? Host names should be unique already! */
+                    final List<Account> accs = ACCOUNTS.get(account.getHoster().toLowerCase(Locale.ENGLISH));
                     if (existingAccount == null) {
+                        /* No existing account found -> Add this account to list of accounts. */
                         account.setAccountController(this);
                         accs.add(account);
                     }
@@ -789,6 +782,28 @@ public class AccountController implements AccountControllerListener, AccountProp
         }
     }
 
+    /** Checks if given account already exists. */
+    public Account getExistingAccount(final Account account) {
+        if (account == null || account.getHoster() == null) {
+            return null;
+        }
+        synchronized (AccountController.this) {
+            final String host = account.getHoster().toLowerCase(Locale.ENGLISH);
+            List<Account> accs = ACCOUNTS.get(host);
+            if (accs == null) {
+                accs = new ArrayList<Account>();
+                ACCOUNTS.put(host, accs);
+            }
+            for (final Account acc : accs) {
+                if (acc.equals(account)) {
+                    return acc;
+                }
+            }
+        }
+        return null;
+    }
+
+    /** Checks if account with expected properties exists. */
     public boolean hasAccount(final String host, final Boolean isEnabled, final Boolean isValid, final Boolean isPremium, final Boolean isExpired) {
         if (StringUtils.isEmpty(host)) {
             return false;

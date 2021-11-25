@@ -46,19 +46,9 @@ import javax.swing.KeyStroke;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
-import jd.controlling.AccountController;
-import jd.controlling.accountchecker.AccountChecker;
-import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.gui.UserIO;
-import jd.gui.swing.jdgui.JDGui;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
-import jd.plugins.AccountInfo;
-import jd.plugins.PluginForHost;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.ListFocusTraversalPolicy;
@@ -87,6 +77,17 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.translate._JDT;
 
+import jd.controlling.AccountController;
+import jd.controlling.accountchecker.AccountChecker;
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
+import jd.gui.UserIO;
+import jd.gui.swing.jdgui.JDGui;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
+import jd.plugins.AccountInfo;
+import jd.plugins.PluginForHost;
+import net.miginfocom.swing.MigLayout;
+
 public class AddAccountDialog extends AbstractDialog<Integer> implements InputChangedCallbackInterface {
     public static void showDialog(final PluginForHost pluginForHost, Account acc) {
         final AddAccountDialog dialog = new AddAccountDialog(pluginForHost, acc);
@@ -113,12 +114,36 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
         return null;
     }
 
-    public static boolean addAccount(final Account ac) throws DialogNoAnswerException {
+    public static boolean addAccount(Account ac) throws DialogNoAnswerException {
+        final AccountController accountController = AccountController.getInstance();
+        Account existingAccount = null;
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            existingAccount = accountController.getExistingAccount(ac);
+            if (existingAccount != null) {
+                /**
+                 * 2021-11-25: TODO: Same account but different password -> Change PW of existing account? Otherwise our check will be kinda
+                 * broken...
+                 */
+                // if (!StringUtils.equals(ac.getPass(), existingAccount.getPass())) {
+                // existingAccount.setPass(ac.getPass());
+                // }
+                ac = existingAccount;
+            }
+        }
         try {
-            checkAccount(ac);
-        } catch (DialogNoAnswerException e) {
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && existingAccount != null) {
+                /* User wants to add an account which already exists --> Enable existing account --> It will be checked then */
+                /* TODO: Enable account without additional check as we do the check here! */
+                if (!ac.isEnabled()) {
+                    ac.setEnabled(true);
+                }
+                checkAccount(ac);
+            } else {
+                checkAccount(ac);
+            }
+        } catch (final DialogNoAnswerException e) {
             throw e;
-        } catch (Throwable e) {
+        } catch (final Throwable e) {
             Dialog.getInstance().showExceptionDialog(_GUI.T.accountdialog_check_failed(), _GUI.T.accountdialog_check_failed_msg(), e);
         }
         AccountError error = ac.getError();
@@ -166,7 +191,10 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
                 message = _GUI.T.lit_yes();
             }
             Dialog.getInstance().showMessageDialog(_GUI.T.accountdialog_check_valid(message));
-            AccountController.getInstance().addAccount(ac, false);
+            if (existingAccount == null) {
+                /* Only do this for new accounts otherwise existing accounts (which we checked just now) will be checked again. */
+                AccountController.getInstance().addAccount(ac, false);
+            }
             return true;
         }
     }
