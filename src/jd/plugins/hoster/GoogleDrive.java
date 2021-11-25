@@ -927,7 +927,11 @@ public class GoogleDrive extends PluginForHost {
     private void checkErrorBlockedByGoogle(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         if (br.getHttpConnection().getResponseCode() == 403 && br.containsHTML("but your computer or network may be sending automated queries")) {
             /* 2021-01-18 */
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Blocked by Google", 5 * 60 * 1000l);
+            if (account != null) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Blocked by Google", 5 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Blocked by Google", 5 * 60 * 1000l);
+            }
         }
     }
 

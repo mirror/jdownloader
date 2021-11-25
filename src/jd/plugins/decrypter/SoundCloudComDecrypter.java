@@ -116,7 +116,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(false);
         /* They can have huge pages, allow eight times the normal load limit */
-        /* Login if possible, helps to get links which need the user to be logged in */
+        /* Login whenever possible, helps to get links which need the user to be logged in e.g. users' own favorites. */
         final List<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
         if (accs != null && accs.size() > 0) {
             final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
@@ -183,6 +183,8 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             br.getPage(parameter);
             final String newurl = br.getRedirectLocation();
             if (newurl == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (!this.canHandle(newurl)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 param.setCryptedUrl(newurl);
