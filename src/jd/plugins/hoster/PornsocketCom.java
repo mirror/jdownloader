@@ -136,7 +136,7 @@ public class PornsocketCom extends PluginForHost {
         final String urlContainingUsableTitle;
         if (link.getPluginPatternMatcher().matches(TYPE_NORMAL)) {
             urlContainingUsableTitle = link.getPluginPatternMatcher();
-            title = br.getRegex("@type\"\\s*:\\s*\"VideoObject\",\\s*\"name\": \"([^\"]+)\"").getMatch(0);
+            title = br.getRegex("@type\"\\s*:\\s*\"VideoObject\",\\s*\"name\":\\s*\"([^\"]+)\"").getMatch(0);
         } else {
             urlContainingUsableTitle = br.getRegex("player_logo_link\\s*=\\s*\"(" + TYPE_NORMAL + ")\"").getMatch(0);
             if (urlContainingUsableTitle != null) {
