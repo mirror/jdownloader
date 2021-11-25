@@ -36,7 +36,7 @@ public class UiiIo extends MightyScriptAdLinkFly {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "uii.io", "szs.pw", "passgen.icu" });
+        ret.add(new String[] { "uii.io", "szs.pw", "passgen.icu", "wordcounter.icu" });
         return ret;
     }
 
