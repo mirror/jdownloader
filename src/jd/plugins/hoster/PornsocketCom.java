@@ -16,12 +16,15 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornsocket.com" }, urls = { "https?://(?:www\\.)?pornsocket\\.com/video/(\\d+)/([a-z0-9\\-]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornsocketCom extends PluginForHost {
     public PornsocketCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,10 +46,37 @@ public class PornsocketCom extends PluginForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
+    private static final String  TYPE_NORMAL       = "https?://[^/]+/video/(\\d+)/([a-z0-9\\-]+)";
+    private static final String  TYPE_EMBED        = "https?://[^/]+/embed/([a-f0-9]{20})";
 
     @Override
     public String getAGBLink() {
         return "https://www.pornsocket.com/tos.html";
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "pornsocket.com" });
+        ret.add(new String[] { "outerporn.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:video/\\d+/[a-z0-9\\-]+|embed/[a-f0-9]{20})");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -60,7 +90,28 @@ public class PornsocketCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        if (link.getPluginPatternMatcher() == null) {
+            return null;
+        } else if (link.getPluginPatternMatcher().matches(TYPE_NORMAL)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(0);
+        } else {
+            /* TYPE_EMBED */
+            return new Regex(link.getPluginPatternMatcher(), TYPE_EMBED).getMatch(0);
+        }
+    }
+
+    private String getTitleURL(final DownloadLink link) {
+        return getTitleURL(link.getPluginPatternMatcher());
+    }
+
+    /** Returns title inside URL (cleaned). */
+    private String getTitleURL(final String url) {
+        if (url.matches(TYPE_NORMAL)) {
+            return new Regex(url, TYPE_NORMAL).getMatch(1).replace("-", " ");
+        } else {
+            /* TYPE_EMBED */
+            return new Regex(url, TYPE_EMBED).getMatch(0);
+        }
     }
 
     @Override
@@ -69,8 +120,7 @@ public class PornsocketCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
-        final String urlTitle = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
-        link.setFinalFileName(urlTitle.replace("-", " ") + ".mp4");
+        link.setName(getTitleURL(link) + ".mp4");
         dllink = null;
         this.setBrowserExclusive();
         br.setAllowedResponseCodes(new int[] { 500 });
@@ -78,10 +128,35 @@ public class PornsocketCom extends PluginForHost {
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.canHandle(br.getURL())) {
+            /* E.g. redirect to https://www.pornsocket.com/notfound/video_missing */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String title = null;
+        final String urlContainingUsableTitle;
+        if (link.getPluginPatternMatcher().matches(TYPE_NORMAL)) {
+            urlContainingUsableTitle = link.getPluginPatternMatcher();
+            title = br.getRegex("@type\"\\s*:\\s*\"VideoObject\",\\s*\"name\": \"([^\"]+)\"").getMatch(0);
+        } else {
+            urlContainingUsableTitle = br.getRegex("player_logo_link\\s*=\\s*\"(" + TYPE_NORMAL + ")\"").getMatch(0);
+            if (urlContainingUsableTitle != null) {
+                /*
+                 * Use this for future linkchecks as it contains more useful information such as the "real" videoID and a human readable
+                 * title.
+                 */
+                logger.info("Correcting internal URL: old: " + link.getPluginPatternMatcher() + " | new: " + urlContainingUsableTitle);
+                link.setPluginPatternMatcher(urlContainingUsableTitle);
+            }
+        }
+        /* Prefer title inside URL as it will be the same for all URL-types! */
+        if (urlContainingUsableTitle != null) {
+            link.setFinalFileName(getTitleURL(urlContainingUsableTitle) + ".mp4");
+        } else if (title != null) {
+            link.setFinalFileName(title + ".mp4");
         }
         /**
          * 2021-09-06: First result = highest quality </br>
-         * These directurls are only valid once!!
+         * These direct-urls are only valid once!!
          */
         dllink = br.getRegex("<source src=\"(https?://[^\"]+\\.mp4)\"").getMatch(0);
         if (!StringUtils.isEmpty(dllink) && !isDownload) {
@@ -108,7 +183,10 @@ public class PornsocketCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link, true);
-        if (StringUtils.isEmpty(dllink)) {
+        if (br.containsHTML("(?i)>\\s*This is a private video")) {
+            /* 2021-11-25: You must be friends with user blabla to be able to view this content... */
+            throw new AccountRequiredException("Private video");
+        } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
