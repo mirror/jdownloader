@@ -120,13 +120,6 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             existingAccount = accountController.getExistingAccount(ac);
             if (existingAccount != null) {
-                /**
-                 * 2021-11-25: TODO: Same account but different password -> Change PW of existing account? Otherwise our check will be kinda
-                 * broken...
-                 */
-                // if (!StringUtils.equals(ac.getPass(), existingAccount.getPass())) {
-                // existingAccount.setPass(ac.getPass());
-                // }
                 ac = existingAccount;
             }
         }

@@ -38,6 +38,7 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.logging2.LogInterface;
@@ -617,7 +618,8 @@ public class AccountController implements AccountControllerListener, AccountProp
     }
 
     /** Adds account to accountlist. If account already exists, it will be enabled (and checked) if it is currently disabled. */
-    public void addAccount(final Account account, boolean forceCheck) {
+    public void addAccount(final Account account, final boolean forceCheck) {
+        /* TODO: Implement "forceCheck"! */
         if (account != null) {
             if (account.getPlugin() == null) {
                 new PluginFinder().assignPlugin(account, true);
@@ -627,22 +629,38 @@ public class AccountController implements AccountControllerListener, AccountProp
                 synchronized (AccountController.this) {
                     existingAccount = this.getExistingAccount(account);
                     /* 2021-11-25: TODO: Lowercase required? Host names should be unique already! */
-                    final List<Account> accs = ACCOUNTS.get(account.getHoster().toLowerCase(Locale.ENGLISH));
+                    final String host = account.getHoster().toLowerCase(Locale.ENGLISH);
+                    List<Account> accs = ACCOUNTS.get(host);
+                    if (accs == null) {
+                        accs = new ArrayList<Account>();
+                        ACCOUNTS.put(host, accs);
+                    }
                     if (existingAccount == null) {
                         /* No existing account found -> Add this account to list of accounts. */
                         account.setAccountController(this);
                         accs.add(account);
                     }
                 }
-                if (existingAccount == null) {
+                if (existingAccount != null) {
+                    /*
+                     * TODO: Set password of "new" account on existing account (assume it has been checked before or add more logic to not
+                     * lose older passwords of accounts with same usernames!)
+                     */
+                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                        if (!StringUtils.equals(existingAccount.getPass(), account.getPass())) {
+                            account.setPass(existingAccount.getPass());
+                        }
+                    }
+                    if (!existingAccount.isEnabled() || existingAccount.getError() != null) {
+                        // reuse properties and accountInfos from new account
+                        existingAccount.setError(null, -1, null);
+                        existingAccount.setAccountInfo(account.getAccountInfo());
+                        existingAccount.setProperties(account.getProperties());
+                        existingAccount.setEnabled(true);
+                        getEventSender().fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ACCOUNT_CHECKED, existingAccount));
+                    }
+                } else {
                     this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ADDED, account));
-                } else if (existingAccount != null && (!existingAccount.isEnabled() || existingAccount.getError() != null)) {
-                    // reuse properties and accountInfos from new account
-                    existingAccount.setError(null, -1, null);
-                    existingAccount.setAccountInfo(account.getAccountInfo());
-                    existingAccount.setProperties(account.getProperties());
-                    existingAccount.setEnabled(true);
-                    getEventSender().fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ACCOUNT_CHECKED, existingAccount));
                 }
             }
         }
