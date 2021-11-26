@@ -193,25 +193,28 @@ public class PornportalComCrawler extends PluginForDecrypt {
         }
         Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final Map<String, Object> result = (Map<String, Object>) root.get("result");
-        final ArrayList<Object> videoObjects = new ArrayList<Object>();
-        /* Add current object */
+        final ArrayList<Map<String, Object>> videoObjects = new ArrayList<Map<String, Object>>();
+        /* Add current object - that itself could be a video object! */
         videoObjects.add(result);
-        /* Look for more objects */
+        /* Look for more objects e.g. video split into multiple parts/scenes(??!) */
         final Object videoChildrenO = result.get("children");
         if (videoChildrenO != null) {
-            final ArrayList<Object> children = (ArrayList<Object>) videoChildrenO;
+            final ArrayList<Map<String, Object>> children = (ArrayList<Map<String, Object>>) videoChildrenO;
             videoObjects.addAll(children);
         }
         final boolean isPremium = account != null && account.getType() == AccountType.PREMIUM;
         for (final Object videoO : videoObjects) {
             final Map<String, Object> clipInfo = (Map<String, Object>) videoO;
+            final String type = (String) clipInfo.get("type");
             // final String type = (String) entries.get("type");
             final String videoID = Long.toString(JavaScriptEngineFactory.toLong(clipInfo.get("id"), 0));
-            if (StringUtils.isEmpty(videoID) || videoID.equals("0")) {
+            if (StringUtils.isEmpty(type) || !type.matches("trailer|full|scene")) {
+                /* Skip unsupported video types */
+                continue;
+            } else if (StringUtils.isEmpty(videoID)) {
                 /* Skip invalid objects */
                 continue;
             }
-            final boolean isTrailer = "trailer".equals(clipInfo.get("type"));
             String title = (String) clipInfo.get("title");
             String description = (String) clipInfo.get("description");
             if (StringUtils.isEmpty(title)) {
@@ -220,7 +223,7 @@ public class PornportalComCrawler extends PluginForDecrypt {
             } else if (title.equalsIgnoreCase("trailer")) {
                 title = contentID + "_trailer";
             }
-            if (isPremium && isTrailer) {
+            if (isPremium && type.equals("trailer")) {
                 plg.getLogger().info("Skipping trailer because user owns premium account");
                 continue;
             }
@@ -229,21 +232,21 @@ public class PornportalComCrawler extends PluginForDecrypt {
             if (!StringUtils.isEmpty(description)) {
                 fp.setComment(description);
             }
-            final String format_filename = "%s_%s_%s.mp4";
-            final List<Map<String, Object>> videoTypes = new ArrayList<Map<String, Object>>();
+            final List<Map<String, Object>> allFullVideos = new ArrayList<Map<String, Object>>();
+            final List<Map<String, Object>> allTrailers = new ArrayList<Map<String, Object>>();
             try {
                 final Map<String, Object> videoTypesMap = (Map<String, Object>) clipInfo.get("videos");
-                final Map<String, Object> fullVideos = (Map<String, Object>) JavaScriptEngineFactory.walkJson(videoTypesMap, "full/files");
-                final Map<String, Object> trailers = (Map<String, Object>) JavaScriptEngineFactory.walkJson(videoTypesMap, "mediabook/files");
-                if (fullVideos == null && trailers == null) {
+                final Map<String, Object> fullVideoRenditions = (Map<String, Object>) JavaScriptEngineFactory.walkJson(videoTypesMap, "full/files");
+                final Map<String, Object> trailerRenditions = (Map<String, Object>) JavaScriptEngineFactory.walkJson(videoTypesMap, "mediabook/files");
+                if (fullVideoRenditions == null && trailerRenditions == null) {
                     /* Skip non-video objects */
                     continue;
                 } else {
-                    if (fullVideos != null) {
-                        videoTypes.add(fullVideos);
+                    if (fullVideoRenditions != null) {
+                        allFullVideos.add(fullVideoRenditions);
                     }
-                    if (trailers != null) {
-                        videoTypes.add(trailers);
+                    if (trailerRenditions != null) {
+                        allTrailers.add(trailerRenditions);
                     }
                 }
             } catch (final Throwable e) {
@@ -251,7 +254,14 @@ public class PornportalComCrawler extends PluginForDecrypt {
                 continue;
             }
             /* Now walk through all qualities in all types */
-            for (final Map<String, Object> files : videoTypes) {
+            final List<Map<String, Object>> videoRenditionsToProcess;
+            /* Prefer full videos over trailers */
+            if (!allFullVideos.isEmpty()) {
+                videoRenditionsToProcess = allFullVideos;
+            } else {
+                videoRenditionsToProcess = allTrailers;
+            }
+            for (final Map<String, Object> files : videoRenditionsToProcess) {
                 final Iterator<Entry<String, Object>> qualities = files.entrySet().iterator();
                 while (qualities.hasNext()) {
                     final Entry<String, Object> entry = qualities.next();
@@ -267,7 +277,7 @@ public class PornportalComCrawler extends PluginForDecrypt {
                     String downloadurl = (String) downloadInfo.get("download");
                     if (StringUtils.isEmpty(downloadurl)) {
                         /* Fallback to stream-URL (most times, an official downloadurl is available!) */
-                        downloadurl = (String) videoInfo.get("view");
+                        downloadurl = (String) downloadInfo.get("view");
                     }
                     if (StringUtils.isEmpty(downloadurl)) {
                         continue;
@@ -293,7 +303,7 @@ public class PornportalComCrawler extends PluginForDecrypt {
                     }
                     final DownloadLink dl = new DownloadLink(pluginToUse, "pornportal", host, patternMatcher, true);
                     dl.setContentUrl(contentURL);
-                    dl.setFinalFileName(String.format(format_filename, videoID, title, format));
+                    dl.setFinalFileName(videoID + "_" + title + "_" + format + ".mp4");
                     dl.setProperty("videoid", videoID);
                     dl.setProperty("quality", format);
                     dl.setProperty("directurl", downloadurl);
@@ -306,10 +316,6 @@ public class PornportalComCrawler extends PluginForDecrypt {
                 }
                 if (!foundQualities.isEmpty()) {
                     break;
-                } else if (videoTypes.size() > 1) {
-                    /* Possibly no full clips available although user may be premium -> Continue and hope that trailers are available. */
-                    plg.getLogger().info("Failed to find full clips -> Adding trailer for current videoID: " + videoID);
-                    continue;
                 } else {
                     /* This should never happen! */
                     plg.getLogger().warning("Failed to find any downloadable content for videoID: " + videoID);
