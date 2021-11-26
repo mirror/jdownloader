@@ -43,7 +43,7 @@ public class UploadingVn extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "uploading.vn" });
+        ret.add(new String[] { "uploading.vn", "files.pw" });
         return ret;
     }
 
@@ -58,6 +58,12 @@ public class UploadingVn extends XFileSharingProBasic {
 
     public static String[] getAnnotationUrls() {
         return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        /* 2021-11-26: files.pw is now uploading.vn */
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     @Override
