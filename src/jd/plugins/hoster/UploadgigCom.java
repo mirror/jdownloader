@@ -453,20 +453,8 @@ public class UploadgigCom extends antiDDoSForHost {
                 if (this.containsRecaptchaV2Class(brc) && !captchaHidden) {
                     /* 2020-05-15: New */
                     logger.info("Login captcha required");
-                    final DownloadLink dlinkbefore = this.getDownloadLink();
-                    try {
-                        final DownloadLink dl_dummy;
-                        if (dlinkbefore != null) {
-                            dl_dummy = dlinkbefore;
-                        } else {
-                            dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
-                            this.setDownloadLink(dl_dummy);
-                        }
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brc).getToken();
-                        loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                    } finally {
-                        this.setDownloadLink(dlinkbefore);
-                    }
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brc).getToken();
+                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 } else {
                     logger.info("Login captcha NOT required");
                 }

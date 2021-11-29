@@ -25,6 +25,17 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.GfycatConfig;
+import org.jdownloader.plugins.components.config.GfycatConfig.PreferredFormat;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -38,17 +49,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.GfycatConfig;
-import org.jdownloader.plugins.components.config.GfycatConfig.PreferredFormat;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gfycat.com" }, urls = { "https?://(?:www\\.)?(?:gfycat\\.com(?:/ifr)?|gifdeliverynetwork\\.com(?:/ifr)?|redgifs\\.com/(?:watch|ifr))/([A-Za-z0-9]+)" })
 public class GfyCatCom extends PluginForHost {
@@ -177,60 +177,66 @@ public class GfyCatCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (Browser.getHost(br.getHost()).equals("redgifs.com")) {
-            /* 2021-05-04: New API handling required for URLs of this domain */
-            String key = null;
-            synchronized (redgifsAccessKey) {
-                key = redgifsAccessKey.get();
-                if (StringUtils.isEmpty(key)) {
-                    br.getPage(link.getPluginPatternMatcher());
-                    /* 2021-05-04: /assets/app.59be79d0c1811e38f695.js */
-                    final String jsurl = br.getRegex("<script src=\"(/assets/app\\.[a-f0-9]+\\.js)\">").getMatch(0);
-                    if (jsurl == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final Browser brc = br.cloneBrowser();
-                    brc.getPage(jsurl);
-                    key = brc.getRegex("webloginAccessKey=\"([^\"]+)\"").getMatch(0);
+            /* 2021-11-29: New endpoint available and old one can be used without key/token: https://api.redgifs.com/v2/gifs/ */
+            final boolean accessKeyRequired = false;
+            String token = null;
+            if (accessKeyRequired) {
+                String key = null;
+                synchronized (redgifsAccessKey) {
+                    key = redgifsAccessKey.get();
                     if (StringUtils.isEmpty(key)) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else {
-                        redgifsAccessKey.set(key);
+                        br.getPage(link.getPluginPatternMatcher());
+                        /* 2021-05-04: /assets/app.59be79d0c1811e38f695.js */
+                        final String jsurl = br.getRegex("<script src=\"(/assets/app\\.[a-f0-9]+\\.js)\">").getMatch(0);
+                        if (jsurl == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        final Browser brc = br.cloneBrowser();
+                        brc.getPage(jsurl);
+                        key = brc.getRegex("webloginAccessKey=\"([^\"]+)\"").getMatch(0);
+                        if (StringUtils.isEmpty(key)) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        } else {
+                            redgifsAccessKey.set(key);
+                        }
                     }
                 }
-            }
-            String token = null;
-            synchronized (redgifsAccessToken) {
-                token = redgifsAccessToken.get();
-                if (StringUtils.isEmpty(token) || redgifsAccessTokenValidUntil.get() < System.currentTimeMillis()) {
-                    if (redgifsAccessToken == null) {
-                        logger.info("Creating token for the first time");
-                    } else {
-                        logger.info("Creating new token because the old one has expired");
-                    }
-                    final Browser brc = br.cloneBrowser();
-                    // brc.getHeaders().put("Accept", "*/*");
-                    // brc.getHeaders().put("Cache-Control", null);
-                    // brc.getHeaders().put("TE", "Trailers");
-                    // brc.getHeaders().put("Connection", "keep-alive");
-                    brc.getHeaders().put("Origin", "https://www.redgifs.com");
-                    brc.getHeaders().put("Referer", "https://www.redgifs.com/");
-                    PostRequest request = brc.createJSonPostRequest("https://api.redgifs.com/v1/oauth/webtoken", "{\"access_key\":\"" + key + "\"}");
-                    request.setContentType("application/json");// is important, default content-type with charset will fail in bad request
-                    brc.getPage(request);
-                    final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
-                    token = (String) entries.get("access_token");
-                    if (StringUtils.isEmpty(token)) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else {
-                        redgifsAccessToken.set(token);
-                        redgifsAccessTokenValidUntil.set(System.currentTimeMillis() + ((Number) entries.get("expires_in")).longValue() * 1000l);
+                synchronized (redgifsAccessToken) {
+                    token = redgifsAccessToken.get();
+                    if (StringUtils.isEmpty(token) || redgifsAccessTokenValidUntil.get() < System.currentTimeMillis()) {
+                        if (redgifsAccessToken == null) {
+                            logger.info("Creating token for the first time");
+                        } else {
+                            logger.info("Creating new token because the old one has expired");
+                        }
+                        final Browser brc = br.cloneBrowser();
+                        // brc.getHeaders().put("Accept", "*/*");
+                        // brc.getHeaders().put("Cache-Control", null);
+                        // brc.getHeaders().put("TE", "Trailers");
+                        // brc.getHeaders().put("Connection", "keep-alive");
+                        brc.getHeaders().put("Origin", "https://www.redgifs.com");
+                        brc.getHeaders().put("Referer", "https://www.redgifs.com/");
+                        PostRequest request = brc.createJSonPostRequest("https://api.redgifs.com/v1/oauth/webtoken", "{\"access_key\":\"" + key + "\"}");
+                        request.setContentType("application/json");// is important, default content-type with charset will fail in bad
+                                                                   // request
+                        brc.getPage(request);
+                        final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                        token = (String) entries.get("access_token");
+                        if (StringUtils.isEmpty(token)) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        } else {
+                            redgifsAccessToken.set(token);
+                            redgifsAccessTokenValidUntil.set(System.currentTimeMillis() + ((Number) entries.get("expires_in")).longValue() * 1000l);
+                        }
                     }
                 }
             }
             final Browser brapi = br.cloneBrowser();
             GetRequest request = brapi.createGetRequest("https://api.redgifs.com/v1/gfycats/" + this.getFID(link));
             request.getHeaders().put("Origin", "https://redgifs.com/");
-            request.getHeaders().put("Referer", "https://redgifs.com/");
+            if (token != null) {
+                request.getHeaders().put("Referer", "https://redgifs.com/");
+            }
             request.getHeaders().put("Authorization", "Bearer " + token);
             brapi.getPage(request);
             if (brapi.getHttpConnection().getResponseCode() == 404) {
