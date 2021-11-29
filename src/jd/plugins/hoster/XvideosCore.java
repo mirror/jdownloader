@@ -155,16 +155,20 @@ public abstract class XvideosCore extends PluginForHost {
     private static final String PROPERTY_TAGS     = "tags";
     private static final String PROPERTY_VIDEOID  = "videoid";
 
+    @Override
     public void correctDownloadLink(final DownloadLink link) {
         if (!link.getPluginPatternMatcher().matches(type_normal)) {
             final String urlHost = Browser.getHost(link.getPluginPatternMatcher());
             final String videoID = this.getVideoID(link);
             if (videoID != null) {
                 /* 2021-07-23: This needs to end with a slash otherwise the URL will be invalid! */
-                String newURL = "https://www." + urlHost + "/video" + videoID + "/";
+                String newURL = "https://www." + urlHost + "/video" + videoID;
                 final String urlTitle = getURLTitle(link);
                 if (urlTitle != null) {
                     newURL += "/" + urlTitle;
+                } else {
+                    /* URL needs to contain a title otherwise we'll get error 404! */
+                    newURL += "/dummytext";
                 }
                 link.setPluginPatternMatcher(newURL);
             }
@@ -235,6 +239,13 @@ public abstract class XvideosCore extends PluginForHost {
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, Account account, final boolean isDownload) throws Exception {
+        final Regex brokenURL = new Regex(link.getPluginPatternMatcher(), "(https?://[^/]+/video\\d+)//(.+)");
+        if (link.getPluginPatternMatcher().matches("https?://[^/]+/video\\d+//.+")) {
+            /* 2021-11-29: Hotfix for broken URLs due to bug in correctDownloadLink! */
+            final String newURL = brokenURL.getMatch(0) + "/" + brokenURL.getMatch(1);
+            logger.info("Fixing broken URL: OLD: " + link.getPluginPatternMatcher() + " | NEW: " + newURL);
+            link.setPluginPatternMatcher(newURL);
+        }
         final String urlTitle = getURLTitle(link);
         if (!link.isNameSet() && urlTitle != null) {
             link.setName(urlTitle + ".mp4");
