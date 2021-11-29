@@ -9,6 +9,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.JVMVersion;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.os.Docker;
 import org.appwork.utils.os.hardware.HardwareType;
 import org.appwork.utils.os.hardware.HardwareTypeInterface;
 import org.jdownloader.logging.LogController;
@@ -63,7 +64,7 @@ public class DiskSpaceManager {
                 }
                 try {
                     final HardwareTypeInterface hardwareType = HardwareType.getHardware();
-                    if (hardwareType != null) {
+                    if (hardwareType != null && !Docker.isInsideDocker()) {
                         switch (hardwareType.getHardwareType()) {
                         case QNAP:
                         case SYNOLOGY:
