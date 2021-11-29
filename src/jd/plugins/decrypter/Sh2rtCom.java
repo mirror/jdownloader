@@ -23,9 +23,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bestcash2020.com" }, urls = { "https?://(?:www\\.)?bestcash2020\\.com/([A-Za-z0-9]+)" })
-public class Bestcash2020Com extends MightyScriptAdLinkFly {
-    public Bestcash2020Com(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sh2rt.com" }, urls = { "https?://(?:www\\.)?sh2rt\\.com/([A-Za-z0-9]+)" })
+public class Sh2rtCom extends MightyScriptAdLinkFly {
+    public Sh2rtCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -35,7 +35,7 @@ public class Bestcash2020Com extends MightyScriptAdLinkFly {
 
     @Override
     protected String getSpecialReferer() {
-        /* Pre-set Referer to skip multiple ad pages e.g. bestcash2020.com -> ta2deem7arbya.com -> bestcash2020.com */
-        return "https://ta2deem7arbya.com/";
+        /* Pre-set Referer to skip multiple ad pages e.g. sh2rt.com -> urlily.com -> Captcha & wait time -> sh2rt.com.com */
+        return "https://urlily.com/";
     }
 }
