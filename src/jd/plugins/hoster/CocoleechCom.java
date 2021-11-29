@@ -15,23 +15,27 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.utils.IO;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.CountingOutputStream;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -93,54 +97,15 @@ public class CocoleechCom extends PluginForHost {
     }
 
     @Override
-    /* This should never get called. */
+    /** This should never get called. */
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override
+    /** This should never get called. */
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        handleDL(account, link);
-    }
-
-    private void handleDL(final Account account, final DownloadLink link) throws Exception {
-        if (!attemptStoredDownloadurlDownload(link)) {
-            br.setFollowRedirects(true);
-            /* Request creation of downloadlink */
-            this.br.getPage(API_ENDPOINT + "?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
-            handleAPIErrors(this.br, account, link);
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            String maxchunksStr = null;
-            final Object chunksO = entries.get("chunks");
-            if (chunksO != null) {
-                maxchunksStr = chunksO.toString();
-            }
-            final String dllink = (String) entries.get("download");
-            if (StringUtils.isEmpty(dllink)) {
-                logger.warning("Final downloadlink is null");
-                mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
-            }
-            int maxChunks = defaultMAXCHUNKS;
-            if (!StringUtils.isEmpty(maxchunksStr) && maxchunksStr.matches("^\\d+$")) {
-                maxChunks = -Integer.parseInt(maxchunksStr);
-                link.setProperty(PROPERTY_MAXCHUNKS, -Integer.parseInt(maxchunksStr));
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, maxChunks);
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
-                if (dl.getConnection().getContentType().contains("json")) {
-                    handleAPIErrors(this.br, account, link);
-                }
-                mhm.handleErrorGeneric(account, link, "unknowndlerror", 50, 5 * 60 * 1000l);
-            }
-            link.setProperty(PROPERTY_DIRECTURL, dllink);
-        }
-        this.dl.startDownload();
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link) throws Exception {
@@ -177,39 +142,41 @@ public class CocoleechCom extends PluginForHost {
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         prepBR(this.br);
         mhm.runCheck(account, link);
-        handleDL(account, link);
-    }
-
-    private String checkDirectLink(final DownloadLink link, final String property) {
-        final String dllink = link.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                con = br2.openGetConnection(dllink);
-                if (!con.isOK() || con.getContentType().contains("html") || con.getResponseCode() == 404 || con.getLongContentLength() == -1) {
-                    link.removeProperty(property);
-                } else {
-                    final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                    final CountingOutputStream cos = new CountingOutputStream(bos);
-                    IO.readStreamToOutputStream(128 * 1024, con.getInputStream(), cos, false);
-                    if (cos.transferedBytes() < 100) {
-                        link.removeProperty(property);
-                        logger.info(bos.toString("UTF-8"));
-                    } else {
-                        return dllink;
-                    }
-                }
-            } catch (final Exception e) {
-                logger.log(e);
-                link.removeProperty(property);
-            } finally {
-                if (con != null) {
-                    con.disconnect();
-                }
+        if (!attemptStoredDownloadurlDownload(link)) {
+            br.setFollowRedirects(true);
+            /* Request creation of downloadlink */
+            this.br.getPage(API_ENDPOINT + "?key=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+            handleAPIErrors(this.br, account, link);
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            String maxchunksStr = null;
+            final Object chunksO = entries.get("chunks");
+            if (chunksO != null) {
+                maxchunksStr = chunksO.toString();
             }
+            final String dllink = (String) entries.get("download");
+            if (StringUtils.isEmpty(dllink)) {
+                mhm.handleErrorGeneric(account, link, "Failed to find final downloadurl", 50, 5 * 60 * 1000l);
+            }
+            int maxChunks = defaultMAXCHUNKS;
+            if (!StringUtils.isEmpty(maxchunksStr) && maxchunksStr.matches("^\\d+$")) {
+                maxChunks = -Integer.parseInt(maxchunksStr);
+                link.setProperty(PROPERTY_MAXCHUNKS, -Integer.parseInt(maxchunksStr));
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, maxChunks);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                if (dl.getConnection().getContentType().contains("json")) {
+                    handleAPIErrors(this.br, account, link);
+                }
+                mhm.handleErrorGeneric(account, link, "Unknown download error", 50, 5 * 60 * 1000l);
+            }
+            link.setProperty(PROPERTY_DIRECTURL, dllink);
         }
-        return null;
+        this.dl.startDownload();
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -219,6 +186,14 @@ public class CocoleechCom extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(account);
         Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        /*
+         * 2021-11-29: Users enter API key only from now on --> Try to find username in API answer and set it so accounts in JD still have
+         * unique username strings!
+         */
+        final String username = (String) entries.get("username");
+        if (!StringUtils.isEmpty(username)) {
+            account.setUser(username);
+        }
         final String accounttype = (String) entries.get("type");
         final String trafficleft = (String) entries.get("traffic_left");
         final String validuntil = (String) entries.get("expire_date");
@@ -278,7 +253,7 @@ public class CocoleechCom extends PluginForHost {
 
     private void login(final Account account) throws Exception {
         synchronized (account) {
-            this.br.getPage(API_ENDPOINT + "/info?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            this.br.getPage(API_ENDPOINT + "/info?key=" + Encoding.urlEncode(account.getPass()));
             /* No error here = account is valid. */
             handleAPIErrors(this.br, account, null);
         }
@@ -294,6 +269,8 @@ public class CocoleechCom extends PluginForHost {
         if (!StringUtils.isEmpty(statusmsg)) {
             if (statusmsg.equalsIgnoreCase("Incorrect log-in or password.")) {
                 throw new AccountInvalidException(statusmsg);
+            } else if (statusmsg.equalsIgnoreCase("Incorrect API key.")) {
+                throw new AccountInvalidException(statusmsg + "\r\n Find your API Key here: members.cocoleech.com/settings");
             } else if (statusmsg.matches("(?i)Daily limit is reached\\. Hours left:\\s*?\\d+")) {
                 mhm.handleErrorGeneric(account, link, "daily_limit_reached", 10, 5 * 60 * 1000l);
             } else if (statusmsg.equalsIgnoreCase("Failed to generate link.")) {
@@ -322,6 +299,88 @@ public class CocoleechCom extends PluginForHost {
             return defaultMAXDOWNLOADS;
         } else {
             return 0;
+        }
+    }
+
+    @Override
+    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
+        return new CocoleechAccountFactory(callback);
+    }
+
+    public static class CocoleechAccountFactory extends MigPanel implements AccountBuilderInterface {
+        /**
+         *
+         */
+        private static final long serialVersionUID = 1L;
+        private final String      APIKEYHELP       = "Enter your API Key";
+
+        private String getPassword() {
+            if (this.pass == null) {
+                return null;
+            }
+            if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
+                return null;
+            }
+            return new String(this.pass.getPassword());
+        }
+
+        public boolean updateAccount(Account input, Account output) {
+            boolean changed = false;
+            if (!StringUtils.equals(input.getUser(), output.getUser())) {
+                output.setUser(input.getUser());
+                changed = true;
+            }
+            if (!StringUtils.equals(input.getPass(), output.getPass())) {
+                output.setPass(input.getPass());
+                changed = true;
+            }
+            return changed;
+        }
+
+        private final ExtPasswordField pass;
+        private static String          EMPTYPW = "                 ";
+
+        public CocoleechAccountFactory(final InputChangedCallbackInterface callback) {
+            super("ins 0, wrap 2", "[][grow,fill]", "");
+            add(new JLabel("Click here to find your API Key:"));
+            add(new JLink("https://members.cocoleech.com/settings"));
+            add(new JLabel("API Key:"));
+            add(this.pass = new ExtPasswordField() {
+                @Override
+                public void onChanged() {
+                    callback.onChangedInput(this);
+                }
+            }, "");
+            pass.setHelpText(APIKEYHELP);
+        }
+
+        @Override
+        public JComponent getComponent() {
+            return this;
+        }
+
+        @Override
+        public void setAccount(Account defaultAccount) {
+            if (defaultAccount != null) {
+                // name.setText(defaultAccount.getUser());
+                pass.setText(defaultAccount.getPass());
+            }
+        }
+
+        @Override
+        public boolean validateInputs() {
+            // final String userName = getUsername();
+            // if (userName == null || !userName.trim().matches("^\\d{9}$")) {
+            // idLabel.setForeground(Color.RED);
+            // return false;
+            // }
+            // idLabel.setForeground(Color.BLACK);
+            return getPassword() != null;
+        }
+
+        @Override
+        public Account getAccount() {
+            return new Account(null, getPassword());
         }
     }
 

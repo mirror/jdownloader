@@ -241,7 +241,10 @@ public abstract class XvideosCore extends PluginForHost {
     private AvailableStatus requestFileInformation(final DownloadLink link, Account account, final boolean isDownload) throws Exception {
         final Regex brokenURL = new Regex(link.getPluginPatternMatcher(), "(https?://[^/]+/video\\d+)//(.+)");
         if (link.getPluginPatternMatcher().matches("https?://[^/]+/video\\d+//.+")) {
-            /* 2021-11-29: Hotfix for broken URLs due to bug in correctDownloadLink! */
+            /**
+             * 2021-11-29: Hotfix for broken URLs due to bug in correctDownloadLink! </br>
+             * TODO: Remove this in 2022-02
+             */
             final String newURL = brokenURL.getMatch(0) + "/" + brokenURL.getMatch(1);
             logger.info("Fixing broken URL: OLD: " + link.getPluginPatternMatcher() + " | NEW: " + newURL);
             link.setPluginPatternMatcher(newURL);
