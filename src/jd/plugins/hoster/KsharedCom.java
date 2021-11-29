@@ -219,7 +219,7 @@ public class KsharedCom extends PluginForHost {
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
@@ -430,7 +430,9 @@ public class KsharedCom extends PluginForHost {
                 br.postPageRaw("https://www." + this.getHost() + "/v1/drive/get_download_link", JSonStorage.serializeToJson(data));
                 this.handleErrors(link, account);
                 final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                dllink = (String) entries.get("uri");
+                dllink = (String) entries.get("link");
+                /* 2021-11-29: No idea why they got this field two times. Maybe different data-servers. */
+                // dllink = (String) entries.get("linnk");
                 if (StringUtils.isEmpty(dllink)) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl", 5 * 60 * 1000l);
                 }

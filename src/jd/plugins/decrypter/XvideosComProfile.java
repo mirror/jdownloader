@@ -254,7 +254,7 @@ public class XvideosComProfile extends PluginForDecrypt {
     private void crawlChannel(final String parameter, final ArrayList<DownloadLink> decryptedLinks) throws IOException, PluginException {
         final Set<String> dupeList = new HashSet<String>();
         final Regex urlinfo = new Regex(parameter, "https?://[^/]+/([^/]+)/([^/]+)");
-        final String type = urlinfo.getMatch(0);
+        // final String type = urlinfo.getMatch(0);
         final String username = urlinfo.getMatch(1);
         if (!br.getURL().contains(username)) {
             /* E.g. redirect to mainpage */
