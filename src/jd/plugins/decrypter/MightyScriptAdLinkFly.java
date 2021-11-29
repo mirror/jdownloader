@@ -19,6 +19,10 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -33,10 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -270,7 +270,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                 }
                 if (!skipWait) {
                     if (waitStr != null) {
-                        logger.info("Found waittime in html, waiting (seconds): " + waitStr);
+                        logger.info("Found waittime in html, waiting seconds: " + waitStr);
                         final int wait = Integer.parseInt(waitStr) * +1;
                         this.sleep(wait * 1000, param);
                     } else {
@@ -305,8 +305,14 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
 
     /** Accesses input URL and handles "Pre-AdLinkFly" redirects. */
     protected void handlePreCrawlProcess(final CryptedLink param, final ArrayList<DownloadLink> decryptedLinks) throws Exception {
-        br.setFollowRedirects(false);
-        getPage(param.getCryptedUrl());
+        if (getSpecialReferer() != null) {
+            br.getHeaders().put("Referer", getSpecialReferer());
+            /* Do not expect direct redirects to our target-URL. */
+            br.setFollowRedirects(true);
+        } else {
+            br.setFollowRedirects(false);
+        }
+        getPage(param.getCryptedUrl() + "/");
         // 2019-11-13: http->https->different domain(https)
         // 2019-11-13: http->https->different domain(http)->different domain(https)
         while (true) {
@@ -504,6 +510,11 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         /* Most of all providers will require the user to solve a reCaptchaV2. */
         return true;
+    }
+
+    /** Use this to define a Referer to be used for the first request. */
+    protected String getSpecialReferer() {
+        return null;
     }
 
     @Override
