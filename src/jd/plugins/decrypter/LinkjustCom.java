@@ -28,18 +28,6 @@ public class LinkjustCom extends MightyScriptAdLinkFly {
     public LinkjustCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-    // @Override
-    // protected void handlePreCrawlProcess(final CryptedLink param, final ArrayList<DownloadLink> decryptedLinks) throws Exception {
-    // param.setCryptedUrl(param.getCryptedUrl().replaceFirst("http://", "https://"));
-    // br.setFollowRedirects(true);
-    // /* Pre-set Referer to skip multiple ad pages e.g. linkjust.com -> forex-articles.com -> forexmab.com */
-    // br.getHeaders().put("Referer", "https://forexmab.com");
-    // getPage(param.getCryptedUrl());
-    // if (this.regexAppVars(this.br) == null) {
-    // logger.warning("Possible crawler failure...");
-    // }
-    // /* Now continue with parent class code (requires 2nd captcha + waittime) */
-    // }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         return super.decryptIt(param, progress);

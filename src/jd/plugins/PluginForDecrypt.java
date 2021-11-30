@@ -144,19 +144,26 @@ public abstract class PluginForDecrypt extends Plugin {
      * Use this to find the last path in order to continue to build the path until all subfolders are crawled.
      */
     protected final String getAdoptedCloudFolderStructure() {
-        String subfolderPath = null;
+        return getAdoptedCloudFolderStructure(null);
+    }
+
+    /**
+     * Use this when e.g. crawling folders & subfolders from cloud-services. </br>
+     * Use this to find the last path in order to continue to build the path until all subfolders are crawled.
+     */
+    protected final String getAdoptedCloudFolderStructure(final String fallback) {
         CrawledLink current = getCurrentLink();
         while (current != null) {
             if (current.getDownloadLink() != null && getSupportedLinks().matcher(current.getURL()).matches()) {
-                final String path = current.getDownloadLink().getStringProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, null);
+                final String path = current.getDownloadLink().getStringProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH);
                 if (path != null) {
-                    subfolderPath = path;
+                    return path;
                 }
                 break;
             }
             current = current.getSourceLink();
         }
-        return subfolderPath;
+        return fallback;
     }
 
     @Override

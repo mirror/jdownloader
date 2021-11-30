@@ -35,16 +35,20 @@ public class GoFileIo extends PluginForDecrypt {
         query.add("contentId", folderID);
         query.add("websiteToken", "websiteToken");
         query.add("cache", "true");
-        String passCode = null;
+        String passCode = parameter.getDecrypterPassword();
         boolean passwordCorrect = true;
         boolean passwordRequired = false;
         int attempt = 0;
         Map<String, Object> response = null;
         final Browser brc = br.cloneBrowser();
         final String token = jd.plugins.hoster.GofileIo.getToken(this, brc);
+        String path = this.getAdoptedCloudFolderStructure();
         do {
-            if (passwordRequired) {
-                passCode = getUserInput("Password?", parameter);
+            if (passwordRequired || passCode != null) {
+                /* Pre-given password was wrong -> Ask user for password */
+                if (attempt > 0) {
+                    passCode = getUserInput("Password?", parameter);
+                }
                 query.addAndReplace("password", JDHash.getSHA256(passCode));
             }
             final GetRequest req = br.createGetRequest("https://api." + this.getHost() + "/getContent?" + query.toString() + "&token=" + token);
@@ -75,32 +79,47 @@ public class GoFileIo extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Map<String, Object> data = (Map<String, Object>) response.get("data");
-        final String folderName = (String) data.get("name");
+        final String currentFolderName = (String) data.get("name");
         FilePackage fp = null;
-        if (!StringUtils.isEmpty(folderName) && !folderName.matches("^quickUpload_.+")) {
+        if (path == null && !StringUtils.isEmpty(currentFolderName) && !currentFolderName.matches("^quickUpload_.+") && !currentFolderName.equals(folderID)) {
+            /* No path given yet --> Use current folder name as root */
+            path = currentFolderName;
+        }
+        if (path != null) {
             fp = FilePackage.getInstance();
-            fp.setName(folderName);
+            fp.setName(path);
         }
         final Map<String, Map<String, Object>> files = (Map<String, Map<String, Object>>) data.get("contents");
-        for (final Entry<String, Map<String, Object>> file : files.entrySet()) {
-            final String fileID = file.getKey();
-            final DownloadLink link = createDownloadlink("https://gofile.io/?c=" + folderID + "#file=" + fileID);
-            final Map<String, Object> entry = file.getValue();
+        for (final Entry<String, Map<String, Object>> item : files.entrySet()) {
+            final Map<String, Object> entry = item.getValue();
             final String type = (String) entry.get("type");
-            if (!type.equals("file")) {
-                logger.info("Unsupported type: " + type);
+            if (type.equals("file")) {
+                final String fileID = item.getKey();
+                final DownloadLink file = createDownloadlink("https://gofile.io/?c=" + folderID + "#file=" + fileID);
+                jd.plugins.hoster.GofileIo.parseFileInfo(file, entry);
+                file.setAvailable(true);
+                if (passCode != null) {
+                    file.setDownloadPassword(passCode);
+                }
+                if (path != null) {
+                    file.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
+                }
+                ret.add(file);
+            } else if (type.equals("folder")) {
+                /* Subfolder containing more files/folders */
+                final DownloadLink folder = this.createDownloadlink("https://" + this.getHost() + "/d/" + entry.get("code"));
+                final String folderName = (String) entry.get("name");
+                if (passCode != null) {
+                    folder.setDownloadPassword(passCode);
+                }
+                if (path != null) {
+                    folder.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path + "/" + folderName);
+                }
+                ret.add(folder);
+            } else {
+                logger.warning("Unsupported type: " + type);
                 continue;
             }
-            final String description = (String) entry.get("description");
-            jd.plugins.hoster.GofileIo.parseFileInfo(link, entry);
-            link.setAvailable(true);
-            if (passCode != null) {
-                link.setDownloadPassword(passCode);
-            }
-            if (!StringUtils.isEmpty(description)) {
-                link.setComment(description);
-            }
-            ret.add(link);
         }
         if (fp != null && ret.size() > 1) {
             fp.addLinks(ret);
