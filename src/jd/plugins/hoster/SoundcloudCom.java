@@ -107,7 +107,7 @@ public class SoundcloudCom extends PluginForHost {
     public static final String   PROPERTY_directurl                                                    = "directurl";
     /* Account properties */
     private static final String  PROPERTY_ACCOUNT_oauthtoken                                           = "oauthtoken";
-    private static final String  PROPERTY_ACCOUNT_userid                                               = "userid";
+    public static final String   PROPERTY_ACCOUNT_userid                                               = "userid";
     /* API base URLs */
     public static final String   API_BASEv2                                                            = "https://api-v2.soundcloud.com";
 

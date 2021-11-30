@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
@@ -42,7 +44,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdupload.com" }, urls = { "https?://(?:www\\.)?wdupload\\.com/file/([A-Za-z0-9\\-_]+)(/.+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class WduploadCom extends antiDDoSForHost {
     public WduploadCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -55,26 +57,55 @@ public class WduploadCom extends antiDDoSForHost {
     }
 
     /* Connection stuff */
-    private final boolean        FREE_RESUME                  = false;
-    private final int            FREE_MAXCHUNKS               = 1;
-    private final int            FREE_MAXDOWNLOADS            = 1;
-    private final boolean        ACCOUNT_FREE_RESUME          = false;
-    private final int            ACCOUNT_FREE_MAXCHUNKS       = 1;
-    private final int            ACCOUNT_FREE_MAXDOWNLOADS    = 1;
-    private final boolean        ACCOUNT_PREMIUM_RESUME       = true;
-    private final int            ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private final int            ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
+    private final boolean FREE_RESUME                  = false;
+    private final int     FREE_MAXCHUNKS               = 1;
+    private final int     FREE_MAXDOWNLOADS            = 1;
+    private final boolean ACCOUNT_FREE_RESUME          = false;
+    private final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
+    private final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
+    private final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "wdupload.com", "emload.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/file/([A-Za-z0-9\\-_]+)(/.+)?");
+        }
+        return ret.toArray(new String[0]);
+    }
+    // @Override
+    // public String rewriteHost(final String host) {
+    // return this.rewriteHost(getPluginDomains(), host);
+    // }
+
     /*
      * New parts of the website, intriduced 2020-01-20 but then reverted back to old style 2020-01-21 </br> They will probably re-introduce
      * their changes! In this case, simply setting this to true should fix availablecheck, login and (premium) download!
      */
-    private static final boolean useWebAPI                    = false;
+    private static final boolean useWebAPI = false;
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = getFID(link);
-        if (linkid != null) {
-            return this.getHost() + "://" + linkid;
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
         } else {
             return super.getLinkID(link);
         }
