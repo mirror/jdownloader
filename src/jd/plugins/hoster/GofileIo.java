@@ -89,7 +89,7 @@ public class GofileIo extends PluginForHost {
     protected static AtomicLong              TOKEN_TIMESTAMP = new AtomicLong(-1);
     protected final static long              TOKEN_EXPIRE    = 30 * 60 * 1000l;
 
-    public static String getToken(Plugin plugin, Browser br) throws IOException, PluginException {
+    public static String getToken(final Plugin plugin, final Browser br) throws IOException, PluginException {
         synchronized (TOKEN) {
             String token = TOKEN.get();
             if (!StringUtils.isEmpty(token) && Time.systemIndependentCurrentJVMTimeMillis() - TOKEN_TIMESTAMP.get() < TOKEN_EXPIRE) {
@@ -120,13 +120,18 @@ public class GofileIo extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        if (false && this.checkDirectLink(link, PROPERTY_DIRECTURL) != null) {
+        /* 2021-11-30: Token cookie is even needed to check directURLs! */
+        final String token = getToken(this, this.br);
+        br.setCookie(this.getHost(), "accountToken", token);
+        final boolean allowDirecturlLinkcheck = true;
+        if (allowDirecturlLinkcheck && this.checkDirectLink(link, PROPERTY_DIRECTURL) != null) {
             logger.info("Availablecheck via directurl complete");
             return AvailableStatus.TRUE;
         }
         final String folderID = getFolderID(link);
         if (folderID == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* This should never happen! */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* 2020-08-20: Avoid blocks by user-agent - this is just a test based on a weak assumption, it is not necessarily! */
         br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
@@ -141,7 +146,6 @@ public class GofileIo extends PluginForHost {
         boolean passwordRequired = false;
         int attempt = 0;
         final Browser brc = br.cloneBrowser();
-        final String token = getToken(this, brc);
         Map<String, Object> response = null;
         do {
             if (passwordRequired) {
@@ -220,6 +224,10 @@ public class GofileIo extends PluginForHost {
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
+                    final String serverFilename = Plugin.getFileNameFromDispositionHeader(con);
+                    if (serverFilename != null) {
+                        link.setFinalFileName(serverFilename);
+                    }
                     return dllink;
                 } else {
                     throw new IOException();
@@ -249,11 +257,15 @@ public class GofileIo extends PluginForHost {
         }
         final String name = (String) entry.get("name");
         final String md5 = (String) entry.get("md5");
+        final String description = (String) entry.get("description");
         if (!StringUtils.isEmpty(name)) {
             link.setFinalFileName(name);
         }
         if (!StringUtils.isEmpty(md5)) {
             link.setMD5Hash(md5);
+        }
+        if (StringUtils.isEmpty(link.getComment()) && !StringUtils.isEmpty(description)) {
+            link.setComment(description);
         }
         /*
          * 2021-03-30: Check if the file contains malicious software according to their system. We could still download it but it's
@@ -273,11 +285,11 @@ public class GofileIo extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link, true);
-        doFree(link);
+        handleDownload(link);
     }
 
-    private void doFree(final DownloadLink link) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link, true);
         final boolean isDangerousFile = link.getBooleanProperty(PROPERTY_DANGEROUS_FILE, false);
         final String downloadURL = link.getStringProperty(PROPERTY_DIRECTURL, null);
         if (isDangerousFile && !this.getPluginConfig().getBooleanProperty(SETTING_ALLOW_DOWNLOAD_OF_FILES_FLAGGED_AS_MALICIOUS, default_SETTING_ALLOW_DOWNLOAD_OF_FILES_FLAGGED_AS_MALICIOUS)) {
@@ -287,6 +299,9 @@ public class GofileIo extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, FREE_RESUME, FREE_MAXCHUNKS);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
+            if (br.getHttpConnection().getResponseCode() == 429) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "429 Too Many Requests", 30 * 1000l);
+            }
             try {
                 br.followConnection(true);
             } catch (final IOException e) {

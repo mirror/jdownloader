@@ -270,7 +270,9 @@ public class CocoleechCom extends PluginForHost {
             if (statusmsg.equalsIgnoreCase("Incorrect log-in or password.")) {
                 throw new AccountInvalidException(statusmsg);
             } else if (statusmsg.equalsIgnoreCase("Incorrect API key.")) {
-                throw new AccountInvalidException(statusmsg + "\r\n Find your API Key here: members.cocoleech.com/settings");
+                String errormsg = statusmsg + "\r\n Find your API Key here: members.cocoleech.com/settings";
+                errormsg += "\r\nIf you#Re using myjdownloader, enter your API Key into the username- and password fields.";
+                throw new AccountInvalidException(errormsg);
             } else if (statusmsg.matches("(?i)Daily limit is reached\\. Hours left:\\s*?\\d+")) {
                 mhm.handleErrorGeneric(account, link, "daily_limit_reached", 10, 5 * 60 * 1000l);
             } else if (statusmsg.equalsIgnoreCase("Failed to generate link.")) {
