@@ -299,9 +299,6 @@ public class GofileIo extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, FREE_RESUME, FREE_MAXCHUNKS);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
-            if (br.getHttpConnection().getResponseCode() == 429) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "429 Too Many Requests", 30 * 1000l);
-            }
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
