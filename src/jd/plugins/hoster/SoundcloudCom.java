@@ -108,6 +108,9 @@ public class SoundcloudCom extends PluginForHost {
     /* Account properties */
     private static final String  PROPERTY_ACCOUNT_oauthtoken                                           = "oauthtoken";
     public static final String   PROPERTY_ACCOUNT_userid                                               = "userid";
+    public static final String   PROPERTY_ACCOUNT_created_at                                           = "created_at";
+    public static final String   PROPERTY_ACCOUNT_username                                             = "username";
+    public static final String   PROPERTY_ACCOUNT_permalink                                            = "permalink";
     /* API base URLs */
     public static final String   API_BASEv2                                                            = "https://api-v2.soundcloud.com";
 
@@ -745,11 +748,22 @@ public class SoundcloudCom extends PluginForHost {
         AccountInfo ai = new AccountInfo();
         login(this.br, account, true);
         ai.setUnlimitedTraffic();
-        final boolean checkViaProfilePage = false;
         if (br.getURL() == null || !br.getURL().contains(API_BASEv2 + "/me")) {
             br.getPage(API_BASEv2 + "/me?client_id=" + getClientIdV2() + "&app_version=" + getAppVersionV2() + "&app_locale=" + getAppLocaleV2());
         }
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final String created_at = (String) entries.get("created_at");
+        if (!StringUtils.isEmpty(created_at)) {
+            account.setProperty(SoundcloudCom.PROPERTY_ACCOUNT_created_at, created_at);
+        }
+        final String permalink = (String) entries.get("permalink");
+        if (!StringUtils.isEmpty(permalink)) {
+            account.setProperty(SoundcloudCom.PROPERTY_ACCOUNT_permalink, permalink);
+        }
+        final String username = (String) entries.get("username");
+        if (!StringUtils.isEmpty(username)) {
+            account.setProperty(SoundcloudCom.PROPERTY_ACCOUNT_username, username);
+        }
         /*
          * 2020-12-15: At this moment only cookie login is possible which means in theory, user can enter anything in the username field ->
          * Let's fix that
@@ -758,9 +772,9 @@ public class SoundcloudCom extends PluginForHost {
         if (!StringUtils.isEmpty(email)) {
             account.setUser(email);
         }
+        final boolean checkViaProfilePage = false;
         if (checkViaProfilePage) {
-            String acctype = null;
-            acctype = (String) JavaScriptEngineFactory.walkJson(entries, "consumer_subscription/product/id");
+            final String acctype = (String) JavaScriptEngineFactory.walkJson(entries, "consumer_subscription/product/id");
             if ("free".equalsIgnoreCase(acctype)) {
                 /* 2020-12-16: E.g. "consumer-high-tier" */
                 account.setType(AccountType.FREE);

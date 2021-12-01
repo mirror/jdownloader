@@ -633,7 +633,7 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     public void doFree(final DownloadLink link) throws Exception, PluginException {
-        if (this.isHLS(this.finalUrl)) {
+        if (this.isHLS(link, this.finalUrl)) {
             /* HLS download */
             br.getPage(this.finalUrl);
             final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
@@ -656,7 +656,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 }
                 // most if not all components already opened connection via either linkOk or photolinkOk
                 br.getHeaders().put("Accept-Encoding", "identity");
-                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.finalUrl, isResumeSupported(link, finalUrl), getMaxChunks(link, finalUrl));
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.finalUrl, isResumeSupported(link, this.finalUrl), getMaxChunks(link, this.finalUrl));
             }
             handleServerErrors(link);
             dl.startDownload();
@@ -936,8 +936,11 @@ public class VKontakteRuHoster extends PluginForHost {
         return true;
     }
 
-    private boolean isHLS(final String url) {
-        if (url == null) {
+    private boolean isHLS(final DownloadLink link, final String url) {
+        final String qualityStr = link.getStringProperty(PROPERTY_VIDEO_SELECTED_QUALITY);
+        if (StringUtils.equalsIgnoreCase(qualityStr, "HLS")) {
+            return true;
+        } else if (url == null) {
             return false;
         } else if (url.contains(".m3u8") || url.contains("video_hls.php")) {
             return true;
@@ -965,14 +968,14 @@ public class VKontakteRuHoster extends PluginForHost {
         URLConnectionAdapter con = null;
         boolean closeConnection = true;
         try {
-            if (isDownload && !isHLS(finalUrl)) {
+            if (isDownload && !isHLS(link, finalUrl)) {
                 dl = new jd.plugins.BrowserAdapter().openDownload(br2, link, finalUrl, isResumeSupported(link, finalUrl), getMaxChunks(link, finalUrl));
                 con = dl.getConnection();
             } else {
                 con = br2.openGetConnection(finalUrl);
             }
             if (this.looksLikeDownloadableContent(con)) {
-                if (!isHLS(finalUrl)) {
+                if (!isHLS(link, finalUrl)) {
                     final long foundFilesize = con.getCompleteContentLength();
                     final String headerFilename = Plugin.getFileNameFromHeader(con);
                     if (link.getFinalFileName() == null && headerFilename != null) {
