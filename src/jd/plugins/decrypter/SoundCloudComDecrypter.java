@@ -62,11 +62,11 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     private final Pattern           TYPE_API_TRACK                = Pattern.compile("(?i)https?://(www\\.|m\\.)?api\\.soundcloud\\.com/tracks/\\d+(\\?secret_token=[A-Za-z0-9\\-_]+)?");
     private final Pattern           TYPE_SINGLE_SET               = Pattern.compile("(?i)https?://[^/]+/([A-Za-z0-9\\-_]+)/sets/([A-Za-z0-9\\-_]+)");
     private final Pattern           TYPE_SINGLE_TRACK             = Pattern.compile("(?i)https?://[^/]+/([A-Za-z0-9\\-_]+)/([A-Za-z0-9\\-_]+)");
-    private final Pattern           TYPE_USER_SETS                = Pattern.compile("(?i)https?://[^/]+/([A-Za-z0-9\\-_]+)/sets");
+    private final Pattern           TYPE_USER_SETS                = Pattern.compile("(?i)https?://[^/]+/(?!you/)([A-Za-z0-9\\-_]+)/sets");
     private final Pattern           TYPE_USER_IN_PLAYLIST         = Pattern.compile("(?i)https?://[^/]+/([A-Za-z0-9\\-_]+)/([A-Za-z0-9\\-_]+)/sets");
     private final Pattern           TYPE_USER_LIKES               = Pattern.compile("(?i)https?://[^/]+/([A-Za-z0-9\\-_]+)/likes");
     private final Pattern           TYPE_USER_LIKES_SELF          = Pattern.compile("(?i)https?://[^/]+/you/likes");
-    private final Pattern           TYPE_USER_LIKES_PLAYLIST_SELF = Pattern.compile("(?i)https?:///you/sets");
+    private final Pattern           TYPE_USER_LIKES_PLAYLIST_SELF = Pattern.compile("(?i)https?://[^/]+/you/sets");
     private final Pattern           TYPE_USER_TRACKS              = Pattern.compile("(?i)https?://[^/]+/([A-Za-z0-9\\-_]+)/tracks");
     private final Pattern           TYPE_USER_REPOST              = Pattern.compile("(?i)https?://[^/]+/([A-Za-z0-9\\-_]+)/repost");
     private final Pattern           TYPE_GROUPS                   = Pattern.compile("(?i)https?://[^/]+/groups/([A-Za-z0-9\\-_]+)");
@@ -420,7 +420,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 parseTracklist(fp, tracklist);
             }
             if (collection == null || collection.size() < max_entries_per_request) {
-                logger.info("Seems like we decrypted all likes-pages - stopping");
+                logger.info("Seems like we crawled all likes-pages - stopping");
                 break;
             }
             page++;
@@ -457,7 +457,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 parseTracklist(fp, tracklist);
             }
             if (collection == null || collection.size() < max_entries_per_request) {
-                logger.info("Stopping because: Seems like we decrypted all likes-pages");
+                logger.info("Stopping because: Seems like we crawled all likes-pages");
                 break;
             }
             page++;
@@ -465,6 +465,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         } while (!this.isAbort());
     }
 
+    /** Crawl all tracks of a group. */
     private void crawlGroups(final CryptedLink param) throws Exception {
         final String usernameURL = new Regex(param.getCryptedUrl(), TYPE_GROUPS).getMatch(0);
         if (usernameURL == null) {
@@ -479,13 +480,13 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         final long items_count = ((Number) data.get("track_count")).longValue();
         final int max_entries_per_request = 100;
         final long pages = items_count / max_entries_per_request;
-        int current_page = 1;
+        int currentPage = 1;
         int offset = 0;
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(getFormattedPackagename(usernameURL, null, "groups", null));
         fp.setProperty(LinkCrawler.PACKAGE_IGNORE_VARIOUS, true);
         do {
-            logger.info("Crawling page " + current_page + " of probably " + pages);
+            logger.info("Crawling page " + currentPage + " of probably " + pages);
             final String next_page_url = "https://api.soundcloud.com/groups/" + groupID + "/tracks?app_version=" + SoundcloudCom.getAppVersion(br) + "&client_id=" + SoundcloudCom.getClientId(br) + "&limit=" + max_entries_per_request + "&linked_partitioning=1&offset=" + offset + "&order=approved_at";
             br.getPage(next_page_url);
             final int pre = decryptedLinks.size();
@@ -500,68 +501,46 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             } else {
                 offset += collection.size();
             }
-            current_page++;
+            currentPage++;
         } while (!this.isAbort());
-        logger.info("Seems like we decrypted all likes-pages - stopping");
+        logger.info("Seems like we crawled all group-tracks - stopping");
     }
-    // private Map<String, Object> data = null;
 
-    public List<Map<String, Object>> processCollection(final FilePackage fp, final Browser br) throws Exception, DecrypterException, ParseException, IOException {
+    protected List<Map<String, Object>> processCollection(final FilePackage fp, final Browser br) throws Exception, DecrypterException, ParseException, IOException {
         final Map<String, Object> data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final List<Map<String, Object>> collection = (List<Map<String, Object>>) data.get("collection");
         return parseTracklist(fp, collection);
     }
 
     @SuppressWarnings("unchecked")
-    public List<Map<String, Object>> parseTracklist(final FilePackage fp, final List<Map<String, Object>> collection) throws Exception {
+    protected List<Map<String, Object>> parseTracklist(final FilePackage fp, final List<Map<String, Object>> collection) throws Exception {
         for (final Map<String, Object> item : collection) {
-            DownloadLink dl = null;
-            final String type = (String) item.get("type");
-            final String kind = (String) item.get("kind");
-            Map<String, Object> entry = null;
-            if (type == null) {
-                entry = (Map<String, Object>) item.get("track");
-            } else if ("track".equals(type)) {
-                entry = (Map<String, Object>) item.get("track");
-            }
-            if ("like".equals(type) || "like".equals(kind)) {
-                /* Users can like tracks and/or playlists */
-                if (item.containsKey("track")) {
-                    entry = (Map<String, Object>) item.get("track");
-                } else {
-                    entry = (Map<String, Object>) item.get("playlist");
-                }
-            } else if ("track_repost".equals(type) || "track-repost".equals(type)) {
-                entry = (Map<String, Object>) item.get("track");
-            } else if ("playlist-repost".equals(type) || "playlist_repost".equals(type)) {
-                entry = (Map<String, Object>) item.get("playlist");
-            } else if ("playlist".equals(type)) {
-                entry = (Map<String, Object>) item.get("playlist");
+            final Object trackO = item.get("track");
+            final Object playlistO = item.get("playlist");
+            final Map<String, Object> entry;
+            if (trackO != null) {
+                entry = (Map<String, Object>) trackO;
+            } else if (playlistO != null) {
+                entry = (Map<String, Object>) playlistO;
             } else {
-                entry = (Map<String, Object>) item.get(type);
-            }
-            if (entry == null) {
-                // in some cases, there is no subgroup
+                /* Assume we've already opened that object. */
                 entry = item;
             }
+            final String type = (String) item.get("type");
+            // final String kind = (String) item.get("kind");
             final String permalinkURL = (String) entry.get("permalink_url");
             final String url = (String) entry.get("permalink");
-            final Object track_count = entry.get("track_count");
+            // final Object track_count = entry.get("track_count");
             if (StringUtils.isEmpty(permalinkURL) || StringUtils.isEmpty(url)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (type != null && type.equals("playlist")) {
-                if (track_count != null && track_count instanceof Number && ((Number) track_count).intValue() == 0) {
-                    /* This should never happen */
-                    continue;
-                }
+            final DownloadLink dl;
+            if (playlistO != null) {
                 final Map<String, Object> user = (Map<String, Object>) entry.get("user");
-                dl = createDownloadlink("https://soundcloud.com/" + user.get("permalink") + "/sets/" + url);
+                /* Goes back into crawler to find individual playlist tracks. */
+                dl = createDownloadlink("https://" + this.getHost() + "/" + user.get("permalink") + "/sets/" + url);
             } else if (type != null && type.equals("playlist-repost")) {
-                if (track_count != null && track_count instanceof Number && ((Number) track_count).intValue() == 0) {
-                    /* This should never happen */
-                    continue;
-                }
+                /* Goes back into crawler to find individual playlist tracks. */
                 dl = createDownloadlink(permalinkURL);
             } else {
                 String track_url = permalinkURL.replace("http://", "https://").replace("soundcloud.com", "soundclouddecrypted.com");
@@ -590,7 +569,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         final String playlistname;
         if (new Regex(param.getCryptedUrl(), TYPE_USER_LIKES_SELF).matches()) {
             if (account == null) {
-                throw new AccountRequiredException("Cannot crawl own likes if no account is available");
+                throw new AccountRequiredException("Cannot crawl own liked tracks when no account is available");
             }
             userID = account.getStringProperty(SoundcloudCom.PROPERTY_ACCOUNT_userid);
             if (userID == null) {
@@ -607,7 +586,27 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             br.getPage("https://api-v2.soundcloud.com/users/" + userID + "?" + query.toString());
             user = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             url_base = SoundcloudCom.API_BASEv2 + "/users/" + userID + "/track_likes";
-            playlistname = "own likes";
+            playlistname = "own liked tracks";
+        } else if (new Regex(param.getCryptedUrl(), TYPE_USER_LIKES_PLAYLIST_SELF).matches()) {
+            if (account == null) {
+                throw new AccountRequiredException("Cannot crawl own liked playlists when no account is available");
+            }
+            userID = account.getStringProperty(SoundcloudCom.PROPERTY_ACCOUNT_userid);
+            if (userID == null) {
+                /* This should never happen! */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final UrlQuery query = new UrlQuery();
+            query.append("client_id", SoundcloudCom.getClientId(br), true);
+            query.append("linked_partitioning", "1", true);
+            query.append("app_version", SoundcloudCom.getAppVersion(br), true);
+            // query.append("app_locale", "de", false);
+            /* Get information about current user. */
+            /* TODO: Maybe cache this information during accountcheck -> This way we can save one http request here */
+            br.getPage("https://api-v2.soundcloud.com/users/" + userID + "?" + query.toString());
+            user = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            url_base = SoundcloudCom.API_BASEv2 + "/users/" + userID + "/playlist_likes";
+            playlistname = "own liked tracks";
         } else {
             resolve(this.br, param.getCryptedUrl());
             user = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
@@ -637,7 +636,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
          * seems to be a limit of the API (12.02.14), </br>
          * still valid far as I can see raztoki20160208
          */
-        int maxPerCall = 200;
+        final int maxItemsPerCall = 200;
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(getFormattedPackagename(user.get("permalink").toString(), user.get("username").toString(), playlistname, user.get("created_at").toString()));
         fp.setProperty(LinkCrawler.PACKAGE_IGNORE_VARIOUS, true);
@@ -645,7 +644,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         query.append("client_id", SoundcloudCom.getClientId(br), true);
         query.append("linked_partitioning", "1", true);
         query.append("app_version", SoundcloudCom.getAppVersion(br), true);
-        query.append("limit", maxPerCall + "", true);
+        query.append("limit", maxItemsPerCall + "", true);
         String next_href = null;
         String offset = "0";
         url_base += "?" + query.toString();
