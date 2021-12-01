@@ -66,6 +66,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     private final Pattern           TYPE_USER_IN_PLAYLIST         = Pattern.compile("(?i)https?://[^/]+/([A-Za-z0-9\\-_]+)/([A-Za-z0-9\\-_]+)/sets");
     private final Pattern           TYPE_USER_LIKES               = Pattern.compile("(?i)https?://[^/]+/([A-Za-z0-9\\-_]+)/likes");
     private final Pattern           TYPE_USER_LIKES_SELF          = Pattern.compile("(?i)https?://[^/]+/you/likes");
+    private final Pattern           TYPE_USER_LIKES_PLAYLIST_SELF = Pattern.compile("(?i)https?:///you/sets");
     private final Pattern           TYPE_USER_TRACKS              = Pattern.compile("(?i)https?://[^/]+/([A-Za-z0-9\\-_]+)/tracks");
     private final Pattern           TYPE_USER_REPOST              = Pattern.compile("(?i)https?://[^/]+/([A-Za-z0-9\\-_]+)/repost");
     private final Pattern           TYPE_GROUPS                   = Pattern.compile("(?i)https?://[^/]+/groups/([A-Za-z0-9\\-_]+)");
@@ -516,13 +517,20 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         for (final Map<String, Object> item : collection) {
             DownloadLink dl = null;
             final String type = (String) item.get("type");
+            final String kind = (String) item.get("kind");
             Map<String, Object> entry = null;
             if (type == null) {
                 entry = (Map<String, Object>) item.get("track");
             } else if ("track".equals(type)) {
                 entry = (Map<String, Object>) item.get("track");
-            } else if ("like".equals(type)) {
-                entry = (Map<String, Object>) item.get("track");
+            }
+            if ("like".equals(type) || "like".equals(kind)) {
+                /* Users can like tracks and/or playlists */
+                if (item.containsKey("track")) {
+                    entry = (Map<String, Object>) item.get("track");
+                } else {
+                    entry = (Map<String, Object>) item.get("playlist");
+                }
             } else if ("track_repost".equals(type) || "track-repost".equals(type)) {
                 entry = (Map<String, Object>) item.get("track");
             } else if ("playlist-repost".equals(type) || "playlist_repost".equals(type)) {
