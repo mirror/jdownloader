@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -27,12 +30,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "researchgate.net" }, urls = { "https?://(?:www\\.)?researchgate\\.net/(publication/\\d+_[A-Za-z0-9\\-_]+|figure/[A-Za-z0-9\\-_]+_\\d+)" })
 public class ResearchgateNet extends PluginForHost {
@@ -47,26 +48,39 @@ public class ResearchgateNet extends PluginForHost {
 
     private String dllink = null;
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        final String urlTitle = new Regex(link.getPluginPatternMatcher(), "(?:publication|figure)/(.+)").getMatch(0);
+        if (!link.isNameSet()) {
+            /* Set fallback filename */
+            link.setName(urlTitle + ".zip");
+        }
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.getURL().length() <= 60) {
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.getURL().length() <= 60) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "(?:publication|figure)/(.+)").getMatch(0);
         final String json_source = this.br.getRegex("createInitialWidget\\((.*?\\})\\s+").getMatch(0);
         dllink = PluginJSonUtils.getJsonValue(json_source, "downloadLink");
         String filename = PluginJSonUtils.getJsonValue(json_source, "fileName");
-        final String filesize = PluginJSonUtils.getJsonValue(json_source, "fileSize");
+        String filesize = PluginJSonUtils.getJsonValue(json_source, "fileSize");
+        if (filesize == null) {
+            /* 2021-12-01 */
+            filesize = br.getRegex("ile-list-item__meta-data-item\"><span class=\"\">(\\d+[^<]+)</span>").getMatch(0);
+        }
         if (dllink == null) {
             dllink = br.getRegex("full-text\" href=\"([^\"]+)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("\"citation_pdf_url\"\\s*content\\s*=\\s*\"(https?://[^\"]*?\\.pdf)\"").getMatch(0);
             }
+        }
+        if (dllink == null) {
+            /* 2021-12-01 */
+            dllink = br.getRegex("js-lite-click\" href=\"(https?://[^\"]+)\"").getMatch(0);
         }
         if (dllink == null && StringUtils.containsIgnoreCase(link.getPluginPatternMatcher(), "/figure/")) {
             dllink = br.getRegex("property\\s*=\\s*\"og:image\"\\s*content\\s*=\\s*\"(https?://.*?\\.(png|jpe?g))\"").getMatch(0);
@@ -74,26 +88,27 @@ public class ResearchgateNet extends PluginForHost {
         if (filename == null || filename.equals("")) {
             filename = br.getRegex("<title>\\s*([^<>\"].*?)\\s*((\\(PDF Download Available\\))|(\\|\\s*Download Scientific Diagram))?\\s*</title>").getMatch(0);
         }
-        if (filename == null) {
-            /* Fallback */
-            filename = url_filename;
+        if (!StringUtils.isEmpty(filename)) {
+            String correctFileExtension = null;
+            if (dllink != null) {
+                correctFileExtension = Plugin.getFileNameExtensionFromURL(dllink);
+            }
+            if (StringUtils.containsIgnoreCase(link.getPluginPatternMatcher(), "/figure/")) {
+                final String ext = getFileNameExtensionFromURL(dllink, ".jpg");
+                filename = Encoding.htmlDecode(filename.trim()) + ext;
+            } else if (correctFileExtension != null) {
+                filename = Encoding.htmlDecode(filename.trim());
+                filename = this.correctOrApplyFileNameExtension(filename, correctFileExtension);
+            } else {
+                filename = Encoding.htmlDecode(filename.trim()) + ".zip";
+            }
+            link.setName(filename);
         }
-        if (StringUtils.containsIgnoreCase(link.getPluginPatternMatcher(), "/figure/")) {
-            final String ext = getFileNameExtensionFromURL(dllink, ".jpg");
-            filename = Encoding.htmlDecode(filename.trim()) + ext;
-        } else {
-            filename = Encoding.htmlDecode(filename.trim()) + ".pdf";
-        }
-        link.setName(filename);
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
-        if (StringUtils.isEmpty(dllink)) {
-            if (br.containsHTML("=su_requestFulltext")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Request full-text PDF");
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+        if (StringUtils.isEmpty(dllink) && br.containsHTML("=su_requestFulltext")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Request full-text PDF");
         } else {
             return AvailableStatus.TRUE;
         }
@@ -102,14 +117,14 @@ public class ResearchgateNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        String dllink = checkDirectLink(link, "directlink");
-        if (dllink == null) {
-            dllink = this.dllink;
-            if (dllink == null) {
+        String directurl = checkDirectLink(link, "directlink");
+        if (directurl == null) {
+            directurl = this.dllink;
+            if (directurl == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, false, 1);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);

@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -48,12 +49,12 @@ import jd.plugins.components.PluginJSonUtils;
 public class WduploadCom extends antiDDoSForHost {
     public WduploadCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.wdupload.com/premium");
+        this.enablePremium("https://www.emload.com/premium");
     }
 
     @Override
     public String getAGBLink() {
-        return "https://www.wdupload.com/help/tos";
+        return "https://www.emload.com/help/tos";
     }
 
     /* Connection stuff */
@@ -70,7 +71,7 @@ public class WduploadCom extends antiDDoSForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "wdupload.com", "emload.com" });
+        ret.add(new String[] { "emload.com", "wdupload.com" });
         return ret;
     }
 
@@ -90,10 +91,11 @@ public class WduploadCom extends antiDDoSForHost {
         }
         return ret.toArray(new String[0]);
     }
-    // @Override
-    // public String rewriteHost(final String host) {
-    // return this.rewriteHost(getPluginDomains(), host);
-    // }
+
+    @Override
+    public String rewriteHost(final String host) {
+        return this.rewriteHost(getPluginDomains(), host);
+    }
 
     /*
      * New parts of the website, intriduced 2020-01-20 but then reverted back to old style 2020-01-21 </br> They will probably re-introduce
@@ -117,6 +119,9 @@ public class WduploadCom extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link));
+        }
         String filename = null, filesize = null;
         final String fid = this.getFID(link);
         final boolean use_API = false;
@@ -142,11 +147,9 @@ public class WduploadCom extends antiDDoSForHost {
             }
             filesize = br.getRegex("class=\"file\\-size\">([^<>\"]+)<").getMatch(0);
         }
-        if (StringUtils.isEmpty(filename)) {
-            /* Fallback */
-            filename = fid;
+        if (!StringUtils.isEmpty(filename)) {
+            link.setName(filename);
         }
-        link.setName(filename);
         if (!StringUtils.isEmpty(filesize)) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -159,11 +162,11 @@ public class WduploadCom extends antiDDoSForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
         }
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
+        String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
             final String premiumonly_api = PluginJSonUtils.getJson(br, "premium_only_files");
             if (br.containsHTML("This link only for premium") || !StringUtils.isEmpty(premiumonly_api)) {
@@ -191,7 +194,7 @@ public class WduploadCom extends antiDDoSForHost {
                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                 final long timePassed = System.currentTimeMillis() - timeBefore;
                 if (timePassed < waittime) {
-                    this.sleep(waittime - timePassed, downloadLink);
+                    this.sleep(waittime - timePassed, link);
                 }
                 postPage(br, "/captcha/php/checkGoogleCaptcha.php", "response=" + Encoding.urlEncode(recaptchaV2Response));
                 if (!br.toString().equals("1")) {
@@ -206,33 +209,39 @@ public class WduploadCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
+                if (this.looksLikeDownloadableContent(con)) {
+                    return dllink;
+                } else {
+                    link.setProperty(property, Property.NULL);
                     dllink = null;
                 }
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
+                link.setProperty(property, Property.NULL);
                 dllink = null;
             } finally {
                 try {
@@ -241,7 +250,7 @@ public class WduploadCom extends antiDDoSForHost {
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override
@@ -501,7 +510,7 @@ public class WduploadCom extends antiDDoSForHost {
             }
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 if (dl.getConnection().getResponseCode() == 401) {
                     /* This sometimes happens for premiumonly content */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401", 60 * 60 * 1000l);
@@ -511,7 +520,11 @@ public class WduploadCom extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
                 }
                 logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             link.setProperty("premium_directlink", dl.getConnection().getURL().toString());
@@ -524,13 +537,13 @@ public class WduploadCom extends antiDDoSForHost {
         if (acc == null) {
             /* no account, yes we can expect captcha */
             return true;
-        }
-        if (acc.getType() == AccountType.FREE) {
+        } else if (acc.getType() == AccountType.FREE) {
             /* Free accounts can have captchas */
             return true;
+        } else {
+            /* Premium accounts do not have captchas */
+            return false;
         }
-        /* Premium accounts do not have captchas */
-        return false;
     }
 
     @Override
