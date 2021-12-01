@@ -227,10 +227,6 @@ public class VKontakteRuHoster extends PluginForHost {
         // setters
         prepBrowser(br, false);
         setConstants(link);
-        /* Check if offline was set via decrypter */
-        if (link.getBooleanProperty("offline", false)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         if (link.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
             finalUrl = link.getPluginPatternMatcher();
             /* Prefer filename inside url */
@@ -637,7 +633,7 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     public void doFree(final DownloadLink link) throws Exception, PluginException {
-        if (this.finalUrl != null && this.finalUrl.contains(".m3u8")) {
+        if (this.isHLS(this.finalUrl)) {
             /* HLS download */
             br.getPage(this.finalUrl);
             final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
@@ -940,13 +936,22 @@ public class VKontakteRuHoster extends PluginForHost {
         return true;
     }
 
+    private boolean isHLS(final String url) {
+        if (url == null) {
+            return false;
+        } else if (url.contains(".m3u8") || url.contains("video_hls.php")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     /**
      *
      * @return <b>1</b>: Link is valid and can be downloaded, <b>0</b>: Link leads to HTML, times out or other problems occured, <b>404</b>:
      *         Server 404 response
      */
     private int linkOk(final DownloadLink link, final boolean isDownload) throws Exception {
-        // invalidate is required!
         if (StringUtils.isEmpty(finalUrl)) {
             return 0;
         }
@@ -960,21 +965,23 @@ public class VKontakteRuHoster extends PluginForHost {
         URLConnectionAdapter con = null;
         boolean closeConnection = true;
         try {
-            if (isDownload) {
+            if (isDownload && !isHLS(finalUrl)) {
                 dl = new jd.plugins.BrowserAdapter().openDownload(br2, link, finalUrl, isResumeSupported(link, finalUrl), getMaxChunks(link, finalUrl));
                 con = dl.getConnection();
             } else {
                 con = br2.openGetConnection(finalUrl);
             }
             if (this.looksLikeDownloadableContent(con)) {
-                final long foundFilesize = con.getCompleteContentLength();
-                final String headerFilename = Plugin.getFileNameFromHeader(con);
-                if (link.getFinalFileName() == null && headerFilename != null) {
-                    link.setFinalFileName(Encoding.htmlDecode(headerFilename));
-                }
-                /* 2016-12-01: Set filesize if it has not been set before. */
-                if (link.getDownloadSize() < foundFilesize) {
-                    link.setDownloadSize(foundFilesize);
+                if (!isHLS(finalUrl)) {
+                    final long foundFilesize = con.getCompleteContentLength();
+                    final String headerFilename = Plugin.getFileNameFromHeader(con);
+                    if (link.getFinalFileName() == null && headerFilename != null) {
+                        link.setFinalFileName(Encoding.htmlDecode(headerFilename));
+                    }
+                    /* 2016-12-01: Set filesize if it has not been set before. */
+                    if (link.getDownloadSize() < foundFilesize) {
+                        link.setDownloadSize(foundFilesize);
+                    }
                 }
                 if (isDownload) {
                     closeConnection = false;

@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.html.Form;
@@ -27,21 +30,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.formatter.SizeFormatter;
-
 //rghost.ru by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rghost.net" }, urls = { "https?://(?:[a-z0-9]+\\.)?(?:rghost\\.(?:net|ru)|rgho\\.st)/(.+)" })
-public class RGhostRu extends PluginForHost {
+public class RGhostNet extends PluginForHost {
     private static final String PWTEXT              = "id=\"password_field\"";
-    private static final String type_private_all    = "http://([a-z0-9]+\\.)?[^/]+/private/.+";
-    private static final String type_private_direct = "http://([a-z0-9]+\\.)?[^/]+/private/[A-Za-z0-9]+/[a-f0-9]{32}/.+";
-    private static final String type_normal_direct  = "http://([a-z0-9]+\\.)?[^/]+/[A-Za-z0-9]+/.+";
+    public static final String  type_private_all    = "http://([a-z0-9]+\\.)?[^/]+/private/.+";
+    public static final String  type_private_direct = "http://([a-z0-9]+\\.)?[^/]+/private/[A-Za-z0-9]+/[a-f0-9]{32}/.+";
+    public static final String  type_normal_direct  = "http://([a-z0-9]+\\.)?[^/]+/[A-Za-z0-9]+/.+";
 
-    public RGhostRu(PluginWrapper wrapper) {
+    public RGhostNet(PluginWrapper wrapper) {
         super(wrapper);
-        // this host blocks if there is no timegap between the simultan
-        // downloads so waittime is 3,5 sec right now, works good!
+        /* this host blocks if there is no timegap between the simultaneous downloads so waittime is 3,5 sec right now, works good! */
         this.setStartIntervall(3500l);
     }
 
@@ -55,18 +54,12 @@ public class RGhostRu extends PluginForHost {
         return -1;
     }
 
-    @Override
-    public String rewriteHost(final String host) {
-        if ("rgho.st".equals(getHost()) || "rghost.ru".equals(getHost())) {
-            if (host == null || "rgho.st".equals(host) || "rghost.ru".equals(host)) {
-                return "rghost.net";
-            }
-        }
-        return super.rewriteHost(host);
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setPluginPatternMatcher(correctAddedURL(link.getPluginPatternMatcher()));
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        String newlink = link.getPluginPatternMatcher().replaceAll("([a-z0-9]+)?rghost\\.(?:net|ru)/", "rgho.st/");
+    public static String correctAddedURL(final String url) {
+        String newlink = url.replaceAll("([a-z0-9]+)?rghost\\.(?:net|ru)/", "rgho.st/");
         if (newlink.matches(type_private_direct) || (newlink.matches(type_normal_direct) && !newlink.matches(type_private_all))) {
             /* Directlinks --> Change to normal links */
             newlink = newlink.substring(0, newlink.lastIndexOf("/"));
@@ -76,8 +69,8 @@ public class RGhostRu extends PluginForHost {
                 newlink = newlink.substring(0, newlink.lastIndexOf("."));
             }
         }
-        newlink = newlink.replaceFirst(Regex.escape(Browser.getHost(newlink)), this.getHost());
-        link.setPluginPatternMatcher(newlink);
+        newlink = newlink.replaceFirst(Regex.escape(Browser.getHost(newlink)), "rghost.net");
+        return newlink;
     }
 
     @Override
@@ -90,25 +83,38 @@ public class RGhostRu extends PluginForHost {
         }
     }
 
-    private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    public static String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "https?://[^/]+(.+)").getMatch(0);
+    }
+
+    public static Browser prepBR(final Browser br) {
+        br.setAllowedResponseCodes(new int[] { 409, 503 });
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setAllowedResponseCodes(new int[] { 409, 503 });
+        prepBR(this.br);
         br.getPage(link.getPluginPatternMatcher());
+        parseFileInfo(link, br);
+        return AvailableStatus.TRUE;
+    }
+
+    public static void parseFileInfo(final DownloadLink link, final Browser br) throws PluginException {
         if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            link.setAvailable(false);
+            return;
         } else if (br.getHttpConnection().getResponseCode() == 409) {
-            /* Cloudflare DNS issue --> In this case definitly offline! */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            /* Cloudflare DNS issue --> In this case definitely offline! */
+            link.setAvailable(false);
+            return;
         } else if (br.getHttpConnection().getResponseCode() == 503) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "503 Server maintenance");
         } else if (!br.containsHTML("abuses\\?file=" + Regex.escape(getFID(link)))) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            link.setAvailable(false);
+            return;
         }
         String filename = br.getRegex("<title>([^<>\"]+) — RGhost — file sharing</title>").getMatch(0);
         String filesize = br.getRegex("<i class=\"nowrap\">\\(([^<>\"]+)\\)<").getMatch(0);
@@ -141,31 +147,29 @@ public class RGhostRu extends PluginForHost {
         }
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         /* Leave this here - filename- and filesize can be present although the url is offline! */
-        if (this.br.containsHTML(">File is deleted")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(?i)>File is deleted")) {
+            link.setAvailable(false);
+        } else {
+            link.setAvailable(true);
         }
-        if (br.containsHTML(PWTEXT)) {
-            link.getLinkStatus().setStatusText("This file is password protected");
-        }
-        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
+        if (!link.isAvailable()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         br.setFollowRedirects(false);
-        String dllink = getDownloadlink();
-        String passCode = null;
+        String dllink = getDownloadlink(br);
         if (dllink == null && br.containsHTML(PWTEXT)) {
             Form pwform = br.getFormbyKey("password");
             if (pwform == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (link.getStringProperty("pass", null) == null) {
+            String passCode = link.getDownloadPassword();
+            if (passCode == null) {
                 passCode = getUserInput("Password?", link);
-            } else {
-                /* gespeicherten PassCode holen */
-                passCode = link.getStringProperty("pass", null);
             }
             pwform.put("password", passCode);
             /* Correct some stuff */
@@ -179,18 +183,19 @@ public class RGhostRu extends PluginForHost {
             br.submitForm(pwform);
             /* Correct html */
             br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-            dllink = getDownloadlink();
+            dllink = getDownloadlink(br);
             if (dllink == null && br.containsHTML(PWTEXT)) {
-                link.setProperty("pass", null);
-                logger.info("DownloadPW wrong!");
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+                link.setDownloadPassword(null);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
+            } else {
+                link.setDownloadPassword(passCode);
             }
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (!dl.getConnection().isContentDisposition()) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
@@ -198,13 +203,10 @@ public class RGhostRu extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
-        if (passCode != null) {
-            link.setProperty("pass", passCode);
-        }
         dl.startDownload();
     }
 
-    private String getDownloadlink() {
+    private String getDownloadlink(final Browser br) {
         String dllink = br.getRegex("\"([^\"]*/download/[^<>\"]*?)\"").getMatch(0);
         return dllink;
     }
