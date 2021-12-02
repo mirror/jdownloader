@@ -48,28 +48,33 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final boolean       FREE_RESUME                         = true;
-    private final int           FREE_MAXCHUNKS                      = 0;
-    private final int           FREE_MAXDOWNLOADS                   = 20;
-    private final boolean       ACCOUNT_FREE_RESUME                 = true;
-    private final int           ACCOUNT_FREE_MAXCHUNKS              = 0;
-    private final int           ACCOUNT_FREE_MAXDOWNLOADS           = 20;
+    private final boolean       FREE_RESUME                          = true;
+    private final int           FREE_MAXCHUNKS                       = 0;
+    private final int           FREE_MAXDOWNLOADS                    = 20;
+    private final boolean       ACCOUNT_FREE_RESUME                  = true;
+    private final int           ACCOUNT_FREE_MAXCHUNKS               = 0;
+    private final int           ACCOUNT_FREE_MAXDOWNLOADS            = 20;
     // private final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     // private final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    private static final String PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN = "download_serverside_broken";
-    public static final String  PROPERTY_IS_BOOK_PREVIEW            = "is_book_preview";
-    private boolean             registered_only                     = false;
+    private static final String PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN  = "download_serverside_broken";
+    public static final String  PROPERTY_IS_BOOK_PREVIEW             = "is_book_preview";
+    public static final String  PROPERTY_BOOK_LOANED_UNTIL_TIMESTAMP = "book_loaned_until_timestamp";
+    private boolean             registered_only                      = false;
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        // final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         return requestFileInformation(link, null, false);
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         registered_only = false;
         if (link.getPluginPatternMatcher().endsWith("my_dir")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (account != null) {
+            login(account, false);
         }
         br.setFollowRedirects(true);
         this.setBrowserExclusive();
@@ -78,7 +83,7 @@ public class ArchiveOrg extends PluginForHost {
             try {
                 /* 2021-02-25: Do NOT use head connection here anymore! */
                 con = br.openGetConnection(link.getPluginPatternMatcher());
-                connectionErrorhandling(br.getHttpConnection(), link, account);
+                connectionErrorhandling(con, link, account);
                 if (this.looksLikeDownloadableContent(con)) {
                     link.setFinalFileName(getFileNameFromHeader(con));
                     if (con.getCompleteContentLength() > 0) {
@@ -212,8 +217,8 @@ public class ArchiveOrg extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail address in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                br.getPage("https://" + account.getHoster() + "/account/login.php");
-                br.postPage("/account/login.php", "remember=CHECKED&referer=https%3A%2F%2F" + account.getHoster() + "%2F&action=login&submit=Log+in&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.getPage("https://" + account.getHoster() + "/account/login");
+                br.postPageRaw(br.getURL(), "remember=true&referer=https%3A%2F%2Farchive.org%2FCREATE%2F&login=true&submit_by_js=true&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (!isLoggedIN(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -257,7 +262,6 @@ public class ArchiveOrg extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, account, true);
-        login(account, false);
         if (link.getPluginPatternMatcher().matches("(?i).+\\.zip/.+")) {
             doDownload(account, link, false, 1, "account_free_directlink");
         } else {
