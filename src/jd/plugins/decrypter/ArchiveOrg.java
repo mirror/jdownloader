@@ -160,18 +160,36 @@ public class ArchiveOrg extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/brOptions");
-            final String bookId = entries.get("bookId").toString();
-            /*
-             * TODO: Check if current user has borrowed this book, then try to create different direct-URLs which should enable downloading
-             * of borrowed books.
-             */
-            // final String zipID = (String)entries.get("zip");
-            final String title = (String) entries.get("bookTitle");
-            final ArrayList<Object> imagesO = (ArrayList<Object>) entries.get("data");
+            final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> data = (Map<String, Object>) root.get("data");
+            final Map<String, Object> lendingInfo = (Map<String, Object>) data.get("lendingInfo");
+            final long daysLeftOnLoan = ((Number) lendingInfo.get("daysLeftOnLoan")).longValue();
+            final long secondsLeftOnLoan = ((Number) lendingInfo.get("secondsLeftOnLoan")).longValue();
+            long loanedMillisecondsLeft = 0;
+            if (daysLeftOnLoan > 0) {
+                loanedMillisecondsLeft += daysLeftOnLoan * 24 * 60 * 60 * 1000;
+            }
+            if (secondsLeftOnLoan > 0) {
+                loanedMillisecondsLeft += secondsLeftOnLoan * 1000;
+            }
+            final Map<String, Object> brOptions = (Map<String, Object>) data.get("brOptions");
+            final String bookId = brOptions.get("bookId").toString();
+            final String title = (String) brOptions.get("bookTitle");
+            final ArrayList<Object> imagesO = (ArrayList<Object>) brOptions.get("data");
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(title);
+            long loanedUntilTimestamp = 0;
+            /**
+             * 2021-12-02: Currently all we do is detect currently loaned books but they are not (yet) downloadable via JDownloader. </br>
+             * Borrowing books counts per session so if a user borrows a book via browser it won#t be borrowed in JD even if user has added
+             * the same account to JD.
+             */
+            boolean userHasBorrowedThisBook = false;
+            if (loanedMillisecondsLeft > 0 && (Boolean) lendingInfo.get("userHasBorrowed")) {
+                userHasBorrowedThisBook = true;
+                loanedUntilTimestamp = System.currentTimeMillis() + loanedUntilTimestamp;
+                logger.info("User has borrowed book which is currently being crawled: " + title);
+            }
             for (final Object imageO : imagesO) {
                 /*
                  * Most of all objects will contain an array with 2 items --> Books always have two viewable pages. Exception = First page
@@ -180,16 +198,19 @@ public class ArchiveOrg extends PluginForDecrypt {
                 final ArrayList<Object> pagesO = (ArrayList<Object>) imageO;
                 for (final Object pageO : pagesO) {
                     /* Grab "Preview"(???) version --> Usually "pageType":"NORMAL", "pageSide":"L", "viewable":true */
-                    entries = (Map<String, Object>) pageO;
-                    final int pageNum = (int) JavaScriptEngineFactory.toLong(entries.get("leafNum"), -1);
-                    final String url = (String) entries.get("uri");
+                    final Map<String, Object> bookPage = (Map<String, Object>) pageO;
+                    final int pageNum = (int) JavaScriptEngineFactory.toLong(bookPage.get("leafNum"), -1);
+                    final String url = (String) bookPage.get("uri");
                     if (StringUtils.isEmpty(url) || pageNum == -1) {
-                        /* Skip invalid items */
+                        /* Skip invalid items (this should never happen) */
                         continue;
                     }
-                    // final DownloadLink dl = this.createDownloadlink("directhttp://" + url);
                     final DownloadLink dl = new DownloadLink(hostPlugin, null, "archive.org", url, true);
                     dl.setName(pageNum + "_ " + title + ".jpg");
+                    if (userHasBorrowedThisBook) {
+                        /* User has currently borrowed this book. */
+                        dl.setProperty(jd.plugins.hoster.ArchiveOrg.PROPERTY_BOOK_LOANED_UNTIL_TIMESTAMP, loanedUntilTimestamp);
+                    }
                     /* Assume all are online & downloadable */
                     dl.setAvailable(true);
                     dl._setFilePackage(fp);
