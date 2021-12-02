@@ -19,13 +19,13 @@ public interface XvideosComConfigCore extends PluginConfigInterface {
     void setEnableFastLinkcheckForHostPlugin(boolean b);
 
     @AboutConfig
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     @TakeValueFromSubconfig("Prefer HLS")
     @DescriptionForConfigEntry("Prefer HLS download?")
     @Order(30)
-    boolean isPreferHLSDownload();
+    boolean isPreferHLSStreamDownload();
 
-    void setPreferHLSDownload(boolean b);
+    void setPreferHLSStreamDownload(boolean b);
 
     public static enum PreferredHLSQuality implements LabelInterface {
         Q2160P {

@@ -356,7 +356,7 @@ public abstract class XvideosCore extends PluginForHost {
             if (allowLimitCheck && StringUtils.isEmpty(hlsMaster)) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Low quality block active", 60 * 60 * 1000l);
             }
-            if (PluginJsonConfig.get(XvideosComConfig.class).isPreferHLSDownload()) {
+            if (PluginJsonConfig.get(XvideosComConfig.class).isPreferHLSStreamDownload()) {
                 logger.info("User prefers HLS download");
                 if (StringUtils.isNotEmpty(hlsMaster)) {
                     logger.info("FoundHlsMaster --> Looking for preferred quality");
