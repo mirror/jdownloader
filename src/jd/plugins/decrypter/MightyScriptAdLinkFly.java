@@ -312,7 +312,12 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         } else {
             br.setFollowRedirects(false);
         }
-        getPage(param.getCryptedUrl() + "/");
+        // tny.so don't work with url ending with "/"
+        if (param.getCryptedUrl().contains("tny.so")) {
+            getPage(param.getCryptedUrl());
+        } else {
+            getPage(param.getCryptedUrl() + "/");
+        }
         // 2019-11-13: http->https->different domain(https)
         // 2019-11-13: http->https->different domain(http)->different domain(https)
         while (true) {
