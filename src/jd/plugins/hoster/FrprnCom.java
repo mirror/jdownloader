@@ -69,7 +69,7 @@ public class FrprnCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String regexEmbedTitle() {
+    protected String regexEmbedTitleWebsite() {
         /* 2021-03-02 */
         return br.getRegex("<title>(.*?)</title>").getMatch(0);
     }

@@ -43,10 +43,10 @@ public class VideocelebsNet extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String regexNormalTitle() {
+    protected String regexNormalTitleWebsite() {
         final String ret = br.getRegex(Pattern.compile("<meta property\\s*=\\s*\"og:title\"\\s*content\\s*=\\s*\"(.*?)\"/>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (StringUtils.isEmpty(ret)) {
-            return super.regexNormalTitle();
+            return super.regexNormalTitleWebsite();
         } else {
             return ret;
         }

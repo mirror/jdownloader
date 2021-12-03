@@ -26,12 +26,11 @@ import jd.plugins.HostPlugin;
 public class VxxxCom extends KernelVideoSharingComV2 {
     public VxxxCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("");
     }
 
     @Override
     public String getAGBLink() {
-        return "https://www.test.com/help/privacy";
+        return "https://vxxx.com/information/terms";
     }
 
     private static List<String[]> getPluginDomains() {
