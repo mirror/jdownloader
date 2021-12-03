@@ -54,8 +54,8 @@ public class OuoIo extends antiDDoSForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        // they don't support https.. redirects to http.
-        set(param.toString().replace("//www.", "//").replace("https://", "http://"));
+        // they don't support http.. redirects to https.
+        set(param.toString().replace("//www.", "//").replace("http://", "https://"));
         DownloadLink fallBack = null;
         if (slink != null) {
             String link = Encoding.urlDecode(slink, false);
