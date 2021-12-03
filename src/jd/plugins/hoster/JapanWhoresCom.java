@@ -60,18 +60,18 @@ public class JapanWhoresCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String regexNormalTitle() {
+    protected String regexNormalTitleWebsite() {
         String title = br.getRegex("(?i)name=\"DC\\.title\" content=\"([^\"]*?)(?: at Japanese Whores)?\"").getMatch(0);
         if (title != null) {
             return title;
         } else {
-            return super.regexNormalTitle();
+            return super.regexNormalTitleWebsite();
         }
     }
 
     @Override
     protected String getFileTitle(final DownloadLink link) {
-        final String title = regexNormalTitle();
+        final String title = regexNormalTitleWebsite();
         /* Prefer regexed title over fuid/title from inside URL. */
         if (title != null) {
             return title;

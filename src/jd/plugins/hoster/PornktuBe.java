@@ -66,11 +66,11 @@ public class PornktuBe extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected boolean isOffline(final Browser br) {
+    protected boolean isOfflineWebsite(final Browser br) {
         if (br.containsHTML("(?i)>\\s*Video removed at request of the owner")) {
             /* 2021-11-23: Special */
             return true;
-        } else if (super.isOffline(br)) {
+        } else if (super.isOfflineWebsite(br)) {
             return true;
         } else {
             return false;

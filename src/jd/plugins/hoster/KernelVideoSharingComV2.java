@@ -335,8 +335,8 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /**
-     * Alternative way to linkcheck (works only for some hosts and only if FUIS is given): privat-zapisi.biz/feed/12345.xml | Als working
-     * for: webcamsbabe.com
+     * Alternative way to linkcheck (works only for some hosts and only if FUIS is given): privat-zapisi.biz/feed/12345.xml </br>
+     * Also working for: webcamsbabe.com
      */
     protected AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         dllink = null;
@@ -350,7 +350,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             this.login(account, false);
         }
         getPage(link.getPluginPatternMatcher());
-        if (isOffline(this.br)) {
+        if (isOfflineWebsite(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (link.getPluginPatternMatcher().matches(type_embedded)) {
@@ -387,7 +387,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             }
             if (realURL == null) {
                 /* 2020-11-10: Experimental feature: This can fix "broken" embed URLs: https://svn.jdownloader.org/issues/89009 */
-                final String embedTitle = regexEmbedTitle();
+                final String embedTitle = regexEmbedTitleWebsite();
                 if (!StringUtils.isEmpty(embedTitle)) {
                     /*
                      * "Convert" embed title to URL-title. Unsafe attempt but this can make "embed" URLs downloadable that wouldn't be
@@ -407,7 +407,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                     final Browser brc = this.prepBR(new Browser());
                     brc.getPage(realURL);
                     /* Fail-safe: Only set this URL as PluginPatternMatcher if it contains our expected videoID! */
-                    if ((!this.hasFUIDInsideURL(null) || (this.hasFUIDInsideURL(null) && brc.getURL().contains(fuid))) && new Regex(brc.getURL(), this.getSupportedLinks()).matches() && !this.isOffline(brc)) {
+                    if ((!this.hasFUIDInsideURL(null) || (this.hasFUIDInsideURL(null) && brc.getURL().contains(fuid))) && new Regex(brc.getURL(), this.getSupportedLinks()).matches() && !this.isOfflineWebsite(brc)) {
                         logger.info("Successfully found real URL: " + realURL);
                         link.setPluginPatternMatcher(brc.getURL());
                         br.setRequest(brc.getRequest());
@@ -472,7 +472,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (!StringUtils.isEmpty(finalFilename)) {
             link.setFinalFileName(finalFilename + ".mp4");
         }
-        if (this.isPrivateVideo(this.br)) {
+        if (this.isPrivateVideoWebsite(this.br)) {
             link.setProperty(PROPERTY_IS_PRIVATE_VIDEO, true);
         } else {
             link.removeProperty(PROPERTY_IS_PRIVATE_VIDEO);
@@ -505,7 +505,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 }
                 if (this.looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
-                        link.setDownloadSize(con.getCompleteContentLength());
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                     final String redirect_url = brc.getHttpConnection().getRequest().getUrl();
@@ -576,6 +575,9 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             croppedVideoID = null;
         }
         br.getPage("https://" + this.getHost() + "/api/json/video/86400/0/" + croppedVideoID + "/" + videoID + ".json");
+        if (br.getHttpConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final Map<String, Object> video = (Map<String, Object>) entries.get("video");
         final Map<String, Object> channel = (Map<String, Object>) video.get("channel");
@@ -632,11 +634,11 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
-    protected boolean isOffline(final Browser br) {
+    protected boolean isOfflineWebsite(final Browser br) {
         return br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/404.php");
     }
 
-    protected boolean isPrivateVideo(final Browser br) {
+    protected boolean isPrivateVideoWebsite(final Browser br) {
         /* 2020-10-09: Tested for pornyeah.com, anyporn.com, camwhoreshd.com */
         return br.containsHTML(">\\s*This video is a private video uploaded by |Only active members can watch private videos");
     }
@@ -649,10 +651,10 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         String title = null;
         /* Try default traits --> Very unsafe but may sometimes work */
         if (link.getPluginPatternMatcher().matches(type_embedded)) {
-            title = regexEmbedTitle();
+            title = regexEmbedTitleWebsite();
         }
         if (StringUtils.isEmpty(title)) {
-            title = regexNormalTitle();
+            title = regexNormalTitleWebsite();
         }
         if (title != null) {
             /* Remove html crap and spaces at the beginning and end. */
@@ -670,11 +672,11 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
     }
 
-    protected String regexEmbedTitle() {
+    protected String regexEmbedTitleWebsite() {
         return br.getRegex("<title>\\s*([^<>\"]*?)\\s*(/|-)\\s*Embed\\s*(Player|Video)</title>").getMatch(0);
     }
 
-    protected String regexNormalTitle() {
+    protected String regexNormalTitleWebsite() {
         String best = null;
         final String header = br.getRegex("<h(?:1|2)>\\s*(.*?)\\s*</h(?:1|2)>").getMatch(0);
         if (StringUtils.isNotEmpty(header)) {
@@ -705,12 +707,16 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     protected boolean isPrivateVideo(final DownloadLink link) {
-        return false;
+        if (link.hasProperty(PROPERTY_IS_PRIVATE_VIDEO)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     protected void handleDownload(final DownloadLink link, final Account account) throws Exception {
         if (StringUtils.isEmpty(this.dllink)) {
-            if (this.isPrivateVideo(br)) {
+            if (this.isPrivateVideoWebsite(br)) {
                 throw new AccountRequiredException("Private video");
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Broken video (?)");
@@ -774,15 +780,15 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     public static String getHttpServerErrorWorkaroundURL(final URLConnectionAdapter con) {
         /* 2020-11-03: TODO: Check if this is still needed. */
-        String workaroundURL = null;
         if (con.getResponseCode() == 403 || con.getResponseCode() == 404 || con.getResponseCode() == 405) {
             /*
              * Small workaround for buggy servers that redirect and fail if the Referer is wrong then or Cloudflare cookies were missing on
              * first attempt Examples: hdzog.com (404), txxx.com (403)
              */
-            workaroundURL = con.getRequest().getUrl();
+            return con.getRequest().getUrl();
+        } else {
+            return null;
         }
-        return workaroundURL;
     }
 
     @Override
