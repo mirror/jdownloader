@@ -13,11 +13,12 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -25,16 +26,15 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.formatter.SizeFormatter;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "roms.zophar.net" }, urls = { "https?://(?:www\\.)?zophar\\.net/(?!download_file)[^<>\"/]*?/[^<>\"/]*?(/[^<>\"/]+)?\\.html" })
+public class ZopharNetCrawler extends PluginForDecrypt {
+    static private final Pattern patternDownload = Pattern.compile("\"(https?://[^/]+/download_file/\\d+)\"", Pattern.CASE_INSENSITIVE);
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "roms.zophar.net" }, urls = { "http://(www\\.)?zophar\\.net/(?!download_file|frontends|news\\-archive|consoles)[^<>\"/]*?/[^<>\"/]*?/[^<>\"/]*?\\.html" }) 
-public class RmsZphrNt extends PluginForDecrypt {
-
-    static private final Pattern patternDownload = Pattern.compile("\"(http://(www\\.)?zophar\\.net/download_file/\\d+)\"", Pattern.CASE_INSENSITIVE);
-
-    public RmsZphrNt(PluginWrapper wrapper) {
+    public ZopharNetCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -43,33 +43,29 @@ public class RmsZphrNt extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(param.toString());
-        if (br.getURL().equals("http://www.zophar.net/")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
+        if (!this.canHandle(br.getURL())) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String file = br.getRegex(patternDownload).getMatch(0);
         if (file == null) {
             if (!br.containsHTML("class=\"tcat\"")) {
                 logger.info("Link offline (unsupported linktype): " + parameter);
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
         }
         final String size = br.getRegex("<b>Filesize</b></td>.*?<td align=\"right\">(\\d+(\\.\\d+)? (KB|MB|B))</td>").getMatch(0);
         final DownloadLink dlLink = createDownloadlink(file);
-        if (size != null)
+        if (size != null) {
             dlLink.setDownloadSize(SizeFormatter.getSize(size));
+        }
         dlLink.setName(new Regex(parameter, "/([^<>\"/]*?)\\.html").getMatch(0));
-
         decryptedLinks.add(dlLink);
-
         return decryptedLinks;
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

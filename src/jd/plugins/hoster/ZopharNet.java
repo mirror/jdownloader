@@ -13,10 +13,11 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.Regex;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -28,53 +29,68 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "roms.zophar.net" }, urls = { "http://(www\\.)zophar\\.net/download_file/[0-9]{1,}" }) 
-public class RomsZopharNet extends PluginForHost {
-
-    public RomsZopharNet(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zophar.net" }, urls = { "https?://(?:www\\.)zophar\\.net/download_file/([0-9]{1,})" })
+public class ZopharNet extends PluginForHost {
+    public ZopharNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public String getAGBLink() {
-        return "http://roms.zophar.net/legal.html";
+        return "https://www.zophar.net/legal.html";
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        /* TODO: Wert nachprüfen */
         return 1;
     }
 
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL());
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
         }
-        downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
-        dl.startDownload();
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(downloadLink.getDownloadURL());
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setAvailable(true);
-                downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            con = br.openHeadConnection(link.getPluginPatternMatcher());
+            if (this.looksLikeDownloadableContent(con)) {
+                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (final Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher());
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
+        dl.startDownload();
     }
 
     public void reset() {
