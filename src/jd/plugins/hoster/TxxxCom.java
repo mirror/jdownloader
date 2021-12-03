@@ -28,7 +28,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
@@ -75,7 +74,6 @@ public class TxxxCom extends KernelVideoSharingComV2 {
     @Override
     protected AvailableStatus requestFileInformation(final DownloadLink link, Account account, final boolean isDownload) throws Exception {
         dllink = null;
-        server_issues = false;
         prepBR(this.br);
         final String weakFilename = getWeakFilename(link);
         if (!link.isNameSet() && weakFilename != null) {
@@ -95,7 +93,8 @@ public class TxxxCom extends KernelVideoSharingComV2 {
         }
         final String lifetime = PluginJSonUtils.getJson(br, "lifetime");
         final Browser brAPI = br.cloneBrowser();
-        getPage(brAPI, "https://" + this.getHost() + "/api/json/video/" + lifetime + "/16000000/16421000/" + this.getFUID(link) + ".json");
+        final String param1 = this.getFUID(link).substring(0, 2) + "000000";
+        getPage(brAPI, "https://" + this.getHost() + "/api/json/video/" + lifetime + "/" + param1 + "/16421000/" + this.getFUID(link) + ".json");
         if (brAPI.getHttpConnection().getResponseCode() != 200) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -118,17 +117,17 @@ public class TxxxCom extends KernelVideoSharingComV2 {
         // setSpecialFlags();
         final long is_private = JavaScriptEngineFactory.toLong(video.get("is_private"), 0);
         if (is_private == 1) {
-            this.private_video = true;
+            link.setProperty(PROPERTY_IS_PRIVATE_VIDEO, true);
             return AvailableStatus.TRUE;
         } else {
-            this.private_video = false;
+            link.setProperty(PROPERTY_IS_PRIVATE_VIDEO, false);
         }
         /* Only look for downloadurl if we need it! */
         if (isDownload || !this.enableFastLinkcheck()) {
             try {
                 dllink = getDllink(this.br);
             } catch (final PluginException e) {
-                if (this.private_video && e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                if (this.isPrivateVideo(link) && e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                     logger.info("ERROR_FILE_NOT_FOUND in getDllink but we have a private video so it is not offline ...");
                 } else {
                     throw e;
@@ -142,18 +141,12 @@ public class TxxxCom extends KernelVideoSharingComV2 {
                 final Browser brc = this.br.cloneBrowser();
                 brc.setAllowedResponseCodes(new int[] { 405 });
                 // In case the link redirects to the finallink -
-                try {
-                    // br.getHeaders().put("Accept-Encoding", "identity");
-                    con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(dllink));
-                    final String workaroundURL = getHttpServerErrorWorkaroundURL(con);
-                    if (workaroundURL != null) {
-                        con.disconnect();
-                        con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(workaroundURL));
-                    }
-                } catch (final BrowserException e) {
-                    logger.log(e);
-                    server_issues = true;
-                    return AvailableStatus.TRUE;
+                // br.getHeaders().put("Accept-Encoding", "identity");
+                con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(dllink));
+                final String workaroundURL = getHttpServerErrorWorkaroundURL(con);
+                if (workaroundURL != null) {
+                    con.disconnect();
+                    con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(workaroundURL));
                 }
                 if (this.looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
@@ -186,7 +179,7 @@ public class TxxxCom extends KernelVideoSharingComV2 {
                     } catch (IOException e) {
                         logger.log(e);
                     }
-                    server_issues = true;
+                    this.errorNoFile();
                 }
             } finally {
                 try {
@@ -208,4 +201,13 @@ public class TxxxCom extends KernelVideoSharingComV2 {
         }
         return AvailableStatus.TRUE;
     }
+    // @Override
+    // protected boolean useAPIAvailablecheck() {
+    // return true;
+    // }
+    //
+    // @Override
+    // protected boolean useAPIGetDllink() {
+    // return true;
+    // }
 }

@@ -48,7 +48,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -80,31 +79,36 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
      * example.com/videos/1234-title.html </br>
      * example.com/videos/
      */
-    private static final String   type_normal              = "^https?://[^/]+/(?:[a-z]{2}/)?(?:videos?/)?(\\d+)(?:/|-)([a-z0-9\\-]+)(?:/?|\\.html)$";
+    private static final String   type_normal               = "^https?://[^/]+/(?:[a-z]{2}/)?(?:videos?/)?(\\d+)(?:/|-)([a-z0-9\\-]+)(?:/?|\\.html)$";
     /**
      * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(List)} (excluding
      * "embed" URLs). </br>
      * You need to override {@link #hasFUIDInsideURLAtTheEnd(String)} to return true when using such a pattern! </br>
      * TODO: Consider removing support for this from this main class.
      */
-    private static final String   type_normal_fuid_at_end  = "^https?://[^/]+/videos?/([a-z0-9\\-]+)-(\\d+)(?:/?|\\.html)$";
+    private static final String   type_normal_fuid_at_end   = "^https?://[^/]+/videos?/([a-z0-9\\-]+)-(\\d+)(?:/?|\\.html)$";
     /***
      * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternWithoutFileID(List)} and
      * {@link #buildAnnotationUrlsDefaultVideosPatternWithoutFileIDWithHTMLEnding(List)} (excluding "embed" URLs). </br>
      * You need to override {@link #hasFUIDInsideURLAtTheEnd(String)} to return false when using such a pattern!
      */
-    private static final String   type_normal_without_fuid = "^https?://[^/]+/(?:videos?/)?([a-z0-9\\-]+)(?:/?|\\.html)$";
-    private static final String   type_mobile              = "^https?://m\\.([^/]+/(videos?/)?\\d+/[a-z0-9\\-]+/$)";
+    private static final String   type_normal_without_fuid  = "^https?://[^/]+/(?:videos?/)?([a-z0-9\\-]+)(?:/?|\\.html)$";
+    private static final String   type_mobile               = "^https?://m\\.([^/]+/(videos?/)?\\d+/[a-z0-9\\-]+/$)";
     /**
      * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternOnlyNumbers(List)} (excluding
      * "embed" URLs).
      */
-    protected static final String type_only_numbers        = "^https?://[^/]+/(\\d+)/?$";
-    protected static final String type_embedded            = "^https?://[^/]+/embed/(\\d+)/?$";
-    protected String              dllink                   = null;
-    protected boolean             server_issues            = false;
-    protected boolean             private_video            = false;
-    protected static final String PROPERTY_FUID            = "fuid";
+    protected static final String type_only_numbers         = "^https?://[^/]+/(\\d+)/?$";
+    protected static final String type_embedded             = "^https?://[^/]+/embed/(\\d+)/?$";
+    protected String              dllink                    = null;
+    protected static final String PROPERTY_FUID             = "fuid";
+    protected static final String PROPERTY_USERNAME         = "user";
+    protected static final String PROPERTY_USERID           = "userid";
+    protected static final String PROPERTY_CHANNELNAME      = "channel";
+    protected static final String PROPERTY_CHANNELID        = "channelid";
+    protected static final String PROPERTY_TITLE            = "title";
+    protected static final String PROPERTY_DATE             = "date";
+    protected static final String PROPERTY_IS_PRIVATE_VIDEO = "privatevideo";
 
     /**
      * Use this e.g. for: </br>
@@ -281,6 +285,16 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return false;
     }
 
+    /** Enable this to use API availablecheck */
+    protected boolean useAPIAvailablecheck() {
+        return false;
+    }
+
+    /** Enable this to fetch final downloadurl via API only(!) */
+    protected boolean useAPIGetDllink() {
+        return false;
+    }
+
     /** Override this to allow attempting to auto-fix broken embed URLs. */
     protected String generateContentURL(final String fuid, final String urlTitle) {
         return null;
@@ -293,7 +307,8 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, null, false);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return requestFileInformation(link, account, false);
     }
 
     protected String getWeakFilename(final DownloadLink link) {
@@ -311,22 +326,25 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
     }
 
+    protected AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        if (useAPIAvailablecheck()) {
+            return this.requestFileInformationAPI(link, account, isDownload);
+        } else {
+            return this.requestFileInformationWebsite(link, account, isDownload);
+        }
+    }
+
     /**
      * Alternative way to linkcheck (works only for some hosts and only if FUIS is given): privat-zapisi.biz/feed/12345.xml | Als working
      * for: webcamsbabe.com
      */
-    protected AvailableStatus requestFileInformation(final DownloadLink link, Account account, final boolean isDownload) throws Exception {
+    protected AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         dllink = null;
-        server_issues = false;
         prepBR(this.br);
         final String weakFilename = getWeakFilename(link);
         if (!link.isNameSet() && weakFilename != null) {
             /* Set this so that offline items have "nice" titles too. */
             link.setName(weakFilename);
-        }
-        if (account == null) {
-            /* Was not called in download mode -> Try to grab any valid account */
-            account = AccountController.getInstance().getValidAccount(this.getHost());
         }
         if (account != null) {
             this.login(account, false);
@@ -454,13 +472,17 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (!StringUtils.isEmpty(finalFilename)) {
             link.setFinalFileName(finalFilename + ".mp4");
         }
-        setSpecialFlags();
+        if (this.isPrivateVideo(this.br)) {
+            link.setProperty(PROPERTY_IS_PRIVATE_VIDEO, true);
+        } else {
+            link.removeProperty(PROPERTY_IS_PRIVATE_VIDEO);
+        }
         /* Only look for downloadurl if we need it! */
         if (isDownload || !this.enableFastLinkcheck()) {
             try {
                 dllink = getDllink(this.br);
             } catch (final PluginException e) {
-                if (this.private_video && e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                if (this.isPrivateVideo(link) && e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                     logger.info("ERROR_FILE_NOT_FOUND in getDllink but we have a private video so it is not offline ...");
                 } else {
                     throw e;
@@ -474,18 +496,12 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 final Browser brc = this.br.cloneBrowser();
                 brc.setAllowedResponseCodes(new int[] { 405 });
                 // In case the link redirects to the finallink -
-                try {
-                    // br.getHeaders().put("Accept-Encoding", "identity");
-                    con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(dllink));
-                    final String workaroundURL = getHttpServerErrorWorkaroundURL(con);
-                    if (workaroundURL != null) {
-                        con.disconnect();
-                        con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(workaroundURL));
-                    }
-                } catch (final BrowserException e) {
-                    logger.log(e);
-                    server_issues = true;
-                    return AvailableStatus.TRUE;
+                // br.getHeaders().put("Accept-Encoding", "identity");
+                con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(dllink));
+                final String workaroundURL = getHttpServerErrorWorkaroundURL(con);
+                if (workaroundURL != null) {
+                    con.disconnect();
+                    con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(workaroundURL));
                 }
                 if (this.looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
@@ -518,7 +534,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                     } catch (IOException e) {
                         logger.log(e);
                     }
-                    server_issues = true;
+                    errorNoFile();
                 }
             } finally {
                 try {
@@ -541,6 +557,81 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
+    protected AvailableStatus requestFileInformationAPI(final DownloadLink link, Account account, final boolean isDownload) throws Exception {
+        this.prepBR(br);
+        if (account != null) {
+            this.login(account, false);
+        }
+        final String videoID = this.getFUID(link);
+        final String weakFilename = getWeakFilename(link);
+        if (!link.isNameSet() && weakFilename != null) {
+            /* Set this so that offline items have "nice" titles too. */
+            link.setName(weakFilename);
+        }
+        final String croppedVideoID;
+        if (videoID.length() > 3) {
+            croppedVideoID = videoID.substring(0, videoID.length() - 3) + "000";
+        } else {
+            /* Most likely invalid videoID. */
+            croppedVideoID = null;
+        }
+        br.getPage("https://" + this.getHost() + "/api/json/video/86400/0/" + croppedVideoID + "/" + videoID + ".json");
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> video = (Map<String, Object>) entries.get("video");
+        final Map<String, Object> channel = (Map<String, Object>) video.get("channel");
+        final Map<String, Object> user = (Map<String, Object>) video.get("user");
+        final String status_idStr = (String) video.get("status_id");
+        if (!status_idStr.equals("1")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String title = (String) video.get("title");
+        final String description = (String) video.get("description");
+        if (!StringUtils.isEmpty(title)) {
+            link.setFinalFileName(title + ".mp4");
+        }
+        if (StringUtils.isEmpty(link.getComment()) && !StringUtils.isEmpty(description)) {
+            link.setComment(description);
+        }
+        /* Set some Packagizer properties */
+        link.setProperty(PROPERTY_TITLE, title);
+        link.setProperty(PROPERTY_CHANNELNAME, channel.get("title"));
+        link.setProperty(PROPERTY_CHANNELID, channel.get("id"));
+        link.setProperty(PROPERTY_USERNAME, user.get("username"));
+        link.setProperty(PROPERTY_USERID, user.get("id"));
+        link.setProperty(PROPERTY_DATE, video.get("post_date"));
+        final long is_private = JavaScriptEngineFactory.toLong(video.get("is_private"), 0);
+        if (is_private == 1) {
+            link.setProperty(PROPERTY_IS_PRIVATE_VIDEO, true);
+            return AvailableStatus.TRUE;
+        } else {
+            link.removeProperty(PROPERTY_IS_PRIVATE_VIDEO);
+        }
+        if (this.enableFastLinkcheck() && !isDownload) {
+            return AvailableStatus.TRUE;
+        } else {
+            this.dllink = this.getDllinkViaAPI(br, link, videoID);
+            if (!isDownload) {
+                URLConnectionAdapter con = null;
+                try {
+                    con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
+                    if (!this.looksLikeDownloadableContent(con)) {
+                        errorNoFile();
+                    } else {
+                        if (con.getCompleteContentLength() > 0) {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
+            }
+        }
+        return AvailableStatus.TRUE;
+    }
+
     protected boolean isOffline(final Browser br) {
         return br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/404.php");
     }
@@ -548,10 +639,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     protected boolean isPrivateVideo(final Browser br) {
         /* 2020-10-09: Tested for pornyeah.com, anyporn.com, camwhoreshd.com */
         return br.containsHTML(">\\s*This video is a private video uploaded by |Only active members can watch private videos");
-    }
-
-    protected void setSpecialFlags() {
-        this.private_video = this.isPrivateVideo(br);
     }
 
     protected String getFileTitle(final DownloadLink link) {
@@ -617,9 +704,13 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         this.handleDownload(link, null);
     }
 
+    protected boolean isPrivateVideo(final DownloadLink link) {
+        return false;
+    }
+
     protected void handleDownload(final DownloadLink link, final Account account) throws Exception {
         if (StringUtils.isEmpty(this.dllink)) {
-            if (private_video) {
+            if (this.isPrivateVideo(br)) {
                 throw new AccountRequiredException("Private video");
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Broken video (?)");
@@ -628,8 +719,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
         } else if (br.getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-        } else if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
         if (StringUtils.containsIgnoreCase(dllink, ".m3u8")) {
             /* hls download */
@@ -672,11 +761,15 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                     /* Should only happen in rare cases */
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 503 connection limit reached", 5 * 60 * 1000l);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+                    errorNoFile();
                 }
             }
             dl.startDownload();
         }
+    }
+
+    protected void errorNoFile() throws PluginException {
+        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to file");
     }
 
     public static String getHttpServerErrorWorkaroundURL(final URLConnectionAdapter con) {
@@ -733,6 +826,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                     }
                 }
                 /* 2020-11-04: Login-URL that fits most of all websites (example): https://www.porngem.com/login-required/ */
+                logger.info("Performing full login");
                 getPage("https://www." + this.getHost() + "/login/");
                 /*
                  * 2017-01-21: This request will usually return a json with some information about the account. Until now there are no
@@ -1029,43 +1123,12 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (StringUtils.isEmpty(dllink)) {
             final String query = br.getRegex("\"query\"\\s*:\\s*(\\{[^\\{\\}]*?\\})").getMatch(0);
             if (query != null) {
-                /* tubepornclassic.com, vjav.com, hotmovs.com, txxx.tube */
                 final Map<String, Object> queryMap = JSonStorage.restoreFromString(query, TypeRef.HASHMAP);
                 final String videoID = (String) queryMap.get("video_id");
                 if (StringUtils.isNotEmpty(videoID) && queryMap.containsKey("lifetime")) {
-                    final Browser brc = br.cloneBrowser();
-                    brc.getPage("/api/videofile.php?video_id=" + videoID + "&lifetime=8640000");
-                    /*
-                     * 2021-07-22: Sites which got this API may as well have such an API endpoint available which could be used for
-                     * linkchecking (well also only if the internal videoID is given like in the above example):
-                     * https://hotmovs.com/api/json/video/86400/8000000/8787000/<videoID>.json </br> This json may also contain a field
-                     * representing the online status. For some offline items, title and other metadata is given although it is offline.
-                     * </br> "status_id":"1" --> Online </br> "status_id":"5" --> Offline
-                     */
-                    final List<Map<String, Object>> formats = (List<Map<String, Object>>) JSonStorage.restoreFromString(brc.toString(), TypeRef.OBJECT);
-                    /* 2021-07-22: I wasn't able to find any website using this API that had more than 1 quality available. */
-                    if (formats.size() > 1) {
-                        logger.warning("!! Developer work needed !! KVS website with API got multiple video qualities available!");
-                    }
-                    for (final Map<String, Object> format : formats) {
-                        final String cryptedVideoURL = format.get("video_url").toString();
-                        final String decryptedVideoURL = decryptVideoURL(cryptedVideoURL);
-                        try {
-                            /*
-                             * Check for valid URL. We're not using their API to verify onlinestatus, instead we're using the result here as
-                             * an offline-indicator.
-                             */
-                            if (decryptedVideoURL.startsWith("/")) {
-                                /* Add dummy-host because relative URLs would throw exception. */
-                                new URL("https://example.com" + decryptedVideoURL);
-                            } else {
-                                new URL(decryptedVideoURL);
-                            }
-                        } catch (final Throwable ignore) {
-                            /* 2021-07-22: E.g. instead of a valid URL we get: "c46d....&ti=<timestamp>" */
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        }
-                        return decryptedVideoURL;
+                    final String dllinkAPI = getDllinkViaAPI(br.cloneBrowser(), this.getDownloadLink(), videoID);
+                    if (!StringUtils.isEmpty(dllinkAPI)) {
+                        return dllinkAPI;
                     }
                 }
             }
@@ -1081,6 +1144,52 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             dllink = Encoding.htmlDecode(dllink);
         }
         return dllink;
+    }
+
+    /* Example websites: tubepornclassic.com, vjav.com, hotmovs.com, txxx.tube, vxxx.com, txxx.com, tubecup.com, videotxxx.com */
+    protected String getDllinkViaAPI(final Browser br, final DownloadLink link, final String videoID) throws IOException, PluginException {
+        br.getPage("/api/videofile.php?video_id=" + videoID + "&lifetime=8640000");
+        final List<Map<String, Object>> renditions = (List<Map<String, Object>>) JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
+        String bestDownloadurl = null;
+        int maxHeight = 0;
+        /* This list is usually sorted from best to worst. */
+        for (final Map<String, Object> rendition : renditions) {
+            final String format = (String) rendition.get("format");
+            final String cryptedVideoURL = rendition.get("video_url").toString();
+            final String decryptedVideoURL = decryptVideoURL(cryptedVideoURL);
+            try {
+                /*
+                 * Check for valid URL. We're not using their API to verify onlinestatus, instead we're using the result here as an
+                 * offline-indicator.
+                 */
+                if (decryptedVideoURL.startsWith("/")) {
+                    /* Add dummy-host because relative URLs would throw exception. */
+                    new URL("https://example.com" + decryptedVideoURL);
+                } else {
+                    new URL(decryptedVideoURL);
+                }
+            } catch (final Throwable ignore) {
+                /* 2021-07-22: E.g. instead of a valid URL we get: "c46d....&ti=<timestamp>" */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            /* TODO: Respect users' preferred quality setting here. */
+            final int height;
+            if (format.equalsIgnoreCase("_sd.mp4")) {
+                height = 480;
+            } else if (format.equalsIgnoreCase("_hd.mp4")) {
+                height = 720;
+            } else if (format.equalsIgnoreCase("_fhd.mp4")) {
+                height = 1080;
+            } else {
+                logger.warning("Unknown format value: " + format);
+                height = 1;
+            }
+            if (height > maxHeight) {
+                maxHeight = height;
+                bestDownloadurl = decryptedVideoURL;
+            }
+        }
+        return bestDownloadurl;
     }
 
     /** Decrypts given URL if needed. */
@@ -1331,16 +1440,17 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     protected String getURLTitle(final String url) {
         if (url == null) {
             return null;
+        } else {
+            if (url.matches(type_normal)) {
+                return new Regex(url, type_normal).getMatch(1);
+            } else if (url.matches(type_normal_fuid_at_end) && hasFUIDInsideURLAtTheEnd(url)) {
+                return new Regex(url, type_normal_fuid_at_end).getMatch(0);
+            } else if (url.matches(type_normal_without_fuid)) {
+                return new Regex(url, type_normal_without_fuid).getMatch(0);
+            } else {
+                return null;
+            }
         }
-        String urlTitle = null;
-        if (url.matches(type_normal)) {
-            urlTitle = new Regex(url, type_normal).getMatch(1);
-        } else if (url.matches(type_normal_fuid_at_end) && hasFUIDInsideURLAtTheEnd(url)) {
-            urlTitle = new Regex(url, type_normal_fuid_at_end).getMatch(0);
-        } else if (url.matches(type_normal_without_fuid)) {
-            urlTitle = new Regex(url, type_normal_without_fuid).getMatch(0);
-        }
-        return urlTitle;
     }
 
     /**
@@ -1361,19 +1471,21 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
      * should in most of all cases!
      */
     protected String getFUIDFromURL(final String url) {
-        String fuid = null;
-        if (url != null) {
+        if (url == null) {
+            return null;
+        } else {
             if (url.matches(type_only_numbers)) {
-                fuid = new Regex(url, type_only_numbers).getMatch(0);
+                return new Regex(url, type_only_numbers).getMatch(0);
             } else if (url.matches(type_embedded)) {
-                fuid = new Regex(url, type_embedded).getMatch(0);
+                return new Regex(url, type_embedded).getMatch(0);
             } else if (url.matches(type_normal_fuid_at_end) && hasFUIDInsideURL(url) && hasFUIDInsideURLAtTheEnd(url)) {
-                fuid = new Regex(url, type_normal_fuid_at_end).getMatch(1);
+                return new Regex(url, type_normal_fuid_at_end).getMatch(1);
             } else if (url.matches(type_normal) && hasFUIDInsideURL(url)) {
-                fuid = new Regex(url, type_normal).getMatch(0);
+                return new Regex(url, type_normal).getMatch(0);
+            } else {
+                return null;
             }
         }
-        return fuid;
     }
 
     /** Returns user selected stream quality. -1 = BEST/default */
