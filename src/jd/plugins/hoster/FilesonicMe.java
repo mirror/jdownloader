@@ -131,6 +131,7 @@ public class FilesonicMe extends PluginForHost {
             } else {
                 final UrlQuery query = UrlQuery.parse(br.getURL());
                 query.append("url", "https://www.blabla.de/?utm_source=google&utm_medium=cpc&utm_campaign=&utm_content=", true);
+                br.getPage(query.toString());
                 dllink = br.getRegex("(/s\\d+_download\\.php?id=[a-f0-9]+)").getMatch(0);
             }
             if (StringUtils.isEmpty(dllink)) {
