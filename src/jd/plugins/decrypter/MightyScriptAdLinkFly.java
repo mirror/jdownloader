@@ -67,6 +67,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
 
     private String appVars = null;
 
+    /** Use this to correct URL added by user if necessary. */
     protected void correctURL(final CryptedLink param) {
     }
 
@@ -87,7 +88,6 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.toString().length() < 100) {
             /* 2020-05-29: E.g. https://uii.io/full */
-            logger.info("Invalid HTML - probably offline content");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.setFollowRedirects(true);
@@ -312,12 +312,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         } else {
             br.setFollowRedirects(false);
         }
-        // tny.so don't work with url ending with "/"
-        if (param.getCryptedUrl().contains("tny.so")) {
-            getPage(param.getCryptedUrl());
-        } else {
-            getPage(param.getCryptedUrl() + "/");
-        }
+        getPage(param.getCryptedUrl());
         // 2019-11-13: http->https->different domain(https)
         // 2019-11-13: http->https->different domain(http)->different domain(https)
         while (true) {

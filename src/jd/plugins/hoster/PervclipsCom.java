@@ -23,6 +23,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
 
@@ -73,7 +74,7 @@ public class PervclipsCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String getDllink(final Browser br) throws PluginException, IOException {
+    protected String getDllink(final DownloadLink link, final Browser br) throws PluginException, IOException {
         /* 2020-10-27: Official download available: Highest quality + 20 seconds pre-download-waittime skippable! */
         String officialDownloadurl = br.getRegex("\"(https?://[^\"]+\\.mp4\\?download=1[^\"]*)\"").getMatch(0);
         if (officialDownloadurl != null) {
@@ -83,7 +84,7 @@ public class PervclipsCom extends KernelVideoSharingComV2 {
             return officialDownloadurl;
         } else {
             /* Fallback */
-            return super.getDllink(br);
+            return super.getDllink(link, br);
         }
     }
 }

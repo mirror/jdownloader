@@ -115,7 +115,7 @@ public class TheyarehugeCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String getDllink(final Browser br) throws PluginException, IOException {
+    protected String getDllink(final DownloadLink link, final Browser br) throws PluginException, IOException {
         /* 2020-10-27: Official download available: Higher quality than streaming download! */
         String officialDownloadurl = br.getRegex("\"(https?://[^\"]+\\.mp4[^\"]*\\?download=true[^\"]*720p[^\"]*)\"").getMatch(0);
         if (officialDownloadurl != null) {
@@ -128,7 +128,7 @@ public class TheyarehugeCom extends KernelVideoSharingComV2 {
             return officialDownloadurl;
         } else {
             /* Fallback and also required for embed URLs */
-            String streamURL = super.getDllink(br);
+            String streamURL = super.getDllink(link, br);
             if (!streamURL.contains(".mp4")) {
                 /* Fallback/Workaround */
                 streamURL = br.getRegex("video_url\\s*:\\s*'(https?://[^<>\"\\']+)'").getMatch(0);
