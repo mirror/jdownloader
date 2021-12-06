@@ -2247,7 +2247,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 } else {
                     con = openAntiDDoSRequestConnection(br2, br2.createGetRequest(directurl));
                 }
-                /* For video streams we often don't get a Content-Disposition header. */
                 if (con.getResponseCode() == 503) {
                     try {
                         br2.followConnection(true);
@@ -4165,8 +4164,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             handleDownloadErrors(dl.getConnection(), link, account);
             try {
                 fixFilename(dl.getConnection(), link);
-            } catch (Exception e) {
-                logger.log(e);
+            } catch (final Exception ignore) {
+                logger.log(ignore);
             }
             try {
                 /* add a download slot */
@@ -4184,7 +4183,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             if (dllink.startsWith("rtmp")) {
-                /* 2019-05-21: rtmp download - VERY rare case! */
+                /* 2021-12-06: rtmp download is very rarely used by now. */
                 try {
                     dl = new RTMPDownload(this, link, dllink);
                 } catch (final NoClassDefFoundError e) {
@@ -4204,8 +4203,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 rtmp.setResume(false);
                 try {
                     fixFilename(dl.getConnection(), link);
-                } catch (Exception e) {
-                    logger.log(e);
+                } catch (final Exception ignore) {
+                    logger.log(ignore);
                 }
                 try {
                     /* add a download slot */
@@ -4241,7 +4240,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 handleDownloadErrors(dl.getConnection(), link, account);
                 try {
                     fixFilename(dl.getConnection(), link);
-                } catch (Exception e) {
+                } catch (final Exception e) {
                     logger.log(e);
                 }
                 try {
@@ -4256,15 +4255,50 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
         }
     }
+    /* TODO: Implement this */
+    // private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final Account account) throws Exception {
+    // final String url = link.getStringProperty(getDownloadModeDirectlinkProperty(account));
+    // if (StringUtils.isEmpty(url)) {
+    // return false;
+    // }
+    // try {
+    // final Browser brc = br.cloneBrowser();
+    // dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, this.isResumeable(link, account), this.getMaxChunks(account));
+    // if (dl.getConnection().getResponseCode() == 503) {
+    // /* TODO: Improve this errorhandling for "too many connections" and throw Exception right away! */
+    // return true;
+    // } else if (this.looksLikeDownloadableContent(dl.getConnection())) {
+    // return true;
+    // } else if (StringUtils.equalsIgnoreCase(dl.getConnection().getContentType(), "application/vnd.apple.mpegurl")) {
+    // /* HLS download */
+    // try {
+    // dl.getConnection().disconnect();
+    // } catch (final Throwable ignore) {
+    // }
+    // dl = new HLSDownloader(link, br, url);
+    // return true;
+    // } else {
+    // brc.followConnection(true);
+    // throw new IOException();
+    // }
+    // } catch (final Throwable e) {
+    // logger.log(e);
+    // try {
+    // dl.getConnection().disconnect();
+    // } catch (Throwable ignore) {
+    // }
+    // return false;
+    // }
+    // }
 
     /** Returns user selected streaming quality. Returns BEST by default / no selection. */
-    private String handleQualitySelectionHLS(final Browser brc, final String hls_master) throws Exception {
-        if (hls_master == null) {
+    private String handleQualitySelectionHLS(final Browser br, final String hlsMaster) throws Exception {
+        if (StringUtils.isEmpty(hlsMaster)) {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        this.getPage(brc, hls_master);
-        final List<HlsContainer> hlsQualities = HlsContainer.getHlsQualities(brc);
+        this.getPage(br, hlsMaster);
+        final List<HlsContainer> hlsQualities = HlsContainer.getHlsQualities(br);
         if (hlsQualities == null || hlsQualities.isEmpty()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "HLS stream broken?");
         }

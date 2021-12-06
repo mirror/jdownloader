@@ -412,8 +412,8 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                         /* This should never happen */
                         logger.warning("Cannot trust 'real' URL: " + realURL);
                     }
-                } catch (final MalformedURLException e) {
-                    logger.log(e);
+                } catch (final MalformedURLException ignore) {
+                    logger.log(ignore);
                     logger.info("URL parsing failure");
                 }
             } else {
@@ -651,7 +651,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     protected boolean isPrivateVideoWebsite(final Browser br) {
         /* 2020-10-09: Tested for pornyeah.com, anyporn.com, camwhoreshd.com */
-        return br.containsHTML(">\\s*This video is a private video uploaded by |Only active members can watch private videos");
+        return br.containsHTML("(?i)>\\s*This video is a private video uploaded by |Only active members can watch private videos");
     }
 
     protected boolean isPrivateVideo(final DownloadLink link) {
@@ -756,9 +756,9 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
                 link.setProperty(PROPERTY_DIRECTURL, hlsbest.getDownloadurl());
             } else {
+                /* http download */
                 final int maxChunks = getMaxChunks(account);
                 final boolean isResumeable = isResumeable(link, account);
-                /* http download */
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.dllink, isResumeable, maxChunks);
                 final String workaroundURL = getHttpServerErrorWorkaroundURL(dl.getConnection());
                 if (workaroundURL != null) {
@@ -1141,7 +1141,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                         httpurl_temp = quality_url_temp;
                     }
                 }
-            } catch (final Throwable e) {
+            } catch (final Throwable ignore) {
             }
             /* Last chance */
             if (httpurl_temp == null) {
