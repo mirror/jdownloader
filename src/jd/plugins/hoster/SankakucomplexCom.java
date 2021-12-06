@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.URL;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
@@ -88,7 +87,10 @@ public class SankakucomplexCom extends antiDDoSForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
-        link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
+        final String fileID = new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
+        if (!link.isNameSet()) {
+            link.setName(fileID);
+        }
         br.setFollowRedirects(true);
         final String host = new URL(link.getPluginPatternMatcher()).getHost();
         br.setCookie("https://" + host, "locale", "en");
@@ -103,7 +105,6 @@ public class SankakucomplexCom extends antiDDoSForHost {
             this.accountRequired = true;
             return AvailableStatus.TRUE;
         }
-        String filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
         dllink = checkDirectLink(link, "directlink");
         if (dllink != null) {
             /* This means we must have checked this one before so filesize/name has already been set -> Done! */
@@ -122,12 +123,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
                 dllink = "https:" + dllink;
             }
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
+        String filename = fileID;
         String ext = null;
         if (dllink != null) {
             ext = new Regex(dllink, "[a-z0-9]+(\\.[a-z]+)(\\?|$)").getMatch(0);
@@ -187,7 +183,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
         }
         /* Disable chunks as we only download small files */
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("text")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (IOException e) {
