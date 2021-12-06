@@ -24,6 +24,7 @@ import org.appwork.utils.Regex;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -78,7 +79,7 @@ public class PornktuBe extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String getDllink(final Browser br) throws PluginException, IOException {
+    protected String getDllink(final DownloadLink link, final Browser br) throws PluginException, IOException {
         final String id = this.getFUID(this.getDownloadLink());
         // final String s = br.getRegex("data-s=\"(\\d+)\"").getMatch(0);
         // final String t = br.getRegex("data-t=\"(\\d+)\"").getMatch(0);
@@ -109,8 +110,9 @@ public class PornktuBe extends KernelVideoSharingComV2 {
                 dllink = url;
             }
         }
+        link.setProperty(PROPERTY_CHOSEN_QUALITY, best);
         if (dllink != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            this.getDownloadLink().setComment("ChosenQuality: " + best + "p");
+            link.setComment("ChosenQuality: " + best + "p");
         }
         return dllink;
     }

@@ -56,7 +56,7 @@ public class UiiIo extends MightyScriptAdLinkFly {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(full\\?api=[a-f0-9]+\\&url=[a-zA-Z0-9_/\\+\\=\\-%]+\\&type=1|[A-Za-z0-9]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(full\\?api=[a-f0-9]+\\&url=[a-zA-Z0-9_/\\+\\=\\-%]+\\&type=1|[A-Za-z0-9]+/?)");
         }
         return ret.toArray(new String[0]);
     }

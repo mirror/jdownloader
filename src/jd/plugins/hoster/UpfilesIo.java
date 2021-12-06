@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
@@ -45,7 +47,6 @@ public class UpfilesIo extends PluginForHost {
         return -1;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         // requestFileInformation(link);
@@ -72,8 +73,12 @@ public class UpfilesIo extends PluginForHost {
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadUrl, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -111,7 +116,6 @@ public class UpfilesIo extends PluginForHost {
         return PluginJSonUtils.getJsonValue(br, "url");
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.getPage(link.getPluginPatternMatcher());
@@ -123,11 +127,12 @@ public class UpfilesIo extends PluginForHost {
         try {
             br.setFollowRedirects(true);
             con = br.openGetConnection(downloadUrl);
-            if (!con.getContentType().contains("html")) {
+            if (this.looksLikeDownloadableContent(con)) {
                 logger.info("This url is a directurl");
-                link.setDownloadSize(con.getLongContentLength());
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
                 link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con).trim()));
-                return AvailableStatus.TRUE;
             } else {
                 br.followConnection();
             }

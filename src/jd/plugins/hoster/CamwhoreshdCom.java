@@ -24,6 +24,7 @@ import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
 
@@ -59,14 +60,14 @@ public class CamwhoreshdCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String getDllink(final Browser br) throws PluginException, IOException {
+    protected String getDllink(final DownloadLink link, final Browser br) throws PluginException, IOException {
         final String embed = br.getRegex("(https?://www.cwtvembeds.com/embed/\\d+)").getMatch(0);
         if (embed != null && !StringUtils.equals(br._getURL().getPath(), new URL(embed).getPath())) {
             br.setFollowRedirects(true);
             br.getPage(embed);
-            return super.getDllink(br);
+            return super.getDllink(link, br);
         } else {
-            return super.getDllink(br);
+            return super.getDllink(link, br);
         }
     }
 }

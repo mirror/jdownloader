@@ -167,7 +167,7 @@ public class MightyScriptAdLinkFlyDefault extends MightyScriptAdLinkFly {
         final String host = getHostsPattern();
         /* [a-zA-Z0-9]{2,} will work for 99% but site shortit.ca is not compatible. */
         /* 2019-04-25: Added special pattern for direct-redirects of clicksfly.com domains('/entrar/...') */
-        return new String[] { host + "/(entrar/[A-Za-z0-9\\-]+|[a-zA-Z0-9]{2,})" };
+        return new String[] { host + "/(entrar/[A-Za-z0-9\\-]+|[a-zA-Z0-9]{2,}/?)" };
     }
 
     private static String getHostsPattern() {

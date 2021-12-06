@@ -25,6 +25,7 @@ import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
 
@@ -68,7 +69,7 @@ public class XbabeCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String getDllink(final Browser br) throws PluginException, IOException {
+    protected String getDllink(final DownloadLink link, final Browser br) throws PluginException, IOException {
         /* 2021-09-01: Workaround as upper handling picks up preview-clips instead of the full videos. */
         final HashMap<Integer, String> qualityMap = new HashMap<Integer, String>();
         final String[] htmls = br.getRegex("(<source[^>]*src=.*?[^>]*type=\"video/mp4\"[^>]*>)").getColumn(0);
@@ -90,12 +91,12 @@ public class XbabeCom extends KernelVideoSharingComV2 {
             }
             qualityMap.put(width, url);
         }
-        String dllink = this.handleQualitySelection(qualityMap);
+        String dllink = this.handleQualitySelection(link, qualityMap);
         if (dllink != null) {
             return dllink;
         } else {
             /* Fallback to upper handling */
-            return super.getDllink(br);
+            return super.getDllink(link, br);
         }
     }
 }

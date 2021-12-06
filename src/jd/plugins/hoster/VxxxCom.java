@@ -67,12 +67,22 @@ public class VxxxCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected boolean useAPIAvailablecheck() {
+    protected boolean useAPI() {
         return true;
     }
 
     @Override
-    protected boolean useAPIGetDllink() {
-        return true;
+    protected String getAPIParam1(final String videoID) {
+        return "0";
+    }
+
+    @Override
+    protected String getAPICroppedVideoID(final String videoID) {
+        if (videoID.length() > 3) {
+            return videoID.substring(0, videoID.length() - 3) + "000";
+        } else {
+            /* Most likely invalid videoID. */
+            return null;
+        }
     }
 }
