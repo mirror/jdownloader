@@ -166,6 +166,20 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                             logger.warning("Failed to find reCaptchaV2 key");
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
+                        /**
+                         * Some websites do not allow users to access the target URL directly but will require a certain Referer to be set.
+                         * </br>
+                         * We pre-set this in our browser but if that same URL is opened in browser, it may redirect to another website as
+                         * the Referer is missing. In this case we'll use the main page to solve the captcha to prevent this from happening.
+                         */
+                        final String reCaptchaSiteURL;
+                        if (this.getSpecialReferer() != null) {
+                            /* Required e.g. for sh2rt.com. */
+                            reCaptchaSiteURL = br.getBaseURL();
+                        } else {
+                            /* Fine for most of all websites. */
+                            reCaptchaSiteURL = br.getURL();
+                        }
                         recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, key) {
                             @Override
                             public TYPE getType() {
@@ -174,6 +188,11 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                                 } else {
                                     return TYPE.NORMAL;
                                 }
+                            }
+
+                            @Override
+                            protected String getSiteUrl() {
+                                return reCaptchaSiteURL;
                             }
                         }.getToken();
                         form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
@@ -198,18 +217,16 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                         form.put("adcopy_challenge", chid);
                         form.put("adcopy_response", "manual_challenge");
                     } else {
-                        /* Unsupported captchaType */
+                        /* This should never happen */
                         logger.warning("Unsupported captcha type!");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     submitForm(form);
                     if (requiresCaptchaWhichCanFail && this.br.containsHTML("The CAPTCHA was incorrect")) {
                         captchaFailed = true;
+                        continue;
                     } else {
                         captchaFailed = false;
-                    }
-                    if (!captchaFailed) {
-                        /* Captcha success or we did not have to enter any captcha! */
                         break;
                     }
                 }

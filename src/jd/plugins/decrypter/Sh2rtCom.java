@@ -35,7 +35,10 @@ public class Sh2rtCom extends MightyScriptAdLinkFly {
 
     @Override
     protected String getSpecialReferer() {
-        /* Pre-set Referer to skip multiple ad pages e.g. sh2rt.com -> urlily.com -> Captcha & wait time -> sh2rt.com.com */
-        return "https://urlily.com/";
+        /*
+         * Pre-set Referer to skip multiple ad pages e.g. sh2rt.com -> google.com -> urlily.com -> Captcha & wait time -> nawahi1.com ->
+         * sh2rt.com.com
+         */
+        return "https://nawahi1.com/";
     }
 }
