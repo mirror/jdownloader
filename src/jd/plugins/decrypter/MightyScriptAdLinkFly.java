@@ -43,7 +43,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
  * @author raztoki
  * @tags: similar to OuoIo
  * @examples: Without captcha: met.bz <br />
- *            With reCaptchaV2 (like most): geistlink.com <br />
+ *            With reCaptchaV2 (like most): sh2rt.com <br />
  *            With solvemedia: clik.pw
  *
  */

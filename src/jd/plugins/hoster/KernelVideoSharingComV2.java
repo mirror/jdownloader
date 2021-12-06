@@ -451,12 +451,12 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 logger.info("Successfully found fuid in html: " + fuidInsideHTML);
                 if (this.getFUID(link) == null) {
                     /** Most likely useful for URLs matching pattern {@link #type_normal_without_fuid}. */
-                    logger.info("Setting FUID found inside URL as DownloadLink FUID");
+                    logger.info("Setting FUID found inside HTML as DownloadLink FUID");
                     link.setLinkID(this.getHost() + "://" + fuidInsideHTML);
                     link.setProperty(PROPERTY_FUID, fuidInsideHTML);
                 } else if (!StringUtils.equals(this.getFUID(link), fuidInsideHTML)) {
                     /* More or less helpful for debugging: This should never happen! */
-                    logger.warning("FUID inside URL doesn't match FUID found in HTML: " + this.getFUID(link) + " vs. " + fuidInsideHTML);
+                    logger.warning("FUID inside URL doesn't match FUID found in HTML: URL: " + this.getFUID(link) + " | HTML: " + fuidInsideHTML);
                 } else {
                     /* Everything alright - FUID of inside URL equals FUID found in HTML! */
                 }
@@ -486,11 +486,12 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 }
             }
         }
-        if (!StringUtils.isEmpty(this.dllink) && !dllink.contains(".m3u8") && !isDownload && !enableFastLinkcheck()) {
+        if (!StringUtils.isEmpty(this.dllink) && !this.isHLS(this.dllink) && !isDownload && !enableFastLinkcheck()) {
             URLConnectionAdapter con = null;
             try {
                 /* if you don't do this then referrer is fked for the download! -raztoki */
                 final Browser brc = this.br.cloneBrowser();
+                brc.setFollowRedirects(true);
                 brc.setAllowedResponseCodes(new int[] { 405 });
                 // In case the link redirects to the finallink -
                 // br.getHeaders().put("Accept-Encoding", "identity");
@@ -510,17 +511,18 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                     link.setProperty(PROPERTY_DIRECTURL, this.dllink);
                     if (StringUtils.isEmpty(finalFilename)) {
                         /* Fallback - attempt to find final filename */
+                        final String headerFilename = Plugin.getFileNameFromHeader(con);
                         final String filenameFromFinalDownloadurl = Plugin.getFileNameFromURL(con.getURL());
-                        if (con.isContentDisposition()) {
-                            logger.info("Using final filename from content disposition header");
-                            finalFilename = Plugin.getFileNameFromHeader(con);
+                        if (!StringUtils.isEmpty(headerFilename)) {
+                            logger.info("Using final filename from content-disposition header: " + headerFilename);
+                            finalFilename = headerFilename;
                             link.setFinalFileName(finalFilename);
                         } else if (!StringUtils.isEmpty(filenameFromFinalDownloadurl)) {
-                            logger.info("Using final filename from inside final downloadurl");
+                            logger.info("Using final filename from inside final downloadurl: " + filenameFromFinalDownloadurl);
                             finalFilename = filenameFromFinalDownloadurl;
                             link.setFinalFileName(finalFilename);
                         } else {
-                            logger.info("Failed to find any final filename so far");
+                            logger.warning("Failed to find any final filename so far");
                         }
                     }
                 } else {
@@ -550,6 +552,16 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    protected boolean isHLS(final String url) {
+        if (url == null) {
+            return false;
+        } else if (StringUtils.containsIgnoreCase(url, ".m3u8")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     protected AvailableStatus requestFileInformationAPI(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
@@ -672,7 +684,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         /* Prefer title from URL if it is available. */
         if (!StringUtils.isEmpty(title_url)) {
             return title_url;
-        } else if (title != null) {
+        } else if (!StringUtils.isEmpty(title)) {
             return title;
         } else {
             return null;
@@ -713,11 +725,10 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     protected void handleDownload(final DownloadLink link, final Account account) throws Exception {
-        /* TODO: Also save- and re-use HLS-directurls */
         if (!attemptStoredDownloadurlDownload(link, account)) {
             requestFileInformation(link, account, true);
             if (StringUtils.isEmpty(this.dllink)) {
-                if (this.isPrivateVideoWebsite(br)) {
+                if (this.isPrivateVideo(link)) {
                     throw new AccountRequiredException("Private video");
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Broken video (?)");
@@ -727,7 +738,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             } else if (br.getHttpConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            if (StringUtils.containsIgnoreCase(dllink, ".m3u8")) {
+            if (isHLS(this.dllink)) {
                 /* hls download */
                 final Browser brc = br.cloneBrowser();
                 /* Access hls master */
@@ -743,6 +754,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 }
                 checkFFmpeg(link, "Download a HLS Stream");
                 dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
+                link.setProperty(PROPERTY_DIRECTURL, hlsbest.getDownloadurl());
             } else {
                 final int maxChunks = getMaxChunks(account);
                 final boolean isResumeable = isResumeable(link, account);
@@ -787,6 +799,14 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             final Browser brc = br.cloneBrowser();
             dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, this.isResumeable(link, account), this.getMaxChunks(account));
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                return true;
+            } else if (StringUtils.equalsIgnoreCase(dl.getConnection().getContentType(), "application/vnd.apple.mpegurl")) {
+                /* HLS download */
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable ignore) {
+                }
+                dl = new HLSDownloader(link, br, url);
                 return true;
             } else {
                 brc.followConnection(true);
@@ -1104,7 +1124,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
             }
         }
-        if (dllink != null && dllink.contains(".m3u8")) {
+        if (dllink != null && this.isHLS(dllink)) {
             /* 2016-12-02 - txxx.com */
             /* Prefer httpp over hls */
             try {
@@ -1182,7 +1202,23 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     /* Example websites: tubepornclassic.com, vjav.com, hotmovs.com, txxx.tube, vxxx.com, txxx.com */
     protected String getDllinkViaAPI(final Browser br, final DownloadLink link, final String videoID) throws IOException, PluginException {
         br.getPage("/api/videofile.php?video_id=" + videoID + "&lifetime=8640000");
-        final List<Map<String, Object>> renditions = (List<Map<String, Object>>) JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
+        final Object responseO = JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
+        if (responseO instanceof Map) {
+            /*
+             * E.g. {"error":1,"code":"private_video"} --> E.g. if we fail to properly detect this in beforehand and try to download such
+             * videos anyways.
+             */
+            final Map<String, Object> response = (Map<String, Object>) responseO;
+            final String errorKey = response.get("code").toString();
+            if (errorKey.equalsIgnoreCase("private_video")) {
+                link.setProperty(PROPERTY_IS_PRIVATE_VIDEO, true);
+                /* Do not throw Exception here - this will be handled later! */
+                return null;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FATAL, errorKey);
+            }
+        }
+        final List<Map<String, Object>> renditions = (List<Map<String, Object>>) responseO;
         // String bestDownloadurl = null;
         int maxHeight = 0;
         final HashMap<Integer, String> qualityMap = new HashMap<Integer, String>();
