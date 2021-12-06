@@ -292,8 +292,8 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.info("Link was not changed, continuing with: " + CRYPTEDLINK_FUNCTIONAL);
             } else {
                 logger.info("Link was changed!");
-                logger.info("Old link: " + CRYPTEDLINK_FUNCTIONAL);
-                logger.info("Continuing with: " + newLink);
+                logger.info("Old link:\r\nOLD:" + CRYPTEDLINK_FUNCTIONAL);
+                logger.info("NEW: " + newLink);
                 CRYPTEDLINK_FUNCTIONAL = newLink;
             }
             /* Replace section end */
@@ -670,12 +670,12 @@ public class VKontakteRu extends PluginForDecrypt {
         /* Check if fast-crawl is allowed */
         final QualitySelectionMode qualitySelectionMode = VKontakteRuHoster.getSelectedVideoQualitySelectionMode();
         final boolean userWantsMultipleQualities = qualitySelectionMode == QualitySelectionMode.ALL;
-        final boolean linkCanBeFastCrawled = param.getDownloadLink() != null && !param.getDownloadLink().hasProperty(VIDEO_PROHIBIT_FASTCRAWL) && param.getDownloadLink().hasProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE);
+        final boolean linkCanBeFastCrawled = param.getDownloadLink() != null && !param.getDownloadLink().hasProperty(VIDEO_PROHIBIT_FASTCRAWL) && param.getDownloadLink().hasProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN);
         if (this.cfg.getBooleanProperty(VKontakteRuHoster.FASTCRAWL_VIDEO, VKontakteRuHoster.default_FASTCRAWL_VIDEO) && !userWantsMultipleQualities && linkCanBeFastCrawled) {
             final DownloadLink dl = this.createDownloadlink(param.getDownloadLink().getPluginPatternMatcher());
             /* Inherit all previously set properties */
             dl.setProperties(param.getDownloadLink().getProperties());
-            dl.setFinalFileName(param.getDownloadLink().getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE) + "_fastcrawl.mp4");
+            dl.setFinalFileName(param.getDownloadLink().getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN) + "_fastcrawl.mp4");
             dl.setAvailable(true);
             this.decryptedLinks.add(dl);
             return;
@@ -757,7 +757,6 @@ public class VKontakteRu extends PluginForDecrypt {
                 if (listID != null) {
                     dl.setProperty(VKontakteRuHoster.PROPERTY_VIDEO_LIST_ID, listID);
                 }
-                dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE, titleToUse);
                 dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN, titlePlain);
                 dl.setProperty(VKontakteRuHoster.VIDEO_QUALITY_SELECTION_MODE, cfg.getIntegerProperty(VKontakteRuHoster.VIDEO_QUALITY_SELECTION_MODE, VKontakteRuHoster.default_VIDEO_QUALITY_SELECTION_MODE));
                 dl.setProperty(VKontakteRuHoster.PREFERRED_VIDEO_QUALITY, cfg.getIntegerProperty(VKontakteRuHoster.PREFERRED_VIDEO_QUALITY, VKontakteRuHoster.default_PREFERRED_VIDEO_QUALITY));
@@ -1113,7 +1112,6 @@ public class VKontakteRu extends PluginForDecrypt {
                 final String completeVideolink = getProtocol() + this.getHost() + "/video" + thisOwnerID + "_" + thisContentID;
                 final DownloadLink dl = createDownloadlink(completeVideolink);
                 dl.setContainerUrl(containerURL);
-                dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE, Encoding.htmlDecode(videoTitle).trim());
                 dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN, Encoding.htmlDecode(videoTitle).trim());
                 if (uploader != null) {
                     dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_UPLOADER, uploader);
@@ -1953,7 +1951,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     dl.setProperty(VKontakteRuHoster.PROPERTY_PHOTOS_photo_list_id, photo_list_id);
                 }
                 if (photo_module != null) {
-                    dl.setProperty(VKontakteRuHoster.PROPERTY_PHOTOS_photo_module, "wall");
+                    dl.setProperty(VKontakteRuHoster.PROPERTY_PHOTOS_photo_module, photo_module);
                 }
                 if (store_picture_directurls) {
                     if (picture_preview_json != null) {

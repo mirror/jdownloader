@@ -127,9 +127,6 @@ public class VKontakteRuHoster extends PluginForHost {
     /* General */
     public static final String  PROPERTY_GENERAL_owner_id                                                   = "owner_id";
     public static final String  PROPERTY_GENERAL_content_id                                                 = "content_id";
-    /* Old handling. TODO: Remove PROPERTY_GENERAL_TITLE in 01-2022 and/or rename it so we can remove PROPERTY_GENERAL_TITLE_PLAIN. */
-    @Deprecated
-    public static String        PROPERTY_GENERAL_TITLE                                                      = "title";
     public static String        PROPERTY_GENERAL_TITLE_PLAIN                                                = "title_plain";
     public static String        PROPERTY_GENERAL_DATE                                                       = "date";
     public static String        PROPERTY_GENERAL_UPLOADER                                                   = "uploader";
@@ -403,30 +400,23 @@ public class VKontakteRuHoster extends PluginForHost {
                     }
                 } else if (this.isTypeVideo(link.getPluginPatternMatcher())) {
                     br.setFollowRedirects(true);
-                    finalUrl = link.getStringProperty("directlink", null);
+                    finalUrl = link.getStringProperty("directlink");
                     /* Don't lose filenames if e.g. user resets DownloadLink. */
                     final String linkQuality = link.getStringProperty(VKontakteRuHoster.PROPERTY_VIDEO_SELECTED_QUALITY);
                     if (linkQuality != null) {
-                        if (link.hasProperty(PROPERTY_GENERAL_TITLE_PLAIN)) {
-                            link.setFinalFileName(link.getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN) + "_" + this.getOwnerID(link) + "_" + this.getContentID(link) + "_" + linkQuality + ".mp4");
-                        } else {
-                            /* Old handling. TODO: Remove this in 01-2022 */
-                            link.setFinalFileName(link.getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE) + "_" + linkQuality + ".mp4");
-                        }
+                        link.setFinalFileName(link.getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN) + "_" + this.getOwnerID(link) + "_" + this.getContentID(link) + "_" + linkQuality + ".mp4");
                     }
                     /* Check if directlink is expired */
                     checkstatus = linkOk(link, isDownload);
                     if (checkstatus != 1) {
                         /* Refresh directlink */
-                        final String oid = this.ownerID;
-                        final String id = this.contentID;
-                        accessVideo(this.br, oid, id, link.getStringProperty(VKontakteRuHoster.PROPERTY_VIDEO_LIST_ID), false);
+                        accessVideo(this.br, this.ownerID, this.contentID, link.getStringProperty(VKontakteRuHoster.PROPERTY_VIDEO_LIST_ID), false);
                         if (br.containsHTML(VKontakteRuHoster.HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS)) {
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         } else if (br.containsHTML("class\\s*=\\s*\"message_page_body\">\\s*Access denied")) {
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         }
-                        final Map<String, Object> video = jd.plugins.decrypter.VKontakteRu.findVideoMap(this.br, id);
+                        final Map<String, Object> video = jd.plugins.decrypter.VKontakteRu.findVideoMap(this.br, this.contentID);
                         final Map<String, String> availableQualities = jd.plugins.decrypter.VKontakteRu.findAvailableVideoQualities(video);
                         if (availableQualities.isEmpty()) {
                             /* This should never happen */
@@ -468,17 +458,12 @@ public class VKontakteRuHoster extends PluginForHost {
                              */
                             link.setProperty(VKontakteRuHoster.PROPERTY_VIDEO_SELECTED_QUALITY, entry.getKey());
                             /* Correct filename which did not contain any quality modifier before. */
-                            if (link.hasProperty(PROPERTY_GENERAL_TITLE_PLAIN)) {
-                                link.setFinalFileName(link.getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN) + "_" + this.getOwnerID(link) + "_" + this.getContentID(link) + "_" + entry.getKey() + ".mp4");
-                            } else {
-                                /* Old handling. TODO: Remove this in 01-2022 */
-                                link.setFinalFileName(link.getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE) + "_" + entry.getKey() + ".mp4");
-                            }
+                            link.setFinalFileName(link.getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN) + "_" + this.getOwnerID(link) + "_" + this.getContentID(link) + "_" + entry.getKey() + ".mp4");
                         }
                     }
                 } else {
                     /* Single photo --> Complex handling */
-                    this.finalUrl = link.getStringProperty(PROPERTY_PHOTOS_picturedirectlink, null);
+                    this.finalUrl = link.getStringProperty(PROPERTY_PHOTOS_picturedirectlink);
                     if (this.finalUrl == null && this.getPluginConfig().getBooleanProperty(VKWALL_STORE_PICTURE_DIRECTURLS, default_VKWALL_STORE_PICTURE_DIRECTURLS) && this.getPluginConfig().getBooleanProperty(VKWALL_STORE_PICTURE_DIRECTURLS_PREFER_STORED_DIRECTURLS, default_VKWALL_STORE_PICTURE_DIRECTURLS_PREFER_STORED_DIRECTURLS)) {
                         this.finalUrl = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null), isDownload);
                     }
@@ -486,56 +471,56 @@ public class VKontakteRuHoster extends PluginForHost {
                         String photo_list_id = link.getStringProperty(PROPERTY_PHOTOS_photo_list_id);
                         final String module = link.getStringProperty(PROPERTY_PHOTOS_photo_module);
                         final String photoID = getPhotoID(link);
+                        setHeadersPhoto(br);
                         if (module != null) {
                             /* Access photo inside wall-post or qwall reply or photo album */
                             if (photo_list_id == null) {
                                 photo_list_id = "";
                             }
-                            setHeadersPhoto(this.br);
                             int photo_counter = 0;
-                            boolean photo_list_id_workaround_failed = false;
                             do {
                                 photo_counter++;
                                 if (photo_counter > 1) {
                                     /* 2nd loop */
-                                    photo_list_id_workaround_failed = true;
                                     /*
                                      * 2020-01-28: Some content needs a photo_list_id which is generated when accessing the html page so
                                      * this can be seen as a workaround but sometimes it is mandatory!
                                      */
                                     final String content_url = link.getContentUrl();
                                     if (content_url == null || !content_url.contains(photoID)) {
+                                        logger.info("photo_list_id workaround is not possible");
                                         break;
                                     }
                                     logger.info("Attempting photo_list_id workaround");
                                     this.getPageSafe(account, link, content_url);
-                                    photo_list_id = br.getRegex(photoID + "(?:%2F|/)([a-f0-9]+)").getMatch(0);
-                                    if (photo_list_id == null) {
+                                    final String new_photo_list_id = br.getRegex(photoID + "(?:%2F|/)([a-f0-9]+)").getMatch(0);
+                                    if (new_photo_list_id == null) {
                                         logger.warning("photo_list_id workaround failed");
-                                        break;
+                                        if (account == null) {
+                                            /* Assume that account is required */
+                                            throw new AccountRequiredException();
+                                        } else {
+                                            /* Assume that permissions are missing. */
+                                            throw new AccountRequiredException("Missing permissions");
+                                        }
                                     } else {
-                                        logger.warning("Successfully found new photo_list_id");
-                                        photo_list_id_workaround_failed = false;
+                                        logger.warning("Successfully found new photo_list_id: " + new_photo_list_id);
+                                        photo_list_id = new_photo_list_id;
                                     }
                                 }
                                 /*
-                                 * 2020-01-27: Browser request would also contain "&dmcah=" - at least for items which came from walls
-                                 * (module=wall)
+                                 * 2020-01-27: Browser request would also contain "&dmcah=".
                                  */
-                                final String postData = String.format("act=show&al=1&dmcah=&list=%s&module=%s&photo=%s", photo_list_id, module, photoID);
-                                postPageSafe(account, link, getBaseURL() + "/al_photos.php?act=show", postData);
+                                final String postData = "act=show&al=1&al_ad=0&dmcah=&list=" + photo_list_id + "&module=" + module + "" + "&photo=" + photoID;
+                                postPageSafe(br, account, link, getBaseURL() + "/al_photos.php?act=show", postData);
                             } while (photo_counter <= 1 && PluginJSonUtils.unescape(br.toString()).contains("\"Access denied\""));
-                            if (photo_list_id_workaround_failed) {
-                                logger.warning("Failed to get photo because photo_list_id_workaround_failed");
-                                throw new AccountRequiredException();
-                            }
-                            checkErrorsPhoto();
+                            checkErrorsPhoto(br);
                         } else {
                             /* Access normal photo / photo inside album */
                             String albumID = link.getStringProperty(PROPERTY_PHOTOS_album_id);
                             boolean jsonSourceAvailableFromHtml = false;
                             if (albumID == null) {
-                                /* No albumID available? Search it in the html! */
+                                /* Find albumID */
                                 getPageSafe(account, link, getBaseURL() + "/photo" + photoID);
                                 if (br.containsHTML(">\\s*(Unknown error|Unbekannter Fehler|Access denied|Error<)") || this.br.getHttpConnection().getResponseCode() == 404) {
                                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -552,12 +537,14 @@ public class VKontakteRuHoster extends PluginForHost {
                                 }
                                 if (albumID == null) {
                                     /* New 2016-08-23 */
-                                    final String json = this.br.getRegex("ajax\\.preload\\(\\'al_photos\\.php\\'\\s*?,\\s*?(\\{.*?)\\);").getMatch(0);
-                                    if (json != null) {
-                                        albumID = PluginJSonUtils.getJsonValue(json, "list");
-                                        if (albumID != null) {
+                                    final String jsonInsideHTML = this.br.getRegex("ajax\\.preload\\(\\'al_photos\\.php\\'\\s*?,\\s*?(\\{.*?)\\);").getMatch(0);
+                                    if (jsonInsideHTML != null) {
+                                        String albumIDFromJson = PluginJSonUtils.getJsonValue(jsonInsideHTML, "list");
+                                        if (!StringUtils.isEmpty(albumIDFromJson)) {
                                             /* Fix id */
-                                            albumID = albumID.replace("album", "");
+                                            albumIDFromJson = albumIDFromJson.replace("album", "");
+                                            /* Set ID */
+                                            albumID = albumIDFromJson;
                                         }
                                     }
                                 }
@@ -565,23 +552,22 @@ public class VKontakteRuHoster extends PluginForHost {
                                     /* Save this! Important! */
                                     link.setProperty(PROPERTY_PHOTOS_album_id, albumID);
                                 }
-                                if (picturesGetJsonFromHtml() != null) {
+                                if (picturesGetJsonFromHtml(br) != null) {
                                     jsonSourceAvailableFromHtml = true;
                                 }
                             }
                             if (!jsonSourceAvailableFromHtml) {
                                 /* Only go the json-way if we have to! */
                                 if (albumID == null) {
-                                    logger.info("vk.com: albumID is null and failed to find picture json");
+                                    logger.info("albumID is null and failed to find picture json");
                                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                                 }
-                                setHeadersPhoto(this.br);
-                                postPageSafe(account, link, getBaseURL() + "/al_photos.php", "act=show&al=1&module=photos&list=album" + albumID + "&photo=" + photoID);
-                                checkErrorsPhoto();
+                                postPageSafe(br, account, link, getBaseURL() + "/al_photos.php", "act=show&al=1&module=photos&list=album" + albumID + "&photo=" + photoID);
+                                checkErrorsPhoto(br);
                             }
                         }
                         try {
-                            this.finalUrl = getHighestQualityPictureDownloadurl(link, isDownload);
+                            this.finalUrl = getHighestQualityPictureDownloadurl(br, link, isDownload);
                             if (StringUtils.isEmpty(this.finalUrl)) {
                                 /* Fallback but this will only work if the user enabled a specified plugin setting. */
                                 this.finalUrl = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null), isDownload);
@@ -610,7 +596,7 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     /** Check errors which may happen after POST '/al_photos.php' request. */
-    private void checkErrorsPhoto() throws PluginException {
+    private void checkErrorsPhoto(final Browser br) throws PluginException {
         if (br.containsHTML(">\\s*Unfortunately, this photo has been deleted")) {
             /* html */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -816,9 +802,10 @@ public class VKontakteRuHoster extends PluginForHost {
         }
     }
 
-    private void setHeadersPhoto(final Browser br) {
+    private static void setHeadersPhoto(final Browser br) {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+        br.getHeaders().put("Origin", "https://vk.com");
     }
 
     public static void setHeaderRefererPhoto(final Browser br) {
@@ -869,7 +856,7 @@ public class VKontakteRuHoster extends PluginForHost {
         return ai;
     }
 
-    private void generalErrorhandling() throws PluginException {
+    private void generalErrorhandling(final Browser br) throws PluginException {
         if (br.containsHTML(VKontakteRuHoster.TEMPORARILYBLOCKED)) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many requests in a short time", 60 * 1000l);
         } else if (br.containsHTML("You have to log in to view this user")) {
@@ -1033,15 +1020,15 @@ public class VKontakteRuHoster extends PluginForHost {
      * @return <b>true</b>: Link is valid and can be downloaded <b>false</b>: Link leads to HTML, times out or other problems occured - link
      *         is not downloadable!
      */
-    private boolean photolinkOk(final DownloadLink link, String finalfilename, final boolean isDownload, String downloadurl) throws Exception {
-        if (StringUtils.isEmpty(downloadurl)) {
+    private boolean photolinkOk(final DownloadLink link, String finalfilename, final boolean isDownload, String directurl) throws Exception {
+        if (StringUtils.isEmpty(directurl)) {
             return false;
         }
         final Browser br2 = this.br.cloneBrowser();
         /* Correct final URLs according to users' plugin settings. */
-        downloadurl = photo_correctLink(downloadurl);
+        directurl = photo_correctLink(directurl);
         /* Ignore invalid urls. Usually if we have such an url the picture is serverside temporarily unavailable. */
-        if (downloadurl.contains("_null_")) {
+        if (directurl.contains("_null_")) {
             return false;
         }
         br2.getHeaders().put("Accept-Encoding", "identity");
@@ -1053,10 +1040,10 @@ public class VKontakteRuHoster extends PluginForHost {
         boolean closeConnection = true;
         try {
             if (isDownload) {
-                dl = new jd.plugins.BrowserAdapter().openDownload(br2, link, downloadurl, isResumeSupported(link, downloadurl), getMaxChunks(link, downloadurl));
+                dl = new jd.plugins.BrowserAdapter().openDownload(br2, link, directurl, isResumeSupported(link, directurl), getMaxChunks(link, directurl));
                 con = dl.getConnection();
             } else {
-                con = br2.openGetConnection(downloadurl);
+                con = br2.openGetConnection(directurl);
             }
             // request range fucked
             if (con.getResponseCode() == 416) {
@@ -1071,26 +1058,26 @@ public class VKontakteRuHoster extends PluginForHost {
             if (!this.looksLikeDownloadableContent(con)) {
                 return false;
             }
-            finalfilename = photoGetFinalFilename(this.getPhotoID(link), finalfilename, downloadurl);
+            finalfilename = photoGetFinalFilename(this.getPhotoID(link), finalfilename, directurl);
             if (finalfilename == null) {
                 /* This should actually never happen. */
                 finalfilename = Encoding.htmlDecode(getFileNameFromHeader(con));
             }
             link.setFinalFileName(finalfilename);
-            link.setProperty(PROPERTY_PHOTOS_picturedirectlink, downloadurl);
+            link.setProperty(PROPERTY_PHOTOS_picturedirectlink, directurl);
             if (isDownload) {
                 closeConnection = false;
             }
             return true;
         } catch (final BrowserException ebr) {
-            logger.info("BrowserException on directlink: " + downloadurl);
+            logger.info("BrowserException on directlink: " + directurl);
             logger.log(ebr);
             if (isDownload) {
                 throw ebr;
             }
             return false;
         } catch (final ConnectException ec) {
-            logger.info("Directlink timed out: " + downloadurl);
+            logger.info("Directlink timed out: " + directurl);
             logger.log(ec);
             if (isDownload) {
                 throw ec;
@@ -1265,7 +1252,11 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     /* Handle all kinds of stuff that disturbs the downloadflow */
-    private void getPageSafe(final Account acc, final DownloadLink dl, final String page) throws Exception {
+    private void getPageSafe(final Account acc, final DownloadLink link, final String page) throws Exception {
+        getPageSafe(br, acc, link, page);
+    }
+
+    private void getPageSafe(final Browser br, final Account acc, final DownloadLink link, final String page) throws Exception {
         br.getPage(page);
         if (acc != null && br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.vk.com/?role=fast")) {
             logger.info("Avoiding 'login.vk.com/?role=fast&_origin=' security check by re-logging in...");
@@ -1280,10 +1271,14 @@ public class VKontakteRuHoster extends PluginForHost {
         } else if (br.getRedirectLocation() != null && br.getRedirectLocation().replaceAll("https?://(\\w+\\.)?vk\\.com", "").equals(page.replaceAll("https?://(\\w+\\.)?vk\\.com", ""))) {
             br.getPage(br.getRedirectLocation());
         }
-        generalErrorhandling();
+        generalErrorhandling(br);
     }
 
-    private void postPageSafe(final Account acc, final DownloadLink dl, final String page, final String postData) throws Exception {
+    private void postPageSafe(final Account acc, final DownloadLink link, final String page, final String postData) throws Exception {
+        postPageSafe(this.br, acc, link, page, postData);
+    }
+
+    private void postPageSafe(final Browser br, final Account acc, final DownloadLink link, final String page, final String postData) throws Exception {
         br.postPage(page, postData);
         if (acc != null && br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.vk.com/?role=fast")) {
             logger.info("Avoiding 'login.vk.com/?role=fast&_origin=' security check by re-logging in...");
@@ -1297,7 +1292,7 @@ public class VKontakteRuHoster extends PluginForHost {
             login(br, acc, false);
             br.postPage(page, postData);
         }
-        generalErrorhandling();
+        generalErrorhandling(br);
     }
 
     public static Browser prepBrowser(final Browser br, final boolean isDecryption) {
@@ -1352,10 +1347,10 @@ public class VKontakteRuHoster extends PluginForHost {
      *            false: return best quality downloadurl without checking whether it is downloadable or not
      */
     @SuppressWarnings({ "unchecked" })
-    private String getHighestQualityPictureDownloadurl(final DownloadLink dl, final boolean checkDownloadability) throws Exception {
-        String json = picturesGetJsonFromHtml();
+    private String getHighestQualityPictureDownloadurl(final Browser br, final DownloadLink dl, final boolean checkDownloadability) throws Exception {
+        String json = picturesGetJsonFromHtml(br);
         if (json == null) {
-            json = picturesGetJsonFromXml();
+            json = picturesGetJsonFromXml(br);
         }
         if (json == null) {
             /* 2019-10-02: Fallback - e.g. single image from album will return plain json. */
@@ -1458,13 +1453,13 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     /** RegEx source-json from html. */
-    private String picturesGetJsonFromHtml() {
-        return this.br.getRegex("ajax\\.preload\\(\\'al_photos\\.php\\'\\s*?,\\s*?\\{[^\\}]*?\\}\\s*?,\\s*?(\\[.+)").getMatch(0);
+    private static String picturesGetJsonFromHtml(final Browser br) {
+        return br.getRegex("ajax\\.preload\\(\\'al_photos\\.php\\'\\s*?,\\s*?\\{[^\\}]*?\\}\\s*?,\\s*?(\\[.+)").getMatch(0);
     }
 
     /** RegEx source-json from xml. */
-    private String picturesGetJsonFromXml() {
-        return this.br.getRegex("<\\!json>(.*?)<\\!><\\!json>").getMatch(0);
+    private String picturesGetJsonFromXml(final Browser br) {
+        return br.getRegex("<\\!json>(.*?)<\\!><\\!json>").getMatch(0);
     }
 
     /**
@@ -1479,29 +1474,22 @@ public class VKontakteRuHoster extends PluginForHost {
      */
     private String getHighestQualityPicFromSavedJson(final DownloadLink link, final String picture_preview_json, final boolean checkDownloadability) throws Exception {
         String dllink = getHighestQualityPicFromSavedJson(picture_preview_json);
-        boolean success = false;
-        final boolean foundValidURL = dllink != null && dllink.startsWith("http");
-        String directurl = null;
-        if (dllink != null && dllink.startsWith("http")) {
-            /* 2019-08-06: Extension is sometimes missing but required! */
-            if (!dllink.endsWith(".jpg")) {
-                dllink += ".jpg";
-            }
-            directurl = dllink;
-            if (checkDownloadability) {
-                success = photolinkOk(link, null, true, directurl);
-            } else {
-                return directurl;
-            }
-        }
-        if (!foundValidURL) {
-            logger.info("No saved downloadlink available");
+        if (dllink == null || !dllink.startsWith("http")) {
             return null;
-        } else if (!success) {
-            logger.info("Saved downloadlink(s) did not work");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Photo is temporarily unavailable or offline (server issues)", 30 * 60 * 1000l);
         }
-        return directurl;
+        /* 2019-08-06: Extension is sometimes missing but required! */
+        if (!dllink.endsWith(".jpg")) {
+            dllink += ".jpg";
+        }
+        if (checkDownloadability) {
+            if (photolinkOk(link, null, true, dllink)) {
+                return dllink;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Photo is temporarily unavailable or offline (server issues)", 30 * 60 * 1000l);
+            }
+        } else {
+            return dllink;
+        }
     }
 
     public static String getHighestQualityPicFromSavedJson(String picture_preview_json) {
