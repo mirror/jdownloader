@@ -795,13 +795,16 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (StringUtils.isEmpty(url)) {
             return false;
         }
+        boolean valid = false;
         try {
             final Browser brc = br.cloneBrowser();
             dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, this.isResumeable(link, account), this.getMaxChunks(account));
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                valid = true;
                 return true;
             } else if (StringUtils.equalsIgnoreCase(dl.getConnection().getContentType(), "application/vnd.apple.mpegurl")) {
                 /* HLS download */
+                valid = true;
                 try {
                     dl.getConnection().disconnect();
                 } catch (final Throwable ignore) {
@@ -814,11 +817,15 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             }
         } catch (final Throwable e) {
             logger.log(e);
-            try {
-                dl.getConnection().disconnect();
-            } catch (Throwable ignore) {
-            }
             return false;
+        } finally {
+            if (!valid) {
+                try {
+                    dl.getConnection().disconnect();
+                } catch (Throwable ignore) {
+                }
+                this.dl = null;
+            }
         }
     }
 

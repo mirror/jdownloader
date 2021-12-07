@@ -332,12 +332,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
     @Override
     public void doFree(final DownloadLink link, final Account account) throws Exception, PluginException {
         /* First bring up saved final links */
-        final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
-        /*
-         * 2019-05-21: TODO: Maybe try download right away instead of checking this here --> This could speed-up the
-         * download-start-procedure!
-         */
-        String dllink = checkDirectLink(link, directlinkproperty);
+        String dllink = checkDirectLink(link, account);
         if (StringUtils.isEmpty(dllink)) {
             if (link.getPluginPatternMatcher().matches(TYPE_DOWNLOAD)) {
                 /* Basically the same as the other type but hides that via iFrame. */

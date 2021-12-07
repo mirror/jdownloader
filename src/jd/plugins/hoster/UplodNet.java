@@ -20,6 +20,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -32,10 +36,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UplodNet extends XFileSharingProBasic {
@@ -150,8 +150,7 @@ public class UplodNet extends XFileSharingProBasic {
 
     public void doFree(final DownloadLink link, final Account account) throws Exception, PluginException {
         /* First bring up saved final links */
-        final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
-        String dllink = checkDirectLink(link, directlinkproperty);
+        String dllink = checkDirectLink(link, account);
         if (StringUtils.isEmpty(dllink)) {
             this.checkErrors(br, correctedBR, link, account, false);
             final Form dl1 = br.getFormByInputFieldKeyValue("op", "step1");
