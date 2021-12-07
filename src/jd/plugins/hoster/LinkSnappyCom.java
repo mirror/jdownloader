@@ -565,22 +565,29 @@ public class LinkSnappyCom extends antiDDoSForHost {
         if (StringUtils.isEmpty(url)) {
             return false;
         }
+        boolean valid = false;
         try {
             final Browser brc = br.cloneBrowser();
             dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resumes, chunks);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                valid = true;
                 return true;
             } else {
+                link.removeProperty(PROPERTY_DIRECTURL);
                 brc.followConnection(true);
                 throw new IOException();
             }
         } catch (final Throwable e) {
             logger.log(e);
-            try {
-                dl.getConnection().disconnect();
-            } catch (Throwable ignore) {
-            }
             return false;
+        } finally {
+            if (!valid) {
+                try {
+                    dl.getConnection().disconnect();
+                } catch (Throwable ignore) {
+                }
+                this.dl = null;
+            }
         }
     }
 

@@ -53,7 +53,6 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -67,6 +66,7 @@ import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
@@ -400,7 +400,7 @@ public class YetiShareCore extends antiDDoSForHost {
              * Additional offline check. Useful for websites which still provide filename & filesize for offline files. </br>
              * This can only happen on special file information page!
              */
-            if (br.containsHTML("(?i)>\\s*Status:</span>\\s*<span>\\s*(Deleted|Usunięto)\\s*</span>")) {
+            if (br.containsHTML("(?i)>\\s*Status\\s*:\\s*</span>\\s*<span>\\s*(Deleted|Usunięto)\\s*</span>")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } else {
@@ -1188,7 +1188,7 @@ public class YetiShareCore extends antiDDoSForHost {
      * Checks for reasons to ignore given PluginExceptions. </br>
      * Example: Certain errors thay may happen during availablecheck when user is not yet logged in but won't happen when user is logged in.
      * </br>
-     * TODO: Remove this once "fastdrive.io" is no more.
+     * TODO: Remove this once "fastdrive.io" does not exist anymore.
      */
     @Deprecated
     protected void ignorePluginException(final PluginException exception, final Browser br, final DownloadLink link, final Account account) throws PluginException {
@@ -1219,6 +1219,7 @@ public class YetiShareCore extends antiDDoSForHost {
         throw exception;
     }
 
+    @Deprecated
     protected static HashMap<String, String> errorMsgURLMap = new HashMap<String, String>();
 
     /**
@@ -1410,7 +1411,7 @@ public class YetiShareCore extends antiDDoSForHost {
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
-    /** Handles all kinds of error-responsecodes! */
+    /** Handles all kinds of error response codes! */
     protected void checkResponseCodeErrors(final URLConnectionAdapter con) throws PluginException {
         if (con != null) {
             final long responsecode = con.getResponseCode();
@@ -1421,9 +1422,13 @@ public class YetiShareCore extends antiDDoSForHost {
             } else if (responsecode == 416) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 2 * 60 * 1000l);
             } else if (responsecode == 429) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 429 connection limit reached, please contact our support!", 5 * 60 * 1000l);
+                exception429TooManyConnections();
             }
         }
+    }
+
+    private void exception429TooManyConnections() throws PluginException {
+        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 429 too many requests", 5 * 60 * 1000l);
     }
 
     /**
@@ -1433,10 +1438,7 @@ public class YetiShareCore extends antiDDoSForHost {
      * @throws Exception
      */
     protected boolean isOfflineWebsite(final Browser br, final DownloadLink link) throws Exception {
-        /* TODO: Improve this to make it more reliable! */
-        /* TODO: Consider checking for fuid in URL too in the future --> This might be a good offline indicator */
-        // final String fid = this.getFUIDFromURL(link);
-        // final boolean currentURLContainsFID = br.getURL().contains(fid);
+        // final boolean currentURLContainsFID = br.getURL().contains(this.getFUIDFromURL(link));
         final boolean isDownloadableOldWebsiteOrFreeMode = this.getContinueLink(br) != null;
         final boolean isDownloadableNewWebsite = this.getInternalFileID(link, br) != null;
         final boolean isDownloadable = isDownloadableOldWebsiteOrFreeMode || isDownloadableNewWebsite;
@@ -1459,7 +1461,7 @@ public class YetiShareCore extends antiDDoSForHost {
         return ttt;
     }
 
-    protected String checkDirectLink(final DownloadLink link, final Account account) throws InterruptedException, PluginException {
+    protected final String checkDirectLink(final DownloadLink link, final Account account) throws Exception {
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
         final String dllink = link.getStringProperty(directlinkproperty);
         if (dllink == null) {
@@ -1468,39 +1470,42 @@ public class YetiShareCore extends antiDDoSForHost {
         final Browser br2 = this.br.cloneBrowser();
         br2.setFollowRedirects(true);
         boolean valid = false;
+        boolean throwException = false;
         try {
             // con = br2.openHeadConnection(dllink);
             this.dl = jd.plugins.BrowserAdapter.openDownload(br2, link, dllink, this.isResumeable(link, account), this.getMaxChunks(account));
             if (br2.getHttpConnection().getResponseCode() == 429) {
                 logger.info("Stored directurl lead to 429 | too many connections");
+                /* URL is valid but we need to wait before we can use it. */
                 try {
-                    br2.followConnection(true);
-                } catch (IOException e) {
-                    logger.log(e);
+                    dl.getConnection().disconnect();
+                } catch (final Throwable ignore) {
                 }
-                /*
-                 * Too many connections but that does not mean that our downloadlink is invalid. Accept it and if it still returns 429 on
-                 * download-attempt this error will get displayed to the user.
-                 */
+                throwException = true;
+                exception429TooManyConnections();
+                return null;
+            } else if (looksLikeDownloadableContent(dl.getConnection())) {
                 valid = true;
                 return dllink;
-            } else if (!looksLikeDownloadableContent(dl.getConnection())) {
+            } else {
+                /* Remove property so we don't try the same invalid directurl again. */
+                link.removeProperty(directlinkproperty);
                 try {
                     br2.followConnection(true);
                 } catch (IOException e) {
                     logger.log(e);
                 }
                 throw new IOException();
-            } else {
-                valid = true;
-                return dllink;
             }
         } catch (final InterruptedException e) {
             throw e;
         } catch (final Exception e) {
-            link.setProperty(directlinkproperty, Property.NULL);
-            logger.log(e);
-            return null;
+            if (throwException) {
+                throw e;
+            } else {
+                logger.log(e);
+                return null;
+            }
         } finally {
             if (!valid) {
                 try {
@@ -1879,14 +1884,10 @@ public class YetiShareCore extends antiDDoSForHost {
                     }
                 }
                 if (generateAPIKeyForm != null) {
-                    if (!this.isAPICredential(key1) || !this.isAPICredential(key2) || true) {
-                        logger.info("Found apikey Form but without keys");
+                    if (!this.isAPICredential(key1) || !this.isAPICredential(key2)) {
                         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                            /**
-                             * 2021-05-04: TODO: Auto-generate API keys if user hasn't already done this (similar to how it's done in
-                             * XFileSharingProBasic). </br>
-                             */
-                            /* 2021-06-16: This doesn't work yet */
+                            logger.info("Found apikey Form but without keys --> Generating API keys");
+                            /* 2021-06-16: TODO: This doesn't work yet! Fix it! */
                             logger.info("Initially setting up API keys fror user...");
                             key1 = this.websiteGenerateRandomAPIKey();
                             key2 = this.websiteGenerateRandomAPIKey();
@@ -1909,8 +1910,16 @@ public class YetiShareCore extends antiDDoSForHost {
                             generateAPIKeyForm.put("privateFileStatistics", "0");
                             generateAPIKeyForm.put("watermarkPosition", "top left");
                             generateAPIKeyForm.put("watermarkPadding", "10");
+                            /* Workaround for: https://svn.jdownloader.org/issues/89825 */
+                            for (final InputField ifield : generateAPIKeyForm.getInputFields()) {
+                                if (ifield.getValue() == null) {
+                                    ifield.setValue("");
+                                }
+                            }
                             this.submitForm(brc, generateAPIKeyForm);
                             /* Assume that this was successful */
+                        } else {
+                            logger.info("Failed to find API Keys");
                         }
                     } else {
                         logger.info("Found pre-generated API credentials on website");
@@ -2524,7 +2533,8 @@ public class YetiShareCore extends antiDDoSForHost {
             /* No error */
             return;
         }
-        if (entries.containsKey("_status")) {
+        final Object statusO = entries.get("_status");
+        if (statusO != null) {
             /* Collection of newer json errormessages */
             /*
              * { "response":
@@ -2535,7 +2545,7 @@ public class YetiShareCore extends antiDDoSForHost {
              * 2021-04-22: {"response":"Could not validate access_token, please reauthenticate or try again.","_status":"error",
              * "_datetime":"2021-04-22 20:22:08"}
              */
-            final String status = (String) entries.get("_status");
+            final String status = statusO.toString();
             if (status.equalsIgnoreCase("error")) {
                 final String errorMsg = (String) entries.get("response");
                 if (StringUtils.isEmpty(errorMsg)) {
@@ -2543,6 +2553,8 @@ public class YetiShareCore extends antiDDoSForHost {
                     throw new AccountUnavailableException("Unknown API error", 10 * 60 * 1000l);
                 } else if (errorMsg.equalsIgnoreCase("Could not find file based on file_id.")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (errorMsg.equalsIgnoreCase("Your account level does not have access to the file upload API. Please contact site support for more information.")) {
+                    throw new AccountInvalidException("API cannot be used with this account");
                 } else {
                     logger.info("API returned errormessage: " + errorMsg);
                     throw new AccountUnavailableException(errorMsg, 5 * 60 * 1000l);

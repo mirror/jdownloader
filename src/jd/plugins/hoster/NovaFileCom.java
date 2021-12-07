@@ -27,6 +27,9 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasicSpecialFilejoker;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -39,9 +42,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasicSpecialFilejoker;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
@@ -262,8 +262,7 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
     /* *************************** SPECIAL RECONNECT STUFF STARTS HERE *************************** */
     @Override
     public void doFree(final DownloadLink link, final Account account) throws Exception, PluginException {
-        final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
-        final String dllink = checkDirectLink(link, directlinkproperty);
+        final String dllink = checkDirectLink(link, account);
         if (dllink != null) {
             /*
              * Found directurl? Start download! This is there to prevent our experimental reconnect handling from triggering when the user
