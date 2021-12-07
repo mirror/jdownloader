@@ -56,6 +56,9 @@ public class SeventySevenFileCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link));
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         /* 2021-05-10: Doesn't work. */
@@ -65,20 +68,23 @@ public class SeventySevenFileCom extends PluginForHost {
         // }
         br.getPage(link.getPluginPatternMatcher());
         /* Empty / Missing filesize --> File offline */
-        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<span id=\"file_size\"></span>")) {
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("<span id=\"file_size\"></span>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*此文件已被用户删除，暂时无法访问")) {
+            /* 2021-12-07 */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String extFileID = new Regex(br.getURL(), "/s/(.+)").getMatch(0);
         if (extFileID != null) {
             link.setLinkID(this.getHost() + "://" + extFileID);
         }
-        String filename = br.getRegex("align='absbottom' border='0' />([^<>\"]+)<").getMatch(0);
-        if (filename == null) {
-            /* Fallback */
-            filename = getFID(link);
-        }
+        String filename = br.getRegex("align='absbottom' border='0'[^/>]*/>([^<>\"]+)<").getMatch(0);
         String filesize = br.getRegex("<span id=\"file_size\">([^<>\"]+)</span>").getMatch(0);
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename.trim()));
+        }
         if (filesize != null) {
             filesize += "b";
             link.setDownloadSize(SizeFormatter.getSize(filesize));

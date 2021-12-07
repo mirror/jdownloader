@@ -32,27 +32,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
-import jd.controlling.linkcollector.LinknameCleaner;
-import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.PostRequest;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.parser.html.HTMLParser;
-import jd.parser.html.HTMLParser.HtmlParserCharSequence;
-import jd.parser.html.HTMLParser.HtmlParserResultSet;
-import jd.plugins.CryptedLink;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginsC;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.scheduler.DelayedRunnable;
@@ -87,6 +66,28 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
+
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
+import jd.controlling.linkcollector.LinknameCleaner;
+import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
+import jd.parser.html.HTMLParser.HtmlParserCharSequence;
+import jd.parser.html.HTMLParser.HtmlParserResultSet;
+import jd.plugins.CryptedLink;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginsC;
+import jd.plugins.hoster.DirectHTTP;
 
 public class LinkCrawler {
     private static enum DISTRIBUTE {
@@ -1156,7 +1157,7 @@ public class LinkCrawler {
         final DownloadLink link = new DownloadLink(null, null, "DirectHTTP", "directhttp://" + startURL, true);
         final String cookie = con.getRequestProperty("Cookie");
         if (StringUtils.isNotEmpty(cookie)) {
-            link.setProperty("cookies", cookie);
+            link.setProperty(DirectHTTP.PROPERTY_COOKIES, cookie);
         }
         final long contentLength = con.getCompleteContentLength();
         if (contentLength > 0) {
@@ -2085,7 +2086,7 @@ public class LinkCrawler {
                                                     sb.append(cookie[0]).append("=").append(cookie[1]).append(";");
                                                 }
                                             }
-                                            link.setProperty("cookies", sb.toString());
+                                            link.setProperty(DirectHTTP.PROPERTY_COOKIES, sb.toString());
                                         }
                                         final CrawledLink directHTTP = crawledLinkFactorybyDownloadLink(link);
                                         directHTTP.setMatchingRule(rule);

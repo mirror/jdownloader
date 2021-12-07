@@ -6,10 +6,27 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.uio.CloseReason;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.swing.dialog.LoginDialog;
+import org.appwork.utils.swing.dialog.LoginDialogInterface;
+import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.auth.AuthenticationInfo;
+import org.jdownloader.auth.AuthenticationInfo.Type;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerDeepHelperInterface;
 import jd.controlling.linkcrawler.LinkCrawlerRule;
 import jd.http.Authentication;
@@ -29,22 +46,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.uio.CloseReason;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.swing.dialog.LoginDialog;
-import org.appwork.utils.swing.dialog.LoginDialogInterface;
-import org.jdownloader.auth.AuthenticationController;
-import org.jdownloader.auth.AuthenticationInfo;
-import org.jdownloader.auth.AuthenticationInfo.Type;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.translate._JDT;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkcrawlerdeephelper" }, urls = { "" })
 public class LinkCrawlerDeepHelper extends antiDDoSForDecrypt implements LinkCrawlerDeepHelperInterface {
     public LinkCrawlerDeepHelper(PluginWrapper wrapper) {
@@ -59,7 +60,7 @@ public class LinkCrawlerDeepHelper extends antiDDoSForDecrypt implements LinkCra
     @Override
     public URLConnectionAdapter openConnection(LinkCrawlerRule matchingRule, Browser br, CrawledLink source) throws Exception {
         br.addAllowedResponseCodes(500);
-        final List<String[]> setCookies = matchingRule != null ? getCrawler().getLinkCrawlerRuleCookies(matchingRule.getId()) : null;
+        final List<String[]> setCookies = matchingRule != null ? LinkCrawler.getLinkCrawlerRuleCookies(matchingRule.getId()) : null;
         if (setCookies != null) {
             for (final String cookie[] : setCookies) {
                 if (cookie != null) {
@@ -184,6 +185,7 @@ public class LinkCrawlerDeepHelper extends antiDDoSForDecrypt implements LinkCra
             if (round < 2 && (urlConnection.isOK() || urlConnection.getResponseCode() == 404) && br != null && !br.getCookies(br.getBaseURL()).isEmpty()) {
                 final Cookies cookies = br.getCookies(br.getBaseURL());
                 for (final Cookie cookie : cookies.getCookies()) {
+                    /* Check for special Incapsula antiDdosCookie */
                     if (StringUtils.contains(cookie.getKey(), "incap_ses")) {
                         try {
                             Thread.sleep(2000);

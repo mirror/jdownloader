@@ -25,6 +25,21 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.auth.AuthenticationInfo;
+import org.jdownloader.auth.AuthenticationInfo.Type;
+import org.jdownloader.auth.Login;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -59,21 +74,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.Downloadable;
 import jd.utils.locale.JDL;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.jdownloader.auth.AuthenticationController;
-import org.jdownloader.auth.AuthenticationInfo;
-import org.jdownloader.auth.AuthenticationInfo.Type;
-import org.jdownloader.auth.Login;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 /**
  * TODO: remove after next big update of core to use the public static methods!
  */
@@ -94,6 +94,7 @@ public class DirectHTTP extends antiDDoSForHost {
     public static final String TRY_ALL                  = "tryall";
     public static final String POSSIBLE_URLPARAM        = "POSSIBLE_GETPARAM";
     public static final String BYPASS_CLOUDFLARE_BGJ    = "bpCfBgj";
+    public static final String PROPERTY_COOKIES         = "COOKIES";
 
     @Override
     public ArrayList<DownloadLink> getDownloadLinks(final String data, final FilePackage fp) {
@@ -152,7 +153,8 @@ public class DirectHTTP extends antiDDoSForHost {
     }
 
     @Override
-    public String getMirrorID(DownloadLink link) {
+    public String getMirrorID(final DownloadLink link) {
+        /* TODO: 2021-12-07: what is this Override good for?? */
         final String mirrorID = link != null ? link.getStringProperty("mirrorID", null) : null;
         return mirrorID;
     }
@@ -185,8 +187,10 @@ public class DirectHTTP extends antiDDoSForHost {
         if (link != null) {
             if (link.getBooleanProperty(DirectHTTP.NORESUME, false) || link.getBooleanProperty(DirectHTTP.FORCE_NORESUME, false)) {
                 return false;
+            } else if (link.getBooleanProperty(DownloadLink.PROPERTY_RESUMEABLE, true)) {
+                return true;
             } else {
-                return link.getBooleanProperty(DownloadLink.PROPERTY_RESUMEABLE, true);
+                return false;
             }
         } else {
             return false;
@@ -295,6 +299,7 @@ public class DirectHTTP extends antiDDoSForHost {
     public Downloadable newDownloadable(DownloadLink downloadLink, Browser br) {
         final String host = Browser.getHost(downloadLink.getPluginPatternMatcher());
         if (StringUtils.contains(host, "mooo.com")) {
+            /* 2021-12-07: What's this good for? */
             final Browser brc = br.cloneBrowser();
             brc.setRequest(null);
             return super.newDownloadable(downloadLink, brc);
@@ -317,7 +322,7 @@ public class DirectHTTP extends antiDDoSForHost {
         br.setCookies(getDownloadURL(downloadLink), cookies);
         this.br.getHeaders().put("Accept-Encoding", "identity");
         br.setDefaultSSLTrustALL(isSSLTrustALL());
-        /* workaround to clear referer */
+        /* Workaround to clear referer */
         this.br.setFollowRedirects(true);
         this.br.setDebug(true);
         boolean resume = true;
@@ -708,7 +713,7 @@ public class DirectHTTP extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             downloadLink.setProperty("auth", basicauth);
-            final String contentType = getContentType(urlConnection);
+            final String contentType = urlConnection.getContentType();
             if (contentType != null) {
                 if (StringUtils.startsWithCaseInsensitive(contentType, "application/pls") && StringUtils.endsWithCaseInsensitive(urlConnection.getURL().getPath(), ".mp3")) {
                     followURLConnectinon(br, urlConnection);
@@ -955,10 +960,6 @@ public class DirectHTTP extends antiDDoSForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    protected String getContentType(URLConnectionAdapter urlConnection) {
-        return urlConnection.getContentType();
-    }
-
     private final String IOEXCEPTIONS = "IOEXCEPTIONS";
 
     @Override
@@ -1025,8 +1026,8 @@ public class DirectHTTP extends antiDDoSForHost {
             downloadLink.setProperty("tryoldref", true);
             br.getHeaders().put("Referer", downloadLink.getStringProperty("referer", null));
         }
-        if (downloadLink.getStringProperty("cookies", null) != null) {
-            br.getCookies(getDownloadURL(downloadLink)).add(Cookies.parseCookies(downloadLink.getStringProperty("cookies", null), Browser.getHost(getDownloadURL(downloadLink)), null));
+        if (downloadLink.getStringProperty(DirectHTTP.PROPERTY_COOKIES, null) != null) {
+            br.getCookies(getDownloadURL(downloadLink)).add(Cookies.parseCookies(downloadLink.getStringProperty(DirectHTTP.PROPERTY_COOKIES, null), Browser.getHost(getDownloadURL(downloadLink)), null));
         }
         long linkCrawlerRuleID = -1;
         if ((linkCrawlerRuleID = downloadLink.getLongProperty("lcrID", -1)) != -1) {
@@ -1075,22 +1076,11 @@ public class DirectHTTP extends antiDDoSForHost {
         // we shouldn't potentially over right setCustomHeaders..
         if (br.getHeaders().get("Referer") == null) {
             final String link = getDownloadURL(downloadLink);
-            if (link.contains("fileplanet.com")) {
+            if (link.contains("sites.google.com")) {
                 /*
-                 * it seems fileplanet firewall checks referer and ip must have called the page lately
-                 */
-                // br.getPage("http://www.fileplanet.com/");
-                br.getHeaders().put("Referer", "http://fileplanet.com/");
-            } else if (link.contains("sites.google.com")) {
-                /*
-                 * it seems google checks referer and ip must have called the page lately
+                 * It seems google checks referer and ip must have called the page lately. TODO: 2021-12-07 Check if this is still required
                  */
                 br.getHeaders().put("Referer", "https://sites.google.com");
-            } else if (link.contains("tinypic.com/")) {
-                // they seem to block direct link access
-                br.getHeaders().put("Referer", link);
-            } else if (link.contains("project-gxs.com")) {
-                br.getHeaders().put("Referer", "http://sh.st/");
             }
         }
     }
