@@ -23,7 +23,6 @@ import java.util.Arrays;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -40,22 +39,31 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareplace.com" }, urls = { "https?://[\\w\\.]*?shareplace\\.(?:com|org)/\\?(?:d=)?([\\w]+)(/.*?)?" })
-public class Shareplacecom extends PluginForHost {
-    public Shareplacecom(final PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareplace.org" }, urls = { "https?://[\\w\\.]*?shareplace\\.(?:com|org)/\\?(?:d=)?([\\w]+)(/.*?)?" })
+public class ShareplaceOrg extends PluginForHost {
+    public ShareplaceOrg(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         // they are switching to .org as main domain
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("\\.com", ".org"));
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("Download", ""));
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("\\.com", ".org"));
+        link.setUrlDownload(link.getPluginPatternMatcher().replaceFirst("Download", ""));
     }
 
     @Override
     public String getAGBLink() {
-        return "http://shareplace.com/rules.php";
+        return "http://shareplace.org/rules.php";
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null || host.equalsIgnoreCase("shareplace.com")) {
+            return this.getHost();
+        } else {
+            return super.rewriteHost(host);
+        }
     }
 
     @Override
@@ -87,18 +95,12 @@ public class Shareplacecom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        String url = link.getDownloadURL();
-        if (StringUtils.containsIgnoreCase(url, ".com/")) {
-            convert(link);
-            url = link.getDownloadURL();
-        }
         setBrowserExclusive();
         prepBR(this.br);
         br.setFollowRedirects(true);
-        getPage(url);
+        getPage(link.getPluginPatternMatcher());
         if (!this.br.getURL().contains(this.getFID(link))) {
             /* E.g. redirect to mainpage or errorpage. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

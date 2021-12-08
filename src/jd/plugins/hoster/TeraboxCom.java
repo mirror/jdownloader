@@ -21,27 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import jd.PluginWrapper;
-import jd.controlling.AccountController;
-import jd.http.Browser;
-import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountRequiredException;
-import jd.plugins.CryptedLink;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.DuboxComFolder;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.HashInfo;
-
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -51,9 +30,31 @@ import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
+import jd.PluginWrapper;
+import jd.controlling.AccountController;
+import jd.http.Browser;
+import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.CryptedLink;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.TeraboxComFolder;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.HashInfo;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class DuboxCom extends PluginForHost {
-    public DuboxCom(PluginWrapper wrapper) {
+public class TeraboxCom extends PluginForHost {
+    public TeraboxCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.dubox.com/");
     }
@@ -133,7 +134,7 @@ public class DuboxCom extends PluginForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         if (link.hasProperty(PROPERTY_PASSWORD_COOKIE)) {
-            DuboxComFolder.setPasswordCookie(this.br, this.getHost(), link.getStringProperty(PROPERTY_PASSWORD_COOKIE));
+            TeraboxComFolder.setPasswordCookie(this.br, this.getHost(), link.getStringProperty(PROPERTY_PASSWORD_COOKIE));
         }
         try {
             this.login(account, false);
@@ -157,7 +158,7 @@ public class DuboxCom extends PluginForHost {
             }
             try {
                 /* 2021-04-24: Handling has been changed so array should only contain the one element we need! */
-                final ArrayList<DownloadLink> items = ((jd.plugins.decrypter.DuboxComFolder) decrypter).crawlFolder(param, account, this.getFID(link));
+                final ArrayList<DownloadLink> items = ((jd.plugins.decrypter.TeraboxComFolder) decrypter).crawlFolder(param, account, this.getFID(link));
                 DownloadLink target = null;
                 for (final DownloadLink tmp : items) {
                     if (StringUtils.equals(this.getFID(tmp), this.getFID(link))) {
@@ -252,7 +253,7 @@ public class DuboxCom extends PluginForHost {
                     logger.info("Cookies are still fresh --> Trust cookies without login");
                     return false;
                 }
-                if (this.checkLoginStatus()) {
+                if (this.checkLoginStatus(br)) {
                     logger.info("Cookie login successful");
                     /* Refresh cookie timestamp */
                     account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -264,12 +265,16 @@ public class DuboxCom extends PluginForHost {
             logger.info("Full login required");
             if (userCookies == null) {
                 showCookieLoginInformation();
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new AccountInvalidException("Cookie login required");
             }
             logger.info("Performing full (user-cookie) login");
             br.setCookies(userCookies);
-            if (!this.checkLoginStatus()) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (!this.checkLoginStatus(br)) {
+                if (account.getLastValidTimestamp() > 0) {
+                    throw new AccountInvalidException("Expired login cookies");
+                } else {
+                    throw new AccountInvalidException("Invalid login cookies");
+                }
             }
             account.saveCookies(this.br.getCookies(this.getHost()), "");
             return true;
@@ -313,7 +318,7 @@ public class DuboxCom extends PluginForHost {
         return thread;
     }
 
-    private boolean checkLoginStatus() throws IOException {
+    private boolean checkLoginStatus(final Browser br) throws IOException {
         br.setFollowRedirects(true);
         br.getPage("https://www." + this.getHost() + "/disk/home");
         /* NOT logged in --> Redirect to mainpage */

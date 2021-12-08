@@ -32,10 +32,48 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.MetArtCom;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "metart.com", "sexart.com" }, urls = { "https://(?:www\\.)?metart\\.com/model/[^/]+/(gallery|movie)/\\d+/[A-Za-z0-9\\-_]+", "https://(?:www\\.)?sexart\\.com/model/[^/]+/(gallery|movie)/\\d+/[A-Za-z0-9\\-_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class MetArt extends PluginForDecrypt {
     public MetArt(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    /** Sync this list for hoster + crawler plugin! */
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "metart.com" });
+        ret.add(new String[] { "sexart.com" });
+        ret.add(new String[] { "alsscan.com" });
+        ret.add(new String[] { "domai.com" });
+        ret.add(new String[] { "eroticbeauty.com" });
+        ret.add(new String[] { "errotica-archives.com" });
+        ret.add(new String[] { "eternaldesire.com" });
+        ret.add(new String[] { "goddessnudes.com" });
+        ret.add(new String[] { "lovehairy.com" });
+        ret.add(new String[] { "metartx.com" });
+        ret.add(new String[] { "rylskyart.com" });
+        ret.add(new String[] { "stunning18.com" });
+        ret.add(new String[] { "thelifeerotic.com" });
+        ret.add(new String[] { "vivthomas.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/model/[^/]+/(gallery|movie)/\\d+/[A-Za-z0-9\\-_]+");
+        }
+        return ret.toArray(new String[0]);
     }
 
     private static final String TYPE_GALLERY = "https://[^/]+/model/([^/]+)/gallery/(\\d+)/([^/]+)";

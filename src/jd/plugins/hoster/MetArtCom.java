@@ -1,6 +1,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -32,25 +33,64 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "metart.com", "sexart.com" }, urls = { "https?://(?:www\\.)?metart\\.com/api/download-media/[A-F0-9]{32}.+", "https?://(?:www\\.)?sexart\\.com/api/download-media/[A-F0-9]{32}.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = { "https?://(?:www\\.)?metart\\.com/api/download-media/[A-F0-9]{32}.+", "https?://(?:www\\.)?sexart\\.com/api/download-media/[A-F0-9]{32}.+" })
 public class MetArtCom extends PluginForHost {
     public MetArtCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://signup.met-art.com/model.htm?from=homepage");
     }
 
-    public static final String PROPERTY_UUID    = "uuid";
-    public static final String PROPERTY_QUALITY = "quality";
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "metart.com" });
+        ret.add(new String[] { "sexart.com" });
+        ret.add(new String[] { "alsscan.com" });
+        ret.add(new String[] { "domai.com" });
+        ret.add(new String[] { "eroticbeauty.com" });
+        ret.add(new String[] { "errotica-archives.com" });
+        ret.add(new String[] { "eternaldesire.com" });
+        ret.add(new String[] { "goddessnudes.com" });
+        ret.add(new String[] { "lovehairy.com" });
+        ret.add(new String[] { "metartx.com" });
+        ret.add(new String[] { "rylskyart.com" });
+        ret.add(new String[] { "stunning18.com" });
+        ret.add(new String[] { "thelifeerotic.com" });
+        ret.add(new String[] { "vivthomas.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/api/download-media/[A-F0-9]{32}.+");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    public static final String PROPERTY_UUID         = "uuid";
+    public static final String PROPERTY_QUALITY      = "quality";
+    public static final String COOKIES_METARTNETWORK = "metartnetwork";
 
     @Override
     public String getLinkID(final DownloadLink link) {
         final String uuid = link.getStringProperty(PROPERTY_UUID);
         if (uuid != null) {
-            String linkid = this.getHost() + "://" + uuid;
+            final String linkid_without_quality_identifier = this.getHost() + "://" + uuid;
             if (link.hasProperty(PROPERTY_QUALITY)) {
-                linkid += link.getStringProperty(PROPERTY_QUALITY);
+                return linkid_without_quality_identifier + link.getStringProperty(PROPERTY_QUALITY);
+            } else {
+                return linkid_without_quality_identifier;
             }
-            return linkid;
         } else {
             return super.getLinkID(link);
         }
@@ -69,6 +109,7 @@ public class MetArtCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
+        /* Freedownloads are not possible! */
         throw new AccountRequiredException();
     }
 
@@ -100,32 +141,40 @@ public class MetArtCom extends PluginForHost {
         if (account.getType() == AccountType.PREMIUM) {
             /* Try to find the expire-date the hard way... */
             try {
-                final Browser brc = br.cloneBrowser();
-                // brc.getPage("https://account-new.metartnetwork.com/api/app-data");
-                // final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
-                // String thisMetartSiteUUID = null;
-                // final List<Map<String, Object>> metartSites = (List<Map<String, Object>>) entries.get("sites");
-                // for (final Map<String, Object> metartSite : metartSites) {
-                // final String domain = metartSite.get("domain").toString();
-                // if (domain.equalsIgnoreCase(this.getHost())) {
-                // thisMetartSiteUUID = metartSite.get("UUID").toString();
-                // break;
-                // }
-                // }
-                brc.getPage("https://account-new.metartnetwork.com/api/subscriptions");
-                final List<Map<String, Object>> subscriptions = (List<Map<String, Object>>) JSonStorage.restoreFromString(brc.toString(), TypeRef.OBJECT);
-                if (subscriptions.size() == 1) {
-                    final Map<String, Object> subscription = subscriptions.get(0);
-                    final String expireDate = subscription.get("expireDate").toString();
-                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-MM-dd'T'HH:mm:ss'.000Z'", Locale.ENGLISH), brc);
+                final Cookies requiredCookies = account.loadCookies(COOKIES_METARTNETWORK);
+                if (requiredCookies == null || requiredCookies.isEmpty()) {
+                    /* E.g. if user used cookie login method we won't have these cookies! */
+                    logger.warning("Failed to find detailed account information because: Required cookies are missing");
                 } else {
-                    logger.info("Cannot yet handle users with multiple active subscriptions");
-                }
-                for (final Map<String, Object> subscription : subscriptions) {
+                    final Browser brc = br.cloneBrowser();
+                    brc.setCookies(requiredCookies);
+                    /* Not required but maybe useful in the future */
+                    // final String metartnetworkAppdataURL = "https://account-new.metartnetwork.com/api/app-data";
+                    // brc.getPage(metartnetworkAppdataURL);
+                    // final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                    // String thisMetartSiteUUID = null;
+                    // final List<Map<String, Object>> metartSites = (List<Map<String, Object>>) entries.get("sites");
+                    // for (final Map<String, Object> metartSite : metartSites) {
+                    // final String domain = metartSite.get("domain").toString();
+                    // if (domain.equalsIgnoreCase(this.getHost())) {
+                    // thisMetartSiteUUID = metartSite.get("UUID").toString();
+                    // break;
+                    // }
+                    // }
+                    final String metartnetworkSubscriptionsURL = "https://account-new.metartnetwork.com/api/subscriptions";
+                    brc.getPage(metartnetworkSubscriptionsURL);
+                    final List<Map<String, Object>> subscriptions = (List<Map<String, Object>>) JSonStorage.restoreFromString(brc.toString(), TypeRef.OBJECT);
+                    if (subscriptions.size() == 1) {
+                        final Map<String, Object> subscription = subscriptions.get(0);
+                        final String expireDate = subscription.get("expireDate").toString();
+                        ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-MM-dd'T'HH:mm:ss'.000Z'", Locale.ENGLISH), brc);
+                    } else {
+                        logger.info("Cannot yet handle users with multiple (" + subscriptions.size() + ") active subscriptions");
+                    }
                 }
             } catch (final Throwable e) {
                 logger.log(e);
-                logger.info("Failed to find detailed account information!");
+                logger.info("Failed to find detailed account information because: Exception occured");
             }
         }
         return ai;
@@ -203,10 +252,18 @@ public class MetArtCom extends PluginForHost {
                 br.followConnection();
             }
         } else {
-            br.getPage("https://" + this.getHost() + "/login");
             /* Redirect to: https://sso.metartnetwork.com/login */
-            final Browser brc = br.cloneBrowser();
+            br.getPage("https://" + this.getHost() + "/login");
+            /* Very important step to obtain 2nd csrf token as cookie! */
+            final Browser brb = br.cloneBrowser();
+            brb.getPage("https://sso.metartnetwork.com/cm?");
+            final String _csrfToken = brb.getCookie(brb.getHost(), "_csrfToken");
+            if (_csrfToken == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final Browser brc = brb.cloneBrowser();
             brc.setAllowedResponseCodes(401);
+            brc.getHeaders().put("Content-Type", "application/json");
             brc.getPage("https://sso.metartnetwork.com/api/app-data");
             Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
             /* Handle login captcha */
@@ -222,15 +279,19 @@ public class MetArtCom extends PluginForHost {
             postData.put("password", account.getPass());
             postData.put("rememberMe", true);
             postData.put("g-recaptcha-response", recaptchaV2Response);
+            /* Very important */
+            brc.getHeaders().put("csrf-token", _csrfToken);
             brc.postPageRaw("/api/login", JSonStorage.serializeToJson(postData));
-            /* 2021-12-08: TODO: All I get is "Invalid token" */
-            if (br.getHttpConnection().getResponseCode() == 401) {
+            if (brc.getHttpConnection().getResponseCode() == 401) {
                 throw new AccountInvalidException();
+            } else if (brc.getHttpConnection().getResponseCode() == 403) {
+                throw new AccountInvalidException("Account banned");
             } else {
                 /* Login successful: Access special URL that will lead to multiple redirects and provide required cookies. */
                 entries = JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
                 final String redirectURL = entries.get("redirectTo").toString();
                 br.getPage(redirectURL);
+                account.saveCookies(brc.getCookies(brc.getHost()), COOKIES_METARTNETWORK);
             }
         }
         account.saveCookies(br.getCookies(br.getHost()), "");
