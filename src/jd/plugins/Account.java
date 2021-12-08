@@ -467,6 +467,10 @@ public class Account extends Property {
     }
 
     public void setError(final AccountError error, final long setTimeout, String errorString) {
+        setError(error, setTimeout, errorString, true);
+    }
+
+    public void setError(final AccountError error, final long setTimeout, String errorString, final boolean forceAccountCheckOnChange) {
         if (error == null) {
             errorString = null;
         }
@@ -484,7 +488,9 @@ public class Account extends Property {
             }
             this.error = error;
             this.errorString = errorString;
-            notifyUpdate(AccountProperty.Property.ERROR, error);
+            if (forceAccountCheckOnChange) {
+                notifyUpdate(AccountProperty.Property.ERROR, error);
+            }
         }
     }
 
@@ -585,14 +591,21 @@ public class Account extends Property {
         return errorString;
     }
 
+    /** Enabled/disables account and checks account-status if new enabled status != old enabled status. */
     public void setEnabled(final boolean enabled) {
+        setEnabled(enabled, true);
+    }
+
+    public void setEnabled(final boolean enabled, final boolean forceAccountCheckOnChange) {
         if (this.enabled != enabled) {
             this.enabled = enabled;
-            final AccountInfo ai = accinfo;
-            if (enabled && (!isValid() || ai != null && ai.isExpired())) {
-                setUpdateTime(0);
+            if (forceAccountCheckOnChange) {
+                final AccountInfo ai = accinfo;
+                if (enabled && (!isValid() || ai != null && ai.isExpired())) {
+                    setUpdateTime(0);
+                }
+                notifyUpdate(AccountProperty.Property.ENABLED, enabled);
             }
-            notifyUpdate(AccountProperty.Property.ENABLED, enabled);
         }
     }
 
@@ -650,13 +663,20 @@ public class Account extends Property {
         }
     }
 
-    public void setPass(String newPass) {
+    /** Sets new password and force checks account if password differs from previously set password. */
+    public void setPass(final String newPass) {
+        setPass(newPass, true);
+    }
+
+    public void setPass(String newPass, final boolean forceAccountCheckOnChange) {
         newPass = trim(newPass);
         if (!StringUtils.equals(this.pass, newPass)) {
             this.pass = newPass;
-            accinfo = null;
-            setUpdateTime(0);
-            notifyUpdate(AccountProperty.Property.PASSWORD, newPass);
+            if (forceAccountCheckOnChange) {
+                accinfo = null;
+                setUpdateTime(0);
+                notifyUpdate(AccountProperty.Property.PASSWORD, newPass);
+            }
         }
     }
 

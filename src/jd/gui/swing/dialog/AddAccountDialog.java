@@ -48,7 +48,6 @@ import javax.swing.event.DocumentListener;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.components.ExtTextField;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.ListFocusTraversalPolicy;
@@ -114,26 +113,9 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
         return null;
     }
 
-    public static boolean addAccount(Account ac) throws DialogNoAnswerException {
-        final AccountController accountController = AccountController.getInstance();
-        Account existingAccount = null;
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            existingAccount = accountController.getExistingAccount(ac);
-            if (existingAccount != null) {
-                ac = existingAccount;
-            }
-        }
+    public static boolean addAccount(final Account ac) throws DialogNoAnswerException {
         try {
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && existingAccount != null) {
-                /* User wants to add an account which already exists --> Enable existing account --> It will be checked then */
-                /* TODO: Enable account without additional check as we do the check here! */
-                if (!ac.isEnabled()) {
-                    ac.setEnabled(true);
-                }
-                checkAccount(ac);
-            } else {
-                checkAccount(ac);
-            }
+            checkAccount(ac);
         } catch (final DialogNoAnswerException e) {
             throw e;
         } catch (final Throwable e) {
@@ -176,7 +158,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
             }
         } else {
             String message = null;
-            AccountInfo ai = ac.getAccountInfo();
+            final AccountInfo ai = ac.getAccountInfo();
             if (ai != null) {
                 message = ai.getStatus();
             }
@@ -184,14 +166,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
                 message = _GUI.T.lit_yes();
             }
             Dialog.getInstance().showMessageDialog(_GUI.T.accountdialog_check_valid(message));
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                if (existingAccount == null) {
-                    /* Only do this for new accounts otherwise existing accounts (which we checked just now) will be checked again. */
-                    AccountController.getInstance().addAccount(ac, false);
-                }
-            } else {
-                AccountController.getInstance().addAccount(ac, false);
-            }
+            AccountController.getInstance().addAccount(ac, false);
             return true;
         }
     }

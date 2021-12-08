@@ -46,7 +46,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debridplanet.com" }, urls = { "" })
-public class DebridplanetCom2 extends PluginForHost {
+public class DebridplanetCom extends PluginForHost {
     private static final String          API_BASE               = "https://debridplanet.com/v1";
     private static MultiHosterManagement mhm                    = new MultiHosterManagement("debridplanet.com");
     private static final boolean         resume                 = true;
@@ -54,7 +54,7 @@ public class DebridplanetCom2 extends PluginForHost {
     private static final String          PROPERTY_ACCOUNT_TOKEN = "LOGIN_TOKEN";
 
     @SuppressWarnings("deprecation")
-    public DebridplanetCom2(PluginWrapper wrapper) {
+    public DebridplanetCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(API_BASE + "/premium");
     }
@@ -77,11 +77,11 @@ public class DebridplanetCom2 extends PluginForHost {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (account == null) {
             return false;
         } else {
-            return super.canHandle(downloadLink, account);
+            return super.canHandle(link, account);
         }
     }
 
@@ -138,26 +138,34 @@ public class DebridplanetCom2 extends PluginForHost {
     }
 
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link) throws Exception {
-        final String url = link.getStringProperty(this.getHost() + "directlink");
+        final String directurlproperty = this.getHost() + "directlink";
+        final String url = link.getStringProperty(directurlproperty);
         if (StringUtils.isEmpty(url)) {
             return false;
         }
+        boolean valid = false;
         try {
             final Browser brc = br.cloneBrowser();
             dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resume, maxchunks);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                valid = true;
                 return true;
             } else {
+                link.removeProperty(directurlproperty);
                 brc.followConnection(true);
                 throw new IOException();
             }
         } catch (final Throwable e) {
             logger.log(e);
-            try {
-                dl.getConnection().disconnect();
-            } catch (Throwable ignore) {
-            }
             return false;
+        } finally {
+            if (!valid) {
+                try {
+                    dl.getConnection().disconnect();
+                } catch (Throwable ignore) {
+                }
+                dl = null;
+            }
         }
     }
 
