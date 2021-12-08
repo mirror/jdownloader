@@ -22,6 +22,8 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexzindian.com" }, urls = { "https?://(?:www\\.)?sexzindian\\.com/.*" })
 public class SexZindianComDecrypter extends PornEmbedParser {
@@ -31,19 +33,17 @@ public class SexZindianComDecrypter extends PornEmbedParser {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
-        if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("404 Not Found<|Page not found")) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+        br.getPage(param.getCryptedUrl());
+        if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)404 Not Found<|Page not found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         decryptedLinks.addAll(findEmbedUrls(null));
         if (!decryptedLinks.isEmpty()) {
             return decryptedLinks;
         }
         decryptedLinks = new ArrayList<DownloadLink>();
-        decryptedLinks.add(createDownloadlink(parameter.replace("sexzindian.com/", "sexzindiandecrypted.com/")));
+        decryptedLinks.add(createDownloadlink(param.getCryptedUrl()));
         return decryptedLinks;
     }
 

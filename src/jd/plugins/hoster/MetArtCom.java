@@ -1,19 +1,28 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.config.MetartConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
@@ -86,12 +95,43 @@ public class MetArtCom extends PluginForHost {
         this.login(account, true);
         if (br.getURL() == null || !br.getURL().contains("/api/user-data")) {
             br.getPage("https://www." + account.getHoster() + "/api/user-data");
-            getSetAccountType(account);
+            getSetAccountTypeSimple(account);
+        }
+        if (account.getType() == AccountType.PREMIUM) {
+            /* Try to find the expire-date the hard way... */
+            try {
+                final Browser brc = br.cloneBrowser();
+                // brc.getPage("https://account-new.metartnetwork.com/api/app-data");
+                // final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                // String thisMetartSiteUUID = null;
+                // final List<Map<String, Object>> metartSites = (List<Map<String, Object>>) entries.get("sites");
+                // for (final Map<String, Object> metartSite : metartSites) {
+                // final String domain = metartSite.get("domain").toString();
+                // if (domain.equalsIgnoreCase(this.getHost())) {
+                // thisMetartSiteUUID = metartSite.get("UUID").toString();
+                // break;
+                // }
+                // }
+                brc.getPage("https://account-new.metartnetwork.com/api/subscriptions");
+                final List<Map<String, Object>> subscriptions = (List<Map<String, Object>>) JSonStorage.restoreFromString(brc.toString(), TypeRef.OBJECT);
+                if (subscriptions.size() == 1) {
+                    final Map<String, Object> subscription = subscriptions.get(0);
+                    final String expireDate = subscription.get("expireDate").toString();
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-MM-dd'T'HH:mm:ss'.000Z'", Locale.ENGLISH), brc);
+                } else {
+                    logger.info("Cannot yet handle users with multiple active subscriptions");
+                }
+                for (final Map<String, Object> subscription : subscriptions) {
+                }
+            } catch (final Throwable e) {
+                logger.log(e);
+                logger.info("Failed to find detailed account information!");
+            }
         }
         return ai;
     }
 
-    private void getSetAccountType(final Account account) {
+    private void getSetAccountTypeSimple(final Account account) {
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         entries = (Map<String, Object>) entries.get("initialState");
         entries = (Map<String, Object>) entries.get("auth");
@@ -102,20 +142,33 @@ public class MetArtCom extends PluginForHost {
         } else {
             account.setType(AccountType.FREE);
         }
+        /* This plugin supports cookie login --> Make sure that usernames are unique! */
+        final String email = (String) entries.get("email");
+        if (!StringUtils.isEmpty(email)) {
+            account.setUser(email);
+        }
     }
 
-    public void login(final Account account, final boolean verifyCredentials) throws PluginException, IOException {
+    public void login(final Account account, final boolean verifyCredentials) throws Exception {
+        br.setFollowRedirects(true);
         final Cookies cookies = account.loadCookies("");
-        if (cookies != null) {
-            logger.info("Attempting cookie login");
-            br.setCookies(account.getHoster(), cookies);
+        /* User cookie login is possible as an alternative way to login */
+        final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+        if (cookies != null || userCookies != null) {
+            if (cookies != null) {
+                logger.info("Attempting cookie login");
+                br.setCookies(account.getHoster(), cookies);
+            } else {
+                logger.info("Attempting user cookie login");
+                br.setCookies(account.getHoster(), userCookies);
+            }
             if (!verifyCredentials) {
                 logger.info("Not verifying cookies");
                 return;
             } else {
-                br.getPage("https://www." + account.getHoster() + "/api/user-data");
+                br.getPage("https://www." + this.getHost() + "/api/user-data");
                 try {
-                    getSetAccountType(account);
+                    getSetAccountTypeSimple(account);
                     logger.info("Cookie login successful");
                     account.saveCookies(br.getCookies(br.getHost()), "");
                     return;
@@ -123,23 +176,62 @@ public class MetArtCom extends PluginForHost {
                     /* Not logged in = Different json -> Exception */
                     logger.info("Cookie login failed");
                     br.clearAll();
+                    if (userCookies != null) {
+                        if (account.getLastValidTimestamp() > 0) {
+                            throw new AccountInvalidException("Expired login cookies");
+                        } else {
+                            throw new AccountInvalidException("Invalid login cookies");
+                        }
+                    }
                 }
             }
         }
-        /* 2020-12-07: This way to login is not used anymore by the current version of the website but it is still working fine! */
         logger.info("Performing full login");
-        br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
-        br.setFollowRedirects(true);
-        /*
-         * 2021-03-16: TODO: Add support for their other portals/domains, visible only when logged in here:
-         * https://account-new.metartnetwork.com/ (about 13 more websites)
-         */
-        final URLConnectionAdapter con = br.openGetConnection("https://members." + account.getHoster() + "/members/");
-        if (con.getResponseCode() == 401) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        /* 2021-12-08: Website will still ask for basic auth login but it doesn't work anymore... */
+        final boolean useBasicAuthLogin = false;
+        if (useBasicAuthLogin) {
+            br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
+            /*
+             * 2021-03-16: TODO: Add support for their other portals/domains, visible only when logged in here:
+             * https://account-new.metartnetwork.com/ (about 13 more websites)
+             */
+            final URLConnectionAdapter con = br.openGetConnection("https://members." + this.getHost() + "/members/");
+            if (con.getResponseCode() == 401) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                /* Multiple redirects + we get cookies */
+                br.followConnection();
+            }
         } else {
-            /* Multiple redirects */
-            br.followConnection();
+            br.getPage("https://" + this.getHost() + "/login");
+            /* Redirect to: https://sso.metartnetwork.com/login */
+            final Browser brc = br.cloneBrowser();
+            brc.setAllowedResponseCodes(401);
+            brc.getPage("https://sso.metartnetwork.com/api/app-data");
+            Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
+            /* Handle login captcha */
+            final String reCaptchaSiteKey = entries.get("googleReCaptchaKey").toString();
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaSiteKey) {
+                @Override
+                public TYPE getType() {
+                    return TYPE.INVISIBLE;
+                }
+            }.getToken();
+            final Map<String, Object> postData = new HashMap<String, Object>();
+            postData.put("login", account.getUser());
+            postData.put("password", account.getPass());
+            postData.put("rememberMe", true);
+            postData.put("g-recaptcha-response", recaptchaV2Response);
+            brc.postPageRaw("/api/login", JSonStorage.serializeToJson(postData));
+            /* 2021-12-08: TODO: All I get is "Invalid token" */
+            if (br.getHttpConnection().getResponseCode() == 401) {
+                throw new AccountInvalidException();
+            } else {
+                /* Login successful: Access special URL that will lead to multiple redirects and provide required cookies. */
+                entries = JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
+                final String redirectURL = entries.get("redirectTo").toString();
+                br.getPage(redirectURL);
+            }
         }
         account.saveCookies(br.getCookies(br.getHost()), "");
     }
@@ -165,8 +257,9 @@ public class MetArtCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Directurl expired?");
             }
         }
-        if (!link.isNameSet()) {
-            link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+        final String headerFilename = getFileNameFromHeader(dl.getConnection());
+        if (!link.isNameSet() && !StringUtils.isEmpty(headerFilename)) {
+            link.setFinalFileName(Encoding.htmlDecode(headerFilename));
         }
         dl.startDownload();
     }

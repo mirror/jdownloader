@@ -100,6 +100,9 @@ public class SextvxCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("(?i)This video is no longer available")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("class=\"not-available\"")) {
+            /* 2021-12-08 */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1>([^<>]*?)</h1>").getMatch(0);
         if (filename == null) {
@@ -125,52 +128,51 @@ public class SextvxCom extends PluginForHost {
             path = path.replace(".", ",").replace("/", ",");
             flux = "/flux?d=web.flv&s=" + server + "&p=" + path;
         }
-        String source = br.getRegex("<source[^<>']+src='([^']+)'").getMatch(0);
-        if (source == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.setFollowRedirects(false);
-        br.getPage(source);
-        /* 2017-01-05: 2 different types. */
-        final String redirect = br.getRedirectLocation();
-        if (redirect != null) {
-            dllink = redirect;
-        } else {
-            dllink = br.toString();
-        }
-        br.setFollowRedirects(true);
-        if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = Encoding.htmlDecode(dllink);
         if (filename != null) {
             filename = Encoding.htmlDecode(filename);
             filename = filename.trim();
             filename = encodeUnicode(filename);
-            final String ext = getFileNameExtensionFromString(dllink, ".mp4");
+            final String ext = ".mp4";
             if (!filename.endsWith(ext)) {
                 filename += ext;
             }
             link.setFinalFileName(filename);
         }
-        final Browser br2 = br.cloneBrowser();
-        br2.getHeaders().put("Referer", "http://sextvx.com/static/player/player.swf");
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openHeadConnection(dllink);
-            if (this.looksLikeDownloadableContent(con)) {
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
+        final String source = br.getRegex("<source[^<>']+src='([^']+)'").getMatch(0);
+        if (source != null) {
+            br.setFollowRedirects(false);
+            br.getPage(source);
+            /* 2017-01-05: 2 different types. */
+            final String redirect = br.getRedirectLocation();
+            if (redirect != null) {
+                dllink = redirect;
             } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?");
+                dllink = br.toString();
             }
-        } finally {
+            br.setFollowRedirects(true);
+            if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dllink = Encoding.htmlDecode(dllink);
+            final Browser br2 = br.cloneBrowser();
+            br2.getHeaders().put("Referer", "http://sextvx.com/static/player/player.swf");
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                con = br.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?");
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         return AvailableStatus.TRUE;

@@ -239,14 +239,25 @@ public abstract class XvideosCore extends PluginForHost {
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, Account account, final boolean isDownload) throws Exception {
+        /* Some workarounds for broken URLs */
         final Regex brokenURL = new Regex(link.getPluginPatternMatcher(), "(https?://[^/]+/video\\d+)//(.+)");
-        if (link.getPluginPatternMatcher().matches("https?://[^/]+/video\\d+//.+")) {
+        final Regex brokenURL2 = new Regex(link.getPluginPatternMatcher(), "^https?://[^/]+/video(\\d+)/?$");
+        if (brokenURL.matches()) {
             /**
              * 2021-11-29: Hotfix for broken URLs due to bug in correctDownloadLink! </br>
              * TODO: Remove this in 2022-02
              */
             final String newURL = brokenURL.getMatch(0) + "/" + brokenURL.getMatch(1);
-            logger.info("Fixing broken URL: OLD: " + link.getPluginPatternMatcher() + " | NEW: " + newURL);
+            logger.info("Fixing broken URL#1: OLD: " + link.getPluginPatternMatcher() + " | NEW: " + newURL);
+            link.setPluginPatternMatcher(newURL);
+        } else if (brokenURL2.matches()) {
+            /*
+             * 2021-12-08: Commonly used URLs which worked like this in the past. Now they contain all the info we need but are broken:
+             * Those URLs have to end with a trailing slash + at least one char.
+             */
+            final String thisVideoID = brokenURL2.getMatch(0);
+            final String newURL = "https://www." + Browser.getHost(link.getPluginPatternMatcher()) + "/video" + thisVideoID + "/xy";
+            logger.info("Fixing broken URL#2: OLD: " + link.getPluginPatternMatcher() + " | NEW: " + newURL);
             link.setPluginPatternMatcher(newURL);
         }
         final String urlTitle = getURLTitle(link);
@@ -271,17 +282,18 @@ public abstract class XvideosCore extends PluginForHost {
         }
         br.getPage(link.getPluginPatternMatcher());
         int counter = 0;
+        String videoID = this.getVideoID(link);
         while (br.getRedirectLocation() != null) {
             final String redirect = br.getRedirectLocation();
             /*
              * 2019-09-30: Only set new URL if it is valid. E.g. when using xvideos2.com (= for india) in germany, it will only redirect us
              * to their mainpage!
              */
-            if (this.canHandle(redirect)) {
-                logger.info("Setting new downloadlink: " + redirect);
-                link.setPluginPatternMatcher(br.getRedirectLocation());
+            if (this.canHandle(redirect) && videoID != null && redirect.contains(videoID)) {
+                logger.info("Setting new PluginPatternMatcher: " + redirect);
+                link.setPluginPatternMatcher(redirect);
             } else {
-                logger.info("Progressing to redirect: " + redirect);
+                logger.info("Progressing to redirect WITHOUT setting new PluginPatternMatcher: " + redirect);
             }
             if (counter >= 10) {
                 /* This should never happen */
@@ -330,7 +342,7 @@ public abstract class XvideosCore extends PluginForHost {
                 }
             }
         }
-        final String videoID = getVideoID(this.br, link);
+        videoID = getVideoID(this.br, link);
         if (videoID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
