@@ -617,9 +617,11 @@ public class AccountController implements AccountControllerListener, AccountProp
         addAccount(account, true);
     }
 
-    /** Adds account to accountlist. If account already exists, it will be enabled (and checked) if it is currently disabled. */
-    public void addAccount(final Account account, final boolean forceCheck) {
-        /* TODO: Implement "forceCheck"! */
+    /**
+     * Adds account to list of accounts. If account already exists, it will be enabled (and checked) in case it is currently disabled. </br>
+     * If password of new account differs from existing accounts' password, existing accounts' password will be updated.
+     */
+    public void addAccount(final Account account, final boolean forceAccountCheckOnPropertyChange) {
         if (account != null) {
             if (account.getPlugin() == null) {
                 new PluginFinder().assignPlugin(account, true);
@@ -642,22 +644,26 @@ public class AccountController implements AccountControllerListener, AccountProp
                     }
                 }
                 if (existingAccount != null) {
-                    /*
-                     * TODO: Set password of "new" account on existing account (assume it has been checked before or add more logic to not
-                     * lose older passwords of accounts with same usernames!)
-                     */
                     if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                        /* Update password of existing account */
                         if (!StringUtils.equals(existingAccount.getPass(), account.getPass())) {
-                            account.setPass(existingAccount.getPass());
+                            existingAccount.setPass(account.getPass(), forceAccountCheckOnPropertyChange);
                         }
-                    }
-                    if (!existingAccount.isEnabled() || existingAccount.getError() != null) {
                         // reuse properties and accountInfos from new account
-                        existingAccount.setError(null, -1, null);
+                        existingAccount.setError(null, -1, null, forceAccountCheckOnPropertyChange);
                         existingAccount.setAccountInfo(account.getAccountInfo());
                         existingAccount.setProperties(account.getProperties());
-                        existingAccount.setEnabled(true);
+                        existingAccount.setEnabled(true, forceAccountCheckOnPropertyChange);
                         getEventSender().fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ACCOUNT_CHECKED, existingAccount));
+                    } else {
+                        if (!existingAccount.isEnabled() || existingAccount.getError() != null) {
+                            // reuse properties and accountInfos from new account
+                            existingAccount.setError(null, -1, null);
+                            existingAccount.setAccountInfo(account.getAccountInfo());
+                            existingAccount.setProperties(account.getProperties());
+                            existingAccount.setEnabled(true);
+                            getEventSender().fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ACCOUNT_CHECKED, existingAccount));
+                        }
                     }
                 } else {
                     this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ADDED, account));
