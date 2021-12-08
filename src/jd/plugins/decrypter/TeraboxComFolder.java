@@ -41,11 +41,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DuboxCom;
+import jd.plugins.hoster.TeraboxCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class DuboxComFolder extends PluginForDecrypt {
-    public DuboxComFolder(PluginWrapper wrapper) {
+public class TeraboxComFolder extends PluginForDecrypt {
+    public TeraboxComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -146,7 +146,7 @@ public class DuboxComFolder extends PluginForDecrypt {
          * http requests later on!
          */
         if (account != null) {
-            ((jd.plugins.hoster.DuboxCom) plg).login(account, false);
+            ((jd.plugins.hoster.TeraboxCom) plg).login(account, false);
         }
         String passCode = param.getDecrypterPassword();
         boolean trustPassword = passCode != null;
@@ -154,7 +154,7 @@ public class DuboxComFolder extends PluginForDecrypt {
          * TODO: That is not enough -> We might have to re-use all cookies and/or maybe always store current/new session on account. </br>
          * It is only possible to use one "passwordCookie" at the same time!
          */
-        String passwordCookie = param.getDownloadLink() != null ? param.getDownloadLink().getStringProperty(DuboxCom.PROPERTY_PASSWORD_COOKIE) : null;
+        String passwordCookie = param.getDownloadLink() != null ? param.getDownloadLink().getStringProperty(TeraboxCom.PROPERTY_PASSWORD_COOKIE) : null;
         if (passwordCookie != null) {
             setPasswordCookie(this.br, this.br.getHost(), passwordCookie);
         }
@@ -282,7 +282,7 @@ public class DuboxComFolder extends PluginForDecrypt {
                     }
                     /* Saving- and re-using this can save us some time later. */
                     if (passwordCookie != null) {
-                        folder.setProperty(DuboxCom.PROPERTY_PASSWORD_COOKIE, passwordCookie);
+                        folder.setProperty(TeraboxCom.PROPERTY_PASSWORD_COOKIE, passwordCookie);
                     }
                     distribute(folder);
                     decryptedLinks.add(folder);
@@ -313,16 +313,16 @@ public class DuboxComFolder extends PluginForDecrypt {
                     final DownloadLink dl = new DownloadLink(plg, "dubox", this.getHost(), url, true);
                     dl.setContentUrl(contentURL);
                     dl.setContainerUrl(containerURL);
-                    jd.plugins.hoster.DuboxCom.parseFileInformation(dl, entries);
+                    jd.plugins.hoster.TeraboxCom.parseFileInformation(dl, entries);
                     if (passCode != null) {
                         dl.setDownloadPassword(passCode);
                     }
                     /* Saving- and re-using this can save us some time later. */
                     if (passwordCookie != null) {
-                        dl.setProperty(DuboxCom.PROPERTY_PASSWORD_COOKIE, passwordCookie);
+                        dl.setProperty(TeraboxCom.PROPERTY_PASSWORD_COOKIE, passwordCookie);
                     }
                     /* This can be useful to refresh directurls a lot quicker. */
-                    dl.setProperty(DuboxCom.PROPERTY_PAGINATION_PAGE, page);
+                    dl.setProperty(TeraboxCom.PROPERTY_PAGINATION_PAGE, page);
                     if (realpath.length() > 1) {
                         dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, realpath);
                         final FilePackage fp = FilePackage.getInstance();

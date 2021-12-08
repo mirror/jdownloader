@@ -13,11 +13,12 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -28,11 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharegadget.com" }, urls = { "http://[\\w\\.]*?(?:sharegadget\\.com|leteckaposta\\.cz)/[0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharegadget.com" }, urls = { "https?://[\\w\\.]*?(?:sharegadget\\.com|leteckaposta\\.cz)/[0-9]+" })
 public class ShareGadgetCom extends PluginForHost {
-
     public ShareGadgetCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -52,31 +50,33 @@ public class ShareGadgetCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        String linkurl = br.getRegex("\\s+<h1><a href='(.*?)'").getMatch(0);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        String linkurl = br.getRegex("\\s+<h1><a href='/(.*?)'").getMatch(0);
         if (linkurl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        linkurl = "http://sharegadget.com" + linkurl;
+        linkurl = br.getBaseURL() + linkurl;
         br.setFollowRedirects(true);
-        // this.sleep(40000, downloadLink); //Remove if they find a better way
-        // to force wait time
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, linkurl, true, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("Final dllink is no file...");
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setAllowedResponseCodes(400);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("file does not exist")) {
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)file does not exist")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("class=\\'download\\-link\\'>(.*?)</a>", Pattern.CASE_INSENSITIVE)).getMatch(0));
@@ -84,8 +84,8 @@ public class ShareGadgetCom extends PluginForHost {
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
+        link.setName(Encoding.htmlDecode(filename).trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
     }
 

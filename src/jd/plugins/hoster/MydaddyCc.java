@@ -16,16 +16,18 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map.Entry;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.appwork.utils.DebugMode;
+import org.jdownloader.plugins.components.config.MydaddyCcConfig;
+import org.jdownloader.plugins.components.config.MydaddyCcConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -35,151 +37,156 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mydaddy.cc" }, urls = { "https?://(?:www\\.)?mydaddy\\.cc/video/[a-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mydaddy.cc" }, urls = { "https?://(?:www\\.)?mydaddy\\.cc/video/([a-z0-9]+)" })
 public class MydaddyCc extends PluginForHost {
     public MydaddyCc(PluginWrapper wrapper) {
         super(wrapper);
     }
     /* DEV NOTES */
-    // Tags:
+    // Tags: porn plugin
     // protocol: no https
     // other:
 
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
+    private static final boolean  free_resume             = true;
+    private static final int      free_maxchunks          = 0;
+    private static final int      free_maxdownloads       = -1;
+    private String                dllink                  = null;
+    protected static final String PROPERTY_CHOSEN_QUALITY = "chosen_quality";
 
     @Override
     public String getAGBLink() {
         return "http://bemywife.cc/";
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        dllink = null;
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.toString().length() < 500) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String url_filename = new Regex(link.getDownloadURL(), "([^/]+)$").getMatch(0).replace("-", " ");
         /* Host itself has no filenames so if we know the title from the website which embedded the content, prefer that! */
-        final String actress_name = link.getStringProperty("actress_name", null);
-        String filename = link.getStringProperty("decryptertitle", null);
+        final String actress_name = link.getStringProperty("actress_name");
+        String filename = link.getStringProperty("decryptertitle");
         if (filename == null) {
-            filename = url_filename;
+            /* Fallback to videoID is filename. */
+            filename = getFID(link);
         }
         if (actress_name != null && !filename.contains(actress_name)) {
             filename = actress_name + " - " + filename;
         }
+        link.setFinalFileName(filename + ".mp4");
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404 || this.br.toString().length() < 500) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
-        /* 2020-03-23 */
-        int qualityMax = -1;
+        final HashMap<Integer, String> qualityMap = new HashMap<Integer, String>();
         final String[] sources = br.getRegex("<source src.*?/>").getColumn(-1);
+        int qualityMax = -1;
         for (final String source : sources) {
             final Regex finfo = new Regex(source, "src=\"([^\"]*?(\\d+)\\.mp4)");
-            final String dllink_tmp = finfo.getMatch(0);
+            final String url = finfo.getMatch(0);
             final String qualityStr = finfo.getMatch(1);
-            if (qualityStr == null || dllink_tmp == null) {
+            if (qualityStr == null || url == null) {
                 continue;
             }
             final int qualityTmp = Integer.parseInt(qualityStr);
             if (qualityTmp > qualityMax) {
                 qualityMax = qualityTmp;
-                dllink = dllink_tmp;
             }
+            qualityMap.put(qualityTmp, url);
         }
-        /* Old */
-        final String jssource = br.getRegex("srca\\s*=\\s*(\\[.*?\\])").getMatch(0);
-        try {
-            HashMap<String, Object> entries = null;
-            String quality_temp_str = null;
-            long quality_temp = 0;
-            long quality_best = 0;
-            String dllink_temp = null;
-            final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(jssource);
-            for (final Object videoo : ressourcelist) {
-                entries = (HashMap<String, Object>) videoo;
-                dllink_temp = (String) entries.get("file");
-                quality_temp_str = (String) entries.get("label");
-                if (quality_temp_str != null) {
-                    quality_temp_str = new Regex(quality_temp_str, "(\\d+)").getMatch(0);
-                    if (quality_temp_str != null) {
-                        quality_temp = Long.parseLong(quality_temp_str);
-                    }
-                }
-                if (dllink_temp == null || quality_temp == 0) {
-                    continue;
-                } else if (dllink_temp.contains(".m3u8")) {
-                    /* Skip hls */
-                    continue;
-                }
-                if (quality_temp > quality_best) {
-                    quality_best = quality_temp;
-                    dllink = dllink_temp;
-                }
-            }
-            if (dllink == null) {
-                logger.info("BEST handling for multiple video source succeeded");
-            }
-        } catch (final Throwable e) {
-            logger.info("BEST handling for multiple video source failed");
-        }
-        if (dllink == null) {
-            dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
-        }
-        if (filename == null || dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = Encoding.htmlDecode(dllink);
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
-        link.setFinalFileName(filename);
+        this.dllink = handleQualitySelection(link, qualityMap);
         final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            try {
-                con = br2.openHeadConnection(dllink);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
+            con = br2.openHeadConnection(dllink);
+            if (this.looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            link.setProperty("directlink", dllink);
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (final Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
+    }
+
+    /** Returns user preferred quality inside given quality map. Returns best, if user selection is not present in map. */
+    protected final String handleQualitySelection(final DownloadLink link, final HashMap<Integer, String> qualityMap) {
+        if (qualityMap.isEmpty()) {
+            return null;
+        }
+        logger.info("Total found qualities: " + qualityMap.size());
+        final Iterator<Entry<Integer, String>> iterator = qualityMap.entrySet().iterator();
+        int maxQuality = 0;
+        String maxQualityDownloadurl = null;
+        final int userSelectedQuality = this.getPreferredStreamQuality();
+        String selectedQualityDownloadurl = null;
+        while (iterator.hasNext()) {
+            final Entry<Integer, String> entry = iterator.next();
+            final int qualityTmp = entry.getKey();
+            if (qualityTmp > maxQuality) {
+                maxQuality = entry.getKey();
+                maxQualityDownloadurl = entry.getValue();
+            }
+            if (qualityTmp == userSelectedQuality) {
+                selectedQualityDownloadurl = entry.getValue();
+                break;
+            }
+        }
+        final int chosenQuality;
+        final String downloadurl;
+        if (selectedQualityDownloadurl != null) {
+            logger.info("Found user selected quality: " + userSelectedQuality + "p");
+            chosenQuality = userSelectedQuality;
+            downloadurl = selectedQualityDownloadurl;
+        } else {
+            logger.info("Auto-Chosen quality: " + maxQuality + "p");
+            chosenQuality = maxQuality;
+            downloadurl = maxQualityDownloadurl;
+        }
+        link.setProperty(PROPERTY_CHOSEN_QUALITY, chosenQuality);
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            link.setComment("ChosenQuality: " + chosenQuality + "p");
+        }
+        return downloadurl;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {
@@ -187,6 +194,34 @@ public class MydaddyCc extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    /** Returns user selected stream quality. -1 = BEST/default */
+    private final int getPreferredStreamQuality() {
+        final MydaddyCcConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
+        final PreferredStreamQuality quality = cfg.getPreferredStreamQuality();
+        switch (quality) {
+        case Q2160P:
+            return 2160;
+        case Q1440P:
+            return 1440;
+        case Q1080P:
+            return 1080;
+        case Q720P:
+            return 720;
+        case Q480P:
+            return 480;
+        case Q360P:
+            return 360;
+        case BEST:
+        default:
+            return -1;
+        }
+    }
+
+    @Override
+    public Class<? extends MydaddyCcConfig> getConfigInterface() {
+        return MydaddyCcConfig.class;
     }
 
     @Override
