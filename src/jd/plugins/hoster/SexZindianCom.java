@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -30,9 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexzindian.com" }, urls = { "http://(?:www\\.)?sexzindiandecrypted\\.com/video/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexzindian.com" }, urls = { "http://(?:www\\.)?sexzindian\\.com/video/\\d+" })
 public class SexZindianCom extends PluginForHost {
-
     public SexZindianCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -42,11 +40,6 @@ public class SexZindianCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.sexzindian.com/static/terms";
-    }
-
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("sexzindiandecrypted.com/", "sexzindian.com/"));
     }
 
     @SuppressWarnings("deprecation")

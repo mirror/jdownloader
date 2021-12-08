@@ -17,14 +17,14 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.abstractSafeLinking;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-
-import org.jdownloader.plugins.components.abstractSafeLinking;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kprotector.com", "keeplinks.org" }, urls = { "https?://(?:www\\.)?kprotector\\.com/(p\\d*|d)/[a-z0-9]+", "https?://(?:www\\.)?keeplinks\\.(me|eu|co|org)/(p\\d*|d)/[a-z0-9]+" })
 public class KeepLinksMe extends abstractSafeLinking {
@@ -81,8 +81,7 @@ public class KeepLinksMe extends abstractSafeLinking {
 
     @Override
     protected Form formProtected() {
-        final Form f = br.getFormbyProperty("id", "frmprotect");
-        return f;
+        return br.getFormbyProperty("id", "frmprotect");
     }
 
     @Override

@@ -11,6 +11,10 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -29,10 +33,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * abstract class to handle sites similar to safelinking type sites. <br />
@@ -311,6 +311,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
         ajax.getHeaders().put("Origin", new Regex(br.getURL(), "https?://[^/]+").getMatch(-1));
     }
 
+    /** 2021-12-08: Only used by kprotector.com at this moment. */
     public ArrayList<DownloadLink> decryptIt_oldStyle(final CryptedLink param, final ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // link correction
@@ -513,11 +514,20 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
 
     /**
      * 2020-01-24: I was able to test the following captcha types: reCaptchaV2, basiccaptcha, simplecaptcha, coolcaptcha, fancycaptcha(Fancy
-     * Captcha, fancy), with- and without password and with password + captcha. </br> Seems like the following captcha types are not used
-     * anymore: threeD, qaptcha, cats(CaptchaCatAndDog)
+     * Captcha, fancy), with- and without password and with password + captcha. </br>
+     * Seems like the following captcha types are not used anymore: threeD, qaptcha, cats(CaptchaCatAndDog)
      */
     protected void handleCaptcha_oldStyle(final CryptedLink param) throws Exception {
         br.setFollowRedirects(true);
+        /* First handle "Click to continue" step without any captcha */
+        final Form preForm = formProtected();
+        if ("Click+To+Proceed".equals(preForm.getInputFieldByType("button").getValue()) || preForm.containsHTML(">\\s*Click To Proceed\\s*</button>")) {
+            /* E.g. kprotector.com */
+            logger.info("Found preForm");
+            this.submitForm(preForm);
+        } else {
+            logger.info("No preForm available");
+        }
         LinkedHashMap<String, String> captchaRegex = new LinkedHashMap<String, String>();
         captchaRegex.put("solvemedia", regexCaptchaSolveMedia());
         captchaRegex.put("recaptcha", regexCaptchaRecaptcha());
@@ -540,7 +550,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
             for (int i = 0; i < repeat; i++) {
                 if (timesNoUserInput > timesNoCaptchaLimit) {
                     /* Fail-safe */
-                    logger.info("Too many times no captcha --> Stepping out of captcha loop --> Possible plugin failure");
+                    logger.info("Too many times no captcha with user interaction --> Stepping out of captcha loop --> Possible plugin failure");
                     break;
                 }
                 while (protectedForm.hasInputFieldByName("%5C")) {
@@ -568,30 +578,20 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                 }
                 switch (getCaptchaTypeNumber()) {
                 case 0:
-                    /* No captcha */
+                /* No captcha */
                 {
                     timesNoUserInput++;
-                    // no captcha or pre-captcha-Form: kprotector.com, click to proceed step, prior to captcha. && keeplinks also though not
-                    // in submit value
-                    if (protectedForm.getInputFieldByType("button") != null && ("Click+To+Proceed".equals(protectedForm.getInputFieldByType("button").getValue()) || protectedForm.containsHTML(">\\s*Click To Proceed\\s*</button>"))) {
-                        logger.info("No captcha --> Sending continue_form");
-                        submitForm(protectedForm);
-                        protectedForm = formProtected();
-                        prepareCaptchaAdress(protectedForm.getHtmlCode(), captchaRegex);
-                        if (decryptMultipleLinks(param).size() > 0) {
-                            break;
-                        } else {
-                            continue;
-                        }
-                    } else if (!password) {
-                        // unsupported types
-                        // short wait to prevent hammering
-                        sleep(2500, param);
-                        // maybe also good to clear cookies?
-                        getPage(br.getURL());
-                        protectedForm = formProtected();
-                        prepareCaptchaAdress(protectedForm.getHtmlCode(), captchaRegex);
-                        continue;
+                    if (!password) {
+                        // // unsupported types
+                        // // short wait to prevent hammering
+                        // sleep(2500, param);
+                        // // maybe also good to clear cookies?
+                        // getPage(br.getURL());
+                        // protectedForm = formProtected();
+                        // prepareCaptchaAdress(protectedForm.getHtmlCode(), captchaRegex);
+                        // continue;
+                        /* 2021-12-08: Form available + no captcha + no password --> Should never happen?! */
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
                 case 1:
@@ -909,11 +909,16 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
         }
         String[] urls = HTMLParser.getHttpLinks(plaintext, "");
         for (final String url : urls) {
+            final String urlhost = Browser.getHost(url);
             if (new Regex(url, this.getSupportedLinks()).matches()) {
                 /* Skip URLs that would go back into this crawler */
                 continue;
+            } else if (urlhost.equals(this.getHost())) {
+                /* Skip elements belonging to this linkcrypters' website. */
+                continue;
+            } else {
+                decryptedLinks.add(this.createDownloadlink(url));
             }
-            decryptedLinks.add(this.createDownloadlink(url));
         }
         return decryptedLinks;
     }

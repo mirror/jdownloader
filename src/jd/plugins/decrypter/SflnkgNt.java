@@ -69,8 +69,7 @@ public class SflnkgNt extends abstractSafeLinking {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = super.decryptIt(param, progress);
-        return decryptedLinks;
+        return super.decryptIt(param, progress);
     }
 
     /* NO OVERRIDE!! */
@@ -82,8 +81,9 @@ public class SflnkgNt extends abstractSafeLinking {
     protected boolean supportsHTTPS() {
         if ("safelinking.net".equalsIgnoreCase(Browser.getHost(parameter))) {
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     @Override
