@@ -28,11 +28,11 @@ public class CamwhoresTv extends KernelVideoSharingComV2 {
         this.enablePremium("https://www.camwhores.tv/");
     }
 
-    /** Add all KVS hosts to this list that fit the main template without the need of ANY changes to this class. */
+    /** Sync this between camwhores hoster + crawler plugins!! */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "camwhores.tv", "camwhores.video", "camwhores.biz", "camwhores.sc", "camwhores.io", "camwhores.adult", "camwhores.cc", "camwhores.org" });
+        ret.add(new String[] { "camwhores.tv", "camwhores.video", "camwhores.biz", "camwhores.sc", "camwhores.io", "camwhores.adult", "camwhores.cc", "camwhores.org", "camwhores.lol", "camwhorestv.co", "camwhorestv.org" });
         return ret;
     }
 

@@ -334,6 +334,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
         /* First bring up saved final links */
         String dllink = checkDirectLink(link, account);
         if (StringUtils.isEmpty(dllink)) {
+            requestFileInformationWebsite(link, account, true);
             if (link.getPluginPatternMatcher().matches(TYPE_DOWNLOAD)) {
                 /* Basically the same as the other type but hides that via iFrame. */
                 final String embedURL = br.getRegex("<iframe[^>]*src=\"(/e/[a-z0-9]+)\"").getMatch(0);

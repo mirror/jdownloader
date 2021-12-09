@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.Regex;
@@ -27,10 +28,35 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camwhores.tv" }, urls = { "https?://(?:www\\.)?camwhores(tv)?\\.(?:tv|video|biz|sc|io|adult|cc|co|org)/videos/(?:\\d+/[a-z0-9\\-]+/|private/[a-z0-9\\-]+/)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CamwhoresTv extends PornEmbedParser {
     public CamwhoresTv(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    /** Sync this between camwhores hoster + crawler plugins!! */
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "camwhores.tv", "camwhores.video", "camwhores.biz", "camwhores.sc", "camwhores.io", "camwhores.adult", "camwhores.cc", "camwhores.org", "camwhores.lol", "camwhorestv.co", "camwhorestv.org" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/videos/(?:\\d+/[a-z0-9\\-]+/|private/[a-z0-9\\-]+/)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     /* DEV NOTES */
