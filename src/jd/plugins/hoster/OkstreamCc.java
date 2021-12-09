@@ -155,6 +155,7 @@ public class OkstreamCc extends XFileSharingProBasic {
             handleDownload(link, account, dllink, null);
             return;
         }
+        requestFileInformationWebsite(link, account, true);
         Form dlform = br.getFormbyKey("securenet");
         if (dlform == null) {
             dlform = br.getForm(0);

@@ -20,12 +20,13 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "camvideos.org" }, urls = { "http?://(?:www\\.)?camvideos\\.org/videos/(\\d+)/([a-z0-9\\-]+)/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "camvideos.org" }, urls = { "https?://(?:www\\.)?camvideos\\.org/videos/(\\d+)/([a-z0-9\\-]+)/" })
 public class CamvideosOrg extends PornEmbedParser {
     public CamvideosOrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -51,6 +52,16 @@ public class CamvideosOrg extends PornEmbedParser {
         String filename = new Regex(parameter, this.getSupportedLinks()).getMatch(1).replace("-", " ");
         filename = filename.trim();
         decryptedLinks.addAll(findEmbedUrls(filename));
+        if (decryptedLinks.isEmpty()) {
+            /* 2021-12-09 e.g. dood.to embedded URLs im iFrame */
+            final String[] iframes = br.getRegex("<iframe(.*?)</iframe>").getColumn(0);
+            for (final String iframe : iframes) {
+                final String[] urls = HTMLParser.getHttpLinks(iframe, br.getURL());
+                for (final String url : urls) {
+                    decryptedLinks.add(this.createDownloadlink(url));
+                }
+            }
+        }
         return decryptedLinks;
     }
 

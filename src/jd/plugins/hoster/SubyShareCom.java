@@ -154,6 +154,7 @@ public class SubyShareCom extends XFileSharingProBasic {
         /* First bring up saved final links */
         String dllink = checkDirectLink(link, account);
         if (StringUtils.isEmpty(dllink)) {
+            requestFileInformationWebsite(link, account, true);
             int download1counter = 0;
             final int download1max = 1;
             do {

@@ -141,7 +141,18 @@ public class SoftPediaCom extends PluginForHost {
             } catch (final IOException e) {
                 logger.log(e);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
+            } else {
+                final boolean looksLikeSelfhostedContent = dllink.matches("https?://softpedia-secure-download\\.com/dl/[a-f0-9]{32}/.+");
+                if (looksLikeSelfhostedContent) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported external mirror");
+                }
+            }
         }
         if (dl.getConnection().isContentDisposition()) {
             link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
@@ -151,7 +162,7 @@ public class SoftPediaCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        if (new Regex(link.getDownloadURL(), "index\\d*\\.shtml").matches()) {
+        if (new Regex(link.getPluginPatternMatcher(), "index\\d*\\.shtml").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.setBrowserExclusive();

@@ -579,7 +579,11 @@ public class FlickrCom extends PluginForDecrypt {
                 statusMessage = null;
                 break;
             case 1:
-                statusMessage = "Group/user/photo not found - possibly invalid nsid";
+                /**
+                 * This will also happen for items for which an account is required. Browser will return a more accurate error (403) in this
+                 * case but we won't do the extra step to find the exact reason of failure.
+                 */
+                statusMessage = "Group/user/photo not found - possibly invalid nsid (or account required to view)";
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             case 2:
                 statusMessage = "No user specified or permission denied";
