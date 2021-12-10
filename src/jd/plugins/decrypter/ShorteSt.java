@@ -19,6 +19,10 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -34,10 +38,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ShorteSt extends antiDDoSForDecrypt {
@@ -90,8 +90,7 @@ public class ShorteSt extends antiDDoSForDecrypt {
         getPage(parameter);
         String redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"\\d+\\;url=(.*?)\" \\/>").getMatch(0);
         if (containsLoginRedirect(redirect) || br.containsHTML(">link removed<")) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (redirect != null) {
             parameter = redirect;
             boolean redirectsToSupportedDomain = false;
@@ -104,14 +103,12 @@ public class ShorteSt extends antiDDoSForDecrypt {
             }
             if (!redirectsToSupportedDomain) {
                 /* 2020-07-13: Direct redirect to final downloadurl (e.g. when GoogleBot User-Agent is used) */
-                decryptedLinks.add(this.createDownloadlink(redirect));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             getPage(parameter);
         }
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.setFollowRedirects(true);
         handleSiteVerification(parameter);
@@ -151,12 +148,12 @@ public class ShorteSt extends antiDDoSForDecrypt {
         }
         if (finallink == null) {
             /* 2020-02-03: Offline can happen after siteVerification & captcha */
-            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">page not found<")) {
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*page not found<")) {
                 if (!parameter.contains("!/")) {
-                    logger.info("Link offline: " + parameter);
-                    decryptedLinks.add(createOfflinelink(parameter));
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    return decryptedLinks;
                 }
-                return decryptedLinks;
             }
             final String timer = PluginJSonUtils.getJsonValue(br, "seconds");
             final String cb = PluginJSonUtils.getJsonValue(br, "callbackUrl");

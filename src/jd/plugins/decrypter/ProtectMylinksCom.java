@@ -31,7 +31,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect-mylinks.com" }, urls = { "https?://(?:www\\.)?protect\\-mylinks\\.com/(?:decrypt(?:\\.php)|f)\\?i=[a-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect-mylinks.com" }, urls = { "https?://(?:www\\.)?protect\\-mylinks\\.com/(?:decrypt(?:\\.php)?|f)\\?i=[a-z0-9]+" })
 public class ProtectMylinksCom extends antiDDoSForDecrypt {
     public ProtectMylinksCom(PluginWrapper wrapper) {
         super(wrapper);
