@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -98,7 +97,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             this.submitForm(beforeCaptcha);
         }
         appVars = regexAppVars(this.br);
-        Form form = getCaptchaForm();
+        Form form = getCaptchaForm(br);
         if (form == null) {
             if (decryptedLinks.size() > 0) {
                 return decryptedLinks;
@@ -116,203 +115,175 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         // form.put("_Token%5Bfields%5D", valueNew);
         // }
         String recaptchaV2Response = null;
-        if (form.hasInputFieldByName("captcha")) {
-            /* original captcha/ VERY OLD way! [2018-07-18: Very rare or non existent anymore!] */
-            logger.info("OLD captcha required");
-            final String code = getCaptchaCode("cp.php", param);
-            form.put("captcha", Encoding.urlEncode(code));
-            submitForm(form);
-            if (br.containsHTML("<script>alert\\('(?:Empty Captcha|Incorrect Captcha)\\s*!'\\);")) {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
-            form = br.getForm(0);
-            if (form == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.setFollowRedirects(false);
-            submitForm(form);
-            final String finallink = br.getRedirectLocation();
-            if (finallink == null) {
-                if (br.containsHTML("<script>alert\\('(?:Link not found)\\s*!'\\);")) {
-                    logger.warning("Invalid link : " + param.getCryptedUrl());
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            decryptedLinks.add(createDownloadlink(finallink));
-        } else {
-            /* 2018-07-18: Not all sites require a captcha to be solved */
-            final CaptchaType captchaType = getCaptchaType();
-            if (evalulateCaptcha(captchaType, param.getCryptedUrl())) {
-                logger.info("Captcha required");
-                boolean requiresCaptchaWhichCanFail = false;
-                boolean captchaFailed = false;
-                for (int i = 0; i <= 2; i++) {
-                    form = getCaptchaForm();
-                    if (form == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    /* Captcha type will usually stay the same even on bad solve attempts! */
-                    // captchaType = getCaptchaType();
-                    if (captchaType == CaptchaType.reCaptchaV2 || captchaType == CaptchaType.reCaptchaV2_invisible) {
-                        requiresCaptchaWhichCanFail = false;
-                        final String key;
-                        if (captchaType == CaptchaType.reCaptchaV2) {
-                            key = getAppVarsResult("reCAPTCHA_site_key");
-                        } else {
-                            key = getAppVarsResult("invisible_reCAPTCHA_site_key");
-                        }
-                        if (StringUtils.isEmpty(key)) {
-                            logger.warning("Failed to find reCaptchaV2 key");
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        /**
-                         * Some websites do not allow users to access the target URL directly but will require a certain Referer to be set.
-                         * </br>
-                         * We pre-set this in our browser but if that same URL is opened in browser, it may redirect to another website as
-                         * the Referer is missing. In this case we'll use the main page to solve the captcha to prevent this from happening.
-                         */
-                        final String reCaptchaSiteURL;
-                        if (this.getSpecialReferer() != null) {
-                            /* Required e.g. for sh2rt.com. */
-                            reCaptchaSiteURL = br.getBaseURL();
-                        } else {
-                            /* Fine for most of all websites. */
-                            reCaptchaSiteURL = br.getURL();
-                        }
-                        recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, key) {
-                            @Override
-                            public TYPE getType() {
-                                if (captchaType == CaptchaType.reCaptchaV2_invisible) {
-                                    return TYPE.INVISIBLE;
-                                } else {
-                                    return TYPE.NORMAL;
-                                }
-                            }
-
-                            @Override
-                            protected String getSiteUrl() {
-                                return reCaptchaSiteURL;
-                            }
-                        }.getToken();
-                        form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                        /* Small workaround, see https://svn.jdownloader.org/issues/89825 */
-                        final InputField submit = form.getInputField("submit");
-                        if (submit != null && submit.getValue() == null) {
-                            form.put("submit", "");
-                        }
-                    } else if (captchaType == CaptchaType.solvemedia) {
-                        final String solvemediaChallengeKey = this.getAppVarsResult("solvemedia_challenge_key");
-                        if (StringUtils.isEmpty(solvemediaChallengeKey)) {
-                            logger.warning("Failed to find solvemedia_challenge_key");
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        requiresCaptchaWhichCanFail = true;
-                        final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-                        sm.setChallengeKey(solvemediaChallengeKey);
-                        File cf = null;
-                        cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                        final String code = getCaptchaCode("solvemedia", cf, param);
-                        final String chid = sm.getChallenge(code);
-                        form.put("adcopy_challenge", chid);
-                        form.put("adcopy_response", "manual_challenge");
-                    } else {
-                        /* This should never happen */
-                        logger.warning("Unsupported captcha type!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    submitForm(form);
-                    if (requiresCaptchaWhichCanFail && this.br.containsHTML("The CAPTCHA was incorrect")) {
-                        captchaFailed = true;
-                        continue;
-                    } else {
-                        captchaFailed = false;
-                        break;
-                    }
-                }
-                if (requiresCaptchaWhichCanFail && captchaFailed) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-            } else if (form != null) {
-                /* 2019-01-30: E.g. "safelinku.com", "idsly.bid", "idsly.net" */
-                logger.info("No captcha required");
-                /*
-                 * 2020-04-01: This would lead to a failure. I was not able to reproduce this with safelinku.com anymore - it would
-                 * sometimes submit this form which == f2 --> Failure e.g. za.gl
-                 */
-                // this.submitForm(form);
-            }
-            hookAfterCaptcha(this.br);
-            final boolean skipWait = waittimeIsSkippable(sourceHost);
-            /** TODO: Fix waittime-detection for tmearn.com */
-            /* 2018-07-18: It is very important to keep this exact as some websites have "ad-forms" e.g. urlcloud.us !! */
-            Form f2 = br.getFormbyKey("_Token[fields]");
-            if (f2 == null) {
-                f2 = br.getFormbyKey("_Token%5Bfields%5D");
-            }
-            if (f2 == null) {
-                f2 = br.getFormbyAction("/links/go");
-            }
-            if (f2 == null) {
-                f2 = br.getForm(0);
-            }
-            if (f2 != null) {
-                br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-                br.getHeaders().put("Origin", "https://" + br.getHost());
-                if (br.containsHTML(org.appwork.utils.Regex.escape("name:'gc_token', value:e}).appendTo('#go-link')")) && recaptchaV2Response != null) {
-                    /* 2021-08-06: Special: tny.so (and maybe others too) */
-                    f2.put("gc_token", Encoding.urlEncode(recaptchaV2Response));
-                }
-                if (f2.hasInputFieldByName("_csrfToken")) {
-                    /*
-                     * 2021-03-29: E.g. tny.so will return error if this header is missing/wrong:
-                     * {"message":"CSRF token mismatch.","url":"\/links\/go","code":403}
-                     */
-                    final String csrftoken = f2.getInputField("_csrfToken").getValue();
-                    if (!StringUtils.isEmpty(csrftoken)) {
-                        br.getHeaders().put("X-CSRF-Token", csrftoken);
-                    } else {
-                        logger.warning("csrftoken fielld exists but no value present");
-                    }
-                }
-                String waitStr = br.getRegex("\"counter_value\"\\s*:\\s*\"(\\d+)\"").getMatch(0);
-                if (waitStr == null) {
-                    waitStr = br.getRegex(">\\s*Please Wait\\s*(\\d+)s\\s*<").getMatch(0);
-                    if (waitStr == null) {
-                        /* 2018-12-12: E.g. rawabbet.com[RIP 2019-02-21] */
-                        waitStr = br.getRegex("class=\"timer\">\\s*?(\\d+)\\s*?<").getMatch(0);
-                    }
-                }
-                if (!skipWait) {
-                    if (waitStr != null) {
-                        logger.info("Found waittime in html, waiting seconds: " + waitStr);
-                        final int wait = Integer.parseInt(waitStr) * +1;
-                        this.sleep(wait * 1000, param);
-                    } else {
-                        logger.info("Failed to find waittime in html");
-                    }
-                } else {
-                    if (waitStr != null) {
-                        logger.info("Skipping waittime (seconds): " + waitStr);
-                    } else {
-                        logger.info("Skipping waittime");
-                    }
-                }
-                submitForm(f2);
-            }
-            final String finallink = getFinallink();
-            if (finallink == null) {
-                if (br.containsHTML("<h1>Whoops, looks like something went wrong\\.</h1>")) {
-                    logger.warning("Hoster has issue");
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else {
+        /* 2018-07-18: Not all sites require a captcha to be solved */
+        final CaptchaType captchaType = getCaptchaType();
+        if (evalulateCaptcha(captchaType, param.getCryptedUrl())) {
+            logger.info("Captcha required");
+            boolean requiresCaptchaWhichCanFail = false;
+            boolean captchaFailed = false;
+            for (int i = 0; i <= 2; i++) {
+                form = getCaptchaForm(br);
+                if (form == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                /* Captcha type will usually stay the same even on bad solve attempts! */
+                // captchaType = getCaptchaType();
+                if (captchaType == CaptchaType.reCaptchaV2 || captchaType == CaptchaType.reCaptchaV2_invisible) {
+                    requiresCaptchaWhichCanFail = false;
+                    final String key;
+                    if (captchaType == CaptchaType.reCaptchaV2) {
+                        key = getAppVarsResult("reCAPTCHA_site_key");
+                    } else {
+                        key = getAppVarsResult("invisible_reCAPTCHA_site_key");
+                    }
+                    if (StringUtils.isEmpty(key)) {
+                        logger.warning("Failed to find reCaptchaV2 key");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    /**
+                     * Some websites do not allow users to access the target URL directly but will require a certain Referer to be set.
+                     * </br>
+                     * We pre-set this in our browser but if that same URL is opened in browser, it may redirect to another website as the
+                     * Referer is missing. In this case we'll use the main page to solve the captcha to prevent this from happening.
+                     */
+                    final String reCaptchaSiteURL;
+                    if (this.getSpecialReferer() != null) {
+                        /* Required e.g. for sh2rt.com. */
+                        reCaptchaSiteURL = br.getBaseURL();
+                    } else {
+                        /* Fine for most of all websites. */
+                        reCaptchaSiteURL = br.getURL();
+                    }
+                    recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, key) {
+                        @Override
+                        public TYPE getType() {
+                            if (captchaType == CaptchaType.reCaptchaV2_invisible) {
+                                return TYPE.INVISIBLE;
+                            } else {
+                                return TYPE.NORMAL;
+                            }
+                        }
+
+                        @Override
+                        protected String getSiteUrl() {
+                            return reCaptchaSiteURL;
+                        }
+                    }.getToken();
+                    form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    /* Small workaround, see https://svn.jdownloader.org/issues/89825 */
+                    final InputField submit = form.getInputField("submit");
+                    if (submit != null && submit.getValue() == null) {
+                        form.put("submit", "");
+                    }
+                } else if (captchaType == CaptchaType.solvemedia) {
+                    final String solvemediaChallengeKey = this.getAppVarsResult("solvemedia_challenge_key");
+                    if (StringUtils.isEmpty(solvemediaChallengeKey)) {
+                        logger.warning("Failed to find solvemedia_challenge_key");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    requiresCaptchaWhichCanFail = true;
+                    final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
+                    sm.setChallengeKey(solvemediaChallengeKey);
+                    final String code = getCaptchaCode("solvemedia", sm.downloadCaptcha(getLocalCaptchaFile()), param);
+                    final String chid = sm.getChallenge(code);
+                    form.put("adcopy_challenge", chid);
+                    form.put("adcopy_response", "manual_challenge");
+                } else {
+                    /* This should never happen */
+                    logger.warning("Unsupported captcha type!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                submitForm(form);
+                if (requiresCaptchaWhichCanFail && this.br.containsHTML("(?i)The CAPTCHA was incorrect")) {
+                    captchaFailed = true;
+                    continue;
+                } else {
+                    captchaFailed = false;
+                    break;
+                }
             }
-            decryptedLinks.add(createDownloadlink(finallink));
+            if (requiresCaptchaWhichCanFail && captchaFailed) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+        } else if (form != null) {
+            /* 2019-01-30: E.g. "safelinku.com", "idsly.bid", "idsly.net" */
+            logger.info("No captcha required");
+            /*
+             * 2020-04-01: This would lead to a failure. I was not able to reproduce this with safelinku.com anymore - it would sometimes
+             * submit this form which == f2 --> Failure e.g. za.gl
+             */
+            // this.submitForm(form);
         }
+        hookAfterCaptcha(this.br);
+        final boolean skipWait = waittimeIsSkippable(sourceHost);
+        /** TODO: Fix waittime-detection for tmearn.com */
+        /* 2018-07-18: It is very important to keep this exact as some websites have "ad-forms" e.g. urlcloud.us !! */
+        Form f2 = br.getFormbyKey("_Token[fields]");
+        if (f2 == null) {
+            f2 = br.getFormbyKey("_Token%5Bfields%5D");
+        }
+        if (f2 == null) {
+            f2 = br.getFormbyAction("/links/go");
+        }
+        if (f2 == null) {
+            f2 = br.getForm(0);
+        }
+        if (f2 != null) {
+            br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+            br.getHeaders().put("Origin", "https://" + br.getHost());
+            if (br.containsHTML(org.appwork.utils.Regex.escape("name:'gc_token', value:e}).appendTo('#go-link')")) && recaptchaV2Response != null) {
+                /* 2021-08-06: Special: tny.so (and maybe others too) */
+                f2.put("gc_token", Encoding.urlEncode(recaptchaV2Response));
+            }
+            if (f2.hasInputFieldByName("_csrfToken")) {
+                /*
+                 * 2021-03-29: E.g. tny.so will return error if this header is missing/wrong:
+                 * {"message":"CSRF token mismatch.","url":"\/links\/go","code":403}
+                 */
+                final String csrftoken = f2.getInputField("_csrfToken").getValue();
+                if (!StringUtils.isEmpty(csrftoken)) {
+                    br.getHeaders().put("X-CSRF-Token", csrftoken);
+                } else {
+                    logger.warning("csrftoken fielld exists but no value present");
+                }
+            }
+            String waitStr = br.getRegex("\"counter_value\"\\s*:\\s*\"(\\d+)\"").getMatch(0);
+            if (waitStr == null) {
+                waitStr = br.getRegex(">\\s*Please Wait\\s*(\\d+)s\\s*<").getMatch(0);
+                if (waitStr == null) {
+                    /* 2018-12-12: E.g. rawabbet.com[RIP 2019-02-21] */
+                    waitStr = br.getRegex("class=\"timer\">\\s*?(\\d+)\\s*?<").getMatch(0);
+                }
+            }
+            if (!skipWait) {
+                if (waitStr != null) {
+                    logger.info("Found waittime in html, waiting seconds: " + waitStr);
+                    final int wait = Integer.parseInt(waitStr) * +1;
+                    this.sleep(wait * 1000, param);
+                } else {
+                    logger.info("Failed to find waittime in html");
+                }
+            } else {
+                if (waitStr != null) {
+                    logger.info("Skipping waittime (seconds): " + waitStr);
+                } else {
+                    logger.info("Skipping waittime");
+                }
+            }
+            submitForm(f2);
+        }
+        final String finallink = getFinallink();
+        if (finallink == null) {
+            if (br.containsHTML("<h1>Whoops, looks like something went wrong\\.</h1>")) {
+                logger.warning("Hoster has issue");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
     }
 
@@ -389,7 +360,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         return false;
     }
 
-    private Form getCaptchaForm() {
+    protected Form getCaptchaForm(final Browser br) {
         return br.getForm(0);
     }
 

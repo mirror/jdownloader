@@ -52,10 +52,10 @@ public class DluploadCom extends PluginForHost {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         /*
-         * 2021-05-12: khabarbabal.online is used for downloading but their name is "dlupload" and their main domain is "dlupload.com". Just
-         * don't modify the domain of the user added URLs!!
+         * 2021-05-12: khabarbabal.online and dlsharefile.com are used for downloading but their name is "dlupload" and their main domain is
+         * "dlupload.com". Just don't modify the domain of the user added URLs!!
          */
-        ret.add(new String[] { "dlupload.com", "khabarbabal.online" });
+        ret.add(new String[] { "dlupload.com", "khabarbabal.online", "dlsharefile.com" });
         // ret.add(new String[] { "khabarbabal.online", "dlupload.com" });
         return ret;
     }
@@ -183,8 +183,7 @@ public class DluploadCom extends PluginForHost {
         if (acc == null) {
             /* no account, yes we can expect captcha */
             return true;
-        }
-        if (acc.getType() == AccountType.FREE) {
+        } else if (acc.getType() == AccountType.FREE) {
             /* Free accounts can have captchas */
             return true;
         } else {
