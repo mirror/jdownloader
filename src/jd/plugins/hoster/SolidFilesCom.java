@@ -39,7 +39,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "https?://(?:www\\.)?solidfiles\\.com/(?:d|v)/([a-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "https?://(?:www\\.)?solidfiles\\.com/(?:d|v|e)/([a-z0-9]+)" })
 public class SolidFilesCom extends PluginForHost {
     public SolidFilesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -64,6 +64,15 @@ public class SolidFilesCom extends PluginForHost {
     // private final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 1;
     private final int            ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    public static final String   PROPERTY_DIRECT_DOWNLOAD     = "directDownload";
+    private static final String  TYPE_EMBED                   = "https?://[^/]+/e/([A-Za-z0-9]+)";
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
+            link.setPluginPatternMatcher("http://www." + this.getHost() + "/v/" + this.getFID(link));
+        }
+    }
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -87,7 +96,7 @@ public class SolidFilesCom extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        if (link.getBooleanProperty("directDownload", false)) {
+        if (link.getBooleanProperty(SolidFilesCom.PROPERTY_DIRECT_DOWNLOAD, false)) {
             return AvailableStatus.TRUE;
         }
         br.getPage(link.getPluginPatternMatcher());
@@ -136,7 +145,7 @@ public class SolidFilesCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is not available yet", 5 * 60 * 1000l);
             }
             String dllink;
-            if (link.getBooleanProperty("directDownload", false)) {
+            if (link.getBooleanProperty(SolidFilesCom.PROPERTY_DIRECT_DOWNLOAD, false)) {
                 // direct download...
                 dllink = link.getPluginPatternMatcher();
             } else {

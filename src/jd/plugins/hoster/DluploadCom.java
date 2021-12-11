@@ -29,6 +29,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -72,7 +73,7 @@ public class DluploadCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/file/([A-Za-z0-9]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:Download/)?file/([A-Za-z0-9]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -114,13 +115,15 @@ public class DluploadCom extends PluginForHost {
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("<h5></h5>") || br.containsHTML("")) {
-            /* 2021-05-12: They don't show any error for offline files, they just display the normal website as offline. */
         }
         String filename = br.getRegex("<title>\\s*DLUpload -(.*?)</title>").getMatch(0);
         String filesize = br.getRegex(">File Size\\s*</td>\\s*<td[^>]*>([^<>\"]+)</td>").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (StringUtils.isEmpty(filename) && br.containsHTML("(?i)<h4[^>]*>File Information</h4>")) {
+            /*
+             * 2021-05-12: They don't show any error for offline files, they just display the normal website for file downloads with empty
+             * fields.
+             */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (filename != null) {
             filename = Encoding.htmlDecode(filename).trim();
@@ -166,7 +169,13 @@ public class DluploadCom extends PluginForHost {
                 } catch (final IOException e) {
                     logger.log(e);
                 }
-                if (dl.getConnection().getResponseCode() == 403) {
+                if (br.getURL().contains("/user/login")) {
+                    /*
+                     * 2021-12-11: dlsharefile.com would redirect to dlupload.com/user/login and downloads seem to be impossible. Does not
+                     * work using a free account. Either premium needed or website broken.
+                     */
+                    throw new AccountRequiredException();
+                } else if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);

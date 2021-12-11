@@ -30,6 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.SolidFilesCom;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "https?://(?:www\\.)?solidfiles\\.com/(?:folder|v)/[a-z0-9]+/?" })
@@ -43,11 +44,11 @@ public class SolidFilesComFolder extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.openGetConnection(parameter);
-        if (!br.getHttpConnection().getContentType().contains("text/html") || br.getHttpConnection().getContentLength() > br.getLoadLimit()) {
+        if (this.looksLikeDownloadableContent(br.getHttpConnection())) {
             br.getHttpConnection().disconnect();
             // direct downloadable
             final DownloadLink dl = createDownloadlink(parameter);
-            dl.setProperty("directDownload", true);
+            dl.setProperty(SolidFilesCom.PROPERTY_DIRECT_DOWNLOAD, true);
             final String fileName = getFileNameFromDispositionHeader(br.getHttpConnection());
             if (fileName != null) {
                 dl.setFinalFileName(fileName);

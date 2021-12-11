@@ -64,20 +64,18 @@ import jd.plugins.components.PluginJSonUtils;
 public class FaceBookComVideos extends PluginForHost {
     private static final String TYPE_PHOTO                             = "(?i)https?://[^/]+/(?:photo\\.php|photo/)\\?fbid=(\\d+)";
     private static final String TYPE_PHOTO_PART_OF_ALBUM               = "(?i)https?://[^/]+/[^/]+/photos/a\\.\\d+/(\\d+)";
-    private static final String TYPE_VIDEO_WATCH                       = "(?i)https?://[^/]+/watch/\\?v=(\\d+)";
+    /* Allow parameter 'v' to be anywhere in that URL. */
+    private static final String TYPE_VIDEO_WATCH                       = "(?i)https?://[^/]+/watch/(?:live/)?\\?.*v=(\\d+)";
     private static final String TYPE_VIDEO_WITH_UPLOADER_NAME          = "(?i)https://[^/]+/([^/]+)/videos/(\\d+).*";
     // private static final String TYPE_SINGLE_VIDEO_ALL = "https?://(www\\.)?facebook\\.com/video\\.php\\?v=\\d+";
     private static final long   trust_cookie_age                       = 300000l;
     private int                 maxChunks                              = 0;
     private static final String PROPERTY_DATE_FORMATTED                = "date_formatted";
     private static final String PROPERTY_TITLE                         = "title";
-    private static final String PROPERTY_UPLOADER                      = "uploader";                                               // real
-                                                                                                                                   // uploader
-                                                                                                                                   // name
-    private static final String PROPERTY_UPLOADER_URL                  = "uploader_url";                                           // uploader
-                                                                                                                                   // name
-                                                                                                                                   // inside
-                                                                                                                                   // URL
+    /* Real uploader name */
+    private static final String PROPERTY_UPLOADER                      = "uploader";
+    /* Uploader name inside URL (slug, shortened variant of uploaders' name.) */
+    private static final String PROPERTY_UPLOADER_URL                  = "uploader_url";
     private static final String PROPERTY_DIRECTURL                     = "directurl";
     private static final String PROPERTY_IS_CHECKABLE_VIA_PLUGIN_EMBED = "is_checkable_via_plugin_embed";
     private static final String PROPERTY_ACCOUNT_REQUIRED              = "account_required";
@@ -110,8 +108,8 @@ public class FaceBookComVideos extends PluginForHost {
             regex += ".*?video\\.php\\?v=\\d+|";
             regex += "video/embed\\?video_id=\\d+|";
             regex += ".*?/videos/(?:[^/]+/)?\\d+|";
-            regex += "watch/\\?v=\\d+|";
-            regex += "watch/live/\\?v=\\d+";
+            regex += "watch/\\?.*v=\\d+|";
+            regex += "watch/live/\\?.*v=\\d+";
             /* Photo RegExes */
             regex += "photo\\.php\\?fbid=\\d+|";
             regex += "photo/\\?fbid=\\d+|";

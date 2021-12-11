@@ -1016,9 +1016,15 @@ public class PornHubCom extends PluginForHost {
                 }
                 final String redirect = (String) entries.get("redirect");
                 final String username = (String) entries.get("username");
+                final Boolean expiredPremiumUser = (Boolean) entries.get("expiredPremiumUser");
                 if (redirect != null && (redirect.startsWith("http") || redirect.startsWith("/"))) {
                     /* Required to get the (premium) cookies (multiple redirects). */
-                    final boolean premiumExpired = redirect.contains(PORNHUB_PREMIUM) && redirect.contains("expired");
+                    final boolean premiumExpired;
+                    if (expiredPremiumUser != null && expiredPremiumUser == Boolean.TRUE) {
+                        premiumExpired = true;
+                    } else {
+                        premiumExpired = redirect.contains(PORNHUB_PREMIUM) && redirect.contains("expired");
+                    }
                     getPage(br, redirect);
                     if (premiumExpired && !br.getURL().contains(PORNHUB_FREE)) {
                         /*

@@ -22,6 +22,7 @@ import org.appwork.utils.Regex;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -30,7 +31,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ebay.com" }, urls = { "https?://(?:www\\.)?ebay[\\.\\w]+/itm/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ebay.com" }, urls = { "https?://(?:www\\.)?ebay[\\.\\w]+/itm/(\\d+).*" })
 public class Ebay extends PluginForDecrypt {
     public Ebay(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,14 +40,13 @@ public class Ebay extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        br.getPage(param.getCryptedUrl());
         final String fpName = br.getRegex("<title>([^<]+)\\s+eBay</title>").getMatch(0);
-        final String itemID = new Regex(parameter, "/itm/([^/]+)").getMatch(0);
+        final String itemID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         String[] links = br.getRegex("\"maxImageUrl\":\"([^\"]+)\"").getColumn(0);
         for (String link : links) {
-            DownloadLink dl = createDownloadlink(Encoding.unicodeDecode(link));
+            final DownloadLink dl = createDownloadlink(Encoding.unicodeDecode(link));
             String filename = itemID + "_" + Hash.getMD5(link) + Plugin.getFileNameExtensionFromURL(link);
             dl.setFinalFileName(filename);
             decryptedLinks.add(dl);
@@ -54,7 +54,7 @@ public class Ebay extends PluginForDecrypt {
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.setProperty("ALLOW_MERGE", true);
+            fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
