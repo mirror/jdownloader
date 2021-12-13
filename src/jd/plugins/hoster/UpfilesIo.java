@@ -31,9 +31,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upfiles.io" }, urls = { "https?://(?:www\\.)?upfiles\\.io/([A-Za-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upfiles.io" }, urls = { "https?://(?:www\\.)?upfiles\\.(?:io|com)/([A-Za-z0-9]+)" })
 public class UpfilesIo extends PluginForHost {
-    public UpfilesIo(PluginWrapper wrapper) {
+    public UpfilesIo(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -118,6 +118,7 @@ public class UpfilesIo extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("upfiles.com", "upfiles.io"));
         br.getPage(link.getPluginPatternMatcher());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
