@@ -72,8 +72,6 @@ public class MightyScriptAdLinkFlyDefault extends MightyScriptAdLinkFly {
             "adlinkcash.com",
             /** 2019-12-04: shortmony.com domains */
             "shortmony.com", "shortmony.me", "gamez-ar.com",
-            /** samaa-pro.com domains */
-            "samaa-pro.com",
             /** 2019-11-06: skip4all.com */
             "skip4all.com",
             /** 2019-10-30: glory-link.com domains */
@@ -135,7 +133,9 @@ public class MightyScriptAdLinkFlyDefault extends MightyScriptAdLinkFly {
             /** adshort.co domains */
             "adshort.co", "adsrt.com", "adsrt.me", "adshort.me", "adshort.im",
             /** hitfile short links */
-            "hil.to", "hitf.to", "hitf.cc", "hif.to" };
+            "hil.to", "hitf.to", "hitf.cc", "hif.to",
+            /** linkawynet.xyz links */
+            "linkawynet.xyz" };
     /** List of services for which waittime is skippable. */
     private static final List<String> domains_waittime_skippable = Arrays.asList(new String[] {});
     // /** List of services for which captcha is skippable or not required. */
