@@ -249,6 +249,10 @@ public class BCSSLSocketStreamFactory implements SSLSocketStreamFactory {
             }
         }
 
+        // @Override
+        // public boolean shouldUseExtendedMasterSecret() {
+        // return false;
+        // }
         @Override
         public Hashtable getClientExtensions() throws IOException {
             final Hashtable clientExtensions = super.getClientExtensions();

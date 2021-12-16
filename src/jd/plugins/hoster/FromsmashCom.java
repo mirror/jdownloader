@@ -20,10 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.requests.PutRequest;
@@ -35,6 +31,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.FromsmashComFolder;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FromsmashCom extends PluginForHost {
@@ -103,6 +103,10 @@ public class FromsmashCom extends PluginForHost {
         }
     }
 
+    private String getRegion(final DownloadLink link) {
+        return link.getStringProperty("region", "transfer.eu-central-1.fromsmash.co");
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
@@ -126,7 +130,8 @@ public class FromsmashCom extends PluginForHost {
             FromsmashComFolder.setPasswordHeader(brc, link.getStringProperty(PROPERTY_STATIC_DOWNLOAD_PASSWORD));
         }
         FromsmashComFolder.prepBR(brc);
-        final PutRequest put = new PutRequest("https://transfer.eu-central-1.fromsmash.co/transfer/" + getFolderID(link) + "/urls?version=07-2020");
+        final String region = getRegion(link);
+        final PutRequest put = new PutRequest("https://" + region + "/transfer/" + getFolderID(link) + "/urls?version=07-2020");
         final String reqData = "{\"files\":[{\"id\":\"" + getFileID(link) + "\"}]}";
         put.setPostBytes(reqData.getBytes());
         brc.getPage(put);

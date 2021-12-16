@@ -5,15 +5,16 @@ import javax.swing.SwingConstants;
 
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginProgress;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.appwork.utils.ModifyLock;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.DownloadPluginProgress;
 
 public class DurationColumn extends ExtTextColumn<AbstractNode> {
-
     public DurationColumn() {
         super(_GUI.T.DurationColumn_DurationColumn_object_());
         rendererField.setHorizontalAlignment(SwingConstants.CENTER);
@@ -54,8 +55,18 @@ public class DurationColumn extends ExtTextColumn<AbstractNode> {
             if (time > 0) {
                 return TimeFormatter.formatMilliSeconds(time, 0);
             }
+        } else if (value instanceof FilePackage) {
+            final FilePackage fp = (FilePackage) value;
+            final ModifyLock lock = fp.getModifyLock();
+            final boolean readL = lock.readLock();
+            try {
+                if (fp.size() == 1) {
+                    return getStringValue(fp.getChildren().get(0));
+                }
+            } finally {
+                lock.readUnlock(readL);
+            }
         }
         return null;
     }
-
 }

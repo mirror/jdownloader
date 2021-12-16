@@ -16,23 +16,13 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -48,6 +38,18 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.FromsmashCom;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FromsmashComFolder extends PluginForDecrypt {
@@ -114,6 +116,23 @@ public class FromsmashComFolder extends PluginForDecrypt {
         }
     }
 
+    private String[] getDetails(CryptedLink param, Browser br) throws Exception {
+        final String folderName = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        final Browser brc = br.cloneBrowser();
+        brc.getHeaders().put("Accept", "application/json, text/plain, */*");
+        brc.getPage("https://link.fromsmash.co/target/fromsmash.com%2F" + URLEncode.encodeURIComponent(folderName) + "?version=10-2019");
+        Map<String, Object> json = JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
+        final String target = (String) JavaScriptEngineFactory.walkJson(json, "target/target");
+        if (target == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String url = (String) JavaScriptEngineFactory.walkJson(json, "target/url");
+        if (url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return new String[] { target, url };
+    }
+
     public static Browser prepBR(final Browser br) {
         br.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://fromsmash.com"));
         br.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://fromsmash.com"));
@@ -130,14 +149,16 @@ public class FromsmashComFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         br.getHeaders().put("Authorization", "Bearer " + getToken(this, this.br));
+        final String details[] = getDetails(param, br);
+        final String folderID = details[0];
+        final String region = new URL(details[1]).getHost();
         prepBR(br);
         String passCode = null;
         int passwordAttempt = 0;
         do {
             passwordAttempt += 1;
-            br.getPage("https://transfer.eu-central-1.fromsmash.co/transfer/" + folderID + "/preview?version=07-2020");
+            br.getPage("https://" + region + "/transfer/" + folderID + "/preview?version=07-2020");
             if (br.getHttpConnection().getResponseCode() == 404) {
                 /*
                  * E.g. {"code":404,"error":"Transfer <folderID> not found","requestId":"<someHash>","details":{"name":"Transfer","primary":
@@ -190,6 +211,7 @@ public class FromsmashComFolder extends PluginForDecrypt {
                 link.setProperty(FromsmashCom.PROPERTY_DIRECTURL, file.get("download").toString());
                 link.setProperty("fileid", fileid);
                 link.setProperty("folderid", folderID);
+                link.setProperty("region", region);
                 if (passCode != null) {
                     link.setDownloadPassword(passCode);
                     /*
