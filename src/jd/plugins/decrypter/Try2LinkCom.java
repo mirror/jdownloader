@@ -38,7 +38,8 @@ public class Try2LinkCom extends MightyScriptAdLinkFly {
         /* Pre-set Referer to skip multiple ad pages e.g. try2link.com -> forex-gold.net -> try2link.com */
         getPage(param.getCryptedUrl());
         String location = br.getRequest().getLocation();
-        String timestampBase64 = new Regex(location, "d=(.*)").getMatch(0);
+        location = Encoding.Base64Decode(new Regex(location, "k=([^&]+)").getMatch(0));
+        String timestampBase64 = new Regex(location, "d=([^&]+)").getMatch(0);
         String timestamp = Encoding.Base64Decode(timestampBase64);
         br.setFollowRedirects(true);
         getPage(param.getCryptedUrl() + "/?d=" + timestamp);
