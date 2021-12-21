@@ -19,11 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -32,6 +27,11 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DownloadSaikoanimesNetFolder extends PluginForDecrypt {
@@ -63,7 +63,7 @@ public class DownloadSaikoanimesNetFolder extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/drive/s/([A-Za-z0-9]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/drive/s/([A-Za-z0-9:]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -106,17 +106,32 @@ public class DownloadSaikoanimesNetFolder extends PluginForDecrypt {
             ressourcelist.add(fileFolderInfo);
         }
         for (final Map<String, Object> file : ressourcelist) {
-            final String filename = (String) file.get("name");
-            // final String url = (String) entries.get("url");
+            final String type = (String) file.get("type");
             final String hash = (String) file.get("hash");
-            final long filesize = ((Number) file.get("file_size")).longValue();
-            final DownloadLink dl = this.createDownloadlink("directhttp://https://" + this.getHost() + "/secure/uploads/download?hashes=" + hash + "&shareable_link=" + linkID);
-            dl.setFinalFileName(filename);
-            dl.setVerifiedFileSize(filesize);
-            dl.setAvailable(true);
-            dl._setFilePackage(fp);
-            distribute(dl);
-            decryptedLinks.add(dl);
+            if (StringUtils.equalsIgnoreCase("folder", type)) {
+                String folderURL = param.getCryptedUrl();
+                final String nextFolderID;
+                if (folderID.contains(":")) {
+                    nextFolderID = folderID.replaceAll("(:.+)", "hash");
+                } else {
+                    nextFolderID = folderID + ":" + hash;
+                }
+                folderURL = folderURL.replace(folderID, nextFolderID);
+                final DownloadLink dl = this.createDownloadlink(folderURL);
+                distribute(dl);
+                decryptedLinks.add(dl);
+            } else {
+                final String filename = (String) file.get("name");
+                // final String url = (String) entries.get("url");
+                final long filesize = ((Number) file.get("file_size")).longValue();
+                final DownloadLink dl = this.createDownloadlink("directhttp://https://" + this.getHost() + "/secure/uploads/download?hashes=" + hash + "&shareable_link=" + linkID);
+                dl.setFinalFileName(filename);
+                dl.setVerifiedFileSize(filesize);
+                dl.setAvailable(true);
+                dl._setFilePackage(fp);
+                distribute(dl);
+                decryptedLinks.add(dl);
+            }
         }
         return decryptedLinks;
     }

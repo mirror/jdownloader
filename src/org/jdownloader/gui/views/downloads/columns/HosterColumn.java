@@ -177,11 +177,11 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
     public boolean isEnabled(AbstractNode obj) {
         if (COLORED_ICONS) {
             return true;
-        }
-        if (obj instanceof CrawledPackage) {
+        } else if (obj instanceof CrawledPackage) {
             return ((CrawledPackage) obj).getView().isEnabled();
+        } else {
+            return obj.isEnabled();
         }
-        return obj.isEnabled();
     }
 
     @Override
