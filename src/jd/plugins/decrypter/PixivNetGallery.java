@@ -292,7 +292,8 @@ public class PixivNetGallery extends PluginForDecrypt {
                         }
                     }
                 }
-                final Map<String, Object> illusts = (Map<String, Object>) body.get("illusts");
+                final Object illustsObject = body.get("illusts");
+                final Map<String, Object> illusts = illustsObject instanceof Map ? (Map<String, Object>) illustsObject : null;
                 if (illusts != null && !isManga) {
                     for (Map.Entry<String, Object> entry : illusts.entrySet()) {
                         final String galleryID = entry.getKey();
@@ -309,7 +310,8 @@ public class PixivNetGallery extends PluginForDecrypt {
                         }
                     }
                 }
-                final Map<String, Object> manga = (Map<String, Object>) body.get("manga");
+                final Object mangaObject = body.get("manga");
+                final Map<String, Object> manga = mangaObject instanceof Map ? (Map<String, Object>) mangaObject : null;
                 if (manga != null) {
                     for (Map.Entry<String, Object> entry : manga.entrySet()) {
                         final String galleryID = entry.getKey();

@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.lang.reflect.Method;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -44,6 +45,8 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.FunctionObject;
 
 /**
  *
@@ -208,22 +211,38 @@ public class HitomiLa extends antiDDoSForDecrypt {
 
     private ScriptEngine engine = null;
 
+    public static String jsStringPad(String string) {
+        final String ret = StringUtils.fillPre(string, "0", 3);
+        return ret;
+    }
+
     private String subdomain_from_url(String url, String base) throws Exception {
         if (true) {
             if (engine == null) {
                 Browser brc = br.cloneBrowser();
                 brc.setFollowRedirects(true);
                 brc.getPage("https://ltn.hitomi.la/common.js");
-                final String js = brc.getRegex("(function.*?)function\\s*show_loading").getMatch(0);
+                String js = brc.getRegex("(var gg.*?)function\\s*show_loading").getMatch(0);
+                if (js == null) {
+                    js = brc.getRegex("(function subdom.*?)function\\s*show_loading").getMatch(0);
+                }
+                // String.padStart not available in old Rhino version
+                js = js.replace("g.toString(16).padStart(3, '0')", "jsStringPad(g.toString(16))");
                 if (StringUtils.isEmpty(js)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
                 engine = manager.getEngineByName("javascript");
+                final Context jsContext = Context.enter();
                 try {
+                    final Method jsStringPad = HitomiLa.class.getMethod("jsStringPad", new Class[] { String.class });
+                    engine.put("jsStringPad", new FunctionObject("jsStringPad", jsStringPad, jsContext.initStandardObjects()));
                     engine.eval(js);
                 } catch (final Exception e) {
+                    e.printStackTrace();
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
+                } finally {
+                    Context.exit();
                 }
             }
             try {
@@ -235,6 +254,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
                 final String result = engine.get("result").toString();
                 return result;
             } catch (final Exception e) {
+                e.printStackTrace();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
             }
         } else {

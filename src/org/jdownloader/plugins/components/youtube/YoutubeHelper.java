@@ -1755,6 +1755,9 @@ public class YoutubeHelper {
     }
 
     public Request getPage(Browser br, Request request) throws Exception {
+        if (this.br != br) {
+            this.br = br;
+        }
         br.getPage(request);
         if (handleConsent(br)) {
             br.getPage(request.cloneRequest());
