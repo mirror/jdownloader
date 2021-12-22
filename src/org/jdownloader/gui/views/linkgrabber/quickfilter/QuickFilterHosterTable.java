@@ -11,7 +11,6 @@ import javax.swing.Icon;
 
 import jd.controlling.faviconcontroller.FavIcons;
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.http.Browser;
 
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.IconKey;
@@ -91,10 +90,10 @@ public class QuickFilterHosterTable extends FilterTable {
     private String getID(CrawledLink link) {
         final DomainInfo info = link.getDomainInfo();
         if (link.isDirectHTTP()) {
-            final String linkHOST = Browser.getHost(link.getURL());
+            final String linkHOST = info.getTld();// Browser.getHost(link.getURL());
             return linkHOST != null ? "http_".concat(linkHOST) : "http_unknown";
         } else if (link.isFTP()) {
-            final String linkHOST = Browser.getHost(link.getURL());
+            final String linkHOST = info.getTld();// Browser.getHost(link.getURL());
             return linkHOST != null ? "ftp_".concat(linkHOST) : "ftp_unknown";
         } else {
             return info.getTld();
@@ -107,7 +106,7 @@ public class QuickFilterHosterTable extends FilterTable {
         final String HOST;
         final Icon favIcon;
         if (link.isDirectHTTP()) {
-            HOST = Browser.getHost(link.getURL());
+            HOST = info.getTld();// Browser.getHost(link.getURL());
             if (HOST == null) {
                 ID = "http_unknown";
                 favIcon = NewTheme.I().getIcon(IconKey.ICON_BROWSE, 16);
@@ -116,7 +115,7 @@ public class QuickFilterHosterTable extends FilterTable {
                 favIcon = info.getFavIcon();
             }
         } else if (link.isFTP()) {
-            HOST = Browser.getHost(link.getURL());
+            HOST = info.getTld();// Browser.getHost(link.getURL());
             if (HOST == null) {
                 ID = "ftp_unknown";
                 favIcon = NewTheme.I().getIcon(IconKey.ICON_BROWSE, 16);

@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.controlling.downloadcontroller;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -654,7 +655,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             ZipInputStream zis = null;
             try {
                 fis = new FileInputStream(file);
-                zis = new ZipInputStream(fis);
+                zis = new ZipInputStream(new BufferedInputStream(fis, 1 * 1024 * 1024));
                 /* lets restore the FilePackages from Json */
                 final HashMap<Integer, LoadedPackage> packageMap = new HashMap<Integer, LoadedPackage>();
                 DownloadControllerStorable dcs = null;
@@ -666,7 +667,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 };
                 ZipEntry entry = null;
                 final ZipInputStream finalZis = zis;
-                final InputStream entryInputStream = new InputStream() {
+                final InputStream entryInputStream = new BufferedInputStream(new InputStream() {
                     @Override
                     public int read() throws IOException {
                         return finalZis.read();
@@ -698,6 +699,10 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
                     @Override
                     public synchronized void mark(int readlimit) {
+                    }
+                }, 1024) {
+                    @Override
+                    public void close() throws IOException {
                     }
                 };
                 int entries = 0;
