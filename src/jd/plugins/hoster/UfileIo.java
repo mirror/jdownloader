@@ -15,12 +15,16 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Locale;
+import java.util.WeakHashMap;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -73,15 +77,91 @@ public class UfileIo extends antiDDoSForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = -5;
-    private static final int     FREE_MAXDOWNLOADS            = 20;
-    private static final boolean ACCOUNT_FREE_RESUME          = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = -5;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final boolean           FREE_RESUME                  = true;
+    private static final int               FREE_MAXCHUNKS               = -5;
+    private static final int               FREE_MAXDOWNLOADS            = 20;
+    private static final boolean           ACCOUNT_FREE_RESUME          = true;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS       = -5;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    protected WeakHashMap<Request, String> correctedBrowserRequestMap   = new WeakHashMap<Request, String>();
+
+    /** Traits used to cleanup html of our basic browser object and put it into correctedBR. */
+    public ArrayList<String> getCleanupHTMLRegexes() {
+        final ArrayList<String> regexStuff = new ArrayList<String>();
+        // remove custom rules first!!! As html can change because of generic cleanup rules.
+        /* generic cleanup */
+        regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
+        regexStuff.add("(display: ?none;\">.*?</div>)");
+        regexStuff.add("(visibility:hidden>.*?<)");
+        return regexStuff;
+    }
+
+    protected String replaceCorrectBR(Browser br, String pattern, String target) {
+        /* Do not e.g. remove captcha forms from html! */
+        if (StringUtils.containsIgnoreCase(pattern, "none") && (containsHCaptcha(target) || containsRecaptchaV2Class(target))) {
+            return null;
+        } else {
+            return "";
+        }
+    }
+
+    @Override
+    public void clean() {
+        try {
+            super.clean();
+        } finally {
+            synchronized (correctedBrowserRequestMap) {
+                correctedBrowserRequestMap.clear();
+            }
+        }
+    }
+
+    /** Removes HTML code which could break the plugin and puts it into correctedBR. */
+    protected String correctBR(final Browser br) {
+        synchronized (correctedBrowserRequestMap) {
+            final Request request = br.getRequest();
+            String correctedBR = correctedBrowserRequestMap.get(request);
+            if (correctedBR == null) {
+                correctedBR = br.toString();
+                final ArrayList<String> regexStuff = getCleanupHTMLRegexes();
+                // remove custom rules first!!! As html can change because of generic cleanup rules.
+                /* generic cleanup */
+                boolean modified = false;
+                for (final String aRegex : regexStuff) {
+                    final String results[] = new Regex(correctedBR, aRegex).getColumn(0);
+                    if (results != null) {
+                        for (final String result : results) {
+                            final String replace = replaceCorrectBR(br, aRegex, result);
+                            if (replace != null) {
+                                correctedBR = correctedBR.replace(result, replace);
+                                modified = true;
+                            }
+                        }
+                    }
+                }
+                if (modified && request != null && request.isRequested()) {
+                    correctedBrowserRequestMap.put(request, correctedBR);
+                } else {
+                    correctedBrowserRequestMap.remove(request);
+                }
+            }
+            return correctedBR;
+        }
+    }
+
+    protected String getCorrectBR(Browser br) {
+        synchronized (correctedBrowserRequestMap) {
+            final String ret = correctedBrowserRequestMap.get(br.getRequest());
+            if (ret != null) {
+                return ret;
+            } else {
+                return br.toString();
+            }
+        }
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -146,13 +226,19 @@ public class UfileIo extends antiDDoSForHost {
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (IOException ignore) {
+                logger.log(ignore);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
@@ -166,7 +252,7 @@ public class UfileIo extends antiDDoSForHost {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(dllink));
-                if (!con.isOK() || con.getContentType().contains("text") || con.getLongContentLength() == -1) {
+                if (!looksLikeDownloadableContent(con)) {
                     downloadLink.setProperty(property, Property.NULL);
                 } else {
                     return dllink;
@@ -242,7 +328,9 @@ public class UfileIo extends antiDDoSForHost {
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -260,6 +348,7 @@ public class UfileIo extends antiDDoSForHost {
             this.getPage("/dashboard");
         }
         ai.setUnlimitedTraffic();
+        br.getRequest().setHtmlCode(correctBR(br));
         if (br.containsHTML("class=\"label\">Free Account|>\\s*As a free user, you have \\d+")) {
             account.setType(AccountType.FREE);
             /* free accounts can still have captcha */

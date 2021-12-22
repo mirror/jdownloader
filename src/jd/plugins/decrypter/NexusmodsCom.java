@@ -19,10 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -40,6 +36,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com/(?!contents)([^/]+)/mods/(\\d+)/?" })
 public class NexusmodsCom extends PluginForDecrypt {
@@ -202,9 +203,9 @@ public class NexusmodsCom extends PluginForDecrypt {
                 final String filename = new Regex(html, "data-url=\"([^<>\"]+)\"").getMatch(0);
                 final DownloadLink link = createDownloadlink(generatePluginPatternMatcher(file_id, game_id));
                 link.setContentUrl(generateContentURL(game_domain_name, mod_id, file_id));
-                final String filesizeStr = new Regex(html, "data-size=\"(\\d+)\"").getMatch(0);
+                final String filesizeStr = new Regex(html, ">\\s*File\\s*size\\s*</div>.*?\"stat\"\\s*>\\s*([0-9\\.TKGMB]+)").getMatch(0);
                 if (filesizeStr != null) {
-                    link.setDownloadSize(Long.parseLong(filesizeStr));
+                    link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
                 }
                 if (filename != null) {
                     link.setName(file_id + "_" + Encoding.htmlOnlyDecode(filename));

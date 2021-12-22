@@ -19,10 +19,10 @@ public class DownloadLinkStorable implements Storable {
     private static final byte[]                       KEY      = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
     private static final String                       CRYPTED  = "CRYPTED:";
     public static final TypeRef<DownloadLinkStorable> TYPE_REF = new TypeRef<DownloadLinkStorable>() {
-                                                                   public java.lang.reflect.Type getType() {
-                                                                       return DownloadLinkStorable.class;
-                                                                   };
-                                                               };
+        public java.lang.reflect.Type getType() {
+            return DownloadLinkStorable.class;
+        };
+    };
     private DownloadLink                              link;
 
     public AvailableStatus getAvailablestatus() {
@@ -68,20 +68,19 @@ public class DownloadLinkStorable implements Storable {
     public Map<String, Object> getProperties() {
         if (crypt()) {
             return null;
+        } else {
+            final Map<String, Object> ret = link.getProperties();
+            if (ret == null || ret.isEmpty()) {
+                return null;
+            } else {
+                return ret;
+            }
         }
-        final Map<String, Object> ret = link.getProperties();
-        if (ret == null || ret.isEmpty()) {
-            return null;
-        }
-        return ret;
     }
 
     public void setProperties(Map<String, Object> props) {
         if (props == null || props.isEmpty()) {
             return;
-        }
-        if (props instanceof HashMap) {
-            link.setPropertiesUnsafe((HashMap<String, Object>) props);
         } else {
             this.link.setProperties(props);
         }
@@ -192,11 +191,17 @@ public class DownloadLinkStorable implements Storable {
     }
 
     public long[] getChunkProgress() {
-        return link.getChunksProgress();
+        if (FinalLinkState.CheckFinished(link.getFinalLinkState())) {
+            return null;
+        } else {
+            return link.getChunksProgress();
+        }
     }
 
     public void setChunkProgress(long[] p) {
-        link.setChunksProgress(p);
+        if (!FinalLinkState.CheckFinished(link.getFinalLinkState())) {
+            link.setChunksProgress(p);
+        }
     }
 
     public String getUrlProtection() {
@@ -235,10 +240,10 @@ public class DownloadLinkStorable implements Storable {
     public DownloadLink _getDownloadLink() {
         final DownloadLink lLink = link;
         if (lLink != null) {
-            lLink.setContainerUrl(DownloadLink.dedupeString(LinkCrawler.cleanURL(lLink.getContainerUrl())));
-            lLink.setReferrerUrl(DownloadLink.dedupeString(LinkCrawler.cleanURL(lLink.getReferrerUrl())));
-            lLink.setOriginUrl(DownloadLink.dedupeString(LinkCrawler.cleanURL(lLink.getOriginUrl())));
-            lLink.setContentUrl(DownloadLink.dedupeString(LinkCrawler.cleanURL(lLink.getContentUrl())));
+            lLink.setContainerUrl(LinkCrawler.cleanURL(lLink.getContainerUrl()));
+            lLink.setReferrerUrl(LinkCrawler.cleanURL(lLink.getReferrerUrl()));
+            lLink.setOriginUrl(LinkCrawler.cleanURL(lLink.getOriginUrl()));
+            lLink.setContentUrl(LinkCrawler.cleanURL(lLink.getContentUrl()));
         }
         return lLink;
     }
@@ -261,11 +266,13 @@ public class DownloadLinkStorable implements Storable {
             final Map<String, Object> properties = link.getProperties();
             if (properties == null || properties.isEmpty()) {
                 return null;
+            } else {
+                final byte[] crypted = JDCrypt.encrypt(JSonStorage.serializeToJson(properties), KEY);
+                return CRYPTED + Base64.encodeToString(crypted, false);
             }
-            final byte[] crypted = JDCrypt.encrypt(JSonStorage.serializeToJson(properties), KEY);
-            return CRYPTED + Base64.encodeToString(crypted, false);
+        } else {
+            return null;
         }
-        return null;
     }
 
     /**
@@ -275,8 +282,7 @@ public class DownloadLinkStorable implements Storable {
     public void setPropertiesString(String propertiesString) {
         if (propertiesString != null && propertiesString.startsWith(CRYPTED)) {
             final byte[] bytes = Base64.decodeFast(propertiesString.substring(CRYPTED.length()));
-            final Map<String, Object> properties = JSonStorage.restoreFromString(JDCrypt.decrypt(bytes, KEY), new TypeRef<org.jdownloader.myjdownloader.client.json.JsonMap>() {
-            });
+            final HashMap<String, Object> properties = JSonStorage.restoreFromByteArray(JDCrypt.decrypt(bytes, KEY, KEY), TypeRef.HASHMAP);
             setProperties(properties);
         }
     }
