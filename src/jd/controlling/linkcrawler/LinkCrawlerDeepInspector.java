@@ -55,6 +55,8 @@ public abstract class LinkCrawlerDeepInspector {
                 }
             } else if (hasContentType && (!isTextContent(urlConnection) && contentType.matches("(?i)^binary/octet-stream"))) {
                 return true;
+            } else if (hasContentType && !isTextContent(urlConnection) && completeContentLength > 0) {
+                return true;
             } else if (!hasContentType && completeContentLength > 0 && hasStrongEtag) {
                 return true;
             } else if (!hasContentType && completeContentLength > 0 && allowsByteRanges) {

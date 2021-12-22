@@ -30,9 +30,6 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.crypt.Base64;
 import jd.crypt.JDCrypt;
@@ -52,6 +49,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDHexUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "veoh.com" }, urls = { "https?://(?:www\\.)?veohdecrypted\\.com/(browse/videos/category/.*?/)?watch/([A-Za-z0-9]+)" })
 public class VeohCom extends PluginForHost {
@@ -411,7 +411,8 @@ public class VeohCom extends PluginForHost {
                 String fHashToken = br.getRegex("fullHashPathToken=\"(.*?)\"").getMatch(0);
                 /* decrypt fHashToken */
                 try {
-                    fHashToken = JDCrypt.decrypt(JDHexUtils.getByteArray(JDHexUtils.getHexString(Base64.decode(fHashToken))), JDHexUtils.getByteArray(Encoding.Base64Decode("ODY5NGRmY2RkODY0Y2FhYWM4OTAyZDdlYmQwNGVkYWU=")), JDHexUtils.getByteArray(Encoding.Base64Decode("ZmY1N2NlYzMwYWVlYTg5YTBmNTBkYjQxNjRhMWRhNzI=")));
+                    final byte[] bytes = JDCrypt.decrypt(JDHexUtils.getByteArray(JDHexUtils.getHexString(Base64.decode(fHashToken))), JDHexUtils.getByteArray(Encoding.Base64Decode("ODY5NGRmY2RkODY0Y2FhYWM4OTAyZDdlYmQwNGVkYWU=")), JDHexUtils.getByteArray(Encoding.Base64Decode("ZmY1N2NlYzMwYWVlYTg5YTBmNTBkYjQxNjRhMWRhNzI=")));
+                    fHashToken = bytes != null ? new String(bytes, "UTF-8") : null;
                 } catch (final Throwable e) {
                 }
                 if (fHashPath == null || fHashToken == null) {

@@ -13,8 +13,9 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.crypt;
+
+import java.nio.charset.Charset;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -23,13 +24,14 @@ import javax.crypto.spec.SecretKeySpec;
 import org.jdownloader.logging.LogController;
 
 /**
- * JDCrypt class provides a few easy to use functions to encrypt or decrypt data. Use {@link jd.utils.JDHexUtils} to split Keys in Hex form to byte arrays. ALog
- * AES CBC Mode is used.
- * 
+ * JDCrypt class provides a few easy to use functions to encrypt or decrypt data. Use {@link jd.utils.JDHexUtils} to split Keys in Hex form
+ * to byte arrays. ALog AES CBC Mode is used.
+ *
  * @author unknown
- * 
+ *
  */
 public final class JDCrypt {
+    public static final Charset UTF_8 = Charset.forName("UTF-8");
 
     /**
      * Don't let anyone instantiate this class.
@@ -39,7 +41,7 @@ public final class JDCrypt {
 
     /**
      * Encrypts a String
-     * 
+     *
      * @param string
      *            data to encrypt
      * @param key
@@ -52,7 +54,7 @@ public final class JDCrypt {
 
     /**
      * Encrypts a string
-     * 
+     *
      * @param string
      *            String to encrypt
      * @param key
@@ -76,7 +78,7 @@ public final class JDCrypt {
 
     /**
      * Decrypt data which has been encrypted width {@link JDCrypt#encrypt(String, byte[], byte[])}
-     * 
+     *
      * @param b
      *            data to decrypt
      * @param key
@@ -85,20 +87,20 @@ public final class JDCrypt {
      *            to use (128Bit (16 Byte))
      * @return
      */
-    public static String decrypt(final byte[] b, final byte[] key, final byte[] iv) {
+    public static byte[] decrypt(final byte[] b, final byte[] key, final byte[] iv) {
         try {
             final IvParameterSpec ivSpec = new IvParameterSpec(iv);
             final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
             final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
-            return new String(cipher.doFinal(b), "UTF-8");
+            return cipher.doFinal(b);
         } catch (Exception e) {
             final IvParameterSpec ivSpec = new IvParameterSpec(iv);
             final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
             try {
                 final Cipher cipher = Cipher.getInstance("AES/CBC/nopadding");
                 cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
-                return new String(cipher.doFinal(b), "UTF-8");
+                return cipher.doFinal(b);
             } catch (Exception e1) {
                 LogController.CL().log(e);
             }
@@ -108,7 +110,7 @@ public final class JDCrypt {
 
     /**
      * Decrypts data which has been encrypted with {@link JDCrypt#encrypt(String, byte[])}
-     * 
+     *
      * @param b
      *            data to decrypt
      * @param key
@@ -116,7 +118,11 @@ public final class JDCrypt {
      * @return
      */
     public static String decrypt(final byte[] b, final byte[] key) {
-        return decrypt(b, key, key);
+        final byte[] ret = decrypt(b, key, key);
+        if (ret != null) {
+            return new String(ret, UTF_8);
+        } else {
+            return null;
+        }
     }
-
 }

@@ -19,9 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,6 +28,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wikifeet.com" }, urls = { "https?://(?!pics\\.)(?:\\w+\\.)?wikifeetx?\\.com/(?!celebs|feetoftheyear)[^/]+" })
 public class WikifeetCom extends PluginForDecrypt {
@@ -70,7 +70,7 @@ public class WikifeetCom extends PluginForDecrypt {
                     dl.setName(cfName + "_" + pid);
                     dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
                     dl.setAvailable(true);
-                    dl.setProperty("fid", cfName + pid);
+                    // dl.setProperty("fid", cfName + pid);
                     decryptedLinks.add(dl);
                 }
             }
