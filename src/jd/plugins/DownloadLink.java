@@ -30,6 +30,19 @@ import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
+import jd.config.Property;
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.HistoryEntry;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.packagecontroller.AbstractNodeNotifier;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.plugins.DownloadLinkDatabindingInterface.Key;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.HashInfo;
+import jd.plugins.download.HashInfo.TYPE;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -58,19 +71,6 @@ import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
-import jd.config.Property;
-import jd.controlling.downloadcontroller.DownloadLinkCandidate;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.HistoryEntry;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.packagecontroller.AbstractNodeNotifier;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.plugins.DownloadLinkDatabindingInterface.Key;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.HashInfo;
-import jd.plugins.download.HashInfo.TYPE;
-
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten. Die Informationen werden dann in einer Tabelle
  * dargestellt
@@ -83,7 +83,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         FALSE(_GUI.T.linkgrabber_onlinestatus_offline()),
         UNCHECKABLE(_GUI.T.linkgrabber_onlinestatus_uncheckable()),
         TRUE(_GUI.T.linkgrabber_onlinestatus_online());
-
         private final String exp;
 
         private AvailableStatus(String exp) {
@@ -1251,6 +1250,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (old != finalLinkState) {
             if (FinalLinkState.CheckFinished(finalLinkState)) {
                 setResumeable(false);
+                setChunksProgress(null);
             }
             if (finalLinkState == null || !FinalLinkState.CheckFinished(finalLinkState)) {
                 setFinishedDate(-1);
@@ -1273,6 +1273,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     protected void setFinalLinkStateUnsafe(final FinalLinkState finalLinkState) {
+        if (FinalLinkState.CheckFinished(finalLinkState)) {
+            setChunksProgress(null);
+        }
         this.finalLinkState = finalLinkState;
     }
 
@@ -1363,7 +1366,11 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     protected void setNameUnsafe(String name) {
-        this.name = name;
+        if (name == null) {
+            this.name = name;
+        } else {
+            this.name = dedupeValueString(DownloadLinkProperty.Property.NAME.name(), name);
+        }
     }
 
     public void forceForcedFileName(String newForced) {
@@ -1572,9 +1579,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Returns whether or not a download password is required to download this item. 7 </br>
-     * In most of all cases, this cannot be known until downloads are started but in some instances this can be set e.g. during folder
-     * crawling already.
+     * Returns whether or not a download password is required to download this item. 7 </br> In most of all cases, this cannot be known
+     * until downloads are started but in some instances this can be set e.g. during folder crawling already.
      */
     public boolean isPasswordProtected() {
         return this.getBooleanProperty(PROPERTY_PASSWORD_PROTECTED, false);
@@ -1776,6 +1782,37 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             removeProperty(PROPERTY_MIME_HINT);
         } else {
             setProperty(PROPERTY_MIME_HINT, extensionFilter.name());
+        }
+    }
+
+    @Override
+    protected String dedupeValueString(String key, String value) {
+        if ("fixName".equals(key) || PROPERTY_FORCEDFILENAME.equals(key) || PROPERTY_FINALFILENAME.equals(key) || DownloadLinkProperty.Property.NAME.name().equals(key)) {
+            String name = this.name;
+            if (name != null && name.equals(value)) {
+                return name;
+            }
+            name = getStringProperty(PROPERTY_FINALFILENAME, null);
+            if (name != null && name.equals(value)) {
+                return name;
+            }
+            name = getStringProperty(PROPERTY_FORCEDFILENAME, null);
+            if (name != null && name.equals(value)) {
+                return name;
+            }
+            name = getStringProperty("fixName", null);
+            if (name != null && name.equals(value)) {
+                return name;
+            }
+            return value;
+        } else if (PROPERTY_HASHINFO.equals(key) || PROPERTY_SHA1.equals(key) || PROPERTY_SHA256.equals(key) || PROPERTY_MD5.equals(key)) {
+            return value;
+        } else if (PROPERTY_COMMENT.equals(key)) {
+            return value;
+        } else if ("fid".equals(key) || PROPERTY_LINKDUPEID.equals(key) || "ORG_LINKID".equals(key)) {
+            return value;
+        } else {
+            return super.dedupeValueString(key, value);
         }
     }
 

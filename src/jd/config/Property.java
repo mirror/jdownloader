@@ -21,7 +21,6 @@ import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.WeakHashMap;
@@ -57,13 +56,99 @@ public class Property implements Serializable {
         }
     }
 
-    private static final long       serialVersionUID = -6093927038856757256L;
+    private static final long       serialVersionUID  = -6093927038856757256L;
     /**
      * Nullvalue used to remove a key completly.
      */
-    public static final Object      NULL             = new Object();
+    public static final Object      NULL              = new Object();
     /* do not remove to keep stable compatibility */
-    private HashMap<String, Object> properties       = null;
+    private HashMap<String, Object> properties        = null;
+    private static final Object     NEWIMPLEMENTATION = new Object();
+    private Object[]                propertiesList    = null;
+
+    private boolean putObject(String key, Object value) {
+        synchronized (NEWIMPLEMENTATION) {
+            if (propertiesList == null) {
+                propertiesList = new Object[2];
+            }
+            Object[] propertiesList = this.propertiesList;
+            if (key != null) {
+                final int length = propertiesList.length;
+                int index = getObjectIndex(key);
+                if (index != -1) {
+                    if (value == null || value == NULL) {
+                        propertiesList[index] = null;
+                        propertiesList[index + 1] = null;
+                        return true;
+                    } else {
+                        final Object old = propertiesList[index + 1];
+                        if (value instanceof String) {
+                            propertiesList[index + 1] = dedupeValueString(key, (String) value);
+                        } else {
+                            propertiesList[index + 1] = value;
+                        }
+                        if (old == null && value != null) {
+                            return true;
+                        } else {
+                            return !old.equals(value);
+                        }
+                    }
+                }
+                for (index = 0; index < length; index += 2) {
+                    if (propertiesList[index] == null) {
+                        propertiesList[index] = dedupeKeyString(key);
+                        if (value instanceof String) {
+                            propertiesList[index + 1] = dedupeValueString(key, (String) value);
+                        } else {
+                            propertiesList[index + 1] = value;
+                        }
+                        return true;
+                    }
+                }
+                Object[] tmpPropertiesList = new Object[length + 2];
+                System.arraycopy(propertiesList, 0, tmpPropertiesList, 0, length);
+                tmpPropertiesList[length] = dedupeKeyString(key);
+                if (value instanceof String) {
+                    tmpPropertiesList[length + 1] = dedupeValueString(key, (String) value);
+                } else {
+                    tmpPropertiesList[length + 1] = value;
+                }
+                this.propertiesList = tmpPropertiesList;
+                return true;
+            }
+            return false;
+        }
+    }
+
+    private Object getObject(String key) {
+        synchronized (NEWIMPLEMENTATION) {
+            final Object[] propertiesList = this.propertiesList;
+            if (propertiesList != null && key != null) {
+                final int length = propertiesList.length;
+                for (int index = 0; index < length; index += 2) {
+                    if (key.equals(propertiesList[index])) {
+                        return propertiesList[index + 1];
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private int getObjectIndex(String key) {
+        synchronized (NEWIMPLEMENTATION) {
+            final Object[] propertiesList = this.propertiesList;
+            if (propertiesList != null && key != null) {
+                final int length = propertiesList.length;
+                for (int index = 0; index < length; index += 2) {
+                    if (key.equals(propertiesList[index])) {
+                        return index;
+                    }
+                }
+            }
+        }
+        return -1;
+    }
 
     public Property() {
     }
@@ -171,12 +256,28 @@ public class Property implements Serializable {
      * @return
      */
     public Map<String, Object> getProperties() {
-        final HashMap<String, Object> lInternal = properties;
-        if (lInternal == null || lInternal.size() == 0) {
-            return new HashMap<String, Object>();
+        if (NEWIMPLEMENTATION != null) {
+            synchronized (NEWIMPLEMENTATION) {
+                final Object[] propertiesList = this.propertiesList;
+                final HashMap<String, Object> ret = new HashMap<String, Object>();
+                if (propertiesList != null) {
+                    final int length = propertiesList.length;
+                    for (int index = 0; index < length; index += 2) {
+                        if (propertiesList[index] != null) {
+                            ret.put((String) propertiesList[index], propertiesList[index + 1]);
+                        }
+                    }
+                }
+                return ret;
+            }
         } else {
-            synchronized (lInternal) {
-                return new HashMap<String, Object>(lInternal);
+            final HashMap<String, Object> lInternal = properties;
+            if (lInternal == null || lInternal.size() == 0) {
+                return new HashMap<String, Object>();
+            } else {
+                synchronized (lInternal) {
+                    return new HashMap<String, Object>(lInternal);
+                }
             }
         }
     }
@@ -190,13 +291,18 @@ public class Property implements Serializable {
     public Object getProperty(final String key) {
         if (key == null) {
             throw new WTFException("key ==null is forbidden!");
-        }
-        final HashMap<String, Object> lInternal = properties;
-        if (lInternal == null || lInternal.size() == 0) {
-            return null;
         } else {
-            synchronized (lInternal) {
-                return lInternal.get(key);
+            if (NEWIMPLEMENTATION != null) {
+                return getObject(key);
+            } else {
+                final HashMap<String, Object> lInternal = properties;
+                if (lInternal == null || lInternal.size() == 0) {
+                    return null;
+                } else {
+                    synchronized (lInternal) {
+                        return lInternal.get(key);
+                    }
+                }
             }
         }
     }
@@ -244,67 +350,75 @@ public class Property implements Serializable {
         if (key == null) {
             throw new WTFException("key ==null is forbidden!");
         } else {
-            final HashMap<String, Object> lInternal = properties;
-            if (lInternal == null || lInternal.size() == 0) {
-                return false;
+            if (NEWIMPLEMENTATION != null) {
+                return getObjectIndex(key) != -1;
             } else {
-                synchronized (lInternal) {
-                    return lInternal.containsKey(key);
+                final HashMap<String, Object> lInternal = properties;
+                if (lInternal == null || lInternal.size() == 0) {
+                    return false;
+                } else {
+                    synchronized (lInternal) {
+                        return lInternal.containsKey(key);
+                    }
                 }
             }
         }
     }
 
-    // convert LinkedHashMap to HashMap, reduces memory
-    private final HashMap<String, Object> optimizeHashMap(final HashMap<String, Object> map) {
-        if (map != null) {
-            if (map instanceof LinkedHashMap) {
-                final HashMap<String, Object> ret = new HashMap<String, Object>();
-                final Iterator<Entry<String, Object>> it = map.entrySet().iterator();
-                while (it.hasNext()) {
-                    final Entry<String, Object> next = it.next();
-                    if (next.getKey() == null || next.getValue() == null) {
-                        continue;
-                    } else {
-                        if (next.getValue() instanceof HashMap) {
-                            ret.put(next.getKey(), optimizeHashMap((HashMap<String, Object>) next.getValue()));
-                        } else {
-                            ret.put(next.getKey(), next.getValue());
+    protected HashMap<String, Object> optimizeMapInstance(final Map<String, Object> map) {
+        if (map != null && map.size() > 0) {
+            final HashMap<String, Object> ret = new HashMap<String, Object>();
+            final Iterator<Entry<String, Object>> it = map.entrySet().iterator();
+            while (it.hasNext()) {
+                final Entry<String, Object> next = it.next();
+                String key = next.getKey();
+                Object value = next.getValue();
+                if (key == null || value == null) {
+                    continue;
+                } else {
+                    key = dedupeKeyString(key);
+                    if (value instanceof Map) {
+                        value = optimizeMapInstance((Map<String, Object>) value);
+                        if (value != null) {
+                            ret.put(key, value);
                         }
+                    } else if (value instanceof String) {
+                        ret.put(key, dedupeValueString(key, (String) value));
+                    } else {
+                        ret.put(key, value);
                     }
                 }
-                return ret;
             }
+            if (ret.size() > 0) {
+                return ret;
+            } else {
+                return null;
+            }
+        } else {
+            return null;
         }
-        return map;
+    }
+
+    protected String dedupeValueString(String key, String value) {
+        return dedupeString(value);
+    }
+
+    protected String dedupeKeyString(String key) {
+        return dedupeString(key);
     }
 
     public void setProperties(final Map<String, Object> properties) {
-        final HashMap<String, Object> newProperties = new HashMap<String, Object>();
-        if (properties != null && properties.size() > 0) {
-            final Iterator<Entry<String, Object>> it = properties.entrySet().iterator();
-            while (it.hasNext()) {
-                final Entry<String, Object> next = it.next();
-                if (next.getKey() == null || next.getValue() == null) {
-                    //
-                    continue;
+        final HashMap<String, Object> newProperties = optimizeMapInstance(properties);
+        if (newProperties != null && newProperties.size() > 0) {
+            if (NEWIMPLEMENTATION != null) {
+                for (final Entry<String, Object> entry : newProperties.entrySet()) {
+                    putObject(entry.getKey(), entry.getValue());
                 }
-                final String deDupKey = dedupeString(next.getKey());
-                newProperties.put(deDupKey, next.getValue());
+            } else {
+                this.properties = newProperties;
             }
-        }
-        if (newProperties.size() > 0) {
-            this.properties = newProperties;
         } else {
             this.properties = null;
-        }
-    }
-
-    public void setPropertiesUnsafe(final HashMap<String, Object> properties) {
-        if (properties != null && properties instanceof LinkedHashMap) {
-            this.properties = optimizeHashMap(properties);
-        } else {
-            this.properties = properties;
         }
     }
 
@@ -314,29 +428,38 @@ public class Property implements Serializable {
      * @param key
      * @param value
      */
-    public boolean setProperty(final String key, final Object value) {
+    public boolean setProperty(String key, Object value) {
         if (key == null) {
             throw new WTFException("key ==null is forbidden!");
         }
-        final HashMap<String, Object> lInternal = properties;
-        if (lInternal == null) {
-            if (value == null || value == NULL) {
-                return false;
-            } else {
-                properties = new HashMap<String, Object>();
-                return setProperty(key, value);
-            }
+        if (NEWIMPLEMENTATION != null) {
+            return putObject(key, value);
         } else {
-            synchronized (lInternal) {
-                if (value == NULL || value == null) {
-                    return lInternal.remove(key) != null;
+            final HashMap<String, Object> lInternal = properties;
+            if (lInternal == null) {
+                if (value == null || value == NULL) {
+                    return false;
+                } else {
+                    properties = new HashMap<String, Object>(8);
+                    return setProperty(key, value);
                 }
-                final String deDupKey = dedupeString(key);
-                final Object old = lInternal.put(deDupKey, value);
-                if (old == null && value != null) {
-                    return true;
+            } else {
+                synchronized (lInternal) {
+                    if (value == NULL || value == null) {
+                        return lInternal.remove(key) != null;
+                    } else {
+                        key = dedupeKeyString(key);
+                        if (value instanceof String) {
+                            value = dedupeValueString(key, (String) value);
+                        }
+                        final Object old = lInternal.put(key, value);
+                        if (old == null && value != null) {
+                            return true;
+                        } else {
+                            return !old.equals(value);
+                        }
+                    }
                 }
-                return !old.equals(value);
             }
         }
     }
@@ -346,10 +469,9 @@ public class Property implements Serializable {
      *
      * @return PropertyString
      */
-    // @Override
     @Override
     public String toString() {
-        final HashMap<String, Object> lInternal = properties;
+        final Map<String, Object> lInternal = getProperties();
         if (lInternal == null || lInternal.size() == 0) {
             return "Property: empty";
         } else {

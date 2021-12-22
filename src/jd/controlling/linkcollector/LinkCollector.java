@@ -1,6 +1,7 @@
 package jd.controlling.linkcollector;
 
 import java.awt.Toolkit;
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -2061,7 +2062,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             ZipInputStream zis = null;
             try {
                 fis = new FileInputStream(file);
-                zis = new ZipInputStream(fis);
+                zis = new ZipInputStream(new BufferedInputStream(fis, 1 * 1024 * 1024));
                 /* lets restore the CrawledPackages from Json */
                 final HashMap<Integer, LoadedPackage> packageMap = new HashMap<Integer, LoadedPackage>();
                 LinkCollectorStorable lcs = null;
@@ -2073,7 +2074,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 };
                 ZipEntry entry = null;
                 final ZipInputStream finalZis = zis;
-                final InputStream entryInputStream = new InputStream() {
+                final InputStream entryInputStream = new BufferedInputStream(new InputStream() {
                     @Override
                     public int read() throws IOException {
                         return finalZis.read();
@@ -2105,6 +2106,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
                     @Override
                     public synchronized void mark(int readlimit) {
+                    }
+                }, 1024) {
+                    @Override
+                    public void close() throws IOException {
                     }
                 };
                 int entries = 0;
