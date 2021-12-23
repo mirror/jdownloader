@@ -74,7 +74,7 @@ public class BackupCreateAction extends CustomizableAppAction {
                 d.setMultiSelection(false);
                 d.setType(FileChooserType.SAVE_DIALOG);
                 try {
-                    Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.lit_restart(), _GUI.T.BackupCreateAction_run_restart_ask(), null, _GUI.T.lit_continue(), null);
+                    Dialog.getInstance().showConfirmDialog(0, _GUI.T.lit_restart(), _GUI.T.BackupCreateAction_run_restart_ask(), null, _GUI.T.lit_continue(), null);
                     Dialog.getInstance().showDialog(d);
                     File file = d.getSelectedFile();
                     if (file == null) {
