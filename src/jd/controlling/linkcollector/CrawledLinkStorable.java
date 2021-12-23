@@ -14,7 +14,7 @@ import org.jdownloader.extensions.extraction.BooleanStatus;
 
 public class CrawledLinkStorable implements Storable {
     public static final TypeRef<CrawledLinkStorable> TYPEREF = new TypeRef<CrawledLinkStorable>() {
-                                                             };
+    };
     private CrawledLink                              link;
     private String                                   id      = null;
     private long                                     UID     = -1;
@@ -168,7 +168,19 @@ public class CrawledLinkStorable implements Storable {
         if (UID != -1) {
             link.getUniqueID().setID(UID);
         }
+        _finalizeDeserialization(link, dll);
         return link;
+    }
+
+    public void _finalizeDeserialization(CrawledLink crawledLink, DownloadLink downloadLink) {
+        if (crawledLink != null && crawledLink.getSourceUrls() != null && downloadLink != null) {
+            final String[] sourceURLs = crawledLink.getSourceUrls();
+            for (final String sourceURL : sourceURLs) {
+                if (sourceURL != null && sourceURL.equals(downloadLink.getPluginPatternMatcher())) {
+                    downloadLink.setPluginPatternMatcherUnsafe(sourceURL);
+                }
+            }
+        }
     }
 
     public ArchiveInfoStorable getArchiveInfo() {
