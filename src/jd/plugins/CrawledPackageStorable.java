@@ -1,4 +1,4 @@
-package jd.controlling.linkcollector;
+package jd.plugins;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -7,8 +7,6 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.PackageControllerComparator;
-import jd.plugins.CrawledLinkStorable;
-import jd.plugins.DownloadLink;
 
 import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
