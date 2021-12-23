@@ -838,7 +838,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             lCachedName = new String[] { null, null, null, null };
             cachedName = lCachedName;
         }
-        lCachedName[(ignoreUnsafe ? 1 : 0) * 2 + (ignoreForcedFilename ? 1 : 0)] = ret;
+        final String name = dedupeValueString(DownloadLinkProperty.Property.NAME.name(), ret);
+        lCachedName[(ignoreUnsafe ? 1 : 0) * 2 + (ignoreForcedFilename ? 1 : 0)] = name;
     }
 
     private String getCachedName(boolean ignoreUnsafe, boolean ignoreForcedFilename) {
@@ -1522,7 +1523,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
     }
 
-    protected void setPluginPatternMatcherUnsafe(final String pluginPattern) {
+    public void setPluginPatternMatcherUnsafe(final String pluginPattern) {
         this.urlDownload = pluginPattern;
     }
 
@@ -1787,7 +1788,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     @Override
     protected String dedupeValueString(String key, String value) {
-        if ("fixName".equals(key) || PROPERTY_FORCEDFILENAME.equals(key) || PROPERTY_FINALFILENAME.equals(key) || DownloadLinkProperty.Property.NAME.name().equals(key)) {
+        if (value == null) {
+            return null;
+        } else if ("fixName".equals(key) || PROPERTY_FORCEDFILENAME.equals(key) || PROPERTY_FINALFILENAME.equals(key) || DownloadLinkProperty.Property.NAME.name().equals(key)) {
             String name = this.name;
             if (name != null && name.equals(value)) {
                 return name;

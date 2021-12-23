@@ -69,9 +69,13 @@ public class Property implements Serializable {
     private boolean putObject(String key, Object value) {
         synchronized (NEWIMPLEMENTATION) {
             if (propertiesList == null) {
-                propertiesList = new Object[2];
+                if (value == null || value == NULL) {
+                    return false;
+                } else {
+                    propertiesList = new Object[2];
+                }
             }
-            Object[] propertiesList = this.propertiesList;
+            final Object[] propertiesList = this.propertiesList;
             if (key != null) {
                 final int length = propertiesList.length;
                 int index = getObjectIndex(key);
@@ -93,6 +97,8 @@ public class Property implements Serializable {
                             return !old.equals(value);
                         }
                     }
+                } else if (value == null || value == NULL) {
+                    return false;
                 }
                 for (index = 0; index < length; index += 2) {
                     if (propertiesList[index] == null) {
@@ -105,7 +111,7 @@ public class Property implements Serializable {
                         return true;
                     }
                 }
-                Object[] tmpPropertiesList = new Object[length + 2];
+                final Object[] tmpPropertiesList = new Object[length + 2];
                 System.arraycopy(propertiesList, 0, tmpPropertiesList, 0, length);
                 tmpPropertiesList[length] = dedupeKeyString(key);
                 if (value instanceof String) {
