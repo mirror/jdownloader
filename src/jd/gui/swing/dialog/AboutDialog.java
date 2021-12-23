@@ -372,7 +372,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
             if (usedPlatform != null) {
                 return version + "/" + usedPlatform;
             }
-        } catch (final Throwable ignore) {
+        } catch (final Throwable ignore1) {
         }
         return version;
     }
