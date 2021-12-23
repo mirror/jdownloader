@@ -7,13 +7,13 @@ import java.util.HashMap;
 import java.util.LinkedList;
 
 import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.linkcollector.CrawledPackageStorable;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.plugins.ContainerStatus;
+import jd.plugins.CrawledPackageStorable;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
