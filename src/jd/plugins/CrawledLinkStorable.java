@@ -1,12 +1,12 @@
-package jd.controlling.linkcollector;
+package jd.plugins;
 
 import java.util.ArrayList;
 
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.ArchiveInfoStorable;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLinkStorable;
 
 import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
