@@ -203,7 +203,7 @@ public class GigaPetaCom extends PluginForHost {
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, -6);
-            if (!(!this.looksLikeDownloadableContent(dl.getConnection()))) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection(true);
                 } catch (final IOException e) {
