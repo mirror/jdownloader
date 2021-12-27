@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -28,6 +26,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehippo.com" }, urls = { "https?://(?:www\\.)?filehippo\\.com(?:/(?:es|en|pl|jp|de))?/download_[^<>/\"]+(?:(?:/tech)?/\\d+/)?" })
 public class FileHippoCom extends PluginForHost {
@@ -99,7 +99,7 @@ public class FileHippoCom extends PluginForHost {
             }
         }
         if (filename == null) {
-            filename = url_name;
+            filename = url_name.replaceFirst("(download_)", "").replaceFirst("(/.+)", "");
         }
         link.setName(filename.trim());
         String filesize = br.getRegex("\\(([0-9,]+ bytes)\\)").getMatch(0);
