@@ -44,6 +44,12 @@ public class GetComics extends antiDDoSForDecrypt {
     }
 
     @Override
+    public void init() {
+        super.init();
+        Browser.setRequestIntervalLimitGlobal(getHost(), 750);
+    }
+
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
@@ -91,15 +97,14 @@ public class GetComics extends antiDDoSForDecrypt {
                 final byte[] decoded = Base64.decode(base64);
                 if (decoded != null) {
                     final String possibleURLs = new String(decoded, "UTF-8");
-                    decryptedLinks.add(createDownloadlink(possibleURLs));
+                    decryptedLinks.add(createDownloadlink(possibleURLs, false));
                     return decryptedLinks;
                 }
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String title = br.getRegex("<title>(.+?) &ndash; GetComics").getMatch(0);
-        String baseurl1 = br.getHost();
-        ArrayList<String> links = new ArrayList<String>();
+        final ArrayList<String> links = new ArrayList<String>();
         final String textBody = br.getRegex("<section class=\"post-contents\">(.*)<strong>(?:Screenshots|Notes)").getMatch(0);
         if (StringUtils.isNotEmpty(textBody)) {
             Collections.addAll(links, HTMLParser.getHttpLinks(textBody, null));
@@ -127,12 +132,12 @@ public class GetComics extends antiDDoSForDecrypt {
                         detectedLink = redirect;
                     }
                 } else {
-                    detectedLink = Encoding.htmlDecode(link);
+                    detectedLink = Encoding.htmlOnlyDecode(link);
                 }
-                if (new Regex(detectedLink, ".*(imgur\\.com|/contact|/sitemap|/how-to-download).*").matches()) {
+                if (new Regex(detectedLink, ".*(imgur\\.com|windsplay\\.com|/contact|/sitemap|/how-to-download).*").matches()) {
                     continue;
                 }
-                decryptedLinks.add(createDownloadlink(detectedLink));
+                decryptedLinks.add(createDownloadlink(detectedLink, false));
             }
         }
         if (StringUtils.isEmpty(title)) {
@@ -142,5 +147,10 @@ public class GetComics extends antiDDoSForDecrypt {
         }
         //
         return decryptedLinks;
+    }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
     }
 }

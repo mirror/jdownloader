@@ -17,14 +17,13 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -33,6 +32,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "groovesharing.com" }, urls = { "https?://(?:www\\.)?(?:groovesharing|groovestreams)\\.com/\\?d=([A-Z0-9]+)" })
 public class GrooveSharingCom extends PluginForHost {
@@ -91,14 +93,19 @@ public class GrooveSharingCom extends PluginForHost {
         this.setBrowserExclusive();
         requestFileInformation(link);
         String dllink = checkDirectLink(link, "directlink");
-        if (dllink == null) {
+        Request downloadRequest = null;
+        if (dllink != null) {
+            final Browser br2 = br.cloneBrowser();
+            downloadRequest = br2.createGetRequest(dllink);
+        }
+        if (downloadRequest == null) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage(link.getDownloadURL(), "downloadverify=1&d=1");
             if (this.br.containsHTML("Vous avez atteint la quantite maximum de bande passante permise|groovesharing\\.com/limitsfree/")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
             }
-            dllink = findLink();
-            if (dllink == null) {
+            downloadRequest = findLink();
+            if (downloadRequest == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             int wait = 35;
@@ -108,7 +115,7 @@ public class GrooveSharingCom extends PluginForHost {
             }
             sleep(wait * 1001l, link);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadRequest, false, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
@@ -117,14 +124,15 @@ public class GrooveSharingCom extends PluginForHost {
             }
             if (br.containsHTML("(?i)>\\s*AccessKey is expired, please request")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL server error, waittime skipped?");
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty("directlink", dllink);
         dl.startDownload();
     }
 
-    private String findLink() throws Exception {
+    private Request findLink() throws Exception {
         String finalLink = br.getRegex("(https?://.{5,30}getfile\\.php\\?id=\\d+[^<>\"\\']*?)(\"|\\')").getMatch(0);
         if (finalLink == null) {
             /* 2021-11-10 */
@@ -143,7 +151,18 @@ public class GrooveSharingCom extends PluginForHost {
                 }
             }
         }
-        return finalLink;
+        final Request ret;
+        if (finalLink != null) {
+            ret = br.createGetRequest(finalLink);
+        } else {
+            final Form form = br.getFormByInputFieldKeyValue("downloadverify", "1");
+            if (form == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.submitForm(form);
+            return findLink();
+        }
+        return ret;
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -153,9 +172,11 @@ public class GrooveSharingCom extends PluginForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (!looksLikeDownloadableContent(con)) {
                     downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                    throw new IOException();
+                } else {
+                    return dllink;
                 }
             } catch (final Exception e) {
                 downloadLink.setProperty(property, Property.NULL);

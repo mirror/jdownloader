@@ -18,11 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Locale;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -39,6 +34,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4share.vn" }, urls = { "https?://(?:www\\.)?(?:up\\.)?4share\\.vn/f/([a-f0-9]{16})" })
 public class FourShareVn extends PluginForHost {
@@ -86,12 +86,15 @@ public class FourShareVn extends PluginForHost {
         }
         String filename = br.getRegex(">\\s*Tên File\\s*:\\s*<strong>([^<>\"]*?)</strong>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>Download ([^<>\"]+) \\| 4share\\.vn\\s*</title>").getMatch(0);
+            filename = br.getRegex("<title>Download\\s*([^<>\"]+) \\| 4share\\.vn\\s*</title>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<h1[^>]*>\\s*<strong>\\s*([^<>\"]+)\\s*</strong>").getMatch(0);
+            }
         }
         String filesize = br.getRegex(">\\s*Kích thước\\s*:\\s*<strong>\\s*(\\d+(?:\\.\\d+)?\\s*(?:B(?:yte)?|KB|MB|GB))\\s*</strong>").getMatch(0);
         if (filesize == null) {
             /* 2019-08-28 */
-            filesize = br.getRegex("</h1>\\s*<strong>([^<>\"]+)</strong>").getMatch(0);
+            filesize = br.getRegex("</h1>\\s*<strong>\\s*([^<>\"]+)\\s*</strong>").getMatch(0);
             if (filesize == null) {
                 /* 2021-10-21 */
                 filesize = br.getRegex("/strong>\\s*</h1>\\s*(\\d+[^<>\"]+)<br/>").getMatch(0);
@@ -119,11 +122,11 @@ public class FourShareVn extends PluginForHost {
             getPage("/member");
             /*
              * TODO
-             *
+             * 
              * Ngày đăng ký: 2012-xx-xx 10:10:10 Ngày hết hạn: 2012-xx-xx 10:10:10 , còn 59 ngày sử dụng - Gold còn lại: 293 (293 - TKC + 0
              * - TKP ) Gold TKC - Tài khoản Chính, là loại gold nạp tiền trực tiếp; Gold TKP - Tài khoản Phụ, là loại Gold được thưởng Gold
              * đã dùng: 607 (607 + 0) Gold đã nạp: 900 (900 + ) Bạn đã download từ 4Share hôm nay : 91.01 GB [Tất cả: 1.34 TB]
-             *
+             * 
              * Feedback from customer: My account pays a monthly fee. Looks like there's a limit to it, I'm not sure how many GB it is. Gold
              * = Monthly renew
              */
@@ -179,6 +182,9 @@ public class FourShareVn extends PluginForHost {
         // wait = Integer.parseInt(waittime);
         // }
         // sleep(wait * 1001l, downloadLink);
+        if (br.containsHTML("chứa file này đang bảo dưỡng")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is under maintenance!");
+        }
         for (int i = 0; i <= 3; i++) {
             Form captchaform = br.getFormbyKey("free_download");
             if (captchaform == null) {
@@ -228,6 +234,9 @@ public class FourShareVn extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         getPage(link.getDownloadURL());
+        if (br.containsHTML("chứa file này đang bảo dưỡng")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is under maintenance!");
+        }
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             dllink = br.getRegex("class=''> <a href\\s*=\\s*'(https?://.*?)'").getMatch(0);
