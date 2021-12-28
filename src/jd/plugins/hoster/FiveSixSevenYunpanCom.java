@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Locale;
 
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -44,9 +43,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 public class FiveSixSevenYunpanCom extends PluginForHost {
     public FiveSixSevenYunpanCom(PluginWrapper wrapper) {
         super(wrapper);
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            this.enablePremium("https://www.567yunpan.com/vip.php");
-        }
+        this.enablePremium("https://www.567yunpan.com/vip.php");
     }
 
     @Override
