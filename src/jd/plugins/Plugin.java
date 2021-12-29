@@ -359,8 +359,9 @@ public abstract class Plugin implements ActionListener {
         final String output = extractFileNameFromURL(filename);
         if (output != null && output.contains(".")) {
             return output.substring(output.lastIndexOf("."));
+        } else {
+            return failover;
         }
-        return failover;
     }
 
     /**

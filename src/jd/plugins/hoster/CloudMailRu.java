@@ -213,7 +213,7 @@ public class CloudMailRu extends PluginForHost {
                     final LinkedHashMap<String, Object> filemap = (LinkedHashMap<String, Object>) o;
                     final LinkedHashMap<String, Object> url = (LinkedHashMap<String, Object>) filemap.get("url");
                     final String get_url = (String) url.get("get");
-                    if (Encoding.htmlOnlyDecode(get_url).contains(link.getName())) {
+                    if (Encoding.htmlOnlyDecode(get_url, false).contains(link.getName())) {
                         if (get_url.startsWith("//")) {
                             dllink = Request.getLocation(get_url, br.getRequest());
                         } else {
