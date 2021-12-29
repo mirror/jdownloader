@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -31,7 +30,6 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "photoshare.ru" }, urls = { "https?://(?:www\\.)?photoshare\\.ru/(?:album\\d+\\.html|login/album\\.php\\?id=\\d+)" })
 public class PhotoShareRu extends PluginForDecrypt {
-
     public PhotoShareRu(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -55,7 +53,6 @@ public class PhotoShareRu extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-
         if (this.br.containsHTML(html_passwordprotected)) {
             boolean failed = true;
             for (int i = 0; i <= 2; i++) {
@@ -71,17 +68,14 @@ public class PhotoShareRu extends PluginForDecrypt {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
         }
-
-        final Regex fpn = br.getRegex("<h1 style=\"margin: 0px; padding: 0px;\">([^<>\"]*?)</h1>([^<>\"]*?)</div>");
+        final Regex fpn = br.getRegex("<h1 style=\"margin: 0px; padding: 0px;\">([^<>\"]*?)</h1>([^<>\"]*?)<");
         if (fpn.getMatches().length != 1) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         final String fpName = Encoding.htmlDecode(fpn.getMatch(0).trim() + " - " + fpn.getMatch(1).trim());
-
         br.getPage("http://photoshare.ru/do/change_mpp.php?mpp=100");
         br.getPage(parameter);
-
         final String albumID = new Regex(parameter, "album(\\d+)\\.html$").getMatch(0);
         final String[] pages = br.getRegex("<a href=\"/album" + albumID + "\\-(\\d+)\\.html\"").getColumn(0);
         if (pages != null && pages.length != 0) {
@@ -91,7 +85,6 @@ public class PhotoShareRu extends PluginForDecrypt {
                 }
             }
         }
-
         for (final String currentPage : allPages) {
             logger.info("Decrypting page " + currentPage + " of " + allPages.size());
             if (!currentPage.equals("1")) {
@@ -120,5 +113,4 @@ public class PhotoShareRu extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

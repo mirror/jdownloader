@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.Regex;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -29,6 +27,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "perfectgirls.net" }, urls = { "https?://(?:[a-z]+\\.)?perfectgirls\\.net/(?:gal/)?(\\d{2,})(/([A-Za-z0-9\\-_]+))?" })
 public class PerfectGirlsNet extends PluginForHost {
@@ -89,14 +89,25 @@ public class PerfectGirlsNet extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("<source src=\"([^<>\"]+)\"").getMatch(0);
         }
-        if (filename == null || dllink == null) {
-            logger.info("filename: " + filename + ", dllink: " + dllink);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            filename = filename.trim();
+            final String ext = dllink != null ? getFileNameExtensionFromString(dllink, ".mp4") : ".mp4";
+            if (dllink == null) {
+                link.setName(Encoding.htmlDecode(filename) + ext);
+            } else {
+                link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+            }
         }
-        filename = filename.trim();
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        return AvailableStatus.TRUE;
+        if (filename == null || dllink == null) {
+            if (br.containsHTML("not_available.png")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                logger.info("filename: " + filename + ", dllink: " + dllink);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } else {
+            return AvailableStatus.TRUE;
+        }
     }
 
     private String checkDllink(final DownloadLink link, final String flink) throws Exception {
@@ -111,9 +122,11 @@ public class PerfectGirlsNet extends PluginForHost {
                 }
                 dllink = flink;
             } else {
-                dllink = null;
+                throw new IOException();
             }
         } catch (final Throwable e) {
+            logger.log(e);
+            dllink = null;
         } finally {
             try {
                 con.disconnect();

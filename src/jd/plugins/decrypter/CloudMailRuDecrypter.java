@@ -122,11 +122,15 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 continue;
             }
             if ("folder".equals(type)) {
-                weblink = Encoding.htmlOnlyDecode(weblink);
+                weblink = Encoding.htmlOnlyDecode(weblink, false);
                 String encoded_weblink = Encoding.urlEncode(weblink);
                 /* We need the "/" so let's encode them back. */
                 encoded_weblink = encoded_weblink.replace("%2F", "/");
                 encoded_weblink = encoded_weblink.replace("+", "%20");
+                if (!encoded_weblink.endsWith("/")) {
+                    // spaces at the end without / will be removed
+                    encoded_weblink = encoded_weblink + "/";
+                }
                 weblink = "https://cloud.mail.ru/public/" + encoded_weblink;
                 final DownloadLink folderLink = createDownloadlink(weblink);
                 folderLink.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolder + "/" + itemTitle);

@@ -46,7 +46,7 @@ public class GetComics extends antiDDoSForDecrypt {
     @Override
     public void init() {
         super.init();
-        Browser.setRequestIntervalLimitGlobal(getHost(), 750);
+        Browser.setRequestIntervalLimitGlobal(getHost(), 500);
     }
 
     @Override
@@ -147,10 +147,5 @@ public class GetComics extends antiDDoSForDecrypt {
         }
         //
         return decryptedLinks;
-    }
-
-    @Override
-    public int getMaxConcurrentProcessingInstances() {
-        return 1;
     }
 }
