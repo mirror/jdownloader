@@ -17,11 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -38,6 +33,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgs.aventertainments.com", "aventertainments.com" }, urls = { "https?://imgs\\d+\\.aventertainments\\.com/.+", "https?://www\\.aventertainments\\.com/newdlsample\\.aspx.+\\.mp4|https?://ppvclips\\d+\\.aventertainments\\.com/.+\\.m3u9|https?://(?:www\\.)?aventertainments\\.com/ppv/new_detail\\.aspx\\?ProID=\\d+.*" })
 public class AventertainmentsCom extends PluginForHost {
@@ -238,6 +238,16 @@ public class AventertainmentsCom extends PluginForHost {
                 loginform.put("ctl00$ContentPlaceHolder1$uid", Encoding.urlEncode(account.getUser()));
                 loginform.put("ctl00$ContentPlaceHolder1$passwd", Encoding.urlEncode(account.getPass()));
                 loginform.put("ctl00$ContentPlaceHolder1$SavedLoginBox", "on");
+                loginform.put("__EVENTTARGET", Encoding.urlEncode("ctl00$ContentPlaceHolder1$SubmitBtn"));
+                loginform.put("__EVENTARGUMENT", "");
+                final String VIEWSTATEGENERATOR = br.getRegex("VIEWSTATEGENERATOR\"\\s*value\\s*=\\s*\"(.*?)\"").getMatch(0);
+                final String EVENTVALIDATION = br.getRegex("EVENTVALIDATION\"\\s*value\\s*=\\s*\"(.*?)\"").getMatch(0);
+                if (VIEWSTATEGENERATOR != null) {
+                    loginform.put("__VIEWSTATEGENERATOR", Encoding.urlEncode(VIEWSTATEGENERATOR));
+                }
+                if (EVENTVALIDATION != null) {
+                    loginform.put("__EVENTVALIDATION", Encoding.urlEncode(EVENTVALIDATION));
+                }
                 br.submitForm(loginform);
                 if (!br.containsHTML(html_loggedin)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
