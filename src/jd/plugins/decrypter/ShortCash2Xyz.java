@@ -23,24 +23,24 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkjust.com" }, urls = { "https?://(?:www\\.)?linkjust\\.com/([A-Za-z0-9]+)" })
-public class LinkjustCom extends MightyScriptAdLinkFly {
-    public LinkjustCom(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "short-cash2.xyz" }, urls = { "https?://(?:www\\.)?short-cash2\\.xyz/([A-Za-z0-9]+)" })
+public class ShortCash2Xyz extends MightyScriptAdLinkFly {
+    public ShortCash2Xyz(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
-    protected void correctURL(final CryptedLink param) {
-        param.setCryptedUrl(param.getCryptedUrl().replaceFirst("http://", "https://"));
+    protected void handlePreCrawlProcess(final CryptedLink param, final ArrayList<DownloadLink> decryptedLinks) throws Exception {
+        param.setCryptedUrl(param.getCryptedUrl().replaceFirst("http://", "https://").replace("short2.cash", "short-cash2.xyz"));
+        br.setFollowRedirects(true);
+        getPage(param.getCryptedUrl());
+        if (this.regexAppVars(this.br) == null) {
+            logger.warning("Possible crawler failure...");
+        }
+        /* Now continue with parent class code (requires 2nd captcha + waittime) */
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         return super.decryptIt(param, progress);
-    }
-
-    @Override
-    protected String getSpecialReferer() {
-        /* Pre-set Referer to skip multiple ad pages e.g. linkjust.com -> forexmab.com -> linkjust.com */
-        return "https://forexmab.com";
     }
 }

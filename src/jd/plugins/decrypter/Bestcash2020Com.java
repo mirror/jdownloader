@@ -36,6 +36,6 @@ public class Bestcash2020Com extends MightyScriptAdLinkFly {
     @Override
     protected String getSpecialReferer() {
         /* Pre-set Referer to skip multiple ad pages e.g. bestcash2020.com -> e3raftech.online -> bestcash2020.com */
-        return "https://talakik2020.com";
+        return "https://encyclopedia-24.com";
     }
 }
