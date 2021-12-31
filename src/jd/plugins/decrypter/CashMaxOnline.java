@@ -23,15 +23,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkjust.com" }, urls = { "https?://(?:www\\.)?linkjust\\.com/([A-Za-z0-9]+)" })
-public class LinkjustCom extends MightyScriptAdLinkFly {
-    public LinkjustCom(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cash-max.online" }, urls = { "https?://(?:www\\.)?cash-max\\.online/([A-Za-z0-9]+)" })
+public class CashMaxOnline extends MightyScriptAdLinkFly {
+    public CashMaxOnline(PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    @Override
-    protected void correctURL(final CryptedLink param) {
-        param.setCryptedUrl(param.getCryptedUrl().replaceFirst("http://", "https://"));
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -40,7 +35,7 @@ public class LinkjustCom extends MightyScriptAdLinkFly {
 
     @Override
     protected String getSpecialReferer() {
-        /* Pre-set Referer to skip multiple ad pages e.g. linkjust.com -> forexmab.com -> linkjust.com */
-        return "https://forexmab.com";
+        /* Pre-set Referer to skip multiple ad pages e.g. bestcash2020.com -> e3raftech.online -> bestcash2020.com */
+        return "https://hagamix.blogspot.com";
     }
 }
