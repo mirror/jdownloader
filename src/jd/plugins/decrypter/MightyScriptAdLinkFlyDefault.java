@@ -137,7 +137,9 @@ public class MightyScriptAdLinkFlyDefault extends MightyScriptAdLinkFly {
             /** linkawynet.xyz links */
             "linkawynet.xyz",
             /** shortawy.com links */
-            "shortawy.com" };
+            "shortawy.com",
+            /** up4cash.com links */
+            "up4cash.com" };
     /** List of services for which waittime is skippable. */
     private static final List<String> domains_waittime_skippable = Arrays.asList(new String[] {});
     // /** List of services for which captcha is skippable or not required. */
@@ -155,11 +157,7 @@ public class MightyScriptAdLinkFlyDefault extends MightyScriptAdLinkFly {
              * of their working domains.
              */
             param.setCryptedUrl(param.getCryptedUrl().replace("curs.io", "cuto.io"));
-        } else if (param.getCryptedUrl().contains("shortawy.com/s/")) {
-            /*
-             * 2019-02-21: curs.io is a cut-urls.com domain which is down but the URLs can still be online so we need to replace it with one
-             * of their working domains.
-             */
+        } else if (param.getCryptedUrl().contains("shortawy.com/s/") || param.getCryptedUrl().contains("up4cash.com/s/")) {
             param.setCryptedUrl(param.getCryptedUrl().replace("s/", ""));
         } else {
             /* Nothing to correct */
