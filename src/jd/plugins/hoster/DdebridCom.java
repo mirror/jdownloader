@@ -298,7 +298,9 @@ public class DdebridCom extends PluginForHost {
                 /* Existing session expired. */
                 throw new AccountUnavailableException(errormsg, 1 * 60 * 1000l);
             } else if (errormsg.equalsIgnoreCase("Filehost not supported.")) {
-                /* 2021-01-11 */
+                mhm.putError(account, link, 1 * 60 * 1000l, errormsg);
+            } else if (errormsg.equalsIgnoreCase("Account not premium.")) {
+                /* Happens when trying to download from a non-free-account supported host via free account --> Temp. disable this host */
                 mhm.putError(account, link, 1 * 60 * 1000l, errormsg);
             } else {
                 if (link == null) {
