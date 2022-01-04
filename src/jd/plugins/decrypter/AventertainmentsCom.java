@@ -78,11 +78,10 @@ public class AventertainmentsCom extends PluginForDecrypt {
              */
             throw new AccountRequiredException();
         } else if (br.getURL().contains("ppv/Streaming.aspx")) {
-            logger.info("DRM protected paid content");
+            logger.info("DRM protected paid content (encrypted HLS)");
             final DownloadLink offline = this.createOfflinelink(param.getCryptedUrl(), "DRM_PROTECTED_" + br._getURL().getFile(), "DRM protected content is not supported");
             decryptedLinks.add(offline);
             return decryptedLinks;
-            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String fpName;
         final String title_part1 = this.br.getRegex("class=\"top\\-title\">Item #:([^<>\"]+)</div>").getMatch(0);
