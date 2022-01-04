@@ -117,7 +117,13 @@ public class FakirdebridNet extends PluginForHost {
             String passCode = link.getDownloadPassword();
             do {
                 String postData = "url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this));
+                // if (link.getContainerUrl() != null) {
+                // /* 2022-01-04: TODO: Requested by admin (include referer as parameter if available) but unclear which parameter-name to
+                // use for this. */
+                // postData += "&reflink=" + Encoding.urlEncode(link.getContainerUrl());
+                // }
                 if (counter > 0) {
+                    /* 2nd try: First provided password was invalid or no password has been tried on first attempt. */
                     passCode = getUserInput("Password?", link);
                 }
                 if (passCode != null) {
@@ -168,6 +174,7 @@ public class FakirdebridNet extends PluginForHost {
                     dllink = (String) entries.get("link");
                 }
             } else {
+                /* 2022-01-04: Deprecated */
                 final List<String> urls = (List<String>) entries.get("links");
                 if (urls.isEmpty()) {
                     mhm.handleErrorGeneric(account, link, "Failed to generate transloadURL", 10, 5 * 60 * 1000l);

@@ -24,10 +24,13 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "aventertainments.com" }, urls = { "https?://(?:www\\.)?aventertainments\\.com/(?!newdlsample).+" })
@@ -43,10 +46,17 @@ public class AventertainmentsCom extends PluginForDecrypt {
         if (aa != null) {
             jd.plugins.hoster.AventertainmentsCom.login(this.br, aa, false);
         }
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getURL().contains("/login.aspx")) {
+            /**
+             * This can even happen if account is given because: </br>
+             * - maybe it's only a free account </br>
+             * - maybe content needs to be purchased separately
+             */
+            throw new AccountRequiredException();
         }
         String fpName;
         final String title_part1 = this.br.getRegex("class=\"top\\-title\">Item #:([^<>\"]+)</div>").getMatch(0);

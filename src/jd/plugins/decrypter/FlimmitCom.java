@@ -24,6 +24,7 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -59,7 +60,7 @@ public class FlimmitCom extends PluginForDecrypt {
         final String contentID = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
         login();
         br.setFollowRedirects(true);
-        br.getPage("https://flimmit.at/dynamically/video/" + contentID);
+        br.getPage(jd.plugins.hoster.FlimmitCom.getInternalBaseURL() + "dynamically/video/" + contentID + "/parent/" + contentID);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -81,7 +82,7 @@ public class FlimmitCom extends PluginForDecrypt {
                     /* Do not add currently processed URL again! */
                     continue;
                 } else {
-                    decryptedLinks.add(this.createDownloadlink("https://flimmit.at/" + titleURL + "/assets/" + assetID));
+                    decryptedLinks.add(this.createDownloadlink(jd.plugins.hoster.FlimmitCom.getInternalBaseURL() + titleURL + "/assets/" + assetID));
                 }
             }
         } else {
@@ -91,6 +92,9 @@ public class FlimmitCom extends PluginForDecrypt {
             final String description = (String) JavaScriptEngineFactory.walkJson(entries, "data/modules/titles/description");
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(titleURL);
+            if (!StringUtils.isEmpty(description)) {
+                fp.setComment(description);
+            }
             if (m3u == null) {
                 logger.info("Failed to find any downloadable content");
                 decryptedLinks.add(this.createOfflinelink(parameter));
@@ -100,9 +104,8 @@ public class FlimmitCom extends PluginForDecrypt {
             final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br);
             for (final HlsContainer quality : qualities) {
                 final DownloadLink dl = this.createDownloadlink(quality.getDownloadurl().replaceAll("https?://", "m3u8://"));
-                dl.setFinalFileName(titleURL + "_" + title + "_" + quality.getStandardFilename());
+                dl.setFinalFileName(titleURL + "_" + title + "_" + quality.getResolution() + "_" + quality.getBandwidth() + ".mp4");
                 dl.setAvailable(true);
-                dl.setComment(description);
                 dl._setFilePackage(fp);
                 decryptedLinks.add(dl);
             }
