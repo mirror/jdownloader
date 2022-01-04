@@ -77,10 +77,11 @@ public class UdemyComDecrypter extends PluginForDecrypt {
         }
         this.br.getPage("https://www.udemy.com/api-2.0/courses/" + course_id + "/?fields[course]=title,headline,description,prerequisites,objectives,target_audiences,url,is_published,is_approved,is_practice_test_course,content_length_video,instructional_level,locale,content_length_practice_test_questions,content_info,num_subscribers,visible_instructors,is_paid,is_private,is_owner_terms_banned,is_owned_by_instructor_team,image_240x135,instructor_status,is_cpe_compliant,cpe_field_of_study,cpe_program_level,num_cpe_credits&fields[locale]=simple_english_title&fields[user]=url,title,job_title,image_200_H,description,display_name,image_50x50,initials,url_twitter,url_facebook,url_linkedin,url_youtube,url_personal_website&caching_intent=True");
         Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final String courseSlug = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         String courseTitle = (String) entries.get("title");
         if (StringUtils.isEmpty(courseTitle)) {
             /* Fallback */
-            courseTitle = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+            courseTitle = courseSlug;
         }
         this.br.getPage("/api-2.0/courses/" + course_id + "/subscriber-curriculum-items?fields%5Basset%5D=@min,title,filename,asset_type,external_url,length&fields%5Bchapter%5D=@min,description,object_index,title,sort_order&fields%5Blecture%5D=@min,object_index,asset,supplementary_assets,sort_order,is_published,is_free&fields%5Bquiz%5D=@min,object_index,title,sort_order,is_published&page_size=9999");
         if (this.br.getHttpConnection().getResponseCode() == 403) {
@@ -113,20 +114,20 @@ public class UdemyComDecrypter extends PluginForDecrypt {
                 sectionTitle = chapterFormat.format(positionChapter) + "_" + sectionTitle;
                 continue;
             } else if (lecture_id.equals("0") || !_class.equalsIgnoreCase("lecture")) {
-                /* Hm maybe some type we don't support (yet). */
+                /* Skip unsupported/dummy items such as "practice". */
                 continue;
             }
             entries = (Map<String, Object>) entries.get("asset");
             if (entries == null) {
                 continue;
             }
-            decryptedLinks.add(decryptAsset(entries, courseTitle, sectionTitle, lecture_id, positionTOTAL));
+            decryptedLinks.add(processAsset(entries, courseSlug, courseTitle, sectionTitle, lecture_id, positionTOTAL));
             /* Add file content */
             if (supplementary_assets != null) {
                 ressourcelist_2 = (ArrayList<Object>) supplementary_assets;
                 for (final Object supplementary_asseto : ressourcelist_2) {
                     entries = (Map<String, Object>) supplementary_asseto;
-                    decryptedLinks.add(decryptAsset(entries, courseTitle, sectionTitle, lecture_id, positionTOTAL));
+                    decryptedLinks.add(processAsset(entries, courseSlug, courseTitle, sectionTitle, lecture_id, positionTOTAL));
                 }
             }
             positionTOTAL++;
@@ -135,13 +136,13 @@ public class UdemyComDecrypter extends PluginForDecrypt {
     }
 
     /** Crawls single object (video or document) */
-    private DownloadLink decryptAsset(final Map<String, Object> entries, final String courseTitle, final String chapterTitle, final String lecture_id, final int position) {
+    private DownloadLink processAsset(final Map<String, Object> entries, final String courseSlug, final String courseTitle, final String chapterTitle, final String lectureID, final int position) {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(courseTitle + " - " + chapterTitle);
         final DecimalFormat df = new DecimalFormat("000");
         final String position_formatted = df.format(position);
-        String asset_id = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), 0));
-        String title = (String) entries.get("title");
+        final String asset_id = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), 0));
+        final String title = (String) entries.get("title");
         final String filename = (String) entries.get("filename");
         /* E.g. Video, Article, File */
         final String asset_type = (String) entries.get("asset_type");
@@ -150,12 +151,12 @@ public class UdemyComDecrypter extends PluginForDecrypt {
         }
         String filename_temp;
         if (!StringUtils.isEmpty(filename)) {
-            filename_temp = course_id + "_" + position_formatted + "_" + lecture_id + "_" + asset_id + "_" + filename;
+            filename_temp = course_id + "_" + position_formatted + "_" + lectureID + "_" + asset_id + "_" + filename;
         } else if (!StringUtils.isEmpty(title)) {
             filename_temp = title;
-            filename_temp = course_id + "_" + position_formatted + "_" + lecture_id + "_" + asset_id + "_" + filename_temp;
+            filename_temp = course_id + "_" + position_formatted + "_" + lectureID + "_" + asset_id + "_" + filename_temp;
         } else {
-            filename_temp = course_id + "_" + position_formatted + "_" + lecture_id + "_" + asset_id;
+            filename_temp = course_id + "_" + position_formatted + "_" + lectureID + "_" + asset_id;
             if ("Article".equalsIgnoreCase(asset_type)) {
                 filename_temp += ".html";
             }
@@ -165,18 +166,19 @@ public class UdemyComDecrypter extends PluginForDecrypt {
             /* Add external urls as our plugins might be able to parse some of them. */
             /* TODO: Check if normal (e.g. "Video") assets can also contain an "external_url" object. */
             final String external_url = (String) entries.get("external_url");
-            if (external_url == null || external_url.equals("")) {
+            if (StringUtils.isEmpty(external_url)) {
                 return null;
             }
             dl = createDownloadlink(external_url);
         } else {
             dl = createDownloadlink("http://" + decrypter_domain + "/lecture_id/" + asset_id);
             dl.setName(filename_temp);
-            dl.setContentUrl("https://www." + this.getHost() + "/learn/v4/t/lecture/" + lecture_id);
+            /* URL for user to copy */
+            dl.setContentUrl("https://www." + this.getHost() + "/course/" + courseSlug + "/learn/lecture/" + lectureID);
             dl.setAvailable(true);
             dl.setProperty("asset_type", asset_type);
             dl.setProperty("filename_decrypter", filename_temp);
-            dl.setProperty("lecture_id", lecture_id);
+            dl.setProperty("lecture_id", lectureID);
             dl.setProperty("course_id", course_id);
             dl.setProperty("position", position);
             /* Set relative download path */
