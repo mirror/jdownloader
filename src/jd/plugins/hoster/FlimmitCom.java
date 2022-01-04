@@ -18,6 +18,12 @@ package jd.plugins.hoster;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -30,12 +36,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
 
 /**
  *
@@ -52,6 +52,10 @@ public class FlimmitCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.flimmit.com/agb/";
+    }
+
+    public static String getInternalBaseURL() {
+        return "https://flimmit.at/";
     }
 
     /* Connection stuff */
@@ -111,7 +115,7 @@ public class FlimmitCom extends PluginForHost {
                         logger.info("Trust cookies without login");
                         return;
                     } else {
-                        br.getPage("https://flimmit.at/account");
+                        br.getPage(getInternalBaseURL() + "account");
                         if (this.isLoggedIN(br)) {
                             logger.info("Cookie login successful");
                             account.saveCookies(br.getCookies(br.getHost()), "");
@@ -123,7 +127,7 @@ public class FlimmitCom extends PluginForHost {
                     }
                 }
                 logger.info("Performing full login");
-                br.getPage("https://flimmit.at/de/login");
+                br.getPage(getInternalBaseURL() + "de/login");
                 String responseString = br.postPageRaw("/de/dynamically/user/login", String.format("{\"email\":\"%s\",\"password\":\"%s\",\"_csrf_token\":null}", account.getUser(), account.getPass()));
                 Map<String, Object> response = JSonStorage.restoreFromString(responseString, TypeRef.HASHMAP);
                 if ("failure".equals(response.get("status"))) {
