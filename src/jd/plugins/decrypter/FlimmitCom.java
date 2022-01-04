@@ -31,6 +31,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountRequiredException;
@@ -38,6 +39,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
@@ -56,55 +59,65 @@ public class FlimmitCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final String titleURL = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        final String seriesSlug = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         final String contentID = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
-        login();
+        // login();
         br.setFollowRedirects(true);
         br.getPage(jd.plugins.hoster.FlimmitCom.getInternalBaseURL() + "dynamically/video/" + contentID + "/parent/" + contentID);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         // final String httpURL = (String) JavaScriptEngineFactory.walkJson(entries, "data/config/progressive");
         // we get hls since thats all we support at this stage.
-        final String error = (String) JavaScriptEngineFactory.walkJson(entries, "data/error");
-        /* Content is not a video object --> Maybe Series */
-        if ("Video not found.".equalsIgnoreCase(error)) {
+        final Object errorO = JavaScriptEngineFactory.walkJson(entries, "data/error");
+        /*
+         * Content is not a video object --> Maybe Series (2022-01-04: website actually handles this the same way and does the request for a
+         * single video even for series-overview-pages lol)
+         */
+        if ((errorO instanceof String) && errorO.toString().equalsIgnoreCase("Video not found.")) {
+            logger.info("Content is not a single video --> Maybe series-overview");
             br.getPage(parameter);
             if (this.br.getHttpConnection().getResponseCode() == 404) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String[] assetIDs = br.getRegex("/assets..?(\\d+)").getColumn(0);
-            for (final String assetID : assetIDs) {
-                if (assetIDs.equals(contentID)) {
+            final String[] episodesHTMLs = br.getRegex("<div class=\"b-card is-asset has-img-media  js-link-item\" data-jsb=\"(\\{\\&quot;.*?)\">").getColumn(0);
+            for (final String episodesHTML : episodesHTMLs) {
+                final String episodeJson = Encoding.htmlDecode(episodesHTML);
+                final Map<String, Object> episodeInfo = JavaScriptEngineFactory.jsonToJavaMap(episodeJson);
+                String url = episodeInfo.get("linkUrl").toString();
+                if (url.endsWith(contentID)) {
                     /* Do not add currently processed URL again! */
                     continue;
                 } else {
-                    decryptedLinks.add(this.createDownloadlink(jd.plugins.hoster.FlimmitCom.getInternalBaseURL() + titleURL + "/assets/" + assetID));
+                    /* TODO: Fix these URLs. Crawler should be able to handle them but they're still wrong! */
+                    url = br.getURL(url).toString();
+                    decryptedLinks.add(this.createDownloadlink(url));
                 }
             }
+            logger.info("Found " + decryptedLinks.size() + " episodes");
+        } else if (errorO != null) {
+            /* Offline or GEO-blocked */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
             /* Process video object */
             final String m3u = (String) JavaScriptEngineFactory.walkJson(entries, "data/config/hls");
             final String title = (String) JavaScriptEngineFactory.walkJson(entries, "data/modules/titles/title");
             final String description = (String) JavaScriptEngineFactory.walkJson(entries, "data/modules/titles/description");
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(titleURL);
+            fp.setName(seriesSlug);
             if (!StringUtils.isEmpty(description)) {
                 fp.setComment(description);
             }
             if (m3u == null) {
                 logger.info("Failed to find any downloadable content");
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             br.getPage(m3u);
             final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br);
             for (final HlsContainer quality : qualities) {
                 final DownloadLink dl = this.createDownloadlink(quality.getDownloadurl().replaceAll("https?://", "m3u8://"));
-                dl.setFinalFileName(titleURL + "_" + title + "_" + quality.getResolution() + "_" + quality.getBandwidth() + ".mp4");
+                dl.setFinalFileName(seriesSlug + "_" + title + "_" + quality.getResolution() + "_" + quality.getBandwidth() + ".mp4");
                 dl.setAvailable(true);
                 dl._setFilePackage(fp);
                 decryptedLinks.add(dl);
