@@ -185,6 +185,11 @@ public class DdebridCom extends PluginForHost {
         if (!is_premium) {
             account.setType(AccountType.FREE);
             ai.setStatus("Free account");
+            /*
+             * 2022-01-04: When attempting to download from any "free host", website says
+             * "Free downloads are disabled temporarily. Become VIP to download without limits.".
+             */
+            ai.setTrafficLeft(0);
             account.setMaxSimultanDownloads(defaultMAXDOWNLOADS);
         } else {
             account.setType(AccountType.PREMIUM);
@@ -195,13 +200,13 @@ public class DdebridCom extends PluginForHost {
             if (timestampValidUntil > 0) {
                 ai.setValidUntil(timestampValidUntil * 1000l, this.br);
             }
-        }
-        if (traffic_leftO != null && traffic_leftO instanceof String) {
-            ai.setUnlimitedTraffic();
-        } else if (traffic_leftO != null && traffic_leftO instanceof Long) {
-            ai.setTrafficLeft((Long) traffic_leftO);
-        } else {
-            logger.info("Failed to find any processable traffic_left value");
+            if (traffic_leftO != null && traffic_leftO instanceof String) {
+                ai.setUnlimitedTraffic();
+            } else if (traffic_leftO != null && traffic_leftO instanceof Long) {
+                ai.setTrafficLeft((Long) traffic_leftO);
+            } else {
+                logger.info("Failed to find any processable traffic_left value");
+            }
         }
         br.getPage(API_BASE + "/status");
         entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
