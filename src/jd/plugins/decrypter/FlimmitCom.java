@@ -61,7 +61,7 @@ public class FlimmitCom extends PluginForDecrypt {
         final String parameter = param.toString();
         final String seriesSlug = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         final String contentID = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
-        // login();
+        login();
         br.setFollowRedirects(true);
         br.getPage(jd.plugins.hoster.FlimmitCom.getInternalBaseURL() + "dynamically/video/" + contentID + "/parent/" + contentID);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
