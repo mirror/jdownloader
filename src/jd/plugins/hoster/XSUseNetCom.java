@@ -5,6 +5,17 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.uio.CloseReason;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.usenet.InvalidAuthException;
+import org.jdownloader.gui.dialog.AskDownloadPasswordDialogInterface;
+import org.jdownloader.gui.dialog.AskForDownloadLinkDialog;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -17,17 +28,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.uio.CloseReason;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.usenet.InvalidAuthException;
-import org.jdownloader.gui.dialog.AskDownloadPasswordDialogInterface;
-import org.jdownloader.gui.dialog.AskForDownloadLinkDialog;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xsusenet.com" }, urls = { "" })
 public class XSUseNetCom extends UseNet {
@@ -71,32 +71,29 @@ public class XSUseNetCom extends UseNet {
         }
     }
 
-    private boolean containsSessionCookie(Browser br) {
-        if (br.getCookie(getHost(), "XSRF-TOKEN", Cookies.NOTDELETEDPATTERN) == null) {
-            return false;
-        } else if (br.getCookie(getHost(), "laravel_session", Cookies.NOTDELETEDPATTERN) == null && br.getCookie(getHost(), "laravel_session_xsu", Cookies.NOTDELETEDPATTERN) == null) {
-            return false;
-        } else {
+    private boolean containsSessionCookie(final Browser br) {
+        if (br.containsHTML("\\?action=logout")) {
             return true;
+        } else {
+            return false;
         }
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setBrowserExclusive();
         final AccountInfo ai = new AccountInfo();
         br.setFollowRedirects(true);
         final Cookies cookies = account.loadCookies("");
         try {
-            Form login = null;
             if (cookies != null) {
                 br.setCookies(getHost(), cookies);
                 getPage("https://my.xsusenet.com");
-                login = br.getFormbyActionRegex(".*login");
-                if (login != null && login.containsHTML("name=\"password\"")) {
+                if (!containsSessionCookie(br)) {
+                    logger.info("Cookie login failed");
                     br.getCookies(getHost()).clear();
-                } else if (!containsSessionCookie(br)) {
-                    br.getCookies(getHost()).clear();
+                } else {
+                    logger.info("Cookie login successful");
                 }
             }
             if (!containsSessionCookie(br)) {
@@ -106,30 +103,20 @@ public class XSUseNetCom extends UseNet {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please enter your e-mail/password for xsusenet.com website!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 getPage("https://my.xsusenet.com/login");
-                final String csrfToken = br.getRegex("\"csrfToken\"\\s*:\\s*\"(.*?)\"").getMatch(0);
-                if (csrfToken == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                login = br.getFormbyActionRegex(".*login");
+                final Form login = br.getFormbyKey("password");
                 if (login == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                login.put("email", Encoding.urlEncode(userName));
+                login.put("username", Encoding.urlEncode(userName));
                 login.put("password", Encoding.urlEncode(account.getPass()));
-                login.put("_token", csrfToken);
                 submitForm(login);
-                login = br.getFormbyActionRegex(".*login");
-                if (login != null && login.containsHTML("name=\"password\"")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else if (!containsSessionCookie(br)) {
+                if (!containsSessionCookie(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
-            if (br.getRequest() == null || !StringUtils.containsIgnoreCase(br.getURL(), "https://my.xsusenet.com/")) {
-                getPage("https://my.xsusenet.com/");
-            }
-            if (br.containsHTML("Amigo, please select a product to start")) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "No valid/active subscriptio", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            this.getPage("/index.php?/clientarea/");
+            if (br.containsHTML("(?i)aria-selected=\"true\">\\s*Free Usenet\\s*<")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "No valid/active subscription", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             account.saveCookies(br.getCookies(getHost()), "");
             final String currentSubscription = br.getRegex("Your current subscription</span>\\s*<p>\\s*<strong>(.*?)<").getMatch(0);
