@@ -189,7 +189,13 @@ public class DdebridCom extends PluginForHost {
              * 2022-01-04: When attempting to download from any "free host", website says
              * "Free downloads are disabled temporarily. Become VIP to download without limits.".
              */
-            ai.setTrafficLeft(0);
+            final boolean canUseFreeAccounts = false;
+            if (canUseFreeAccounts) {
+                ai.setUnlimitedTraffic();
+            } else {
+                ai.setTrafficLeft(0);
+                ai.setExpired(true);
+            }
             account.setMaxSimultanDownloads(defaultMAXDOWNLOADS);
         } else {
             account.setType(AccountType.PREMIUM);
