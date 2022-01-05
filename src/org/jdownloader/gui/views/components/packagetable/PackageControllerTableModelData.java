@@ -23,7 +23,11 @@ public class PackageControllerTableModelData<PackageType extends AbstractPackage
 
         public List<? extends AbstractNode> getVisibleChildren();
 
+        public int getVisibleChildrenSize();
+
         public List<? extends AbstractNode> getInvisibleChildren();
+
+        public int getInvisibleChildrenSize();
 
         public int getPackageIndex();
     }
@@ -224,7 +228,7 @@ public class PackageControllerTableModelData<PackageType extends AbstractPackage
 
     /*
      * updates the filtered flag
-     * 
+     *
      * we don't want quickfilters to count as filtered state, users will still be able to move/dragdrop stuff
      */
     private void updateFilteredState() {
