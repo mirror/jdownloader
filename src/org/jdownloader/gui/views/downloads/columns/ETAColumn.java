@@ -2,6 +2,7 @@ package org.jdownloader.gui.views.downloads.columns;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
+import java.util.List;
 
 import javax.swing.Icon;
 import javax.swing.JCheckBoxMenuItem;
@@ -20,7 +21,6 @@ import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.columnmenu.LockColumnWidthAction;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
-import org.appwork.utils.ModifyLock;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -127,27 +127,22 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
             columnHelper.eta = -1;
         } else {
             final FilePackage fp = (FilePackage) value;
-            final ModifyLock lock = fp.getModifyLock();
-            final boolean readL = lock.readLock();
-            try {
-                if (fp.size() == 1) {
-                    fillColumnHelper(fp.getChildren().get(0), columnHelper);
-                    return;
-                }
-            } finally {
-                lock.readUnlock(readL);
-            }
-            columnHelper.icon = null;
-            final long eta = fp.getView().getETA();
-            if (eta > 0) {
-                columnHelper.eta = eta;
-                columnHelper.string = Formatter.formatSeconds(eta);
-            } else if (eta == Integer.MIN_VALUE) {
-                columnHelper.eta = Long.MAX_VALUE;
-                columnHelper.string = "\u221E";
+            final List<? extends AbstractNode> visibleChildren = fp.getView().getTableModelDataPackage().getVisibleChildren();
+            if (visibleChildren.size() == 1) {
+                fillColumnHelper(visibleChildren.get(0), columnHelper);
             } else {
-                columnHelper.eta = 0;
-                columnHelper.string = null;
+                columnHelper.icon = null;
+                final long eta = fp.getView().getETA();
+                if (eta > 0) {
+                    columnHelper.eta = eta;
+                    columnHelper.string = Formatter.formatSeconds(eta);
+                } else if (eta == Integer.MIN_VALUE) {
+                    columnHelper.eta = Long.MAX_VALUE;
+                    columnHelper.string = "\u221E";
+                } else {
+                    columnHelper.eta = 0;
+                    columnHelper.string = null;
+                }
             }
         }
     }

@@ -1,5 +1,7 @@
 package org.jdownloader.gui.views.downloads.columns;
 
+import java.util.List;
+
 import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
 
@@ -9,7 +11,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginProgress;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
-import org.appwork.utils.ModifyLock;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.DownloadPluginProgress;
@@ -54,19 +55,19 @@ public class DurationColumn extends ExtTextColumn<AbstractNode> {
             }
             if (time > 0) {
                 return TimeFormatter.formatMilliSeconds(time, 0);
+            } else {
+                return null;
             }
         } else if (value instanceof FilePackage) {
             final FilePackage fp = (FilePackage) value;
-            final ModifyLock lock = fp.getModifyLock();
-            final boolean readL = lock.readLock();
-            try {
-                if (fp.size() == 1) {
-                    return getStringValue(fp.getChildren().get(0));
-                }
-            } finally {
-                lock.readUnlock(readL);
+            final List<? extends AbstractNode> visibleChildren = fp.getView().getTableModelDataPackage().getVisibleChildren();
+            if (visibleChildren.size() == 1) {
+                return getStringValue(visibleChildren.get(0));
+            } else {
+                return null;
             }
+        } else {
+            return null;
         }
-        return null;
     }
 }
