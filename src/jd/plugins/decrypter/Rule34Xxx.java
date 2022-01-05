@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 
@@ -34,6 +35,8 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.config.Rule34xxxConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 /**
  *
@@ -54,6 +57,11 @@ public class Rule34Xxx extends PluginForDecrypt {
         Browser.setRequestIntervalLimitGlobal(getHost(), 250);
     }
 
+    @Override
+    public Class<? extends Rule34xxxConfig> getConfigInterface() {
+        return Rule34xxxConfig.class;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = Encoding.htmlDecode(param.toString());
@@ -67,6 +75,7 @@ public class Rule34Xxx extends PluginForDecrypt {
         if (br.getURL().endsWith("/index.php?page=post&s=list&tags=all")) {
             return decryptedLinks;
         }
+        final boolean preferServerFilenames = PluginJsonConfig.get(this.getConfigInterface()).isPreferServerFilenamesOverPluginDefaultFilenames();
         if (parameter.contains("&s=view&")) {
             // from list to post page
             final String imageParts[] = br.getRegex("'domain'\\s*:\\s*'(.*?)'\\s*,.*?'dir'\\s*:\\s*(\\d+).*?'img'\\s*:\\s*'(.*?)'.*?'base_dir'\\s*:\\s*'(.*?)'").getRow(0);
@@ -104,7 +113,12 @@ public class Rule34Xxx extends PluginForDecrypt {
                 } else {
                     dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
                 }
-                dl.setFinalFileName("rule34xxx-" + id + extension);
+                if (preferServerFilenames) {
+                    final String filename = getFileNameFromURL(new URL(dl.getPluginPatternMatcher()));
+                    dl.setFinalFileName(filename);
+                } else {
+                    dl.setFinalFileName("rule34xxx-" + id + extension);
+                }
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }

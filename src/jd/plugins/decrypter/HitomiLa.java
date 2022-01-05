@@ -218,37 +218,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
     }
 
     private String subdomain_from_url(String url, String base) throws Exception {
-        if (engine == null) {
-            Browser brc = br.cloneBrowser();
-            brc.setFollowRedirects(true);
-            brc.getPage("https://ltn.hitomi.la/common.js");
-            String js = brc.getRegex("(var gg.*?)function\\s*show_loading").getMatch(0);
-            if (js == null) {
-                js = brc.getRegex("(function subdom.*?)function\\s*show_loading").getMatch(0);
-            }
-            // String.padStart not available in old Rhino version
-            // js = js.replace("g.toString(16).padStart(3, '0')", "jsStringPad(g.toString(16))");
-            if (StringUtils.isEmpty(js)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
-            engine = manager.getEngineByName("javascript");
-            final Context jsContext = Context.enter();
-            try {
-                final Method jsStringPad = HitomiLa.class.getMethod("jsStringPad", new Class[] { String.class });
-                engine.put("jsStringPad", new FunctionObject("jsStringPad", jsStringPad, jsContext.initStandardObjects()));
-                engine.eval(js);
-                engine.eval(IO.readInputStreamToString(getClass().getResourceAsStream("/org/jdownloader/plugins/components/hitomi-gg.js")));
-            } catch (final Exception e) {
-                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                    engine = null;
-                    logger.log(e);
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
-            } finally {
-                Context.exit();
-            }
-        }
+        initEngine();
         try {
             if (base != null) {
                 engine.eval("var result=subdomain_from_url('" + url + "','" + base + "');");
@@ -269,7 +239,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
         return URL_FROM_URL_PATTERN.matcher(url).replaceAll("//" + subdomain_from_url(url, base) + ".hitomi.la/");
     }
 
-    private String full_path_from_hash(String hash) throws Exception {
+    private void initEngine() throws Exception {
         if (engine == null) {
             Browser brc = br.cloneBrowser();
             brc.setFollowRedirects(true);
@@ -301,6 +271,10 @@ public class HitomiLa extends antiDDoSForDecrypt {
                 Context.exit();
             }
         }
+    }
+
+    private String full_path_from_hash(String hash) throws Exception {
+        initEngine();
         try {
             engine.eval("var result=full_path_from_hash('" + hash + "');");
             final String result = engine.get("result").toString();
