@@ -14,7 +14,6 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 
 public class RemainingColumn extends ExtFileSizeColumn<AbstractNode> {
-
     /**
      *
      */
@@ -59,8 +58,9 @@ public class RemainingColumn extends ExtFileSizeColumn<AbstractNode> {
             final FilePackageView view = ((FilePackage) o2).getView();
             if (view.getUnknownFileSizes() > 0) {
                 return Math.max(-1, view.getSize() - view.getDone());
+            } else {
+                return Math.max(0, view.getSize() - view.getDone());
             }
-            return Math.max(0, view.getSize() - view.getDone());
         } else {
             return -1l;
         }
@@ -79,7 +79,6 @@ public class RemainingColumn extends ExtFileSizeColumn<AbstractNode> {
         } else {
             return this.getSizeString(sizeValue);
         }
-
     }
 
     @Override
@@ -91,5 +90,4 @@ public class RemainingColumn extends ExtFileSizeColumn<AbstractNode> {
     public boolean isEnabled(AbstractNode obj) {
         return obj.isEnabled();
     }
-
 }

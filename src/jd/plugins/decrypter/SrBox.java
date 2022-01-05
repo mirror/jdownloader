@@ -21,9 +21,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -34,8 +31,11 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 /** 2020-06-08: Current main domain is: isrbx.net */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "isrbx.net" }, urls = { "https?://[\\w\\.]*(?:isra?bo?x\\.(?:[a-zA-Z]+)|isbox\\.net)/[0-9]+-.*?\\.html|https?://(?:www\\.)?(?:biq\\.to|(?:isra?bo?x\\.(?:[a-zA-Z]+)|isbox\\.net))/go/[a-f0-9]{100,}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "isrbx.net" }, urls = { "https?://[\\w\\.]*(?:isra?bo?x(?:-music)?\\.(?:[a-zA-Z]+)|isbox\\.net)/[0-9]+-.*?\\.html|https?://(?:www\\.)?(?:biq\\.to|(?:isra?bo?x(?:-music)?\\.(?:[a-zA-Z]+)|isbox\\.net))/go/[a-f0-9]{100,}" })
 public class SrBox extends antiDDoSForDecrypt {
     public SrBox(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,7 +48,7 @@ public class SrBox extends antiDDoSForDecrypt {
         Browser.setRequestIntervalLimitGlobal("isrbx.net", 1000);
     }
 
-    private final String        base                 = "(?i)https?://[\\w\\.]*(?:isra?bo?x\\.(?:[a-zA-Z]+)|isbox\\.net)/";
+    private final String        base                 = "(?i)https?://[\\w\\.]*(?:isra?bo?x(?:-music)?\\.(?:[a-zA-Z]+)|isbox\\.net)/";
     private static final String TYPE_SINGLE_REDIRECT = "https?://[^/]+/go/[a-f0-9]{100,}";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
