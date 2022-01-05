@@ -58,7 +58,7 @@ public class Property implements Serializable {
 
     private static final long       serialVersionUID  = -6093927038856757256L;
     /**
-     * Nullvalue used to remove a key completly.
+     * Null value used to remove a key completly.
      */
     public static final Object      NULL              = new Object();
     /* do not remove to keep stable compatibility */
@@ -66,14 +66,17 @@ public class Property implements Serializable {
     private static final Object     NEWIMPLEMENTATION = new Object();
     private Object[]                propertiesList    = null;
 
-    private void grow(final int size) {
+    private void ensureCapacity(final int capacity) {
         synchronized (NEWIMPLEMENTATION) {
             if (propertiesList == null) {
-                propertiesList = new Object[size * 2];
+                propertiesList = new Object[capacity * 2];
             } else {
                 final int length = propertiesList.length;
-                final Object[] tmpPropertiesList = new Object[length + (size * 2)];
-                System.arraycopy(propertiesList, 0, tmpPropertiesList, 0, length);
+                final int grow = (capacity * 2) - length;
+                if (grow > 0) {
+                    final Object[] tmpPropertiesList = new Object[length + grow];
+                    System.arraycopy(propertiesList, 0, tmpPropertiesList, 0, length);
+                }
             }
         }
     }
@@ -429,7 +432,7 @@ public class Property implements Serializable {
         final HashMap<String, Object> newProperties = optimizeMapInstance(properties);
         if (newProperties != null && newProperties.size() > 0) {
             if (NEWIMPLEMENTATION != null) {
-                grow(newProperties.size());
+                ensureCapacity(newProperties.size());
                 for (final Entry<String, Object> entry : newProperties.entrySet()) {
                     putObject(entry.getKey(), entry.getValue());
                 }
