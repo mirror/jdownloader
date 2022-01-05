@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
@@ -41,6 +40,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
@@ -217,70 +218,50 @@ public class HitomiLa extends antiDDoSForDecrypt {
     }
 
     private String subdomain_from_url(String url, String base) throws Exception {
-        if (true) {
-            if (engine == null) {
-                Browser brc = br.cloneBrowser();
-                brc.setFollowRedirects(true);
-                brc.getPage("https://ltn.hitomi.la/common.js");
-                String js = brc.getRegex("(var gg.*?)function\\s*show_loading").getMatch(0);
-                if (js == null) {
-                    js = brc.getRegex("(function subdom.*?)function\\s*show_loading").getMatch(0);
-                }
-                // String.padStart not available in old Rhino version
-                js = js.replace("g.toString(16).padStart(3, '0')", "jsStringPad(g.toString(16))");
-                if (StringUtils.isEmpty(js)) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
-                engine = manager.getEngineByName("javascript");
-                final Context jsContext = Context.enter();
-                try {
-                    final Method jsStringPad = HitomiLa.class.getMethod("jsStringPad", new Class[] { String.class });
-                    engine.put("jsStringPad", new FunctionObject("jsStringPad", jsStringPad, jsContext.initStandardObjects()));
-                    engine.eval(js);
-                } catch (final Exception e) {
-                    e.printStackTrace();
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
-                } finally {
-                    Context.exit();
-                }
+        if (engine == null) {
+            Browser brc = br.cloneBrowser();
+            brc.setFollowRedirects(true);
+            brc.getPage("https://ltn.hitomi.la/common.js");
+            String js = brc.getRegex("(var gg.*?)function\\s*show_loading").getMatch(0);
+            if (js == null) {
+                js = brc.getRegex("(function subdom.*?)function\\s*show_loading").getMatch(0);
             }
+            // String.padStart not available in old Rhino version
+            // js = js.replace("g.toString(16).padStart(3, '0')", "jsStringPad(g.toString(16))");
+            if (StringUtils.isEmpty(js)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
+            engine = manager.getEngineByName("javascript");
+            final Context jsContext = Context.enter();
             try {
-                if (base != null) {
-                    engine.eval("var result=subdomain_from_url('" + url + "','" + base + "');");
-                } else {
-                    engine.eval("var result=subdomain_from_url('" + url + "');");
-                }
-                final String result = engine.get("result").toString();
-                return result;
+                final Method jsStringPad = HitomiLa.class.getMethod("jsStringPad", new Class[] { String.class });
+                engine.put("jsStringPad", new FunctionObject("jsStringPad", jsStringPad, jsContext.initStandardObjects()));
+                engine.eval(js);
+                engine.eval(IO.readInputStreamToString(getClass().getResourceAsStream("/org/jdownloader/plugins/components/hitomi-gg.js")));
             } catch (final Exception e) {
-                e.printStackTrace();
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    engine = null;
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
+            } finally {
+                Context.exit();
             }
-        } else {
-            String retval = "b";
+        }
+        try {
             if (base != null) {
-                retval = base;
+                engine.eval("var result=subdomain_from_url('" + url + "','" + base + "');");
+            } else {
+                engine.eval("var result=subdomain_from_url('" + url + "');");
             }
-            int number_of_frontends = 3;
-            final Matcher m = SUBDOMAIN_FROM_URL_PATTERN.matcher(url);
-            if (!m.find()) {
-                return "a";
+            final String result = engine.get("result").toString();
+            return result;
+        } catch (final Exception e) {
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                e.printStackTrace();
             }
-            try {
-                int g = Integer.parseInt(m.group(1), 16);
-                int o = 0;
-                if (g < 0x80) {
-                    o = 1;
-                }
-                if (g < 0x40) {
-                    o = 2;
-                }
-                // retval = subdomain_from_galleryid(g, number_of_frontends) + retval;
-                retval = String.valueOf((char) (97 + o)) + retval;
-            } catch (NumberFormatException ignore) {
-            }
-            return retval;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
         }
     }
 
@@ -288,11 +269,47 @@ public class HitomiLa extends antiDDoSForDecrypt {
         return URL_FROM_URL_PATTERN.matcher(url).replaceAll("//" + subdomain_from_url(url, base) + ".hitomi.la/");
     }
 
-    private String full_path_from_hash(String hash) {
-        if (hash.length() < 3) {
-            return hash;
-        } else {
-            return FULL_PATH_FROM_HASH_PATTERN.matcher(hash).replaceAll("$2/$1/" + hash);
+    private String full_path_from_hash(String hash) throws Exception {
+        if (engine == null) {
+            Browser brc = br.cloneBrowser();
+            brc.setFollowRedirects(true);
+            brc.getPage("https://ltn.hitomi.la/common.js");
+            String js = brc.getRegex("(var gg.*?)function\\s*show_loading").getMatch(0);
+            if (js == null) {
+                js = brc.getRegex("(function subdom.*?)function\\s*show_loading").getMatch(0);
+            }
+            // String.padStart not available in old Rhino version
+            // js = js.replace("g.toString(16).padStart(3, '0')", "jsStringPad(g.toString(16))");
+            if (StringUtils.isEmpty(js)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
+            engine = manager.getEngineByName("javascript");
+            final Context jsContext = Context.enter();
+            try {
+                final Method jsStringPad = HitomiLa.class.getMethod("jsStringPad", new Class[] { String.class });
+                engine.put("jsStringPad", new FunctionObject("jsStringPad", jsStringPad, jsContext.initStandardObjects()));
+                engine.eval(js);
+                engine.eval(IO.readInputStreamToString(getClass().getResourceAsStream("/org/jdownloader/plugins/components/hitomi-gg.js")));
+            } catch (final Exception e) {
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    engine = null;
+                    logger.log(e);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
+            } finally {
+                Context.exit();
+            }
+        }
+        try {
+            engine.eval("var result=full_path_from_hash('" + hash + "');");
+            final String result = engine.get("result").toString();
+            return result;
+        } catch (final Exception e) {
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                e.printStackTrace();
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
         }
     }
 
