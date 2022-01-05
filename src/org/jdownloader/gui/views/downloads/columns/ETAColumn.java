@@ -24,6 +24,7 @@ import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelData.PackageControllerTableModelDataPackage;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.TimeOutCondition;
@@ -127,8 +128,9 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
             columnHelper.eta = -1;
         } else {
             final FilePackage fp = (FilePackage) value;
-            final List<? extends AbstractNode> visibleChildren = fp.getView().getTableModelDataPackage().getVisibleChildren();
-            if (visibleChildren.size() == 1) {
+            final PackageControllerTableModelDataPackage view = fp.getView().getTableModelDataPackage();
+            final List<? extends AbstractNode> visibleChildren = view.getVisibleChildrenSize() == 1 ? view.getVisibleChildren() : null;
+            if (visibleChildren != null && visibleChildren.size() == 1) {
                 fillColumnHelper(visibleChildren.get(0), columnHelper);
             } else {
                 columnHelper.icon = null;

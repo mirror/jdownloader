@@ -13,6 +13,7 @@ import jd.plugins.PluginProgress;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelData.PackageControllerTableModelDataPackage;
 import org.jdownloader.plugins.DownloadPluginProgress;
 
 public class DurationColumn extends ExtTextColumn<AbstractNode> {
@@ -60,8 +61,9 @@ public class DurationColumn extends ExtTextColumn<AbstractNode> {
             }
         } else if (value instanceof FilePackage) {
             final FilePackage fp = (FilePackage) value;
-            final List<? extends AbstractNode> visibleChildren = fp.getView().getTableModelDataPackage().getVisibleChildren();
-            if (visibleChildren.size() == 1) {
+            final PackageControllerTableModelDataPackage view = fp.getView().getTableModelDataPackage();
+            final List<? extends AbstractNode> visibleChildren = view.getVisibleChildrenSize() == 1 ? view.getVisibleChildren() : null;
+            if (visibleChildren != null && visibleChildren.size() == 1) {
                 return getStringValue(visibleChildren.get(0));
             } else {
                 return null;
