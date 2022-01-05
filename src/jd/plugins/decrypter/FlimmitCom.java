@@ -22,12 +22,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -43,7 +37,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  *
@@ -97,8 +96,13 @@ public class FlimmitCom extends PluginForDecrypt {
             }
             logger.info("Found " + decryptedLinks.size() + " episodes");
         } else if (errorO != null) {
-            /* Offline or GEO-blocked */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("Sie ein laufendes Abo") || br.containsHTML("\"code\"\\s*:\\s*1006")) {
+                /* active subscription required */
+                throw new AccountRequiredException();
+            } else {
+                /* Offline or GEO-blocked */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         } else {
             /* Process video object */
             final String m3u = (String) JavaScriptEngineFactory.walkJson(entries, "data/config/hls");
@@ -114,6 +118,9 @@ public class FlimmitCom extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             br.getPage(m3u);
+            // TODO: please rewrite to use the dedicated hoster plugin
+            // TODO: store asset ID/contentID and maybe seriesSlug(might be required in future) and hlscontainer id as properties, so hoster
+            // plugin can later refresh urls or change quality
             final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br);
             for (final HlsContainer quality : qualities) {
                 final DownloadLink dl = this.createDownloadlink(quality.getDownloadurl().replaceAll("https?://", "m3u8://"));
@@ -129,7 +136,7 @@ public class FlimmitCom extends PluginForDecrypt {
     public void login() throws Exception {
         // we need an account
         Account account = null;
-        ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
+        final ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
         if (accounts != null && accounts.size() != 0) {
             // lets sort, premium > non premium
             Collections.sort(accounts, new Comparator<Account>() {
@@ -140,9 +147,9 @@ public class FlimmitCom extends PluginForDecrypt {
                     return io1 <= io2 ? io1 : io2;
                 }
             });
-            Iterator<Account> it = accounts.iterator();
+            final Iterator<Account> it = accounts.iterator();
             while (it.hasNext()) {
-                Account n = it.next();
+                final Account n = it.next();
                 if (n.isEnabled() && n.isValid()) {
                     account = n;
                     break;
@@ -151,14 +158,16 @@ public class FlimmitCom extends PluginForDecrypt {
         }
         if (account == null) {
             throw new AccountRequiredException();
+        } else {
+            final PluginForHost plugin = getNewPluginForHostInstance("flimmit.com");
+            if (plugin == null) {
+                throw new IllegalStateException("flimmit hoster plugin not found!");
+            } else {
+                // set cross browser support
+                ((jd.plugins.hoster.FlimmitCom) plugin).setBrowser(br);
+                ((jd.plugins.hoster.FlimmitCom) plugin).login(account, false);
+            }
         }
-        final PluginForHost plugin = JDUtilities.getPluginForHost("flimmit.com");
-        if (plugin == null) {
-            throw new IllegalStateException("flimmit hoster plugin not found!");
-        }
-        // set cross browser support
-        ((jd.plugins.hoster.FlimmitCom) plugin).setBrowser(br);
-        ((jd.plugins.hoster.FlimmitCom) plugin).login(account, false);
     }
 
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
