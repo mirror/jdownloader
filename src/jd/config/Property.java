@@ -83,13 +83,7 @@ public class Property implements Serializable {
 
     private boolean putObject(String key, Object value) {
         synchronized (NEWIMPLEMENTATION) {
-            if (propertiesList == null) {
-                if (value == null || value == NULL) {
-                    return false;
-                } else {
-                    propertiesList = new Object[2];
-                }
-            }
+            ensureCapacity(1);
             final Object[] propertiesList = this.propertiesList;
             if (key != null) {
                 final int length = propertiesList.length;
@@ -198,17 +192,17 @@ public class Property implements Serializable {
         Object ret = getProperty(key);
         if (ret == null) {
             return null;
-        }
-        if (typeRef.getType().equals(ret.getClass())) {
+        } else if (typeRef.getType().equals(ret.getClass())) {
+            return (T) ret;
+        } else {
+            // if (ret instanceof String) {
+            // ret = JSonStorage.restoreFromString((String) ret, typeRef);
+            // } else {
+            ret = JSonStorage.convert(ret, typeRef);
+            // }
+            setProperty(key, ret);
             return (T) ret;
         }
-        // if (ret instanceof String) {
-        // ret = JSonStorage.restoreFromString((String) ret, typeRef);
-        // } else {
-        ret = JSonStorage.convert(ret, typeRef);
-        // }
-        setProperty(key, ret);
-        return (T) ret;
     }
 
     public Boolean getBooleanProperty(final String key, final boolean def) {
@@ -343,8 +337,9 @@ public class Property implements Serializable {
         }
         if (ret == null) {
             return def;
+        } else {
+            return ret;
         }
-        return ret;
     }
 
     /**
