@@ -66,6 +66,18 @@ public class Property implements Serializable {
     private static final Object     NEWIMPLEMENTATION = new Object();
     private Object[]                propertiesList    = null;
 
+    private void grow(final int size) {
+        synchronized (NEWIMPLEMENTATION) {
+            if (propertiesList == null) {
+                propertiesList = new Object[size * 2];
+            } else {
+                final int length = propertiesList.length;
+                final Object[] tmpPropertiesList = new Object[length + (size * 2)];
+                System.arraycopy(propertiesList, 0, tmpPropertiesList, 0, length);
+            }
+        }
+    }
+
     private boolean putObject(String key, Object value) {
         synchronized (NEWIMPLEMENTATION) {
             if (propertiesList == null) {
@@ -417,6 +429,7 @@ public class Property implements Serializable {
         final HashMap<String, Object> newProperties = optimizeMapInstance(properties);
         if (newProperties != null && newProperties.size() > 0) {
             if (NEWIMPLEMENTATION != null) {
+                grow(newProperties.size());
                 for (final Entry<String, Object> entry : newProperties.entrySet()) {
                     putObject(entry.getKey(), entry.getValue());
                 }

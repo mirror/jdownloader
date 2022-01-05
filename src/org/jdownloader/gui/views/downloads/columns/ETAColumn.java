@@ -20,6 +20,7 @@ import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.columnmenu.LockColumnWidthAction;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.appwork.utils.ModifyLock;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -29,7 +30,6 @@ import org.jdownloader.plugins.TimeOutCondition;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class ETAColumn extends ExtTextColumn<AbstractNode> {
-
     private class ColumnHelper {
         private Icon   icon   = null;
         private long   eta    = -1;
@@ -40,7 +40,6 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
      *
      */
     private static final long serialVersionUID = 1L;
-
     private final Icon        wait;
     private ColumnHelper      columnHelper     = new ColumnHelper();
 
@@ -68,7 +67,6 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
         super(_GUI.T.ETAColumn_ETAColumn());
         rendererField.setHorizontalAlignment(SwingConstants.RIGHT);
         this.wait = NewTheme.I().getIcon(IconKey.ICON_WAIT, 16);
-
         this.setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
             private ColumnHelper helper1 = new ColumnHelper();
             private ColumnHelper helper2 = new ColumnHelper();
@@ -91,7 +89,6 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
                     return l1 < l2 ? -1 : 1;
                 }
             }
-
         });
     }
 
@@ -102,7 +99,7 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
             if (progress != null) {
                 columnHelper.icon = progress.getIcon(this);
                 columnHelper.string = progress.getMessage(this);
-                long eta = progress.getETA();
+                final long eta = progress.getETA();
                 if (eta >= 0) {
                     columnHelper.eta = eta;
                 } else {
@@ -129,9 +126,19 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
             columnHelper.string = null;
             columnHelper.eta = -1;
         } else {
+            final FilePackage fp = (FilePackage) value;
+            final ModifyLock lock = fp.getModifyLock();
+            final boolean readL = lock.readLock();
+            try {
+                if (fp.size() == 1) {
+                    fillColumnHelper(fp.getChildren().get(0), columnHelper);
+                    return;
+                }
+            } finally {
+                lock.readUnlock(readL);
+            }
             columnHelper.icon = null;
-            FilePackage fp = (FilePackage) value;
-            long eta = fp.getView().getETA();
+            final long eta = fp.getView().getETA();
             if (eta > 0) {
                 columnHelper.eta = eta;
                 columnHelper.string = Formatter.formatSeconds(eta);
@@ -156,11 +163,9 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
     }
 
     public JPopupMenu createHeaderPopup() {
-
         final JPopupMenu ret = new JPopupMenu();
         LockColumnWidthAction action;
         ret.add(new JCheckBoxMenuItem(action = new LockColumnWidthAction(this)));
-
         ret.add(new JCheckBoxMenuItem(new AppAction() {
             {
                 setName(_GUI.T.literall_premium_alert());
@@ -175,7 +180,6 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
         }));
         ret.add(new JSeparator());
         return ret;
-
     }
 
     public boolean onSingleClick(final MouseEvent e, final AbstractNode value) {
