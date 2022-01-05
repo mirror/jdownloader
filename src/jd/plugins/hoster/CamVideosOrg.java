@@ -12,6 +12,7 @@ import org.appwork.utils.StringUtils;
 public class CamVideosOrg extends KernelVideoSharingComV2 {
     public CamVideosOrg(final PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://www.camvideos.org/");
     }
 
     public static List<String[]> getPluginDomains() {

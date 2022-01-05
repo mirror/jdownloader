@@ -19,17 +19,12 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -46,6 +41,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "udemy.com" }, urls = { "https?://(?:www\\.)?udemydecrypted\\.com/(.+\\?dtcode=[A-Za-z0-9]+|lecture_id/\\d+)" })
 public class UdemyCom extends PluginForHost {
@@ -102,7 +102,12 @@ public class UdemyCom extends PluginForHost {
             try {
                 login(aa, false);
                 loggedin = true;
-            } catch (final Throwable e) {
+            } catch (final Exception e) {
+                if (Thread.currentThread() instanceof SingleDownloadController) {
+                    throw e;
+                } else {
+                    logger.log(e);
+                }
             }
         }
         String ext = null;
@@ -160,9 +165,12 @@ public class UdemyCom extends PluginForHost {
                 description = (String) entries.get("description");
                 String json_view_html = (String) entries.get("view_html");
                 entries = (Map<String, Object>) entries.get("asset");
+                final boolean drm;
                 if ((Boolean) entries.get("course_is_drmed") == Boolean.TRUE) {
+                    drm = true;
                     link.setProperty(PROPERTY_IS_DRM_PROTECTED, true);
                 } else {
+                    drm = false;
                     link.removeProperty(PROPERTY_IS_DRM_PROTECTED);
                 }
                 if (asset_type.equalsIgnoreCase("Article")) {
@@ -174,75 +182,99 @@ public class UdemyCom extends PluginForHost {
                         ext = ".pdf";
                     }
                 }
+                if (filename == null) {
+                    filename = (String) entries.get("title");
+                }
                 final Object download_urlsO = entries.get("download_urls");
-                if (download_urlsO != null) {
-                    link.setProperty(PROPERTY_IS_OFFICIALLY_DOWNLOADABLE, true);
+                if (download_urlsO != null && download_urlsO instanceof Map) {
+                    // DownloadURL
+                    final List<Map<String, Object>> downloadList = (List<Map<String, Object>>) ((Map<String, Object>) download_urlsO).get(asset_type);
+                    long maxQuality = -1;
+                    for (final Map<String, Object> downloadEntry : downloadList) {
+                        final long qualityTmp = JavaScriptEngineFactory.toLong(downloadEntry.get("label"), 0);
+                        final String dllinkTmp = (String) downloadEntry.get("file");
+                        if (qualityTmp > maxQuality && !StringUtils.isEmpty(dllinkTmp)) {
+                            this.dllink = dllinkTmp;
+                            maxQuality = qualityTmp;
+                            final String filename_url = this.br.getRegex("response\\-content\\-disposition=attachment%3Bfilename=([^<>\"/\\\\]*)(mp4)?\\.mp4").getMatch(0);
+                            if (StringUtils.isNotEmpty(filename_url)) {
+                                filename = filename_url;
+                            }
+                        }
+                    }
+                    if (maxQuality > 0) {
+                        link.setProperty(PROPERTY_IS_OFFICIALLY_DOWNLOADABLE, true);
+                        logger.info("Found Download:" + maxQuality + "|" + dllink);
+                    } else {
+                        link.removeProperty(PROPERTY_IS_OFFICIALLY_DOWNLOADABLE);
+                    }
                 } else {
                     link.removeProperty(PROPERTY_IS_OFFICIALLY_DOWNLOADABLE);
                 }
                 final Object media_sourcesO = entries.get("media_sources");
-                if (download_urlsO != null && download_urlsO instanceof Map) {
-                    // DownloadURL
-                    if (filename == null) {
-                        filename = (String) entries.get("title");
-                    }
-                    entries = (Map<String, Object>) download_urlsO;
-                    final ArrayList<Object> ressourcelist = (ArrayList) entries.get(asset_type);
-                    long maxQuality = 0;
-                    for (final Object qualityO : ressourcelist) {
-                        entries = (Map<String, Object>) qualityO;
-                        final long qualityTmp = JavaScriptEngineFactory.toLong(entries.get("label"), 0);
-                        final String dllinkTmp = (String) entries.get("file");
-                        if (qualityTmp > maxQuality && !StringUtils.isEmpty(dllinkTmp)) {
-                            this.dllink = dllinkTmp;
-                            final String filename_url = this.br.getRegex("response\\-content\\-disposition=attachment%3Bfilename=([^<>\"/\\\\]*)(mp4)?\\.mp4").getMatch(0);
-                            if (filename_url != null) {
-                                filename = filename_url;
-                            }
+                if (StringUtils.isEmpty(dllink) && media_sourcesO != null && media_sourcesO instanceof List) {
+                    final List<Map<String, Object>> mediaList = (List<Map<String, Object>>) media_sourcesO;
+                    long maxQuality = -1;
+                    for (final Map<String, Object> mediaEntry : mediaList) {
+                        final long qualityTmp = JavaScriptEngineFactory.toLong(mediaEntry.get("label"), 0);
+                        final String src = (String) mediaEntry.get("src");
+                        if ("video/mp4".equals(mediaEntry.get("type")) && !StringUtils.isEmpty(src) && qualityTmp > maxQuality) {
+                            this.dllink = src;
                             maxQuality = qualityTmp;
                         }
+                    }
+                    for (final Map<String, Object> mediaEntry : mediaList) {
+                        final String src = (String) mediaEntry.get("src");
+                        if (!drm && "application/x-mpegURL".equals(mediaEntry.get("type")) && !StringUtils.isEmpty(src)) {
+                            this.dllink = src;
+                            break;
+                        }
+                    }
+                    if (dllink != null) {
+                        logger.info("Found Media:" + dllink);
                     }
                 }
                 if (StringUtils.isEmpty(dllink) && entries.get("stream_urls") != null) {
                     // StreamURL
                     final Map<String, Object> stream_urls = ((Map<String, Object>) entries.get("stream_urls"));
-                    if (stream_urls != null) {
+                    try {
                         final List<Map<String, Object>> videos = (List<Map<String, Object>>) stream_urls.get("Video");
-                        if (videos != null) {
-                            try {
-                                long quality_best = -1;
-                                for (final Map<String, Object> video : videos) {
-                                    final String file = (String) video.get("file");
-                                    final Object labelO = video.get("label");
-                                    final long quality;
-                                    if (labelO != null && labelO instanceof Number) {
-                                        quality = ((Number) labelO).longValue();
-                                    } else if (labelO != null && labelO instanceof String) {
-                                        /* E.g. '360p' or '360' */
-                                        final String labelNumberStr = new Regex(labelO.toString(), "(\\d+)p?").getMatch(0);
-                                        if (labelNumberStr == null) {
-                                            /* E.g. "auto" */
-                                            continue;
-                                        }
-                                        quality = Long.parseLong(labelNumberStr);
-                                    } else {
-                                        quality = -1;
-                                    }
-                                    if (StringUtils.isEmpty(file) || quality == -1) {
-                                        continue;
-                                    } else if (file.contains(".m3u8")) {
-                                        /* Skip hls */
+                        if (videos != null && videos.size() > 0) {
+                            long quality_best = -1;
+                            for (final Map<String, Object> video : videos) {
+                                final String file = (String) video.get("file");
+                                final Object labelO = video.get("label");
+                                final long quality;
+                                if (labelO != null && labelO instanceof Number) {
+                                    quality = ((Number) labelO).longValue();
+                                } else if (labelO != null && labelO instanceof String) {
+                                    /* E.g. '360p' or '360' */
+                                    final String labelNumberStr = new Regex(labelO.toString(), "(\\d+)p?").getMatch(0);
+                                    if (labelNumberStr == null) {
+                                        /* E.g. "auto" */
                                         continue;
                                     }
-                                    if (quality > quality_best) {
-                                        quality_best = quality;
-                                        dllink = file;
-                                    }
+                                    quality = Long.parseLong(labelNumberStr);
+                                } else {
+                                    quality = -1;
                                 }
-                            } catch (final Throwable e) {
-                                logger.log(e);
+                                if (StringUtils.isEmpty(file) || quality == -1) {
+                                    continue;
+                                } else if (file.contains(".m3u8")) {
+                                    /* Skip hls */
+                                    continue;
+                                }
+                                if (quality > quality_best) {
+                                    quality_best = quality;
+                                    dllink = file;
+                                }
+                            }
+                            if (quality_best > 0) {
+                                logger.info("Found Stream:" + quality_best + "|" + dllink);
                             }
                         }
+                    } catch (final Throwable e) {
+                        logger.log(e);
                     }
                     /* json handling did not work or officially there are no downloadlinks --> Grab links from html inside json */
                     if (StringUtils.isEmpty(dllink) && json_view_html != null) {
@@ -277,6 +309,9 @@ public class UdemyCom extends PluginForHost {
                                         dllink = src;
                                     }
                                 }
+                                if (quality_best > 0) {
+                                    logger.info("Found JsonStream:" + quality_best + "|" + dllink);
+                                }
                             } catch (final Throwable e) {
                                 logger.log(e);
                             }
@@ -300,25 +335,12 @@ public class UdemyCom extends PluginForHost {
                             dllink = Encoding.htmlDecode(dllink);
                         }
                     }
-                    if (filename == null) {
-                        if (title_cleaned != null) {
-                            filename = asset_id + "_" + title_cleaned;
-                        } else {
-                            filename = asset_id;
-                        }
-                    }
                 }
-                if (StringUtils.isEmpty(this.dllink) && media_sourcesO != null) {
-                    /* Maybe only HLS and DASH streaming available. */
-                    final List<Map<String, Object>> media_sources = (List<Map<String, Object>>) media_sourcesO;
-                    for (final Map<String, Object> media_source : media_sources) {
-                        if (media_source.get("type").toString().equals("application/x-mpegURL")) {
-                            this.dllink = media_source.get("src").toString();
-                            break;
-                        }
-                    }
-                    if (this.dllink == null) {
-                        logger.warning("Failed to find final downloadurl --> No supported streaming types available?");
+                if (filename == null) {
+                    if (title_cleaned != null) {
+                        filename = asset_id + "_" + title_cleaned;
+                    } else {
+                        filename = asset_id;
                     }
                 }
             }
@@ -358,7 +380,7 @@ public class UdemyCom extends PluginForHost {
         if (description != null && link.getComment() == null) {
             link.setComment(description);
         }
-        if (dllink != null && dllink.startsWith("http") && !dllink.contains(".m3u8")) {
+        if (StringUtils.startsWithCaseInsensitive(dllink, "http") && !dllink.contains(".m3u8")) {
             final Browser br2 = new Browser();
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
@@ -387,8 +409,9 @@ public class UdemyCom extends PluginForHost {
         requestFileInformation(link);
         if (link.getPluginPatternMatcher().matches(TYPE_SINGLE_PREMIUM__DECRYPRED)) {
             throw new AccountRequiredException();
+        } else {
+            handleDownload(link);
         }
-        handleDownload(link);
     }
 
     public void handleDownload(final DownloadLink link) throws Exception {
@@ -419,10 +442,12 @@ public class UdemyCom extends PluginForHost {
                 }
             }
         } else {
-            if (dllink == null && !isOfficiallyDownloadable(link)) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Content might not be officially downloadable. Contact our support if you think this error message is wrong.");
-            } else if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                if (!isOfficiallyDownloadable(link)) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Content might not be officially downloadable. Contact our support if you think this error message is wrong.");
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             /*
              * Remove old cookies and headers from Browser as they are not needed for their downloadurls in fact using them get you server
@@ -444,10 +469,10 @@ public class UdemyCom extends PluginForHost {
                 dl = new HLSDownloader(link, br, url_hls);
                 dl.startDownload();
             } else {
-                /* Do not check for DRM protected flag here as HTTP streams are never DRM protected. */
-                // if (this.isDrmProtected(link)) {
-                // throw new PluginException(LinkStatus.ERROR_FATAL, "DRM protected");
-                // }
+                if (this.isDrmProtected(link) && false) {
+                    /* Do not check for DRM protected flag here as HTTP streams are never DRM protected. */
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "DRM protected");
+                }
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
                 if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                     try {
@@ -461,12 +486,9 @@ public class UdemyCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                     } else if (dl.getConnection().getResponseCode() == 404) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content");
                     }
-                    try {
-                        dl.getConnection().disconnect();
-                    } catch (final Throwable e) {
-                    }
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content");
                 }
                 dl.startDownload();
             }
