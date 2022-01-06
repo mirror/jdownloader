@@ -29,13 +29,18 @@ public class Bestcash2020Com extends MightyScriptAdLinkFly {
         super(wrapper);
     }
 
+    String refererHost = "";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        br.setFollowRedirects(false);
+        br.getPage(param.getCryptedUrl());
+        refererHost = br.getRequest().getLocation();
         return super.decryptIt(param, progress);
     }
 
     @Override
     protected String getSpecialReferer() {
         /* Pre-set Referer to skip multiple ad pages e.g. bestcash2020.com -> e3raftech.online -> bestcash2020.com */
-        return "https://encyclopedia-24.com";
+        return refererHost;
     }
 }
