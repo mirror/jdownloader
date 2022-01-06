@@ -610,7 +610,7 @@ public class FilerNet extends PluginForHost {
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_ENABLE_API_FOR_FREE_AND_FREE_ACCOUNT_DOWNLOADS, "Enable API for free- and free account downloads?\r\nBy disabling this you will force JD to use the website instead.\r\nThis could lead to unexpected errors.").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_ENABLE_HTTP, "Use HTTP instead of HTTPS").setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS, "Wait minutes on error 'no free slots available'", 10, 600, 1).setDefaultValue(defaultSETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS, "Wait minutes on error 'no free slots available'", 1, 600, 1).setDefaultValue(defaultSETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS));
     }
 
     @Override

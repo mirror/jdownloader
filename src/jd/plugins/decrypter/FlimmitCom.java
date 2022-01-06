@@ -15,12 +15,19 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -38,12 +45,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 /**
  *
  * @author raztoki
@@ -55,10 +56,13 @@ public class FlimmitCom extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String PROPERTY_COLLECTION_SLUG  = "collectionSlug";
+    private static final String PROPERTY_COLLECTION_TITLE = "collectionTitle";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final String seriesSlug = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        final String urlSlug = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         final String contentID = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
         login();
         br.setFollowRedirects(true);
@@ -80,6 +84,7 @@ public class FlimmitCom extends PluginForDecrypt {
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            final String title = br.getRegex("property=\"og:title\" content=\"([^\"]+)\"").getMatch(0);
             final String[] episodesHTMLs = br.getRegex("<div class=\"b-card is-asset has-img-media  js-link-item\" data-jsb=\"(\\{\\&quot;.*?)\">").getColumn(0);
             for (final String episodesHTML : episodesHTMLs) {
                 final String episodeJson = Encoding.htmlDecode(episodesHTML);
@@ -89,9 +94,17 @@ public class FlimmitCom extends PluginForDecrypt {
                     /* Do not add currently processed URL again! */
                     continue;
                 } else {
-                    /* TODO: Fix these URLs. Crawler should be able to handle them but they're still wrong! */
                     url = br.getURL(url).toString();
-                    decryptedLinks.add(this.createDownloadlink(url));
+                    final DownloadLink video = this.createDownloadlink(url);
+                    /*
+                     * Store some info here which would be harder to get later (e.g. we would have to access HTML page for each single video
+                     * -> Takes time -> We want to avoid that)
+                     */
+                    video.setProperty(PROPERTY_COLLECTION_SLUG, urlSlug);
+                    if (title != null) {
+                        video.setProperty(PROPERTY_COLLECTION_TITLE, Encoding.htmlDecode(title).trim());
+                    }
+                    decryptedLinks.add(video);
                 }
             }
             logger.info("Found " + decryptedLinks.size() + " episodes");
@@ -106,12 +119,39 @@ public class FlimmitCom extends PluginForDecrypt {
         } else {
             /* Process video object */
             final String m3u = (String) JavaScriptEngineFactory.walkJson(entries, "data/config/hls");
-            final String title = (String) JavaScriptEngineFactory.walkJson(entries, "data/modules/titles/title");
-            final String description = (String) JavaScriptEngineFactory.walkJson(entries, "data/modules/titles/description");
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(seriesSlug);
-            if (!StringUtils.isEmpty(description)) {
-                fp.setComment(description);
+            final String videoTitle = (String) JavaScriptEngineFactory.walkJson(entries, "data/modules/titles/title");
+            String seriesTitle = null;
+            String seasonNumberStr = null;
+            String episodeNumberStr = null;
+            String seriesInfoFormatted = null;
+            if (param.getDownloadLink() != null) {
+                final String collectionSlug = param.getDownloadLink().getStringProperty(PROPERTY_COLLECTION_SLUG);
+                final String collectionTitle = param.getDownloadLink().getStringProperty(PROPERTY_COLLECTION_TITLE);
+                if (collectionTitle != null) {
+                    final Regex seriesTitleRegex = new Regex(collectionTitle, "(?i)(.*) - Staffel (\\d+)");
+                    if (seriesTitleRegex.matches()) {
+                        seriesTitle = seriesTitleRegex.getMatch(0);
+                        seasonNumberStr = seriesTitleRegex.getMatch(1);
+                    } else {
+                        /* For collections without season numbers */
+                        seriesTitle = collectionTitle;
+                    }
+                } else if (collectionSlug != null) {
+                    /* Fallback */
+                    final Regex seriesTitleSlugRegex = new Regex(collectionSlug, "(?i)(.*)\\s*staffel-(\\d+)");
+                    if (seriesTitleSlugRegex.matches()) {
+                        seriesTitle = seriesTitleSlugRegex.getMatch(0);
+                        seasonNumberStr = seriesTitleSlugRegex.getMatch(1);
+                    } else {
+                        /* For collections without season numbers */
+                        seriesTitle = collectionSlug;
+                    }
+                }
+            }
+            episodeNumberStr = new Regex(videoTitle, "Folge (\\d+)").getMatch(0);
+            if (seasonNumberStr != null && episodeNumberStr != null) {
+                final DecimalFormat df = new DecimalFormat("00");
+                seriesInfoFormatted = "S" + df.format(Integer.parseInt(seasonNumberStr)) + "E" + df.format(Integer.parseInt(episodeNumberStr));
             }
             if (m3u == null) {
                 logger.info("Failed to find any downloadable content");
@@ -122,9 +162,30 @@ public class FlimmitCom extends PluginForDecrypt {
             // TODO: store asset ID/contentID and maybe seriesSlug(might be required in future) and hlscontainer id as properties, so hoster
             // plugin can later refresh urls or change quality
             final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br);
+            final String baseVideoTitle;
+            if (!StringUtils.isEmpty(videoTitle)) {
+                baseVideoTitle = videoTitle;
+            } else {
+                /* Fallback */
+                baseVideoTitle = urlSlug;
+            }
+            final String baseTitle;
+            if (!StringUtils.isEmpty(seriesTitle) && seriesInfoFormatted != null) {
+                baseTitle = seriesTitle + " " + seriesInfoFormatted;
+            } else if (!StringUtils.isEmpty(seriesTitle)) {
+                baseTitle = seriesTitle + baseVideoTitle;
+            } else {
+                baseTitle = baseVideoTitle;
+            }
+            final String description = (String) JavaScriptEngineFactory.walkJson(entries, "data/modules/titles/description");
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(baseTitle);
+            if (!StringUtils.isEmpty(description)) {
+                fp.setComment(description);
+            }
             for (final HlsContainer quality : qualities) {
                 final DownloadLink dl = this.createDownloadlink(quality.getDownloadurl().replaceAll("https?://", "m3u8://"));
-                dl.setFinalFileName(seriesSlug + "_" + title + "_" + quality.getResolution() + "_" + quality.getBandwidth() + ".mp4");
+                dl.setFinalFileName(baseTitle + "_" + quality.getResolution() + "_" + quality.getBandwidth() + ".mp4");
                 dl.setAvailable(true);
                 dl._setFilePackage(fp);
                 decryptedLinks.add(dl);

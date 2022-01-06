@@ -27,8 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class SunexenusCom extends XFileSharingProBasic {
-    public SunexenusCom(final PluginWrapper wrapper) {
+public class MiravdCom extends XFileSharingProBasic {
+    public MiravdCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -36,14 +36,14 @@ public class SunexenusCom extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info: 2020-06-10: All untested as I was unable to find example URLs/upload own files <br />
-     * captchatype-info: 2020-06-10: Unknown <br />
+     * limit-info:<br />
+     * captchatype-info: null 4dignum solvemedia reCaptchaV2, hcaptcha<br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "sunexenus.com" });
+        ret.add(new String[] { "miravd.com" });
         return ret;
     }
 
@@ -65,13 +65,13 @@ public class SunexenusCom extends XFileSharingProBasic {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return false;
+            return true;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return true;
         } else {
             /* Free(anonymous) and unknown account type */
-            return false;
+            return true;
         }
     }
 
@@ -80,30 +80,24 @@ public class SunexenusCom extends XFileSharingProBasic {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return 1;
+            return 0;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 1;
+            return 0;
         }
     }
 
     @Override
-    protected boolean supports_availablecheck_filesize_html() {
-        /* 2022-01-06: Important otherwise we'll get wrong filesize results! */
-        return false;
-    }
-
-    @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return 3;
+        return -1;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 3;
+        return -1;
     }
 
     @Override
