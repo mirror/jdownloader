@@ -71,7 +71,7 @@ public class XSUseNetCom extends UseNet {
         }
     }
 
-    private boolean containsSessionCookie(final Browser br) {
+    private boolean isLoggedIN(final Browser br) {
         if (br.containsHTML("\\?action=logout")) {
             return true;
         } else {
@@ -89,14 +89,14 @@ public class XSUseNetCom extends UseNet {
             if (cookies != null) {
                 br.setCookies(getHost(), cookies);
                 getPage("https://my.xsusenet.com");
-                if (!containsSessionCookie(br)) {
+                if (!isLoggedIN(br)) {
                     logger.info("Cookie login failed");
                     br.getCookies(getHost()).clear();
                 } else {
                     logger.info("Cookie login successful");
                 }
             }
-            if (!containsSessionCookie(br)) {
+            if (!isLoggedIN(br)) {
                 account.clearCookies("");
                 final String userName = account.getUser();
                 if (userName == null || !userName.matches("^.+?@.+?\\.[^\\.]+")) {
@@ -110,7 +110,7 @@ public class XSUseNetCom extends UseNet {
                 login.put("username", Encoding.urlEncode(userName));
                 login.put("password", Encoding.urlEncode(account.getPass()));
                 submitForm(login);
-                if (!containsSessionCookie(br)) {
+                if (!isLoggedIN(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
