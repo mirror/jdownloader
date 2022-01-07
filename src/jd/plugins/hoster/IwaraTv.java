@@ -59,6 +59,7 @@ public class IwaraTv extends PluginForHost {
     private static final String  type_image        = "https?://[^/]+/images/.+";
     private String               dllink            = null;
     private boolean              serverIssue       = false;
+    private static final String  PROPERTY_DATE     = "date";
     public static final String   PROPERTY_USER     = "user";
     public static final String   PROPERTY_TITLE    = "title";
     public static final String   PROPERTY_VIDEOID  = "videoid";
@@ -115,6 +116,10 @@ public class IwaraTv extends PluginForHost {
         }
         this.br.getPage(link.getPluginPatternMatcher());
         br.followRedirect();
+        final String date = br.getRegex("class=\"username\"[^>]*>[^<]+</a>\\s*作成日:(\\d{4}-\\d{2}-\\d{2}) 12:31").getMatch(0);
+        if (date != null) {
+            link.setProperty(PROPERTY_DATE, date);
+        }
         String uploadername = this.br.getRegex("class=\"username\">([^<>]+)<").getMatch(0);
         String filename = "";
         if (uploadername != null) {

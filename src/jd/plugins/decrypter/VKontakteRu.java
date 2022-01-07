@@ -127,7 +127,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_AUDIO_PAGE_oid                    = "https?://[^/]+/pages\\?oid=\\-\\d+\\&p=(?!va_c)[^<>/\"]+";
     private static final String     PATTERN_AUDIO_AUDIOS_ALBUM                = "https?://[^/]+/(audios\\-\\d+\\?album_id=\\d+|music/album/-?\\d+_\\d+)";
     private static final String     PATTERN_AUDIO_AUDIOS_ALBUM_2020           = "https?://[^/]+/music/album/(-?\\d+)_(\\d+).*?";
-    private static final String     PATTERN_VIDEO_SINGLE_Z                    = "(?i)https?://[^/]+/.*?z=video((?:\\-)?\\d+_\\d+).*?";
+    public static final String      PATTERN_VIDEO_SINGLE_Z                    = "(?i)https?://[^/]+/.*?z=video((?:\\-)?\\d+_\\d+).*?";
     private static final String     PATTERN_CLIP_SINGLE_Z                     = "(?i)https?://[^/]+/.*?z=clip((?:\\-)?\\d+_\\d+).*?";
     private static final String     PATTERN_VIDEO_SINGLE_ORIGINAL             = "(?i)https?://[^/]+/video((?:\\-)?\\d+_\\d+)";
     private static final String     PATTERN_CLIP_SINGLE_ORIGINAL              = "(?i)https?://[^/]+/clip((?:\\-)?\\d+_\\d+)";
@@ -654,13 +654,13 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /** 2016-08-11: Using website, API not anymore! */
     private void crawlSingleVideo(final CryptedLink param) throws Exception {
-        final String[] ids = findVideoIDs(this.CRYPTEDLINK_FUNCTIONAL);
+        final String[] ids = findVideoIDs(param.getCryptedUrl());
         final String oid = ids[0];
         final String id = ids[1];
         final String oid_and_id = oid + "_" + id;
         String listID;
         if (param.getCryptedUrl().matches(PATTERN_VIDEO_SINGLE_Z)) {
-            listID = new Regex(param.getCryptedUrl(), "z=video-?\\d+_\\d+(?:%2F|/)([a-z0-9]+)(?:%2F|/)").getMatch(0);
+            listID = new Regex(param.getCryptedUrl(), "z=video-?\\d+_\\d+(?:%2F|/)([A-Za-z0-9\\-_]+)").getMatch(0);
         } else {
             listID = UrlQuery.parse(param.getCryptedUrl()).get("listid");
             if (listID == null && param.getDownloadLink() != null) {
@@ -683,7 +683,7 @@ public class VKontakteRu extends PluginForDecrypt {
         try {
             br.setFollowRedirects(false);
             // webui, youtube stuff within -raztoki20160817
-            VKontakteRuHoster.accessVideo(this.br, oid, id, listID, false);
+            VKontakteRuHoster.accessVideo(this.br, param.getCryptedUrl(), oid, id, listID);
             handleVideoErrors(br);
             String embeddedVideoURL = new Regex(PluginJSonUtils.unescape(br.toString()), "<iframe [^>]*src=('|\")(.*?)\\1").getMatch(1);
             if (embeddedVideoURL != null) {
@@ -2184,7 +2184,17 @@ public class VKontakteRu extends PluginForDecrypt {
             final String listID = new Regex(videoHTML, videoContentStr + ", ([a-f0-9]+)").getMatch(0);
             final String postID = new Regex(videoHTML, "post_id:((-)?\\d+_\\d+)").getMatch(0);
             foundNewItems = true;
-            final DownloadLink dl = this.createDownloadlink(this.getProtocol() + this.getHost() + "/video" + videoContentStr);
+            /* Important: This URL may contain information without which crawler/hosterplugin would fail later! */
+            final String contentURL;
+            if (postID != null && listID != null) {
+                /* Video is part of */
+                contentURL = this.getProtocol() + this.getHost() + "/wall" + postID + "?z=video" + videoContentStr + "%2F" + listID;
+            } else if (postID != null) {
+                contentURL = this.getProtocol() + this.getHost() + "/wall" + postID + "?z=video" + videoContentStr;
+            } else {
+                contentURL = this.getProtocol() + this.getHost() + "/video" + videoContentStr;
+            }
+            final DownloadLink dl = this.createDownloadlink(contentURL);
             if (fp != null) {
                 dl._setFilePackage(fp);
             }
@@ -2193,11 +2203,6 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             if (postID != null) {
                 dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_wall_post_id, postID);
-            }
-            /* Try to set meaningful ContentURL */
-            if (postID != null && listID != null) {
-                /* ContentURL for user != PluginPatternMatcher */
-                dl.setContentUrl(this.getProtocol() + this.getHost() + "/wall" + postID + "?z=video" + videoContentStr + "%2F" + listID);
             }
             decryptedLinks.add(dl);
         }

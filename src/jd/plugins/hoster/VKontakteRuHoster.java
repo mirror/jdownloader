@@ -31,6 +31,7 @@ import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.SkipReasonException;
@@ -410,7 +411,7 @@ public class VKontakteRuHoster extends PluginForHost {
                     checkstatus = linkOk(link, isDownload);
                     if (checkstatus != 1) {
                         /* Refresh directlink */
-                        accessVideo(this.br, this.ownerID, this.contentID, link.getStringProperty(VKontakteRuHoster.PROPERTY_VIDEO_LIST_ID), false);
+                        accessVideo(this.br, link.getPluginPatternMatcher(), this.ownerID, this.contentID, link.getStringProperty(VKontakteRuHoster.PROPERTY_VIDEO_LIST_ID));
                         if (br.containsHTML(VKontakteRuHoster.HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS)) {
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         } else if (br.containsHTML("class\\s*=\\s*\"message_page_body\">\\s*Access denied")) {
@@ -813,17 +814,33 @@ public class VKontakteRuHoster extends PluginForHost {
         br.getHeaders().put("Referer", "https://" + DOMAIN + "/al_photos.php");
     }
 
-    public static void accessVideo(final Browser br, final String oid, final String id, final String listID, final boolean useApi) throws Exception {
+    public static void accessVideo(final Browser br, final String videoURL, final String oid, final String id, final String listID) throws Exception {
         final String videoids_together = oid + "_" + id;
-        if (listID == null && useApi) {
-            /*
-             * 2016-08-10: Seems like this API method does not löonger work/return the information we need. The new method seems to require
-             * authentication: https://api.vk.com/method/video.get?format=json&owner_id=&videos=-12345678_87654321 See here:
-             * https://new.vk.com/dev/video.get
+        if (videoURL.matches(VKontakteRu.PATTERN_VIDEO_SINGLE_Z) && listID == null) {
+            /**
+             * 2022-01-07: Special: Extra request of original URL in beforehand required to find listID and/or set required cookies!
              */
-            br.getPage(getProtocol() + "vk.com/video.php?act=a_flash_vars&vid=" + videoids_together);
+            br.getPage(videoURL);
+            final String thisListID = br.getRegex("\\?z=video" + videoids_together + "%2F([a-f0-9]+)\"").getMatch(0);
+            final UrlQuery query = new UrlQuery();
+            query.add("act", "show");
+            query.add("al", "1");
+            query.add("autoplay", "0");
+            if (thisListID != null) {
+                /* Should always be given! */
+                query.add("list", thisListID);
+            }
+            query.add("module", "");
+            query.add("video", videoids_together);
+            br.postPage("/al_video.php?act=show", query);
         } else if (listID != null) {
-            br.postPage(getProtocol() + "vk.com/al_video.php", "act=show_inline&al=1&list=" + listID + "&module=public&video=" + videoids_together);
+            final UrlQuery query = new UrlQuery();
+            query.add("act", "show_inline");
+            query.add("al", "1");
+            query.add("list", listID);
+            query.add("module", "public");
+            query.add("video", videoids_together);
+            br.postPage(getProtocol() + "vk.com/al_video.php", query);
         } else {
             br.getPage(getProtocol() + "vk.com/video" + videoids_together);
         }
