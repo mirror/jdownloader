@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.html.Form;
@@ -27,6 +25,8 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UsersdriveCom extends XFileSharingProBasic {
@@ -115,13 +115,13 @@ public class UsersdriveCom extends XFileSharingProBasic {
     }
 
     @Override
-    public Form findFormDownload2Premium(final Browser br) throws Exception {
+    public Form findFormDownload2Premium(final DownloadLink downloadLink, final Account account, final Browser br) throws Exception {
         /* 2020-07-16: Special */
         final Form download2 = br.getFormByInputFieldKeyValue("op", "download2");
         if (download2 != null) {
             return download2;
         } else {
-            return super.findFormDownload2Premium(br);
+            return super.findFormDownload2Premium(downloadLink, account, br);
         }
     }
 }

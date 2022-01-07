@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -31,6 +29,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FlorenfileCom extends XFileSharingProBasic {
@@ -191,9 +191,9 @@ public class FlorenfileCom extends XFileSharingProBasic {
         Form premiumDownloadForm = null;
         try {
             freeDownloadForm = this.findFormDownload1Free(br);
-            premiumDownloadForm = this.findFormDownload2Premium(br);
+            premiumDownloadForm = this.findFormDownload2Premium(link, account, br);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(e);
         }
         if (freeDownloadForm != null || premiumDownloadForm != null) {
             return null;
@@ -212,7 +212,7 @@ public class FlorenfileCom extends XFileSharingProBasic {
         Form premiumDownloadForm = null;
         try {
             freeDownloadForm = this.findFormDownload1Free(br);
-            premiumDownloadForm = this.findFormDownload2Premium(br);
+            premiumDownloadForm = this.findFormDownload2Premium(getDownloadLink(), null, br);
         } catch (Exception e) {
             e.printStackTrace();
         }

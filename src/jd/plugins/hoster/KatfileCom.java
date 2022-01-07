@@ -21,6 +21,7 @@ import java.util.List;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -80,6 +81,15 @@ public class KatfileCom extends XFileSharingProBasic {
             /* Free(anonymous) and unknown account type */
             return false;
         }
+    }
+
+    @Override
+    public Form findFormDownload2Premium(final DownloadLink downloadLink, final Account account, final Browser br) throws Exception {
+        final Form ret = super.findFormDownload2Premium(downloadLink, account, br);
+        if (ret != null) {
+            handleCaptcha(downloadLink, ret);
+        }
+        return ret;
     }
 
     @Override

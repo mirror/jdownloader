@@ -73,10 +73,10 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
     }
 
     @Override
-    public Form findFormDownload2Premium(final Browser br) throws Exception {
+    public Form findFormDownload2Premium(final DownloadLink downloadLink, final Account account, final Browser br) throws Exception {
         /* 2019-08-20: Special */
         handleSecurityVerification(br);
-        return super.findFormDownload2Premium(br);
+        return super.findFormDownload2Premium(downloadLink, account, br);
     }
 
     @Override

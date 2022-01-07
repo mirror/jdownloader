@@ -18,10 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -38,6 +34,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FilefoxCc extends XFileSharingProBasic {
@@ -258,10 +258,10 @@ public class FilefoxCc extends XFileSharingProBasic {
     }
 
     @Override
-    public Form findFormDownload2Premium(final Browser br) throws Exception {
+    public Form findFormDownload2Premium(final DownloadLink downloadLink, final Account account, final Browser br) throws Exception {
         /* 2019-06-13: Special */
         handleSecurityVerification();
-        return super.findFormDownload2Premium(br);
+        return super.findFormDownload2Premium(downloadLink, account, br);
     }
 
     @Override
