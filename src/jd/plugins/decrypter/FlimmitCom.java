@@ -157,11 +157,6 @@ public class FlimmitCom extends PluginForDecrypt {
                 logger.info("Failed to find any downloadable content");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            br.getPage(m3u);
-            // TODO: please rewrite to use the dedicated hoster plugin
-            // TODO: store asset ID/contentID and maybe seriesSlug(might be required in future) and hlscontainer id as properties, so hoster
-            // plugin can later refresh urls or change quality
-            final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br);
             final String baseVideoTitle;
             if (!StringUtils.isEmpty(videoTitle)) {
                 baseVideoTitle = videoTitle;
@@ -173,7 +168,7 @@ public class FlimmitCom extends PluginForDecrypt {
             if (!StringUtils.isEmpty(seriesTitle) && seriesInfoFormatted != null) {
                 baseTitle = seriesTitle + " " + seriesInfoFormatted;
             } else if (!StringUtils.isEmpty(seriesTitle)) {
-                baseTitle = seriesTitle + baseVideoTitle;
+                baseTitle = seriesTitle + " - " + baseVideoTitle;
             } else {
                 baseTitle = baseVideoTitle;
             }
@@ -183,6 +178,11 @@ public class FlimmitCom extends PluginForDecrypt {
             if (!StringUtils.isEmpty(description)) {
                 fp.setComment(description);
             }
+            br.getPage(m3u);
+            // TODO: please rewrite to use the dedicated hoster plugin
+            // TODO: store asset ID/contentID and maybe seriesSlug(might be required in future) and hlscontainer id as properties, so hoster
+            // plugin can later refresh urls or change quality
+            final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br);
             for (final HlsContainer quality : qualities) {
                 final DownloadLink dl = this.createDownloadlink(quality.getDownloadurl().replaceAll("https?://", "m3u8://"));
                 dl.setFinalFileName(baseTitle + "_" + quality.getResolution() + "_" + quality.getBandwidth() + ".mp4");

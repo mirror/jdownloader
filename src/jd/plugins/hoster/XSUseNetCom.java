@@ -115,9 +115,6 @@ public class XSUseNetCom extends UseNet {
                 }
             }
             this.getPage("/index.php?/clientarea/");
-            if (br.containsHTML("(?i)aria-selected=\"true\">\\s*Free Usenet\\s*<")) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "No valid/active subscription", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
             account.saveCookies(br.getCookies(getHost()), "");
             final String currentSubscription = br.getRegex("Your current subscription</span>\\s*<p>\\s*<strong>(.*?)<").getMatch(0);
             final String validUntil = br.getRegex("End date:\\s*(.*?)\\(").getMatch(0);
@@ -132,7 +129,10 @@ public class XSUseNetCom extends UseNet {
             account.setProperty(USENET_PASSWORD, password);
             final String packageType = currentSubscription;
             final boolean isFree;
-            if (packageType != null && !StringUtils.containsIgnoreCase(currentSubscription, "free")) {
+            if (br.containsHTML("(?i)aria-selected=\"true\">\\s*Free Usenet\\s*<")) {
+                isFree = true;
+            } else if (packageType != null && !StringUtils.containsIgnoreCase(currentSubscription, "free")) {
+                /* 2022-01-07: This is probably broken */
                 isFree = false;
                 account.setType(Account.AccountType.PREMIUM);
                 ai.setStatus(packageType);
@@ -161,9 +161,13 @@ public class XSUseNetCom extends UseNet {
             } else {
                 // Free account: 5 connections
                 isFree = true;
+            }
+            if (isFree) {
                 account.setType(Account.AccountType.FREE);
                 account.setMaxSimultanDownloads(5);
-                ai.setStatus(packageType);
+                if (packageType != null) {
+                    ai.setStatus(packageType);
+                }
             }
             if (validUntil != null) {
                 final long date = TimeFormatter.getMilliSeconds(validUntil, "MMM' 'dd', 'yyyy", Locale.ENGLISH);

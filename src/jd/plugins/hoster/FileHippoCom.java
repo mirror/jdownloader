@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -26,8 +28,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehippo.com" }, urls = { "https?://(?:www\\.)?filehippo\\.com(?:/(?:es|en|pl|jp|de))?/download_[^<>/\"]+(?:(?:/tech)?/\\d+/)?" })
 public class FileHippoCom extends PluginForHost {
@@ -88,6 +88,7 @@ public class FileHippoCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
+        final String applicationVersion = br.getRegex("data-qa=\"program-version\"[^>]*>([^<>\"]+)</p>").getMatch(0);
         String filename = br.getRegex("<b>Filename:</b></td><td>(.*?)</td>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>Download (.*?) \\- Technical Details \\- FileHippo\\.com</title>").getMatch(0);
@@ -99,7 +100,11 @@ public class FileHippoCom extends PluginForHost {
             }
         }
         if (filename == null) {
+            /* Fallback */
             filename = url_name.replaceFirst("(download_)", "").replaceFirst("(/.+)", "");
+        }
+        if (applicationVersion != null) {
+            filename += " " + applicationVersion;
         }
         link.setName(filename.trim());
         String filesize = br.getRegex("\\(([0-9,]+ bytes)\\)").getMatch(0);
