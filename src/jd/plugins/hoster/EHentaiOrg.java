@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -36,7 +35,6 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
-import jd.http.requests.HeadRequest;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
@@ -74,22 +72,21 @@ public class EHentaiOrg extends antiDDoSForHost {
     // protocol: no https
     // other:
     /* Connection stuff */
-    private static final boolean        free_resume                       = true;
+    private static final boolean free_resume                       = true;
     /* Limit chunks to 1 as we only download small files */
-    private static final int            free_maxchunks                    = 1;
-    private static final int            free_maxdownloads                 = -1;
-    private String                      dllink                            = null;
-    private boolean                     server_issues                     = false;
-    private final boolean               ENABLE_RANDOM_UA                  = true;
-    public static final String          PREFER_ORIGINAL_QUALITY           = "PREFER_ORIGINAL_QUALITY";
-    public static final String          ENABLE_FILENAME_FIX               = "ENABLE_FILENAME_FIX";
-    public static final String          PREFER_ORIGINAL_FILENAME          = "PREFER_ORIGINAL_FILENAME";
-    public static final String          SETTING_DOWNLOAD_ZIP              = "DOWNLOAD_ZIP";
-    private static final String         TYPE_EXHENTAI                     = "exhentai\\.org";
-    private static final String         TYPE_ARCHIVE                      = "ehentaiarchive://\\d+/[a-z0-9]+";
-    private static final String         TYPE_SINGLE_IMAGE_MULTI_PAGE_VIEW = "https://[^/]+/mpv/(\\d+)/([a-f0-9]{10})/#page(\\d+)";
-    private static final String         TYPE_SINGLE_IMAGE                 = "https?://[^/]+/s/([a-f0-9]{10})/(\\d+)-(\\d+)";
-    private final LinkedHashSet<String> dupe                              = new LinkedHashSet<String>();
+    private static final int     free_maxchunks                    = 1;
+    private static final int     free_maxdownloads                 = -1;
+    private String               dllink                            = null;
+    private boolean              server_issues                     = false;
+    private final boolean        ENABLE_RANDOM_UA                  = true;
+    public static final String   PREFER_ORIGINAL_QUALITY           = "PREFER_ORIGINAL_QUALITY";
+    public static final String   ENABLE_FILENAME_FIX               = "ENABLE_FILENAME_FIX";
+    public static final String   PREFER_ORIGINAL_FILENAME          = "PREFER_ORIGINAL_FILENAME";
+    public static final String   SETTING_DOWNLOAD_ZIP              = "DOWNLOAD_ZIP";
+    private static final String  TYPE_EXHENTAI                     = "exhentai\\.org";
+    private static final String  TYPE_ARCHIVE                      = "ehentaiarchive://\\d+/[a-z0-9]+";
+    private static final String  TYPE_SINGLE_IMAGE_MULTI_PAGE_VIEW = "https://[^/]+/mpv/(\\d+)/([a-f0-9]{10})/#page(\\d+)";
+    private static final String  TYPE_SINGLE_IMAGE                 = "https?://[^/]+/s/([a-f0-9]{10})/(\\d+)-(\\d+)";
 
     @Override
     public String getAGBLink() {
@@ -145,10 +142,8 @@ public class EHentaiOrg extends antiDDoSForHost {
      * @throws Exception
      */
     private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        boolean loggedin = false;
         if (account != null) {
             login(this.br, account, false);
-            loggedin = true;
         } else if (ENABLE_RANDOM_UA) {
             /* Be sure only to use random UA when an account is not used! */
             /*
@@ -159,7 +154,6 @@ public class EHentaiOrg extends antiDDoSForHost {
         }
         prepBR(br, link);
         // nullfication
-        dupe.clear();
         dllink = null;
         final boolean preferOriginalQuality = this.getPluginConfig().getBooleanProperty(PREFER_ORIGINAL_QUALITY, default_PREFER_ORIGINAL_QUALITY);
         /* from manual 'online check', we don't want to 'try' as it uses up quota... */
@@ -178,20 +172,35 @@ public class EHentaiOrg extends antiDDoSForHost {
             if (isDownload) {
                 String continue_url = br.getRegex("popUp\\('(https?://[^/]+/archiver\\.php\\?[^<>\"\\']+)'").getMatch(0);
                 if (continue_url == null) {
-                    logger.warning("Failed to find continue_url");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 continue_url = Encoding.htmlDecode(continue_url);
                 getPage(continue_url);
                 /* Another step */
-                continue_url = br.getRegex("document\\.getElementById\\(\"continue\"\\).*?document\\.location\\s*=\\s*\"((?:/|http)[^\"]+)\"").getMatch(0);
-                if (continue_url != null) {
-                    getPage(continue_url);
+                final String continue_url2 = br.getRegex("document\\.getElementById\\(\"continue\"\\).*?document\\.location\\s*=\\s*\"((?:/|http)[^\"]+)\"").getMatch(0);
+                /**
+                 * 2022-01-07: Two types can be available: "Original Archive" and "Resample Archive". </br>
+                 * We prefer best quality --> "Original Archive"
+                 */
+                final Form continueForm = br.getFormByInputFieldKeyValue("dltype", "org");
+                if (continue_url2 != null) {
+                    /* Old way */
+                    getPage(continue_url2);
+                } else if (continueForm != null) {
+                    this.submitForm(continueForm);
+                }
+                final String continue3 = br.getRegex("id=\"continue\"[^>]*>\\(<a href=\"(https?://[^\"]+)").getMatch(0);
+                if (continue3 != null) {
+                    this.getPage(continue3);
                 }
                 dllink = br.getRegex("document\\.location\\s*=\\s*\"((?:/|http)[^\"]+)\"").getMatch(0);
-                if (dllink == null && br.containsHTML("name=\"dlcheck\" value=\"Insufficient Funds\"")) {
-                    /* 2020-05-20: E.g. not enough credits for archive downloads (?) but enough to download single images (?) */
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cannot download archives with this account (?)");
+                if (dllink == null) {
+                    /* 2022-01-07 */
+                    dllink = br.getRegex("(?i)href=\"([^\"]+)\"[^>]*>Click Here To Start Downloading").getMatch(0);
+                }
+                if (dllink == null && br.containsHTML("name=\"dlcheck\"[^<>]*value=\"Insufficient Funds\"")) {
+                    /* 2020-05-20: E.g. not enough credits for archive downloads but enough to download single images. */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Insufficient funds for downloading archives");
                 }
             }
             return AvailableStatus.TRUE;
@@ -319,7 +328,7 @@ public class EHentaiOrg extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String namepart = getNamePart(link);
-            if (loggedin && this.getPluginConfig().getBooleanProperty(PREFER_ORIGINAL_QUALITY, default_PREFER_ORIGINAL_QUALITY)) {
+            if (account != null && this.getPluginConfig().getBooleanProperty(PREFER_ORIGINAL_QUALITY, default_PREFER_ORIGINAL_QUALITY)) {
                 /* Try to get fullsize (original) image. */
                 final Regex fulllinkinfo = br.getRegex("href=\"(https?://(?:(?:g\\.)?e\\-hentai|exhentai)\\.org/fullimg\\.php[^<>\"]*?)\">Download original \\d+ x \\d+ ([^<>\"]*?) source</a>");
                 dllink_fullsize = fulllinkinfo.getMatch(0);
@@ -363,79 +372,6 @@ public class EHentaiOrg extends antiDDoSForHost {
                 final String filesize2 = br.getRegex(":: ([^:<>\"]+)</div><div class=\"sn\"").getMatch(0);
                 if (filesize2 != null) {
                     link.setDownloadSize(SizeFormatter.getSize(filesize2));
-                }
-            }
-            final boolean check_filesize_via_directurl = false;
-            if (dllink != null && check_filesize_via_directurl) {
-                /*
-                 * Old fallback handling --> Website has a button "reload if image fails loading" --> This is what this does --> Should
-                 * never be required thus deactivated 2020-03-06.
-                 */
-                while (true) {
-                    if (!dupe.add(dllink)) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    final Browser br2 = br.cloneBrowser();
-                    // In case the link redirects to the finallink
-                    br2.setFollowRedirects(true);
-                    URLConnectionAdapter con = null;
-                    try {
-                        try {
-                            con = this.openAntiDDoSRequestConnection(br2, br2.createHeadRequest(dllink));
-                        } catch (final BrowserException ebr) {
-                            logger.log(ebr);
-                            // socket issues, lets try another mirror also.
-                            final String[] failed = br.getRegex("onclick=\"return ([a-z]+)\\(\\'(\\d+-\\d+)\\'\\)\">Click here if the image failsloading</a>").getRow(0);
-                            if (failed == null || failed.length == 2) {
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            }
-                            getPage(br.getURL() + "?" + failed[0] + "=" + failed[1]);
-                            getDllink(link, account);
-                            if (dllink != null) {
-                                continue;
-                            } else {
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            }
-                            /* Whatever happens - its most likely a server problem for this host! */
-                            // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
-                        }
-                        if (con.getResponseCode() == 404) {
-                            // we can try another mirror
-                            final String[] failed = br.getRegex("onclick=\"return ([a-z]+)\\('(\\d+-\\d+)'\\)\">Click here if the image failsloading</a>").getRow(0);
-                            if (failed != null && failed.length == 2) {
-                                getPage(br.getURL() + "?" + failed[0] + "=" + failed[1]);
-                                getDllink(link, account);
-                                if (dllink != null) {
-                                    continue;
-                                } else {
-                                    /* Failed */
-                                    break;
-                                }
-                            } else {
-                                /* Failed */
-                                break;
-                            }
-                        }
-                        final long conlength = con.getLongContentLength();
-                        if (this.looksLikeDownloadableContent(con)) {
-                            link.setDownloadSize(conlength);
-                            link.setProperty("directlink", dllink);
-                            return AvailableStatus.TRUE;
-                        } else {
-                            return AvailableStatus.UNCHECKABLE;
-                        }
-                    } finally {
-                        if (con != null) {
-                            if (con.getRequest() instanceof HeadRequest) {
-                                br2.loadConnection(con);
-                            } else {
-                                try {
-                                    con.disconnect();
-                                } catch (final Throwable e) {
-                                }
-                            }
-                        }
-                    }
                 }
             }
         } else {
@@ -709,7 +645,7 @@ public class EHentaiOrg extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     loginform.put("UserName", account.getUser());
-                    loginform.put("PassWord", account.getPass());
+                    loginform.put("PassWord", Encoding.urlEncode(account.getPass()));
                     if (i > 0 && this.containsRecaptchaV2Class(br)) {
                         /*
                          * First login attempt failed and we get a captcha --> Does not necessarily mean that user entered wrong logindata -
