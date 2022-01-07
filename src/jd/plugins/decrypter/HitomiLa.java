@@ -257,10 +257,12 @@ public class HitomiLa extends antiDDoSForDecrypt {
             engine = manager.getEngineByName("javascript");
             final Context jsContext = Context.enter();
             try {
+                jsContext.setOptimizationLevel(-1);
                 final Method jsStringPad = HitomiLa.class.getMethod("jsStringPad", new Class[] { String.class });
                 engine.put("jsStringPad", new FunctionObject("jsStringPad", jsStringPad, jsContext.initStandardObjects()));
                 engine.eval(js);
-                engine.eval(IO.readInputStreamToString(getClass().getResourceAsStream("/org/jdownloader/plugins/components/hitomi-gg.js")));
+                final String gg = IO.readInputStreamToString(getClass().getResourceAsStream("/org/jdownloader/plugins/components/hitomi-gg.js"));
+                engine.eval(gg);
             } catch (final Exception e) {
                 if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                     engine = null;
