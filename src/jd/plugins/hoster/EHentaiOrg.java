@@ -87,6 +87,7 @@ public class EHentaiOrg extends antiDDoSForHost {
     private static final String  TYPE_ARCHIVE                      = "ehentaiarchive://\\d+/[a-z0-9]+";
     private static final String  TYPE_SINGLE_IMAGE_MULTI_PAGE_VIEW = "https://[^/]+/mpv/(\\d+)/([a-f0-9]{10})/#page(\\d+)";
     private static final String  TYPE_SINGLE_IMAGE                 = "https?://[^/]+/s/([a-f0-9]{10})/(\\d+)-(\\d+)";
+    public static final String   PROPERTY_GALLERY_URL              = "gallery_url";
 
     @Override
     public String getAGBLink() {
@@ -165,11 +166,27 @@ public class EHentaiOrg extends antiDDoSForHost {
             }
             final String galleryid = new Regex(link.getPluginPatternMatcher(), "(\\d+)/([a-z0-9]+)$").getMatch(0);
             final String galleryhash = new Regex(link.getPluginPatternMatcher(), "(\\d+)/([a-z0-9]+)$").getMatch(1);
-            getPage("https://" + this.getHost() + "/g/" + galleryid + "/" + galleryhash);
+            final String host; // e-hentai.org or exhentai.org
+            if (link.hasProperty(PROPERTY_GALLERY_URL)) {
+                host = Browser.getHost(link.getStringProperty(PROPERTY_GALLERY_URL));
+            } else {
+                /* Fallback for revision 45332 and prior */
+                host = this.getHost();
+            }
+            getPage("https://" + host + "/g/" + galleryid + "/" + galleryhash);
             if (isOffline(br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (isDownload) {
+                /*
+                 * 2022-01-10: Depending on account settings, some galleries won't be displayed by default for some users. They have to
+                 * click on a "View anyways" button to continue.
+                 */
+                final String skipContentWarningURL = br.getRegex("\"(https?://[^/]+/g/\\d+/[a-f0-9]+/\\?nw=session)\"[^>]*>\\s*View Gallery\\s*<").getMatch(0);
+                if (skipContentWarningURL != null) {
+                    logger.info("Skipping content warning via URL: " + skipContentWarningURL);
+                    this.getPage(skipContentWarningURL);
+                }
                 String continue_url = br.getRegex("popUp\\('(https?://[^/]+/archiver\\.php\\?[^<>\"\\']+)'").getMatch(0);
                 if (continue_url == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -279,17 +296,16 @@ public class EHentaiOrg extends antiDDoSForHost {
             }
             /* TYPE_SINGLE_IMAGE e-hentai.org and exhentai.org */
             String dllink_fullsize = null;
-            final String mainlink = getMainlink(link);
             br.setFollowRedirects(true);
-            getPage(mainlink);
-            final String urlpart = new Regex(mainlink, TYPE_SINGLE_IMAGE).getMatch(0);
+            getPage(link.getPluginPatternMatcher());
+            final String urlpart = new Regex(link.getPluginPatternMatcher(), TYPE_SINGLE_IMAGE).getMatch(0);
             /*
              * 2020-12-01: Workaround attempt: Some users randomly always get the "cookie redirect" for exhentai.org which should only
              * happen when accessing it for the first time. It redirects them to the main page.
              */
             if (link.getPluginPatternMatcher().contains("exhentai") && !this.canHandle(br.getURL()) && !br.getURL().contains(urlpart)) {
                 logger.info("Redirect to mainpage? Accessing gallery URL again ...");
-                br.getPage(mainlink);
+                br.getPage(link.getPluginPatternMatcher());
                 if (!this.canHandle(br.getURL()) && !br.getURL().contains(urlpart)) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Redirect to mainpage? Login failure?", 3 * 60 * 1000l);
                 }
@@ -769,15 +785,6 @@ public class EHentaiOrg extends antiDDoSForHost {
         requestFileInformation(link, account, true);
         /* No need to login here as we already logged in in availablecheck */
         doFree(link, account);
-    }
-
-    private String getMainlink(final DownloadLink dl) {
-        final String link = dl.getStringProperty("individual_link", null);
-        if (link != null) {
-            return link;
-        } else {
-            return dl.getDownloadURL();
-        }
     }
 
     private String getNamePart(DownloadLink downloadLink) throws PluginException {

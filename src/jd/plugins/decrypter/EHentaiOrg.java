@@ -118,9 +118,10 @@ public class EHentaiOrg extends PluginForDecrypt {
         if (getPluginConfig().getBooleanProperty(jd.plugins.hoster.EHentaiOrg.SETTING_DOWNLOAD_ZIP, jd.plugins.hoster.EHentaiOrg.default_ENABLE_DOWNLOAD_ZIP)) {
             /* Crawl process can take some time so let's add this always existing URL first */
             final DownloadLink galleryArchive = this.createDownloadlink("ehentaiarchive://" + galleryid + "/" + galleryhash);
-            galleryArchive.setContentUrl(parameter);
+            galleryArchive.setProperty(jd.plugins.hoster.EHentaiOrg.PROPERTY_GALLERY_URL, br.getURL());
+            galleryArchive.setContentUrl(br.getURL());
             galleryArchive.setFinalFileName(fpName + ".zip");
-            final String archiveFileSize = br.getRegex(">File Size:</td><td[^>]+>([^<>\"]+)</td>").getMatch(0);
+            final String archiveFileSize = br.getRegex("(?i)>\\s*File Size\\s*:\\s*</td><td[^>]+>([^<>\"]+)</td>").getMatch(0);
             if (archiveFileSize != null) {
                 galleryArchive.setDownloadSize(SizeFormatter.getSize(archiveFileSize));
             }
