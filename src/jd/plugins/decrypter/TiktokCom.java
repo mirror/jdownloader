@@ -17,10 +17,13 @@ package jd.plugins.decrypter;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -174,13 +177,54 @@ public class TiktokCom extends PluginForDecrypt {
             /* 2022-01-07: New simple handling */
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(usernameSlug);
-            final String[] videoIDs = br.getRegex(usernameSlug + "/video/(\\d+)\"").getColumn(0);
-            for (final String videoID : videoIDs) {
-                final DownloadLink dl = this.createDownloadlink("https://www.tiktok.com/@" + usernameSlug + "/video/" + videoID);
-                dl.setName("@" + usernameSlug + "_" + videoID + ".mp4");
-                dl.setAvailable(true);
-                dl._setFilePackage(fp);
-                decryptedLinks.add(dl);
+            try {
+                /* First try the "hard" way */
+                final String json = br.getRegex("window\\['SIGI_STATE'\\]\\s*=\\s*(\\{.*?\\});").getMatch(0);
+                final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                final Map<String, Map<String, Object>> itemModule = (Map<String, Map<String, Object>>) entries.get("ItemModule");
+                final Collection<Map<String, Object>> videos = itemModule.values();
+                for (final Map<String, Object> video : videos) {
+                    final Map<String, Object> stats = (Map<String, Object>) video.get("stats");
+                    final Map<String, Object> streamInfo = (Map<String, Object>) video.get("video");
+                    final String videoID = (String) video.get("id");
+                    final String createTimeStr = (String) video.get("createTime");
+                    final String description = (String) video.get("desc");
+                    String directurl = (String) streamInfo.get("downloadAddr");
+                    if (StringUtils.isEmpty(directurl)) {
+                        directurl = (String) streamInfo.get("playAddr");
+                    }
+                    final DownloadLink dl = this.createDownloadlink("https://www.tiktok.com/@" + usernameSlug + "/video/" + videoID);
+                    final String dateFormatted = formatDate(Long.parseLong(createTimeStr));
+                    dl.setFinalFileName(dateFormatted + "_@" + usernameSlug + "_" + videoID + ".mp4");
+                    dl.setAvailable(true);
+                    jd.plugins.hoster.TiktokCom.setDescriptionAndHashtags(dl, description);
+                    dl.setProperty(jd.plugins.hoster.TiktokCom.PROPERTY_USERNAME, usernameSlug);
+                    dl.setProperty(jd.plugins.hoster.TiktokCom.PROPERTY_USER_ID, video.get("authorId"));
+                    dl.setProperty(jd.plugins.hoster.TiktokCom.PROPERTY_DATE, dateFormatted);
+                    jd.plugins.hoster.TiktokCom.setLikeCount(dl, (Number) stats.get("diggCount"));
+                    jd.plugins.hoster.TiktokCom.setPlayCount(dl, (Number) stats.get("playCount"));
+                    jd.plugins.hoster.TiktokCom.setShareCount(dl, (Number) stats.get("shareCount"));
+                    jd.plugins.hoster.TiktokCom.setCommentCount(dl, (Number) stats.get("commentCount"));
+                    if (!StringUtils.isEmpty(directurl)) {
+                        dl.setProperty(jd.plugins.hoster.TiktokCom.PROPERTY_DIRECTURL, directurl);
+                    }
+                    dl._setFilePackage(fp);
+                    decryptedLinks.add(dl);
+                    distribute(dl);
+                }
+            } catch (final Throwable e) {
+            }
+            if (decryptedLinks.isEmpty()) {
+                /* Last chance fallback */
+                logger.warning("Fallback to plain html handling");
+                final String[] videoIDs = br.getRegex(usernameSlug + "/video/(\\d+)\"").getColumn(0);
+                for (final String videoID : videoIDs) {
+                    final DownloadLink dl = this.createDownloadlink("https://www.tiktok.com/@" + usernameSlug + "/video/" + videoID);
+                    dl.setName("@" + usernameSlug + "_" + videoID + ".mp4");
+                    dl.setAvailable(true);
+                    dl._setFilePackage(fp);
+                    decryptedLinks.add(dl);
+                }
             }
         }
         return decryptedLinks;

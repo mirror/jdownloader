@@ -47,7 +47,7 @@ public class ArteTv extends PluginForHost {
     private static final String http_800                              = "http_800";
     private static final String http_1500                             = "http_1500";
     private static final String http_2200                             = "http_2200";
-    private static final String hls                                   = "hls";
+    public static final String  hls                                   = "hls";
     /* creative.arte.tv extern qualities */
     private static final String http_extern_1000                      = "http_extern_1000";
     private static final String hls_extern_250                        = "hls_extern_250";

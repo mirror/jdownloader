@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -44,6 +43,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.ArteTv;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv" }, urls = { "https?://(?:www\\.)?arte\\.tv/(guide/[a-z]{2}/|[a-z]{2}/videos/)\\d+-\\d+-[ADF]+/[^/]+" })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
@@ -212,11 +212,11 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 logger.info("This language is not available");
                 continue;
             }
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-            final LinkedHashMap<String, Object> videoJsonPlayer = (LinkedHashMap<String, Object>) entries.get("videoJsonPlayer");
+            final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            final Map<String, Object> videoJsonPlayer = (Map<String, Object>) entries.get("videoJsonPlayer");
             final Object error_info = videoJsonPlayer.get("custom_msg");
             if (error_info != null) {
-                final LinkedHashMap<String, Object> errorInfomap = (LinkedHashMap<String, Object>) error_info;
+                final Map<String, Object> errorInfomap = (Map<String, Object>) error_info;
                 final String errmsg = (String) errorInfomap.get("msg");
                 final String type = (String) errorInfomap.get("type");
                 if ((type.equals("error") || type.equals("info")) && errmsg != null) {
@@ -227,8 +227,8 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 logger.warning("Unknown error:msg='" + errmsg + "',type=" + type);
                 continue;
             }
-            final Object vsro = videoJsonPlayer.get("VSR");
-            if (!(vsro instanceof LinkedHashMap)) {
+            final Object vsrO = videoJsonPlayer.get("VSR");
+            if (!(vsrO instanceof Map)) {
                 /* No source available --> Video cannot be played --> Browser would says "Error code 2" then */
                 logger.info("This language is not available: " + selectedLanguage);
                 continue;
@@ -244,7 +244,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 }
             }
             String description = (String) videoJsonPlayer.get("VDE");
-            if (description == null) {
+            if (StringUtils.isEmpty(description)) {
                 description = (String) videoJsonPlayer.get("V7T");
             }
             final String errormessage = (String) entries.get("msg");
@@ -289,13 +289,13 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     return decryptedLinks;
                 }
             }
-            final Collection<Object> vsr_quals = ((LinkedHashMap<String, Object>) vsro).values();
+            final Collection<Object> vsr_quals = ((Map<String, Object>) vsrO).values();
             /* One packagename for every language */
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(getFormattedFilePackageName(dateFormatted, title));
             for (final Object o : vsr_quals) {
                 foundFormatsNum++;
-                final LinkedHashMap<String, Object> qualitymap = (LinkedHashMap<String, Object>) o;
+                final Map<String, Object> qualitymap = (Map<String, Object>) o;
                 final String url = (String) qualitymap.get("url");
                 if (!url.startsWith("http")) {
                     continue;
@@ -327,7 +327,8 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     continue;
                 }
                 if (url.contains(".m3u8")) {
-                    if (!cfg.getBooleanProperty("hls", false)) {
+                    if (!cfg.getBooleanProperty(ArteTv.hls, false)) {
+                        /* Skip if user doesn't want HLS qualities. */
                         continue;
                     }
                     final List<HlsContainer> hlsContainers = HlsContainer.getHlsQualities(br.cloneBrowser(), url);
@@ -410,7 +411,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     // /* User does not want the audio-description version */
                     // continue;
                     // }
-                    final String linkID = getHost() + "://" + vpi + "/" + versionInfo.toString() + "/" + quality_intern;
+                    final String linkID = this.getHost() + "://" + vpi + "/" + versionInfo.toString() + "/" + quality_intern;
                     if (!results.containsKey(linkID)) {
                         final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + UniqueAlltimeID.next());
                         link.setContentUrl(parameter);
@@ -789,7 +790,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         return formattedPackageName;
     }
 
-    private String getFormattedThumbnailName(final DownloadLink downloadLink) {
+    private String getFormattedThumbnailName(final DownloadLink link) {
         @SuppressWarnings("deprecation")
         final SubConfiguration cfg = SubConfiguration.getConfig("arte.tv");
         String formattedFileName = cfg.getStringProperty(jd.plugins.hoster.ArteTv.CUSTOM_THUMBNAIL_NAME_PATTERN, jd.plugins.hoster.ArteTv.default_CUSTOM_THUMBNAIL_NAME_PATTERN);
@@ -799,9 +800,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         if (!formattedFileName.contains("*title*")) {
             return "Custom filename pattern for thumbnail is missing *title*.";
         }
-        final String date = downloadLink.getStringProperty("date", null);
-        final String title = downloadLink.getStringProperty("title", null);
-        final String ext = downloadLink.getStringProperty("ext", null);
+        final String date = link.getStringProperty("date", null);
+        final String title = link.getStringProperty("title", null);
+        final String ext = link.getStringProperty("ext", null);
         if (formattedFileName.contains("*date*")) {
             if (date != null) {
                 formattedFileName = formattedFileName.replace("*date*", date);
