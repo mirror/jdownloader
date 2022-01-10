@@ -111,6 +111,7 @@ public class OncamMe extends antiDDoSForHost {
         String jsStr = br.getRegex("var f = \\[([^\\]]+)\\]").getMatch(0);
         jsStr = jsStr.replace("'", "");
         final String[] params = jsStr.split(",");
+        /* 2022-01-10: This URL is only valid once so don't check it in download mode. */
         this.dllink = "/filev.php?id=" + params[0] + "&file_id=" + params[1] + "&server=" + params[2] + "&hash=" + params[3] + "&expire=" + params[4] + "&file=" + params[5];
         if (!StringUtils.isEmpty(dllink) && !isDownload) {
             URLConnectionAdapter con = null;
