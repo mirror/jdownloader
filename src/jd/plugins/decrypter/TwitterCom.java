@@ -62,14 +62,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(?:www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/status/\\d+|https?://(?:www\\.|mobile\\.)?twitter\\.com/(?!i/)[A-Za-z0-9_\\-]{2,}(?:/(?:media|likes))?|https://twitter\\.com/i/cards/tfw/v1/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(?:www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/status/\\d+|https?://(?:www\\.|mobile\\.)?twitter\\.com/(?!i/)[A-Za-z0-9_\\-]{2,}(?:/(?:media|likes))?(\\?.*)?|https://twitter\\.com/i/cards/tfw/v1/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" })
 public class TwitterCom extends PornEmbedParser {
     public TwitterCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private static final String            TYPE_CARD            = "https?://[^/]+/i/cards/tfw/v1/(\\d+)";
-    private static final String            TYPE_USER_ALL        = "https?://[^/]+/([A-Za-z0-9_\\-]+)(?:/(?:media|likes))?";
+    private static final String            TYPE_USER_ALL        = "https?://[^/]+/([A-Za-z0-9_\\-]+)(?:/(?:media|likes))?(\\?.*)?";
     private static final String            TYPE_USER_POST       = "https?://[^/]+/([^/]+)/status/(\\d+).*?";
     private static final String            TYPE_REDIRECT        = "https?://t\\.co/[a-zA-Z0-9]+";
     private ArrayList<DownloadLink>        decryptedLinks       = new ArrayList<DownloadLink>();
@@ -599,6 +599,12 @@ public class TwitterCom extends PornEmbedParser {
             /* This should never happen */
             max_countStr = "??";
         }
+        final UrlQuery addedURLQuery = UrlQuery.parse(param.getCryptedUrl());
+        Number maxTweetsToCrawl = null;
+        final String maxTweetsToCrawlStr = addedURLQuery.get("maxitems");
+        if (maxTweetsToCrawlStr != null && maxTweetsToCrawlStr.matches("\\d+")) {
+            maxTweetsToCrawl = Integer.parseInt(maxTweetsToCrawlStr);
+        }
         final FilePackage fp = FilePackage.getInstance();
         /* we want all links from this user to go into the same package */
         fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
@@ -635,6 +641,11 @@ public class TwitterCom extends PornEmbedParser {
             logger.info("Last created_at date of current page: " + lastCreatedAtDate);
             if (tweetMap.size() < expected_items_per_page) {
                 logger.info(String.format("Warning: Page contains less than %d objects --> Reached the end?", expected_items_per_page));
+            }
+            /* Check some abort conditions */
+            if (maxTweetsToCrawl != null && crawled_tweet_count >= maxTweetsToCrawl.intValue()) {
+                logger.info("Stopping because: Reached user defined max items count: " + maxTweetsToCrawl);
+                break;
             }
             /* Done - now try to find string required to access next page */
             try {
