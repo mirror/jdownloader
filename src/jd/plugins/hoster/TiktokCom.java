@@ -74,25 +74,27 @@ public class TiktokCom extends antiDDoSForHost {
         return new Regex(link.getPluginPatternMatcher(), "/(?:video|v|embed)/(\\d+)").getMatch(0);
     }
 
-    private String              dllink               = null;
-    private boolean             server_issues        = false;
-    private static final String PROPERTY_DIRECTURL   = "directurl";
-    private static final String PROPERTY_USERNAME    = "username";
-    private static final String PROPERTY_VIDEO_ID    = "videoid";
-    private static final String PROPERTY_DATE        = "date";
-    private static final String PROPERTY_DESCRIPTION = "description";
-    private static final String PROPERTY_HASHTAGS    = "hashtags";
-    private static final String PROPERTY_LIKE_COUNT  = "like_count";
-    private static final String PROPERTY_PLAY_COUNT  = "play_count";
-    private static final String PROPERTY_SHARE_COUNT = "share_count";
-    private static final String TYPE_VIDEO           = "https?://[^/]+/(@[^/]+)/video/(\\d+).*?";
+    private String              dllink                 = null;
+    private boolean             server_issues          = false;
+    public static final String  PROPERTY_DIRECTURL     = "directurl";
+    public static final String  PROPERTY_USERNAME      = "username";
+    public static final String  PROPERTY_USER_ID       = "user_id";
+    public static final String  PROPERTY_VIDEO_ID      = "videoid";
+    public static final String  PROPERTY_DATE          = "date";
+    public static final String  PROPERTY_DESCRIPTION   = "description";
+    public static final String  PROPERTY_HASHTAGS      = "hashtags";
+    public static final String  PROPERTY_LIKE_COUNT    = "like_count";
+    public static final String  PROPERTY_PLAY_COUNT    = "play_count";
+    public static final String  PROPERTY_SHARE_COUNT   = "share_count";
+    public static final String  PROPERTY_COMMENT_COUNT = "comment_count";
+    private static final String TYPE_VIDEO             = "https?://[^/]+/(@[^/]+)/video/(\\d+).*?";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, false);
     }
 
-    private static String toHumanReadableNumber(final Number number) {
+    public static String toHumanReadableNumber(final Number number) {
         final long num = number.longValue();
         if (num > 1000000) {
             return new DecimalFormat("0.00m").format((1.0f * num) / 1000000);
@@ -253,18 +255,19 @@ public class TiktokCom extends antiDDoSForHost {
                 /* Set more Packagizer properties */
                 if (itemInfos.containsKey("diggCount")) {
                     final Number number = (Number) itemInfos.get("diggCount");
-                    link.setProperty(PROPERTY_LIKE_COUNT + "_string", toHumanReadableNumber(number));
-                    link.setProperty(PROPERTY_LIKE_COUNT, number.longValue());
+                    setLikeCount(link, number);
                 }
                 if (itemInfos.containsKey("playCount")) {
                     final Number number = (Number) itemInfos.get("playCount");
-                    link.setProperty(PROPERTY_PLAY_COUNT + "_string", toHumanReadableNumber(number));
-                    link.setProperty(PROPERTY_PLAY_COUNT, number.longValue());
+                    setPlayCount(link, number);
                 }
                 if (itemInfos.containsKey("shareCount")) {
                     final Number number = (Number) itemInfos.get("shareCount");
-                    link.setProperty(PROPERTY_SHARE_COUNT + "_string", toHumanReadableNumber(number));
-                    link.setProperty(PROPERTY_SHARE_COUNT, number.longValue());
+                    setShareCount(link, number);
+                }
+                if (itemInfos.containsKey("commentCount")) {
+                    final Number number = (Number) itemInfos.get("commentCount");
+                    setCommentCount(link, number);
                 }
                 // {
                 // /* 2020-10-26: Test */
@@ -281,22 +284,7 @@ public class TiktokCom extends antiDDoSForHost {
                 /* Rev. 40928 and earlier */
                 this.dllink = generateDownloadurlOld(link);
             }
-            if (!StringUtils.isEmpty(description)) {
-                final String[] hashtags = new Regex(description, "(#[^# ]+)").getColumn(0);
-                if (hashtags.length > 0) {
-                    final StringBuilder sb = new StringBuilder();
-                    for (final String hashtag : hashtags) {
-                        sb.append(hashtag);
-                    }
-                    /* Set Packagizer property */
-                    link.setProperty(PROPERTY_HASHTAGS, sb.toString());
-                }
-                if (StringUtils.isEmpty(link.getComment())) {
-                    link.setComment(description);
-                }
-                /* Set Packagizer property */
-                link.setProperty(PROPERTY_DESCRIPTION, description);
-            }
+            setDescriptionAndHashtags(link, description);
             /* 2020-09-16: Directurls can only be used one time! If tried to re-use, this will happen: HTTP/1.1 403 Forbidden */
             br.setFollowRedirects(true);
             if (!StringUtils.isEmpty(dllink) && !isDownload) {
@@ -333,12 +321,20 @@ public class TiktokCom extends antiDDoSForHost {
             }
         }
         String filename = "";
+        String dateFormatted;
+        /* Try to make filename start with publish date of video. */
         if (!StringUtils.isEmpty(createDate)) {
-            final String dateFormatted = convertDateFormat(createDate);
+            dateFormatted = convertDateFormat(createDate);
             if (dateFormatted != null) {
                 filename = dateFormatted;
                 /* Save for later usage */
                 link.setProperty(PROPERTY_DATE, dateFormatted);
+            }
+        } else {
+            /* Try to get saved value */
+            dateFormatted = link.getStringProperty(PROPERTY_DATE);
+            if (dateFormatted != null) {
+                filename = dateFormatted;
             }
         }
         if (!StringUtils.isEmpty(username)) {
@@ -353,6 +349,45 @@ public class TiktokCom extends antiDDoSForHost {
             link.setName(filename);
         }
         return AvailableStatus.TRUE;
+    }
+
+    public static final void setLikeCount(final DownloadLink link, final Number number) {
+        link.setProperty(PROPERTY_LIKE_COUNT + "_string", toHumanReadableNumber(number));
+        link.setProperty(PROPERTY_LIKE_COUNT, number.longValue());
+    }
+
+    public static final void setPlayCount(final DownloadLink link, final Number number) {
+        link.setProperty(PROPERTY_PLAY_COUNT + "_string", toHumanReadableNumber(number));
+        link.setProperty(PROPERTY_PLAY_COUNT, number.longValue());
+    }
+
+    public static final void setShareCount(final DownloadLink link, final Number number) {
+        link.setProperty(PROPERTY_SHARE_COUNT + "_string", toHumanReadableNumber(number));
+        link.setProperty(PROPERTY_SHARE_COUNT, number.longValue());
+    }
+
+    public static final void setCommentCount(final DownloadLink link, final Number number) {
+        link.setProperty(PROPERTY_COMMENT_COUNT + "_string", toHumanReadableNumber(number));
+        link.setProperty(PROPERTY_COMMENT_COUNT, number.longValue());
+    }
+
+    public static void setDescriptionAndHashtags(final DownloadLink link, final String description) {
+        if (!StringUtils.isEmpty(description)) {
+            final String[] hashtags = new Regex(description, "(#[^# ]+)").getColumn(0);
+            if (hashtags.length > 0) {
+                final StringBuilder sb = new StringBuilder();
+                for (final String hashtag : hashtags) {
+                    sb.append(hashtag);
+                }
+                /* Set Packagizer property */
+                link.setProperty(PROPERTY_HASHTAGS, sb.toString());
+            }
+            if (StringUtils.isEmpty(link.getComment())) {
+                link.setComment(description);
+            }
+            /* Set Packagizer property */
+            link.setProperty(PROPERTY_DESCRIPTION, description);
+        }
     }
 
     // private boolean checkDirecturlAndSetFilesize(final DownloadLink link, final String directurl) throws Exception {

@@ -24,6 +24,8 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Random;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -35,9 +37,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "creative.arte.tv_extern" }, urls = { "http://creative\\.arte\\.tv/(de|fr)/scald_dmcloud_json/\\d+" })
+@Deprecated // Deprecated as of 2022-01-10
 public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
     private static final String           EXCEPTION_LINKOFFLINE                       = "EXCEPTION_LINKOFFLINE";
     private static final String           TYPE_CREATIVE                               = "http://creative\\.arte\\.tv/(de|fr)/scald_dmcloud_json/\\d+";
@@ -176,7 +177,9 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
                         if (cfg.getBooleanProperty(V_NORMAL, false)) {
                             selectedFormats.add(selectedLanguage + "_1_" + format);
                         }
-                        /* 1 = German, 2 = French, 3 = Subtitled version, 4 = Subtitled version for disabled people, 5 = Audio description */
+                        /*
+                         * 1 = German, 2 = French, 3 = Subtitled version, 4 = Subtitled version for disabled people, 5 = Audio description
+                         */
                         if (cfg.getBooleanProperty(V_SUBTITLED, false)) {
                             selectedFormats.add(selectedLanguage + "_3_" + format);
                         }
