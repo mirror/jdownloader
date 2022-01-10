@@ -20,18 +20,21 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "webtoons.com" }, urls = { "https?://(?:www\\.)?webtoons\\.com/[a-z]{2}/[^/]+/[^/]+/(?:[^/]+/viewer\\?title_no=\\d+\\&episode_no=\\d+|list\\?title_no=\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "webtoons.com" }, urls = { "https?://(?:www\\.)?webtoons\\.com/[a-z\\-]+/[^/]+/[^/]+/(?:[^/]+/viewer\\?title_no=\\d+\\&episode_no=\\d+|list\\?title_no=\\d+)" })
 public class WebtoonsCom extends PluginForDecrypt {
     public WebtoonsCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,18 +42,17 @@ public class WebtoonsCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
         this.br.setAllowedResponseCodes(400);
         /* This cookie will allow us to access 18+ content */
         setImportantCookies(br, this.getHost());
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String titlenumber = new Regex(parameter, "title_no=(\\d+)").getMatch(0);
-        final String episodenumber = new Regex(parameter, "episode_no=(\\d+)").getMatch(0);
+        final UrlQuery query = UrlQuery.parse(param.getCryptedUrl());
+        final String titlenumber = query.get("title_no");
+        final String episodenumber = query.get("episode_no");
         String fpName = br.getRegex("\"og:title\"\\s*content=\"(.*?)\"").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("<title>([^<>]+)</title>").getMatch(0);
@@ -67,8 +69,7 @@ public class WebtoonsCom extends PluginForDecrypt {
             /* Decrypt single episode */
             links = br.getRegex("class=\"_images\" data\\-url=\"(http[^<>\"]*?)\"").getColumn(0);
             if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final DecimalFormat df = new DecimalFormat("0000");
             int counter = 0;
@@ -93,7 +94,7 @@ public class WebtoonsCom extends PluginForDecrypt {
             while (true) {
                 logger.info("Crawling page: " + pageNumber);
                 if (pageNumber > 1) {
-                    final String nextPage = parameter + "&page=" + pageNumber;
+                    final String nextPage = param.getCryptedUrl() + "&page=" + pageNumber;
                     this.br.getPage(nextPage);
                     /* 2021-08-02: This sometimes randomly happens... */
                     if (br.getURL().contains("/gdpr/ageGate")) {

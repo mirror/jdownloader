@@ -19,6 +19,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -36,11 +41,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com/(?!contents)([^/]+)/mods/(\\d+)/?" })
 public class NexusmodsCom extends PluginForDecrypt {
@@ -151,6 +151,7 @@ public class NexusmodsCom extends PluginForDecrypt {
             /* Login via website */
             ((jd.plugins.hoster.NexusmodsCom) plugin).loginWebsite(account);
         }
+        br.setFollowRedirects(true);
         ((jd.plugins.hoster.NexusmodsCom) plugin).getPage(br, parameter);
         if (jd.plugins.hoster.NexusmodsCom.isOfflineWebsite(br)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -167,12 +168,12 @@ public class NexusmodsCom extends PluginForDecrypt {
             /* This should never happen */
             mod_name = "UNKNOWN";
         }
-        final Browser br2 = br.cloneBrowser();
         final String game_id = br.getRegex("game_id\\s*=\\s*(\\d+)").getMatch(0);
         if (game_id == null) {
             logger.warning("Failed to find game_id");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final Browser br2 = br.cloneBrowser();
         ((jd.plugins.hoster.NexusmodsCom) plugin).getPage(br2, "/Core/Libs/Common/Widgets/ModFilesTab?id=" + mod_id + "&game_id=" + game_id);
         final String[] downloadTypesHTMLs = br2.getRegex("<div class=\"file-category-header\">\\s*<h2>[^<>]+</h2>\\s*<div>.*?</dd>\\s*</dl>\\s*</div>").getColumn(-1);
         int counter = 0;
