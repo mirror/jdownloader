@@ -210,8 +210,8 @@ public class ModDbCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         int configuredServer = getConfiguredServer();
         // Get pages with the mirrors
         String singlemirrorpage = getSinglemirrorpage(br);
@@ -228,18 +228,14 @@ public class ModDbCom extends PluginForHost {
             logger.info("There is a problem with getting the dllink by br.getredirectlocation");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        boolean resumable = false;
-        int maxchunks = 1;
-        // The moddb servers and the fdcservers servers got different settings
-        // so the plugin also got them with this handling
-        if (configuredServer != 1 && !dllink.contains("fdccdn")) {
-            resumable = true;
-            maxchunks = 0;
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.info("invalid final downloadlink (dllink) ?!");
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

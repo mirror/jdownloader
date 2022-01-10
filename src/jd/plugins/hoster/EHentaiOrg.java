@@ -549,7 +549,7 @@ public class EHentaiOrg extends antiDDoSForHost {
             } else {
                 this.handleErrorsLastResort(link, account, this.br);
             }
-        } else if (expectedFilesize > 0 && dl.getConnection().getLongContentLength() < expectedFilesize) {
+        } else if (dl.getConnection().getResponseCode() != 206 && expectedFilesize > 0 && dl.getConnection().getLongContentLength() < expectedFilesize) {
             dl.getConnection().disconnect();
             /* Rare error: E.g. "403 picture" is smaller than 1 KB but is still downloaded content (picture). */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - file is too small", 2 * 60 * 1000l);

@@ -78,6 +78,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
         ret.add(new String[] { "vinload.com" });
         ret.add(new String[] { "afile.cloud" });
         ret.add(new String[] { "bowfile.com" });
+        ret.add(new String[] { "turbogb.com" });
         return ret;
     }
 

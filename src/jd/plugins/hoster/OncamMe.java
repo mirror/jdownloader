@@ -91,6 +91,10 @@ public class OncamMe extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         final String titleUrl = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
         if (titleUrl != null) {
             link.setFinalFileName(titleUrl.replace("-", " ").trim() + ".mp4");
@@ -108,7 +112,7 @@ public class OncamMe extends antiDDoSForHost {
         jsStr = jsStr.replace("'", "");
         final String[] params = jsStr.split(",");
         this.dllink = "/filev.php?id=" + params[0] + "&file_id=" + params[1] + "&server=" + params[2] + "&hash=" + params[3] + "&expire=" + params[4] + "&file=" + params[5];
-        if (!StringUtils.isEmpty(dllink)) {
+        if (!StringUtils.isEmpty(dllink) && !isDownload) {
             URLConnectionAdapter con = null;
             try {
                 con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
@@ -131,7 +135,7 @@ public class OncamMe extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

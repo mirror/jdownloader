@@ -102,6 +102,8 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "pornfd.com" });
         /* 2021-11-19 */
         ret.add(new String[] { "femdomrip.com" });
+        /* 2022-01-10 */
+        ret.add(new String[] { "tktube.com" });
         return ret;
     }
 
