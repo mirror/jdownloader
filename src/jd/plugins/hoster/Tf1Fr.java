@@ -95,17 +95,6 @@ public class Tf1Fr extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public String getFinalLink(final String video_id) throws Exception {
-        if (video_id == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
-            final Browser br2 = br.cloneBrowser();
-            br2.getPage("http://www.wat.tv/get/webhtml/" + video_id);
-            final Map<String, Object> response = JSonStorage.restoreFromString(br2.toString(), TypeRef.HASHMAP);
-            return response != null ? (String) response.get("hls") : null;
-        }
-    }
-
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
@@ -126,9 +115,21 @@ public class Tf1Fr extends PluginForHost {
             br2.getPage("https://www.tf1.fr/graphql/web?id=cb31e88def68451cba035272e5d7f987cbff7d273fb6132d6d662cf684f8de53&variables={%22slug%22:%22" + slug + "%22,%22programSlug%22:%22" + programSlug + "%22}");
             video_id = br2.getRegex("\"streamId\"\\s*:\\s*\"(\\d{6,8})").getMatch(0);
         }
-        String finallink = getFinalLink(video_id);
+        final Browser br2 = br.cloneBrowser();
+        br2.getPage("http://www.wat.tv/get/webhtml/" + video_id);
+        String finallink = null;
+        try {
+            final Map<String, Object> response = JSonStorage.restoreFromString(br2.toString(), TypeRef.HASHMAP);
+            finallink = response != null ? (String) response.get("hls") : null;
+        } catch (final Throwable ignore) {
+        }
         if (finallink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /**
+             * 2022-01-11: Usage of other endpoint required but this will only return MPD with split video/audio, see also:
+             * https://svn.jdownloader.org/issues/89353 </br>
+             * New endpoint: https://mediainfo.tf1.fr/mediainfocombo/<video_id>
+             */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type MPD with split video audio");
         } else if (finallink.startsWith("rtmp")) {
             /**
              * NOT WORKING IN RTMPDUMP
