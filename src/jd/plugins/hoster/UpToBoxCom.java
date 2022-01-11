@@ -117,11 +117,12 @@ public class UpToBoxCom extends antiDDoSForHost {
     public static final String   PROPERTY_available_on_uptostream                 = "available_on_uptostream";
     /* 2020-04-12: All files >=5GB are premiumonly but instead of hardcoding this, their filecheck-API returns the property. */
     private static final String  PROPERTY_needs_premium                           = "needs_premium";
-    private static final String  PROPERTY_is_password_protected                   = "password_protected";
+    private static final String  PROPERTY_preset_api_errorcode                    = "api_errorcode";
     private static final String  PROPERTY_last_downloaded_quality                 = "last_downloaded_quality";
     private static final boolean use_api_availablecheck_for_single_availablecheck = true;
-    private static final int     api_responsecode_password_required_or_wrong      = 17;
-    private static final int     api_responsecode_file_offline                    = 28;
+    private static final int     api_errorcode_password_required_or_wrong         = 17;
+    private static final int     api_errorcode_file_temporarily_unavailable       = 25;
+    private static final int     api_errorcode_file_offline                       = 28;
 
     @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
@@ -155,7 +156,7 @@ public class UpToBoxCom extends antiDDoSForHost {
      * Sometimes URLs can contain a filename - especially useful to have that for offline content and as a fallback. Returns file-id in case
      * a name is not present in the URL.
      */
-    private String getWeakFilenameFromURL(final DownloadLink link) {
+    private String getWeakFilename(final DownloadLink link) {
         String weakFilename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
         if (weakFilename == null) {
             weakFilename = this.getFUID(link);
@@ -196,8 +197,9 @@ public class UpToBoxCom extends antiDDoSForHost {
         }
         if (link.isAvailabilityStatusChecked() && !link.isAvailable()) {
             return AvailableStatus.FALSE;
+        } else {
+            return AvailableStatus.TRUE;
         }
-        return AvailableStatus.TRUE;
     }
 
     private AvailableStatus requestFileInformationWebsite(final DownloadLink link) throws Exception {
@@ -215,7 +217,7 @@ public class UpToBoxCom extends antiDDoSForHost {
             link.setName(Encoding.htmlDecode(filename.trim()));
         } else {
             /* Fallback */
-            link.setName(getWeakFilenameFromURL(link));
+            link.setName(getWeakFilename(link));
         }
         if (!StringUtils.isEmpty(filesize)) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -275,6 +277,9 @@ public class UpToBoxCom extends antiDDoSForHost {
                 int index2 = 0;
                 for (final DownloadLink dl : links) {
                     /* We expect the results to be delivered in the same order we requested them! */
+                    if (!dl.isNameSet()) {
+                        dl.setName(getWeakFilename(dl));
+                    }
                     entries = (Map<String, Object>) linkcheckResults.get(index2);
                     final String fuid = this.getFUID(dl);
                     final String fuid_of_json_response = (String) entries.get("file_code");
@@ -288,16 +293,18 @@ public class UpToBoxCom extends antiDDoSForHost {
                     if (errorO != null) {
                         Map<String, Object> errormap = (Map<String, Object>) errorO;
                         final long errorCode = JavaScriptEngineFactory.toLong(errormap.get("code"), 0);
-                        if (errorCode == api_responsecode_file_offline) {
+                        if (errorCode == api_errorcode_file_offline) {
                             isOffline = true;
-                        } else if (errorCode == api_responsecode_password_required_or_wrong) {
+                        } else if (errorCode == api_errorcode_password_required_or_wrong) {
                             /* E.g. "error":{"code":17,"message":"Password required"} */
-                            dl.setProperty(PROPERTY_is_password_protected, true);
+                            dl.setPasswordProtected(true);
                         } else {
-                            /* Undefined case */
+                            /* Undefined case or code is handled later */
+                            dl.setProperty(PROPERTY_preset_api_errorcode, errorCode);
                         }
                     } else {
-                        dl.setProperty(PROPERTY_is_password_protected, false);
+                        dl.setPasswordProtected(false);
+                        dl.removeProperty(PROPERTY_preset_api_errorcode);
                     }
                     String file_name = null;
                     if (isOffline) {
@@ -323,9 +330,6 @@ public class UpToBoxCom extends antiDDoSForHost {
                     if (!StringUtils.isEmpty(file_name)) {
                         /* Filename should always be available! */
                         dl.setFinalFileName(file_name);
-                    } else {
-                        /* Set fallback name */
-                        dl.setName(getWeakFilenameFromURL(dl));
                     }
                     index2++;
                 }
@@ -349,6 +353,7 @@ public class UpToBoxCom extends antiDDoSForHost {
         if (dllink == null) {
             /* Always check for errors here as download1 Form can be present e.g. along with a (reconnect-waittime) error. */
             this.requestFileInformationAPI(link);
+            handlePropertyBasedErrors(link, null);
             /* Now access website - check availablestatus again here! */
             requestFileInformationWebsite(link);
             checkErrorsWebsite(link, null);
@@ -491,7 +496,13 @@ public class UpToBoxCom extends antiDDoSForHost {
              * Hotlink protection kicks in
              */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hot linking is not allowed on Uptobox", 3 * 60 * 1000l);
+        } else if (br.containsHTML("(?i)>\\s*This file is temporarily unavailable, please retry")) {
+            errorFileTemporarilyUnavailable();
         }
+    }
+
+    private void errorFileTemporarilyUnavailable() throws PluginException {
+        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "This file is temporarily unavailable, please retry later", 30 * 60 * 1000);
     }
 
     private int getPreDownloadWaittimeWebsite() {
@@ -571,7 +582,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                 }
                 this.getPage(API_BASE + "/link?" + queryDownload.toString());
                 tries++;
-                passwordRequiredOrEnteredWrong = getErrorcode() == api_responsecode_password_required_or_wrong;
+                passwordRequiredOrEnteredWrong = getErrorcode() == api_errorcode_password_required_or_wrong;
             } while (passwordRequiredOrEnteredWrong && tries <= maxtries);
             if (passwordRequiredOrEnteredWrong) {
                 logger.info("User entered INCORRECT password");
@@ -758,11 +769,24 @@ public class UpToBoxCom extends antiDDoSForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformationAPI(link);
+        handlePropertyBasedErrors(link, account);
         loginAPI(account, false);
         if (account.getType() == AccountType.FREE) {
             handleDownloadAPI(link, account, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
             handleDownloadAPI(link, account, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS, "premium_directlink");
+        }
+    }
+
+    /** Throws Exception if DownloadLink contains preset property that indicates that a download is not possible. */
+    private void handlePropertyBasedErrors(final DownloadLink link, final Account account) throws PluginException {
+        final int presetErrorcode = link.getIntegerProperty(PROPERTY_preset_api_errorcode, -1);
+        if (presetErrorcode == -1) {
+            return;
+        } else {
+            if (presetErrorcode == api_errorcode_file_temporarily_unavailable) {
+                errorFileTemporarilyUnavailable();
+            }
         }
     }
 
@@ -838,10 +862,10 @@ public class UpToBoxCom extends antiDDoSForHost {
                     waitSeconds = 5 * 60;
                 }
                 throw new AccountUnavailableException(errorMsg, waitSeconds * 1000l);
-            case api_responsecode_password_required_or_wrong:
+            case api_errorcode_password_required_or_wrong:
                 link.setDownloadPassword(null);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
-            case api_responsecode_file_offline:
+            case api_errorcode_file_offline:
                 /* E.g. {"statusCode":28,"message":"File not found","data":"xxxxxxxxxxxx"} */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             case 29:

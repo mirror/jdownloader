@@ -64,7 +64,7 @@ public class BrDeDecrypter extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
-        String videoID = new Regex(parameter, "av:([a-f0-9]{24})").getMatch(0);
+        final String videoID = new Regex(parameter, "av:([a-f0-9]{24})").getMatch(0);
         if (videoID == null) {
             /*
              * 2019-12-13: Legacy handling for old XML way e.g.
