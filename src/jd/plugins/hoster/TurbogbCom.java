@@ -37,7 +37,7 @@ public class TurbogbCom extends YetiShareCore {
      * DEV NOTES YetiShare<br />
      ****************************
      * mods: See overridden functions<br />
-     * limit-info:<br />
+     * limit-info: 2022-01-11: No limits at all (all modes tested) <br />
      * captchatype-info: 2022-01-10: reCaptchaV2<br />
      * other: <br />
      */

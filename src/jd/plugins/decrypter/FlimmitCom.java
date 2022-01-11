@@ -26,12 +26,15 @@ import java.util.Map;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.FlimmitComConfig;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -123,12 +126,13 @@ public class FlimmitCom extends PluginForDecrypt {
             String seriesTitle = null;
             String seasonNumberStr = null;
             String episodeNumberStr = null;
-            String seriesInfoFormatted = null;
+            String seasonEpisodeInfoFormatted = null;
+            String seasonInfoFormatted = null;
             if (param.getDownloadLink() != null) {
                 final String collectionSlug = param.getDownloadLink().getStringProperty(PROPERTY_COLLECTION_SLUG);
                 final String collectionTitle = param.getDownloadLink().getStringProperty(PROPERTY_COLLECTION_TITLE);
                 if (collectionTitle != null) {
-                    final Regex seriesTitleRegex = new Regex(collectionTitle, "(?i)(.*) - Staffel (\\d+)");
+                    final Regex seriesTitleRegex = new Regex(collectionTitle, "(?i)(.*) . Staffel (\\d+)");
                     if (seriesTitleRegex.matches()) {
                         seriesTitle = seriesTitleRegex.getMatch(0);
                         seasonNumberStr = seriesTitleRegex.getMatch(1);
@@ -151,7 +155,8 @@ public class FlimmitCom extends PluginForDecrypt {
             episodeNumberStr = new Regex(videoTitle, "Folge (\\d+)").getMatch(0);
             if (seasonNumberStr != null && episodeNumberStr != null) {
                 final DecimalFormat df = new DecimalFormat("00");
-                seriesInfoFormatted = "S" + df.format(Integer.parseInt(seasonNumberStr)) + "E" + df.format(Integer.parseInt(episodeNumberStr));
+                seasonInfoFormatted = "S" + df.format(Integer.parseInt(seasonNumberStr));
+                seasonEpisodeInfoFormatted = seasonInfoFormatted + "E" + df.format(Integer.parseInt(episodeNumberStr));
             }
             if (m3u == null) {
                 logger.info("Failed to find any downloadable content");
@@ -164,28 +169,41 @@ public class FlimmitCom extends PluginForDecrypt {
                 /* Fallback */
                 baseVideoTitle = urlSlug;
             }
-            final String baseTitle;
-            if (!StringUtils.isEmpty(seriesTitle) && seriesInfoFormatted != null) {
-                baseTitle = seriesTitle + " " + seriesInfoFormatted;
-            } else if (!StringUtils.isEmpty(seriesTitle)) {
-                baseTitle = seriesTitle + " - " + baseVideoTitle;
-            } else {
-                baseTitle = baseVideoTitle;
-            }
             final String description = (String) JavaScriptEngineFactory.walkJson(entries, "data/modules/titles/description");
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(baseTitle);
+            if (!StringUtils.isEmpty(seriesTitle) && !StringUtils.isEmpty(seasonInfoFormatted)) {
+                fp.setName(seriesTitle + " " + seasonInfoFormatted);
+            } else if (!StringUtils.isEmpty(seriesTitle)) {
+                fp.setName(seriesTitle);
+            } else {
+                fp.setName(baseVideoTitle);
+            }
             if (!StringUtils.isEmpty(description)) {
                 fp.setComment(description);
+            }
+            fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
+            final String baseFilename;
+            if (!StringUtils.isEmpty(seriesTitle) && seasonEpisodeInfoFormatted != null) {
+                baseFilename = seriesTitle + " " + seasonEpisodeInfoFormatted;
+            } else if (!StringUtils.isEmpty(seriesTitle)) {
+                baseFilename = seriesTitle + " - " + baseVideoTitle;
+            } else {
+                baseFilename = baseVideoTitle;
             }
             br.getPage(m3u);
             // TODO: please rewrite to use the dedicated hoster plugin
             // TODO: store asset ID/contentID and maybe seriesSlug(might be required in future) and hlscontainer id as properties, so hoster
             // plugin can later refresh urls or change quality
             final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br);
-            for (final HlsContainer quality : qualities) {
+            final ArrayList<HlsContainer> selectedQualities = new ArrayList<HlsContainer>();
+            if (PluginJsonConfig.get(FlimmitComConfig.class).isPreferBest()) {
+                selectedQualities.add(HlsContainer.findBestVideoByBandwidth(qualities));
+            } else {
+                selectedQualities.addAll(qualities);
+            }
+            for (final HlsContainer quality : selectedQualities) {
                 final DownloadLink dl = this.createDownloadlink(quality.getDownloadurl().replaceAll("https?://", "m3u8://"));
-                dl.setFinalFileName(baseTitle + "_" + quality.getResolution() + "_" + quality.getBandwidth() + ".mp4");
+                dl.setFinalFileName(baseFilename + "_" + quality.getResolution() + "_" + quality.getBandwidth() + ".mp4");
                 dl.setAvailable(true);
                 dl._setFilePackage(fp);
                 decryptedLinks.add(dl);
@@ -229,6 +247,11 @@ public class FlimmitCom extends PluginForDecrypt {
                 ((jd.plugins.hoster.FlimmitCom) plugin).login(account, false);
             }
         }
+    }
+
+    @Override
+    public Class<? extends FlimmitComConfig> getConfigInterface() {
+        return FlimmitComConfig.class;
     }
 
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {

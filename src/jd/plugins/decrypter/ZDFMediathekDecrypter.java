@@ -300,38 +300,45 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlPhoenix(final CryptedLink param) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String phoenixContentID = new Regex(param.getCryptedUrl(), TYPE_PHOENIX).getMatch(0);
         if (phoenixContentID == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getPage("https://www.phoenix.de/response/id/" + phoenixContentID);
+        final String urlBase = "https://www.phoenix.de";
+        br.getPage(urlBase + "/response/id/" + phoenixContentID);
         final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final Map<String, Object> videoMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "absaetze/{0}");
-        if (videoMap == null) {
-            /* Probably unsupported content/URL/not a video. */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String type = (String) videoMap.get("typ");
-        if (type.equals("video-youtube")) {
-            /* Embedded youtube video */
-            final String youtubeVideoID = (String) videoMap.get("id");
-            final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-            ret.add(super.createDownloadlink("https://www.youtube.com/watch?v=" + youtubeVideoID));
-            return ret;
-        } else if (type.equals("video-smubl")) {
-            /* "Selfhosted" content --> Hosted on zdf.de */
-            final String zdfContentID = videoMap.get("content").toString();
-            br.getPage("/php/mediaplayer/data/beitrags_details.php?id=" + zdfContentID + "&profile=player2");
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final List<Map<String, Object>> videos = (List<Map<String, Object>>) entries.get("absaetze");
+        int numberofSkippedItems = 0;
+        int index = 0;
+        for (final Map<String, Object> video : videos) {
+            logger.info("Processing item " + (index + 1) + "/" + videos.size());
+            final String type = (String) video.get("typ");
+            if (type.equals("video-youtube")) {
+                /* Embedded youtube video */
+                final String youtubeVideoID = (String) video.get("id");
+                ret.add(super.createDownloadlink("https://www.youtube.com/watch?v=" + youtubeVideoID));
+            } else if (type.equals("video-smubl")) {
+                /* "Selfhosted" content --> Hosted on zdf.de */
+                final String zdfContentID = video.get("content").toString();
+                br.getPage(urlBase + "/php/mediaplayer/data/beitrags_details.php?id=" + zdfContentID + "&profile=player2");
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                ret.addAll(handleZdfJson(param, br, null));
+            } else {
+                numberofSkippedItems++;
+                logger.warning("Skipping unsupported type?! --> " + type);
             }
-            return handleZdfJson(param, br, null);
-        } else {
-            logger.warning("Unsupported type?! --> " + type);
+            index++;
+        }
+        if (numberofSkippedItems == videos.size()) {
+            logger.info("Failed to find any downloadable content");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        return ret;
     }
 
     private ArrayList<DownloadLink> crawlZdfNew(final CryptedLink param) throws Exception {

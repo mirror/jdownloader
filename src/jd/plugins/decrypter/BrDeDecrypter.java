@@ -24,8 +24,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.config.BrDeConfigInterface;
@@ -41,6 +44,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "br-online.de" }, urls = { "https?://(?:www\\.)?br\\.de/.+" })
@@ -57,16 +62,50 @@ public class BrDeDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        boolean offline = false;
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
-        final String videoID = new Regex(parameter, "av:([a-f0-9]{24})").getMatch(0);
+        String videoID = new Regex(parameter, "av:([a-f0-9]{24})").getMatch(0);
         if (videoID == null) {
             /*
              * 2019-12-13: Legacy handling for old XML way e.g.
              * https://www.br.de/telekolleg/faecher/englisch/telekolleg-englisch-out-about100.html
              */
-            return crawlOldContent(parameter, decryptedLinks);
+            if (!this.isSupportedURL(param.getCryptedUrl())) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            br.getPage(param.getCryptedUrl());
+            /* Look for special embedded content (has only one quality available) */
+            final String[] videoJsons = br.getRegex("<script type=\"application/ld\\+json\"[^>]*>\\s*(\\{\"@context\":\"https://schema\\.org/.*?\\})</script>").getColumn(0);
+            if (videoJsons.length > 0) {
+                /*
+                 * 2022-01-11: E.g. small clips like:
+                 * https://www.br.de/nachrichten/sport/dressen-beim-skitest-coole-schwuenge-richtung-naechsten-winter,StjpwZR
+                 */
+                for (final String videoJson : videoJsons) {
+                    final Map<String, Object> video = JSonStorage.restoreFromString(videoJson, TypeRef.HASHMAP);
+                    final String type = (String) video.get("@type");
+                    if (!type.contentEquals("VideoObject")) {
+                        /* Skip unsupported items */
+                        continue;
+                    }
+                    final String directurl = video.get("contentUrl").toString();
+                    final String title = (String) video.get("name");
+                    final String description = (String) video.get("description");
+                    final String uploadDate = video.get("uploadDate").toString();
+                    final String date_formatted = formatDate(uploadDate);
+                    final String show = (String) JavaScriptEngineFactory.walkJson(video, "publisher/name");
+                    final DownloadLink embed = this.createDownloadlink(directurl);
+                    embed.setFinalFileName(date_formatted + "_" + show + "_" + title + ".mp4");
+                    if (!StringUtils.isEmpty(description)) {
+                        embed.setComment(description);
+                    }
+                    embed.setAvailable(true);
+                    decryptedLinks.add(embed);
+                }
+                return decryptedLinks;
+            } else {
+                return crawlOldContent(param, decryptedLinks);
+            }
         }
         br.getHeaders().put("Content-Type", "application/json");
         /* This is important! */
@@ -74,10 +113,9 @@ public class BrDeDecrypter extends PluginForDecrypt {
         br.postPageRaw("https://api.mediathek.br.de/graphql/relayBatch",
                 "[{\"id\":\"DetailPageRendererQuery\",\"query\":\"query DetailPageRendererQuery(  $clipId: ID!) {  video: node(id: $clipId) {    __typename    ...DetailPage_video    id  }}fragment BookmarkAction_clip on ClipInterface {  id  bookmarked}fragment ChildContentRedirect_creativeWork on CreativeWorkInterface {  categories(first: 100) {    edges {      node {        __typename        id      }    }  }}fragment ClipActions_clip on ClipInterface {  id  bookmarked  downloadable  ...BookmarkAction_clip  ...Rate_clip  ...Share_clip  ...Download_clip}fragment ClipInfo_clip on ClipInterface {  __typename  id  title  kicker  description  shortDescription  availableUntil  versionFrom  ...Subtitles_clip  ...Duration_clip  ...FSKInfo_clip  ...RelatedContent_clip  ...ExternalLinks_clip  ... on ProgrammeInterface {    episodeNumber    initialScreening {      __typename      start      publishedBy {        __typename        name        id      }      id    }    episodeOf {      __typename      description      id      title      scheduleInfo      ...SubscribeAction_series      ... on CreativeWorkInterface {        ...LinkWithSlug_creativeWork      }    }  }  ... on ItemInterface {    itemOf(first: 1) {      edges {        node {          __typename          versionFrom          initialScreening {            __typename            start            publishedBy {              __typename              name              id            }            id          }          episodeOf {            __typename            id            title            scheduleInfo            ...SubscribeAction_series            ... on CreativeWorkInterface {              ...LinkWithSlug_creativeWork            }          }          id        }      }    }  }}fragment DetailPage_video on Node {  ...VideoPlayer_video  ... on ClipInterface {    id    title    kicker    slug    shortDescription    description    status {      __typename      id    }    ...ClipActions_clip    ...ClipInfo_clip    ...ChildContentRedirect_creativeWork  }}fragment Download_clip on ClipInterface {  videoFiles(first: 10) {    edges {      node {        __typename        publicLocation        videoProfile {          __typename          height          id        }        id      }    }  }}fragment Duration_clip on ClipInterface {  duration}fragment Error_clip on ClipInterface {  ageRestriction  ... on ProgrammeInterface {    availableUntil    initialScreening {      __typename      start      end      publishedBy {        __typename        name        id      }      id    }  }}fragment ExternalLinks_clip on ClipInterface {  relatedLinks(first: 20) {    edges {      node {        __typename        id        label        url      }    }  }}fragment FSKInfo_clip on ClipInterface {  ageRestriction}fragment LinkWithSlug_creativeWork on CreativeWorkInterface {  id  slug}fragment Rate_clip on ClipInterface {  id  reactions {    likes    dislikes  }  myInteractions {    __typename    reaction {      __typename      id    }    id  }}fragment RelatedContent_clip on ClipInterface {  __typename  title  kicker  ...Duration_clip  ...TeaserImage_creativeWorkInterface  ... on ProgrammeInterface {    episodeNumber    versionFrom    initialScreening {      __typename      start      id    }    items(first: 30, filter: {essences: {empty: {eq: false}}, status: {id: {eq: \\\"av:http://ard.de/ontologies/lifeCycle#published\\\"}}}) {      edges {        node {          __typename          title          kicker          ...Duration_clip          ...TeaserImage_creativeWorkInterface          ...LinkWithSlug_creativeWork          id        }      }    }    episodeOf {      __typename      title      kicker      ...LinkWithSlug_creativeWork      id    }    moreEpisodes: siblings(next: 2, previous: 1, filter: {essences: {empty: {eq: false}}, status: {id: {eq: \\\"av:http://ard.de/ontologies/lifeCycle#published\\\"}}}) {      current      node {        __typename        title        kicker        episodeNumber        versionFrom        initialScreening {          __typename          start          id        }        ...Duration_clip        ...TeaserImage_creativeWorkInterface        ...LinkWithSlug_creativeWork        id      }    }  }  ... on ItemInterface {    moreItems: siblings(next: 25, previous: 25, filter: {essences: {empty: {eq: false}}, status: {id: {eq: \\\"av:http://ard.de/ontologies/lifeCycle#published\\\"}}}) {      current      node {        __typename        title        kicker        itemOf(first: 1) {          edges {            node {              __typename              versionFrom              initialScreening {                __typename                start                id              }              id            }          }        }        ...Duration_clip        ...TeaserImage_creativeWorkInterface        ...LinkWithSlug_creativeWork        id      }    }    itemOf(first: 1) {      edges {        node {          __typename          title          kicker          versionFrom          initialScreening {            __typename            start            id          }          ...Duration_clip          ...TeaserImage_creativeWorkInterface          ...LinkWithSlug_creativeWork          episodeOf {            __typename            title            kicker            ...LinkWithSlug_creativeWork            id          }          id        }      }    }  }}fragment Settings_clip on ClipInterface {  videoFiles(first: 10) {    edges {      node {        __typename        id        mimetype        publicLocation        videoProfile {          __typename          id          width          height        }      }    }  }}fragment Share_clip on ClipInterface {  title  id  embeddable  embedCode  canonicalUrl}fragment SubscribeAction_series on SeriesInterface {  id  subscribed}fragment Subtitles_clip on ClipInterface {  videoFiles(first: 10) {    edges {      node {        __typename        subtitles {          edges {            node {              __typename              timedTextFiles(filter: {mimetype: {eq: \\\"text/vtt\\\"}}) {                edges {                  node {                    __typename                    publicLocation                    id                  }                }              }              id            }          }        }        id      }    }  }}fragment TeaserImage_creativeWorkInterface on CreativeWorkInterface {  id  defaultTeaserImage {    __typename    shortDescription    copyright    imageFiles(first: 1) {      edges {        node {          __typename          id          publicLocation          crops(first: 1, filter: {format: ASPECT_RATIO_16_9}) {            count            edges {              node {                __typename                publicLocation                width                height                id              }            }          }        }      }    }    id  }}fragment Track_clip on ClipInterface {  videoFiles(first: 10) {    edges {      node {        __typename        publicLocation        subtitles {          edges {            node {              id              language              closed              __typename              timedTextFiles(filter: {mimetype: {eq: \\\"text/vtt\\\"}}) {                edges {                  node {                    __typename                    id                    mimetype                    publicLocation                  }                }              }            }          }        }        id      }    }  }}fragment VideoPlayer_video on Node {  id  type: __typename  ... on ClipInterface {    title    ageRestriction    chromecastEntity    videoFiles(first: 10) {      edges {        node {          __typename          id          mimetype          publicLocation          videoProfile {            __typename            id            width          }        }      }    }    ...Track_clip    ...Error_clip    ...Settings_clip    defaultTeaserImage {      __typename      imageFiles(first: 1) {        edges {          node {            __typename            id            publicLocation          }        }      }      id    }    myInteractions {      __typename      completed      progress      id    }  }  ... on ProgrammeInterface {    liveBroadcasts: broadcasts(filter: {start: {lte: \\\"now\\\"}}, orderBy: START_ASC) {      edges {        node {          __typename          start          end          broadcastedOn(first: 1) {            edges {              node {                __typename                id                type: __typename                streamingUrls(first: 10, filter: {hasEmbeddedSubtitles: {eq: false}}) {                  edges {                    node {                      __typename                      id                      publicLocation                      hasEmbeddedSubtitles                    }                  }                }              }            }          }          id        }      }    }    futureBroadcasts: broadcasts(filter: {end: {gte: \\\"now\\\"}}, orderBy: START_DESC) {      edges {        node {          __typename          start          end          broadcastedOn(first: 1) {            edges {              node {                __typename                id                type: __typename                streamingUrls(first: 10, filter: {hasEmbeddedSubtitles: {eq: false}}) {                  edges {                    node {                      __typename                      id                      publicLocation                      hasEmbeddedSubtitles                    }                  }                }              }            }          }          id        }      }    }  }  ... on LivestreamInterface {    streamingUrls(first: 10, filter: {hasEmbeddedSubtitles: {eq: false}}) {      edges {        node {          __typename          id          publicLocation          hasEmbeddedSubtitles        }      }    }  }}\",\"variables\":{\"clipId\":\"av:"
                         + videoID + "\"}}]");
-        if (offline || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
             /* Add offline link so user can see it */
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         LinkedHashMap<String, Object> entries = null;
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
@@ -88,8 +126,7 @@ public class BrDeDecrypter extends PluginForDecrypt {
         if (type != null && !is_video) {
             /* E.g. "Series" or other non-video objects */
             logger.info("Failed to find any downloadable content");
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String date = (String) JavaScriptEngineFactory.walkJson(entries, "initialScreening/start");
         if (StringUtils.isEmpty(date)) {
@@ -107,8 +144,7 @@ public class BrDeDecrypter extends PluginForDecrypt {
              * Probably not a downloadable video e.g. LIVE-streams:
              * https://www.br.de/mediathek/video/bergwetter-und-alpenblick-panoramabilder-live-av:5da6d8987c69d4001a35a8d1
              */
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
         HashMap<String, DownloadLink> best_map = new HashMap<String, DownloadLink>();
@@ -288,35 +324,32 @@ public class BrDeDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    private boolean isSupportedURL(final String url) {
+        if (url == null) {
+            return false;
+        } else if (url.contains("/livestream/")) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     /**
      * 2019-12-13: This is the nearly unmodified crawl code of revision 40970. Parts of the br.de website are still running on the old
      * system e.g. https://www.br.de/telekolleg/faecher/englisch/telekolleg-englisch-out-about100.html
      *
      * @throws IOException
+     * @throws PluginException
      */
-    private ArrayList<DownloadLink> crawlOldContent(final String parameter, final ArrayList<DownloadLink> decryptedLinks) throws IOException {
-        if (parameter.contains("/livestream/")) {
-            /* Invalid URLs. */
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        }
-        br.getPage(parameter);
-        if (this.br.getHttpConnection().getResponseCode() == 404 || parameter.matches("https?://(?:www\\.)?br\\.de/mediathek/video/index\\.html")) {
-            /* Add offline link so user can see it */
-            final DownloadLink dl = this.createOfflinelink(parameter);
-            String offline_name = new Regex(parameter, "br\\.de/(.+)\\.html$").getMatch(0);
-            if (offline_name != null) {
-                dl.setFinalFileName(offline_name);
-            }
-            decryptedLinks.add(dl);
-            return decryptedLinks;
+    private ArrayList<DownloadLink> crawlOldContent(final CryptedLink param, final ArrayList<DownloadLink> decryptedLinks) throws IOException, PluginException {
+        if (this.br.getHttpConnection().getResponseCode() == 404 || param.getCryptedUrl().matches("https?://(?:www\\.)?br\\.de/mediathek/video/index\\.html")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String player_link = br.getRegex("\\{dataURL:\\'(/[^<>\"]*?)\\'\\}").getMatch(0);
         String date = br.getRegex(">(\\d{2}\\.\\d{2}\\.\\d{4}), \\d{2}:\\d{2} Uhr,?</time>").getMatch(0);
         if (player_link == null) {
             logger.info("URL does not lead to any downloadable content");
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /*
          * 2019-12-14: E.g. alternative_date required: https://www.br.de/telekolleg/faecher/englisch/telekolleg-englisch-out-about100.html
@@ -335,7 +368,7 @@ public class BrDeDecrypter extends PluginForDecrypt {
         String title = this.getXML("shareTitle");
         final String[] qualities = br.getRegex("<asset type=(.*?)</asset>").getColumn(0);
         if (qualities == null || qualities.length == 0 || title == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
+            logger.warning("Decrypter broken for link: " + param.getCryptedUrl());
             return null;
         }
         final ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
@@ -390,11 +423,11 @@ public class BrDeDecrypter extends PluginForDecrypt {
             final_video_name += " - " + title + "_" + resolution + ".mp4";
             final DownloadLink dl_video = createDownloadlink("http://brdecrypted-online.de/?format=mp4&quality=" + resolution + "&hash=" + playerLinkID);
             dl_video.setLinkID(getHost() + "://" + playerLinkID + "/" + q_string + "/" + resolution);
-            dl_video.setProperty("mainlink", parameter);
+            dl_video.setProperty("mainlink", param.getCryptedUrl());
             dl_video.setProperty("direct_link", final_url);
             dl_video.setProperty("plain_filename", final_video_name);
             dl_video.setProperty("plain_resolution", resolution);
-            dl_video.setContentUrl(parameter);
+            dl_video.setContentUrl(param.getCryptedUrl());
             dl_video.setFinalFileName(final_video_name);
             dl_video.setDownloadSize(Long.parseLong(fsize));
             dl_video.setAvailable(true);
@@ -404,10 +437,9 @@ public class BrDeDecrypter extends PluginForDecrypt {
         if (!found_supported_format) {
             /* 2019-12-13: E.g. http://www.br.de/fernsehen/ard-alpha/index.html */
             logger.info("Failed to find any downloadable content");
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (newRet.size() == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
+            logger.warning("Decrypter broken for link: " + param.getCryptedUrl());
             return null;
         }
         boolean atLeastOneSelectedQualityExists = false;
@@ -568,12 +600,13 @@ public class BrDeDecrypter extends PluginForDecrypt {
     }
 
     private String formatDate(final String input) {
-        String ret = new Regex(input, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
-        if (ret == null) {
+        final String ret = new Regex(input, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+        if (ret != null) {
+            return ret;
+        } else {
             /* Fallback */
-            ret = input;
+            return input;
         }
-        return ret;
     }
 
     /* NO OVERRIDE!! */
