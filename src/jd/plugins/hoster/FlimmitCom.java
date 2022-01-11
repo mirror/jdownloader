@@ -23,6 +23,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.FlimmitComConfig;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -201,6 +202,11 @@ public class FlimmitCom extends PluginForHost {
         checkFFmpeg(link, "Download a HLS Stream");
         dl = new HLSDownloader(link, br, dllink);
         dl.startDownload();
+    }
+
+    @Override
+    public Class<? extends FlimmitComConfig> getConfigInterface() {
+        return FlimmitComConfig.class;
     }
 
     @Override
