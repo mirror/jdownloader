@@ -30,8 +30,8 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.RedditConfig;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -61,8 +61,14 @@ public class RedditCom extends PluginForHost {
             this.enablePremium("https://www.reddit.com/register/");
         }
     }
-    /* API wiki/docs: https://github.com/reddit-archive/reddit/wiki/API */
 
+    public static final String PROPERTY_SUBREDDIT = "subreddit";
+    public static final String PROPERTY_TITLE     = "title";
+    public static final String PROPERTY_USERNAME  = "username";
+    public static final String PROPERTY_DATE      = "date";
+    public static final String PROPERTY_INDEX     = "index";
+
+    /** API wiki/docs: https://github.com/reddit-archive/reddit/wiki/API */
     public static final String getApiBaseLogin() {
         return "https://www.reddit.com/api/v1";
     }
@@ -142,17 +148,20 @@ public class RedditCom extends PluginForHost {
         br.setAllowedResponseCodes(new int[] { 400 });
         if (link.getPluginPatternMatcher().contains("v.redd.it")) {
             /* HLS Video */
-            link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+            if (!link.isNameSet()) {
+                /* Fallback: Use this if no name was set in crawler. */
+                link.setFinalFileName(this.getFID(link) + ".mp4");
+            }
             br.getPage(br.getPage("https://v.redd.it/" + this.getFID(link) + "/HLSPlaylist.m3u8"));
             if (this.br.getHttpConnection().getResponseCode() == 400 || this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (!link.isNameSet()) {
-                link.setFinalFileName(this.getFID(link) + ".mp4");
-            }
         } else {
             /* Image */
-            link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
+            if (!link.isNameSet()) {
+                /* Fallback: Use this if no name was set in crawler. */
+                link.setFinalFileName(this.getFID(link) + ".jpg");
+            }
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(link.getPluginPatternMatcher());
@@ -161,7 +170,9 @@ public class RedditCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 if (con.getContentType().contains("image")) {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -170,9 +181,6 @@ public class RedditCom extends PluginForHost {
                     con.disconnect();
                 } catch (final Throwable e) {
                 }
-            }
-            if (!link.isNameSet()) {
-                link.setFinalFileName(this.getFID(link) + ".jpg");
             }
         }
         return AvailableStatus.TRUE;
@@ -538,5 +546,10 @@ public class RedditCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    public Class<? extends RedditConfig> getConfigInterface() {
+        return RedditConfig.class;
     }
 }

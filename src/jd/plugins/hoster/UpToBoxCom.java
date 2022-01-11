@@ -502,7 +502,7 @@ public class UpToBoxCom extends antiDDoSForHost {
     }
 
     private void errorFileTemporarilyUnavailable() throws PluginException {
-        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "This file is temporarily unavailable, please retry later", 30 * 60 * 1000);
+        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "This file is temporarily unavailable, please retry later", 5 * 60 * 1000);
     }
 
     private int getPreDownloadWaittimeWebsite() {
@@ -786,6 +786,8 @@ public class UpToBoxCom extends antiDDoSForHost {
         } else {
             if (presetErrorcode == api_errorcode_file_temporarily_unavailable) {
                 errorFileTemporarilyUnavailable();
+            } else {
+                logger.warning("Unknown cached errorcode: " + presetErrorcode);
             }
         }
     }
