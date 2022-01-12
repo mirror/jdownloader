@@ -5,14 +5,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.uio.CloseReason;
-import org.appwork.uio.UIOManager;
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.usenet.InvalidAuthException;
-import org.jdownloader.gui.dialog.AskDownloadPasswordDialogInterface;
-import org.jdownloader.gui.dialog.AskForDownloadLinkDialog;
-import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
@@ -24,7 +20,6 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
-import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -116,63 +111,84 @@ public class XSUseNetCom extends UseNet {
             }
             this.getPage("/index.php?/clientarea/");
             account.saveCookies(br.getCookies(getHost()), "");
-            final String currentSubscription = br.getRegex("Your current subscription</span>\\s*<p>\\s*<strong>(.*?)<").getMatch(0);
-            final String validUntil = br.getRegex("End date:\\s*(.*?)\\(").getMatch(0);
-            final String autoRenewal = br.getRegex("Automatic renewal:\\s*(.*?)\\s*<").getMatch(0);
-            final String username = br.getRegex("Username:\\s*(\\d+)\\s*<").getMatch(0);
-            String password = br.getRegex("Password:\\s*(.*?)\\s*<").getMatch(0);
-            if (StringUtils.isEmpty(username)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else {
-                account.setProperty(USENET_USERNAME, username.trim());
-            }
-            account.setProperty(USENET_PASSWORD, password);
-            final String packageType = currentSubscription;
+            /* Detect account type. Very important because different Usenet servers are used for free/premium accounts! */
             final boolean isFree;
             if (br.containsHTML("(?i)aria-selected=\"true\">\\s*Free Usenet\\s*<")) {
                 isFree = true;
-            } else if (packageType != null && !StringUtils.containsIgnoreCase(currentSubscription, "free")) {
-                /* 2022-01-07: This is probably broken */
+            } else {
                 isFree = false;
+            }
+            final String table = br.getRegex("<tbody>(.*?)</tbody>").getMatch(0);
+            final String[] tableRows = new Regex(table, "<tr(.*?)</tr>").getColumn(0);
+            long highestExpireTimestamp = 0;
+            String subscriptionName = null;
+            String subscriptionInfoURL = null;
+            int skippedSubscriptions = 0;
+            for (final String subscriptionHTML : tableRows) {
+                if (!subscriptionHTML.contains("class=\"badge badge-Active\"")) {
+                    /* Skip inactive/expired subscriptions */
+                    skippedSubscriptions++;
+                    continue;
+                }
+                final String nextDueDate = new Regex(subscriptionHTML, "Next Due Date</small><br />\\s*<span>(\\d{2}/\\d{2}/\\d{4})</span>").getMatch(0);
+                if (nextDueDate != null) {
+                    final long subscriptionExpireTimestamp = TimeFormatter.getMilliSeconds(nextDueDate, "MM/dd/yyyy", Locale.ENGLISH);
+                    if (subscriptionExpireTimestamp > highestExpireTimestamp) {
+                        highestExpireTimestamp = subscriptionExpireTimestamp;
+                        subscriptionName = new Regex(subscriptionHTML, "class=\"text-dark font-weight-bold\">([^<]+)</span>").getMatch(0);
+                        subscriptionInfoURL = new Regex(subscriptionHTML, "<a href=\"([^<>\"]+)\" class=\"text-small\">").getMatch(0);
+                    }
+                }
+            }
+            if (highestExpireTimestamp == 0) {
+                if (skippedSubscriptions > 0) {
+                    ai.setExpired(true);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find any subscriptions");
+                }
+            } else if (subscriptionName == null || subscriptionInfoURL == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage(subscriptionInfoURL + "&widget=logindetails");
+            final String username = br.getRegex(">Username</td>\\s*<td>([^<]*)<").getMatch(0);
+            final String password = br.getRegex("id=\"showpassword\">([^<]+)</span>").getMatch(0);
+            if (StringUtils.isEmpty(username) || StringUtils.isEmpty(password)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find UseNet login credentials");
+            }
+            ai.setValidUntil(highestExpireTimestamp, br);
+            account.setProperty(USENET_USERNAME, username.trim());
+            account.setProperty(USENET_PASSWORD, password);
+            if (subscriptionName != null) {
+                ai.setStatus(subscriptionName);
+            }
+            if (isFree) {
+                account.setType(Account.AccountType.FREE);
+                account.setMaxSimultanDownloads(5);
+            } else {
                 account.setType(Account.AccountType.PREMIUM);
-                ai.setStatus(packageType);
-                if (packageType.contains("200")) {
+                ai.setStatus(subscriptionName);
+                /* TODO: Check if this is still working (2022-01-12: Only checked free account handling) */
+                if (subscriptionName.contains("200")) {
                     // 200 Mbit package: 50 connection
                     account.setMaxSimultanDownloads(50);
-                } else if (packageType.contains("150")) {
+                } else if (subscriptionName.contains("150")) {
                     // 150 Mbit package: 50 connection
                     account.setMaxSimultanDownloads(50);
-                } else if (packageType.contains("100")) {
+                } else if (subscriptionName.contains("100")) {
                     // 100 Mbit package: 50 connections
                     account.setMaxSimultanDownloads(50);
-                } else if (packageType.contains("50")) {
+                } else if (subscriptionName.contains("50")) {
                     // 50 Mbit package: 40 connection
                     account.setMaxSimultanDownloads(40);
-                } else if (packageType.contains("25")) {
+                } else if (subscriptionName.contains("25")) {
                     // 25 Mbit package: 30 connections
                     account.setMaxSimultanDownloads(30);
-                } else if (packageType.contains("10")) {
+                } else if (subscriptionName.contains("10")) {
                     // 10 Mbit package: 20 connections
                     account.setMaxSimultanDownloads(20);
                 } else {
                     // Free account: 5 connections(fallback)
                     account.setMaxSimultanDownloads(5);
-                }
-            } else {
-                // Free account: 5 connections
-                isFree = true;
-            }
-            if (isFree) {
-                account.setType(Account.AccountType.FREE);
-                account.setMaxSimultanDownloads(5);
-                if (packageType != null) {
-                    ai.setStatus(packageType);
-                }
-            }
-            if (validUntil != null) {
-                final long date = TimeFormatter.getMilliSeconds(validUntil, "MMM' 'dd', 'yyyy", Locale.ENGLISH);
-                if (date > 0) {
-                    ai.setValidUntil(date + (24 * 60 * 60 * 1000l));
                 }
             }
             ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
@@ -180,24 +196,11 @@ public class XSUseNetCom extends UseNet {
             try {
                 verifyUseNetLogins(account);
                 return ai;
-            } catch (InvalidAuthException e) {
+            } catch (final InvalidAuthException e) {
                 logger.log(e);
-                final DownloadLink dummyLink = new DownloadLink(this, "Account:" + getUseNetUsername(account), getHost(), "https://www.xsusenet.com/", true);
-                final AskDownloadPasswordDialogInterface handle = UIOManager.I().show(AskDownloadPasswordDialogInterface.class, new AskForDownloadLinkDialog(_GUI.T.AskForPasswordDialog_AskForPasswordDialog_title_(), "Please enter your XSUsenet Usenet Password", dummyLink));
-                if (handle.getCloseReason() == CloseReason.OK) {
-                    password = handle.getText();
-                    if (StringUtils.isNotEmpty(password)) {
-                        account.setProperty(USENET_PASSWORD, password);
-                        try {
-                            verifyUseNetLogins(account);
-                            return ai;
-                        } catch (InvalidAuthException e2) {
-                            logger.log(e2);
-                        }
-                    }
-                }
+                logger.info("Invalid UseNet logindata");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         } catch (final PluginException e) {
             if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                 account.clearCookies("");
