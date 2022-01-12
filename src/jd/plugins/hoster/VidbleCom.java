@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,11 +31,9 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidble.com" }, urls = { "https?://(?:www\\.)?vidble\\.com/(?:show|explore)/[A-Za-z0-9]+" })
 public class VidbleCom extends PluginForHost {
-
     public VidbleCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: no https
@@ -48,7 +45,6 @@ public class VidbleCom extends PluginForHost {
     private static final boolean free_resume       = false;
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
@@ -74,8 +70,11 @@ public class VidbleCom extends PluginForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("It appears that was deleted")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.getHttpConnection().getContentType().contains("html")) {
+            /* Redirect to "not found" image */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String fid = getFID(link);

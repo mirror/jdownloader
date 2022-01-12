@@ -67,6 +67,8 @@ public class RedditCom extends PluginForHost {
     public static final String PROPERTY_USERNAME  = "username";
     public static final String PROPERTY_DATE      = "date";
     public static final String PROPERTY_INDEX     = "index";
+    public static final String PROPERTY_SLUG      = "slug";
+    public static final String PROPERTY_POST_ID   = "postid";
 
     /** API wiki/docs: https://github.com/reddit-archive/reddit/wiki/API */
     public static final String getApiBaseLogin() {

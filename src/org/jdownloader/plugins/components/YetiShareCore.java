@@ -645,36 +645,7 @@ public class YetiShareCore extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 /* Check for password protected */
-                if (getPasswordProtectedForm(this.br) != null) {
-                    /* Old layout additionally redirects to "/file_password.html?file=<fuid>" */
-                    String passCode = link.getDownloadPassword();
-                    if (passCode == null) {
-                        passCode = getUserInput("Password?", link);
-                    }
-                    final Form pwform = this.getPasswordProtectedForm(this.br);
-                    pwform.put("filePassword", Encoding.urlEncode(passCode));
-                    br.setFollowRedirects(false);
-                    this.submitForm(pwform);
-                    if (this.isDownloadlink(br.getRedirectLocation())) {
-                        /*
-                         * We can start the download right away -> Entered password is correct and we're probably logged in into a premium
-                         * account.
-                         */
-                        link.setDownloadPassword(passCode);
-                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), resume, maxchunks);
-                    } else {
-                        /* No download -> Either wrong password or correct password & free download */
-                        br.setFollowRedirects(true);
-                        if (getPasswordProtectedForm(this.br) != null) {
-                            /* Assume that entered password is wrong! */
-                            link.setDownloadPassword(null);
-                            throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
-                        } else {
-                            /* Correct password --> Store it */
-                            link.setDownloadPassword(passCode);
-                        }
-                    }
-                }
+                this.handlePasswordProtection(link, account, this.br);
                 /* Now handle pre-download-waittime, captcha and other pre-download steps. */
                 if (this.dl == null) {
                     checkErrors(br, link, account);
@@ -697,7 +668,7 @@ public class YetiShareCore extends antiDDoSForHost {
                         if (isDownloadlink(continueLink)) {
                             /*
                              * If we already found a downloadlink let's try to download it because html can still contain captcha html -->
-                             * We don't need a captcha in this case/loop/pass for sure! E.g. host '3rbup.com'.
+                             * We don't need a captcha in this case/loop/pass for sure! E.g. host 'filecad.com'.
                              */
                             waitTime(this.br, link, timeBeforeCaptchaInput);
                             dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueLink, resume, maxchunks);
@@ -706,6 +677,7 @@ public class YetiShareCore extends antiDDoSForHost {
                             final String internalFileID = this.getInternalFileID(link, this.br);
                             if (internalFileID != null) {
                                 /* New website layout handling */
+                                this.hookBeforeV2DirectDownload(link, account, br);
                                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, "/account/direct_download/" + internalFileID, resume, maxchunks);
                                 if (!link.hasProperty(PROPERTY_INTERNAL_FILE_ID)) {
                                     link.setProperty(PROPERTY_INTERNAL_FILE_ID, internalFileID);
@@ -848,6 +820,42 @@ public class YetiShareCore extends antiDDoSForHost {
         }
         dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), link));
         dl.startDownload();
+    }
+
+    protected void hookBeforeV2DirectDownload(final DownloadLink link, final Account account, final Browser br) throws Exception {
+        /* E.g. used for letsupload.io */
+    }
+
+    protected void handlePasswordProtection(final DownloadLink link, final Account account, final Browser br) throws Exception {
+        if (getPasswordProtectedForm(this.br) != null) {
+            /* Old layout additionally redirects to "/file_password.html?file=<fuid>" */
+            String passCode = link.getDownloadPassword();
+            if (passCode == null) {
+                passCode = getUserInput("Password?", link);
+            }
+            final Form pwform = this.getPasswordProtectedForm(this.br);
+            pwform.put("filePassword", Encoding.urlEncode(passCode));
+            br.setFollowRedirects(false);
+            this.submitForm(pwform);
+            if (this.isDownloadlink(br.getRedirectLocation())) {
+                /*
+                 * We can start the download right away -> Entered password is correct and we're probably logged in into a premium account.
+                 */
+                link.setDownloadPassword(passCode);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), this.isResumeable(link, account), this.getMaxChunks(account));
+            } else {
+                /* No download -> Either wrong password or correct password & free download */
+                br.setFollowRedirects(true);
+                if (getPasswordProtectedForm(this.br) != null) {
+                    /* Assume that entered password is wrong! */
+                    link.setDownloadPassword(null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                } else {
+                    /* Correct password --> Store it */
+                    link.setDownloadPassword(passCode);
+                }
+            }
+        }
     }
 
     protected Form getPasswordProtectedForm(final Browser br) {
