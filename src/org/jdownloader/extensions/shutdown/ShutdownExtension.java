@@ -39,6 +39,7 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.shutdown.actions.ShutdownToggleAction;
 import org.jdownloader.extensions.shutdown.translate.ShutdownTranslation;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
 import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
@@ -82,7 +83,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
     @Override
     public String getIconKey() {
-        return "logout";
+        return IconKey.ICON_LOGOUT;
     }
 
     @Override

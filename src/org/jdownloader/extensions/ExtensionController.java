@@ -192,7 +192,10 @@ public class ExtensionController implements MenuExtenderHandler {
         if (set.add("org.jdownloader.extensions.schedulerV2.SchedulerExtension") || !Application.isJared(null)) {
             ret.add(new UninstalledExtension("scheduler", IconKey.ICON_WAIT, _GUI.T.ExtensionController_initUninstalledExtensions_SchedulerExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_SchedulerExtension_description()));
         }
-        // TODO: shutdown und antistandby are not optional yet
+        if (set.add("org.jdownloader.extensions.shutdown.ShutdownExtension") || !Application.isJared(null)) {
+            ret.add(new UninstalledExtension("shutdown", IconKey.ICON_LOGOUT, _GUI.T.ExtensionController_initUninstalledExtensions_ShutdownExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_ShutdownExtension_description()));
+        }
+        // TODO: antistandby are not optional yet
         if (!Application.isHeadless()) {
             if (set.add("org.jdownloader.extensions.infobar.InfoBarExtension") || !Application.isJared(null)) {
                 ret.add(new UninstalledExtension("infobar", IconKey.ICON_INFO, _GUI.T.ExtensionController_initUninstalledExtensions_INFOBAR(), _GUI.T.ExtensionController_initUninstalledExtensions_INFOBAR_description()));

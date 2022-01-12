@@ -257,6 +257,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
             engine = manager.getEngineByName("javascript");
             final Context jsContext = Context.enter();
             try {
+                // required to avoid max 64k heap exception
                 jsContext.setOptimizationLevel(-1);
                 final Method jsStringPad = HitomiLa.class.getMethod("jsStringPad", new Class[] { String.class });
                 engine.put("jsStringPad", new FunctionObject("jsStringPad", jsStringPad, jsContext.initStandardObjects()));
