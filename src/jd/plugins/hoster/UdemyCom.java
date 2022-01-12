@@ -22,6 +22,13 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.UdemyComConfig;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -41,11 +48,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "udemy.com" }, urls = { "https?://(?:www\\.)?udemydecrypted\\.com/(.+\\?dtcode=[A-Za-z0-9]+|lecture_id/\\d+)" })
 public class UdemyCom extends PluginForHost {
@@ -67,7 +69,7 @@ public class UdemyCom extends PluginForHost {
     private String               dllink                              = null;
     private boolean              textAssetType                       = false;
     public static final String   TYPE_SINGLE_PREMIUM_WEBSITE         = "(.+/lecture/\\d+).*";
-    public static final String   TYPE_SINGLE_PREMIUM__DECRYPRED      = ".+/lecture_id/\\d+$";
+    public static final String   TYPE_SINGLE_PREMIUM_DECRYPRED       = ".+/lecture_id/\\d+$";
     private static final String  PROPERTY_IS_OFFICIALLY_DOWNLOADABLE = "is_officially_downloadable";
     private static final String  PROPERTY_IS_DRM_PROTECTED           = "is_drm_protected";
 
@@ -81,7 +83,7 @@ public class UdemyCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("udemydecrypted.com/", "udemy.com/"));
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
+    @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (link.getPluginPatternMatcher().matches(TYPE_SINGLE_PREMIUM_WEBSITE)) {
@@ -103,6 +105,7 @@ public class UdemyCom extends PluginForHost {
                 login(aa, false);
                 loggedin = true;
             } catch (final Exception e) {
+                /* Throw Exception if we're in download mode. */
                 if (Thread.currentThread() instanceof SingleDownloadController) {
                     throw e;
                 } else {
@@ -114,11 +117,11 @@ public class UdemyCom extends PluginForHost {
         String asset_type = link.getStringProperty("asset_type", "Video");
         final String lecture_id = link.getStringProperty("lecture_id", null);
         Map<String, Object> entries = null;
-        if (!loggedin && link.getPluginPatternMatcher().matches(TYPE_SINGLE_PREMIUM__DECRYPRED)) {
+        if (!loggedin && isAccountRequired(link)) {
             link.setName(asset_id);
             link.getLinkStatus().setStatusText("Cannot check this url without account");
             return AvailableStatus.TRUE;
-        } else if (link.getPluginPatternMatcher().matches(TYPE_SINGLE_PREMIUM__DECRYPRED)) {
+        } else if (link.getPluginPatternMatcher().matches(TYPE_SINGLE_PREMIUM_DECRYPRED)) {
             /* Prepare the API-Headers to get the videourl */
             if (!link.isNameSet()) {
                 link.setName(asset_id);
@@ -190,21 +193,38 @@ public class UdemyCom extends PluginForHost {
                     // DownloadURL
                     final List<Map<String, Object>> downloadList = (List<Map<String, Object>>) ((Map<String, Object>) download_urlsO).get(asset_type);
                     long maxQuality = -1;
+                    final int preferredQualityWidth = getPreferredQualityWidth();
+                    String bestQualityDownloadlink = null;
+                    String userSelectedQualityDownloadurl = null;
                     for (final Map<String, Object> downloadEntry : downloadList) {
                         final long qualityTmp = JavaScriptEngineFactory.toLong(downloadEntry.get("label"), 0);
                         final String dllinkTmp = (String) downloadEntry.get("file");
-                        if (qualityTmp > maxQuality && !StringUtils.isEmpty(dllinkTmp)) {
-                            this.dllink = dllinkTmp;
+                        if (StringUtils.isEmpty(dllinkTmp)) {
+                            /* Skip invalid objects */
+                            continue;
+                        }
+                        if (qualityTmp == preferredQualityWidth) {
+                            userSelectedQualityDownloadurl = dllinkTmp;
+                        }
+                        if (qualityTmp > maxQuality) {
+                            bestQualityDownloadlink = dllinkTmp;
                             maxQuality = qualityTmp;
-                            final String filename_url = this.br.getRegex("response\\-content\\-disposition=attachment%3Bfilename=([^<>\"/\\\\]*)(mp4)?\\.mp4").getMatch(0);
-                            if (StringUtils.isNotEmpty(filename_url)) {
-                                filename = filename_url;
-                            }
                         }
                     }
-                    if (maxQuality > 0) {
+                    if (userSelectedQualityDownloadurl != null) {
+                        logger.info("Found user selected quality: " + preferredQualityWidth);
+                        this.dllink = userSelectedQualityDownloadurl;
+                    } else if (bestQualityDownloadlink != null) {
+                        logger.info("Using BEST quality: " + maxQuality);
+                        this.dllink = bestQualityDownloadlink;
+                    }
+                    if (!StringUtils.isEmpty(this.dllink)) {
                         link.setProperty(PROPERTY_IS_OFFICIALLY_DOWNLOADABLE, true);
-                        logger.info("Found Download:" + maxQuality + "|" + dllink);
+                        logger.info("Found official Download:" + maxQuality + " | " + dllink);
+                        final String filename_url = this.br.getRegex("response\\-content\\-disposition=attachment%3Bfilename=([^<>\"/\\\\]*)(mp4)?\\.mp4").getMatch(0);
+                        if (StringUtils.isNotEmpty(filename_url)) {
+                            filename = filename_url;
+                        }
                     } else {
                         link.removeProperty(PROPERTY_IS_OFFICIALLY_DOWNLOADABLE);
                     }
@@ -215,19 +235,37 @@ public class UdemyCom extends PluginForHost {
                 if (StringUtils.isEmpty(dllink) && media_sourcesO != null && media_sourcesO instanceof List) {
                     final List<Map<String, Object>> mediaList = (List<Map<String, Object>>) media_sourcesO;
                     long maxQuality = -1;
+                    final int preferredQualityWidth = getPreferredQualityWidth();
+                    String bestQualityDownloadlink = null;
+                    String userSelectedQualityDownloadurl = null;
                     for (final Map<String, Object> mediaEntry : mediaList) {
-                        final long qualityTmp = JavaScriptEngineFactory.toLong(mediaEntry.get("label"), 0);
                         final String src = (String) mediaEntry.get("src");
-                        if ("video/mp4".equals(mediaEntry.get("type")) && !StringUtils.isEmpty(src) && qualityTmp > maxQuality) {
-                            this.dllink = src;
-                            maxQuality = qualityTmp;
+                        if ("video/mp4".equals(mediaEntry.get("type")) && !StringUtils.isEmpty(src)) {
+                            final long qualityTmp = JavaScriptEngineFactory.toLong(mediaEntry.get("label"), 0);
+                            if (qualityTmp == preferredQualityWidth) {
+                                userSelectedQualityDownloadurl = src;
+                            }
+                            if (qualityTmp > maxQuality) {
+                                bestQualityDownloadlink = src;
+                                maxQuality = qualityTmp;
+                            }
                         }
                     }
-                    for (final Map<String, Object> mediaEntry : mediaList) {
-                        final String src = (String) mediaEntry.get("src");
-                        if (!drm && "application/x-mpegURL".equals(mediaEntry.get("type")) && !StringUtils.isEmpty(src)) {
-                            this.dllink = src;
-                            break;
+                    if (userSelectedQualityDownloadurl != null) {
+                        logger.info("Found user selected quality: " + preferredQualityWidth);
+                        this.dllink = userSelectedQualityDownloadurl;
+                    } else if (bestQualityDownloadlink != null) {
+                        logger.info("Using BEST quality: " + maxQuality);
+                        this.dllink = bestQualityDownloadlink;
+                    }
+                    /* Check for valid HLS URLs. */
+                    if (StringUtils.isEmpty(this.dllink)) {
+                        for (final Map<String, Object> mediaEntry : mediaList) {
+                            final String src = (String) mediaEntry.get("src");
+                            if (!drm && "application/x-mpegURL".equals(mediaEntry.get("type")) && !StringUtils.isEmpty(src)) {
+                                this.dllink = src;
+                                break;
+                            }
                         }
                     }
                     if (dllink != null) {
@@ -278,6 +316,7 @@ public class UdemyCom extends PluginForHost {
                     }
                     /* json handling did not work or officially there are no downloadlinks --> Grab links from html inside json */
                     if (StringUtils.isEmpty(dllink) && json_view_html != null) {
+                        /* 2022-01-12: Very old handling! Possibly not needed anymore! */
                         json_view_html = Encoding.unicodeDecode(json_view_html);
                         json_view_html = Encoding.htmlDecode(json_view_html);
                         final String jssource = new Regex(json_view_html, "sources\"\\s*?:\\s*?(\\[.*?\\])").getMatch(0);
@@ -345,6 +384,7 @@ public class UdemyCom extends PluginForHost {
                 }
             }
         } else {
+            /* Old handling for free content */
             br.getPage(link.getPluginPatternMatcher());
             if (br.getURL().contains("/search/") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -404,10 +444,18 @@ public class UdemyCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private boolean isAccountRequired(final DownloadLink link) {
+        if (link.getPluginPatternMatcher().matches(TYPE_SINGLE_PREMIUM_DECRYPRED)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (link.getPluginPatternMatcher().matches(TYPE_SINGLE_PREMIUM__DECRYPRED)) {
+        if (this.isAccountRequired(link)) {
             throw new AccountRequiredException();
         } else {
             handleDownload(link);
@@ -443,6 +491,7 @@ public class UdemyCom extends PluginForHost {
             }
         } else {
             if (dllink == null) {
+                drmCheck(link);
                 if (!isOfficiallyDownloadable(link)) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Content might not be officially downloadable. Contact our support if you think this error message is wrong.");
                 } else {
@@ -455,9 +504,7 @@ public class UdemyCom extends PluginForHost {
              */
             this.br = new Browser();
             if (dllink.contains(".m3u8")) {
-                if (this.isDrmProtected(link)) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "DRM protected");
-                }
+                drmCheck(link);
                 /* 2016-08-23: HLS is preferred over http by their system */
                 this.br.getPage(this.dllink);
                 final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
@@ -492,6 +539,17 @@ public class UdemyCom extends PluginForHost {
                 }
                 dl.startDownload();
             }
+        }
+    }
+
+    /**
+     * Throws Exception if content is DRM protected.
+     *
+     * @throws PluginException
+     */
+    private void drmCheck(final DownloadLink link) throws PluginException {
+        if (this.isDrmProtected(link)) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "DRM protected");
         }
     }
 
@@ -623,6 +681,30 @@ public class UdemyCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return FREE_MAXDOWNLOADS;
+    }
+
+    private int getPreferredQualityWidth() {
+        switch (PluginJsonConfig.get(UdemyComConfig.class).getPreferredDownloadQuality()) {
+        case Q144P:
+            return 144;
+        case Q360P:
+            return 360;
+        case Q480P:
+            return 480;
+        case Q720P:
+            return 720;
+        case Q1080P:
+            return 1080;
+        case Q2160P:
+            return 2160;
+        default:
+            return 2160;
+        }
+    }
+
+    @Override
+    public Class<? extends UdemyComConfig> getConfigInterface() {
+        return UdemyComConfig.class;
     }
 
     @Override
