@@ -90,7 +90,7 @@ public class TrainbitCom extends PluginForHost {
         } else if (!br.getURL().contains(this.getFID(link))) {
             /* 2021-01-06: E.g. redirect to somewhere else */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("Desired folder owner account is disabled")) {
+        } else if (br.containsHTML("(?i)Desired folder owner account is disabled")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;

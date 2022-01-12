@@ -823,7 +823,7 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     protected void hookBeforeV2DirectDownload(final DownloadLink link, final Account account, final Browser br) throws Exception {
-        /* E.g. used for letsupload.io */
+        /* E.g. used for letsupload.io/letsupload.co */
     }
 
     protected void handlePasswordProtection(final DownloadLink link, final Account account, final Browser br) throws Exception {
