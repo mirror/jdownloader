@@ -166,7 +166,10 @@ public class LetsuploadCo extends YetiShareCore {
                     /* E.g. {"success":false,"msg":"The folder password is invalid"} */
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                 }
-                link.setProperty(PROPERTY_INTERNAL_FILE_ID, internalFileID);
+                if (!link.hasProperty(PROPERTY_INTERNAL_FILE_ID)) {
+                    link.setProperty(PROPERTY_INTERNAL_FILE_ID, internalFileID);
+                }
+                link.setDownloadPassword(passCode);
                 // if (this.isDownloadlink(br.getRedirectLocation())) {
                 // /*
                 // * We can start the download right away -> Entered password is correct and we're probably logged in into a premium
