@@ -34,6 +34,7 @@ import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.ExtensionControllerListener;
+import org.jdownloader.extensions.InstalledExtension;
 import org.jdownloader.extensions.LazyExtension;
 import org.jdownloader.extensions.UninstalledExtension;
 import org.jdownloader.gui.notify.BubbleNotify;
@@ -41,10 +42,8 @@ import org.jdownloader.gui.notify.gui.BubbleNotifyConfigPanel;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class SettingsSidebarModel extends DefaultListModel implements GenericConfigEventListener<Object>, ExtensionControllerListener {
-
     private static final long            serialVersionUID = -204494527404304349L;
     private GeneralSettingsConfigPanel   cfg;
-
     private ReconnectConfigPanel         rcs;
     private ProxyConfig                  pc;
     private AccountManagerSettings       ams;
@@ -55,25 +54,22 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     private AdvancedSettings             ads;
     private Linkgrabber                  lg;
     private ExtensionHeader              eh;
-
     private Object                       lock             = new Object();
-
     private SingleReachableState         TREE_COMPLETE    = new SingleReachableState("TREE_COMPLETE");
     private final JList                  list;
     protected MyJDownloaderSettingsPanel myJDownloader;
     protected BubbleNotifyConfigPanel    notifierPanel;
     protected CaptchaConfigPanel         ac;
     protected UninstalledExtensionHeader ueh;
+    protected InstalledExtensionHeader   ieh;
 
     public SettingsSidebarModel(JList list) {
         super();
         this.list = list;
         GenericConfigEventListener<Boolean> listener = new GenericConfigEventListener<Boolean>() {
-
             @Override
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         fireContentsChanged(this, 0, size() - 1);
@@ -88,7 +84,6 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
         org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINK_FILTER_ENABLED.getEventSender().addListener(listener);
         org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.getEventSender().addListener(listener);
         SecondLevelLaunch.EXTENSIONS_LOADED.executeWhenReached(new Runnable() {
-
             @Override
             public void run() {
                 ExtensionController.getInstance().getEventSender().addListener(SettingsSidebarModel.this);
@@ -100,254 +95,284 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     private GeneralSettingsConfigPanel getConfigPanelGeneral() {
         if (cfg != null) {
             return cfg;
-        }
-
-        return new EDTHelper<GeneralSettingsConfigPanel>() {
-            public GeneralSettingsConfigPanel edtRun() {
-                if (cfg != null) {
-                    return cfg;
+        } else {
+            return new EDTHelper<GeneralSettingsConfigPanel>() {
+                public GeneralSettingsConfigPanel edtRun() {
+                    if (cfg != null) {
+                        return cfg;
+                    } else {
+                        cfg = new GeneralSettingsConfigPanel();
+                        return cfg;
+                    }
                 }
-                cfg = new GeneralSettingsConfigPanel();
-                return cfg;
-            }
-        }.getReturnValue();
+            }.getReturnValue();
+        }
     }
 
     private ReconnectConfigPanel getReconnectSettings() {
         if (rcs != null) {
             return rcs;
-        }
-
-        return new EDTHelper<ReconnectConfigPanel>() {
-            public ReconnectConfigPanel edtRun() {
-                if (rcs != null) {
-                    return rcs;
+        } else {
+            return new EDTHelper<ReconnectConfigPanel>() {
+                public ReconnectConfigPanel edtRun() {
+                    if (rcs != null) {
+                        return rcs;
+                    } else {
+                        rcs = new ReconnectConfigPanel();
+                        return rcs;
+                    }
                 }
-                rcs = new ReconnectConfigPanel();
-                return rcs;
-            }
-        }.getReturnValue();
+            }.getReturnValue();
+        }
     }
 
     private ProxyConfig getProxyConfig() {
         if (pc != null) {
             return pc;
-        }
-
-        return new EDTHelper<ProxyConfig>() {
-            public ProxyConfig edtRun() {
-                if (pc != null) {
-                    return pc;
+        } else {
+            return new EDTHelper<ProxyConfig>() {
+                public ProxyConfig edtRun() {
+                    if (pc != null) {
+                        return pc;
+                    } else {
+                        pc = new ProxyConfig();
+                        return pc;
+                    }
                 }
-                pc = new ProxyConfig();
-                return pc;
-            }
-        }.getReturnValue();
+            }.getReturnValue();
+        }
     }
 
     private AccountManagerSettings getAccountManagerSettings() {
         if (ams != null) {
             return ams;
-        }
-
-        return new EDTHelper<AccountManagerSettings>() {
-            public AccountManagerSettings edtRun() {
-                if (ams != null) {
-                    return ams;
+        } else {
+            return new EDTHelper<AccountManagerSettings>() {
+                public AccountManagerSettings edtRun() {
+                    if (ams != null) {
+                        return ams;
+                    } else {
+                        ams = new AccountManagerSettings();
+                        return ams;
+                    }
                 }
-                ams = new AccountManagerSettings();
-                return ams;
-            }
-        }.getReturnValue();
+            }.getReturnValue();
+        }
     }
 
     private BasicAuthentication getBasicAuthentication() {
         if (ba != null) {
             return ba;
-        }
-
-        return new EDTHelper<BasicAuthentication>() {
-            public BasicAuthentication edtRun() {
-                if (ba != null) {
-                    return ba;
+        } else {
+            return new EDTHelper<BasicAuthentication>() {
+                public BasicAuthentication edtRun() {
+                    if (ba != null) {
+                        return ba;
+                    } else {
+                        ba = new BasicAuthentication();
+                        return ba;
+                    }
                 }
-                ba = new BasicAuthentication();
-                return ba;
-            }
-        }.getReturnValue();
+            }.getReturnValue();
+        }
     }
 
     private CaptchaConfigPanel getAntiCaptchaConfigPanel() {
         if (ac != null) {
             return ac;
-        }
-
-        return new EDTHelper<CaptchaConfigPanel>() {
-            public CaptchaConfigPanel edtRun() {
-                if (ac != null) {
-                    return ac;
+        } else {
+            return new EDTHelper<CaptchaConfigPanel>() {
+                public CaptchaConfigPanel edtRun() {
+                    if (ac != null) {
+                        return ac;
+                    } else {
+                        ac = new CaptchaConfigPanel();
+                        return ac;
+                    }
                 }
-                ac = new CaptchaConfigPanel();
-                return ac;
-            }
-        }.getReturnValue();
+            }.getReturnValue();
+        }
     }
 
     private PluginSettings getPluginSettings() {
         if (ps != null) {
             return ps;
-        }
-
-        return new EDTHelper<PluginSettings>() {
-            public PluginSettings edtRun() {
-                if (ps != null) {
-                    return ps;
+        } else {
+            return new EDTHelper<PluginSettings>() {
+                public PluginSettings edtRun() {
+                    if (ps != null) {
+                        return ps;
+                    } else {
+                        ps = new PluginSettings();
+                        return ps;
+                    }
                 }
-                ps = new PluginSettings();
-                return ps;
-            }
-        }.getReturnValue();
+            }.getReturnValue();
+        }
     }
 
     private GUISettings getGUISettings() {
         if (gs != null) {
             return gs;
-        }
-
-        return new EDTHelper<GUISettings>() {
-            public GUISettings edtRun() {
-                if (gs != null) {
-                    return gs;
+        } else {
+            return new EDTHelper<GUISettings>() {
+                public GUISettings edtRun() {
+                    if (gs != null) {
+                        return gs;
+                    } else {
+                        gs = new GUISettings();
+                        return gs;
+                    }
                 }
-                gs = new GUISettings();
-                return gs;
-            }
-        }.getReturnValue();
+            }.getReturnValue();
+        }
     }
 
     private BubbleNotifyConfigPanel getNotifierConfigPanel() {
         if (notifierPanel != null) {
             return notifierPanel;
-        }
-
-        return new EDTHelper<BubbleNotifyConfigPanel>() {
-            public BubbleNotifyConfigPanel edtRun() {
-                if (notifierPanel != null) {
-                    return notifierPanel;
+        } else {
+            return new EDTHelper<BubbleNotifyConfigPanel>() {
+                public BubbleNotifyConfigPanel edtRun() {
+                    if (notifierPanel != null) {
+                        return notifierPanel;
+                    } else {
+                        notifierPanel = BubbleNotify.getInstance().getConfigPanel();
+                        return notifierPanel;
+                    }
                 }
-                notifierPanel = BubbleNotify.getInstance().getConfigPanel();
-                return notifierPanel;
-            }
-        }.getReturnValue();
+            }.getReturnValue();
+        }
     }
 
     private MyJDownloaderSettingsPanel getMyJDownloaderPanel() {
         if (myJDownloader != null) {
             return myJDownloader;
-        }
-
-        return new EDTHelper<MyJDownloaderSettingsPanel>() {
-            public MyJDownloaderSettingsPanel edtRun() {
-                if (myJDownloader != null) {
-                    return myJDownloader;
+        } else {
+            return new EDTHelper<MyJDownloaderSettingsPanel>() {
+                public MyJDownloaderSettingsPanel edtRun() {
+                    if (myJDownloader != null) {
+                        return myJDownloader;
+                    } else {
+                        myJDownloader = new MyJDownloaderSettingsPanel();
+                        return myJDownloader;
+                    }
                 }
-                myJDownloader = new MyJDownloaderSettingsPanel();
-                return myJDownloader;
-            }
-        }.getReturnValue();
+            }.getReturnValue();
+        }
     }
 
     private Packagizer getPackagizer() {
         if (pz != null) {
             return pz;
-        }
-
-        return new EDTHelper<Packagizer>() {
-            public Packagizer edtRun() {
-                if (pz != null) {
-                    return pz;
+        } else {
+            return new EDTHelper<Packagizer>() {
+                public Packagizer edtRun() {
+                    if (pz != null) {
+                        return pz;
+                    } else {
+                        pz = new Packagizer();
+                        return pz;
+                    }
                 }
-                pz = new Packagizer();
-                return pz;
-            }
-        }.getReturnValue();
+            }.getReturnValue();
+        }
     }
 
     private Linkgrabber getLinkgrabber() {
         if (lg != null) {
             return lg;
-        }
-
-        return new EDTHelper<Linkgrabber>() {
-            public Linkgrabber edtRun() {
-                if (lg != null) {
-                    return lg;
+        } else {
+            return new EDTHelper<Linkgrabber>() {
+                public Linkgrabber edtRun() {
+                    if (lg != null) {
+                        return lg;
+                    } else {
+                        lg = new Linkgrabber();
+                        return lg;
+                    }
                 }
-                lg = new Linkgrabber();
-                return lg;
-            }
-        }.getReturnValue();
+            }.getReturnValue();
+        }
     }
 
     private AdvancedSettings getAdvancedSettings() {
         if (ads != null) {
             return ads;
-        }
-
-        return new EDTHelper<AdvancedSettings>() {
-            public AdvancedSettings edtRun() {
-                if (ads != null) {
-                    return ads;
+        } else {
+            return new EDTHelper<AdvancedSettings>() {
+                public AdvancedSettings edtRun() {
+                    if (ads != null) {
+                        return ads;
+                    } else {
+                        ads = new AdvancedSettings();
+                        return ads;
+                    }
                 }
-                ads = new AdvancedSettings();
-                return ads;
-            }
-        }.getReturnValue();
+            }.getReturnValue();
+        }
     }
 
     private UninstalledExtensionHeader getUninstalledExtensionHeader() {
         if (ueh != null) {
             return ueh;
-        }
-
-        return new EDTHelper<UninstalledExtensionHeader>() {
-            public UninstalledExtensionHeader edtRun() {
-                if (ueh != null) {
-                    return ueh;
+        } else {
+            return new EDTHelper<UninstalledExtensionHeader>() {
+                public UninstalledExtensionHeader edtRun() {
+                    if (ueh != null) {
+                        return ueh;
+                    } else {
+                        ueh = new UninstalledExtensionHeader();
+                        return ueh;
+                    }
                 }
-                ueh = new UninstalledExtensionHeader();
-                return ueh;
-            }
-        }.getReturnValue();
+            }.getReturnValue();
+        }
+    }
+
+    private InstalledExtensionHeader getInstalledExtensionHeader() {
+        if (ieh != null) {
+            return ieh;
+        } else {
+            return new EDTHelper<InstalledExtensionHeader>() {
+                public InstalledExtensionHeader edtRun() {
+                    if (ieh != null) {
+                        return ieh;
+                    } else {
+                        ieh = new InstalledExtensionHeader();
+                        return ieh;
+                    }
+                }
+            }.getReturnValue();
+        }
     }
 
     private ExtensionHeader getExtensionHeader() {
         if (eh != null) {
             return eh;
-        }
-
-        return new EDTHelper<ExtensionHeader>() {
-            public ExtensionHeader edtRun() {
-                if (eh != null) {
-                    return eh;
+        } else {
+            return new EDTHelper<ExtensionHeader>() {
+                public ExtensionHeader edtRun() {
+                    if (eh != null) {
+                        return eh;
+                    } else {
+                        eh = new ExtensionHeader();
+                        return eh;
+                    }
                 }
-                eh = new ExtensionHeader();
-                return eh;
-            }
-        }.getReturnValue();
+            }.getReturnValue();
+        }
     }
 
     private void edtAllElement(final Object element) {
-        if (element == null) {
-            return;
+        if (element != null) {
+            new EDTRunner() {
+                @Override
+                protected void runInEDT() {
+                    addElement(element);
+                }
+            };
         }
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                addElement(element);
-            }
-        };
     }
 
     public void fill(final boolean finalWithExtensions) {
@@ -368,40 +393,25 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                         } catch (final Throwable e) {
                             /* plugin not loaded yet */
                         }
-
                         new EDTRunner() {
-
                             @Override
                             protected void runInEDT() {
                                 removeAllElements();
                             }
                         };
                         final LazyExtension finalExtract = extract;
-
                         edtAllElement(getConfigPanelGeneral());
-
                         edtAllElement(getReconnectSettings());
-
                         edtAllElement(getProxyConfig());
-
                         edtAllElement(getAccountManagerSettings());
-
                         edtAllElement(getBasicAuthentication());
-
                         edtAllElement(getPluginSettings());
-
                         edtAllElement(getAntiCaptchaConfigPanel());
-
                         edtAllElement(getGUISettings());
-
                         edtAllElement(getNotifierConfigPanel());
-
                         edtAllElement(getMyJDownloaderPanel());
-
                         edtAllElement(getLinkgrabber());
-
                         edtAllElement(getPackagizer());
-
                         if (finalExtract != null) {
                             edtAllElement(finalExtract);
                         }
@@ -411,23 +421,19 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                             final AtomicBoolean firstExtension = new AtomicBoolean(true);
                             List<Object> pluginsOptional = new ArrayList<Object>();
                             pluginsOptional.addAll(ExtensionController.getInstance().getExtensions());
-
                             java.util.Collections.sort(pluginsOptional, new Comparator<Object>() {
-
                                 @Override
                                 public int compare(Object a, Object b) {
                                     String namea = (a instanceof LazyExtension) ? ((LazyExtension) a).getName() : ((UninstalledExtension) a).getName();
                                     String nameb = (b instanceof LazyExtension) ? ((LazyExtension) b).getName() : ((UninstalledExtension) b).getName();
                                     return namea.compareTo(nameb);
                                 }
-
                             });
                             HashSet<String> loadedExtensions = new HashSet<String>();
                             if (pluginsOptional != null) {
                                 for (final Object o : pluginsOptional) {
                                     if (o instanceof LazyExtension) {
                                         final LazyExtension plg = (LazyExtension) o;
-
                                         if ("org.jdownloader.extensions.extraction.ExtractionExtension".equals(plg.getClassname())) {
                                             continue;
                                         }
@@ -451,7 +457,6 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                                         plg._getSettings()._getStorageHandler().getEventSender().addListener(SettingsSidebarModel.this, true);
                                         loadedExtensions.add(plg.getClassname());
                                         new EDTRunner() {
-
                                             @Override
                                             protected void runInEDT() {
                                                 if (firstExtension.get()) {
@@ -461,35 +466,41 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                                                 addElement(plg);
                                             }
                                         };
-                                    } else {
-
                                     }
                                 }
                             }
                             final AtomicBoolean firstUninstalledExtension = new AtomicBoolean(true);
-
                             for (final UninstalledExtension o : ExtensionController.getInstance().getUninstalledExtensions()) {
                                 // not loaded
                                 new EDTRunner() {
-
                                     @Override
                                     protected void runInEDT() {
-
                                         if (firstUninstalledExtension.get()) {
                                             addElement(getUninstalledExtensionHeader());
                                             firstUninstalledExtension.set(false);
                                         }
                                         addElement(o);
-
                                     }
                                 };
                             }
-
+                        }
+                        final AtomicBoolean firstInstalledExtension = new AtomicBoolean(true);
+                        for (final InstalledExtension o : ExtensionController.getInstance().getInstalledExtensions()) {
+                            // not loaded
+                            new EDTRunner() {
+                                @Override
+                                protected void runInEDT() {
+                                    if (firstInstalledExtension.get()) {
+                                        addElement(getInstalledExtensionHeader());
+                                        firstInstalledExtension.set(false);
+                                    }
+                                    addElement(o);
+                                }
+                            };
                         }
                     }
                 } finally {
                     new EDTRunner() {
-
                         @Override
                         protected void runInEDT() {
                             if (list != null) {
@@ -516,7 +527,6 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     @Override
     public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 fireContentsChanged(this, 0, size() - 1);
@@ -530,5 +540,4 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     public SingleReachableState getTreeCompleteState() {
         return TREE_COMPLETE;
     }
-
 }

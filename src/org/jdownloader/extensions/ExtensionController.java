@@ -92,6 +92,7 @@ public class ExtensionController implements MenuExtenderHandler {
 
     private boolean                             cacheInvalidated      = false;
     private volatile List<UninstalledExtension> uninstalledExtensions = new ArrayList<UninstalledExtension>();
+    private volatile List<InstalledExtension>   installedExtensions   = new ArrayList<InstalledExtension>();
 
     public boolean isCacheInvalidated() {
         return cacheInvalidated;
@@ -178,39 +179,54 @@ public class ExtensionController implements MenuExtenderHandler {
     }
 
     private void initUninstalledExtensions() {
-        ArrayList<UninstalledExtension> ret = new ArrayList<UninstalledExtension>();
-        HashSet<String> set = new HashSet<String>();
+        final ArrayList<UninstalledExtension> uninstalled = new ArrayList<UninstalledExtension>();
+        final ArrayList<InstalledExtension> installed = new ArrayList<InstalledExtension>();
+        final HashSet<String> set = new HashSet<String>();
         for (LazyExtension l : list) {
             set.add(l.getClassname());
         }
-        if (set.add("org.jdownloader.extensions.eventscripter.EventScripterExtension") || !Application.isJared(null)) {
-            ret.add(new UninstalledExtension("eventscripter", IconKey.ICON_EVENT, _GUI.T.ExtensionController_initUninstalledExtensions_EventScripterExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_EventScripterExtension_description()));
+        if (set.contains("org.jdownloader.extensions.eventscripter.EventScripterExtension")) {
+            installed.add(new InstalledExtension("eventscripter", IconKey.ICON_EVENT, _GUI.T.ExtensionController_initUninstalledExtensions_EventScripterExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_EventScripterExtension_description()));
+        } else {
+            uninstalled.add(new UninstalledExtension("eventscripter", IconKey.ICON_EVENT, _GUI.T.ExtensionController_initUninstalledExtensions_EventScripterExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_EventScripterExtension_description()));
         }
-        if (set.add("org.jdownloader.extensions.folderwatchV2.FolderWatchExtension") || !Application.isJared(null)) {
-            ret.add(new UninstalledExtension("folderwatch", IconKey.ICON_FOLDER_ADD, _GUI.T.ExtensionController_initUninstalledExtensions_FolderWatchExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_FolderWatchExtension_description()));
+        if (set.contains("org.jdownloader.extensions.folderwatchV2.FolderWatchExtension")) {
+            installed.add(new InstalledExtension("folderwatch", IconKey.ICON_FOLDER_ADD, _GUI.T.ExtensionController_initUninstalledExtensions_FolderWatchExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_FolderWatchExtension_description()));
+        } else {
+            uninstalled.add(new UninstalledExtension("folderwatch", IconKey.ICON_FOLDER_ADD, _GUI.T.ExtensionController_initUninstalledExtensions_FolderWatchExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_FolderWatchExtension_description()));
         }
-        if (set.add("org.jdownloader.extensions.schedulerV2.SchedulerExtension") || !Application.isJared(null)) {
-            ret.add(new UninstalledExtension("scheduler", IconKey.ICON_WAIT, _GUI.T.ExtensionController_initUninstalledExtensions_SchedulerExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_SchedulerExtension_description()));
+        if (set.contains("org.jdownloader.extensions.schedulerV2.SchedulerExtension")) {
+            installed.add(new InstalledExtension("scheduler", IconKey.ICON_WAIT, _GUI.T.ExtensionController_initUninstalledExtensions_SchedulerExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_SchedulerExtension_description()));
+        } else {
+            uninstalled.add(new UninstalledExtension("scheduler", IconKey.ICON_WAIT, _GUI.T.ExtensionController_initUninstalledExtensions_SchedulerExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_SchedulerExtension_description()));
         }
-        if (set.add("org.jdownloader.extensions.shutdown.ShutdownExtension") || !Application.isJared(null)) {
-            ret.add(new UninstalledExtension("shutdown", IconKey.ICON_LOGOUT, _GUI.T.ExtensionController_initUninstalledExtensions_ShutdownExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_ShutdownExtension_description()));
+        if (set.contains("org.jdownloader.extensions.shutdown.ShutdownExtension")) {
+            installed.add(new InstalledExtension("shutdown", IconKey.ICON_LOGOUT, _GUI.T.ExtensionController_initUninstalledExtensions_ShutdownExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_ShutdownExtension_description()));
+        } else {
+            uninstalled.add(new UninstalledExtension("shutdown", IconKey.ICON_LOGOUT, _GUI.T.ExtensionController_initUninstalledExtensions_ShutdownExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_ShutdownExtension_description()));
         }
         // TODO: antistandby are not optional yet
         if (!Application.isHeadless()) {
-            if (set.add("org.jdownloader.extensions.infobar.InfoBarExtension") || !Application.isJared(null)) {
-                ret.add(new UninstalledExtension("infobar", IconKey.ICON_INFO, _GUI.T.ExtensionController_initUninstalledExtensions_INFOBAR(), _GUI.T.ExtensionController_initUninstalledExtensions_INFOBAR_description()));
+            if (set.contains("org.jdownloader.extensions.infobar.InfoBarExtension")) {
+                installed.add(new InstalledExtension("infobar", IconKey.ICON_INFO, _GUI.T.ExtensionController_initUninstalledExtensions_INFOBAR(), _GUI.T.ExtensionController_initUninstalledExtensions_INFOBAR_description()));
+            } else {
+                uninstalled.add(new UninstalledExtension("infobar", IconKey.ICON_INFO, _GUI.T.ExtensionController_initUninstalledExtensions_INFOBAR(), _GUI.T.ExtensionController_initUninstalledExtensions_INFOBAR_description()));
             }
-            if (set.add("org.jdownloader.extensions.chat.ChatExtension") || !Application.isJared(null)) {
-                ret.add(new UninstalledExtension("chat", IconKey.ICON_CHAT, _GUI.T.ExtensionController_initUninstalledExtensions_JDChat(), _GUI.T.ExtensionController_initUninstalledExtensions_JDChat_description()));
+            if (set.contains("org.jdownloader.extensions.chat.ChatExtension")) {
+                installed.add(new InstalledExtension("chat", IconKey.ICON_CHAT, _GUI.T.ExtensionController_initUninstalledExtensions_JDChat(), _GUI.T.ExtensionController_initUninstalledExtensions_JDChat_description()));
+            } else {
+                uninstalled.add(new UninstalledExtension("chat", IconKey.ICON_CHAT, _GUI.T.ExtensionController_initUninstalledExtensions_JDChat(), _GUI.T.ExtensionController_initUninstalledExtensions_JDChat_description()));
             }
-            if (set.add("org.jdownloader.extensions.translator.TranslatorExtension") || !Application.isJared(null)) {
-                ret.add(new UninstalledExtension("translator", IconKey.ICON_LANGUAGE, _GUI.T.ExtensionController_initUninstalledExtensions_TranslatorExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_TranslatorExtension_description()));
+            if (set.contains("org.jdownloader.extensions.translator.TranslatorExtension")) {
+                installed.add(new InstalledExtension("translator", IconKey.ICON_LANGUAGE, _GUI.T.ExtensionController_initUninstalledExtensions_TranslatorExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_TranslatorExtension_description()));
+            } else {
+                uninstalled.add(new UninstalledExtension("translator", IconKey.ICON_LANGUAGE, _GUI.T.ExtensionController_initUninstalledExtensions_TranslatorExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_TranslatorExtension_description()));
             }
         }
         if (UpdateController.getInstance().isHandlerSet()) {
             // reinstall extensions if we could not load them
-            ArrayList<String> list = new ArrayList<String>();
-            for (UninstalledExtension ue : ret) {
+            final ArrayList<String> list = new ArrayList<String>();
+            for (UninstalledExtension ue : uninstalled) {
                 if (UpdateController.getInstance().isExtensionInstalled(ue.getId())) {
                     list.add(ue.getId());
                 }
@@ -222,7 +238,8 @@ public class ExtensionController implements MenuExtenderHandler {
                 e.printStackTrace();
             }
         }
-        uninstalledExtensions = Collections.unmodifiableList(ret);
+        uninstalledExtensions = Collections.unmodifiableList(uninstalled);
+        installedExtensions = Collections.unmodifiableList(installed);
     }
 
     private java.util.List<LazyExtension> loadFromCache() throws InstantiationException, IllegalAccessException, ClassNotFoundException, StartException {
@@ -681,5 +698,9 @@ public class ExtensionController implements MenuExtenderHandler {
 
     public List<UninstalledExtension> getUninstalledExtensions() {
         return uninstalledExtensions;
+    }
+
+    public List<InstalledExtension> getInstalledExtensions() {
+        return installedExtensions;
     }
 }

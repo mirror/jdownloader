@@ -8,7 +8,6 @@ import javax.swing.JProgressBar;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 
 import org.appwork.swing.components.ExtButton;
-
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.IconKey;
@@ -20,11 +19,10 @@ import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.UpdaterListener;
 
 public class UninstalledExtension {
-
-    private String              iconKey;
-    private String              name;
-    private String              id;
-    private String              description;
+    private final String        iconKey;
+    private final String        name;
+    private final String        id;
+    private final String        description;
     private AbstractConfigPanel panel;
 
     public String getIconKey() {
@@ -40,7 +38,6 @@ public class UninstalledExtension {
         this.name = name;
         this.id = id;
         this.description = description;
-
     }
 
     public String getId() {
@@ -52,16 +49,11 @@ public class UninstalledExtension {
             return panel;
         }
         panel = new AbstractConfigPanel() {
-
             private ExtButton    install;
             private JProgressBar progressbar;
-
             {
-
                 final Header header = new Header(UninstalledExtension.this.getName(), getIcon());
-
                 add(header, "spanx,growx,pushx");
-
                 addDescription(UninstalledExtension.this.getDescription());
                 progressbar = new JProgressBar();
                 progressbar.setIndeterminate(true);
@@ -83,12 +75,9 @@ public class UninstalledExtension {
                         new Thread("Install Extension ") {
                             public void run() {
                                 try {
-
                                     // UpdateController.getInstance().setGuiVisible(true);
-
-                                    UpdaterListener listener;
+                                    final UpdaterListener listener;
                                     UpdateController.getInstance().getEventSender().addListener(listener = new UpdaterListener() {
-
                                         @Override
                                         public void onUpdatesAvailable(boolean selfupdate, InstallLog installlog) {
                                             System.out.println();
@@ -98,10 +87,8 @@ public class UninstalledExtension {
                                         public void onUpdaterStatusUpdate(final String label, Icon icon, final double p) {
                                             System.out.println();
                                             new EDTRunner() {
-
                                                 @Override
                                                 protected void runInEDT() {
-
                                                     progressbar.setValue((int) (p));
                                                     progressbar.setIndeterminate(p <= 0);
                                                     progressbar.setString(label);
@@ -116,15 +103,12 @@ public class UninstalledExtension {
                                             if (!UpdateController.getInstance().isRunning()) {
                                                 break;
                                             }
-
                                             UpdateController.getInstance().waitForUpdate();
-
                                         }
                                         // boolean installed = UpdateController.getInstance().isExtensionInstalled(id);
                                         final boolean pending = UpdateController.getInstance().hasPendingUpdates();
-                                        // 
+                                        //
                                         new EDTRunner() {
-
                                             @Override
                                             protected void runInEDT() {
                                                 progressbar.setIndeterminate(false);
@@ -135,22 +119,17 @@ public class UninstalledExtension {
                                                 } else {
                                                     progressbar.setVisible(false);
                                                     install.setVisible(true);
-
                                                 }
                                             }
                                         };
                                     } finally {
                                         UpdateController.getInstance().getEventSender().removeListener(listener);
                                     }
-
                                 } catch (Exception e) {
                                     org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
-                                } finally {
-
                                 }
                             }
                         }.start();
-
                     }
                 });
                 add(install, "gapleft" + getLeftGap() + ",spanx,growx,pushx,hidemode 3");
@@ -182,15 +161,7 @@ public class UninstalledExtension {
         return new AbstractIcon(iconKey, size);
     }
 
-    //
-    // @Override
-    // public boolean _isEnabled() {
-    // return false;
-    // }
-
-    // @Override
     public String getDescription() {
         return _GUI.T.UninstalledExtension_getDescription_object_(description);
     }
-
 }
