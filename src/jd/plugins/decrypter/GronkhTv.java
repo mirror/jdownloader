@@ -18,7 +18,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gronkh.tv" }, urls = { "https?://(www\\.)?gronkh\\.tv/stream/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gronkh.tv" }, urls = { "https?://(www\\.)?gronkh\\.tv/watch/stream/\\d+" })
 public class GronkhTv extends PluginForDecrypt {
     public GronkhTv(PluginWrapper wrapper) {
         super(wrapper);

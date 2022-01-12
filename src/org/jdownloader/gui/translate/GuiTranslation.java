@@ -5665,6 +5665,12 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Define time schedules to execute actions, start downloads,..." })
     String ExtensionController_initUninstalledExtensions_SchedulerExtension_description();
 
+    @Default(lngs = { "en" }, values = { "JD Shutdown" })
+    String ExtensionController_initUninstalledExtensions_ShutdownExtension();
+
+    @Default(lngs = { "en" }, values = { "Automatically shut down, suspend, hibernate your PC or close JDownloader when downloads are finished." })
+    String ExtensionController_initUninstalledExtensions_ShutdownExtension_description();
+
     @Default(lngs = { "en" }, values = { "Translator" })
     String ExtensionController_initUninstalledExtensions_TranslatorExtension();
 

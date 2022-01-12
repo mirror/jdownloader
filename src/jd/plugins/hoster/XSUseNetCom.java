@@ -5,13 +5,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.usenet.InvalidAuthException;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -23,6 +16,13 @@ import jd.plugins.AccountInfo;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.usenet.InvalidAuthException;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xsusenet.com" }, urls = { "" })
 public class XSUseNetCom extends UseNet {
@@ -146,7 +146,8 @@ public class XSUseNetCom extends UseNet {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find any subscriptions");
                 }
-            } else if (subscriptionName == null || subscriptionInfoURL == null) {
+            }
+            if (subscriptionName == null || subscriptionInfoURL == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getPage(subscriptionInfoURL + "&widget=logindetails");
@@ -158,9 +159,7 @@ public class XSUseNetCom extends UseNet {
             ai.setValidUntil(highestExpireTimestamp, br);
             account.setProperty(USENET_USERNAME, username.trim());
             account.setProperty(USENET_PASSWORD, password);
-            if (subscriptionName != null) {
-                ai.setStatus(subscriptionName);
-            }
+            ai.setStatus(subscriptionName);
             if (isFree) {
                 account.setType(Account.AccountType.FREE);
                 account.setMaxSimultanDownloads(5);
@@ -197,9 +196,7 @@ public class XSUseNetCom extends UseNet {
                 verifyUseNetLogins(account);
                 return ai;
             } catch (final InvalidAuthException e) {
-                logger.log(e);
-                logger.info("Invalid UseNet logindata");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, null, PluginException.VALUE_ID_PREMIUM_DISABLE, e);
             }
         } catch (final PluginException e) {
             if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
