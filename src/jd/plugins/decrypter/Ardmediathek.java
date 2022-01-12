@@ -575,15 +575,18 @@ public class Ardmediathek extends PluginForDecrypt {
             entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "widgets/{0}/");
             final String broadcastedOn = (String) entries.get("broadcastedOn");
-            final String ardtitle = (String) entries.get("title");
+            final String title = (String) entries.get("title");
             final String showname = (String) JavaScriptEngineFactory.walkJson(entries, "show/title");
             final String type = (String) entries.get("type");
             if ("player_live".equalsIgnoreCase(type)) {
                 logger.info("Cannot download livestreams");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (entries.get("blockedByFsk") == Boolean.TRUE) {
+                /* AGE restricted content (can only be watched in the night) */
+                throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "FSK_BLOCKED_" + title, "FSK_BLOCKED", null);
             } else if (StringUtils.isEmpty(broadcastedOn)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else if (StringUtils.isAllEmpty(ardtitle, showname)) {
+            } else if (StringUtils.isAllEmpty(title, showname)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             String date_formatted = new Regex(broadcastedOn, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
@@ -591,10 +594,10 @@ public class Ardmediathek extends PluginForDecrypt {
                 /* Fallback */
                 date_formatted = broadcastedOn;
             }
-            if (StringUtils.isAllNotEmpty(showname, ardtitle)) {
-                this.title = showname + " - " + ardtitle;
+            if (StringUtils.isAllNotEmpty(showname, title)) {
+                this.title = showname + " - " + title;
             } else if (StringUtils.isEmpty(showname)) {
-                this.title = ardtitle;
+                this.title = title;
             } else {
                 this.title = showname;
             }

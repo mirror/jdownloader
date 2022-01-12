@@ -20,16 +20,15 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.RedditConfig;
+import org.jdownloader.plugins.components.config.RedditConfig.CommentsPackagenameScheme;
 import org.jdownloader.plugins.components.config.RedditConfig.FilenameScheme;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -64,18 +63,11 @@ public class RedditCom extends PluginForDecrypt {
         return 1;
     }
 
-    @Override
-    protected DownloadLink createDownloadlink(final String url) {
-        final DownloadLink dl = super.createDownloadlink(url);
-        distribute(dl);
-        return dl;
-    }
-
-    private static final String TYPE_SUBREDDIT          = "https?://[^/]+/r/([^/]+)";
-    private static final String TYPE_SUBREDDIT_COMMENTS = "https?://[^/]+/r/([^/]+)/comments/([a-z0-9]+)/([A-Za-z0-9\\-_]+)";
-    private static final String TYPE_GALLERY            = "https?://[^/]+/gallery/([a-z0-9]+)";
-    private static final String TYPE_USER               = "https://[^/]+/user/([^/]+)";
-    private static final String TYPE_USER_SAVED_OBJECTS = "https://[^/]+/user/([^/]+)/saved";
+    private static final String TYPE_SUBREDDIT          = "(?:https?://[^/]+)?/r/([^/]+)";
+    private static final String TYPE_SUBREDDIT_COMMENTS = "(?:https?://[^/]+)?/r/([^/]+)/comments/([a-z0-9]+)/([A-Za-z0-9\\-_]+)/?";
+    private static final String TYPE_GALLERY            = "(?:https?://[^/]+)?/gallery/([a-z0-9]+)";
+    private static final String TYPE_USER               = "(?:https?://[^/]+)?/user/([^/]+)";
+    private static final String TYPE_USER_SAVED_OBJECTS = "(?:https?://[^/]+)?/user/([^/]+)/saved";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         jd.plugins.hoster.RedditCom.prepBRAPI(this.br);
@@ -274,12 +266,13 @@ public class RedditCom extends PluginForDecrypt {
             final Map<String, Object> post = (Map<String, Object>) itemO;
             final String kind = (String) post.get("kind");
             final Map<String, Object> data = (Map<String, Object>) post.get("data");
+            final String postID = (String) data.get("id");
             final String author = (String) data.get("author");
-            final long createdTimestamp = JavaScriptEngineFactory.toLong(data.get("created"), 0) * 1000;
-            final Date theDate = new Date(createdTimestamp);
+            final Date theDate = new Date(JavaScriptEngineFactory.toLong(data.get("created"), 0) * 1000);
             final String dateFormatted = new SimpleDateFormat("yyy-MM-dd").format(theDate);
             final String title = (String) data.get("title");
             final String subredditTitle = (String) data.get("subreddit");
+            final String permalink = (String) data.get("permalink");
             if (!"t3".equalsIgnoreCase(kind)) {
                 /*
                  * Skip everything except links (e.g. skips comments, awards and so on. See API docs --> In-text search for "type prefixes")
@@ -289,21 +282,29 @@ public class RedditCom extends PluginForDecrypt {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            final String urlSlug = new Regex(permalink, TYPE_SUBREDDIT_COMMENTS).getMatch(2);
             final ArrayList<DownloadLink> thisCrawledLinks = new ArrayList<DownloadLink>();
             try {
                 if (fp == null) {
                     /* No packagename given? Set FilePackage with name of comment/post. */
                     fp = FilePackage.getInstance();
-                    fp.setName(title);
+                    final CommentsPackagenameScheme packagenameScheme = PluginJsonConfig.get(RedditConfig.class).getPreferredCommentsPackagenameScheme();
+                    if (packagenameScheme == CommentsPackagenameScheme.DATE_SUBREDDIT_ID_SLUG && urlSlug != null) {
+                        fp.setName(dateFormatted + "_" + subredditTitle + "_" + postID + "_" + urlSlug);
+                    } else if (packagenameScheme == CommentsPackagenameScheme.DATE_SUBREDDIT_ID_TITLE) {
+                        fp.setName(dateFormatted + "_" + subredditTitle + "_" + postID + "_" + title);
+                    } else {
+                        fp.setName(title);
+                    }
                 }
                 final FilenameScheme scheme = cfg.getPreferredFilenameScheme();
                 String filenameBase = null;
                 String filenameBeginning = null;
-                if (scheme == FilenameScheme.DATE_SUBREDDIT_SERVER_FILENAME) {
+                if (scheme == FilenameScheme.DATE_SUBREDDIT_POSTID_SERVER_FILENAME) {
                     filenameBase = null;
-                    filenameBeginning = dateFormatted + "_" + subredditTitle + "_";
-                } else if (scheme == FilenameScheme.DATE_SUBREDDIT_TITLE) {
-                    filenameBase = dateFormatted + "_" + subredditTitle + " - " + title;
+                    filenameBeginning = dateFormatted + "_" + subredditTitle + "_" + postID + "_";
+                } else if (scheme == FilenameScheme.DATE_SUBREDDIT_POSTID_TITLE) {
+                    filenameBase = dateFormatted + "_" + subredditTitle + "_" + postID + " - " + title;
                 } else if (scheme != null) {
                     logger.warning("Developer mistake! Unsupported FilenameScheme: " + scheme.name());
                 }
@@ -346,29 +347,18 @@ public class RedditCom extends PluginForDecrypt {
                 }
                 final Object is_galleryO = data.get("is_gallery");
                 if (is_galleryO == Boolean.TRUE) {
-                    final Map<String, Object> media_metadata = (Map<String, Object>) data.get("media_metadata");
-                    final Iterator<Entry<String, Object>> iterator = media_metadata.entrySet().iterator();
+                    final Map<String, Object> gallery_data = (Map<String, Object>) data.get("gallery_data");
+                    final List<Map<String, Object>> galleryItems = (List<Map<String, Object>>) gallery_data.get("items");
                     int imageNumber = 0;
-                    while (iterator.hasNext()) {
+                    for (final Map<String, Object> galleryItem : galleryItems) {
                         imageNumber += 1;
-                        final Entry<String, Object> entry = iterator.next();
-                        final Map<String, Object> mediaInfo = (Map<String, Object>) entry.getValue();
-                        /* "image/png" --> "png" */
-                        String mediaType = (String) mediaInfo.get("m");
-                        String extension = getExtensionFromMimeType(mediaType);
-                        if (extension == null && mediaType.contains("/")) {
-                            final String[] mediaTypeSplit = mediaType.split("/");
-                            extension = mediaTypeSplit[mediaTypeSplit.length - 1];
-                        }
-                        if (extension == null) {
-                            // fallback
-                            extension = "jpg";
-                        }
-                        final String media_id = (String) mediaInfo.get("id");
-                        final String serverFilename = media_id + "." + extension;
+                        final String mediaID = (String) galleryItem.get("media_id");
+                        final String caption = (String) galleryItem.get("caption");
+                        final String extension = ".png";
+                        final String serverFilename = mediaID + extension;
                         final DownloadLink image = this.createDownloadlink("https://i.redd.it/" + serverFilename);
                         if (filenameBase != null) {
-                            image.setFinalFileName(filenameBase + "_" + df.format(imageNumber) + "." + extension);
+                            image.setFinalFileName(filenameBase + "_" + df.format(imageNumber) + ".png");
                         } else if (serverFilename != null && filenameBeginning != null) {
                             image.setName(filenameBeginning + df.format(imageNumber) + "_" + serverFilename);
                         } else if (serverFilename != null) {
@@ -376,8 +366,44 @@ public class RedditCom extends PluginForDecrypt {
                         }
                         image.setAvailable(true);
                         image.setProperty(jd.plugins.hoster.RedditCom.PROPERTY_INDEX, imageNumber);
+                        if (!StringUtils.isEmpty(caption)) {
+                            image.setComment(caption);
+                        }
                         thisCrawledLinks.add(image);
                     }
+                    /* Old handling below */
+                    // final Map<String, Object> media_metadata = (Map<String, Object>) data.get("media_metadata");
+                    // final Iterator<Entry<String, Object>> iterator = media_metadata.entrySet().iterator();
+                    // int imageNumber = 0;
+                    // while (iterator.hasNext()) {
+                    // imageNumber += 1;
+                    // final Entry<String, Object> entry = iterator.next();
+                    // final Map<String, Object> mediaInfo = (Map<String, Object>) entry.getValue();
+                    // /* "image/png" --> "png" */
+                    // String mediaType = (String) mediaInfo.get("m");
+                    // String extension = getExtensionFromMimeType(mediaType);
+                    // if (extension == null && mediaType.contains("/")) {
+                    // final String[] mediaTypeSplit = mediaType.split("/");
+                    // extension = mediaTypeSplit[mediaTypeSplit.length - 1];
+                    // }
+                    // if (extension == null) {
+                    // // fallback
+                    // extension = "jpg";
+                    // }
+                    // final String media_id = (String) mediaInfo.get("id");
+                    // final String serverFilename = media_id + "." + extension;
+                    // final DownloadLink image = this.createDownloadlink("https://i.redd.it/" + serverFilename);
+                    // if (filenameBase != null) {
+                    // image.setFinalFileName(filenameBase + "_" + df.format(imageNumber) + "." + extension);
+                    // } else if (serverFilename != null && filenameBeginning != null) {
+                    // image.setName(filenameBeginning + df.format(imageNumber) + "_" + serverFilename);
+                    // } else if (serverFilename != null) {
+                    // image.setName(serverFilename);
+                    // }
+                    // image.setAvailable(true);
+                    // image.setProperty(jd.plugins.hoster.RedditCom.PROPERTY_INDEX, imageNumber);
+                    // thisCrawledLinks.add(image);
+                    // }
                     break;
                 }
                 /* Look for embedded content from external sources - the object is always given but can be empty */
@@ -461,14 +487,18 @@ public class RedditCom extends PluginForDecrypt {
                 }
             } finally {
                 for (final DownloadLink thisCrawledLink : thisCrawledLinks) {
+                    thisCrawledLink._setFilePackage(fp);
                     /* Set properties for Packagizer usage */
                     thisCrawledLink.setProperty(jd.plugins.hoster.RedditCom.PROPERTY_TITLE, title);
                     thisCrawledLink.setProperty(jd.plugins.hoster.RedditCom.PROPERTY_USERNAME, author);
                     thisCrawledLink.setProperty(jd.plugins.hoster.RedditCom.PROPERTY_DATE, dateFormatted);
                     thisCrawledLink.setProperty(jd.plugins.hoster.RedditCom.PROPERTY_SUBREDDIT, subredditTitle);
-                    if (fp != null) {
-                        thisCrawledLink._setFilePackage(fp);
+                    thisCrawledLink.setProperty(jd.plugins.hoster.RedditCom.PROPERTY_POST_ID, postID);
+                    if (urlSlug != null) {
+                        thisCrawledLink.setProperty(jd.plugins.hoster.RedditCom.PROPERTY_SLUG, urlSlug);
                     }
+                    /* Not (yet) required */
+                    // this.distribute(thisCrawledLink);
                     crawledItems.add(thisCrawledLink);
                 }
             }

@@ -27,6 +27,7 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.translate._JDT;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -77,7 +78,6 @@ public class VidcloudCo extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
@@ -89,13 +89,13 @@ public class VidcloudCo extends PluginForHost {
         String filename = null;
         final boolean crawlWebsiteFirst = false;
         if (crawlWebsiteFirst) {
-            br.getPage(link.getDownloadURL());
+            br.getPage(link.getPluginPatternMatcher());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)\"/>").getMatch(0);
         }
-        br.getPage("https://" + this.getHost() + "/player?fid=" + fid + "&page=embed");
+        br.getPage("https://" + Browser.getHost(link.getPluginPatternMatcher()) + "/player?fid=" + fid + "&page=embed");
         if (!br.containsHTML(this.getFID(link))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

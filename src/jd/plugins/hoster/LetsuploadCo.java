@@ -17,15 +17,24 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class LetsuploadCo extends YetiShareCore {
@@ -121,6 +130,66 @@ public class LetsuploadCo extends YetiShareCore {
         } else {
             /* Free(anonymous) and unknown account type */
             return 0;
+        }
+    }
+
+    protected void hookBeforeV2DirectDownload(final DownloadLink link, final Account account, final Browser br) throws Exception {
+        /* Workaround */
+        final String fileidFromHTML = br.getRegex("showFileInformation\\((\\d+)\\);").getMatch(0);
+        if (fileidFromHTML != null) {
+            handlePasswordProtection(link, null, br);
+        }
+    }
+
+    @Override
+    protected void handlePasswordProtection(final DownloadLink link, final Account account, final Browser br) throws Exception {
+        final String internalFileID = this.getInternalFileID(link, br);
+        if (getPasswordProtectedForm(this.br) == null && internalFileID != null) {
+            /* 2022-01-12: Special handling */
+            final Browser brc = br.cloneBrowser();
+            brc.postPage("/account/ajax/file_details", "u=" + internalFileID);
+            final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+            final String html = (String) entries.get("html");
+            brc.getRequest().setHtmlCode(html);
+            final Form pwform = brc.getFormbyProperty("id", "folderPasswordForm");
+            if (pwform != null) {
+                String passCode = link.getDownloadPassword();
+                if (passCode == null) {
+                    passCode = getUserInput("Password?", link);
+                }
+                pwform.put("folderPassword", Encoding.urlEncode(passCode));
+                pwform.setMethod(MethodType.POST);
+                br.setFollowRedirects(false);
+                this.submitForm(pwform);
+                final Map<String, Object> pwResponse = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                if (pwResponse.get("success") != Boolean.TRUE) {
+                    /* E.g. {"success":false,"msg":"The folder password is invalid"} */
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                }
+                link.setProperty(PROPERTY_INTERNAL_FILE_ID, internalFileID);
+                // if (this.isDownloadlink(br.getRedirectLocation())) {
+                // /*
+                // * We can start the download right away -> Entered password is correct and we're probably logged in into a premium
+                // * account.
+                // */
+                // link.setDownloadPassword(passCode);
+                // dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), this.isResumeable(link, account),
+                // this.getMaxChunks(account));
+                // } else {
+                // /* No download -> Either wrong password or correct password & free download */
+                // br.setFollowRedirects(true);
+                // if (getPasswordProtectedForm(this.br) != null) {
+                // /* Assume that entered password is wrong! */
+                // link.setDownloadPassword(null);
+                // throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                // } else {
+                // /* Correct password --> Store it */
+                // link.setDownloadPassword(passCode);
+                // }
+                // }
+            }
+        } else {
+            super.handlePasswordProtection(link, account, br);
         }
     }
 

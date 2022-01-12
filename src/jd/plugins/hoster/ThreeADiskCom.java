@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -27,11 +28,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "3adisk.com" }, urls = { "http://(www\\.)?3adisk\\.com/down_\\d+\\.shtml" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "3adisk.com" }, urls = { "https?://(?:www\\.)?3adisk\\.com/down_\\d+\\.shtml" })
 public class ThreeADiskCom extends PluginForHost {
-
     public ThreeADiskCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -45,7 +43,7 @@ public class ThreeADiskCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getURL().equals("http://www.3adisk.com/error.htm?aspxerrorpath=/down.aspx")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -68,8 +66,12 @@ public class ThreeADiskCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (br.containsHTML("<script>alert\\(\\'文件不存在\\！\\'\\);history\\.back\\(\\);</script>")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
             }
@@ -90,5 +92,4 @@ public class ThreeADiskCom extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
