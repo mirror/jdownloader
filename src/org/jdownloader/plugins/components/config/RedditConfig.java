@@ -1,6 +1,7 @@
 package org.jdownloader.plugins.components.config;
 
 import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.LabelInterface;
@@ -39,4 +40,12 @@ public interface RedditConfig extends PluginConfigInterface {
     FilenameScheme getPreferredFilenameScheme();
 
     void setPreferredFilenameScheme(FilenameScheme quality);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Crawl URLs inside post text?")
+    @Order(20)
+    boolean isCrawlUrlsInsidePostText();
+
+    void setCrawlUrlsInsidePostText(boolean b);
 }
