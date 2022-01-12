@@ -256,6 +256,10 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                     /* 2018-12-12: E.g. rawabbet.com[RIP 2019-02-21] */
                     waitStr = br.getRegex("class=\"timer\">\\s*?(\\d+)\\s*?<").getMatch(0);
                 }
+                if (waitStr == null) {
+                    /* 2021-01-12: E.g. bestcash2020.com */
+                    waitStr = br.getRegex("id=\"timer\"[^>]+>\\s*?(\\d+)\\s*?<").getMatch(0);
+                }
             }
             if (!skipWait) {
                 if (waitStr != null) {
