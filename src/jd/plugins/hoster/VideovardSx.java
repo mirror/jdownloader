@@ -47,7 +47,7 @@ public class VideovardSx extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://www.test.com/help/privacy";
+        return "https://videovard.sx/tos";
     }
 
     private static List<String[]> getPluginDomains() {
