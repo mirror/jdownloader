@@ -64,6 +64,7 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
@@ -816,11 +817,22 @@ public abstract class Plugin implements ActionListener {
     }
 
     public Class<? extends PluginConfigInterface> getConfigInterface() {
-        for (Class<?> cls : getClass().getClasses()) {
+        for (final Class<?> cls : getClass().getClasses()) {
             if (PluginConfigInterface.class.isAssignableFrom(cls) && !AccountConfigInterface.class.isAssignableFrom(cls)) {
-                PluginHost anno = cls.getAnnotation(PluginHost.class);
+                final PluginHost anno = cls.getAnnotation(PluginHost.class);
                 if (anno != null) {
-                    if (StringUtils.equals(anno.host(), getHost())) {
+                    final org.jdownloader.plugins.config.Type pluginType = Plugin.this instanceof PluginForDecrypt ? org.jdownloader.plugins.config.Type.CRAWLER : org.jdownloader.plugins.config.Type.HOSTER;
+                    if (!StringUtils.equals(anno.host(), getHost())) {
+                        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                            LogController.CL(true).log(new Exception("Please check:" + cls + "|host missmatch:" + anno.host() + "!=" + getHost()));
+                        }
+                        return null;
+                    } else if (pluginType != anno.type()) {
+                        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                            LogController.CL(true).log(new Exception("Please check:" + cls + "|type missmatch:" + anno.type() + "!=" + pluginType));
+                        }
+                        return null;
+                    } else {
                         return (Class<? extends PluginConfigInterface>) cls;
                     }
                 } else {
