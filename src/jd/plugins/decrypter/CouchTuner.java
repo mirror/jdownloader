@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
@@ -29,10 +30,38 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "couchtuner.cloud" }, urls = { "https?://(www\\.)?(?:watch-online\\.xyz|watchseries-online\\.me|couchtuner\\.(?:cloud|click|host|website|top|fun|me|network|show|vip|win)|2mycouchtuner\\.me|mycouchtuner\\.li|1couchtuner\\.(?:club|me|xyz)|icouchtuner\\.(?:club|me|xyz)|ecouchtuner\\.(?:club|me|xyz)|icouchtuner\\.(?:club|me|xyz))/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class CouchTuner extends antiDDoSForDecrypt {
     public CouchTuner(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "couchtuner.cloud", "couchtuner.click", "couchtuner.host", "couchtuner.website", "couchtuner.top", "couchtuner.fun", "couchtuner.me", "couchtuner.network", "couchtuner.show", "couchtuner.vip", "couchtuner.win", "watch-online.xyz", "watchseries-online.me", "2mycouchtuner.me", "mycouchtuner.li", "1couchtuner.club", "1couchtuner.me", "1couchtuner.xyz", "ecouchtuner.club", "ecouchtuner.me", "ecouchtuner.xyz", "icouchtuner.club", "icouchtuner.me", "icouchtuner.xyz" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/.+");
+        }
+        return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
