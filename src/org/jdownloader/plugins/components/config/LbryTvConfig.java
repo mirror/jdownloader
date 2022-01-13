@@ -18,6 +18,12 @@ public interface LbryTvConfig extends PluginConfigInterface {
                 return "Best";
             }
         },
+        Q144P {
+            @Override
+            public String getLabel() {
+                return "144p";
+            }
+        },
         Q360P {
             @Override
             public String getLabel() {

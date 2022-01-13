@@ -65,10 +65,10 @@ public class PackageHistoryManager extends HistoryManager<PackageHistoryEntry> i
     }
 
     public List<PackageHistoryEntry> list(PackageHistoryEntry packageHistoryEntry) {
-        List<PackageHistoryEntry> l = list();
-        ArrayList<PackageHistoryEntry> ret = new ArrayList<PackageHistoryEntry>();
+        final List<PackageHistoryEntry> list = list();
+        final ArrayList<PackageHistoryEntry> ret = new ArrayList<PackageHistoryEntry>();
         ret.add(packageHistoryEntry);
-        for (PackageHistoryEntry phe : l) {
+        for (final PackageHistoryEntry phe : list) {
             if (!phe.getName().equals(packageHistoryEntry.getName())) {
                 ret.add(phe);
             }

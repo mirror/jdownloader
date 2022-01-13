@@ -28,12 +28,6 @@ import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -45,6 +39,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountUnavailableException;
@@ -53,6 +48,12 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upstore.net", "upsto.re" }, urls = { "https?://(www\\.)?(upsto\\.re|upstore\\.net)/[A-Za-z0-9]+", "ejnz905rj5o0jt69pgj50ujz0zhDELETE_MEew7th59vcgzh59prnrjhzj0" })
 public class UpstoRe extends antiDDoSForHost {
@@ -165,6 +166,22 @@ public class UpstoRe extends antiDDoSForHost {
             {
                 final Form f = br.getFormBySubmitvalue("Slow+download");
                 if (f != null) {
+                    final Browser br2 = br.cloneBrowser();
+                    br2.getPage("/main/acceptterms/?s=" + f.getInputField("s").getValue() + "&ajax=1");
+                    final String t = br2.getRegex("name=t\\]'\\)\\.val\\('(\\d+)").getMatch(0);
+                    if (t == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else {
+                        f.put("t", t);
+                    }
+                    final String h = br2.getRegex("\\+'(.*?)'").getMatch(0);
+                    if (h == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else {
+                        final InputField oldH = f.getInputField("h");
+                        final String oldHValue = oldH.getValue();
+                        f.put("h", oldHValue.substring(0, Math.min(10, oldHValue.length())) + h);
+                    }
                     submitForm(f);
                 }
             }
@@ -213,6 +230,8 @@ public class UpstoRe extends antiDDoSForHost {
                 if (wait > 0) {
                     sleep(wait * 1000l, link);
                 }
+                captchaForm.put("kpw", "spam");
+                captchaForm.put("antispam", "spam");
                 captchaForm.put("g-recaptcha-response", Encoding.urlEncode(captchaResponse));
                 captchaForm.put("h-captcha-response", Encoding.urlEncode(captchaResponse));
                 submitForm(captchaForm);
@@ -291,13 +310,11 @@ public class UpstoRe extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } else if (br.containsHTML(">\\s*This file is available only for Premium users")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        }
-        /* Here some errors that should only happen in free(account) mode: */
-        if (br.containsHTML(">\\s*Server for free downloads is overloaded<")) {
+        } else if (br.containsHTML(">\\s*Server for free downloads is overloaded<")) {
+            /* Here some errors that should only happen in free(account) mode: */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Server for free downloads is overloaded'", 30 * 60 * 1000l);
-        }
-        // Same server error (displayed differently) also exists for premium users
-        if (br.containsHTML(">\\s*Server with file not found<")) {
+        } else if (br.containsHTML(">\\s*Server with file not found<")) {
+            // Same server error (displayed differently) also exists for premium users
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Server with file not found'", 60 * 60 * 1000l);
         }
         /* 2021-11-22: New attempt */
@@ -535,7 +552,7 @@ public class UpstoRe extends antiDDoSForHost {
             if (br.containsHTML(premDlLimit)) {
                 trafficLeft(account);
             }
-            dllink = br.getRegex("\"ok\":\"(https?:[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("\"ok\"\\s*:\\s*\"(https?:[^<>\"]*?)\"").getMatch(0);
         }
         if (dllink == null) {
             handleErrorsJson();
@@ -567,22 +584,32 @@ public class UpstoRe extends antiDDoSForHost {
     }
 
     private String checkDirectLink(DownloadLink downloadLink, String property) {
-        String dllink = downloadLink.getStringProperty(property);
+        final String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
             try {
                 Browser br2 = prepBrowser(br.cloneBrowser(), Browser.getHost(dllink));
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                final URLConnectionAdapter con = br2.openGetConnection(dllink);
+                try {
+                    if (!looksLikeDownloadableContent(con)) {
+                        try {
+                            br2.followConnection(true);
+                        } catch (IOException ignore) {
+                            logger.log(ignore);
+                        }
+                        throw new IOException();
+                    } else {
+                        return dllink;
+                    }
+                } finally {
+                    con.disconnect();
                 }
-                con.disconnect();
             } catch (Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                return null;
             }
         }
-        return dllink;
+        return null;
     }
 
     @SuppressWarnings("deprecation")

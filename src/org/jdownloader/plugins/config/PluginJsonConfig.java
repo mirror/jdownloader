@@ -33,6 +33,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
@@ -43,12 +44,12 @@ public class PluginJsonConfig {
     private static final WeakHashMap<ClassLoader, HashMap<String, WeakReference<ConfigInterface>>> CONFIG_CACHE  = new WeakHashMap<ClassLoader, HashMap<String, WeakReference<ConfigInterface>>>();
     private static final HashMap<String, JsonKeyValueStorage>                                      STORAGE_CACHE = new HashMap<String, JsonKeyValueStorage>();
     protected static final DelayedRunnable                                                         SAVEDELAYER   = new DelayedRunnable(5000, 30000) {
-        @Override
-        public void delayedrun() {
-            saveAll();
-            cleanup();
-        }
-    };
+                                                                                                                     @Override
+                                                                                                                     public void delayedrun() {
+                                                                                                                         saveAll();
+                                                                                                                         cleanup();
+                                                                                                                     }
+                                                                                                                 };
     private final static boolean                                                                   DEBUG         = false;
     static {
         final File pluginsFolder = Application.getResource("cfg/plugins/");
@@ -91,11 +92,20 @@ public class PluginJsonConfig {
     }
 
     public synchronized static <T extends PluginConfigInterface> T get(Class<T> configInterface) {
+        return get(null, configInterface);
+    }
+
+    public synchronized static <T extends PluginConfigInterface> T get(LazyPlugin lazyPlugin, Class<T> configInterface) {
         String host = null;
         final Type type;
         PluginHost hostAnnotation = configInterface.getAnnotation(PluginHost.class);
         if (hostAnnotation != null) {
             host = hostAnnotation.host();
+            // TODO type check
+            if (StringUtils.isEmpty(host) && lazyPlugin != null) {
+                // TODO warning hier geben oder aufspalten
+                host = lazyPlugin.getDisplayName();
+            }
             type = hostAnnotation.type();
         } else {
             final Class<?> enc = configInterface.getEnclosingClass();

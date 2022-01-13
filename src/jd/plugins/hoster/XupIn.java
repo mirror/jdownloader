@@ -30,7 +30,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xup.in" }, urls = { "https?://[\\w\\.]*?xup\\.((in|to)/dl,\\d+/?.+?|raidrush\\.ws/ndl_[a-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xup.in" }, urls = { "https?://[\\w\\.]*?xup\\.((in|to)/dl,\\d+(/.+)?|raidrush\\.ws/ndl_[a-z0-9]+)" })
 public class XupIn extends PluginForHost {
     private static final String AGB_LINK = "http://www.xup.in/terms/";
 
@@ -101,27 +101,17 @@ public class XupIn extends PluginForHost {
         }
         download.remove(null);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, download);
-        if (dl.getConnection().getContentType().contains("html")) {
-            String page = br.loadConnection(dl.getConnection()) + "";// +"" due
-            // to
-            // refaktor
-            // compatibilities.
-            // old
-            // <ref10000
-            // returns
-            // String.
-            // else
-            // Request
-            // INstance
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            String page = br.followConnection(true);
             if (page.contains("richtige Passwort erneut ein")) {
                 downloadLink.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.xupin.errors.passwrong", "Password wrong"));
-            }
-            if (br.containsHTML(">Die Sicherheitsfrage wurde falsch eingegeben|/captcha\\.php\"")) {
+            } else if (br.containsHTML(">Die Sicherheitsfrage wurde falsch eingegeben|/captcha\\.php\"")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else {
+                logger.warning("Unexpected error occured");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            logger.warning("Unexpected error occured");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
