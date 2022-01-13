@@ -63,15 +63,13 @@ public class VidozaNet extends XFileSharingProBasic {
     }
 
     @Override
-    public String[] scanInfo(String[] fileInfo) {
-        final String[] ret = super.scanInfo(fileInfo);
-        if (StringUtils.isEmpty(ret[0]) || StringUtils.equalsIgnoreCase("No title", ret[0])) {
-            final String curFileName = br.getRegex("var\\s*curFileName\\s*=\\s*\"(.*?)\"").getMatch(0);
-            if (StringUtils.isNotEmpty(curFileName)) {
-                ret[0] = curFileName;
-            }
+    public String[] scanInfo(final String[] fileInfo) {
+        super.scanInfo(fileInfo);
+        final String betterFilename = br.getRegex("var\\s*curFileName\\s*=\\s*\"(.*?)\"").getMatch(0);
+        if (StringUtils.isNotEmpty(betterFilename)) {
+            fileInfo[0] = betterFilename;
         }
-        return ret;
+        return fileInfo;
     }
 
     @Override
