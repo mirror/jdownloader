@@ -1721,7 +1721,6 @@ public class YetiShareCore extends antiDDoSForHost {
                         loginform.put("username", Encoding.urlEncode(account.getUser()));
                         loginform.put("password", Encoding.urlEncode(account.getPass()));
                     }
-                    /* 2019-07-31: At the moment only this older login method supports captchas. Examplehost: uploadship.com */
                     if (br.containsHTML("solvemedia\\.com/papi/")) {
                         /* Handle login-captcha if required */
                         DownloadLink dlinkbefore = this.getDownloadLink();
