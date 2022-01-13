@@ -85,7 +85,7 @@ public class PluginConfigAdapter {
                 } else {
                     final PluginClassLoaderChild classLoader = PluginClassLoader.getInstance().getChild();
                     final Class<? extends PluginConfigInterface> configInterface = (Class<? extends PluginConfigInterface>) classLoader.loadClass(configInterfaceName);
-                    this.config = PluginJsonConfig.get(configInterface);
+                    this.config = PluginJsonConfig.get(getLazyPlugin(), configInterface);
                 }
             } catch (Throwable e) {
                 throw new WTFException(e);

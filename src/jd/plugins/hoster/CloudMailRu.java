@@ -16,8 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -93,7 +92,8 @@ public class CloudMailRu extends PluginForHost {
             URLConnectionAdapter con = null;
             final String dlink = getdllink(link, "free_directlink");
             try {
-                con = br.openGetConnection(dlink);
+                final Browser br2 = br.cloneBrowser();
+                con = br2.openGetConnection(dlink);
                 if (this.looksLikeDownloadableContent(con)) {
                     link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)).trim());
                     if (con.getCompleteContentLength() > 0) {
@@ -101,6 +101,11 @@ public class CloudMailRu extends PluginForHost {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 } else {
+                    try {
+                        br2.followConnection(true);
+                    } catch (IOException ignore) {
+                        logger.log(ignore);
+                    }
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             } finally {
@@ -118,7 +123,7 @@ public class CloudMailRu extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             } else {
-                br.getPage(API_BASE + "/folder?weblink=" + Encoding.urlEncode(getWeblink(link)) + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=500&api=2&build=" + BUILD);
+                br.getPage(API_BASE + "/folder?weblink=" + URLEncode.encodeURIComponent(getWeblink(link)) + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=500&api=2&build=" + BUILD);
                 if (br.containsHTML("\"status\":400")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -144,16 +149,17 @@ public class CloudMailRu extends PluginForHost {
             maxchunks = 1;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
-        if (dl.getConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
-        }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
                 logger.log(e);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         link.setProperty("plain_directlink", dllink);
         try {
@@ -198,7 +204,7 @@ public class CloudMailRu extends PluginForHost {
             if (link.getDownloadURL().matches(TYPE_HOTLINK)) {
                 dllink = link.getDownloadURL();
             } else if (isCompleteFolder(link)) {
-                br.postPage(API_BASE + "/zip", "weblink_list=%5B%22" + URLEncode.encodeURIComponent(this.getWeblink(link)) + "%22%5D&name=" + Encoding.urlEncode(link.getName()) + "&cp866=false&api=2&build=" + BUILD);
+                br.postPage(API_BASE + "/zip", "weblink_list=%5B%22" + URLEncode.encodeURIComponent(this.getWeblink(link)) + "%22%5D&name=" + URLEncode.encodeURIComponent(link.getName()) + "&cp866=false&api=2&build=" + BUILD);
                 dllink = PluginJSonUtils.getJsonValue(br, "body");
             } else if (link.getBooleanProperty("noapi", false)) {
                 br.getPage(getContentURL(link));
@@ -206,12 +212,12 @@ public class CloudMailRu extends PluginForHost {
                 if (json == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-                final LinkedHashMap<String, Object> folder = (LinkedHashMap<String, Object>) entries.get("folder");
-                final ArrayList<Object> list = (ArrayList) folder.get("list");
+                final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+                final Map<String, Object> folder = (Map<String, Object>) entries.get("folder");
+                final List<Object> list = (List) folder.get("list");
                 for (final Object o : list) {
-                    final LinkedHashMap<String, Object> filemap = (LinkedHashMap<String, Object>) o;
-                    final LinkedHashMap<String, Object> url = (LinkedHashMap<String, Object>) filemap.get("url");
+                    final Map<String, Object> filemap = (Map<String, Object>) o;
+                    final Map<String, Object> url = (Map<String, Object>) filemap.get("url");
                     final String get_url = (String) url.get("get");
                     if (Encoding.htmlOnlyDecode(get_url, false).contains(link.getName())) {
                         if (get_url.startsWith("//")) {
@@ -268,7 +274,11 @@ public class CloudMailRu extends PluginForHost {
                 if (dataserver != null) {
                     if (!StringUtils.isEmpty(token)) {
                         /* Old way - won't work as long as the "/tokens/download" API request is broken! */
-                        dllink = dataserver + "/" + URLEncode.encodeURIComponent(link.getStringProperty(PROPERTY_WEBLINK));
+                        String encoded_weblink = URLEncode.encodeURIComponent(getWeblink(link));
+                        /* We need the "/" so let's encode them back. */
+                        encoded_weblink = encoded_weblink.replace("%2F", "/");
+                        encoded_weblink = encoded_weblink.replace("+", "%20");
+                        dllink = dataserver + "/" + encoded_weblink;
                         dllink += "?key=" + token;
                     } else {
                         if (link.getPluginPatternMatcher().matches("http://clouddecrypted\\.mail\\.ru/\\d+")) {
@@ -278,7 +288,11 @@ public class CloudMailRu extends PluginForHost {
                              */
                             dllink = dataserver + "/" + URLEncode.encodeURIComponent(link.getStringProperty("unique_id"));
                         } else {
-                            dllink = dataserver + "/" + link.getStringProperty(PROPERTY_WEBLINK);
+                            String encoded_weblink = URLEncode.encodeURIComponent(getWeblink(link));
+                            /* We need the "/" so let's encode them back. */
+                            encoded_weblink = encoded_weblink.replace("%2F", "/");
+                            encoded_weblink = encoded_weblink.replace("+", "%20");
+                            dllink = dataserver + "/" + encoded_weblink;
                         }
                     }
                 } else {
@@ -289,8 +303,9 @@ public class CloudMailRu extends PluginForHost {
         if (dllink == null) {
             /* 2020-06-18: We're using an API - no need to throw a PLUGIN_DEFECT error in this case! */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API download failure");
+        } else {
+            return dllink;
         }
-        return dllink;
     }
 
     private String getContentURL(final DownloadLink link) {
@@ -304,15 +319,21 @@ public class CloudMailRu extends PluginForHost {
         }
     }
 
-    private String getWeblink(final DownloadLink dl) {
+    private String getWeblink(final DownloadLink dl) throws PluginException {
+        final String ret;
         if (dl.hasProperty("plain_request_id")) {
             /*
              * "Backwards compatibility": TODO: Remove this workaround - it is only required for older items. Remove in 2021-04-XX
              */
-            return dl.getStringProperty("plain_request_id");
+            ret = dl.getStringProperty("plain_request_id");
         } else {
             /* New 2020-12-18 */
-            return dl.getStringProperty(PROPERTY_WEBLINK);
+            ret = dl.getStringProperty(PROPERTY_WEBLINK);
+        }
+        if (ret == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            return ret;
         }
     }
 
@@ -337,6 +358,8 @@ public class CloudMailRu extends PluginForHost {
                 con = br2.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
                     return dllink;
+                } else {
+                    throw new IOException();
                 }
             } catch (final Exception e) {
                 logger.log(e);
@@ -397,7 +420,7 @@ public class CloudMailRu extends PluginForHost {
                 login2.add("lang", "en_US");
                 br.postPage("https://auth.mail.ru/cgi-bin/auth", login2);
                 final String mail_domain = account.getUser().split("@")[1];
-                final String postData = "page=https%3A%2F%2Fcloud.mail.ru%2F&FailPage=&Domain=" + mail_domain + "&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()) + "&new_auth_form=1&saveauth=1";
+                final String postData = "page=https%3A%2F%2Fcloud.mail.ru%2F&FailPage=&Domain=" + mail_domain + "&Login=" + URLEncode.encodeURIComponent(account.getUser()) + "&Password=" + URLEncode.encodeURIComponent(account.getPass()) + "&new_auth_form=1&saveauth=1";
                 br.postPage("https://auth.mail.ru/cgi-bin/auth?lang=ru_RU&from=authpopup", postData);
                 if (br.containsHTML("\\&fail=1") || br.getCookie("http://auth.mail.ru/", "ssdc") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {

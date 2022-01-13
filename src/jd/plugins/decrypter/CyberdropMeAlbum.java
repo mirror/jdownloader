@@ -16,13 +16,9 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -34,6 +30,11 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CyberdropMeAlbum extends PluginForDecrypt {
@@ -78,32 +79,18 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         }
         final String albumjs = br.getRegex("const albumData\\s*=\\s*(\\{.*?\\})").getMatch(0);
         String fpName = new Regex(albumjs, "name\\s*:\\s*'([^\\']+)'").getMatch(0);
+        if (fpName == null) {
+            fpName = br.getRegex("<h1 id=\"title\"[^>]*title=\"([^\"]+)\"[^>]*>").getMatch(0);
+        }
+        final HashSet<String> dups = new HashSet<String>();
         final String albumDescription = br.getRegex("<span id=\"description-box\"[^>]*>([^<>\"]+)</span>").getMatch(0);
-        final String json = br.getRegex("dynamicEl\\s*:\\s*(\\[\\s*\\{.*?\\])").getMatch(0);
-        if (json != null) {
-            /* For albums containing only photos */
-            final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) JavaScriptEngineFactory.jsonToJavaObject(json);
-            for (final Map<String, Object> photo : ressourcelist) {
-                final String url = (String) photo.get("downloadUrl");
-                final String subHtml = (String) photo.get("subHtml");
-                final String filesizeStr = new Regex(subHtml, "(\\d+(\\.\\d+)? [A-Za-z]{2,5})$").getMatch(0);
-                final DownloadLink dl = this.createDownloadlink(url);
-                dl.setAvailable(true);
-                if (filesizeStr != null) {
-                    dl.setDownloadSize(SizeFormatter.getSize(filesizeStr));
-                }
-                decryptedLinks.add(dl);
-            }
-        } else {
-            /* 2022-01-04: New, for albums with mixed content (e.g. NOT only photos). */
-            if (fpName == null) {
-                fpName = br.getRegex("<h1 id=\"title\"[^>]*title=\"([^\"]+)\"[^>]*>").getMatch(0);
-            }
-            final String[] htmls = br.getRegex("<div class=\"image-container column\"[^>]*>(.*?)/p>\\s*</div>").getColumn(0);
-            for (final String html : htmls) {
-                final String directurl = new Regex(html, "href=\"(https?://[^\"]+)\"").getMatch(0);
-                final String filename = new Regex(html, "target=\"_blank\" title=\"([^<>\"]+)\"").getMatch(0);
-                final String filesizeBytes = new Regex(html, "class=\"is-hidden file-size\"[^>]*>(\\d+) B").getMatch(0);
+        /* 2022-01-04: New, for albums with mixed content (e.g. NOT only photos). */
+        final String[] htmls = br.getRegex("<div class=\"image-container column\"[^>]*>(.*?)/p>\\s*</div>").getColumn(0);
+        for (final String html : htmls) {
+            final String directurl = new Regex(html, "href=\"(https?://[^\"]+)\"").getMatch(0);
+            final String filename = new Regex(html, "target=\"_blank\" title=\"([^<>\"]+)\"").getMatch(0);
+            final String filesizeBytes = new Regex(html, "class=\"is-hidden file-size\"[^>]*>(\\d+) B").getMatch(0);
+            if (dups.add(directurl)) {
                 final DownloadLink dl = this.createDownloadlink(directurl);
                 dl.setAvailable(true);
                 if (filename != null) {
@@ -114,6 +101,27 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
                 }
                 decryptedLinks.add(dl);
             }
+        }
+        final String json = br.getRegex("dynamicEl\\s*:\\s*(\\[\\s*\\{.*?\\])").getMatch(0);
+        if (json != null) {
+            /* gallery mode only works for images */
+            final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) JavaScriptEngineFactory.jsonToJavaObject(json);
+            for (final Map<String, Object> photo : ressourcelist) {
+                final String downloadUrl = (String) photo.get("downloadUrl");
+                if (dups.add(downloadUrl)) {
+                    final String subHtml = (String) photo.get("subHtml");
+                    final String filesizeStr = new Regex(subHtml, "(\\d+(\\.\\d+)? [A-Za-z]{2,5})$").getMatch(0);
+                    final DownloadLink dl = this.createDownloadlink(downloadUrl);
+                    dl.setAvailable(true);
+                    if (filesizeStr != null) {
+                        dl.setDownloadSize(SizeFormatter.getSize(filesizeStr));
+                    }
+                    decryptedLinks.add(dl);
+                }
+            }
+        }
+        if (decryptedLinks.size() == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();

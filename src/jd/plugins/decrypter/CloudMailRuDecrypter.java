@@ -123,7 +123,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
             }
             if ("folder".equals(type)) {
                 weblink = Encoding.htmlOnlyDecode(weblink, false);
-                String encoded_weblink = Encoding.urlEncode(weblink);
+                String encoded_weblink = URLEncode.encodeURIComponent(weblink);
                 /* We need the "/" so let's encode them back. */
                 encoded_weblink = encoded_weblink.replace("%2F", "/");
                 encoded_weblink = encoded_weblink.replace("+", "%20");
@@ -136,7 +136,11 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 folderLink.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolder + "/" + itemTitle);
                 decryptedLinks.add(folderLink);
             } else {
-                final String contenturl = "https://cloud.mail.ru/public/" + weblink;
+                String encoded_weblink = URLEncode.encodeURIComponent(weblink);
+                /* We need the "/" so let's encode them back. */
+                encoded_weblink = encoded_weblink.replace("%2F", "/");
+                encoded_weblink = encoded_weblink.replace("+", "%20");
+                final String contenturl = "https://cloud.mail.ru/public/" + encoded_weblink;
                 final DownloadLink dl = createDownloadlink(contenturl);
                 final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
                 if (itemTitle == null) {
@@ -146,6 +150,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 dl.setDownloadSize(filesize);
                 dl.setFinalFileName(itemTitle);
                 dl.setProperty("mainlink", parameter);
+                // PROPERTY_WEBLINK in raw format!
                 dl.setProperty(CloudMailRu.PROPERTY_WEBLINK, weblink);
                 /** TODO: Remove this */
                 if (parameter.matches(TYPE_APIV2)) {

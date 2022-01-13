@@ -40,6 +40,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.config.LbryTvConfig;
+import org.jdownloader.plugins.components.config.LbryTvConfig.PreferredStreamQuality;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -53,6 +54,7 @@ public class LbryTv extends PluginForHost {
     }
 
     private static final String PROPERTY_DIRECTURL             = "free_directlink";
+    private static final String PROPERTY_QUALITY               = "preferredQuality";
     private static final String PROPERTY_EXPECTED_CONTENT_TYPE = "expected_content_type";
 
     @Override
@@ -159,6 +161,7 @@ public class LbryTv extends PluginForHost {
         if (stream_type == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final boolean directDownload = "document".equals(stream_type) || "image".equals(stream_type);
         if (!StringUtils.isEmpty(username) && !StringUtils.isEmpty(filename)) {
             final String dateFormatted = new SimpleDateFormat("yyyy-MM-dd").format(new Date(uploadTimestamp * 1000l));
             final String ext;
@@ -178,14 +181,22 @@ public class LbryTv extends PluginForHost {
         }
         final Map<String, Object> downloadInfo = (Map<String, Object>) videoInfo.get("source");
         if (downloadInfo != null) {
-            final long filesize = JavaScriptEngineFactory.toLong(downloadInfo.get("size"), -1);
-            if (filesize > 0) {
-                link.setVerifiedFileSize(filesize);
-            }
             final String sdhash = (String) downloadInfo.get("sd_hash");
             if (!StringUtils.isEmpty(claimID) && !StringUtils.isEmpty(sdhash)) {
                 final String dllink = "https://cdn.lbryplayer.xyz/api/v4/streams/free/" + slug + "/" + claimID + "/" + sdhash.substring(0, 6);
-                link.setProperty(PROPERTY_DIRECTURL, dllink);
+                final PreferredStreamQuality quality = getPreferredQuality(link);
+                final int userPreferredQualityHeight = this.getPreferredQualityHeight(link, quality);
+                if (userPreferredQualityHeight == -1 || directDownload) {
+                    final long filesize = JavaScriptEngineFactory.toLong(downloadInfo.get("size"), -1);
+                    if (filesize > 0) {
+                        link.setVerifiedFileSize(filesize);
+                    }
+                    link.setProperty(PROPERTY_DIRECTURL, dllink + "?download=true");
+                    link.setProperty(PROPERTY_QUALITY, PreferredStreamQuality.BEST.name());
+                } else {
+                    link.setProperty(PROPERTY_DIRECTURL, dllink);
+                    link.setProperty(PROPERTY_QUALITY, quality.name());
+                }
             }
             /* E.g. "text/markdown", "video/mp4" */
             link.setProperty(PROPERTY_EXPECTED_CONTENT_TYPE, downloadInfo.get("media_type").toString());
@@ -227,7 +238,8 @@ public class LbryTv extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     final HlsContainer chosenQuality;
-                    final int userPreferredQualityHeight = this.getPreferredQualityHeight();
+                    final PreferredStreamQuality quality = getPreferredQuality(link);
+                    final int userPreferredQualityHeight = this.getPreferredQualityHeight(link, quality);
                     if (userPreferredQualityHeight == -1) {
                         chosenQuality = best;
                     } else {
@@ -302,10 +314,29 @@ public class LbryTv extends PluginForHost {
         }
     }
 
-    private int getPreferredQualityHeight() {
-        switch (PluginJsonConfig.get(LbryTvConfig.class).getPreferredStreamQuality()) {
+    private LbryTvConfig.PreferredStreamQuality getPreferredQuality(final DownloadLink downloadLink) {
+        final String preferredQuality = downloadLink.getStringProperty(PROPERTY_QUALITY, null);
+        LbryTvConfig.PreferredStreamQuality quality = PluginJsonConfig.get(LbryTvConfig.class).getPreferredStreamQuality();
+        if (preferredQuality != null) {
+            try {
+                quality = LbryTvConfig.PreferredStreamQuality.valueOf(preferredQuality);
+            } catch (IllegalArgumentException ignore) {
+                logger.log(ignore);
+            }
+        }
+        if (quality == null) {
+            return LbryTvConfig.PreferredStreamQuality.BEST;
+        } else {
+            return quality;
+        }
+    }
+
+    private int getPreferredQualityHeight(final DownloadLink downloadLink, LbryTvConfig.PreferredStreamQuality quality) {
+        switch (quality) {
         case BEST:
             return -1;
+        case Q144P:
+            return 144;
         case Q360P:
             return 360;
         case Q720P:
@@ -333,5 +364,7 @@ public class LbryTv extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        link.removeProperty(PROPERTY_DIRECTURL);
+        link.removeProperty(PROPERTY_QUALITY);
     }
 }

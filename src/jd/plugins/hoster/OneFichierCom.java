@@ -1323,7 +1323,7 @@ public class OneFichierCom extends PluginForHost {
 
     @Override
     public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
-        if (PluginJsonConfig.get(OneFichierConfigInterface.class).isUsePremiumAPIEnabled()) {
+        if (PluginJsonConfig.get(getLazyP(), OneFichierConfigInterface.class).isUsePremiumAPIEnabled()) {
             return new OnefichierAccountFactory(callback);
         } else {
             return new DefaultEditAccountPanel(callback, !getAccountwithoutUsername());

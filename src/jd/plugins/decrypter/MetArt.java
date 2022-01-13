@@ -6,16 +6,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.MetartConfig;
-import org.jdownloader.plugins.components.config.MetartConfig.PhotoCrawlMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -31,6 +21,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.MetArtCom;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.MetartConfig;
+import org.jdownloader.plugins.components.config.MetartConfig.PhotoCrawlMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class MetArt extends PluginForDecrypt {
@@ -115,7 +115,7 @@ public class MetArt extends PluginForDecrypt {
             final String galleryname = urlinfo.getMatch(2);
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(modelname + " - " + date + " - " + galleryname);
-            if (PluginJsonConfig.get(this.getConfigInterface()).getPhotoCrawlMode() == PhotoCrawlMode.ZIP_BEST) {
+            if (PluginJsonConfig.get(getLazyC(), MetartConfig.class).getPhotoCrawlMode() == PhotoCrawlMode.ZIP_BEST) {
                 br.getPage("https://www." + this.getHost() + "/api/gallery?name=" + galleryname + "&date=" + date + "&mediaFirst=42&page=1");
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     ret.add(this.createOfflinelink(param.getCryptedUrl()));
@@ -253,10 +253,5 @@ public class MetArt extends PluginForDecrypt {
 
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
-    }
-
-    @Override
-    public Class<? extends MetartConfig> getConfigInterface() {
-        return MetartConfig.class;
     }
 }

@@ -618,9 +618,19 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
     }
 
     protected void initPluginSettings(Plugin plugin) {
-        Class<? extends PluginConfigInterface> inf = plugin.getConfigInterface();
+        final Class<? extends PluginConfigInterface> inf = plugin.getConfigInterface();
         if (inf != null) {
-            build(PluginJsonConfig.get(inf));
+            final PluginConfigInterface config;
+            if (plugin instanceof PluginForHost) {
+                config = PluginJsonConfig.get(((PluginForHost) plugin).getLazyP(), inf);
+            } else if (plugin instanceof PluginForDecrypt) {
+                config = PluginJsonConfig.get(((PluginForDecrypt) plugin).getLazyC(), inf);
+            } else {
+                config = null;
+            }
+            if (config != null) {
+                build(config);
+            }
         }
     }
 
