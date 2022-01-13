@@ -69,7 +69,7 @@ public class PremiumTo extends UseNet {
     private static final String      type_storage_remote             = "https?://storage\\.[^/]+/(?:remote|r)/[A-Z0-9]+/[A-Z0-9]+/([A-Z0-9]+)/.+";
     // private static final String type_torrent = "https?://torrent.+";
     /* 2019-10-23: According to admin, missing https support for API is not an issue */
-    private static final String      API_BASE                        = "http://api.premium.to/api/2";
+    private static final String      API_BASE                        = "https://api.premium.to/api/2";
     private static final String      API_BASE_STORAGE                = "https://storage.premium.to/api/2";
     private static final String      API_BASE_TORRENT                = "https://torrent.premium.to/api/2";
     /*

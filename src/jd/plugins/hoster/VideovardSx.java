@@ -20,7 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -125,17 +129,34 @@ public class VideovardSx extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
-            /* See https://videovard.sx/api/make/hash/<fileID> and POST to https://videovard.sx/api/player/setup */
             /* 2021-09-22: Unfinished plugin */
-            if (true) {
+            if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            requestFileInformation(link);
+            br.getPage("/api/make/hash/" + this.getFID(link));
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final String hash = entries.get("hash").toString();
+            final UrlQuery query = new UrlQuery();
+            query.add("cmd", "get_stream");
+            query.add("file_code", this.getFID(link));
+            query.add("hash", hash);
+            br.postPage("/api/player/setup", query);
+            final Map<String, Object> streamInfo = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            /* TODO: 2022-01-12: Implement this */
+            final String cryptedURL = streamInfo.get("src").toString();
+            final String seed = streamInfo.get("seed").toString();
+            final boolean pluginUnfinished = true;
+            if (pluginUnfinished) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String decryptedURL = "TODO_IMPLEMENT_THIS";
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, decryptedURL, resumable, maxchunks);
         }
         dl.startDownload();
     }
@@ -156,6 +177,7 @@ public class VideovardSx extends PluginForHost {
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 return true;
             } else {
+                link.removeProperty(directlinkproperty);
                 brc.followConnection(true);
                 throw new IOException();
             }
