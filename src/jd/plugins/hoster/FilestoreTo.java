@@ -47,7 +47,7 @@ public class FilestoreTo extends PluginForHost {
 
     public FilestoreTo(final PluginWrapper wrapper) {
         super(wrapper);
-        // setStartIntervall(10000l);
+        setStartIntervall(10000l);
         enablePremium("https://filestore.to/premium");
     }
 
