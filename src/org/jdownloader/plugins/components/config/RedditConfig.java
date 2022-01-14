@@ -61,14 +61,14 @@ public interface RedditConfig extends PluginConfigInterface {
     CommentsPackagenameScheme getPreferredCommentsPackagenameScheme();
 
     @AboutConfig
-    @DefaultEnumValue("DATE_SUBREDDIT_SERVER_FILENAME")
+    @DefaultEnumValue("DATE_SUBREDDIT_POSTID_SERVER_FILENAME")
     @Order(15)
     @DescriptionForConfigEntry("Select preferred filename scheme")
     FilenameScheme getPreferredFilenameScheme();
 
     void setPreferredFilenameScheme(final FilenameScheme quality);
 
-    void setPreferredCommentsPackagename(final CommentsPackagenameScheme quality);
+    void setPreferredCommentsPackagenameScheme(final CommentsPackagenameScheme quality);
 
     @AboutConfig
     @DefaultBooleanValue(false)
