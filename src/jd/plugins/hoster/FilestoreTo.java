@@ -207,22 +207,27 @@ public class FilestoreTo extends PluginForHost {
             if (filesizeStr != null) {
                 link.setDownloadSize(SizeFormatter.getSize(filesizeStr.replaceAll(",", "\\.").trim()));
             }
-            /** 2020-02-08: File information can be available for offline files too! */
-            if (br.containsHTML("(?i)>\\s*Datei nicht gefunden")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.containsHTML("(?i)>\\s*Datei gesperrt")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.containsHTML("(?i)Entweder wurde die Datei von unseren Servern entfernt oder der Download-Link war")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.containsHTML("(?i)>\\s*Für diese Datei ist eine Take Down-Meldung eingegangen")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            checkFileErrors(link);
             return AvailableStatus.TRUE;
         }
         if (exception != null) {
             throw exception;
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+    }
+
+    private void checkFileErrors(final DownloadLink downloadlink) throws PluginException {
+        if (br.containsHTML("(?i)>\\s*Datei nicht gefunden") || br.containsHTML("(?i)>\\s*DIE DATEI EXISTIERT LEIDER NICHT MEHR")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*Datei gesperrt")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)Entweder wurde die Datei von unseren Servern entfernt oder der Download-Link war")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*Für diese Datei ist eine Take Down-Meldung eingegangen")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)Derzeit haben wir Serverprobleme und arbeiten daran\\. Bitte nochmal versuchen\\.")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server issues", 15 * 60 * 1000l);
         }
     }
 
@@ -253,8 +258,13 @@ public class FilestoreTo extends PluginForHost {
         }
         final String dllink = getDllink(br);
         if (StringUtils.isEmpty(dllink)) {
+            checkFileErrors(link);
             if (br.containsHTML("(?i)>\\s*Leider sind aktuell keine freien Downloadslots für Freeuser verfügbar")) {
-                throw new AccountRequiredException("Leider sind aktuell keine freien Downloadslots für Freeuser verfügbar");
+                if (true) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
+                } else {
+                    throw new AccountRequiredException("Leider sind aktuell keine freien Downloadslots für Freeuser verfügbar");
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -270,14 +280,14 @@ public class FilestoreTo extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.getPage(location);
             }
-            if (br.containsHTML("Derzeit haben wir Serverprobleme und arbeiten daran\\. Bitte nochmal versuchen\\.")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server issues", 15 * 60 * 1000l);
-            } else if (br.containsHTML("Derzeit haben wir leider keinen freien Downloadslots frei\\. Bitte nochmal versuchen\\.")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
+            checkFileErrors(link);
+            if (br.containsHTML("Derzeit haben wir leider keinen freien Downloadslots frei\\. Bitte nochmal versuchen\\.")) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
             } else if (br.getURL().contains("/error/limit")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
