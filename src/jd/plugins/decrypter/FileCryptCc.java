@@ -53,6 +53,8 @@ import jd.plugins.CaptchaException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -82,6 +84,7 @@ public class FileCryptCc extends PluginForDecrypt {
         /*
          * Not all captcha types change when re-loading page without cookies (recaptchav2 isn't). I tried with new response value - raztoki
          */
+        final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final String mirrorIdFromURL = UrlQuery.parse(param.getCryptedUrl()).get("mirror");
         if (mirrorIdFromURL == null) {
             param.setCryptedUrl(param.getCryptedUrl() + ".html");
@@ -265,8 +268,7 @@ public class FileCryptCc extends PluginForDecrypt {
                         submitForm(captchaForm);
                     } else if (cutCaptchaRetryIndex >= cutCaptchaAvoidanceMaxRetries) {
                         /* Fallback to rc2 no longer working or not desired by user. */
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA, "Unsupported captcha type cutcaptcha");
-                        // throw new DecrypterRetryException(RetryReason.CAPTCHA, "Unsupported captcha type cutcaptcha", null, null);
+                        throw new DecrypterRetryException(RetryReason.CAPTCHA, "CUTCAPTCHA_IS_NOT_SUPPORTED_" + folderID, "Cutcaptcha is not supported! Open this link manually in your browser, solve the captcha and add the links manually to JD either via Click and load or via DLC container.", null);
                     } else {
                         logger.info("Trying to avoid cutcaptcha");
                         /* Clear cookies to increase the chances of getting a different captcha type than cutcaptcha. */
@@ -509,7 +511,7 @@ public class FileCryptCc extends PluginForDecrypt {
             infos.put("jk", Encoding.urlDecode(cnl.getInputField("jk").getValue(), false));
             String source = cnl.getInputField("source").getValue();
             if (StringUtils.isEmpty(source)) {
-                source = parameter.toString();
+                source = parameter;
             } else {
                 infos.put("source", source);
             }

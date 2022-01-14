@@ -244,13 +244,17 @@ public abstract class EvilangelCore extends PluginForHost {
                          */
                         throw new PluginException(LinkStatus.ERROR_FATAL, "Only trailer available");
                     }
-                    final Map<String, Object> qualityMap = (Map<String, Object>) videoInfo.get("videos");
+                    final Map<String, String> qualityMap = (Map<String, String>) videoInfo.get("videos");
+                    if (qualityMap.isEmpty()) {
+                        /* This should never happen */
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                     boolean foundSelectedquality = false;
                     String chosenQualityStr = null;
-                    final String[] knownQualities = { "2160p", "1080p", "720p", "540p", "480p", "240p", "160p" };
+                    final String[] knownQualities = { "2160p", "1080p", "720p", "540p", "480p", "360p", "240p", "160p" };
                     for (final String knownQuality : knownQualities) {
                         if (qualityMap.containsKey(knownQuality)) {
-                            dllink = (String) qualityMap.get(knownQuality);
+                            dllink = qualityMap.get(knownQuality);
                             chosenQualityStr = knownQuality;
                             if (preferredQualityStr == null) {
                                 /* User prefers BEST quality. BEST = first item */
@@ -270,6 +274,12 @@ public abstract class EvilangelCore extends PluginForHost {
                         } else {
                             logger.info("Failed to find user selected quality --> Using fallback (best):" + chosenQualityStr);
                             link.setProperty(PROPERTY_QUALITY, chosenQualityStr);
+                        }
+                    } else {
+                        logger.warning("Failed to find any known quality --> Selecting unknown quality");
+                        for (final String value : qualityMap.values()) {
+                            this.dllink = value;
+                            break;
                         }
                     }
                 }
