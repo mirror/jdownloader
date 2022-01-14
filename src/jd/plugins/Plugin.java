@@ -821,20 +821,16 @@ public abstract class Plugin implements ActionListener {
             if (PluginConfigInterface.class.isAssignableFrom(cls) && !AccountConfigInterface.class.isAssignableFrom(cls)) {
                 final PluginHost anno = cls.getAnnotation(PluginHost.class);
                 if (anno != null) {
-                    final org.jdownloader.plugins.config.Type pluginType = Plugin.this instanceof PluginForDecrypt ? org.jdownloader.plugins.config.Type.CRAWLER : org.jdownloader.plugins.config.Type.HOSTER;
-                    if (!StringUtils.equals(anno.host(), getHost())) {
-                        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                        final org.jdownloader.plugins.config.Type pluginType = Plugin.this instanceof PluginForDecrypt ? org.jdownloader.plugins.config.Type.CRAWLER : org.jdownloader.plugins.config.Type.HOSTER;
+                        if (!StringUtils.equals(anno.host(), getHost())) {
                             LogController.CL(true).log(new Exception("Please check:" + cls + "|host missmatch:" + anno.host() + "!=" + getHost()));
                         }
-                        return null;
-                    } else if (pluginType != anno.type()) {
-                        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                        if (pluginType != anno.type()) {
                             LogController.CL(true).log(new Exception("Please check:" + cls + "|type missmatch:" + anno.type() + "!=" + pluginType));
                         }
-                        return null;
-                    } else {
-                        return (Class<? extends PluginConfigInterface>) cls;
                     }
+                    return (Class<? extends PluginConfigInterface>) cls;
                 } else {
                     return (Class<? extends PluginConfigInterface>) cls;
                 }
