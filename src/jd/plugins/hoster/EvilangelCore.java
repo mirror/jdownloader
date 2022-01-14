@@ -91,7 +91,9 @@ public abstract class EvilangelCore extends PluginForHost {
     }
 
     private String              dllink                                 = null;
+    @Deprecated
     private static final String URL_EVILANGEL_FILM                     = "https?://members\\.evilangel.com/[a-z]{2}/([A-Za-z0-9\\-_]+)/film/(\\d+)";
+    @Deprecated
     private static final String URL_EVILANGEL_FREE_TRAILER             = "https?://(?:www\\.)?evilangel\\.com/[a-z]{2}/video/([A-Za-z0-9\\-]+)/(\\d+)";
     private static final String URL_VIDEO                              = "https?://members\\.[^/]+/[a-z]{2}/video/([^/]+)(?:/([A-Za-z0-9\\-_]+))?/(\\d+)";
     private static final String PROPERTY_ACTORS                        = "actors";
@@ -99,6 +101,7 @@ public abstract class EvilangelCore extends PluginForHost {
     private static final String PROPERTY_QUALITY                       = "quality";
     private static final String PROPERTY_TITLE                         = "title";
     private static final String PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIN = "has_used_cookie_login";
+    private static final String PROPERTY_ACCOUNT_CONTENT_SOURCE        = "content_source";
 
     public boolean isProxyRotationEnabledForLinkChecker() {
         return false;
@@ -193,7 +196,6 @@ public abstract class EvilangelCore extends PluginForHost {
                 /* 2021-09-01: Use title from URL as this should be just fine. */
                 filename = getURLTitle(link);
                 filename = Encoding.htmlDecode(filename.trim());
-                dllink = getDllink(link, this.br);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -202,23 +204,127 @@ public abstract class EvilangelCore extends PluginForHost {
                 if (quality != null) {
                     filename = filename + "-" + quality;
                 }
-            } else if (link.getPluginPatternMatcher().matches(URL_VIDEO)) {
+            } else {
                 br.getPage(link.getPluginPatternMatcher());
                 if (this.br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 /* 2021-09-01: Use title from URL as this should be just fine. */
                 filename = getURLTitle(link);
-                filename = Encoding.htmlDecode(filename.trim());
-                dllink = getDllink(link, this.br);
+                filename = Encoding.htmlDecode(filename).replace("-", " ").trim();
+                /* Find downloadlink */
+                final String preferredQualityStr = this.getUserPreferredqualityStr();
+                if (preferredQualityStr == null) {
+                    logger.info("User has selected BEST quality");
+                } else {
+                    logger.info("User has selected quality: " + preferredQualityStr);
+                }
+                /*
+                 * Users have to buy an extra package to get download buttons (official downloads). For now we'll just always download the
+                 * streams as this should work fine for all premium accounts.
+                 */
+                final String htmlVideoJson = br.getRegex("window\\.defaultStateScene\\s*=\\s*(\\{.+\\});").getMatch(0);
+                final String htmlVideoJson2 = br.getRegex("new Cms_Player\\((\\{.*?\\})\\);").getMatch(0);
+                if (htmlVideoJson == null && htmlVideoJson2 == null) {
+                    /**
+                     * No error-page but also no player --> Assume content is offline e.g. </br>
+                     * https://members.wicked.com/en/movie/bla-bla/123456
+                     */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                // final String htmlVideoJson2 = br.getRegex(">dataLayer\\s*=\\s*\\[(\\{.*?\\})\\];</script>").getMatch(0);
+                if (htmlVideoJson != null) {
+                    final Map<String, Object> entries = JSonStorage.restoreFromString(htmlVideoJson, TypeRef.HASHMAP);
+                    final Map<String, Object> videoInfo = (Map<String, Object>) entries.get(this.getFID(getDownloadLink()));
+                    final Object qualityMapO = videoInfo.get("videos");
+                    if (qualityMapO instanceof List) {
+                        /*
+                         * Empty list --> User is not allowed to watch this full video -> Trailer only but we do not (yet) have a handling
+                         * to find the trailer streams -> Throw Exception instead
+                         */
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Only trailer available");
+                    }
+                    final Map<String, Object> qualityMap = (Map<String, Object>) videoInfo.get("videos");
+                    boolean foundSelectedquality = false;
+                    String chosenQualityStr = null;
+                    final String[] knownQualities = { "2160p", "1080p", "720p", "540p", "480p", "240p", "160p" };
+                    for (final String knownQuality : knownQualities) {
+                        if (qualityMap.containsKey(knownQuality)) {
+                            dllink = (String) qualityMap.get(knownQuality);
+                            chosenQualityStr = knownQuality;
+                            if (preferredQualityStr == null) {
+                                /* User prefers BEST quality. BEST = first item */
+                                foundSelectedquality = true;
+                                break;
+                            } else if (knownQuality.equals(preferredQualityStr)) {
+                                foundSelectedquality = true;
+                                logger.info("Found user selected quality: " + preferredQualityStr);
+                                break;
+                            }
+                        }
+                    }
+                    if (!StringUtils.isEmpty(dllink)) {
+                        if (foundSelectedquality) {
+                            logger.info("Found user selected quality " + preferredQualityStr);
+                            link.setProperty(PROPERTY_QUALITY, preferredQualityStr);
+                        } else {
+                            logger.info("Failed to find user selected quality --> Using fallback (best):" + chosenQualityStr);
+                            link.setProperty(PROPERTY_QUALITY, chosenQualityStr);
+                        }
+                    }
+                }
+                if (htmlVideoJson2 != null) {
+                    /* 2022-01-14: For some wicked.com URLs e.g. https://members.wicked.com/en/movie/bla-bla/123456 */
+                    /*
+                     * 2nd json with more information but no downloadlinks is also available in html as json see: dataLayer = [{"dvdDetails"
+                     */
+                    final Map<String, Object> root = JSonStorage.restoreFromString(htmlVideoJson2, TypeRef.HASHMAP);
+                    final Map<String, Object> movieInfos = (Map<String, Object>) root.get("movieInfos");
+                    final String dvdReleaseDate = (String) movieInfos.get("dvdReleaseDate");
+                    final String dvdName = (String) movieInfos.get("dvdName");
+                    if (dvdReleaseDate != null) {
+                        link.setProperty(PROPERTY_DATE, dvdReleaseDate);
+                    }
+                    if (!StringUtils.isEmpty(dvdName)) {
+                        filename = dvdName;
+                    }
+                    final List<Map<String, Object>> streamingSrcs = (List<Map<String, Object>>) root.get("streamingSources");
+                    String bestQualityDownloadurl = null;
+                    String userSelectedQualityDownloadurl = null;
+                    String bestQualityLabel = null;
+                    for (final Map<String, Object> streamingSrc : streamingSrcs) {
+                        final String url = (String) streamingSrc.get("src");
+                        final String label = (String) streamingSrc.get("label");
+                        /* First == BEST */
+                        if (bestQualityDownloadurl == null) {
+                            bestQualityDownloadurl = url;
+                            bestQualityLabel = label;
+                        }
+                        if (label.equalsIgnoreCase(preferredQualityStr)) {
+                            userSelectedQualityDownloadurl = url;
+                            break;
+                        }
+                    }
+                    if (userSelectedQualityDownloadurl != null) {
+                        logger.info("Chose best quality: " + bestQualityLabel);
+                        this.dllink = userSelectedQualityDownloadurl;
+                    } else if (bestQualityDownloadurl != null) {
+                        logger.info("Chose user selected quality: " + preferredQualityStr);
+                        this.dllink = bestQualityDownloadurl;
+                    }
+                }
                 if (dllink != null) {
                     final String quality = new Regex(dllink, "(\\d+p)").getMatch(0);
                     if (quality != null) {
                         filename = filename + "-" + quality;
                     }
                 }
-                final String siteName = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/[a-z]{2}/video/([^/]+)/[^/]+/\\d+").getMatch(0);
-                if (!link.hasProperty(PROPERTY_DATE) && siteName != null) {
+                String contentSource = new Regex(link.getPluginPatternMatcher(), URL_VIDEO).getMatch(0);
+                if (contentSource == null) {
+                    contentSource = account.getStringProperty(PROPERTY_ACCOUNT_CONTENT_SOURCE);
+                }
+                // siteName = "wicked";
+                if (!link.hasProperty(PROPERTY_DATE) && contentSource != null) {
                     logger.info("Looking for additional metadata...");
                     try {
                         final String jsonAPI = br.getRegex("window\\.env\\s*=\\s*(\\{.*?\\});").getMatch(0);
@@ -234,7 +340,7 @@ public abstract class EvilangelCore extends PluginForHost {
                         brc.getHeaders().put("x-algolia-application-id", appID);
                         brc.getHeaders().put("x-algolia-api-key", algoliaAPI.get("apiKey").toString());
                         final String url = "https://" + appID.toLowerCase(Locale.ENGLISH) + "-dsn.algolia.net/1/indexes/*/queries?" + query.toString();
-                        final String postData = "{\"requests\":[{\"indexName\":\"all_scenes\",\"params\":\"query=&page=0&facets=%5B%5D&tagFilters=&facetFilters=%5B%22sitename%3A" + siteName + "%22%2C%5B%22clip_id%3A" + this.getFID(link) + "%22%5D%5D\"},{\"indexName\":\"all_scenes\",\"params\":\"query=&page=0&hitsPerPage=1&attributesToRetrieve=%5B%5D&attributesToHighlight=%5B%5D&attributesToSnippet=%5B%5D&tagFilters=&analytics=false&clickAnalytics=false&facets=clip_id&facetFilters=%5B%22sitename%3A" + siteName + "%22%5D\"}]}";
+                        final String postData = "{\"requests\":[{\"indexName\":\"all_scenes\",\"params\":\"query=&page=0&facets=%5B%5D&tagFilters=&facetFilters=%5B%22sitename%3A" + contentSource + "%22%2C%5B%22clip_id%3A" + this.getFID(link) + "%22%5D%5D\"},{\"indexName\":\"all_scenes\",\"params\":\"query=&page=0&hitsPerPage=1&attributesToRetrieve=%5B%5D&attributesToHighlight=%5B%5D&attributesToSnippet=%5B%5D&tagFilters=&analytics=false&clickAnalytics=false&facets=clip_id&facetFilters=%5B%22sitename%3A" + contentSource + "%22%5D\"}]}";
                         brc.postPageRaw(url, postData);
                         entries = JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
                         final Map<String, Object> clipInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "results/{0}/hits/{0}");
@@ -276,14 +382,12 @@ public abstract class EvilangelCore extends PluginForHost {
                         logger.log(ignore);
                     }
                 }
-            } else {
-                dllink = link.getPluginPatternMatcher();
+            }
+            if (filename != null) {
+                filename = applyFilenameExtension(filename, ".mp4");
+                link.setFinalFileName(filename);
             }
             if (foundFilesize > 0) {
-                if (filename != null) {
-                    filename = applyFilenameExtension(filename, ".mp4");
-                    link.setFinalFileName(filename);
-                }
                 link.setDownloadSize(foundFilesize);
             } else if (!isDownload && dllink != null && !dllink.contains(".m3u8")) {
                 URLConnectionAdapter con = null;
@@ -295,7 +399,10 @@ public abstract class EvilangelCore extends PluginForHost {
                         if (con.getCompleteContentLength() > 0) {
                             link.setVerifiedFileSize(con.getCompleteContentLength());
                         }
-                        link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                        final String serverFilename = getFileNameFromHeader(con);
+                        if (serverFilename != null && link.getFinalFileName() == null) {
+                            link.setFinalFileName(serverFilename);
+                        }
                     } else {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - broken video?");
                     }
@@ -363,26 +470,21 @@ public abstract class EvilangelCore extends PluginForHost {
     }
 
     protected String getURLTitle(final DownloadLink link) {
-        String urlTitle;
         if (link.getPluginPatternMatcher().matches(URL_EVILANGEL_FILM)) {
-            urlTitle = new Regex(link.getPluginPatternMatcher(), URL_EVILANGEL_FILM).getMatch(0).replace("-", " ");
+            return new Regex(link.getPluginPatternMatcher(), URL_EVILANGEL_FILM).getMatch(0);
         } else if (link.getPluginPatternMatcher().matches(URL_EVILANGEL_FREE_TRAILER)) {
-            urlTitle = new Regex(link.getPluginPatternMatcher(), URL_EVILANGEL_FREE_TRAILER).getMatch(0).replace("-", "");
-        } else {
+            return new Regex(link.getPluginPatternMatcher(), URL_EVILANGEL_FREE_TRAILER).getMatch(0);
+        } else if (link.getPluginPatternMatcher().matches(URL_VIDEO)) {
             final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), URL_VIDEO);
             /* Sometimes author/studio + title is given and sometimes title(=param1) only. */
             final String param1 = urlinfo.getMatch(0);
             final String param2 = urlinfo.getMatch(1);
             if (param1 != null && param2 != null) {
-                urlTitle = param1.replace("-", " ") + " - " + param2.replace("-", " ");
+                return param1 + "_" + param2;
             } else {
-                urlTitle = param1.replace("-", " ");
+                return param1;
             }
-        }
-        if (urlTitle != null) {
-            return urlTitle;
         } else {
-            /* Developer error --> URL structure is unsupported */
             return null;
         }
     }
@@ -666,8 +768,13 @@ public abstract class EvilangelCore extends PluginForHost {
         final AccountInfo ai = account.getAccountInfo() != null ? account.getAccountInfo() : new AccountInfo();
         login(account, true);
         final String json = br.getRegex("window\\.context\\s*=\\s*(\\{.+\\});\\s+").getMatch(0);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-        final Map<String, Object> user = (Map<String, Object>) entries.get("user");
+        final Map<String, Object> root = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+        final Map<String, Object> site = (Map<String, Object>) root.get("site");
+        final List<String> contentSources = (List<String>) site.get("contentSource");
+        if (!contentSources.isEmpty()) {
+            account.setProperty(PROPERTY_ACCOUNT_CONTENT_SOURCE, contentSources.get(contentSources.size() - 1));
+        }
+        final Map<String, Object> user = (Map<String, Object>) root.get("user");
         /* TODO: Add support for "expirationDate" along with "scheduledCancelDate" whenever a test account with such a date is available. */
         if ((Boolean) user.get("isExpired")) {
             ai.setExpired(true);

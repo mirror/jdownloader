@@ -18,8 +18,11 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -28,8 +31,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vdisk.cn" }, urls = { "http://(www\\.)?([a-z0-9]+\\.)?vdisk\\.cn/(?:down/index/[A-Z0-9]+|[a-zA-Z0-9]+/.*?\\.html)" })
 public class VdiskCn extends PluginForHost {
@@ -74,17 +75,17 @@ public class VdiskCn extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        String dllink = downloadLink.getStringProperty("freelink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        String dllink = link.getStringProperty("freelink");
         boolean startDL = false;
         if (dllink != null) {
             try {
                 br.setReadTimeout(3 * 60 * 1000);
                 br.setFollowRedirects(true);
                 br.setCookie("http://vdisk.cn/", "lang", "en");
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-                if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getLongContentLength() == -1 || dl.getConnection().getResponseCode() == 403) {
-                    downloadLink.setProperty("freelink", Property.NULL);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+                if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                    link.setProperty("freelink", Property.NULL);
                     dllink = null;
                     try {
                         dl.getConnection().disconnect();
@@ -95,31 +96,35 @@ public class VdiskCn extends PluginForHost {
                 }
             } catch (Exception e) {
                 startDL = false;
-                downloadLink.setProperty("freelink", Property.NULL);
+                link.setProperty("freelink", Property.NULL);
                 dllink = null;
             }
         }
         if (dllink == null) {
-            requestFileInformation(downloadLink);
-            dllink = br.getRegex("(http://[\\w\\.]+?vdisk\\.cn/[^/]+/[0-9A-Z]{2}/[A-Z0-9]{32}\\?key=[a-z0-9]{32}[^\"\\>]+)").getMatch(0);
+            requestFileInformation(link);
+            dllink = getDownloadurl(br);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         int chunks = 0;
-        if (downloadLink.getBooleanProperty(VdiskCn.NOCHUNKS, false)) {
+        if (link.getBooleanProperty(VdiskCn.NOCHUNKS, false)) {
             chunks = 1;
         }
         if (startDL == false) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, chunks);
         }
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty("freelink", dllink);
-        if (downloadLink.getFinalFileName() == null) {
-            downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+        link.setProperty("freelink", dllink);
+        if (link.getFinalFileName() == null) {
+            link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         }
         if (!this.dl.startDownload()) {
             try {
@@ -129,11 +134,15 @@ public class VdiskCn extends PluginForHost {
             } catch (final Throwable e) {
             }
             /* unknown error, we disable multiple chunks */
-            if (downloadLink.getBooleanProperty(VdiskCn.NOCHUNKS, false) == false) {
-                downloadLink.setProperty(VdiskCn.NOCHUNKS, Boolean.valueOf(true));
+            if (link.getBooleanProperty(VdiskCn.NOCHUNKS, false) == false) {
+                link.setProperty(VdiskCn.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
+    }
+
+    private String getDownloadurl(final Browser br) {
+        return br.getRegex("(http://[\\w\\.]+?vdisk\\.cn/[^/]+/[0-9A-Z]{2}/[A-Z0-9]{32}\\?key=[a-z0-9]{32}[^\"\\>]+)").getMatch(0);
     }
 
     @Override
@@ -143,21 +152,29 @@ public class VdiskCn extends PluginForHost {
         br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(true);
         br.setCookie("http://vdisk.cn/", "lang", "en");
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         String filename = br.getRegex("(?i)文件名称: <b>(.*?)</b><br>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("(?i)<META content=\"(.*?)\" name=\"description\">").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex(">文件名称</td>\\s*<td>(.*?)</td>").getMatch(0);
-            }
+        }
+        if (filename == null) {
+            filename = br.getRegex(">文件名称</td>\\s*<td>(.*?)</td>").getMatch(0);
+        }
+        if (filename == null) {
+            /* 2022-01-14 */
+            filename = br.getRegex("<title>([^<>\"]+) - 威盘网vdisk\\.cn</title>").getMatch(0);
         }
         String filesize = br.getRegex("(?i)文件大小: ([\\d\\.]+ ?(GB|MB|KB|B))").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex(">文件大小</td>\\s*<td>(.*?)</td>").getMatch(0);
-            if (filesize == null) {
-                /* 2020-12-02 */
-                filesize = br.getRegex("文件大小:\\s*(\\d+)").getMatch(0);
-            }
+        }
+        if (filesize == null) {
+            /* 2020-12-02 */
+            filesize = br.getRegex("文件大小:\\s*(\\d+)").getMatch(0);
+        }
+        if (filesize == null) {
+            /* 2022-01-14 */
+            filesize = br.getRegex(">大小：(\\d+ [^<]+)</div>").getMatch(0);
         }
         String MD5sum = br.getRegex("(?i)文件校验: ([A-Z0-9]{32})").getMatch(0);
         if (MD5sum == null) {
@@ -176,11 +193,15 @@ public class VdiskCn extends PluginForHost {
         if (MD5sum != null) {
             link.setMD5Hash(MD5sum);
         }
+        final String directurl = this.getDownloadurl(this.br);
         /* 2020-12-02: Filename/size can still be given for offline files! */
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(文件已删除,无法下载\\.|>此文件涉嫌有害信息不允许下载\\!<|>找不到您需要的页面\\!<)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(">\\s*该文件已不提供下载")) {
             /* 2020-12-02 */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (directurl == null) {
+            /* 2022-01-14: Treat undownloadable files as offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;
