@@ -33,7 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = { "https?://(?:www\\.)?metart\\.com/api/download-media/[A-F0-9]{32}.+", "https?://(?:www\\.)?sexart\\.com/api/download-media/[A-F0-9]{32}.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class MetArtCom extends PluginForHost {
     public MetArtCom(PluginWrapper wrapper) {
         super(wrapper);

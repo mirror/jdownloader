@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.net.SocketTimeoutException;
@@ -28,11 +27,12 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vdisk.cn" }, urls = { "http://(www\\.)?vdisk\\.cn/(?!down/)[a-z0-9]+/$" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vdisk.cn" }, urls = { "http://(www\\.)?vdisk\\.cn/(?!down/)[a-z0-9]{4,}/$" })
 public class VDiskCn extends PluginForDecrypt {
-
     public VDiskCn(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -46,12 +46,10 @@ public class VDiskCn extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML(">找不到您需要的页面\\!<|可能您访问的内容已经删除，或您无权访问本页面。<")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
-        if (br.containsHTML("class=\\'tab_sel\\'>所有文件\\(0\\)</div>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("class=\\'tab_sel\\'>所有文件\\(0\\)</div>")) {
             logger.info("Link offline (folder empty): " + parameter);
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String[] pages = br.getRegex("<a href=\\'\\?tag=ALLFILES\\&p=(\\d+)\\'").getColumn(0);
         if (pages == null || pages.length == 0) {
@@ -109,5 +107,4 @@ public class VDiskCn extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
