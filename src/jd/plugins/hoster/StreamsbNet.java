@@ -16,14 +16,18 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -63,7 +67,23 @@ public class StreamsbNet extends XFileSharingProBasic {
 
     @Override
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        final AvailableStatus result = super.requestFileInformationWebsite(link, account, isDownload);
+        /* Beware! This is full of nasty workarounds! */
+        AvailableStatus result = null;
+        String oldPluginPatternMatcher = null;
+        String officialDownloadFilesize = null;
+        try {
+            oldPluginPatternMatcher = link.getPluginPatternMatcher();
+            link.setPluginPatternMatcher("https://" + this.getHost() + "/d/" + this.getFUIDFromURL(link));
+            result = super.requestFileInformationWebsite(link, account, isDownload);
+            officialDownloadFilesize = this.getDllinkViaOfficialVideoDownload(br, link, account, true);
+        } finally {
+            if (officialDownloadFilesize != null) {
+                /* Do not change pluginpatternmatcher back */
+                logger.info("Item is officially downloadable!");
+            } else {
+                link.setPluginPatternMatcher(oldPluginPatternMatcher);
+            }
+        }
         if (link.getPluginPatternMatcher().matches("https?://[^/]+/d/[a-z0-9]{12}.*") && !link.hasProperty(EXTENDED_FILENAME_RESULT)) {
             /*
              * 2021-11-18: Workaround e.g. for items for which uploader has disabled download button because upper handling will fail to
@@ -144,6 +164,177 @@ public class StreamsbNet extends XFileSharingProBasic {
             /* Free(anonymous) and unknown account type */
             return 0;
         }
+    }
+
+    @Override
+    protected String getDllinkViaOfficialVideoDownload(final Browser brc, final DownloadLink link, final Account account, final boolean returnFilesize) throws Exception {
+        if (returnFilesize) {
+            logger.info("[FilesizeMode] Trying to find official video downloads");
+        } else {
+            logger.info("[DownloadMode] Trying to find official video downloads");
+        }
+        String dllink = null;
+        /* Info in table. E.g. xvideosharing.com, watchvideo.us */
+        String[] videoQualityHTMLs = brc.getRegex("<tr><td>[^\r\t\n]+download_video\\(.*?</td></tr>").getColumn(-1);
+        if (videoQualityHTMLs.length == 0) {
+            /* Match on line - safe attempt but this may not include filesize! */
+            videoQualityHTMLs = brc.getRegex("download_video\\([^\r\t\n]+").getColumn(-1);
+        }
+        if (videoQualityHTMLs.length == 0) {
+            logger.info("Failed to find any official video downloads");
+            return null;
+        }
+        /*
+         * Internal quality identifiers highest to lowest (inside 'download_video' String): o = original, h = high, n = normal, l=low
+         */
+        final HashMap<String, Integer> qualityMap = new HashMap<String, Integer>();
+        qualityMap.put("l", 20); // low
+        qualityMap.put("n", 40); // normal
+        qualityMap.put("h", 60); // high
+        qualityMap.put("o", 80); // original
+        long maxInternalQualityValue = 0;
+        String filesizeStr = null;
+        String videoQualityStr = null;
+        String videoHash = null;
+        String targetHTML = null;
+        final String userSelectedQualityValue = getPreferredDownloadQuality();
+        boolean foundUserSelectedQuality = false;
+        if (userSelectedQualityValue == null) {
+            logger.info("Trying to find highest quality for official video download");
+        } else {
+            logger.info(String.format("Trying to find user selected quality %s for official video download", userSelectedQualityValue));
+        }
+        int selectedQualityIndex = 0;
+        for (int currentQualityIndex = 0; currentQualityIndex < videoQualityHTMLs.length; currentQualityIndex++) {
+            final String videoQualityHTML = videoQualityHTMLs[currentQualityIndex];
+            final String filesizeStrTmp = new Regex(videoQualityHTML, "(([0-9\\.]+)\\s*(KB|MB|GB|TB))").getMatch(0);
+            // final String vid = videoinfo.getMatch(0);
+            final Regex videoinfo = new Regex(videoQualityHTML, "download_video\\('([a-z0-9]+)','([^<>\"\\']*)','([^<>\"\\']*)'");
+            // final String vid = videoinfo.getMatch(0);
+            /* Usually this will be 'o' standing for "original quality" */
+            final String videoQualityStrTmp = videoinfo.getMatch(1);
+            final String videoHashTmp = videoinfo.getMatch(2);
+            if (StringUtils.isEmpty(videoQualityStrTmp) || StringUtils.isEmpty(videoHashTmp)) {
+                /*
+                 * Possible plugin failure but let's skip bad items. Upper handling will fallback to stream download if everything fails!
+                 */
+                logger.warning("Found unidentifyable video quality");
+                continue;
+            } else if (!qualityMap.containsKey(videoQualityStrTmp)) {
+                /*
+                 * 2020-01-18: There shouldn't be any unknown values but we should consider allowing such in the future maybe as final
+                 * fallback.
+                 */
+                logger.info("Skipping unknown quality: " + videoQualityStrTmp);
+                continue;
+            }
+            if (userSelectedQualityValue != null && videoQualityStrTmp.equalsIgnoreCase(userSelectedQualityValue)) {
+                logger.info("Found user selected quality: " + userSelectedQualityValue);
+                foundUserSelectedQuality = true;
+                videoQualityStr = videoQualityStrTmp;
+                videoHash = videoHashTmp;
+                if (filesizeStrTmp != null) {
+                    /*
+                     * Usually, filesize for official video downloads will be given but not in all cases. It may also happen that our upper
+                     * RegEx fails e.g. for supervideo.tv.
+                     */
+                    filesizeStr = filesizeStrTmp;
+                }
+                targetHTML = videoQualityHTML;
+                selectedQualityIndex = currentQualityIndex;
+                break;
+            } else {
+                /* Look for best quality */
+                final int internalQualityValueTmp = qualityMap.get(videoQualityStrTmp);
+                if (internalQualityValueTmp < maxInternalQualityValue) {
+                    /* Only continue with qualities that are higher than the highest we found so far. */
+                    continue;
+                }
+                maxInternalQualityValue = internalQualityValueTmp;
+                videoQualityStr = videoQualityStrTmp;
+                videoHash = videoHashTmp;
+                if (filesizeStrTmp != null) {
+                    /*
+                     * Usually, filesize for official video downloads will be given but not in all cases. It may also happen that our upper
+                     * RegEx fails e.g. for supervideo.tv.
+                     */
+                    filesizeStr = filesizeStrTmp;
+                }
+                targetHTML = videoQualityHTML;
+                selectedQualityIndex = currentQualityIndex;
+            }
+        }
+        if (targetHTML == null || videoQualityStr == null || videoHash == null) {
+            if (videoQualityHTMLs != null && videoQualityHTMLs.length > 0) {
+                /* This should never happen */
+                logger.info(String.format("Failed to find officially downloadable video quality although there are %d qualities available", videoQualityHTMLs.length));
+            }
+            return null;
+        }
+        if (filesizeStr == null) {
+            /*
+             * Last chance attempt to find filesize for selected quality. Only allow units "MB" and "GB" as most filesizes will have one of
+             * these units.
+             */
+            final String[] filesizeCandidates = br.getRegex("(\\d+(?:\\.\\d{1,2})? *(MB|GB))").getColumn(0);
+            /* Are there as many filesizes available as there are video qualities --> Chose correct filesize by index */
+            if (filesizeCandidates.length == videoQualityHTMLs.length) {
+                filesizeStr = filesizeCandidates[selectedQualityIndex];
+            }
+        }
+        if (foundUserSelectedQuality) {
+            logger.info("Found user selected quality: " + userSelectedQualityValue);
+        } else {
+            logger.info("Picked BEST quality: " + videoQualityStr);
+        }
+        if (filesizeStr == null) {
+            /* No dramatic failure */
+            logger.info("Failed to find filesize");
+        } else {
+            logger.info("Found filesize of official video download: " + filesizeStr);
+        }
+        if (returnFilesize) {
+            /* E.g. in availablecheck */
+            return filesizeStr;
+        }
+        /* 2019-08-29: Waittime here is possible but a rare case e.g. deltabit.co */
+        this.waitTime(link, Time.systemIndependentCurrentJVMTimeMillis());
+        getPage(brc, "/dl?op=download_orig&id=" + this.getFUIDFromURL(link) + "&mode=" + videoQualityStr + "&hash=" + videoHash);
+        /* 2019-08-29: This Form may sometimes be given e.g. deltabit.co */
+        Form download1 = brc.getFormByInputFieldKeyValue("op", "download1");
+        download1 = brc.getFormbyProperty("id", "F1");
+        if (download1 != null) {
+            this.handleCaptcha(link, download1);
+            if (this.containsRecaptchaV2Class(download1)) {
+                logger.info("Detected captcha method \"RecaptchaV2\" type 'INVISIBLE' for this host");
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brc) {
+                    @Override
+                    public TYPE getType() {
+                        return TYPE.INVISIBLE;
+                    }
+                }.getToken();
+                download1.put("g-recaptcha-response", recaptchaV2Response);
+            }
+            this.submitForm(brc, download1);
+            this.checkErrors(brc, brc.toString(), link, account, false);
+        }
+        /*
+         * 2019-10-04: TODO: Unsure whether we should use the general 'getDllink' method here as it contains a lot of RegExes (e.g. for
+         * streaming URLs) which are completely useless here.
+         */
+        dllink = this.getDllink(link, account, brc, brc.toString());
+        if (StringUtils.isEmpty(dllink)) {
+            /*
+             * 2019-05-30: Test - worked for: xvideosharing.com - not exactly required as getDllink will usually already return a result.
+             */
+            dllink = brc.getRegex("<a href=\"(https?[^\"]+)\"[^>]*>Direct Download Link</a>").getMatch(0);
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            logger.warning("Failed to find dllink via official video download");
+        } else {
+            logger.info("Successfully found dllink via official video download");
+        }
+        return dllink;
     }
 
     @Override
