@@ -852,7 +852,7 @@ public class PornportalCom extends PluginForHost {
                         brContentdef.getPage(String.format("https://ppp.contentdef.com/notification/list?page=1&type=1&network=1&archived=0&ajaxCounter=1&sid=%s&data=%s&_=%d", sid, Encoding.urlEncode(data), System.currentTimeMillis()));
                         Map<String, Object> entries = JSonStorage.restoreFromString(brContentdef.toString(), TypeRef.HASHMAP);
                         final ArrayList<Object> notificationNetworks = (ArrayList<Object>) entries.get("notificationNetworks");
-                        ArrayList<String> supportedHostsTmp = new ArrayList<String>();
+                        final ArrayList<String> supportedHostsTmp = new ArrayList<String>();
                         final ArrayList<String> allowedHosts = getAllSupportedPluginDomainsFlat();
                         final ArrayList<String> blacklistedHosts = getAllBlacklistedDomains();
                         final ArrayList<String> allowedHostsSpecial = getPossibleExternalSupportedSitesThatCannotBeHandledByPornPortal();
@@ -876,7 +876,7 @@ public class PornportalCom extends PluginForHost {
                             /* Find full domain for shortcode */
                             String domainFull = null;
                             for (final Object notificationNetworkO : notificationNetworks) {
-                                Map<String, Object> notificationNetwork = (Map<String, Object>) notificationNetworkO;
+                                final Map<String, Object> notificationNetwork = (Map<String, Object>) notificationNetworkO;
                                 final String domainShortcodeTmp = (String) notificationNetwork.get("short_name");
                                 final String site_url = (String) notificationNetwork.get("site_url");
                                 if (StringUtils.isEmpty(domainShortcodeTmp) || StringUtils.isEmpty(site_url)) {
