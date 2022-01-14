@@ -23,10 +23,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -48,6 +44,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidu.net" }, urls = { "https?://rapidu\\.(net|pl)/(\\d+)(/)?" })
 public class RapiduNet extends PluginForHost {
@@ -75,22 +75,24 @@ public class RapiduNet extends PluginForHost {
     }
 
     @Override
+    protected void updateDownloadLink(final CheckableLink checkableLink, final String url) {
+        final DownloadLink downloadLink = checkableLink != null ? checkableLink.getDownloadLink() : null;
+        if (downloadLink != null && url != null) {
+            downloadLink.removeProperty("without_account");
+            super.updateDownloadLink(checkableLink, url);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        final String downloadUrl = link.getPluginPatternMatcher();
+        final String ret = new Regex(downloadUrl, "https?://rapidu\\.(net|pl)/([0-9]+)/?").getMatch(1);
+        return ret;
+    }
+
+    @Override
     public boolean checkLinks(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) {
             return false;
-        }
-        // correct link stuff goes here, stable is lame!
-        for (DownloadLink link : urls) {
-            if (link.getProperty("FILEID") == null) {
-                String downloadUrl = link.getDownloadURL();
-                String fileID;
-                if (downloadUrl.contains("https")) {
-                    fileID = new Regex(downloadUrl, "https://rapidu\\.(net|pl)/([0-9]+)/?").getMatch(1);
-                } else {
-                    fileID = new Regex(downloadUrl, "http://rapidu\\.(net|pl)/([0-9]+)/?").getMatch(1);
-                }
-                link.setProperty("FILEID", fileID);
-            }
         }
         try {
             final Browser br = new Browser();
@@ -116,7 +118,7 @@ public class RapiduNet extends PluginForHost {
                     if (!first) {
                         sb.append(",");
                     }
-                    sb.append(dl.getProperty("FILEID"));
+                    sb.append(getFID(dl));
                     first = false;
                 }
                 br.postPage("https://rapidu.net/api/getFileDetails/", "id=" + sb.toString());
@@ -213,7 +215,7 @@ public class RapiduNet extends PluginForHost {
             } else if (timeLeft > 0) {
                 sleep(timeLeft, downloadLink);
             }
-            final String fileID = downloadLink.getProperty("FILEID").toString();
+            final String fileID = getFID(downloadLink);
             Form dlForm = new Form();
             dlForm.put("ajax", "1");
             dlForm.put("cachestop", "0.7658682554028928");
@@ -320,7 +322,7 @@ public class RapiduNet extends PluginForHost {
                 }
             }
             br.setFollowRedirects(false);// disable because of server bug (redirect loop)
-            response = br.postPage(MAINPAGE + "/api/getFileDownload/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&id=" + downloadLink.getProperty("FILEID"));
+            response = br.postPage(MAINPAGE + "/api/getFileDownload/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&id=" + getFID(downloadLink));
             // response
             // (string) [fileLocation] - Lokalizacja pliku ( link ważny jest 24h od momentu wygenerowania )
             String errors = checkForErrors(response, "error");
