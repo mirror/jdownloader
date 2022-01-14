@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -30,6 +29,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.PornportalComConfig;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 
 import jd.PluginWrapper;
@@ -72,13 +72,14 @@ public class PornportalCom extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "babes.com" });
+        ret.add(new String[] { "pornportal.com" });
+        ret.add(new String[] { "babes.com", "blackisbetter.com" });
         ret.add(new String[] { "bellesafilms.com" });
         ret.add(new String[] { "biempire.com" });
         ret.add(new String[] { "brazzers.com" });
         ret.add(new String[] { "digitalplayground.com" });
         ret.add(new String[] { "erito.com", "eritos.com" });
-        ret.add(new String[] { "fakehub.com" });
+        ret.add(new String[] { "fakehub.com", "femalefaketaxi.com", "fakedrivingschool.com", "fakehostel.com" });
         ret.add(new String[] { "hentaipros.com" });
         ret.add(new String[] { "lilhumpers.com" });
         ret.add(new String[] { "milehighmedia.com", "sweetheartvideo.com", "realityjunkies.com" });
@@ -105,6 +106,13 @@ public class PornportalCom extends PluginForHost {
                 allDomains.add(singleDomain);
             }
         }
+        return allDomains;
+    }
+
+    /** Contains domains which will be ignored in list of supported hosts in account view / "multihoster support". */
+    public static ArrayList<String> getAllBlacklistedDomains() {
+        final ArrayList<String> allDomains = new ArrayList<String>();
+        allDomains.add("pornportal.com");
         return allDomains;
     }
 
@@ -376,7 +384,12 @@ public class PornportalCom extends PluginForHost {
                 if (brlogin == null || account == null || target_domain == null) {
                     return;
                 }
-                final boolean isExternalPortalLogin = !target_domain.equalsIgnoreCase(account.getHoster());
+                final boolean isExternalPortalLogin;
+                if (!target_domain.equalsIgnoreCase(account.getHoster())) {
+                    isExternalPortalLogin = true;
+                } else {
+                    isExternalPortalLogin = false;
+                }
                 if (isExternalPortalLogin) {
                     /* Login via "Jump-URL" into other portal */
                     logger.info("External portal login: " + target_domain);
@@ -460,7 +473,7 @@ public class PornportalCom extends PluginForHost {
                         logger.warning("Failed to prepare API headers");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    entries = (LinkedHashMap<String, Object>) entries.get("domain");
+                    entries = (Map<String, Object>) entries.get("domain");
                     /* E.g. site-ma.fakehub.com */
                     final String hostname = (String) entries.get("hostname");
                     final String recaptchaSiteKey = (String) entries.get("siteKey");
@@ -606,7 +619,7 @@ public class PornportalCom extends PluginForHost {
         final String hostname;
         String ip = null;
         if (entries != null) {
-            entries = (LinkedHashMap<String, Object>) entries.get("domain");
+            entries = (Map<String, Object>) entries.get("domain");
             /* E.g. site-ma.fakehub.com */
             hostname = (String) entries.get("hostname");
             ip = PluginJSonUtils.getJson(br, "ip");
@@ -841,8 +854,9 @@ public class PornportalCom extends PluginForHost {
                         final ArrayList<Object> notificationNetworks = (ArrayList<Object>) entries.get("notificationNetworks");
                         ArrayList<String> supportedHostsTmp = new ArrayList<String>();
                         final ArrayList<String> allowedHosts = getAllSupportedPluginDomainsFlat();
+                        final ArrayList<String> blacklistedHosts = getAllBlacklistedDomains();
                         final ArrayList<String> allowedHostsSpecial = getPossibleExternalSupportedSitesThatCannotBeHandledByPornPortal();
-                        ArrayList<String> supportedHostsFinal = new ArrayList<String>();
+                        final ArrayList<String> supportedHostsFinal = new ArrayList<String>();
                         for (final String autologinURL : autologinURLs) {
                             String domainWithoutTLD = null;
                             final String domainShortcode = new Regex(autologinURL, "autologin/([a-z0-9]+)").getMatch(0);
@@ -856,7 +870,7 @@ public class PornportalCom extends PluginForHost {
                                 if (domainWithoutTLD != null) {
                                     domainWithoutTLD = Encoding.htmlDecode(domainWithoutTLD);
                                     /* E.g. Hentai Pros --> HentaiPros */
-                                    domainWithoutTLD = domainWithoutTLD.replace(" ", "");
+                                    domainWithoutTLD = domainWithoutTLD.replaceAll("( |\\')", "");
                                 }
                             }
                             /* Find full domain for shortcode */
@@ -868,33 +882,35 @@ public class PornportalCom extends PluginForHost {
                                 if (StringUtils.isEmpty(domainShortcodeTmp) || StringUtils.isEmpty(site_url)) {
                                     /* Skip invalid items */
                                     continue;
-                                }
-                                if (domainShortcodeTmp.equals(domainShortcode)) {
+                                } else if (domainShortcodeTmp.equals(domainShortcode)) {
                                     domainFull = site_url;
                                     break;
                                 }
                             }
-                            final String domain_to_add;
+                            final String domainToAdd;
                             if (domainFull != null) {
-                                domain_to_add = Browser.getHost(domainFull, false);
+                                domainToAdd = Browser.getHost(domainFull, false);
                             } else {
-                                domain_to_add = domainWithoutTLD;
+                                domainToAdd = domainWithoutTLD;
                             }
-                            if (domain_to_add == null) {
+                            if (domainToAdd == null) {
                                 logger.warning("Failed to find any usable domain for domain: " + domainShortcode);
                                 continue;
                             }
                             supportedHostsTmp.clear();
-                            supportedHostsTmp.add(domain_to_add);
+                            supportedHostsTmp.add(domainToAdd);
                             ai.setMultiHostSupport(this, supportedHostsTmp);
                             final List<String> supportedHostsTmpReal = ai.getMultiHostSupport();
                             if (supportedHostsTmpReal == null || supportedHostsTmpReal.isEmpty()) {
-                                logger.info("Failed to find any real host for: " + domain_to_add);
+                                logger.info("Failed to find any real host for: " + domainToAdd);
                                 continue;
                             }
                             final String final_domain = supportedHostsTmpReal.get(0);
                             if (!allowedHosts.contains(final_domain) && !allowedHostsSpecial.contains(final_domain)) {
                                 logger.info("Skipping the following host as it is not an allowed/PornPortal host or an external/unsupported host: " + final_domain);
+                                continue;
+                            } else if (blacklistedHosts.contains(final_domain)) {
+                                /* Skip blacklisted entries */
                                 continue;
                             } else if (supportedHostsFinal.contains(final_domain)) {
                                 /* Avoid duplicates */
@@ -924,8 +940,8 @@ public class PornportalCom extends PluginForHost {
                                     }
                                 } else {
                                     /*
-                                     * TODO: Maybe synchronize account stuff --> Should not be required es this- and the special account
-                                     * will never be checked at the same time (?)
+                                     * TODO: Maybe synchronize account stuff --> Should not be required this- and the special account will
+                                     * never be checked at the same time (?)
                                      */
                                     logger.info("Pornhub external login successful");
                                     boolean addNewAccount = false;
@@ -968,12 +984,12 @@ public class PornportalCom extends PluginForHost {
                                 logger.info("Pornhub was supported but is not supported anymore --> Removing special account");
                                 AccountController.getInstance().removeAccount(pornhubAccount);
                             }
-                        } catch (final Throwable e) {
-                            logger.log(e);
+                        } catch (final Throwable ignore) {
+                            logger.log(ignore);
                             logger.info("Exception occured in special pornhub handling");
                         }
-                    } catch (final Throwable e) {
-                        logger.log(e);
+                    } catch (final Throwable ignore) {
+                        logger.log(ignore);
                         logger.warning("Internal Multihoster handling failed");
                     }
                 }
@@ -1028,6 +1044,11 @@ public class PornportalCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to file");
         }
         dl.startDownload();
+    }
+
+    @Override
+    public Class<? extends PornportalComConfig> getConfigInterface() {
+        return PornportalComConfig.class;
     }
 
     @Override
