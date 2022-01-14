@@ -166,6 +166,7 @@ public class StreamsbNet extends XFileSharingProBasic {
         }
     }
 
+    /** Copy and pasted from main class. Contains ugly workarounds! Do not use anywhere else! */
     @Override
     protected String getDllinkViaOfficialVideoDownload(final Browser brc, final DownloadLink link, final Account account, final boolean returnFilesize) throws Exception {
         if (returnFilesize) {
