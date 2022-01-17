@@ -437,12 +437,12 @@ public class TwitterCom extends PornEmbedParser {
         try {
             created_at = created_at.substring(created_at.indexOf(" ") + 1, created_at.length());
             final String targetFormat = "yyyy-MM-dd";
-            final long date = TimeFormatter.getMilliSeconds(created_at, "MMM dd HH:mm:ss Z yyyy", Locale.ENGLISH);
-            if (date == -1) {
+            final long timestamp = TimeFormatter.getMilliSeconds(created_at, "MMM dd HH:mm:ss Z yyyy", Locale.ENGLISH);
+            if (timestamp == -1) {
                 throw new Exception("TimeFormatter failed for:" + created_at);
             }
             final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
-            return formatter.format(new Date(date));
+            return formatter.format(new Date(timestamp));
         } catch (final Throwable e) {
             /* Fallback */
             return created_at;
@@ -638,13 +638,13 @@ public class TwitterCom extends PornEmbedParser {
                 break;
             }
             final Iterator<Entry<String, Object>> iterator = tweetMap.entrySet().iterator();
-            String lastCreatedAtDate = null;
+            String lastCreatedAtDateStr = null;
             while (iterator.hasNext()) {
                 final Map<String, Object> tweet = (Map<String, Object>) iterator.next().getValue();
                 crawlTweetMediaObjectsAPI(fp, username, tweet);
                 crawled_tweet_count++;
-                lastCreatedAtDate = (String) tweet.get("created_at");
-                final long currentTweetTimestamp = TimeFormatter.getMilliSeconds(lastCreatedAtDate, "yyyy-MM-dd", Locale.ENGLISH);
+                lastCreatedAtDateStr = (String) tweet.get("created_at");
+                final long currentTweetTimestamp = TimeFormatter.getMilliSeconds(lastCreatedAtDateStr, "EEE MMM dd HH:mm:ss Z yyyy", Locale.ENGLISH);
                 /* Check some abort conditions */
                 if (maxTweetsToCrawl != null && crawled_tweet_count >= maxTweetsToCrawl.intValue()) {
                     logger.info("Stopping because: Reached user defined max items count: " + maxTweetsToCrawl);
@@ -655,7 +655,7 @@ public class TwitterCom extends PornEmbedParser {
                 }
             }
             logger.info(String.format("Tweets current page: %d|Tweets crawled so far: %d of expected total %s", tweetMap.size(), crawled_tweet_count, max_countStr));
-            logger.info("Last created_at date of current page: " + lastCreatedAtDate);
+            logger.info("Last created_at date of current page: " + lastCreatedAtDateStr);
             if (tweetMap.size() < expected_items_per_page) {
                 logger.info(String.format("Warning: Page contains less than %d objects --> Reached the end?", expected_items_per_page));
             }

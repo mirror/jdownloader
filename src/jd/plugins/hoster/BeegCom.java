@@ -15,12 +15,15 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -55,25 +58,25 @@ public class BeegCom extends PluginForHost {
         return -1;
     }
 
-    private static final String TYPE_BETA    = "https?://beta\\.beeg\\.com/-(\\d+)(?:\\?t=(\\d+-\\d+))?";
-    private static final String TYPE_NORMAL  = "https?://beeg\\.com/-?(\\d+)(?:\\?t=(\\d+-\\d+))?";
-    private boolean             server_issue = false;
+    private static final String TYPE_BETA       = "https?://beta\\.beeg\\.com/-(\\d+)(?:\\?t=(\\d+-\\d+))?";
+    private static final String TYPE_NORMAL     = "https?://beeg\\.com/-?(\\d+)(?:\\?t=(\\d+-\\d+))?";
+    private boolean             server_issue    = false;
+    private static final String PROPERTY_IS_HLS = "is_hls";
 
     @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        final String fuid = this.getFID(link);
-        if (fuid != null) {
-            /*
-             * 2019-08-16: Users may sometimes add URLs which are offline via browser but work fine in JD so let's correct these URLs so
-             * that if the user copies them inside JD, they will work fine via browser too!
-             */
-            link.setContentUrl("https://" + this.getHost() + "/" + fuid);
-            link.setLinkID(this.getHost() + "://" + fuid);
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
         }
     }
 
     private String getFID(final DownloadLink link) {
-        if (link.getPluginPatternMatcher().matches(TYPE_BETA)) {
+        if (link.getPluginPatternMatcher() == null) {
+            return null;
+        } else if (link.getPluginPatternMatcher().matches(TYPE_BETA)) {
             return new Regex(link.getPluginPatternMatcher(), TYPE_BETA).getMatch(0);
         } else {
             return new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(0);
@@ -90,9 +93,12 @@ public class BeegCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         if (!link.isNameSet()) {
             link.setName(this.getFID(link) + ".mp4");
         }
@@ -107,8 +113,15 @@ public class BeegCom extends PluginForHost {
         String filename = null;
         /* 2021-08-09: Seems like they've moved 100% to the new version of their website. */
         final boolean enforceNewWebsiteHandling = true;
+        boolean isHLS = false;
         if (link.getPluginPatternMatcher().matches(TYPE_BETA) || enforceNewWebsiteHandling) {
-            br.getPage("https://store.externulls.com/facts/file/" + videoidOriginal);
+            String extraParams = "";
+            final String timeParams = UrlQuery.parse(link.getPluginPatternMatcher()).get("t");
+            final Regex timeParamsRegex = new Regex(timeParams, "(\\d+)-(\\d+)");
+            if (timeParams != null && timeParamsRegex.matches()) {
+                extraParams = "?fc_start=" + timeParamsRegex.getMatch(0) + "&fc_end=" + timeParamsRegex.getMatch(1);
+            }
+            br.getPage("https://store.externulls.com/facts/file/" + videoidOriginal + extraParams);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.toString().length() < 100) {
@@ -120,25 +133,36 @@ public class BeegCom extends PluginForHost {
             final Map<String, Object> file = (Map<String, Object>) entries.get("file");
             final Map<String, Object> stuff = (Map<String, Object>) file.get("stuff");
             filename = (String) stuff.get("sf_name");
-            Map<String, String> qualities = null;
+            Map<String, String> qualities_http = null;
+            Map<String, String> qualities_hls = null;
             for (final Map<String, Object> vid : vids) {
-                qualities = (Map<String, String>) vid.get("resources");
-                if (qualities == null) {
-                    continue;
+                qualities_http = (Map<String, String>) vid.get("resources");
+                qualities_hls = (Map<String, String>) vid.get("hls_resources");
+                if (qualities_http != null || qualities_hls != null) {
+                    break;
                 }
-                break;
             }
-            if (qualities == null) {
+            if (qualities_http == null) {
                 /* E.g. videos without "t" parameter inside URL. */
-                qualities = (Map<String, String>) file.get("resources");
+                qualities_http = (Map<String, String>) file.get("resources");
             }
-            if (qualities != null) {
+            if (qualities_hls == null) {
+                qualities_hls = (Map<String, String>) file.get("hls_resources");
+            }
+            Map<String, String> chosenQualities = null;
+            if (qualities_http != null) {
+                chosenQualities = qualities_http;
+            } else if (qualities_hls != null) {
+                chosenQualities = qualities_hls;
+                isHLS = true;
+            }
+            if (chosenQualities != null) {
                 /* Pick best quality */
                 final String[] qualityStrings = { "2160", "1080", "720", "480", "360", "240" };
                 for (final String qualityStr : qualityStrings) {
                     final String qualityKey = "fl_cdn_" + qualityStr;
-                    if (qualities.containsKey(qualityKey)) {
-                        dllink = qualities.get(qualityKey);
+                    if (chosenQualities.containsKey(qualityKey)) {
+                        dllink = chosenQualities.get(qualityKey);
                         if (!StringUtils.isEmpty(dllink)) {
                             break;
                         }
@@ -285,32 +309,38 @@ public class BeegCom extends PluginForHost {
             }
         }
         if (!StringUtils.isEmpty(filename)) {
-            String ext = dllink.substring(dllink.lastIndexOf("."));
-            if (ext == null || ext.length() > 5) {
-                ext = ".mp4";
-            }
             filename = filename.trim();
             if (filename.endsWith(".")) {
                 filename = filename.substring(0, filename.length() - 1);
             }
-            link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+            filename += ".mp4";
+            link.setFinalFileName(filename);
         }
         br.setFollowRedirects(true);
-        br.getHeaders().put("Referer", link.getDownloadURL());
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(dllink);
-            if (this.looksLikeDownloadableContent(con)) {
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
+        br.getHeaders().put("Referer", link.getPluginPatternMatcher());
+        if (dllink != null) {
+            if (isHLS) {
+                link.setProperty(PROPERTY_IS_HLS, true);
             } else {
-                server_issue = true;
+                link.removeProperty(PROPERTY_IS_HLS);
             }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
+            if (!isDownload && !isHLS) {
+                URLConnectionAdapter con = null;
+                try {
+                    con = br.openGetConnection(dllink);
+                    if (this.looksLikeDownloadableContent(con)) {
+                        if (con.getCompleteContentLength() > 0) {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
+                    } else {
+                        server_issue = true;
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (Throwable e) {
+                    }
+                }
             }
         }
         return AvailableStatus.TRUE;
@@ -318,16 +348,36 @@ public class BeegCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         if (server_issue) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server issue", 30 * 60 * 1000l);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection();
+        } else if (StringUtils.isEmpty(this.dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        if (isHLS(link)) {
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, this.dllink);
+            dl.startDownload();
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        }
+    }
+
+    private boolean isHLS(final DownloadLink link) {
+        if (link.hasProperty(PROPERTY_IS_HLS)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private String decryptKey(final String key, final String salt) {
