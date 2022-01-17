@@ -136,6 +136,10 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 folderLink.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolder + "/" + itemTitle);
                 decryptedLinks.add(folderLink);
             } else {
+                if ("illegal".equals(entries.get("uflr"))) {
+                    // flagged as illegal, no longer available, doesn't show up in browser either
+                    continue;
+                }
                 String encoded_weblink = URLEncode.encodeURIComponent(weblink);
                 /* We need the "/" so let's encode them back. */
                 encoded_weblink = encoded_weblink.replace("%2F", "/");
