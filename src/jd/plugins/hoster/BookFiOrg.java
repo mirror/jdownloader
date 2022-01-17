@@ -193,7 +193,7 @@ public class BookFiOrg extends antiDDoSForHost {
                 logger.log(e);
             }
             /* 2021-10-07: Different domain(and/or IP) = different language --> Try to cover multiple languages here */
-            if (br.containsHTML("There are more th(?:e|a)n \\d+ downloads from this IP during last|ACHTUNG: Es gibt mehr als \\d+ Downloads von Ihrer IP")) {
+            if (br.containsHTML("(?i)There are more th(?:e|a)n \\d+ downloads from |ACHTUNG: Es gibt mehr als \\d+ Downloads von Ihrer IP")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily downloadlimit reached");
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

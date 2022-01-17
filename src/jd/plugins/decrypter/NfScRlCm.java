@@ -16,19 +16,51 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scene-rls.com" }, urls = { "https?://(?:\\w+\\.)?scene-rls\\.(?:com|net)/view/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class NfScRlCm extends PluginForDecrypt {
     public NfScRlCm(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "scene-rls.com", "scene-rls.net" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/folder/[a-f0-9]{32}");
+        }
+        return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -39,8 +71,18 @@ public class NfScRlCm extends PluginForDecrypt {
         br.getPage(parameter);
         /* Error handling */
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /* 2022-01-17: They've added one extra step */
+        Form continueForm = null;
+        for (final Form form : br.getForms()) {
+            if (form.containsHTML("Click to Show Links")) {
+                continueForm = form;
+                break;
+            }
+        }
+        if (continueForm != null) {
+            br.submitForm(continueForm);
         }
         final String[] links = HTMLParser.getHttpLinks(br.toString(), "");
         /* avoid recursion */
