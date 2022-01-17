@@ -128,29 +128,6 @@ public class FlickrCom extends PluginForHost {
         } catch (final Throwable t) {
             Browser.setRequestIntervalLimitGlobal(this.getHost(), 1800);
         }
-        /** Backward compatibility: TODO: Remove this in 01-2022 */
-        final String userCustomFilenameMask = this.getPluginConfig().getStringProperty(CUSTOM_FILENAME);
-        if (userCustomFilenameMask != null) {
-            if (userCustomFilenameMask.contains("*owner*") || userCustomFilenameMask.contains("*photo_id*")) {
-                String correctedUserCustomFilenameMask = userCustomFilenameMask.replace("*owner*", "*username_internal*");
-                if (correctedUserCustomFilenameMask.contains("*photo_id*")) {
-                    correctedUserCustomFilenameMask = correctedUserCustomFilenameMask.replace("*photo_id*", "*content_id*");
-                } else if (!correctedUserCustomFilenameMask.contains("*content_id*") && correctedUserCustomFilenameMask.contains("*content_id")) {
-                    /* Fix for mistage in rev 44961 */
-                    correctedUserCustomFilenameMask = correctedUserCustomFilenameMask.replace("*content_id", "*content_id*");
-                }
-                getPluginConfig().setProperty(CUSTOM_FILENAME, correctedUserCustomFilenameMask);
-            } else if (userCustomFilenameMask.equalsIgnoreCase("*username*_*content_id*_*title**extension*")) {
-                /**
-                 * 2021-09-14: Correct defaults just in case user has entered the field so the property has been saved. See new default in:
-                 * defaultCustomFilename </br>
-                 * username_url = always given </br>
-                 * username = not always given but previously the same as new "username_url" and default.
-                 */
-                final String correctedUserCustomFilenameMask = userCustomFilenameMask.replace("*username*", "*username_url*");
-                getPluginConfig().setProperty(CUSTOM_FILENAME, correctedUserCustomFilenameMask);
-            }
-        }
     }
 
     public static final Browser prepBrowser(final Browser br) {
@@ -214,11 +191,6 @@ public class FlickrCom extends PluginForHost {
             } else {
                 link.setName(this.getFID(link));
             }
-        }
-        if (link.hasProperty("owner")) {
-            /** Backward compatibility: TODO: Remove this in 01-2022 */
-            link.setProperty(PROPERTY_USERNAME_INTERNAL, link.getStringProperty("owner"));
-            link.removeProperty("owner");
         }
         /* Set some properties needed for custom filenames/Packagizer! */
         final String usernameFromURL = this.getUsername(link);

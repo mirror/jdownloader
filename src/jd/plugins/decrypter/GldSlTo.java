@@ -34,6 +34,8 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -68,7 +70,7 @@ public class GldSlTo extends antiDDoSForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[a-z0-9]+(/[a-z0-9\\-]+)?/\\d+.{4,}");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[a-z0-9]+(/[a-z0-9\\-]+)?/\\d+-.{4,}");
         }
         return ret.toArray(new String[0]);
     }
@@ -82,8 +84,7 @@ public class GldSlTo extends antiDDoSForDecrypt {
         br.setFollowRedirects(true);
         getPage(parameter);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String fpName = br.getRegex(">Release\\s*:\\s*([^<>]+)<").getMatch(0);
         if (fpName == null) {
@@ -102,8 +103,7 @@ public class GldSlTo extends antiDDoSForDecrypt {
         if (decryptIDs.length == 0) {
             /* 2020-10-19: Some URLs only got P2P/usenet sources available! */
             logger.info("Failed to find any OCH mirrors");
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String[] hosterPrioList;
         String userHosterPrioListStr = PluginJsonConfig.get(GldSlToConfig.class).getHosterPriorityString();
@@ -114,9 +114,14 @@ public class GldSlTo extends antiDDoSForDecrypt {
             hosterPrioList = null;
         }
         final HashMap<String, List<String>> packages = new HashMap<String, List<String>>();
+        int numberofBrokenMirrors = 0;
         for (final String decryptID : decryptIDs) {
             /* Structure of each ID: 1;123456;12345;12345;<hostername>;<season>;<episode> */
             final String[] idInfo = decryptID.split(";");
+            if (idInfo.length < 5) {
+                logger.info("Found broken part: " + numberofBrokenMirrors);
+                continue;
+            }
             final String hoster = idInfo[4];
             final String uniqueID = decryptID.replace(";" + hoster, "");
             if (packages.containsKey(uniqueID)) {
@@ -126,6 +131,13 @@ public class GldSlTo extends antiDDoSForDecrypt {
                 newList.add(decryptID);
                 packages.put(uniqueID, newList);
             }
+        }
+        if (packages.isEmpty()) {
+            /* Probably all mirrors are broken -> This should never happen! */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (numberofBrokenMirrors > 0) {
+            logger.info("Number of broken mirrors: " + numberofBrokenMirrors);
         }
         logger.info("Total number of decryptIDs: " + decryptIDs.length);
         final List<String> userAllowedDecryptIDs = new ArrayList<String>();
@@ -228,8 +240,7 @@ public class GldSlTo extends antiDDoSForDecrypt {
                 postPage("/res/links", "data=" + Encoding.urlEncode(decryptID) + "&rcc=" + Encoding.urlEncode(recaptchaV2Response));
             }
             if (br.containsHTML(HTML_LIMIT_REACHED)) {
-                logger.info("Probably hourly limit is reached --> Stopping decryption");
-                return decryptedLinks;
+                throw new DecrypterRetryException(RetryReason.CAPTCHA, "HOURLY_LIMIT_REACHED", "Hourly limit has been reached! Try again later.", null);
             }
             final String[] finallinks = br.getRegex("url\\s*=\\s*\"(https?[^<>\"]*?)\"").getColumn(0);
             for (final String finallink : finallinks) {
