@@ -27,7 +27,6 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.notify.BasicNotify;
 import org.jdownloader.gui.notify.BubbleNotify;
@@ -55,6 +54,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -69,7 +69,7 @@ import jd.plugins.components.PluginJSonUtils;
 public abstract class HighWayCore extends UseNet {
     protected static MultiHosterManagement                 mhm                                 = new MultiHosterManagement();
     private static final String                            TYPE_TV                             = "https?://[^/]+/onlinetv\\.php\\?id=.+";
-    private static final String                            TYPE_DIRECT                         = "https?://[^/]+/dlu/[a-z0-9]+/[^/]+";
+    private static final String                            TYPE_DIRECT                         = "https?://[^/]+/dl(?:u|t)/([a-z0-9]+)/?";
     private static final int                               STATUSCODE_PASSWORD_NEEDED_OR_WRONG = 13;
     /* Contains <host><Boolean resume possible|impossible> */
     private static Map<String, Map<String, Boolean>>       hostResumeMap                       = new HashMap<String, Map<String, Boolean>>();
@@ -150,72 +150,93 @@ public abstract class HighWayCore extends UseNet {
     }
 
     @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        if (link.getPluginPatternMatcher() == null) {
+            return null;
+        } else if (link.getPluginPatternMatcher().matches(TYPE_TV)) {
+            return new Regex(link.getPluginPatternMatcher(), "id=(\\d+)").getMatch(0);
+        } else {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_DIRECT).getMatch(0);
+        }
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return this.requestFileInformation(link, account);
+    }
+
+    protected AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         if (isUsenetLink(link)) {
             return super.requestFileInformation(link);
         } else if (link.getPluginPatternMatcher().matches(TYPE_TV)) {
-            final boolean check_via_json = true;
             final String dlink = Encoding.urlDecode(link.getPluginPatternMatcher(), true);
-            final String fid = new Regex(dlink, "id=(\\d+)").getMatch(0);
-            link.setLinkID(this.getHost() + "://" + fid);
             if (!link.isNameSet()) {
-                link.setName(fid);
+                link.setName(this.getFID(link) + ".mp4");
             }
-            /* We know that all added content has to be video content. */
-            link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
-            br.setFollowRedirects(true);
-            ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
-            if (accs == null || accs.size() == 0) {
+            if (account == null) {
                 link.getLinkStatus().setStatusText("Only downloadable via account!");
                 return AvailableStatus.UNCHECKABLE;
             }
-            URLConnectionAdapter con = null;
+            br.setFollowRedirects(true);
+            this.login(account, false);
+            final boolean check_via_json = true;
+            String filename;
             String filesize_str;
-            String filename = null;
-            /* Use first existant account */
-            for (final Account acc : accs) {
-                this.login(acc, false);
-                if (check_via_json) {
-                    final String json_url = link.getPluginPatternMatcher().replaceAll("stream=(?:0|1)", "") + "&json=1";
-                    this.br.getPage(json_url);
-                    final String code = PluginJSonUtils.getJsonValue(this.br, "code");
-                    filename = PluginJSonUtils.getJsonValue(this.br, "name");
-                    filesize_str = PluginJSonUtils.getJsonValue(this.br, "size");
-                    if ("5".equals(code)) {
-                        /* Login issue */
-                        return AvailableStatus.UNCHECKABLE;
-                    } else if (!"0".equals(code)) {
+            if (check_via_json) {
+                final String json_url = link.getPluginPatternMatcher().replaceAll("stream=(?:0|1)", "") + "&json=1";
+                this.br.getPage(json_url);
+                final String code = PluginJSonUtils.getJsonValue(this.br, "code");
+                filename = PluginJSonUtils.getJsonValue(this.br, "name");
+                filesize_str = PluginJSonUtils.getJsonValue(this.br, "size");
+                if ("5".equals(code)) {
+                    /* Login issue */
+                    return AvailableStatus.UNCHECKABLE;
+                } else if (!"0".equals(code)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (StringUtils.isEmpty(filesize_str) || !filesize_str.matches("\\d+")) {
+                    /* This should never happen at this stage! */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                link.setDownloadSize(Long.parseLong(filesize_str));
+            } else {
+                URLConnectionAdapter con = null;
+                try {
+                    con = br.openHeadConnection(dlink);
+                    if (!this.looksLikeDownloadableContent(con) || con.getCompleteContentLength() <= 0) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else {
+                        filename = getFileNameFromHeader(con);
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
-                    if (StringUtils.isEmpty(filesize_str) || !filesize_str.matches("\\d+")) {
-                        /* This should never happen at this stage! */
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    link.setDownloadSize(Long.parseLong(filesize_str));
-                } else {
+                } finally {
                     try {
-                        con = br.openHeadConnection(dlink);
-                        if (!this.looksLikeDownloadableContent(con) || con.getCompleteContentLength() <= 0) {
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        } else {
-                            filename = getFileNameFromHeader(con);
-                            link.setVerifiedFileSize(con.getCompleteContentLength());
-                        }
-                    } finally {
-                        try {
-                            con.disconnect();
-                        } catch (Throwable e) {
-                        }
+                        con.disconnect();
+                    } catch (Throwable e) {
                     }
                 }
-                /* Stop after the first account */
-                break;
             }
             if (!StringUtils.isEmpty(filename)) {
                 link.setFinalFileName(filename);
             }
         } else {
-            /* Direct URLs (e.g. cloud stored Usenet downloads) - downloadable even without account. */
+            if (link.getFinalFileName() == null) {
+                link.setName(this.getFID(link) + ".zip");
+            }
+            if (account == null) {
+                link.getLinkStatus().setStatusText("Only downloadable via account!");
+                return AvailableStatus.UNCHECKABLE;
+            }
             URLConnectionAdapter con = null;
             try {
                 final Browser brc = br.cloneBrowser();
@@ -226,7 +247,17 @@ public abstract class HighWayCore extends UseNet {
                 } else if (con.getCompleteContentLength() <= 0) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
-                    link.setFinalFileName(getFileNameFromHeader(con));
+                    final String serverFilename = getFileNameFromHeader(con);
+                    if (!StringUtils.isEmpty(serverFilename)) {
+                        link.setFinalFileName(serverFilename);
+                    } else {
+                        String fallbackFilename = this.getFID(link);
+                        final String realExtension = this.getExtensionFromMimeType(con.getContentType());
+                        if (realExtension != null) {
+                            fallbackFilename = applyFilenameExtension(fallbackFilename, "." + realExtension);
+                        }
+                        link.setFinalFileName(fallbackFilename);
+                    }
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
@@ -242,7 +273,7 @@ public abstract class HighWayCore extends UseNet {
     @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (account != null && link.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
-            /* This is the only linktype which is downloadable via account */
+            /* This is the only linktype which is only downloadable via account */
             return true;
         } else if (account == null) {
             /* without account its not possible to download the link */
@@ -276,32 +307,28 @@ public abstract class HighWayCore extends UseNet {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        handleSelfhostedDownload(link);
+        throw new AccountRequiredException();
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        this.requestFileInformation(link, account);
         if (isUsenetLink(link)) {
             super.handleMultiHost(link, account);
             return;
         } else {
-            this.login(account, false);
-            handleSelfhostedDownload(link);
-        }
-    }
-
-    public void handleSelfhostedDownload(final DownloadLink link) throws Exception, PluginException {
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, defaultMAXCHUNKS);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            logger.warning("The final dllink seems not to be a file!");
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, defaultMAXCHUNKS);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                logger.warning("The final dllink seems not to be a file!");
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to file", 1 * 60 * 1000l);
             }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to file", 1 * 60 * 1000l);
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     @Override

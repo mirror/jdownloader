@@ -28,7 +28,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "high-way.me" }, urls = { "https?://(?:torrentarchiv|torrent)\\.high-way\\.me/dlt/[a-z0-9]+(?:/$|/.+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "high-way.me" }, urls = { "https?://((?:torrent|usenet)(archiv)?)\\.(?:high-way\\.me|dwld\\.link)/dl(?:u|t)/[a-z0-9]+(?:/$|/.+)" })
 public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
     public HighWayMeFolder(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,6 +53,11 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
             } else {
                 logger.info("Failed to find a complete zip file although we're in the torrent root folder -> Probably torrent is very big and thus no extra .zip file is provided");
             }
+        }
+        /* Workaround! We want directURLs to be handled by our high-way.me host plugin, not directhttp! */
+        for (final DownloadLink link : crawledItems) {
+            link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("directhttp://", ""));
+            link.setHost(this.getHost());
         }
         return crawledItems;
     }

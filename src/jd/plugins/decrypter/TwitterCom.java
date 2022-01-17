@@ -602,8 +602,16 @@ public class TwitterCom extends PornEmbedParser {
         final UrlQuery addedURLQuery = UrlQuery.parse(param.getCryptedUrl());
         Number maxTweetsToCrawl = null;
         final String maxTweetsToCrawlStr = addedURLQuery.get("maxitems");
+        final String maxTweetDateStr = addedURLQuery.get("max_date");
+        long crawlUntilTimestamp = -1;
         if (maxTweetsToCrawlStr != null && maxTweetsToCrawlStr.matches("\\d+")) {
             maxTweetsToCrawl = Integer.parseInt(maxTweetsToCrawlStr);
+        }
+        if (maxTweetDateStr != null) {
+            try {
+                crawlUntilTimestamp = TimeFormatter.getMilliSeconds(maxTweetDateStr, "yyyy-MM-dd", Locale.ENGLISH);
+            } catch (final Throwable ignore) {
+            }
         }
         final FilePackage fp = FilePackage.getInstance();
         /* we want all links from this user to go into the same package */
@@ -613,7 +621,7 @@ public class TwitterCom extends PornEmbedParser {
         query.append("count", expected_items_per_page + "", false);
         query.append("ext", "mediaStats,cameraMoment", true);
         int crawled_tweet_count = 0;
-        do {
+        tweetTimeline: do {
             logger.info("Crawling page " + (index + 1));
             final UrlQuery thisquery = query;
             if (!StringUtils.isEmpty(nextCursor)) {
@@ -636,16 +644,20 @@ public class TwitterCom extends PornEmbedParser {
                 crawlTweetMediaObjectsAPI(fp, username, tweet);
                 crawled_tweet_count++;
                 lastCreatedAtDate = (String) tweet.get("created_at");
+                final long currentTweetTimestamp = TimeFormatter.getMilliSeconds(lastCreatedAtDate, "yyyy-MM-dd", Locale.ENGLISH);
+                /* Check some abort conditions */
+                if (maxTweetsToCrawl != null && crawled_tweet_count >= maxTweetsToCrawl.intValue()) {
+                    logger.info("Stopping because: Reached user defined max items count: " + maxTweetsToCrawl);
+                    break tweetTimeline;
+                } else if (crawlUntilTimestamp != -1 && currentTweetTimestamp > crawlUntilTimestamp) {
+                    logger.info("Stopping because: Reached max desired tweet age of: " + maxTweetDateStr);
+                    break tweetTimeline;
+                }
             }
             logger.info(String.format("Tweets current page: %d|Tweets crawled so far: %d of expected total %s", tweetMap.size(), crawled_tweet_count, max_countStr));
             logger.info("Last created_at date of current page: " + lastCreatedAtDate);
             if (tweetMap.size() < expected_items_per_page) {
                 logger.info(String.format("Warning: Page contains less than %d objects --> Reached the end?", expected_items_per_page));
-            }
-            /* Check some abort conditions */
-            if (maxTweetsToCrawl != null && crawled_tweet_count >= maxTweetsToCrawl.intValue()) {
-                logger.info("Stopping because: Reached user defined max items count: " + maxTweetsToCrawl);
-                break;
             }
             /* Done - now try to find string required to access next page */
             try {
