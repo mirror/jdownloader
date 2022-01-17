@@ -177,7 +177,7 @@ public class TwitterCom extends PluginForHost {
                          * the API may return 2 items whereas via browser you can only watch one video which is usually the first item in
                          * the array returned by the API.
                          */
-                        logger.info("Edge case: Video ttweet contains multiple elements: " + results.size());
+                        logger.info("Edge case: Video tweet contains multiple elements: " + results.size());
                         result = results.get(link.getIntegerProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_MEDIA_INDEX, 0));
                     }
                     if (!result.hasProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_BITRATE)) {
