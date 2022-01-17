@@ -50,6 +50,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -173,7 +174,12 @@ public abstract class EvilangelCore extends PluginForHost {
                         }
                         link.setFinalFileName(filename);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - broken video?");
+                        try {
+                            brc.followConnection(true);
+                        } catch (final IOException e) {
+                            logger.log(e);
+                        }
+                        handleErrorsAfterDirecturlAccess(link, account, brc, true);
                     }
                 } finally {
                     try {
@@ -414,7 +420,12 @@ public abstract class EvilangelCore extends PluginForHost {
                             link.setFinalFileName(serverFilename);
                         }
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - broken video?");
+                        try {
+                            brc.followConnection(true);
+                        } catch (final IOException e) {
+                            logger.log(e);
+                        }
+                        handleErrorsAfterDirecturlAccess(link, account, brc, true);
                     }
                 } finally {
                     try {
@@ -425,6 +436,20 @@ public abstract class EvilangelCore extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private void handleErrorsAfterDirecturlAccess(final DownloadLink link, final Account account, final Browser br, final boolean lastChance) throws PluginException {
+        if (br.containsHTML("limit reached:")) {
+            /* 2022-01-17 adulttime.com: E.g. full response: limit reached: 1.1.1.1:12345678 */
+            if (account != null) {
+                throw new AccountUnavailableException("Limit reached", 1 * 60 * 1000);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached");
+            }
+        }
+        if (lastChance) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - broken video?");
+        }
     }
 
     private String getUserPreferredqualityStr() {
@@ -473,7 +498,7 @@ public abstract class EvilangelCore extends PluginForHost {
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link, null, true);
         if (isFreeDownloadable(link)) {
-            handleDownload(link);
+            handleDownload(link, null);
         } else {
             throw new AccountRequiredException();
         }
@@ -495,72 +520,6 @@ public abstract class EvilangelCore extends PluginForHost {
                 return param1;
             }
         } else {
-            return null;
-        }
-    }
-
-    /**
-     * Find preferred quality downloadurl
-     *
-     * @throws IOException
-     * @throws PluginException
-     */
-    private String getDllink(final DownloadLink link, final Browser br) throws IOException, PluginException {
-        final String preferredQualityStr = this.getUserPreferredqualityStr();
-        String dllink = null;
-        if (preferredQualityStr == null) {
-            logger.info("User has selected BEST quality");
-        } else {
-            logger.info("User has selected quality: " + preferredQualityStr);
-        }
-        /*
-         * Users have to buy an extra package to get download buttons (official downloads). For now we'll just always download the streams
-         * as this should work fine for all premium accounts.
-         */
-        final String htmlVideoJson = br.getRegex("window\\.defaultStateScene\\s*=\\s*(\\{.+\\});").getMatch(0);
-        if (htmlVideoJson != null) {
-            final Map<String, Object> entries = JSonStorage.restoreFromString(htmlVideoJson, TypeRef.HASHMAP);
-            final Map<String, Object> videoInfo = (Map<String, Object>) entries.get(this.getFID(getDownloadLink()));
-            final Object qualityMapO = videoInfo.get("videos");
-            if (qualityMapO instanceof List) {
-                /*
-                 * Empty list --> User is not allowed to watch this full video -> Trailer only but we do not (yet) have a handling to find
-                 * the trailer streams -> Throw Exception instead
-                 */
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Only trailer available");
-            }
-            final Map<String, Object> qualityMap = (Map<String, Object>) videoInfo.get("videos");
-            final String[] knownQualities = { "2160p", "1080p", "720p", "540p", "480p", "240p", "160p" };
-            boolean foundSelectedquality = false;
-            String chosenQualityStr = null;
-            for (final String knownQuality : knownQualities) {
-                if (qualityMap.containsKey(knownQuality)) {
-                    dllink = (String) qualityMap.get(knownQuality);
-                    chosenQualityStr = knownQuality;
-                    if (preferredQualityStr == null) {
-                        /* User prefers BEST quality */
-                        foundSelectedquality = true;
-                        break;
-                    } else if (knownQuality.equals(preferredQualityStr)) {
-                        foundSelectedquality = true;
-                        break;
-                    }
-                }
-            }
-            if (!StringUtils.isEmpty(dllink)) {
-                if (foundSelectedquality) {
-                    logger.info("Found user selected quality " + preferredQualityStr);
-                    link.setProperty(PROPERTY_QUALITY, preferredQualityStr);
-                } else {
-                    logger.info("Failed to find user selected quality --> Using fallback (best):" + chosenQualityStr);
-                    link.setProperty(PROPERTY_QUALITY, chosenQualityStr);
-                }
-                return dllink;
-            } else {
-                return null;
-            }
-        } else {
-            logger.warning("Failed to find video json");
             return null;
         }
     }
@@ -807,10 +766,10 @@ public abstract class EvilangelCore extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, account, true);
-        handleDownload(link);
+        handleDownload(link, account);
     }
 
-    private void handleDownload(final DownloadLink link) throws Exception {
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception {
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -831,7 +790,7 @@ public abstract class EvilangelCore extends PluginForHost {
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    handleErrorsAfterDirecturlAccess(link, account, br, true);
                 }
             }
             dl.startDownload();

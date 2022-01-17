@@ -116,7 +116,7 @@ public class IwaraTv extends PluginForHost {
         }
         this.br.getPage(link.getPluginPatternMatcher());
         br.followRedirect();
-        final String date = br.getRegex("class=\"username\"[^>]*>[^<]+</a>\\s*作成日:(\\d{4}-\\d{2}-\\d{2}) 12:31").getMatch(0);
+        final String date = br.getRegex("class=\"username\"[^>]*>[^<]+</a>\\s*作成日:(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
         if (date != null) {
             link.setProperty(PROPERTY_DATE, date);
         }
