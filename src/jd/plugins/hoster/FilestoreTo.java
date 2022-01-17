@@ -23,6 +23,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -31,7 +33,6 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
-import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -49,7 +50,11 @@ public class FilestoreTo extends PluginForHost {
         super(wrapper);
         setStartIntervall(10000l);
         enablePremium("https://filestore.to/premium");
+        setConfigElements();
     }
+
+    private static final String SETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS        = "WAIT_MINUTES_ON_NO_FREE_SLOTS";
+    private static final int    defaultSETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS = 10;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -260,11 +265,7 @@ public class FilestoreTo extends PluginForHost {
         if (StringUtils.isEmpty(dllink)) {
             checkFileErrors(link);
             if (br.containsHTML("(?i)>\\s*Leider sind aktuell keine freien Downloadslots für Freeuser verfügbar")) {
-                if (true) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
-                } else {
-                    throw new AccountRequiredException("Leider sind aktuell keine freien Downloadslots für Freeuser verfügbar");
-                }
+                errorNoFreeSlots();
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -282,7 +283,7 @@ public class FilestoreTo extends PluginForHost {
             }
             checkFileErrors(link);
             if (br.containsHTML("Derzeit haben wir leider keinen freien Downloadslots frei\\. Bitte nochmal versuchen\\.")) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
+                errorNoFreeSlots();
             } else if (br.getURL().contains("/error/limit")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
             } else {
@@ -290,6 +291,15 @@ public class FilestoreTo extends PluginForHost {
             }
         }
         dl.startDownload();
+    }
+
+    private void errorNoFreeSlots() throws PluginException {
+        final int waitMinutes = this.getPluginConfig().getIntegerProperty(SETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS, defaultSETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS);
+        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", waitMinutes * 60 * 1000l);
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS, "Wait minutes on error 'no free slots available'", 1, 600, 1).setDefaultValue(defaultSETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS));
     }
 
     @Override
