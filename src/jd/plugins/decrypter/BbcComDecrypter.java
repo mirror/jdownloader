@@ -18,9 +18,13 @@ package jd.plugins.decrypter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -33,13 +37,18 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.BbcCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bbc.com" }, urls = { "https?://(?:www\\.)?(?:bbc\\.com|bbc\\.co\\.uk)/.+" })
 public class BbcComDecrypter extends PluginForDecrypt {
     public BbcComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    private static final String TYPE_PROGRAMMES = "https?://[^/]+/programmes/([^/]+)$";
 
     @SuppressWarnings("unchecked")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -234,23 +243,26 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 continue;
             }
             final DownloadLink dl = generateDownloadlink(vpid);
-            String filename_plain = null;
+            String filetitle = null;
             if (!inValidate(title)) {
-                filename_plain = "";
+                filetitle = "";
                 if (inValidate(tv_brand)) {
                     tv_brand = "bbc";
                 }
                 date_formatted = formatDate(date);
                 if (date_formatted != null) {
-                    filename_plain = date_formatted + "_";
+                    filetitle = date_formatted + "_";
                 }
-                filename_plain += tv_brand + "_";
-                filename_plain += title + "_";
+                filetitle += tv_brand + "_";
+                filetitle += title + "_";
                 if (subtitle != null) {
-                    filename_plain += " - " + subtitle;
+                    filetitle += " - " + subtitle;
                 }
-                dl.setName(filename_plain + ".mp4");
-                dl.setProperty("decrypterfilename", filename_plain);
+                dl.setName(filetitle + ".mp4");
+                dl.setProperty(BbcCom.PROPERTY_TITLE_FROM_CRAWLER, filetitle);
+                if (date_formatted != null) {
+                    dl.setProperty(BbcCom.PROPERTY_DATE, date_formatted);
+                }
             }
             dl.setContentUrl(parameter);
             if (!inValidate(description)) {
@@ -258,11 +270,52 @@ public class BbcComDecrypter extends PluginForDecrypt {
             }
             decryptedLinks.add(dl);
         }
-        if (decryptedLinks.size() == 0 && this.br.getURL().matches("https?://[^/]+/programmes/[^/]+")) {
-            /* 2017-03-24: Final fallback - UNSURE if that is a good idea as these IDs must not be real videoIDs!! */
-            final String[] videoIDs = this.br.getRegex("episode_id=([pbm][a-z0-9]{7})").getColumn(0);
-            for (final String vpid : videoIDs) {
-                decryptedLinks.add(createDownloadlink(String.format("http://www.bbc.co.uk/iplayer/episode/%s", vpid)));
+        /* 2022-01-17: New handling */
+        final String jsonMorphSingle = br.getRegex("Morph\\.setPayload\\('[^\\']+', (\\{.*?\\})\\);").getMatch(0);
+        if (jsonMorphSingle != null) {
+            final Map<String, Object> root = JSonStorage.restoreFromString(jsonMorphSingle, TypeRef.HASHMAP);
+            final Map<String, Object> body = (Map<String, Object>) root.get("body");
+            fpName = (String) body.get("pageTitle");
+            final List<Map<String, Object>> videos = (List<Map<String, Object>>) body.get("videos");
+            for (final Map<String, Object> video : videos) {
+                final String vpid = (String) video.get("versionPid");
+                if (inValidate(vpid)) {
+                    continue;
+                }
+                final String title = (String) video.get("title");
+                final String description = (String) video.get("description");
+                final String tv_brand = (String) video.get("masterBrand");
+                final String date = (String) video.get("createdDateTime");
+                final DownloadLink dl = generateDownloadlink(vpid);
+                String filetitle = null;
+                if (!inValidate(title)) {
+                    filetitle = "";
+                    final String date_formatted = new Regex(date, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+                    filetitle = date_formatted + "_";
+                    filetitle += tv_brand + "_";
+                    filetitle += title + "_";
+                    dl.setName(filetitle + ".mp4");
+                    dl.setProperty(BbcCom.PROPERTY_TITLE_FROM_CRAWLER, filetitle);
+                    dl.setProperty(BbcCom.PROPERTY_DATE, date_formatted);
+                    dl.setProperty(tv_brand, BbcCom.PROPERTY_TV_BRAND);
+                }
+                dl.setContentUrl(parameter);
+                if (!inValidate(description)) {
+                    dl.setComment(description);
+                }
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+            }
+        }
+        // final String jsonMorphMultiple = br.getRegex("Morph\\.setPayload\\('[^\\']+', (\\{.*?\\})\\);").getMatch(0);
+        if (this.br.getURL().matches(TYPE_PROGRAMMES)) {
+            if (decryptedLinks.isEmpty()) {
+                decryptedLinks.addAll(crawlProgrammes(param));
+            }
+        } else {
+            if (decryptedLinks.isEmpty()) {
+                /* E.g. bbc.co.uk/programmes/blabla/clips --> Look for clips */
+                decryptedLinks.addAll(lookForProgrammesURLs(param));
             }
         }
         if (decryptedLinks.size() == 0) {
@@ -275,6 +328,69 @@ public class BbcComDecrypter extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    private ArrayList<DownloadLink> lookForProgrammesURLs(final CryptedLink param) throws PluginException {
+        if (new Regex(param.getCryptedUrl(), TYPE_PROGRAMMES).matches()) {
+            /* Developer mistake! */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        /* These ones will go back into this crawler */
+        final String[] urls = br.getRegex("\"(https?://[^/]+/programmes/[a-z0-9]+)\"").getColumn(0);
+        for (final String url : urls) {
+            ret.add(this.createDownloadlink(url));
+        }
+        return ret;
+    }
+
+    /** Crawls single 'programmes' clips. */
+    private ArrayList<DownloadLink> crawlProgrammes(final CryptedLink param) throws PluginException {
+        final Regex urlInfo = new Regex(param.getCryptedUrl(), TYPE_PROGRAMMES);
+        if (!urlInfo.matches()) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String contentID = urlInfo.getMatch(0);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String[] jsons = br.getRegex("(\\{\"container\":\"#playout-" + contentID + ".*?\\})\\);").getColumn(0);
+        final String date = br.getRegex("class=\"details__streamablefrom\" datetime=\"(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+        if (jsons.length > 0) {
+            String playlistTitle = null;
+            for (final String json : jsons) {
+                final Map<String, Object> root = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                final Map<String, Object> smpSettings = (Map<String, Object>) root.get("smpSettings");
+                final Map<String, Object> playlistObject = (Map<String, Object>) smpSettings.get("playlistObject");
+                playlistTitle = (String) playlistObject.get("title");
+                final List<Map<String, Object>> videos = (List<Map<String, Object>>) playlistObject.get("items");
+                for (final Map<String, Object> video : videos) {
+                    final String vpid = (String) video.get("vpid");
+                    if (StringUtils.isEmpty(vpid)) {
+                        continue;
+                    }
+                    final DownloadLink link = this.generateDownloadlink(vpid);
+                    ret.add(link);
+                }
+            }
+            if (ret.size() == 1) {
+                /* We got only 1 result --> Set metadata on it */
+                for (final DownloadLink link : ret) {
+                    if (date != null) {
+                        link.setProperty(BbcCom.PROPERTY_DATE, date);
+                    }
+                    if (playlistTitle != null) {
+                        link.setProperty(BbcCom.PROPERTY_TITLE, playlistTitle);
+                    }
+                }
+            }
+        }
+        if (ret.isEmpty()) {
+            /* Old fallback from 2017 */
+            final String[] videoIDs = this.br.getRegex("episode_id=([pbm][a-z0-9]{7})").getColumn(0);
+            for (final String vpid : videoIDs) {
+                ret.add(createDownloadlink(String.format("http://www.bbc.co.uk/iplayer/episode/%s", vpid)));
+            }
+        }
+        return ret;
     }
 
     private DownloadLink generateDownloadlink(final String videoid) {

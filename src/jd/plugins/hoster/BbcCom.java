@@ -55,22 +55,29 @@ public class BbcCom extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = new Regex(link.getPluginPatternMatcher(), "/([^/]+)$").getMatch(0);
-        if (linkid != null) {
-            return linkid;
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
         } else {
             return super.getLinkID(link);
         }
     }
 
-    private String rtmp_host               = null;
-    private String rtmp_app                = null;
-    private String rtmp_playpath           = null;
-    private String rtmp_authString         = null;
-    private String hls_master              = null;
-    private String hls_best_and_or_working = null;
-    private String title                   = null;
-    int            numberofFoundMedia      = 0;
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "/([^/]+)$").getMatch(0);
+    }
+
+    private String             rtmp_host                   = null;
+    private String             rtmp_app                    = null;
+    private String             rtmp_playpath               = null;
+    private String             rtmp_authString             = null;
+    private String             hls_master                  = null;
+    private String             hls_best_and_or_working     = null;
+    int                        numberofFoundMedia          = 0;
+    public static final String PROPERTY_TITLE_FROM_CRAWLER = "decrypterfilename";
+    public static final String PROPERTY_TITLE              = "title";
+    public static final String PROPERTY_DATE               = "date";
+    public static final String PROPERTY_TV_BRAND           = "brand";
 
     /** E.g. json instead of xml: http://open.live.bbc.co.uk/mediaselector/6/select/version/2.0/mediaset/pc/vpid/<vpid>/format/json */
     /**
@@ -84,14 +91,13 @@ public class BbcCom extends PluginForHost {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String vpid = new Regex(link.getDownloadURL(), "bbcdecrypted/(.+)").getMatch(0);
-        this.title = link.getStringProperty("decrypterfilename");
+        final String vpid = new Regex(link.getPluginPatternMatcher(), "bbcdecrypted/(.+)").getMatch(0);
         /* 2021-01-12: useNewRequest! */
         final boolean useNewRequest = true;
         long filesize_temp = 0;
-        String title_downloadurl = null;
         final ArrayList<String> hlsMasters = new ArrayList<String>();
         HlsContainer bestHLSContainer = null;
+        String qualityString = null;
         if (useNewRequest) {
             /* 2021-01-12: Website uses "/pc/" instead of "/iptv-all/" */
             this.br.getPage("https://open.live.bbc.co.uk/mediaselector/6/select/version/2.0/mediaset/iptv-all/vpid/" + vpid + "/format/json");
@@ -320,26 +326,38 @@ public class BbcCom extends PluginForHost {
             if (selectedHlsContainer != null) {
                 /* Set final filename here including quality information because we will definitely download this version! */
                 logger.info("Downloading forced quality: " + selectedHlsContainer.getResolution());
-                final String quality_string = String.format("hls_%s@%d", selectedHlsContainer.getResolution(), selectedHlsContainer.getFramerate(25));
-                link.setFinalFileName(title + "_" + quality_string + ".mp4");
+                qualityString = String.format("hls_%s@%d", selectedHlsContainer.getResolution(), selectedHlsContainer.getFramerate(25));
             }
         }
-        if (rtmp_playpath != null) {
-            title_downloadurl = new Regex(rtmp_playpath, "([^<>\"/]+)\\.mp4").getMatch(0);
+        final String filenameBase = this.getFilenameBase(link);
+        if (qualityString != null) {
+            link.setFinalFileName(filenameBase + "_" + qualityString + ".mp4");
+        } else {
+            link.setName(filenameBase + ".mp4");
         }
-        if (title == null) {
-            title = title_downloadurl;
-        }
-        if (title == null) {
-            /* Final fallback to vpid as filename - if everything goes wrong! */
-            title = vpid;
-        }
-        link.setName(title + ".mp4");
         if (filesize_temp > 0) {
             /* 2017-04-25: Changed from BEST by filesize to BEST by bitrate --> Filesize is not always given for BEST bitrate */
             link.setDownloadSize(filesize_temp);
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String getFilenameBase(final DownloadLink link) {
+        if (link.hasProperty(PROPERTY_TITLE_FROM_CRAWLER)) {
+            return link.getStringProperty(PROPERTY_TITLE_FROM_CRAWLER);
+        } else if (link.hasProperty(PROPERTY_TITLE)) {
+            String filenameBase = link.getStringProperty(PROPERTY_TITLE);
+            if (link.hasProperty(PROPERTY_TV_BRAND)) {
+                filenameBase = link.getStringProperty(PROPERTY_TV_BRAND) + "_" + filenameBase;
+            }
+            if (link.hasProperty(PROPERTY_DATE)) {
+                filenameBase = link.getStringProperty(PROPERTY_DATE) + "_" + filenameBase;
+            }
+            return filenameBase;
+        } else {
+            /* Fallback */
+            return getFID(link);
+        }
     }
 
     @SuppressWarnings("deprecation")
@@ -353,7 +371,7 @@ public class BbcCom extends PluginForHost {
              */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GEO-Blocked and/or account required");
         }
-        final String quality_string;
+        final String qualityString;
         if (hls_master != null) {
             checkFFmpeg(link, "Download a HLS Stream");
             /* 2020-03-16: This is a mess */
@@ -388,8 +406,8 @@ public class BbcCom extends PluginForHost {
                         hlscontainer_chosen = HlsContainer.findBestVideoByBandwidth(containers);
                     }
                 }
-                quality_string = String.format("hls_%s@%d", hlscontainer_chosen.getResolution(), hlscontainer_chosen.getFramerate(25));
-                link.setFinalFileName(title + "_" + quality_string + ".mp4");
+                qualityString = String.format("hls_%s@%d", hlscontainer_chosen.getResolution(), hlscontainer_chosen.getFramerate(25));
+                link.setFinalFileName(getFilenameBase(link) + "_" + qualityString + ".mp4");
                 /* 2017-04-25: Easy debug for user TODO: Remove once feedback is provided! */
                 link.setComment(hlscontainer_chosen.getDownloadurl());
                 final_hls_url = hlscontainer_chosen.getDownloadurl();
@@ -404,8 +422,8 @@ public class BbcCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* TODO: Complete quality_string at this place. */
-            quality_string = "rtmp_";
-            link.setFinalFileName(title + "_" + quality_string + ".mp4");
+            qualityString = "rtmp_";
+            link.setFinalFileName(getFilenameBase(link) + "_" + qualityString + ".mp4");
             String rtmpurl = "rtmp://" + this.rtmp_host + "/" + this.rtmp_app;
             /* authString is needed in some cases */
             if (this.rtmp_authString != null) {
