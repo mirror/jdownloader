@@ -1688,7 +1688,7 @@ public class Ardmediathek extends PluginForDecrypt {
         protected String getPackagename() {
             final String dateFormatted = this.getFormattedDate();
             if (dateFormatted != null) {
-                return dateFormatted + " - " + this.title;
+                return dateFormatted + "_" + this.title;
             } else {
                 return this.title;
             }
