@@ -64,6 +64,10 @@ public class AvxHmeW extends PluginForHost {
     }
 
     public static String[] getAnnotationUrls() {
+        /*
+         * This host plugin doesn't handle any URLs. It's only there so users can add their accounts which will be used in the crawler
+         * plugin.
+         */
         return new String[] { "" };
     }
 
@@ -92,6 +96,7 @@ public class AvxHmeW extends PluginForHost {
         synchronized (account) {
             try {
                 prepBRLogin(this.br);
+                br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36");
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");

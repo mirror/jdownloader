@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -43,7 +42,6 @@ public class VocarooCom extends PluginForHost {
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
-    private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
@@ -67,7 +65,6 @@ public class VocarooCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
-        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         /* Other possible formats via command={download_ogg, download_flac, download_wav, download_webm} */
@@ -75,14 +72,18 @@ public class VocarooCom extends PluginForHost {
         /* 2020-12-02 */
         this.dllink = "https://media1.vocaroo.com/mp3/" + getFID(link);
         link.setFinalFileName(this.getFID(link) + ".mp3");
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
+        br.getHeaders().put("Referer", "https://" + this.getHost());
         URLConnectionAdapter con = null;
         try {
-            con = br2.openHeadConnection(dllink);
+            con = br.openHeadConnection(dllink);
             if (this.looksLikeDownloadableContent(con)) {
-                link.setDownloadSize(con.getCompleteContentLength());
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                final String sha1 = con.getHeaderField("x-bz-content-sha1");
+                if (sha1 != null) {
+                    link.setSha1Hash(sha1);
+                }
             } else {
                 /* The only way to perform an online check for this particular website! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -99,9 +100,7 @@ public class VocarooCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dllink == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);

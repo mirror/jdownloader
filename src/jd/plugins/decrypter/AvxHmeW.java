@@ -28,7 +28,6 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPlu
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -93,8 +92,6 @@ public class AvxHmeW extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        // for when you're testing
-        br = new Browser();
         br.setAllowedResponseCodes(new int[] { 401 });
         /* 2021-03-11: Do not replace hosts inside URLs anymore as this can lead to wrong redirectURLs breaking the crawling process. */
         // final String parameter = param.toString().replaceFirst("(?i)" + Regex.escape(Browser.getHost(param.toString())), this.getHost());
@@ -102,12 +99,23 @@ public class AvxHmeW extends PluginForDecrypt {
             /* 2021-01-20: Login whenever possible -> No captchas required then */
             final Account acc = AccountController.getInstance().getValidAccount("avxhm.se");
             if (acc != null) {
+                /* Logged in users can often skip the captchas but sometimes they will be asked to solve captchas too! */
                 final PluginForHost hostPlugin = this.getNewPluginForHostInstance("avxhm.se");
                 ((jd.plugins.hoster.AvxHmeW) hostPlugin).login(acc, false);
-                /* 2021-02-08: Login may set another User-Agent */
-                this.br = hostPlugin.getBrowser();
             }
             br.setFollowRedirects(false);
+            /* 2022-01-18: Some tests */
+            // br.getHeaders().put("sec-ch-ua", "\" Not;A Brand\";v=\"99\", \"Google Chrome\";v=\"97\", \"Chromium\";v=\"97\"");
+            // br.getHeaders().put("sec-ch-ua-mobile", "?0");
+            // br.getHeaders().put("sec-ch-ua-platform", "\"Windows\"");
+            // br.getHeaders().put("Upgrade-Insecure-Requests", "1");
+            // br.getHeaders().put("Accept",
+            // "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+            // br.getHeaders().put("Sec-Fetch-Site", "same-origin");
+            // br.getHeaders().put("Sec-Fetch-Mode", "navigate");
+            // br.getHeaders().put("Sec-Fetch-User", "?1");
+            // br.getHeaders().put("Sec-Fetch-Dest", "document");
+            // br.getHeaders().put("Accept-Language", "de-DE,de;q=0.9,en;q=0.8,en-US;q=0.7");
             br.getPage(param.getCryptedUrl());
             followInternalRedirects();
             String link = br.getRedirectLocation();
