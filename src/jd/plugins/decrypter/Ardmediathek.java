@@ -43,6 +43,7 @@ import org.jdownloader.plugins.components.config.MediathekProperties;
 import org.jdownloader.plugins.components.config.SandmannDeConfig;
 import org.jdownloader.plugins.components.config.SportschauConfig;
 import org.jdownloader.plugins.components.config.SputnikDeConfig;
+import org.jdownloader.plugins.components.config.TagesschauDeConfig;
 import org.jdownloader.plugins.components.config.WDRConfig;
 import org.jdownloader.plugins.components.config.WDRMausConfig;
 import org.jdownloader.plugins.components.hls.HlsContainer;
@@ -56,7 +57,6 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DecrypterRetryException;
 import jd.plugins.DecrypterRetryException.RetryReason;
@@ -69,10 +69,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.MediathekHelper;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "sandmann.de", "wdr.de", "sportschau.de", "wdrmaus.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "ndr.de" }, urls = { "https?://(?:[A-Z0-9]+\\.)?ardmediathek\\.de/.+", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/.*?\\.html", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html|https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js", "https?://(?:\\w+\\.)?sportschau\\.de/.*?\\.html", "https?://(?:www\\.)?wdrmaus\\.de/.+", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html",
-        "https?://(?:www\\.)?ndr\\.de/[^<>\"]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "sandmann.de", "wdr.de", "sportschau.de", "wdrmaus.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "ndr.de", "tagesschau.de" }, urls = { "https?://(?:[A-Z0-9]+\\.)?ardmediathek\\.de/.+", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/.*?\\.html", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html|https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js", "https?://(?:\\w+\\.)?sportschau\\.de/.*?\\.html", "https?://(?:www\\.)?wdrmaus\\.de/.+", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html",
+        "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?ndr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?tagesschau\\.de/[^<>\"]+\\.html" })
 public class Ardmediathek extends PluginForDecrypt {
-    private static final String                 EXCEPTION_GEOBLOCKED                       = "EXCEPTION_GEOBLOCKED";
     /* Constants */
     private static final String                 type_embedded                              = "https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js";
     /* Variables */
@@ -135,6 +134,8 @@ public class Ardmediathek extends PluginForDecrypt {
             return SandmannDeConfig.class;
         } else if ("mdr.de".equalsIgnoreCase(getHost())) {
             return MdrDeConfig.class;
+        } else if ("tagesschau.de".equalsIgnoreCase(getHost())) {
+            return TagesschauDeConfig.class;
         } else {
             return ArdConfigInterface.class;
         }
@@ -205,31 +206,22 @@ public class Ardmediathek extends PluginForDecrypt {
         if (cfg.isGrabHTTP1080pVideoEnabled()) {
             selectedQualities.add("http_" + heigth_to_bitrate.get("1080") + "_1080");
         }
-        try {
-            /*
-             * 2018-02-22: Important: So far there is only one OLD website, not compatible with the "decryptMediathek" function! Keep this
-             * in mind when changing things!
-             */
-            final String host = this.getHost();
-            if (host.equalsIgnoreCase("daserste.de") || host.equalsIgnoreCase("kika.de") || host.equalsIgnoreCase("sputnik.de") || host.equalsIgnoreCase("mdr.de")) {
-                decryptDasersteVideo(param);
-            } else if (host.equalsIgnoreCase("ardmediathek.de")) {
-                /* 2020-05-26: Separate handling required */
-                this.decryptArdmediathekDeNew(param);
-            } else {
-                this.decryptMediathek(param);
-            }
-            handleUserQualitySelection(selectedQualities);
-        } catch (final DecrypterException e) {
-            try {
-                if (e.getMessage().equals(EXCEPTION_GEOBLOCKED)) {
-                    decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "GEO-blocked_" + getURLPart(param.getCryptedUrl()), "GEO-blocked_" + getURLPart(param.getCryptedUrl())));
-                    return decryptedLinks;
-                }
-            } catch (final Exception ignore) {
-            }
-            throw e;
+        /*
+         * 2018-02-22: Important: So far there is only one OLD website, not compatible with the "decryptMediathek" function! Keep this in
+         * mind when changing things!
+         */
+        final String host = this.getHost();
+        if (host.equalsIgnoreCase("daserste.de") || host.equalsIgnoreCase("kika.de") || host.equalsIgnoreCase("sputnik.de") || host.equalsIgnoreCase("mdr.de")) {
+            crawlDasersteVideo(param);
+        } else if (host.equalsIgnoreCase("tagesschau.de")) {
+            crawlTagesschauVideos(param);
+        } else if (host.equalsIgnoreCase("ardmediathek.de")) {
+            /* 2020-05-26: Separate handling required */
+            this.decryptArdmediathekDeNew(param);
+        } else {
+            this.decryptMediathek(param);
         }
+        handleUserQualitySelection(selectedQualities);
         if (decryptedLinks == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -241,8 +233,16 @@ public class Ardmediathek extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    private void errorGEOBlocked(final CryptedLink param) throws DecrypterRetryException {
+        throw new DecrypterRetryException(RetryReason.GEO);
+    }
+
     public static boolean isOffline(final Browser br) {
-        return br.getHttpConnection().getResponseCode() == 404;
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /* Returns title for all XML based websites (XML has to be accessed before!) */
@@ -984,7 +984,7 @@ public class Ardmediathek extends PluginForDecrypt {
                     con = br.openGetConnection(br.getURL(hlsMaster).toString());
                     if (con.getURL().toString().contains("/static/geoblocking.mp4")) {
                         if (httpStreamsQualityIdentifiers.size() == 0) {
-                            throw new DecrypterException(EXCEPTION_GEOBLOCKED);
+                            this.errorGEOBlocked(param);
                         }
                     } else {
                         br.followConnection(true);
@@ -1052,7 +1052,7 @@ public class Ardmediathek extends PluginForDecrypt {
      * Handling for older ARD websites. </br>
      * INFORMATION: network = akamai or limelight == RTMP
      */
-    private void decryptDasersteVideo(final CryptedLink param) throws Exception {
+    private void crawlDasersteVideo(final CryptedLink param) throws Exception {
         br.getPage(param.getCryptedUrl());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -1186,6 +1186,25 @@ public class Ardmediathek extends PluginForDecrypt {
         return;
     }
 
+    private void crawlTagesschauVideos(final CryptedLink param) throws Exception {
+        br.getPage(param.getCryptedUrl());
+        if (isOffline(br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /* Crawl all embedded items on this page */
+        final String[] embedDatas = br.getRegex("data-ts_component='ts-mediaplayer'\\s*data-config='([^\\']+)'").getColumn(0);
+        for (final String embedData : embedDatas) {
+            final String embedJson = Encoding.htmlDecode(embedData);
+            final Map<String, Object> root = JSonStorage.restoreFromString(embedJson, TypeRef.HASHMAP);
+            final Map<String, Object> mc = (Map<String, Object>) root.get("mc");
+            this.contentID = (String) JavaScriptEngineFactory.walkJson(root, "pc/_pixelConfig/{0}/clipData/assetid");
+            this.title = (String) mc.get("_title");
+            this.crawlARDJson(param, mc);
+            /* TODO: Refactor plugin to make it possible to add multiple videos in one go */
+            break;
+        }
+    }
+
     private void addHLS(final CryptedLink param, final Browser br, final String hlsMaster, final boolean isAudioDescription) throws Exception {
         if (!this.grabHLS) {
             /* Avoid this http request if user hasn't selected any hls qualities */
@@ -1222,7 +1241,7 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         if (width_URL == null) {
             /* Type 3 */
-            width_URL = new Regex(directurl, "\\d+((?:_(?:webs|webl))?_ard)\\.mp4$").getMatch(0);
+            width_URL = new Regex(directurl, "(webs|webl)").getMatch(0);
         }
         if (width_URL == null) {
             /* Type 4 */
@@ -1460,14 +1479,16 @@ public class Ardmediathek extends PluginForDecrypt {
                 /* Convert given quality-text to width. */
                 if (width_str.equals("mn") || width_str.equals("sm")) {
                     width = 480;
-                } else if (width_str.equals("hi") || width_str.equals("m") || width_str.equals("_ard")) {
+                } else if (width_str.equals("hi") || width_str.equals("m") || width_str.equals("_ard") || width_str.equals("webm")) {
                     width = 512;
                 } else if (width_str.equals("ln") || width_str.equals("ml")) {
                     width = 640;
-                } else if (width_str.equals("lo") || width_str.equals("s") || width_str.equals("_webs_ard")) {
+                } else if (width_str.equals("lo") || width_str.equals("s") || width_str.equals("webs")) {
                     width = 320;
-                } else if (width_str.equals("hq") || width_str.equals("l") || width_str.equals("_webl_ard")) {
+                } else if (width_str.equals("hq") || width_str.equals("l") || width_str.equals("webl")) {
                     width = 960;
+                } else if (width_str.equals("webxl")) {
+                    width = 1280;
                 } else {
                     width = 0;
                 }
@@ -1516,13 +1537,15 @@ public class Ardmediathek extends PluginForDecrypt {
             /* Convert given quality-text to height. */
             if (width_str.equals("mn") || width_str.equals("sm")) {
                 height = "270";
-            } else if (width_str.equals("hi") || width_str.equals("m") || width_str.equals("_ard")) {
+            } else if (width_str.equals("hi") || width_str.equals("m") || width_str.equals("_ard") || width_str.equals("webm")) {
                 height = "288";
             } else if (width_str.equals("ln") || width_str.equals("ml")) {
                 height = "360";
-            } else if (width_str.equals("lo") || width_str.equals("s") || width_str.equals("_webs_ard")) {
+            } else if (width_str.equals("lo") || width_str.equals("s") || width_str.equals("webs")) {
                 height = "180";
-            } else if (width_str.equals("hq") || width_str.equals("l") || width_str.equals("_webl_ard")) {
+            } else if (width_str.equals("hq") || width_str.equals("l") || width_str.equals("webl")) {
+                height = "540";
+            } else if (width_str.equals("webxl")) {
                 height = "540";
             } else {
                 height = "0";
