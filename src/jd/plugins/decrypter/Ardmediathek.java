@@ -1241,7 +1241,7 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         if (width_URL == null) {
             /* Type 3 */
-            width_URL = new Regex(directurl, "(webs|webl)").getMatch(0);
+            width_URL = new Regex(directurl, "(webm|webs|webl|webxl)").getMatch(0);
         }
         if (width_URL == null) {
             /* Type 4 */
