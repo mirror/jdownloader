@@ -196,6 +196,7 @@ public class TiktokCom extends antiDDoSForHost {
             } else if (useWebsiteEmbed) {
                 /* Old version: https://www.tiktok.com/embed/<videoID> */
                 // br.getPage(String.format("https://www.tiktok.com/embed/%s", fid));
+                /* Alternative URL: https://www.tiktok.com/node/embed/render/<videoID> */
                 /*
                  * 2021-04-09: Without accessing their website before (= fetches important cookies), we won't be able to use our final
                  * downloadurl!!
@@ -298,7 +299,7 @@ public class TiktokCom extends antiDDoSForHost {
                          */
                         // createDate = con.getHeaderField("Last-Modified");
                         if (con.getCompleteContentLength() > 0) {
-                            link.setDownloadSize(con.getCompleteContentLength());
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
                         }
                         /* Save it for later usage */
                         link.setProperty(PROPERTY_DIRECTURL, this.dllink);
