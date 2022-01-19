@@ -13,6 +13,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.UniqueAlltimeID;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 
 public class PluginFinder {
     private final HashMap<String, LazyHostPlugin> hostMappings            = new HashMap<String, LazyHostPlugin>();
@@ -71,6 +72,15 @@ public class PluginFinder {
         }
     }
 
+    public synchronized PluginForHost getPlugin(LazyHostPlugin lazyPlugin) throws UpdateRequiredClassNotFoundException {
+        PluginForHost plugin = pluginCaches.get(lazyPlugin.getHost());
+        if (plugin == null) {
+            plugin = lazyPlugin.getPrototype(null);
+            pluginCaches.put(lazyPlugin.getHost(), plugin);
+        }
+        return plugin;
+    }
+
     public synchronized LazyHostPlugin _assignHost(final String host) {
         if (host != null) {
             if (!hostMappings.containsKey(host)) {
@@ -82,11 +92,7 @@ public class PluginFinder {
                         return lazyPlugin;
                     } else {
                         try {
-                            PluginForHost plugin = pluginCaches.get(lazyPlugin.getHost());
-                            if (plugin == null) {
-                                plugin = lazyPlugin.getPrototype(null);
-                                pluginCaches.put(lazyPlugin.getHost(), plugin);
-                            }
+                            final PluginForHost plugin = getPlugin(lazyPlugin);
                             final String rewriteHost = plugin.rewriteHost(host);
                             if (StringUtils.equalsIgnoreCase(rewriteHost, host)) {
                                 /* host equals rewriteHost */
@@ -109,11 +115,7 @@ public class PluginFinder {
                             }
                         }
                         try {
-                            PluginForHost plugin = pluginCaches.get(lazyHostPlugin.getHost());
-                            if (plugin == null) {
-                                plugin = lazyHostPlugin.getPrototype(null);
-                                pluginCaches.put(lazyHostPlugin.getHost(), plugin);
-                            }
+                            final PluginForHost plugin = getPlugin(lazyHostPlugin);
                             final String rewriteHost = plugin.rewriteHost(host);
                             if (StringUtils.equalsIgnoreCase(rewriteHost, host)) {
                                 /* host equals rewriteHost */
@@ -171,8 +173,7 @@ public class PluginFinder {
                 }
             }
             try {
-                final PluginForHost pluginForHost = lazyHostPlugin.getPrototype(null);
-                pluginCaches.put(lazyHostPlugin.getHost(), pluginForHost);
+                final PluginForHost pluginForHost = getPlugin(lazyHostPlugin);
                 if (!assignPlugin || assign(link, pluginForHost)) {
                     return pluginForHost;
                 }
@@ -185,8 +186,7 @@ public class PluginFinder {
             final LazyHostPlugin fallBackPlugin = HostPluginController.getInstance().getFallBackPlugin();
             if (fallBackPlugin != null) {
                 logger.severe("Assign fallBackPlugin for: " + link.getHost() + ">" + host + "=" + link.getName());
-                final PluginForHost pluginForHost = fallBackPlugin.getPrototype(null);
-                pluginCaches.put(host, pluginForHost);
+                final PluginForHost pluginForHost = getPlugin(fallBackPlugin);
                 if (!assignPlugin || assign(link, pluginForHost)) {
                     return pluginForHost;
                 }
@@ -216,8 +216,7 @@ public class PluginFinder {
             }
             try {
                 if (lazyHostPlugin != null && (lazyHostPlugin.isPremium() || lazyHostPlugin.getClassName().endsWith("r.Offline"))) {
-                    final PluginForHost pluginForHost = lazyHostPlugin.getPrototype(null);
-                    pluginCaches.put(host, pluginForHost);
+                    final PluginForHost pluginForHost = getPlugin(lazyHostPlugin);
                     try {
                         if (!assignPlugin || pluginForHost.assignPlugin(acc)) {
                             return pluginForHost;

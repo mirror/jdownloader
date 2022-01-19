@@ -15,8 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -30,7 +28,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wrzucplik.pl" }, urls = { "http://(?:www\\.)?(?:wyslij\\-plik|uploadfile|wrzucplik)\\.pl/pokaz/\\d+[^/]+\\.html" })
+import org.appwork.utils.formatter.SizeFormatter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wrzucplik.pl" }, urls = { "http://(?:www\\.)?(?:wyslij-plik|uploadfile|wrzucplik)\\.pl/pokaz/\\d+[^/]+\\.html" })
 public class WyslijPlikPl extends PluginForHost {
     @Override
     public String[] siteSupportedNames() {
