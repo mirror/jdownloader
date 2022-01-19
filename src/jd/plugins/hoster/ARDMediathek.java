@@ -148,7 +148,7 @@ public class ARDMediathek extends PluginForHost {
             try {
                 final Browser brc = br.cloneBrowser();
                 con = brc.openHeadConnection(dllink);
-                if (isVideoContent(con) || isAudioContent(con) || con.isContentDisposition()) {
+                if (looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
@@ -164,6 +164,15 @@ public class ARDMediathek extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter con) {
+        if (isVideoContent(con) || isAudioContent(con) || con.isContentDisposition()) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
