@@ -360,6 +360,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
 
     public List<String> setMultiHostSupport(final PluginForHost multiHostPlugin, final List<String> multiHostSupportList, final PluginFinder pluginFinder) {
         if (multiHostSupportList != null && multiHostSupportList.size() > 0) {
+            final LogInterface logger = (multiHostPlugin != null && multiHostPlugin.getLogger() != null) ? multiHostPlugin.getLogger() : LogController.CL();
             final HostPluginController hpc = HostPluginController.getInstance();
             final HashSet<String> assignedMultiHostPlugins = new HashSet<String>();
             final HashMap<String, String> cleanList = new HashMap<String, String>();
@@ -429,12 +430,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
                                     continue loop;
                                 }
                             } catch (Throwable e) {
-                                final LogInterface logger = multiHostPlugin != null ? multiHostPlugin.getLogger() : null;
-                                if (logger != null) {
-                                    logger.log(e);
-                                } else {
-                                    LogController.CL().log(e);
-                                }
+                                logger.log(e);
                             }
                         }
                         final String pattern = lazyHostPlugin.getPatternSource();
@@ -533,12 +529,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
                                         }
                                     }
                                 } catch (final Throwable e) {
-                                    final LogInterface logger = multiHostPlugin != null ? multiHostPlugin.getLogger() : null;
-                                    if (logger != null) {
-                                        logger.log(e);
-                                    } else {
-                                        LogController.CL().log(e);
-                                    }
+                                    logger.log(e);
                                 }
                             }
                         }
@@ -578,11 +569,8 @@ public class AccountInfo extends Property implements AccountTrafficView {
                 }
             }
             if (unassignedMultiHostSupport.size() > 0 && multiHostPlugin != null) {
-                final LogInterface logger = multiHostPlugin.getLogger();
-                if (logger != null) {
-                    for (final String host : unassignedMultiHostSupport) {
-                        logger.info("Could not assign any host for:" + host);
-                    }
+                for (final String host : unassignedMultiHostSupport) {
+                    logger.info("Could not assign any host for:" + host);
                 }
             }
             if (assignedMultiHostPlugins.size() > 0) {
@@ -614,12 +602,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
                                     best.add(plugin);
                                 }
                             } catch (final Throwable e) {
-                                final LogInterface logger = multiHostPlugin != null ? multiHostPlugin.getLogger() : null;
-                                if (logger != null) {
-                                    logger.log(e);
-                                } else {
-                                    LogController.CL().log(e);
-                                }
+                                logger.log(e);
                             }
                         }
                         if (best.size() == 1) {
@@ -631,7 +614,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
                             }
                             continue;
                         }
-                        System.out.println("dd");
+                        logger.log(new Exception("DEBUG:" + host));
                     }
                 }
                 Collections.sort(list, new NaturalOrderComparator());
