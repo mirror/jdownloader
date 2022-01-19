@@ -20,15 +20,15 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VidmolyTo extends XFileSharingProBasic {
@@ -71,7 +71,7 @@ public class VidmolyTo extends XFileSharingProBasic {
 
     public static final String getDefaultAnnotationPatternPartCustom() {
         /* 2020-05-18: Special */
-        return "/(?:embed-|dl?/)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?";
+        return "/(?:embed-|dl?/|w/)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?";
     }
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
@@ -87,7 +87,7 @@ public class VidmolyTo extends XFileSharingProBasic {
         /* 2020-05-18: Special */
         try {
             if (dl != null && dl.getPluginPatternMatcher() != null) {
-                final String result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "/(?:embed-|dl?/)?([a-z0-9]{12})").getMatch(0);
+                final String result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "/(?:embed-|dl?/|w/)?([a-z0-9]{12})").getMatch(0);
                 return result;
             } else {
                 return null;

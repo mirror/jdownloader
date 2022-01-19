@@ -316,280 +316,277 @@ public class VKontakteRuHoster extends PluginForHost {
                 if (checkstatus != 1) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-            } else {
-                /* Check if login is required to check/download */
-                if (!checkNoLoginNeeded(link) && account == null) {
-                    throw new AccountRequiredException();
+            } else if (link.getPluginPatternMatcher().matches(VKontakteRuHoster.TYPE_AUDIOLINK)) {
+                finalUrl = link.getStringProperty("directlink", null);
+                if (!audioIsValidDirecturl(finalUrl)) {
+                    checkstatus = 0;
+                } else {
+                    checkstatus = linkOk(link, isDownload);
                 }
-                if (link.getPluginPatternMatcher().matches(VKontakteRuHoster.TYPE_AUDIOLINK)) {
-                    finalUrl = link.getStringProperty("directlink", null);
-                    if (!audioIsValidDirecturl(finalUrl)) {
-                        checkstatus = 0;
-                    } else {
-                        checkstatus = linkOk(link, isDownload);
+                if (checkstatus != 1) {
+                    if (this.isDRMProtected(link)) {
+                        return AvailableStatus.UNCHECKABLE;
                     }
-                    if (checkstatus != 1) {
-                        String url = null;
-                        final Browser br = this.br.cloneBrowser();
-                        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                        /*
-                         * If these two values are present, we know that the content initially came from a 'wall' which requires us to use a
-                         * different method to grab it as without that, permissions to play the track might be missing as it can only be
-                         * accessed inside that particular wall!
-                         */
-                        final String postID = link.getStringProperty("postID", null);
-                        final String fromId = link.getStringProperty("fromId", null);
-                        boolean failed = false;
-                        if (postID != null && fromId != null) {
-                            logger.info("Trying to refresh audiolink directlink via wall-handling");
-                            final String post = "act=get_wall_playlist&al=1&local_id=" + postID + "&oid=" + fromId + "&wall_type=own";
-                            br.postPage(getBaseURL() + "/audio", post);
-                            url = br.getRegex("\"0\":\"" + Pattern.quote(ownerID) + "\",\"1\":\"" + Pattern.quote(contentID) + "\",\"2\":(\"[^\"]+\")").getMatch(0);
-                            if (url == null) {
-                                /* Try other way below. */
-                                failed = true;
-                            } else {
-                                /* Decodes the json string */
-                                url = (String) JavaScriptEngineFactory.jsonToJavaObject(url);
-                            }
-                        } else {
+                    String url = null;
+                    final Browser br = this.br.cloneBrowser();
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    /*
+                     * If these two values are present, we know that the content initially came from a 'wall' which requires us to use a
+                     * different method to grab it as without that, permissions to play the track might be missing as it can only be
+                     * accessed inside that particular wall!
+                     */
+                    final String postID = link.getStringProperty("postID", null);
+                    final String fromId = link.getStringProperty("fromId", null);
+                    boolean failed = false;
+                    if (postID != null && fromId != null) {
+                        logger.info("Trying to refresh audiolink directlink via wall-handling");
+                        final String post = "act=get_wall_playlist&al=1&local_id=" + postID + "&oid=" + fromId + "&wall_type=own";
+                        br.postPage(getBaseURL() + "/audio", post);
+                        url = br.getRegex("\"0\":\"" + Pattern.quote(ownerID) + "\",\"1\":\"" + Pattern.quote(contentID) + "\",\"2\":(\"[^\"]+\")").getMatch(0);
+                        if (url == null) {
+                            /* Try other way below. */
                             failed = true;
+                        } else {
+                            /* Decodes the json string */
+                            url = (String) JavaScriptEngineFactory.jsonToJavaObject(url);
                         }
-                        if (failed) {
-                            logger.info("refreshing audiolink directlink via album-handling");
-                            /*
-                             * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink
-                             * for our ID.
-                             *
-                             * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
-                             */
-                            /*
-                             * 2017-01-05: They often change the order of the ownerID and contentID parameters here so from now on, let's
-                             * try both variants.
-                             */
-                            postPageSafe(account, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + ownerID + "_" + contentID);
+                    } else {
+                        failed = true;
+                    }
+                    if (failed) {
+                        logger.info("refreshing audiolink directlink via album-handling");
+                        /*
+                         * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
+                         * our ID.
+                         *
+                         * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
+                         */
+                        /*
+                         * 2017-01-05: They often change the order of the ownerID and contentID parameters here so from now on, let's try
+                         * both variants.
+                         */
+                        postPageSafe(account, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + ownerID + "_" + contentID);
+                        url = audioGetDirectURL();
+                        if (url == null) {
+                            postPageSafe(account, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + contentID + "_" + ownerID);
                             url = audioGetDirectURL();
                             if (url == null) {
-                                postPageSafe(account, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + contentID + "_" + ownerID);
+                                postPageSafe(account, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + ownerID + "_" + contentID);
                                 url = audioGetDirectURL();
-                                if (url == null) {
-                                    postPageSafe(account, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + ownerID + "_" + contentID);
-                                    url = audioGetDirectURL();
-                                }
                             }
                         }
-                        if (url == null) {
-                            if (failed) {
-                                /*
-                                 * 2017-01-05: Changed from ERROR_FILE_NOT_FOUND to ERROR_TEMPORARILY_UNAVAILABLE --> Until now we never had
-                                 * a good test case to identify offline urls.
-                                 */
-                                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server issue - content might be offline", 5 * 60 * 1000l);
-                            } else {
-                                logger.warning("Failed to refresh audiolink directlink");
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            }
-                        }
-                        finalUrl = url;
-                        checkstatus = linkOk(link, isDownload);
-                        if (checkstatus != 1) {
-                            logger.info("Refreshed audiolink directlink seems not to work --> Link is probably offline");
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    if (url == null) {
+                        if (failed) {
+                            /*
+                             * 2017-01-05: Changed from ERROR_FILE_NOT_FOUND to ERROR_TEMPORARILY_UNAVAILABLE --> Until now we never had a
+                             * good test case to identify offline urls.
+                             */
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server issue - content might be offline", 5 * 60 * 1000l);
                         } else {
-                            link.setProperty("directlink", finalUrl);
-                        }
-                    }
-                } else if (this.isTypeVideo(link.getPluginPatternMatcher())) {
-                    br.setFollowRedirects(true);
-                    finalUrl = link.getStringProperty("directlink");
-                    /* Don't lose filenames if e.g. user resets DownloadLink. */
-                    final String linkQuality = link.getStringProperty(VKontakteRuHoster.PROPERTY_VIDEO_SELECTED_QUALITY);
-                    if (linkQuality != null) {
-                        link.setFinalFileName(link.getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN) + "_" + this.getOwnerID(link) + "_" + this.getContentID(link) + "_" + linkQuality + ".mp4");
-                    }
-                    /* Check if directlink is expired */
-                    checkstatus = linkOk(link, isDownload);
-                    if (checkstatus != 1) {
-                        /* Refresh directlink */
-                        accessVideo(this.br, link.getPluginPatternMatcher(), this.ownerID, this.contentID, link.getStringProperty(VKontakteRuHoster.PROPERTY_VIDEO_LIST_ID));
-                        if (br.containsHTML(VKontakteRuHoster.HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS)) {
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        } else if (br.containsHTML("class\\s*=\\s*\"message_page_body\">\\s*Access denied")) {
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        }
-                        final Map<String, Object> video = jd.plugins.decrypter.VKontakteRu.findVideoMap(this.br, this.contentID);
-                        final Map<String, String> availableQualities = jd.plugins.decrypter.VKontakteRu.findAvailableVideoQualities(video);
-                        if (availableQualities.isEmpty()) {
-                            /* This should never happen */
-                            logger.info("vk.com: Couldn't find any available qualities for videolink");
+                            logger.warning("Failed to refresh audiolink directlink");
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        if (StringUtils.isNotEmpty(linkQuality)) {
-                            final Map<String, String> selectedQualities = VKontakteRu.getSelectedVideoQualities(availableQualities, QualitySelectionMode.ALL, null);
-                            finalUrl = selectedQualities.get(linkQuality);
-                            if (finalUrl == null) {
-                                if (selectedQualities.isEmpty()) {
-                                    throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to refresh directurl - Content offline?");
-                                } else {
-                                    logger.info("Qualities:" + selectedQualities);
-                                    /* Rare case: User has to delete- and re-add URL via crawler. */
-                                    throw new PluginException(LinkStatus.ERROR_FATAL, "Selected quality is not available:ALL|" + linkQuality);
-                                }
-                            }
-                        } else {
-                            final QualitySelectionMode mode = QualitySelectionMode.values()[link.getIntegerProperty(VIDEO_QUALITY_SELECTION_MODE, default_VIDEO_QUALITY_SELECTION_MODE)];
-                            final Quality quality = Quality.values()[link.getIntegerProperty(PREFERRED_VIDEO_QUALITY, default_PREFERRED_VIDEO_QUALITY)];
-                            Map<String, String> selectedQualities = VKontakteRu.getSelectedVideoQualities(availableQualities, mode, quality.getLabel());
+                    }
+                    finalUrl = url;
+                    checkstatus = linkOk(link, isDownload);
+                    if (checkstatus != 1) {
+                        logger.info("Refreshed audiolink directlink seems not to work --> Link is probably offline");
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else {
+                        link.setProperty("directlink", finalUrl);
+                    }
+                }
+            } else if (this.isTypeVideo(link.getPluginPatternMatcher())) {
+                br.setFollowRedirects(true);
+                finalUrl = link.getStringProperty("directlink");
+                /* Don't lose filenames if e.g. user resets DownloadLink. */
+                final String linkQuality = link.getStringProperty(VKontakteRuHoster.PROPERTY_VIDEO_SELECTED_QUALITY);
+                if (linkQuality != null) {
+                    link.setFinalFileName(link.getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN) + "_" + this.getOwnerID(link) + "_" + this.getContentID(link) + "_" + linkQuality + ".mp4");
+                }
+                /* Check if directlink is expired */
+                checkstatus = linkOk(link, isDownload);
+                if (checkstatus != 1) {
+                    /* Refresh directlink */
+                    accessVideo(this.br, link.getPluginPatternMatcher(), this.ownerID, this.contentID, link.getStringProperty(VKontakteRuHoster.PROPERTY_VIDEO_LIST_ID));
+                    if (br.containsHTML(VKontakteRuHoster.HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS)) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else if (br.containsHTML("class\\s*=\\s*\"message_page_body\">\\s*Access denied")) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    final Map<String, Object> video = jd.plugins.decrypter.VKontakteRu.findVideoMap(this.br, this.contentID);
+                    final Map<String, String> availableQualities = jd.plugins.decrypter.VKontakteRu.findAvailableVideoQualities(video);
+                    if (availableQualities.isEmpty()) {
+                        /* This should never happen */
+                        logger.info("vk.com: Couldn't find any available qualities for videolink");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    if (StringUtils.isNotEmpty(linkQuality)) {
+                        final Map<String, String> selectedQualities = VKontakteRu.getSelectedVideoQualities(availableQualities, QualitySelectionMode.ALL, null);
+                        finalUrl = selectedQualities.get(linkQuality);
+                        if (finalUrl == null) {
                             if (selectedQualities.isEmpty()) {
-                                selectedQualities = VKontakteRu.getSelectedVideoQualities(availableQualities, QualitySelectionMode.ALL, null);
-                                if (selectedQualities.isEmpty()) {
-                                    throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to refresh directurl - Content offline?");
-                                } else {
-                                    logger.info("Qualities:" + selectedQualities);
-                                    /* Rare case: User has to delete- and re-add URL via crawler. */
-                                    throw new PluginException(LinkStatus.ERROR_FATAL, "Selected quality is not available:" + mode + "|" + quality);
-                                }
+                                throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to refresh directurl - Content offline?");
+                            } else {
+                                logger.info("Qualities:" + selectedQualities);
+                                /* Rare case: User has to delete- and re-add URL via crawler. */
+                                throw new PluginException(LinkStatus.ERROR_FATAL, "Selected quality is not available:ALL|" + linkQuality);
                             }
-                            /* Assume map only contains this one element */
-                            final Entry<String, String> entry = selectedQualities.entrySet().iterator().next();
-                            finalUrl = entry.getValue();
-                            /*
-                             * Set this quality which will also update the linkID of this DownloadLink so user cannot add the same quality
-                             * multiple times.
-                             */
-                            link.setProperty(VKontakteRuHoster.PROPERTY_VIDEO_SELECTED_QUALITY, entry.getKey());
-                            /* Correct filename which did not contain any quality modifier before. */
-                            link.setFinalFileName(link.getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN) + "_" + this.getOwnerID(link) + "_" + this.getContentID(link) + "_" + entry.getKey() + ".mp4");
                         }
-                    }
-                } else {
-                    /* Single photo --> Complex handling */
-                    this.finalUrl = link.getStringProperty(PROPERTY_PHOTOS_picturedirectlink);
-                    if (this.finalUrl == null && this.getPluginConfig().getBooleanProperty(VKWALL_STORE_PICTURE_DIRECTURLS, default_VKWALL_STORE_PICTURE_DIRECTURLS) && this.getPluginConfig().getBooleanProperty(VKWALL_STORE_PICTURE_DIRECTURLS_PREFER_STORED_DIRECTURLS, default_VKWALL_STORE_PICTURE_DIRECTURLS_PREFER_STORED_DIRECTURLS)) {
-                        this.finalUrl = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null), isDownload);
-                    }
-                    if (this.finalUrl == null) {
-                        String photo_list_id = link.getStringProperty(PROPERTY_PHOTOS_photo_list_id);
-                        final String module = link.getStringProperty(PROPERTY_PHOTOS_photo_module);
-                        final String photoID = getPhotoID(link);
-                        setHeadersPhoto(br);
-                        if (module != null) {
-                            /* Access photo inside wall-post or qwall reply or photo album */
-                            if (photo_list_id == null) {
-                                photo_list_id = "";
+                    } else {
+                        final QualitySelectionMode mode = QualitySelectionMode.values()[link.getIntegerProperty(VIDEO_QUALITY_SELECTION_MODE, default_VIDEO_QUALITY_SELECTION_MODE)];
+                        final Quality quality = Quality.values()[link.getIntegerProperty(PREFERRED_VIDEO_QUALITY, default_PREFERRED_VIDEO_QUALITY)];
+                        Map<String, String> selectedQualities = VKontakteRu.getSelectedVideoQualities(availableQualities, mode, quality.getLabel());
+                        if (selectedQualities.isEmpty()) {
+                            selectedQualities = VKontakteRu.getSelectedVideoQualities(availableQualities, QualitySelectionMode.ALL, null);
+                            if (selectedQualities.isEmpty()) {
+                                throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to refresh directurl - Content offline?");
+                            } else {
+                                logger.info("Qualities:" + selectedQualities);
+                                /* Rare case: User has to delete- and re-add URL via crawler. */
+                                throw new PluginException(LinkStatus.ERROR_FATAL, "Selected quality is not available:" + mode + "|" + quality);
                             }
-                            int photo_counter = 0;
-                            do {
-                                photo_counter++;
-                                if (photo_counter > 1) {
-                                    /* 2nd loop */
-                                    /*
-                                     * 2020-01-28: Some content needs a photo_list_id which is generated when accessing the html page so
-                                     * this can be seen as a workaround but sometimes it is mandatory!
-                                     */
-                                    final String content_url = link.getContentUrl();
-                                    if (content_url == null || !content_url.contains(photoID)) {
-                                        logger.info("photo_list_id workaround is not possible");
-                                        break;
-                                    }
-                                    logger.info("Attempting photo_list_id workaround");
-                                    this.getPageSafe(account, link, content_url);
-                                    final String new_photo_list_id = br.getRegex(photoID + "(?:%2F|/)([a-f0-9]+)").getMatch(0);
-                                    if (new_photo_list_id == null) {
-                                        logger.warning("photo_list_id workaround failed");
-                                        if (account == null) {
-                                            /* Assume that account is required */
-                                            throw new AccountRequiredException();
-                                        } else {
-                                            /* Assume that permissions are missing. */
-                                            throw new AccountRequiredException("Missing permissions");
-                                        }
-                                    } else {
-                                        logger.warning("Successfully found new photo_list_id: " + new_photo_list_id);
-                                        photo_list_id = new_photo_list_id;
-                                    }
-                                }
+                        }
+                        /* Assume map only contains this one element */
+                        final Entry<String, String> entry = selectedQualities.entrySet().iterator().next();
+                        finalUrl = entry.getValue();
+                        /*
+                         * Set this quality which will also update the linkID of this DownloadLink so user cannot add the same quality
+                         * multiple times.
+                         */
+                        link.setProperty(VKontakteRuHoster.PROPERTY_VIDEO_SELECTED_QUALITY, entry.getKey());
+                        /* Correct filename which did not contain any quality modifier before. */
+                        link.setFinalFileName(link.getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN) + "_" + this.getOwnerID(link) + "_" + this.getContentID(link) + "_" + entry.getKey() + ".mp4");
+                    }
+                }
+            } else {
+                /* Single photo --> Complex handling */
+                this.finalUrl = link.getStringProperty(PROPERTY_PHOTOS_picturedirectlink);
+                if (this.finalUrl == null && this.getPluginConfig().getBooleanProperty(VKWALL_STORE_PICTURE_DIRECTURLS, default_VKWALL_STORE_PICTURE_DIRECTURLS) && this.getPluginConfig().getBooleanProperty(VKWALL_STORE_PICTURE_DIRECTURLS_PREFER_STORED_DIRECTURLS, default_VKWALL_STORE_PICTURE_DIRECTURLS_PREFER_STORED_DIRECTURLS)) {
+                    this.finalUrl = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null), isDownload);
+                }
+                if (this.finalUrl == null) {
+                    String photo_list_id = link.getStringProperty(PROPERTY_PHOTOS_photo_list_id);
+                    final String module = link.getStringProperty(PROPERTY_PHOTOS_photo_module);
+                    final String photoID = getPhotoID(link);
+                    setHeadersPhoto(br);
+                    if (module != null) {
+                        /* Access photo inside wall-post or qwall reply or photo album */
+                        if (photo_list_id == null) {
+                            photo_list_id = "";
+                        }
+                        int photo_counter = 0;
+                        do {
+                            photo_counter++;
+                            if (photo_counter > 1) {
+                                /* 2nd loop */
                                 /*
-                                 * 2020-01-27: Browser request would also contain "&dmcah=".
+                                 * 2020-01-28: Some content needs a photo_list_id which is generated when accessing the html page so this
+                                 * can be seen as a workaround but sometimes it is mandatory!
                                  */
-                                final String postData = "act=show&al=1&al_ad=0&dmcah=&list=" + photo_list_id + "&module=" + module + "" + "&photo=" + photoID;
-                                postPageSafe(br, account, link, getBaseURL() + "/al_photos.php?act=show", postData);
-                            } while (photo_counter <= 1 && PluginJSonUtils.unescape(br.toString()).contains("\"Access denied\""));
-                            checkErrorsPhoto(br);
-                        } else {
-                            /* Access normal photo / photo inside album */
-                            String albumID = link.getStringProperty(PROPERTY_PHOTOS_album_id);
-                            boolean jsonSourceAvailableFromHtml = false;
+                                final String content_url = link.getContentUrl();
+                                if (content_url == null || !content_url.contains(photoID)) {
+                                    logger.info("photo_list_id workaround is not possible");
+                                    break;
+                                }
+                                logger.info("Attempting photo_list_id workaround");
+                                this.getPageSafe(account, link, content_url);
+                                final String new_photo_list_id = br.getRegex(photoID + "(?:%2F|/)([a-f0-9]+)").getMatch(0);
+                                if (new_photo_list_id == null) {
+                                    logger.warning("photo_list_id workaround failed");
+                                    if (account == null) {
+                                        /* Assume that account is required */
+                                        throw new AccountRequiredException();
+                                    } else {
+                                        /* Assume that permissions are missing. */
+                                        throw new AccountRequiredException("Missing permissions");
+                                    }
+                                } else {
+                                    logger.warning("Successfully found new photo_list_id: " + new_photo_list_id);
+                                    photo_list_id = new_photo_list_id;
+                                }
+                            }
+                            /*
+                             * 2020-01-27: Browser request would also contain "&dmcah=".
+                             */
+                            final String postData = "act=show&al=1&al_ad=0&dmcah=&list=" + photo_list_id + "&module=" + module + "" + "&photo=" + photoID;
+                            postPageSafe(br, account, link, getBaseURL() + "/al_photos.php?act=show", postData);
+                        } while (photo_counter <= 1 && PluginJSonUtils.unescape(br.toString()).contains("\"Access denied\""));
+                        checkErrorsPhoto(br);
+                    } else {
+                        /* Access normal photo / photo inside album */
+                        String albumID = link.getStringProperty(PROPERTY_PHOTOS_album_id);
+                        boolean jsonSourceAvailableFromHtml = false;
+                        if (albumID == null) {
+                            /* Find albumID */
+                            getPageSafe(account, link, getBaseURL() + "/photo" + photoID);
+                            if (br.containsHTML(">\\s*(Unknown error|Unbekannter Fehler|Access denied|Error<)") || this.br.getHttpConnection().getResponseCode() == 404) {
+                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            } else if (!br.getURL().contains(photoID)) {
+                                /*
+                                 * E.g. redirect to somewhere else e.g. single post/wall -> That might be online but we've failed to find
+                                 * that specific picture-ID.
+                                 */
+                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            }
+                            albumID = br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
+                            if (albumID == null) { /* new.vk.com */
+                                albumID = br.getRegex("<span class=\"photos_album_info\"><a href=\"/(.*?)\\?.*?\"").getMatch(0);
+                            }
                             if (albumID == null) {
-                                /* Find albumID */
-                                getPageSafe(account, link, getBaseURL() + "/photo" + photoID);
-                                if (br.containsHTML(">\\s*(Unknown error|Unbekannter Fehler|Access denied|Error<)") || this.br.getHttpConnection().getResponseCode() == 404) {
-                                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                                } else if (!br.getURL().contains(photoID)) {
-                                    /*
-                                     * E.g. redirect to somewhere else e.g. single post/wall -> That might be online but we've failed to
-                                     * find that specific picture-ID.
-                                     */
-                                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                                }
-                                albumID = br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
-                                if (albumID == null) { /* new.vk.com */
-                                    albumID = br.getRegex("<span class=\"photos_album_info\"><a href=\"/(.*?)\\?.*?\"").getMatch(0);
-                                }
-                                if (albumID == null) {
-                                    /* New 2016-08-23 */
-                                    final String jsonInsideHTML = this.br.getRegex("ajax\\.preload\\(\\'al_photos\\.php\\'\\s*?,\\s*?(\\{.*?)\\);").getMatch(0);
-                                    if (jsonInsideHTML != null) {
-                                        String albumIDFromJson = PluginJSonUtils.getJsonValue(jsonInsideHTML, "list");
-                                        if (!StringUtils.isEmpty(albumIDFromJson)) {
-                                            /* Fix id */
-                                            albumIDFromJson = albumIDFromJson.replace("album", "");
-                                            /* Set ID */
-                                            albumID = albumIDFromJson;
-                                        }
+                                /* New 2016-08-23 */
+                                final String jsonInsideHTML = this.br.getRegex("ajax\\.preload\\(\\'al_photos\\.php\\'\\s*?,\\s*?(\\{.*?)\\);").getMatch(0);
+                                if (jsonInsideHTML != null) {
+                                    String albumIDFromJson = PluginJSonUtils.getJsonValue(jsonInsideHTML, "list");
+                                    if (!StringUtils.isEmpty(albumIDFromJson)) {
+                                        /* Fix id */
+                                        albumIDFromJson = albumIDFromJson.replace("album", "");
+                                        /* Set ID */
+                                        albumID = albumIDFromJson;
                                     }
                                 }
-                                if (albumID != null) {
-                                    /* Save this! Important! */
-                                    link.setProperty(PROPERTY_PHOTOS_album_id, albumID);
-                                }
-                                if (picturesGetJsonFromHtml(br) != null) {
-                                    jsonSourceAvailableFromHtml = true;
-                                }
                             }
-                            if (!jsonSourceAvailableFromHtml) {
-                                /* Only go the json-way if we have to! */
-                                if (albumID == null) {
-                                    logger.info("albumID is null and failed to find picture json");
-                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                                }
-                                postPageSafe(br, account, link, getBaseURL() + "/al_photos.php", "act=show&al=1&module=photos&list=album" + albumID + "&photo=" + photoID);
-                                checkErrorsPhoto(br);
+                            if (albumID != null) {
+                                /* Save this! Important! */
+                                link.setProperty(PROPERTY_PHOTOS_album_id, albumID);
+                            }
+                            if (picturesGetJsonFromHtml(br) != null) {
+                                jsonSourceAvailableFromHtml = true;
                             }
                         }
-                        try {
-                            this.finalUrl = getHighestQualityPictureDownloadurl(br, link, isDownload);
-                            if (StringUtils.isEmpty(this.finalUrl)) {
-                                /* Fallback but this will only work if the user enabled a specified plugin setting. */
-                                this.finalUrl = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null), isDownload);
+                        if (!jsonSourceAvailableFromHtml) {
+                            /* Only go the json-way if we have to! */
+                            if (albumID == null) {
+                                logger.info("albumID is null and failed to find picture json");
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
-                            if (StringUtils.isEmpty(this.finalUrl) && link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null) == null) {
-                                /* 2019-08-08: Just a hint */
-                                logger.info("Possible failure - as a workaround download might be possible via: Enable plugin setting PROPERTY_directurls_fallback --> Re-add downloadurls --> Try again");
-                            }
-                        } catch (final Throwable e) {
-                            logger.info("Error occured while trying to find highest quality image downloadurl");
-                            logger.log(e);
+                            postPageSafe(br, account, link, getBaseURL() + "/al_photos.php", "act=show&al=1&module=photos&list=album" + albumID + "&photo=" + photoID);
+                            checkErrorsPhoto(br);
                         }
                     }
-                    /* 2016-10-07: Implemented to avoid host-side block although results tell me that this does not improve anything. */
-                    setHeaderRefererPhoto(this.br);
-                    final String temp_name = photoGetFinalFilename(getPhotoID(link), null, this.finalUrl);
-                    if (isDownload && temp_name != null) {
-                        link.setFinalFileName(temp_name);
-                    } else if (!isDownload && temp_name != null) {
-                        link.setName(temp_name);
+                    try {
+                        this.finalUrl = getHighestQualityPictureDownloadurl(br, link, isDownload);
+                        if (StringUtils.isEmpty(this.finalUrl)) {
+                            /* Fallback but this will only work if the user enabled a specified plugin setting. */
+                            this.finalUrl = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null), isDownload);
+                        }
+                        if (StringUtils.isEmpty(this.finalUrl) && link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null) == null) {
+                            /* 2019-08-08: Just a hint */
+                            logger.info("Possible failure - as a workaround download might be possible via: Enable plugin setting PROPERTY_directurls_fallback --> Re-add downloadurls --> Try again");
+                        }
+                    } catch (final Throwable e) {
+                        logger.info("Error occured while trying to find highest quality image downloadurl");
+                        logger.log(e);
                     }
+                }
+                /* 2016-10-07: Implemented to avoid host-side block although results tell me that this does not improve anything. */
+                setHeaderRefererPhoto(this.br);
+                final String temp_name = photoGetFinalFilename(getPhotoID(link), null, this.finalUrl);
+                if (isDownload && temp_name != null) {
+                    link.setFinalFileName(temp_name);
+                } else if (!isDownload && temp_name != null) {
+                    link.setName(temp_name);
                 }
             }
         }
@@ -619,7 +616,11 @@ public class VKontakteRuHoster extends PluginForHost {
         }
     }
 
-    public void doFree(final DownloadLink link) throws Exception, PluginException {
+    public void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
+        requestFileInformation(link, account, true);
+        if (this.isDRMProtected(link)) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "DRM protected");
+        }
         if (this.isHLS(link, this.finalUrl)) {
             /* HLS download */
             br.getPage(this.finalUrl);
@@ -645,7 +646,22 @@ public class VKontakteRuHoster extends PluginForHost {
                 br.getHeaders().put("Accept-Encoding", "identity");
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.finalUrl, isResumeSupported(link, this.finalUrl), getMaxChunks(link, this.finalUrl));
             }
-            handleServerErrors(link);
+            if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
+            } else if (dl.getConnection().getResponseCode() == 416) {
+                dl.getConnection().disconnect();
+                logger.info("Resume failed --> Retrying from zero");
+                link.setChunksProgress(null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                logger.info("vk.com: Plugin broken after download-try");
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             dl.startDownload();
         }
     }
@@ -846,23 +862,6 @@ public class VKontakteRuHoster extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
-    private void handleServerErrors(final DownloadLink link) throws PluginException, IOException {
-        final URLConnectionAdapter con = dl.getConnection();
-        if (con.getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
-        } else if (con.getResponseCode() == 416) {
-            con.disconnect();
-            logger.info("Resume failed --> Retrying from zero");
-            link.setChunksProgress(null);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        } else if (!this.looksLikeDownloadableContent(con)) {
-            logger.info("vk.com: Plugin broken after download-try");
-            br.followConnection(true);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-    }
-
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -902,30 +901,12 @@ public class VKontakteRuHoster extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        /* Doc-links and other links with permission can be downloaded without login */
-        if (link.getPluginPatternMatcher().matches(VKontakteRuHoster.TYPE_DOCLINK) || link.getPluginPatternMatcher().matches(VKontakteRuHoster.TYPE_DIRECT)) {
-            requestFileInformation(link, null, true);
-            doFree(link);
-        } else if (checkNoLoginNeeded(link)) {
-            requestFileInformation(link, null, true);
-            doFree(link);
-        } else {
-            throw new AccountRequiredException();
-        }
-    }
-
-    private boolean checkNoLoginNeeded(final DownloadLink dl) {
-        if (dl.getBooleanProperty("nologin", false)) {
-            return true;
-        } else {
-            return dl.getPluginPatternMatcher().matches(TYPE_PICTURELINK);
-        }
+        handleDownload(link, null);
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link, account, true);
-        doFree(link);
+        handleDownload(link, account);
     }
 
     /**
@@ -938,6 +919,15 @@ public class VKontakteRuHoster extends PluginForHost {
     @Override
     public boolean isResumeable(DownloadLink link, Account account) {
         return true;
+    }
+
+    private boolean isDRMProtected(final DownloadLink link) {
+        if (link.getPluginPatternMatcher().matches(TYPE_AUDIOLINK)) {
+            /* 2022-01-19: Handling for such links is broken AND they're streamed in DRM protected (well, only AES128) HLS. */
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private boolean isHLS(final DownloadLink link, final String url) {

@@ -50,7 +50,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.JDUtilities;
 
 //Decrypts embedded videos from dailymotion
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://(?:www\\.)?(dailymotion\\.com|dai\\.ly)/.+" })
@@ -107,10 +106,10 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         jd.plugins.hoster.DailyMotionCom.prepBrowser(this.br);
         synchronized (ctrlLock) {
             /* Login if account available */
-            final PluginForHost dailymotionHosterplugin = JDUtilities.getPluginForHost("dailymotion.com");
+            final PluginForHost dailymotionHosterplugin = this.getNewPluginForHostInstance(this.getHost());
             Account aa = AccountController.getInstance().getValidAccount(getHost());
             if (aa != null) {
-                ((jd.plugins.hoster.DailyMotionCom) dailymotionHosterplugin).login(aa, this.br);
+                ((jd.plugins.hoster.DailyMotionCom) dailymotionHosterplugin).login(aa, false);
                 acc_in_use = true;
             }
             /* Login end... */

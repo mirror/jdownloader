@@ -96,7 +96,6 @@ public class Ardmediathek extends PluginForDecrypt {
     }
     private String             subtitleLink = null;
     private boolean            grabHLS      = false;
-    // private String contentID = null;
     private ArdConfigInterface cfg          = null;
 
     public Ardmediathek(final PluginWrapper wrapper) {
