@@ -1596,8 +1596,8 @@ public class Ardmediathek extends PluginForDecrypt {
         // Order is default quality sort order
         P_1080(1920, 1080),
         P_720(1280, 720),
-        P_540(960, 540),
         P_544(960, 544),
+        P_540(960, 540),
         P_360(640, 360),
         P_288(512, 288),
         P_270(480, 270),
