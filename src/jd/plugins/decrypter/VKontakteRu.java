@@ -121,11 +121,18 @@ public class VKontakteRu extends PluginForDecrypt {
     /* Some supported url patterns */
     private static final String     PATTERN_SHORT                             = "https?://vk\\.cc/.+";
     private static final String     PATTERN_URL_EXTERN                        = "https?://[^/]+/away\\.php\\?to=.+";
+    /** 2022-01-19: Audio stuff is deprecated because it's all DRM protected. No need to fix crawl methods for audio content! */
+    @Deprecated
     private static final String     PATTERN_GENERAL_AUDIO                     = "https?://[^/]+/audio.*?";
+    @Deprecated
     private static final String     PATTERN_AUDIO_ALBUM                       = "https?://[^/]+/(?:audio(?:\\.php)?\\?id=(?:\\-)?\\d+|audios(?:\\-)?\\d+).*?";
+    @Deprecated
     private static final String     PATTERN_AUDIO_PAGE                        = "https?://[^/]+/page\\-\\d+_\\d+.*?";
+    @Deprecated
     private static final String     PATTERN_AUDIO_PAGE_oid                    = "https?://[^/]+/pages\\?oid=\\-\\d+\\&p=(?!va_c)[^<>/\"]+";
+    @Deprecated
     private static final String     PATTERN_AUDIO_AUDIOS_ALBUM                = "https?://[^/]+/(audios\\-\\d+\\?album_id=\\d+|music/album/-?\\d+_\\d+)";
+    @Deprecated
     private static final String     PATTERN_AUDIO_AUDIOS_ALBUM_2020           = "https?://[^/]+/music/album/(-?\\d+)_(\\d+).*?";
     public static final String      PATTERN_VIDEO_SINGLE_Z                    = "(?i)https?://[^/]+/.*?z=video(-?\\d+_\\d+).*?";
     private static final String     PATTERN_CLIP_SINGLE_Z                     = "(?i)https?://[^/]+/.*?z=clip((?:\\-)?\\d+_\\d+).*?";
@@ -756,7 +763,6 @@ public class VKontakteRu extends PluginForDecrypt {
                 dl.setFinalFileName(finalfilename);
                 dl.setProperty("directlink", finallink);
                 dl.setProperty(VKontakteRuHoster.PROPERTY_VIDEO_SELECTED_QUALITY, thisQuality);
-                dl.setProperty("nologin", true);
                 if (listID != null) {
                     dl.setProperty(VKontakteRuHoster.PROPERTY_VIDEO_LIST_ID, listID);
                 }
@@ -1522,10 +1528,10 @@ public class VKontakteRu extends PluginForDecrypt {
         int totalNumberOfItems = 0;
         logger.info("Crawling single wall post");
         do {
-            final int foundItemsOld = decryptedLinks.size();
+            final int numberofFoundItemsOld = decryptedLinks.size();
             logger.info("Crawling (comments of) single wall post page: " + page);
             websiteCrawlContent(wall_post_ID, br.toString(), fp, this.vkwall_grabaudio, this.vkwall_grabvideo, this.vkwall_grabphotos, this.vkwall_grabdocs, this.vkwall_graburlsinsideposts, this.photos_store_picture_directurls);
-            final int numberofItemsAddedThisLoop = decryptedLinks.size() - foundItemsOld;
+            final int numberofItemsAddedThisLoop = decryptedLinks.size() - numberofFoundItemsOld;
             logger.info("Offset " + offset + " contained " + numberofItemsAddedThisLoop + " items in total so far (including inside replies)");
             offset += maxEntriesPerRequest;
             logger.info("Number of NEW added items: " + numberofItemsAddedThisLoop);
@@ -2446,7 +2452,7 @@ public class VKontakteRu extends PluginForDecrypt {
         if (account == null) {
             account = AccountController.getInstance().getValidAccount(getHost());
             if (account == null) {
-                logger.warning("There is no account available, continuing without logging in (if possible)");
+                logger.warning("There is no account available, continuing without logging in");
                 return false;
             }
         }

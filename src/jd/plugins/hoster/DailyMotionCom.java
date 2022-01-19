@@ -21,16 +21,33 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -41,11 +58,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.DailyMotionComDecrypter;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://dailymotiondecrypted\\.com/video/\\w+" })
 public class DailyMotionCom extends PluginForHost {
@@ -312,20 +324,16 @@ public class DailyMotionCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, this.br);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
+        login(account, true);
         ai.setUnlimitedTraffic();
+        account.setType(AccountType.FREE);
         ai.setStatus("Registered (free) User");
         return ai;
     }
 
-    protected boolean checkDirectLink(final DownloadLink downloadLink) throws PluginException {
+    protected boolean checkDirectLink(final DownloadLink link) throws PluginException {
         if (dllink != null) {
             br.setFollowRedirects(false);
             try {
@@ -337,11 +345,12 @@ public class DailyMotionCom extends PluginForHost {
                         dllink = br.getRedirectLocation().replace("#cell=core&comment=", "");
                         br.getHeaders().put("Referer", dllink);
                         con = br.openHeadConnection(dllink);
-                    }
-                    if (con.getResponseCode() != 200 || con.getContentType().contains("html")) {
+                    } else if (!this.looksLikeDownloadableContent(con)) {
                         return false;
                     }
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 } finally {
                     try {
                         con.disconnect();
@@ -373,20 +382,19 @@ public class DailyMotionCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        if (downloadLink.getBooleanProperty("countryblock", false)) {
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        if (link.getBooleanProperty("countryblock", false)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, COUNTRYBLOCKUSERTEXT);
-        }
-        if (downloadLink.getBooleanProperty("registeredonly", false)) {
+        } else if (link.getBooleanProperty("registeredonly", false)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, REGISTEREDONLYUSERTEXT);
         }
-        doFree(downloadLink);
+        doFree(link);
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        login(account, this.br);
+        login(account, false);
         requestFileInformation(link);
         if (link.getBooleanProperty("ishds", false)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "HDS stream download is not supported (yet)!");
@@ -396,16 +404,103 @@ public class DailyMotionCom extends PluginForHost {
         doFree(link);
     }
 
-    public void login(final Account account, final Browser br) throws Exception {
+    public void login(final Account account, final boolean verifyCookies) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBrowser(br);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getHeaders().put("X-Prototype-Version", "1.6.1");
-        br.postPage("https://www.dailymotion.com/signin", "form_name=dm_pageitem_login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&login_submit=Login");
-        if (br.getCookie(MAINPAGE, "sid") == null || br.getCookie(MAINPAGE, "sdx") == null) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+        if (userCookies == null || getAuthorizationCookieValue(userCookies) == null) {
+            if (account.getLastValidTimestamp() == -1) {
+                showCookieLoginInformation();
+            }
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
+        br.setCookies(userCookies);
+        if (!verifyCookies) {
+            return;
+        } else {
+            setGraphqlHeaders(br);
+            br.postPageRaw("https://graphql.api.dailymotion.com/", "{\"operationName\":\"USER_BIRTHDAY_QUERY\",\"variables\":{},\"query\":\"query USER_BIRTHDAY_QUERY {  me {    id    birthday    __typename  }}\"}");
+            try {
+                final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> data = (Map<String, Object>) root.get("data");
+                final Map<String, Object> me = (Map<String, Object>) data.get("me");
+                /* Throws Exception on null value */
+                final String userID = me.get("id").toString();
+                account.setUser(userID);
+            } catch (final Throwable e) {
+                logger.log(e);
+                logger.info("User Cookie login failed");
+                if (account.getLastValidTimestamp() == -1) {
+                    showCookieLoginInformation();
+                    throw new AccountInvalidException("Cookie login failed");
+                } else {
+                    throw new AccountInvalidException("Cookies expired");
+                }
+            }
+        }
+    }
+
+    private String getAuthorizationCookieValue(final Cookies cookies) {
+        if (cookies == null) {
+            return null;
+        } else {
+            final Cookie authCookie = cookies.get("access_token");
+            if (authCookie == null) {
+                return null;
+            } else {
+                return authCookie.getValue();
+            }
+        }
+    }
+
+    private void setGraphqlHeaders(final Browser br) {
+        final String authValue = getAuthorizationCookieValue(br.getCookies(this.getHost()));
+        br.getHeaders().put("Authorization", "Bearer " + authValue);
+        br.getHeaders().put("Content-Type", "application/json, application/json");
+        br.getHeaders().put("Origin", "https://www.dailymotion.com");
+        br.getHeaders().put("Referer", "https://www.dailymotion.com");
+        br.getHeaders().put("X-DM-AppInfo-Id", "com.dailymotion.neon");
+        br.getHeaders().put("X-DM-AppInfo-Type", "website");
+        br.getHeaders().put("X-DM-AppInfo-Version", "v2022-01-17T10:14:03.307Z");
+        br.getHeaders().put("X-DM-Neon-SSR", "0");
+        br.getHeaders().put("X-DM-Preferred-Country", "de");
+    }
+
+    private Thread showCookieLoginInformation() {
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    final String help_article_url = "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = "Dailymotion.com - Login";
+                        message += "Hallo liebe(r) Dailymotion NutzerIn\r\n";
+                        message += "Um deinen Dailymotion Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
+                        message += "Folge der Anleitung im Hilfe-Artikel:\r\n";
+                        message += help_article_url;
+                    } else {
+                        title = "Dailymotion.com - Login";
+                        message += "Hello dear Dailymotion user\r\n";
+                        message += "In order to use an account of this service in JDownloader, you need to follow these instructions:\r\n";
+                        message += help_article_url;
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(3 * 60 * 1000);
+                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL(help_article_url);
+                    }
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
     }
 
     private boolean isSubtitle(final DownloadLink dl) {
