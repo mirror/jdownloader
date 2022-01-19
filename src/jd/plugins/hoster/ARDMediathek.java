@@ -148,7 +148,7 @@ public class ARDMediathek extends PluginForHost {
             try {
                 final Browser brc = br.cloneBrowser();
                 con = brc.openHeadConnection(dllink);
-                if (isVideoContent(con) || isAudioContent(con)) {
+                if (isVideoContent(con) || isAudioContent(con) || con.isContentDisposition()) {
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }

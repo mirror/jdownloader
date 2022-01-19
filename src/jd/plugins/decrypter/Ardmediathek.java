@@ -77,11 +77,10 @@ public class Ardmediathek extends PluginForDecrypt {
     /* Constants */
     private static final String                 type_embedded                              = "https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js";
     /* Variables */
-    private final HashMap<String, DownloadLink> foundQualitiesMap                          = new HashMap<String, DownloadLink>();
     private final HashMap<String, DownloadLink> foundQualitiesMap_http_urls_via_HLS_master = new HashMap<String, DownloadLink>();
-    ArrayList<DownloadLink>                     decryptedLinks                             = new ArrayList<DownloadLink>();
     /* Important: Keep this updated & keep this in order: Highest --> Lowest */
     private final List<String>                  all_known_qualities                        = Arrays.asList("http_6666000_1080", "hls_6666000_1080", "http_3773000_720", "hls_3773000_720", "http_1989000_540", "hls_1989000_540", "http_1213000_360", "hls_1213000_360", "http_605000_280", "hls_605000_280", "http_448000_270", "hls_448000_270", "http_317000_270", "hls_317000_270", "http_189000_180", "hls_189000_180", "http_0_0");
+    private final List<String>                  selectedQualities                          = new ArrayList<String>();
     private final Map<String, Long>             heigth_to_bitrate                          = new HashMap<String, Long>();
     {
         heigth_to_bitrate.put("180", 189000l);
@@ -133,19 +132,14 @@ public class Ardmediathek extends PluginForDecrypt {
         }
     }
 
-    @SuppressWarnings("deprecation")
-    @Override
-    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        br.setFollowRedirects(true);
-        cfg = PluginJsonConfig.get(getConfigInterface());
-        final List<String> selectedQualities = new ArrayList<String>();
-        /*
-         * 2018-03-06: TODO: Maybe add option to download hls audio as hls master playlist will often contain a mp4 stream without video (==
-         * audio only).
-         */
+    private void initSelectedQualities() {
         if (cfg.isGrabHLS180pVideoEnabled()) {
             selectedQualities.add("hls_" + heigth_to_bitrate.get("180") + "_180");
         }
+        if (cfg.isGrabHLS144pVideoEnabled()) {
+            selectedQualities.add("hls_" + heigth_to_bitrate.get("144") + "_144");
+        }
+        /* TODO: Check if this is still needed */
         if (cfg.isGrabHLS270pLowerVideoEnabled()) {
             selectedQualities.add("hls_317000_270");
         }
@@ -154,6 +148,9 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         if (cfg.isGrabHLS280pVideoEnabled()) {
             selectedQualities.add("hls_" + heigth_to_bitrate.get("280") + "_280");
+        }
+        if (cfg.isGrabHLS288pVideoEnabled()) {
+            selectedQualities.add("hls_" + heigth_to_bitrate.get("288") + "_288");
         }
         if (cfg.isGrabHLS360pVideoEnabled()) {
             selectedQualities.add("hls_" + heigth_to_bitrate.get("360") + "_360");
@@ -170,10 +167,18 @@ public class Ardmediathek extends PluginForDecrypt {
         if (cfg.isGrabHLS1080pVideoEnabled()) {
             selectedQualities.add("hls_" + heigth_to_bitrate.get("1080") + "_1080");
         }
-        grabHLS = selectedQualities.size() > 0;
+        if (selectedQualities.size() > 0) {
+            this.grabHLS = true;
+        } else {
+            this.grabHLS = false;
+        }
+        if (cfg.isGrabHTTP144pVideoEnabled()) {
+            selectedQualities.add("http_" + heigth_to_bitrate.get("144") + "_144");
+        }
         if (cfg.isGrabHTTP180pVideoEnabled()) {
             selectedQualities.add("http_" + heigth_to_bitrate.get("180") + "_180");
         }
+        /* TODO: Check if this is still needed */
         if (cfg.isGrabHTTP270pLowerVideoEnabled()) {
             selectedQualities.add("http_317000_270");
         }
@@ -182,6 +187,9 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         if (cfg.isGrabHTTP280pVideoEnabled()) {
             selectedQualities.add("http_" + heigth_to_bitrate.get("280") + "_280");
+        }
+        if (cfg.isGrabHTTP288pVideoEnabled()) {
+            selectedQualities.add("http_" + heigth_to_bitrate.get("288") + "_288");
         }
         if (cfg.isGrabHTTP360pVideoEnabled()) {
             selectedQualities.add("http_" + heigth_to_bitrate.get("360") + "_360");
@@ -198,31 +206,29 @@ public class Ardmediathek extends PluginForDecrypt {
         if (cfg.isGrabHTTP1080pVideoEnabled()) {
             selectedQualities.add("http_" + heigth_to_bitrate.get("1080") + "_1080");
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        br.setFollowRedirects(true);
+        cfg = PluginJsonConfig.get(getConfigInterface());
+        initSelectedQualities();
         /*
          * 2018-02-22: Important: So far there is only one OLD website, not compatible with the "decryptMediathek" function! Keep this in
          * mind when changing things!
          */
         final String host = this.getHost();
         if (host.equalsIgnoreCase("daserste.de") || host.equalsIgnoreCase("kika.de") || host.equalsIgnoreCase("sputnik.de") || host.equalsIgnoreCase("mdr.de")) {
-            crawlDasersteVideo(param);
+            return crawlDasersteVideo(param);
         } else if (host.equalsIgnoreCase("tagesschau.de")) {
-            crawlTagesschauVideos(param);
+            return this.crawlTagesschauVideos(param);
         } else if (host.equalsIgnoreCase("ardmediathek.de")) {
             /* 2020-05-26: Separate handling required */
-            this.decryptArdmediathekDeNew(param);
+            return this.crawlArdmediathekDeNew(param);
         } else {
-            this.decryptMediathek(param);
+            return this.crawlMediathek(param);
         }
-        handleUserQualitySelection(this.foundQualitiesMap, selectedQualities);
-        if (decryptedLinks == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (decryptedLinks.size() == 0) {
-            logger.info("Failed to find any links");
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-            return decryptedLinks;
-        }
-        return decryptedLinks;
     }
 
     private void errorGEOBlocked(final CryptedLink param) throws DecrypterRetryException {
@@ -326,12 +332,13 @@ public class Ardmediathek extends PluginForDecrypt {
             http_url_format = "http://hrardmediathek-a.akamaihd.net/" + urlpart + "%skbit.mp4";
         } else {
             /* Unsupported URL */
-            logger.warning("Warning: Unsupported HLS pattern, cannot create HTTP URL!");
+            logger.info("Warning: Unsupported HLS pattern, cannot create HTTP URLs for: " + hlsMaster);
+            return null;
         }
         return http_url_format;
     }
 
-    private void decryptArdmediathekDeNew(final CryptedLink param) throws Exception {
+    private ArrayList<DownloadLink> crawlArdmediathekDeNew(final CryptedLink param) throws Exception {
         /* E.g. old classic.ardmediathek.de URLs */
         final boolean requiresOldContentIDHandling;
         String ardDocumentID = new Regex(param.getCryptedUrl(), "documentId=(\\d+)").getMatch(0);
@@ -414,11 +421,12 @@ public class Ardmediathek extends PluginForDecrypt {
         } else {
             entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         }
-        crawlARDJson(param, metadata, entries);
+        final HashMap<String, DownloadLink> foundQualities = crawlARDJson(param, metadata, entries);
+        return this.handleUserQualitySelection(foundQualities);
     }
 
     /** Last revision with old handling: 38658 */
-    private void decryptMediathek(final CryptedLink param) throws Exception {
+    private ArrayList<DownloadLink> crawlMediathek(final CryptedLink param) throws Exception {
         br.getPage(param.getCryptedUrl());
         if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -436,8 +444,7 @@ public class Ardmediathek extends PluginForDecrypt {
              */
             final ArrayList<DownloadLink> embeds = crawlEmbeddedContent(this.br);
             if (!embeds.isEmpty()) {
-                this.decryptedLinks.addAll(embeds);
-                return;
+                return embeds;
             }
             String url_json = null;
             if (this.getHost().equals("sportschau.de")) {
@@ -640,7 +647,8 @@ public class Ardmediathek extends PluginForDecrypt {
             entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         } catch (final Throwable ignore) {
         }
-        crawlARDJson(param, metadata, entries);
+        final HashMap<String, DownloadLink> foundQualitiesMap = crawlARDJson(param, metadata, entries);
+        return this.handleUserQualitySelection(foundQualitiesMap);
     }
 
     private static String regexOldJson(final String html) {
@@ -656,7 +664,7 @@ public class Ardmediathek extends PluginForDecrypt {
         return ret;
     }
 
-    private void crawlARDJson(final CryptedLink param, final ArdMetadata metadata, final Object mediaCollection) throws Exception {
+    private HashMap<String, DownloadLink> crawlARDJson(final CryptedLink param, final ArdMetadata metadata, final Object mediaCollection) throws Exception {
         /* We know how their http urls look - this way we can avoid HDS/HLS/RTMP */
         /*
          * http://adaptiv.wdr.de/z/medp/ww/fsk0/104/1046579/,1046579_11834667,1046579_11834665,1046579_11834669,.mp4.csmil/manifest.f4
@@ -666,6 +674,7 @@ public class Ardmediathek extends PluginForDecrypt {
          * Grab all http qualities inside json
          */
         subtitleLink = getJsonSubtitleURL(this.br);
+        final HashMap<String, DownloadLink> foundQualitiesMap = new HashMap<String, DownloadLink>();
         final List<String> httpStreamsQualityIdentifiers = new ArrayList<String>();
         /* For http stream quality identifiers which have been created by the hls --> http URLs converter */
         final List<String> httpStreamsQualityIdentifiers_2_over_hls_master = new ArrayList<String>();
@@ -675,7 +684,7 @@ public class Ardmediathek extends PluginForDecrypt {
         if (mediaCollection instanceof Map && ((Map<String, Object>) mediaCollection).containsKey("mediaResource")) {
             /* E.g. older wdr.de json --> Only extract hls-master, then generate http URLs down below */
             final Map<String, Object> mediaResource = (Map<String, Object>) ((Map<String, Object>) mediaCollection).get("mediaResource");
-            /* All of these are usually HLS */
+            /* All of these are usually HLS e.g. present for wdr.de */
             final String[] mediaNames = new String[] { "dflt", "alt" };
             for (final String mediaType : mediaNames) {
                 if (mediaResource.containsKey(mediaType)) {
@@ -698,15 +707,6 @@ public class Ardmediathek extends PluginForDecrypt {
                 map = null;
             }
             if (map != null && map.containsKey("_mediaArray")) {
-                /*
-                 * Website actually tries to stream video - only then it is safe to know if the items is only "somewhere" GEO-blocked or
-                 * GEO-blocked for the current user/IP!
-                 */
-                // final boolean geoBlocked = ((Boolean) map.get("_geoblocked")).booleanValue();
-                // if (geoBlocked) {
-                // /* 2020-11-19: Direct-URLs are given but will all redirect to a "GEO-blocked" video so let's stop here! */
-                // throw new DecrypterException(EXCEPTION_GEOBLOCKED);
-                // }
                 try {
                     final List<Map<String, Object>> mediaArray = (List<Map<String, Object>>) map.get("_mediaArray");
                     mediaArray: for (Map<String, Object> media : mediaArray) {
@@ -714,10 +714,11 @@ public class Ardmediathek extends PluginForDecrypt {
                         for (int mediaStreamIndex = 0; mediaStreamIndex < mediaStreamArray.size(); mediaStreamIndex++) {
                             // list is sorted from best to lowest quality, first one is m3u8
                             final Map<String, Object> mediaStream = mediaStreamArray.get(mediaStreamIndex);
-                            final int quality;
                             final Object _stream = mediaStream.get("_stream");
-                            if (mediaStream.get("_quality") instanceof Number) {
-                                quality = ((Number) mediaStream.get("_quality")).intValue();
+                            final int quality;
+                            final Object qualityO = mediaStream.get("_quality");
+                            if (qualityO instanceof Number || (qualityO != null && qualityO.toString().matches("\\d+"))) {
+                                quality = Integer.parseInt(qualityO.toString());
                             } else {
                                 /* E.g. skip quality "auto" (HLS) */
                                 if (_stream instanceof String) {
@@ -742,138 +743,71 @@ public class Ardmediathek extends PluginForDecrypt {
                                     continue;
                                 }
                                 final String url = br.getURL(stream).toString();
-                                exampleHTTPURL = url;
-                                final int widthInt;
-                                final int heightInt;
+                                if (exampleHTTPURL == null) {
+                                    exampleHTTPURL = url;
+                                }
+                                VideoResolution resolution = null;
                                 /*
                                  * Sometimes the resolutions is given, sometimes we have to assume it and sometimes (e.g. HLS streaming)
                                  * there are multiple qualities available for one stream URL.
                                  */
-                                if (mediaStream.containsKey("_width") && mediaStream.containsKey("_height")) {
-                                    widthInt = ((Number) mediaStream.get("_width")).intValue();
-                                    heightInt = ((Number) mediaStream.get("_height")).intValue();
-                                } else if (quality == 0 && streams.size() == 1) {
-                                    widthInt = 320;
-                                    heightInt = 180;
-                                } else if (quality == 1 && streams.size() == 1) {
-                                    widthInt = 512;
-                                    heightInt = 288;
-                                } else if (quality == 1 && streams.size() == 2) {
-                                    switch (index) {
-                                    case 0:
-                                        widthInt = 512;
-                                        heightInt = 288;
-                                        break;
-                                    case 1:
-                                    default:
-                                        widthInt = 480;
-                                        heightInt = 270;
-                                        break;
-                                    }
-                                } else if (quality == 2 && streams.size() == 1) {
-                                    widthInt = 960;
-                                    heightInt = 544;
-                                } else if (quality == 2 && streams.size() == 2) {
-                                    switch (index) {
-                                    case 0:
-                                        widthInt = 640;
-                                        heightInt = 360;
-                                        break;
-                                    case 1:
-                                    default:
-                                        widthInt = 960;
-                                        heightInt = 540;
-                                        break;
-                                    }
-                                } else if (quality == 3 && streams.size() == 1) {
-                                    widthInt = 960;
-                                    heightInt = 540;
-                                } else if (quality == 3 && streams.size() == 2) {
-                                    switch (index) {
-                                    case 0:
-                                        widthInt = 1280;
-                                        heightInt = 720;
-                                        break;
-                                    case 1:
-                                    default:
-                                        widthInt = 960;
-                                        heightInt = 540;
-                                        break;
-                                    }
-                                } else if (StringUtils.containsIgnoreCase(stream, "0.mp4") || StringUtils.containsIgnoreCase(stream, "128k.mp4")) {
-                                    widthInt = 320;
-                                    heightInt = 180;
-                                } else if (StringUtils.containsIgnoreCase(stream, "lo.mp4")) {
-                                    widthInt = 256;
-                                    heightInt = 144;
-                                } else if (StringUtils.containsIgnoreCase(stream, "A.mp4") || StringUtils.containsIgnoreCase(stream, "mn.mp4") || StringUtils.containsIgnoreCase(stream, "256k.mp4")) {
-                                    widthInt = 480;
-                                    heightInt = 270;
-                                } else if (StringUtils.containsIgnoreCase(stream, "B.mp4") || StringUtils.containsIgnoreCase(stream, "hi.mp4") || StringUtils.containsIgnoreCase(stream, "512k.mp4")) {
-                                    widthInt = 512;
-                                    heightInt = 288;
-                                } else if (StringUtils.containsIgnoreCase(stream, "C.mp4") || StringUtils.containsIgnoreCase(stream, "hq.mp4") || StringUtils.containsIgnoreCase(stream, "1800k.mp4")) {
-                                    widthInt = 960;
-                                    heightInt = 540;
-                                } else if (StringUtils.containsIgnoreCase(stream, "E.mp4") || StringUtils.containsIgnoreCase(stream, "ln.mp4") || StringUtils.containsIgnoreCase(stream, "1024k.mp4") || StringUtils.containsIgnoreCase(stream, "1.mp4")) {
-                                    widthInt = 640;
-                                    heightInt = 360;
-                                } else if (StringUtils.containsIgnoreCase(stream, "X.mp4") || StringUtils.containsIgnoreCase(stream, "hd.mp4")) {
-                                    widthInt = 1280;
-                                    heightInt = 720;
-                                } else {
-                                    /*
-                                     * Fallback to 'old' handling which could result in wrong resolutions (but that's better than missing
-                                     * downloadlinks!)
-                                     */
-                                    final Object width = mediaStream.get("_width");
-                                    final Object height = mediaStream.get("_height");
-                                    if (width instanceof Number) {
-                                        widthInt = ((Number) width).intValue();
-                                    } else {
-                                        switch (((Number) quality).intValue()) {
+                                final Object widthO = mediaStream.get("_width");
+                                final Object heightO = mediaStream.get("_height");
+                                if (widthO != null && heightO != null) {
+                                    resolution = VideoResolution.getByWidth(Integer.parseInt(widthO.toString()));
+                                }
+                                if (resolution == null) {
+                                    resolution = VideoResolution.getByURL(url);
+                                }
+                                if (resolution == null) {
+                                    /* Old handling! Do not trust this! */
+                                    if (quality == 0 && streams.size() == 1) {
+                                        resolution = VideoResolution.P_180;
+                                    } else if (quality == 1 && streams.size() == 1) {
+                                        resolution = VideoResolution.P_288;
+                                    } else if (quality == 1 && streams.size() == 2) {
+                                        switch (index) {
                                         case 0:
-                                            widthInt = 320;
+                                            resolution = VideoResolution.P_288;
                                             break;
                                         case 1:
-                                            widthInt = 512;
-                                            break;
-                                        case 2:
-                                            widthInt = 640;
-                                            break;
-                                        case 3:
-                                            widthInt = 1280;
-                                            break;
                                         default:
-                                            widthInt = -1;
+                                            resolution = VideoResolution.P_270;
                                             break;
                                         }
-                                    }
-                                    if (width instanceof Number) {
-                                        heightInt = ((Number) height).intValue();
-                                    } else {
-                                        switch (((Number) quality).intValue()) {
+                                    } else if (quality == 2 && streams.size() == 1) {
+                                        resolution = VideoResolution.P_544;
+                                    } else if (quality == 2 && streams.size() == 2) {
+                                        switch (index) {
                                         case 0:
-                                            heightInt = 180;
+                                            resolution = VideoResolution.P_360;
                                             break;
                                         case 1:
-                                            heightInt = 288;
-                                            break;
-                                        case 2:
-                                            heightInt = 360;
-                                            break;
-                                        case 3:
-                                            heightInt = 720;
-                                            break;
                                         default:
-                                            heightInt = -1;
+                                            resolution = VideoResolution.P_540;
+                                            break;
+                                        }
+                                    } else if (quality == 3 && streams.size() == 1) {
+                                        resolution = VideoResolution.P_540;
+                                    } else if (quality == 3 && streams.size() == 2) {
+                                        switch (index) {
+                                        case 0:
+                                            resolution = VideoResolution.P_720;
+                                            break;
+                                        case 1:
+                                        default:
+                                            resolution = VideoResolution.P_540;
                                             break;
                                         }
                                     }
                                 }
-                                final DownloadLink download = addQuality(param, metadata, foundQualitiesMap, url, null, 0, widthInt, heightInt, false);
+                                if (resolution == null) {
+                                    logger.warning("Skipping unknown resolution for URL: " + url);
+                                    continue;
+                                }
+                                final DownloadLink download = addQuality(param, metadata, foundQualitiesMap, url, null, 0, resolution, false);
                                 if (download != null) {
-                                    httpStreamsQualityIdentifiers.add(getQualityIdentifier(url, 0, widthInt, heightInt));
+                                    httpStreamsQualityIdentifiers.add(getQualityIdentifier(url, 0, resolution));
                                     if (cfg.isGrabBESTEnabled()) {
                                         // we iterate mediaStreamArray from best to lowest
                                         // TODO: optimize for cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled()
@@ -933,17 +867,19 @@ public class Ardmediathek extends PluginForDecrypt {
                         }
                         final String quality_id = qualities_hls[counter];
                         final String final_url = String.format(http_url_format, quality_id);
-                        // final String linkid = qualities[counter];
-                        final String resolution = resolutionsInOrder[counter];
-                        final String[] height_width = resolution.split("x");
-                        final String width = height_width[0];
-                        final String height = height_width[1];
-                        final int widthInt = Integer.parseInt(width);
-                        final int heightInt = Integer.parseInt(height);
-                        final String qualityIdentifier = getQualityIdentifier(final_url, 0, widthInt, heightInt);
+                        final String resolutionStr = resolutionsInOrder[counter];
+                        final String[] height_width = resolutionStr.split("x");
+                        final int width = Integer.parseInt(height_width[0]);
+                        // final int height = Integer.parseInt(height_width[1]);
+                        final VideoResolution resolution = VideoResolution.getByWidth(width);
+                        if (resolution == null) {
+                            logger.warning("Skipping unsupported width: " + width);
+                            continue;
+                        }
+                        final String qualityIdentifier = getQualityIdentifier(final_url, 0, resolution);
                         if (!httpStreamsQualityIdentifiers_2_over_hls_master.contains(qualityIdentifier)) {
                             logger.info("Found (additional) http quality via HLS Master: " + qualityIdentifier);
-                            addQuality(param, metadata, foundQualitiesMap_http_urls_via_HLS_master, final_url, null, 0, widthInt, heightInt, false);
+                            addQuality(param, metadata, foundQualitiesMap_http_urls_via_HLS_master, final_url, null, 0, resolution, false);
                             httpStreamsQualityIdentifiers_2_over_hls_master.add(qualityIdentifier);
                         }
                     }
@@ -967,22 +903,23 @@ public class Ardmediathek extends PluginForDecrypt {
             }
         }
         if (hlsMaster != null) {
-            addHLS(param, metadata, br, hlsMaster, false);
+            addHLS(param, metadata, foundQualitiesMap, br, hlsMaster, false);
         }
         if (http_url_audio != null) {
             if (http_url_audio.startsWith("//")) {
                 /* 2019-04-11: Workaround for missing protocol */
                 http_url_audio = "https:" + http_url_audio;
             }
-            addQuality(param, metadata, foundQualitiesMap, http_url_audio, null, 0, 0, 0, false);
+            addQuality(param, metadata, foundQualitiesMap, http_url_audio, null, 0, null, false);
         }
+        return foundQualitiesMap;
     }
 
     /**
      * Handling for older ARD websites. </br>
      * INFORMATION: network = akamai or limelight == RTMP
      */
-    private void crawlDasersteVideo(final CryptedLink param) throws Exception {
+    private ArrayList<DownloadLink> crawlDasersteVideo(final CryptedLink param) throws Exception {
         br.getPage(param.getCryptedUrl());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -993,7 +930,18 @@ public class Ardmediathek extends PluginForDecrypt {
         String contentID = null;
         if (this.getHost().equalsIgnoreCase("daserste.de")) {
             /* The fast way - we do not even have to access the main URL which the user has added :) */
-            url_xml = param.getCryptedUrl().replace(".html", "~playerXml.xml");
+            final String[] playerConfigs = br.getRegex("data-ctrl-player=\"(\\{[^\"]+)\"").getColumn(0);
+            if (playerConfigs.length == 0) {
+                /* Look for URLs going to playable content */
+                final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+                final String[] urlsToPlayableContent = br.getRegex("class=\"av-playerContainer notDownloadable\">\\s*<a href=\"(/[^\"]+)\"").getColumn(0);
+                for (final String urlToPlayableContent : urlsToPlayableContent) {
+                    ret.add(this.createDownloadlink(br.getURL(urlToPlayableContent).toString()));
+                }
+                return ret;
+            } else {
+                url_xml = param.getCryptedUrl().replace(".html", "~playerXml.xml");
+            }
         } else if (param.getCryptedUrl().matches(".+mdr\\.de/.+/((?:video|audio)\\-\\d+)\\.html")) {
             /* Some special mdr.de URLs --> We do not have to access main URL so this way we can speed up the crawl process a bit :) */
             contentID = new Regex(param.getCryptedUrl(), "((?:audio|video)\\-\\d+)\\.html$").getMatch(0);
@@ -1016,6 +964,7 @@ public class Ardmediathek extends PluginForDecrypt {
             /* Probably no downloadable content available */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final HashMap<String, DownloadLink> foundQualitiesMap = new HashMap<String, DownloadLink>();
         br.getPage(url_xml);
         /* Usually daserste.de as there is no way to find a contentID inside URL added by the user. */
         final String id = br.getRegex("<c7>(.*?)</c7>").getMatch(0);
@@ -1105,10 +1054,10 @@ public class Ardmediathek extends PluginForDecrypt {
                 }
             }
             /* E.g. daserste.de */
-            String filesize = getXML(stream, "size");
-            if (StringUtils.isEmpty(filesize)) {
+            String filesizeStr = getXML(stream, "size");
+            if (StringUtils.isEmpty(filesizeStr)) {
                 /* E.g. kika.de */
-                filesize = getXML(stream, "fileSize");
+                filesizeStr = getXML(stream, "fileSize");
             }
             final String bitrate_video = getXML(stream, "bitrateVideo");
             final String bitrate_audio = getXML(stream, "bitrateAudio");
@@ -1117,8 +1066,8 @@ public class Ardmediathek extends PluginForDecrypt {
             /* This sometimes contains resolution: e.g. <profileName>Video 2018 | MP4 720p25 | Web XL| 16:9 | 1280x720</profileName> */
             final String profileName = getXML(stream, "profileName");
             final String resolutionInProfileName = new Regex(profileName, "(\\d+x\\d+)").getMatch(0);
-            int width = 0;
-            int height = 0;
+            int width = -1;
+            int height = -1;
             if (width_str != null && width_str.matches("\\d+")) {
                 width = Integer.parseInt(width_str);
             }
@@ -1143,7 +1092,7 @@ public class Ardmediathek extends PluginForDecrypt {
             /* HLS master url may exist in every XML item --> We only have to add all HLS qualities once! */
             if (!StringUtils.isEmpty(hls_master) && !hls_master_dupelist.contains(hls_master)) {
                 /* HLS */
-                addHLS(param, metadata, this.br, hls_master, isAudioDescription);
+                addHLS(param, metadata, foundQualitiesMap, this.br, hls_master, isAudioDescription);
                 hls_master_dupelist.add(hls_master);
             }
             if (!StringUtils.isEmpty(http_url)) {
@@ -1160,13 +1109,29 @@ public class Ardmediathek extends PluginForDecrypt {
                 } else {
                     bitrate = 0;
                 }
-                addQualityDasersteVideo(param, metadata, http_url, filesize, bitrate, width, height, isAudioDescription);
+                /* Find video resolution */
+                VideoResolution resolution = null;
+                if (width > 0) {
+                    resolution = VideoResolution.getByWidth(width);
+                }
+                if (height > 0 && resolution == null) {
+                    resolution = VideoResolution.getByHeight(height);
+                }
+                if (resolution == null) {
+                    resolution = VideoResolution.getByURL(http_url);
+                }
+                if (resolution == null) {
+                    logger.warning("Found unsupported resolution for URL: " + http_url);
+                    continue;
+                }
+                addQuality(param, metadata, foundQualitiesMap, http_url, filesizeStr, bitrate, resolution, isAudioDescription);
             }
         }
-        return;
+        return this.handleUserQualitySelection(foundQualitiesMap);
     }
 
-    private void crawlTagesschauVideos(final CryptedLink param) throws Exception {
+    private ArrayList<DownloadLink> crawlTagesschauVideos(final CryptedLink param) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.getPage(param.getCryptedUrl());
         if (isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -1182,25 +1147,51 @@ public class Ardmediathek extends PluginForDecrypt {
                 /* Skip unsupported items */
                 continue;
             }
-            final Map<String, Object> _info = (Map<String, Object>) mc.get("_info");
-            final String clipDate = _info.get("clipDate").toString();
-            final String contentID = (String) JavaScriptEngineFactory.walkJson(root, "pc/_pixelConfig/{0}/clipData/assetid");
-            final ArdMetadata metadata = new ArdMetadata(mc.get("_title").toString());
-            metadata.setChannel(_info.get("channelTitle").toString());
-            if (clipDate != null) {
-                final long timestamp = TimeFormatter.getMilliSeconds(clipDate, "dd.MM.yyyy HH:mm", Locale.GERMANY);
-                metadata.setDateTimestamp(timestamp);
+            /* Collect metadata */
+            try {
+                final String contentID = (String) JavaScriptEngineFactory.walkJson(root, "pc/_pixelConfig/{0}/clipData/assetid");
+                final ArdMetadata metadata = new ArdMetadata(mc.get("_title").toString());
+                final Map<String, Object> _info = (Map<String, Object>) mc.get("_info");
+                final Map<String, Object> _download = (Map<String, Object>) mc.get("_download");
+                if (_info != null) {
+                    final String clipDate = _info.get("clipDate").toString();
+                    final long timestamp = TimeFormatter.getMilliSeconds(clipDate, "dd.MM.yyyy HH:mm", Locale.GERMANY);
+                    metadata.setDateTimestamp(timestamp);
+                    metadata.setChannel(_info.get("channelTitle").toString());
+                }
+                if (_download != null) {
+                    /* Kind of our fallback as '_info' doesn't always exist */
+                    final String dateStr = (String) _download.get("date");
+                    if (metadata.getChannel() == null) {
+                        metadata.setChannel(_download.get("channel").toString());
+                    }
+                    if (metadata.getDateTimestamp() == -1 && !StringUtils.isEmpty(dateStr)) {
+                        final long timestamp = TimeFormatter.getMilliSeconds(dateStr, "EEE MMM dd HH:mm:ss ZZZ yyyy", Locale.ENGLISH);
+                        metadata.setDateTimestamp(timestamp);
+                    }
+                }
+                if (contentID != null) {
+                    metadata.setContentID(contentID);
+                }
+                final HashMap<String, DownloadLink> foundQualitiesMap = this.crawlARDJson(param, metadata, mc);
+                final ArrayList<DownloadLink> result = this.handleUserQualitySelection(foundQualitiesMap);
+                /* Make sure user gets results right away. */
+                for (final DownloadLink link : result) {
+                    this.distribute(link);
+                }
+                ret.addAll(result);
+                if (this.isAbort()) {
+                    /* Abort by user */
+                    break;
+                }
+            } catch (final Throwable ignore) {
+                logger.warning("WTF");
             }
-            if (contentID != null) {
-                metadata.setContentID(contentID);
-            }
-            this.crawlARDJson(param, metadata, mc);
-            /* TODO: Refactor plugin to make it possible to add multiple videos in one go */
-            break;
         }
+        return ret;
     }
 
-    private void addHLS(final CryptedLink param, final ArdMetadata metadata, final Browser br, final String hlsMaster, final boolean isAudioDescription) throws Exception {
+    private void addHLS(final CryptedLink param, final ArdMetadata metadata, final HashMap<String, DownloadLink> foundQualities, final Browser br, final String hlsMaster, final boolean isAudioDescription) throws Exception {
         if (!this.grabHLS) {
             /* Avoid this http request if user hasn't selected any hls qualities */
             return;
@@ -1218,54 +1209,17 @@ public class Ardmediathek extends PluginForDecrypt {
         for (final HlsContainer hlscontainer : allHlsContainers) {
             if (hlscontainer.isVideo()) {
                 final String final_download_url = hlscontainer.getDownloadurl();
-                addQuality(param, metadata, foundQualitiesMap, final_download_url, null, hlscontainer.getBandwidth(), hlscontainer.getWidth(), hlscontainer.getHeight(), isAudioDescription);
+                final VideoResolution resolution = VideoResolution.getByWidth(hlscontainer.getWidth());
+                if (resolution == null) {
+                    logger.warning("Skipping unknown width: " + hlscontainer.getWidth());
+                } else {
+                    addQuality(param, metadata, foundQualities, final_download_url, null, hlscontainer.getBandwidth(), resolution, isAudioDescription);
+                }
             }
         }
     }
 
-    /* Especially for video.daserste.de */
-    private void addQualityDasersteVideo(final CryptedLink param, final ArdMetadata metadata, final String directurl, final String filesize_str, long bitrate, int width, int height, final boolean isAudioDescription) {
-        /* Try to get/Fix correct width/height values. */
-        /* Type 1 */
-        String width_URL = new Regex(directurl, "(hi|hq|ln|lo|mn)\\.mp4$").getMatch(0);
-        if (width_URL == null) {
-            /* Type 2 */
-            width_URL = new Regex(directurl, "(s|m|sm|ml|l)\\.mp4$").getMatch(0);
-        }
-        if (width_URL == null) {
-            /* Type 3 */
-            width_URL = new Regex(directurl, "(webm|webs|webl|webxl)").getMatch(0);
-        }
-        if (width_URL == null) {
-            /* Type 4 */
-            width_URL = new Regex(directurl, "/(\\d{1,4})\\-\\d+\\.mp4$").getMatch(0);
-        }
-        width = getWidth(width_URL, width);
-        height = getHeight(width_URL, width, height);
-        addQuality(param, metadata, foundQualitiesMap, directurl, filesize_str, bitrate, width, height, isAudioDescription);
-    }
-
-    /* Returns quality identifier String, compatible with quality selection values. Format: protocol_bitrateCorrected_heightCorrected */
-    private String getQualityIdentifier(final String directurl, long bitrate, int width, int height) {
-        final String protocol;
-        if (directurl.contains("m3u8")) {
-            protocol = "hls";
-        } else {
-            protocol = "http";
-        }
-        /* Use this for quality selection as real resolution can be slightly different than the values which our users can select. */
-        final int height_corrected = getHeightForQualitySelection(height);
-        final long bitrate_corrected;
-        if (bitrate > 0) {
-            bitrate_corrected = getBitrateForQualitySelection(bitrate, directurl);
-        } else {
-            bitrate_corrected = getDefaultBitrateForHeight(height_corrected);
-        }
-        final String qualityStringForQualitySelection = protocol + "_" + bitrate_corrected + "_" + height_corrected;
-        return qualityStringForQualitySelection;
-    }
-
-    private DownloadLink addQuality(final CryptedLink param, final ArdMetadata metadata, final HashMap<String, DownloadLink> qualitiesMap, final String directurl, final String filesize_str, long bitrate, int width, int height, final boolean isAudioDescription) {
+    private DownloadLink addQuality(final CryptedLink param, final ArdMetadata metadata, final HashMap<String, DownloadLink> qualitiesMap, final String directurl, final String filesize_str, long bitrate, final VideoResolution resolution, final boolean isAudioDescription) {
         /* Errorhandling */
         final String ext;
         if (directurl == null) {
@@ -1282,7 +1236,6 @@ public class Ardmediathek extends PluginForDecrypt {
             filesize = Long.parseLong(filesize_str);
         }
         /* Use real resolution inside filenames */
-        final String resolution = width + "x" + height;
         final String protocol;
         if (directurl.contains("m3u8")) {
             protocol = "hls";
@@ -1315,13 +1268,15 @@ public class Ardmediathek extends PluginForDecrypt {
                 }
             }
         }
-        final String qualityStringForQualitySelection = getQualityIdentifier(directurl, bitrate, width, height);
+        final String qualityStringForQualitySelection = getQualityIdentifier(directurl, bitrate, resolution);
         final DownloadLink link = createDownloadlink(directurl.replaceAll("https?://", getHost() + "decrypted://"));
         final MediathekProperties data = link.bindData(MediathekProperties.class);
         data.setTitle(metadata.getTitle());
         data.setSourceHost(getHost());
         data.setChannel(metadata.getChannel());
-        data.setResolution(resolution);
+        if (resolution != null) {
+            data.setResolution(resolution.toString());
+        }
         data.setBitrateTotal(bitrate);
         data.setProtocol(protocol);
         data.setFileExtension(ext);
@@ -1355,7 +1310,34 @@ public class Ardmediathek extends PluginForDecrypt {
         return link;
     }
 
-    private void handleUserQualitySelection(final HashMap<String, DownloadLink> foundQualitiesMap, final List<String> selectedQualities) {
+    /* Returns quality identifier String, compatible with quality selection values. Format: protocol_bitrateCorrected_heightCorrected */
+    private String getQualityIdentifier(final String directurl, long bitrate, final VideoResolution resolution) {
+        final String protocol;
+        if (directurl.contains("m3u8")) {
+            protocol = "hls";
+        } else {
+            protocol = "http";
+        }
+        /* Use this for quality selection as real resolution can be slightly different than the values which our users can select. */
+        int height_corrected;
+        long bitrate_corrected;
+        if (resolution != null) {
+            height_corrected = getHeightForQualitySelection(resolution.getHeight());
+            if (bitrate > 0) {
+                bitrate_corrected = getBitrateForQualitySelection(bitrate, directurl);
+            } else {
+                bitrate_corrected = getDefaultBitrateForHeight(height_corrected);
+            }
+        } else {
+            height_corrected = 0;
+            bitrate_corrected = 0;
+        }
+        final String qualityStringForQualitySelection = protocol + "_" + bitrate_corrected + "_" + height_corrected;
+        return qualityStringForQualitySelection;
+    }
+
+    private ArrayList<DownloadLink> handleUserQualitySelection(final HashMap<String, DownloadLink> foundQualitiesMap) {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         /* We have to re-add the subtitle for the best quality if wished by the user */
         HashMap<String, DownloadLink> finalSelectedQualityMap = new HashMap<String, DownloadLink>();
         if (cfg.isGrabBESTEnabled()) {
@@ -1405,9 +1387,9 @@ public class Ardmediathek extends PluginForDecrypt {
             final Entry<String, DownloadLink> entry = it.next();
             final DownloadLink dl = entry.getValue();
             if (cfg.isGrabSubtitleEnabled() && !StringUtils.isEmpty(subtitleLink)) {
-                final DownloadLink dl_subtitle = createDownloadlink(subtitleLink.replaceAll("https?://", getHost() + "decrypted://"));
+                final DownloadLink subtitle = createDownloadlink(subtitleLink.replaceAll("https?://", getHost() + "decrypted://"));
                 final MediathekProperties data_src = dl.bindData(MediathekProperties.class);
-                final MediathekProperties data_subtitle = dl_subtitle.bindData(MediathekProperties.class);
+                final MediathekProperties data_subtitle = subtitle.bindData(MediathekProperties.class);
                 data_subtitle.setStreamingType("subtitle");
                 data_subtitle.setSourceHost(data_src.getSourceHost());
                 data_subtitle.setChannel(data_src.getChannel());
@@ -1422,18 +1404,16 @@ public class Ardmediathek extends PluginForDecrypt {
                 if (data_src.getReleaseDate() > 0) {
                     data_subtitle.setReleaseDate(data_src.getReleaseDate());
                 }
-                dl_subtitle.setAvailable(true);
-                dl_subtitle.setFinalFileName(MediathekHelper.getMediathekFilename(dl_subtitle, data_subtitle, true, true));
-                dl_subtitle.setProperty("itemId", dl.getProperty("itemId", null));
-                dl_subtitle.setContentUrl(dl.getContentUrl());
-                dl_subtitle._setFilePackage(dl.getFilePackage());
-                decryptedLinks.add(dl_subtitle);
+                subtitle.setAvailable(true);
+                subtitle.setFinalFileName(MediathekHelper.getMediathekFilename(subtitle, data_subtitle, true, true));
+                subtitle.setProperty("itemId", dl.getProperty("itemId", null));
+                subtitle.setContentUrl(dl.getContentUrl());
+                subtitle._setFilePackage(dl.getFilePackage());
+                ret.add(subtitle);
             }
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
-        if (all_known_qualities.isEmpty()) {
-            logger.info("Failed to find any quality at all");
-        }
+        return ret;
     }
 
     private boolean isUnsupportedProtocolDasersteVideo(final String directlink) {
@@ -1458,93 +1438,6 @@ public class Ardmediathek extends PluginForDecrypt {
             newMap = map_with_all_qualities;
         }
         return newMap;
-    }
-
-    /** Returns videos' width. Do not remove parts of this code without understanding them - this code is crucial for the plugin! */
-    private int getWidth(final String width_str, final int width_given) {
-        final int width;
-        if (width_given > 0) {
-            width = width_given;
-        } else if (width_str != null) {
-            if (width_str.matches("\\d+")) {
-                width = Integer.parseInt(width_str);
-            } else {
-                /* Convert given quality-text to width. */
-                if (width_str.equals("mn") || width_str.equals("sm")) {
-                    width = 480;
-                } else if (width_str.equals("hi") || width_str.equals("m") || width_str.equals("_ard") || width_str.equals("webm")) {
-                    width = 512;
-                } else if (width_str.equals("ln") || width_str.equals("ml")) {
-                    width = 640;
-                } else if (width_str.equals("lo") || width_str.equals("s") || width_str.equals("webs")) {
-                    width = 320;
-                } else if (width_str.equals("hq") || width_str.equals("l") || width_str.equals("webl")) {
-                    width = 960;
-                } else if (width_str.equals("webxl")) {
-                    width = 1280;
-                } else {
-                    width = 0;
-                }
-            }
-        } else {
-            /* This should never happen! */
-            width = 0;
-        }
-        return width;
-    }
-
-    /** Returns videos' height. Do not remove parts of thise code without understanding them - this code is crucial for the plugin! */
-    private int getHeight(final String width_str, final int width, final int height_given) {
-        final int height;
-        if (height_given > 0) {
-            height = height_given;
-        } else if (width_str != null) {
-            height = Integer.parseInt(convertWidthToHeight(width_str));
-        } else {
-            /* This should never happen! */
-            height = 0;
-        }
-        return height;
-    }
-
-    private String convertWidthToHeight(final String width_str) {
-        final String height;
-        if (width_str == null) {
-            height = "0";
-        } else if (width_str.matches("\\d+")) {
-            final int width = Integer.parseInt(width_str);
-            if (width == 320) {
-                height = "180";
-            } else if (width == 480) {
-                height = "270";
-            } else if (width == 512) {
-                height = "288";
-            } else if (width == 640) {
-                height = "360";
-            } else if (width == 960) {
-                height = "540";
-            } else {
-                height = Integer.toString(width / 2);
-            }
-        } else {
-            /* Convert given quality-text to height. */
-            if (width_str.equals("mn") || width_str.equals("sm")) {
-                height = "270";
-            } else if (width_str.equals("hi") || width_str.equals("m") || width_str.equals("_ard") || width_str.equals("webm")) {
-                height = "288";
-            } else if (width_str.equals("ln") || width_str.equals("ml")) {
-                height = "360";
-            } else if (width_str.equals("lo") || width_str.equals("s") || width_str.equals("webs")) {
-                height = "180";
-            } else if (width_str.equals("hq") || width_str.equals("l") || width_str.equals("webl")) {
-                height = "540";
-            } else if (width_str.equals("webxl")) {
-                height = "540";
-            } else {
-                height = "0";
-            }
-        }
-        return height;
     }
 
     /* Returns default videoBitrate for width values. */
@@ -1695,6 +1588,120 @@ public class Ardmediathek extends PluginForDecrypt {
                 return dateFormatted + "_" + this.title;
             } else {
                 return this.title;
+            }
+        }
+    }
+
+    public enum VideoResolution {
+        // Order is default quality sort order
+        P_1080(1920, 1080),
+        P_720(1280, 720),
+        P_540(960, 540),
+        P_544(960, 544),
+        P_360(640, 360),
+        P_288(512, 288),
+        P_270(480, 270),
+        P_180(320, 180),
+        P_144(256, 144);
+
+        private int height;
+        private int width;
+
+        private VideoResolution(int width, int height) {
+            this.height = height;
+            this.width = width;
+        }
+
+        @Override
+        public String toString() {
+            return this.width + "x" + this.height;
+        }
+
+        public int getHeight() {
+            return height;
+        }
+
+        public String getLabel() {
+            return height + "p";
+        }
+
+        public int getWidth() {
+            return width;
+        }
+
+        public static VideoResolution getByWidth(int width) {
+            for (final VideoResolution r : values()) {
+                if (r.getWidth() == width) {
+                    return r;
+                }
+            }
+            return null;
+        }
+
+        public static VideoResolution getByHeight(int height) {
+            for (final VideoResolution r : values()) {
+                if (r.getHeight() == height) {
+                    return r;
+                }
+            }
+            return null;
+        }
+
+        public static VideoResolution getByURL(final String url) {
+            if (url == null) {
+                return null;
+            }
+            String width_str = new Regex(url, "(hi|hq|ln|lo|mn)\\.mp4$").getMatch(0);
+            if (width_str == null) {
+                /* Type 2 */
+                width_str = new Regex(url, "(s|m|sm|ml|l)\\.mp4$").getMatch(0);
+            }
+            if (width_str == null) {
+                /* Type 3 */
+                width_str = new Regex(url, "(webm|webs|webl|webxl|webxxl)").getMatch(0);
+            }
+            if (width_str == null) {
+                /* Type 4 */
+                width_str = new Regex(url, "/(\\d{1,4})\\-\\d+\\.mp4$").getMatch(0);
+            }
+            if (width_str != null) {
+                /* Convert given quality-text to width. */
+                if (width_str.equals("mn") || width_str.equals("sm")) {
+                    return P_270;
+                } else if (width_str.equals("hi") || width_str.equals("m") || width_str.equals("_ard") || width_str.equals("webm")) {
+                    return P_288;
+                } else if (width_str.equals("ln") || width_str.equals("ml")) {
+                    return P_360;
+                } else if (width_str.equals("lo") || width_str.equals("s") || width_str.equals("webs")) {
+                    return P_180;
+                } else if (width_str.equals("hq") || width_str.equals("l") || width_str.equals("webl")) {
+                    return P_540;
+                } else if (width_str.equals("webxl")) {
+                    return P_720;
+                } else if (width_str.equals("webxl")) {
+                    return P_1080;
+                } else {
+                    return null;
+                }
+            } else {
+                /* More loose checks */
+                if (StringUtils.containsIgnoreCase(url, "0.mp4") || StringUtils.containsIgnoreCase(url, "128k.mp4")) {
+                    return P_180;
+                } else if (StringUtils.containsIgnoreCase(url, "lo.mp4")) {
+                    return P_144;
+                } else if (StringUtils.containsIgnoreCase(url, "A.mp4") || StringUtils.containsIgnoreCase(url, "mn.mp4") || StringUtils.containsIgnoreCase(url, "256k.mp4")) {
+                    return P_270;
+                } else if (StringUtils.containsIgnoreCase(url, "B.mp4") || StringUtils.containsIgnoreCase(url, "hi.mp4") || StringUtils.containsIgnoreCase(url, "512k.mp4")) {
+                    return P_288;
+                } else if (StringUtils.containsIgnoreCase(url, "C.mp4") || StringUtils.containsIgnoreCase(url, "hq.mp4") || StringUtils.containsIgnoreCase(url, "1800k.mp4")) {
+                    return P_540;
+                } else if (StringUtils.containsIgnoreCase(url, "E.mp4") || StringUtils.containsIgnoreCase(url, "ln.mp4") || StringUtils.containsIgnoreCase(url, "1024k.mp4") || StringUtils.containsIgnoreCase(url, "1.mp4")) {
+                    return P_360;
+                } else if (StringUtils.containsIgnoreCase(url, "X.mp4") || StringUtils.containsIgnoreCase(url, "hd.mp4")) {
+                    return P_720;
+                } else {
+                    return null;
+                }
             }
         }
     }
