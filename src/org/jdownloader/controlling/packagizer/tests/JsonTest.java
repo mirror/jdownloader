@@ -21,18 +21,6 @@ public class JsonTest extends AWTest {
 
     @Override
     public void runTest() throws Exception {
-        testMapper(new SimpleMapper());
-        testMapper(new JacksonMapper());
-    }
-
-    private void testMapper(JSONMapper mapper) throws Exception {
-        JSonStorage.setMapper(mapper);
-        mapper.addSerializer(JsonFactoryInterface.class, new JsonSerializer() {
-            @Override
-            public String toJSonString(Object object, Object mapper) {
-                return ((JsonFactoryInterface) object).toJsonString();
-            }
-        });
         MyJDJsonMapper.HANDLER = new JSonHandler<Type>() {
             @Override
             public String objectToJSon(Object payload) {
@@ -45,6 +33,18 @@ public class JsonTest extends AWTest {
                 });
             }
         };
+        testMapper(new SimpleMapper());
+        testMapper(new JacksonMapper());
+    }
+
+    private void testMapper(JSONMapper mapper) throws Exception {
+        JSonStorage.setMapper(mapper);
+        mapper.addSerializer(JsonFactoryInterface.class, new JsonSerializer() {
+            @Override
+            public String toJSonString(Object object, Object mapper) {
+                return ((JsonFactoryInterface) object).toJsonString();
+            }
+        });
         PackagizerRule rule = new PackagizerRule();
         final PackagizerRule clone = JSonStorage.restoreFromString(JSonStorage.serializeToJson(rule), new TypeRef<PackagizerRule>() {
         });
