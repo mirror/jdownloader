@@ -22,6 +22,7 @@ import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
@@ -35,15 +36,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class GuardLink extends PluginForDecrypt {
-    public GuardLink(PluginWrapper wrapper) {
+public class LinkguardOrg extends PluginForDecrypt {
+    public LinkguardOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "guard.link" });
+        ret.add(new String[] { "linkguard.org", "guard.link" });
         return ret;
     }
 
@@ -70,22 +71,20 @@ public class GuardLink extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        br.getPage(parameter);
+        br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (this.getCaptchaForm() != null) {
+        if (this.getCaptchaForm(this.br) != null) {
             boolean captchaSuccess = false;
             int counter = 0;
             do {
-                final Form captchaForm = this.getCaptchaForm();
+                final Form captchaForm = this.getCaptchaForm(this.br);
                 final String captchaURL = captchaForm.getRegex("(/captcha\\.php[^<>\"\\']+)").getMatch(0);
                 final String code = this.getCaptchaCode(captchaURL, param);
                 captchaForm.put("captcha_code", Encoding.urlEncode(code));
                 this.br.submitForm(captchaForm);
-                if (this.getCaptchaForm() == null) {
+                if (this.getCaptchaForm(this.br) == null) {
                     captchaSuccess = true;
                     break;
                 }
@@ -96,15 +95,15 @@ public class GuardLink extends PluginForDecrypt {
             }
         }
         String passCode = null;
-        if (this.getPasswordForm() != null) {
+        if (this.getPasswordForm(this.br) != null) {
             boolean passwordSuccess = false;
             int counter = 0;
             do {
-                final Form passwordForm = this.getPasswordForm();
+                final Form passwordForm = this.getPasswordForm(this.br);
                 passCode = getUserInput("Password?", param);
                 passwordForm.put("password", Encoding.urlEncode(passCode));
                 this.br.submitForm(passwordForm);
-                if (this.getPasswordForm() == null) {
+                if (this.getPasswordForm(this.br) == null) {
                     passwordSuccess = true;
                     break;
                 }
@@ -145,7 +144,7 @@ public class GuardLink extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private Form getCaptchaForm() {
+    private Form getCaptchaForm(final Browser br) {
         /* 2021-02-15: Form is always present but hidden */
         if (br.containsHTML("<div style=\"display:block;\">\\s*<form action=\"\" accept-charset=\"utf-8\" method=\"post\">\\s*<input name=\"captcha\" value=\"captcha\" type=\"hidden\">")) {
             return br.getFormbyKey("captcha");
@@ -153,7 +152,7 @@ public class GuardLink extends PluginForDecrypt {
         return null;
     }
 
-    private Form getPasswordForm() {
+    private Form getPasswordForm(final Browser br) {
         /* 2021-02-15: Form is always present but hidden */
         if (br.containsHTML("<div class=\"panel-body\" style=\"display:block;\">\\s*<div class=\"signup_form\">")) {
             return br.getFormbyKey("password");
