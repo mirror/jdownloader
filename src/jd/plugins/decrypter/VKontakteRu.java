@@ -799,7 +799,7 @@ public class VKontakteRu extends PluginForDecrypt {
             for (final Map.Entry<String, Object> cookieEntry : entrymap.entrySet()) {
                 final String key = cookieEntry.getKey();
                 final Object value = cookieEntry.getValue();
-                if (key.equals("vid") && ((Number) value).toString().equals(videoid) && entrymap.containsKey("hd")) {
+                if (key.equals("vid") && value != null && value.toString().equals(videoid) && entrymap.containsKey("hd")) {
                     return o;
                 } else if (value instanceof List || value instanceof Map) {
                     final Object pico = recursiveFindVideoMap(value, videoid);

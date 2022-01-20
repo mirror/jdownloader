@@ -175,4 +175,10 @@ public class VidmolyTo extends XFileSharingProBasic {
         /* 2020-05-18: Special */
         return false;
     }
+
+    @Override
+    public String getLoginURL() {
+        /* 2022-01-20 */
+        return getMainPage() + "/";
+    }
 }
