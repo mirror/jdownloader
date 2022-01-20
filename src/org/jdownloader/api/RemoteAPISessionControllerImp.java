@@ -73,44 +73,50 @@ public class RemoteAPISessionControllerImp extends HttpSessionController<RemoteA
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, "0"));
             response.setResponseCode(ResponseCode.SUCCESS_OK);
             return true;
+        } else {
+            return super.onGetRequest(request, response);
         }
-        return super.onGetRequest(request, response);
     }
 
     @Override
     public void onBeforeSendHeaders(HttpResponse response) {
-        HttpRequest request = response.getConnection().getRequest();
-        HTTPBridge bridge = request.getBridge();
-        // https://scotthelme.co.uk/hardening-your-http-response-headers/#x-content-type-options
+        final HttpRequest request = response.getConnection().getRequest();
+        final HTTPBridge bridge = request.getBridge();
+        response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_MAX_AGE, "1800"));
+        response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_METHODS, "OPTIONS, GET, POST"));
+        final String allowHeaders = request.getRequestHeaders().getValue("Access-Control-Request-Headers");
+        if (allowHeaders != null) {
+            response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_HEADERS, allowHeaders));
+        }
+        final String pna = request.getRequestHeaders().getValue("Access-Control-Request-Private-Network");
+        if (pna != null) {
+            response.getResponseHeaders().addIfAbsent(new HTTPHeader("Access-Control-Allow-Private-Network", pna));
+        }
         if (bridge != null && bridge instanceof MyJDownloaderConnectThread) {
-            response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN, "*"));
-            response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_MAX_AGE, "1800"));
-            response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_METHODS, "OPTIONS, GET, POST"));
-            final String headers = request.getRequestHeaders().getValue("Access-Control-Request-Headers");
-            if (headers != null) {
-                response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_HEADERS, headers));
+            final String allowOrigin = request.getRequestHeaders().getValue(HTTPConstants.HEADER_REQUEST_ORIGIN);
+            if (allowOrigin != null) {
+                response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN, allowOrigin));
+            } else if (StringUtils.containsIgnoreCase(request.getRequestHeaders().getValue(HTTPConstants.HEADER_REQUEST_HOST), "my.jdownloader.org")) {
+                response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN, "https://my.jdownloader.org"));
+            } else {
+                response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN, "*"));
             }
+            response.getResponseHeaders().addIfAbsent(new HTTPHeader("Access-Control-Allow-Credentials", "true"));
             response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_X_FRAME_OPTIONS, "DENY"));
             response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_X_XSS_PROTECTION, "1; mode=block"));
             response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_REFERRER_POLICY, JsonConfig.create(RemoteAPIConfig.class).getLocalAPIServerHeaderReferrerPolicy()));
             response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_X_CONTENT_TYPE_OPTIONS, "nosniff"));
-            return;
+        } else {
+            final String allowOrigin = JsonConfig.create(RemoteAPIConfig.class).getLocalAPIServerHeaderAccessControllAllowOrigin();
+            if (StringUtils.isNotEmpty(allowOrigin)) {
+                response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN, allowOrigin));
+            }
+            response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_SECURITY_POLICY, JsonConfig.create(RemoteAPIConfig.class).getLocalAPIServerHeaderContentSecurityPolicy()));
+            response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_X_FRAME_OPTIONS, JsonConfig.create(RemoteAPIConfig.class).getLocalAPIServerHeaderXFrameOptions()));
+            response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_X_XSS_PROTECTION, JsonConfig.create(RemoteAPIConfig.class).getLocalAPIServerHeaderXXssProtection()));
+            response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_REFERRER_POLICY, JsonConfig.create(RemoteAPIConfig.class).getLocalAPIServerHeaderReferrerPolicy()));
+            response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_X_CONTENT_TYPE_OPTIONS, JsonConfig.create(RemoteAPIConfig.class).getLocalAPIServerHeaderXContentTypeOptions()));
         }
-        String value = JsonConfig.create(RemoteAPIConfig.class).getLocalAPIServerHeaderAccessControllAllowOrigin();
-        if (StringUtils.isNotEmpty(value)) {
-            response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN, value));
-        }
-        response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_MAX_AGE, "1800"));
-        response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_METHODS, "OPTIONS, GET, POST"));
-        final String headers = request.getRequestHeaders().getValue("Access-Control-Request-Headers");
-        if (headers != null) {
-            response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_HEADERS, headers));
-        }
-        response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_SECURITY_POLICY, JsonConfig.create(RemoteAPIConfig.class).getLocalAPIServerHeaderContentSecurityPolicy()));
-        response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_X_FRAME_OPTIONS, JsonConfig.create(RemoteAPIConfig.class).getLocalAPIServerHeaderXFrameOptions()));
-        response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_X_XSS_PROTECTION, JsonConfig.create(RemoteAPIConfig.class).getLocalAPIServerHeaderXXssProtection()));
-        response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_REFERRER_POLICY, JsonConfig.create(RemoteAPIConfig.class).getLocalAPIServerHeaderReferrerPolicy()));
-        response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_X_CONTENT_TYPE_OPTIONS, JsonConfig.create(RemoteAPIConfig.class).getLocalAPIServerHeaderXContentTypeOptions()));
     }
 
     @Override

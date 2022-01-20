@@ -26,8 +26,9 @@ public class ExternInterface {
                 response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, "0"));
                 response.setResponseCode(ResponseCode.SUCCESS_OK);
                 return true;
+            } else {
+                return super.onGetRequest(request, response);
             }
-            return super.onGetRequest(request, response);
         }
 
         @Override
@@ -37,9 +38,13 @@ public class ExternInterface {
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_MAX_AGE, "1800"));
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN, "*"));
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_METHODS, "OPTIONS, GET, POST"));
-            final String headers = request.getRequestHeaders().getValue("Access-Control-Request-Headers");
-            if (headers != null) {
-                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_HEADERS, headers));
+            final String allowHeaders = request.getRequestHeaders().getValue("Access-Control-Request-Headers");
+            if (allowHeaders != null) {
+                response.getResponseHeaders().addIfAbsent(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_HEADERS, allowHeaders));
+            }
+            final String pna = request.getRequestHeaders().getValue("Access-Control-Request-Private-Network");
+            if (pna != null) {
+                response.getResponseHeaders().addIfAbsent(new HTTPHeader("Access-Control-Allow-Private-Network", pna));
             }
             response.getResponseHeaders().remove(HTTPConstants.HEADER_RESPONSE_CONTENT_SECURITY_POLICY);
             response.getResponseHeaders().remove(HTTPConstants.HEADER_RESPONSE_X_FRAME_OPTIONS);
