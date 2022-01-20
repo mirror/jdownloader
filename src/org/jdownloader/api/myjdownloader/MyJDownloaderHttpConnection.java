@@ -49,6 +49,7 @@ import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.net.httpserver.requests.OptionsRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
+import org.bouncycastle.tls.TlsNoCloseNotifyException;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.api.myjdownloader.MyJDownloaderConnectThread.SessionInfoWrapper;
 import org.jdownloader.api.myjdownloader.api.MyJDownloaderAPI;
@@ -231,19 +232,22 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         if (Exceptions.containsInstanceOf(e, SocketException.class, ClosedChannelException.class)) {
             // socket already closed
             return true;
-        }
-        if (e instanceof HttpConnectionExceptionHandler) {
+        } else if (Exceptions.containsInstanceOf(e, TlsNoCloseNotifyException.class)) {
+            // TLS socket already closed
+            return true;
+        } else if (e instanceof HttpConnectionExceptionHandler) {
             return ((HttpConnectionExceptionHandler) e).handle(response);
-        }
-        final BasicRemoteAPIException apiException;
-        if (!(e instanceof BasicRemoteAPIException)) {
-            apiException = new InternalApiException(e);
         } else {
-            apiException = (BasicRemoteAPIException) e;
+            final BasicRemoteAPIException apiException;
+            if (!(e instanceof BasicRemoteAPIException)) {
+                apiException = new InternalApiException(e);
+            } else {
+                apiException = (BasicRemoteAPIException) e;
+            }
+            logger.log(apiException);
+            this.response = new HttpResponse(this);
+            return apiException.handle(this.response);
         }
-        logger.log(apiException);
-        this.response = new HttpResponse(this);
-        return apiException.handle(this.response);
     }
 
     public String getRequestConnectToken() {
@@ -340,7 +344,7 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         if (this.os != null) {
             return this.os;
         }
-        HTTPHeader contentType = response.getResponseHeaders().get(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE);
+        final HTTPHeader contentType = response.getResponseHeaders().get(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE);
         if (contentType != null && StringUtils.startsWithCaseInsensitive(contentType.getValue(), "application/json")) {
             /* check for json response */
             try {
@@ -384,9 +388,9 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
                     this.os = new OutputStream() {
                         private ChunkedOutputStream chunkedOS = new ChunkedOutputStream(new BufferedOutputStream(getRawOutputStream(), 16384));
                         Base64OutputStream          b64os     = new Base64OutputStream(chunkedOS) {
-                            // public void close() throws IOException {
-                            // };
-                        };
+                                                                  // public void close() throws IOException {
+                                                                  // };
+                                                              };
                         OutputStream                outos     = new CipherOutputStream(b64os, cipher);
                         {
                             if (useDeChunkingOutputStream) {
