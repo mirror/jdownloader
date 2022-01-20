@@ -20,7 +20,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -75,27 +74,13 @@ import jd.plugins.components.PluginJSonUtils;
         "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?ndr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?tagesschau\\.de/[^<>\"]+\\.html" })
 public class Ardmediathek extends PluginForDecrypt {
     /* Constants */
-    private static final String                 type_embedded                              = "https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js";
+    private static final String type_embedded       = "https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js";
     /* Variables */
-    private final HashMap<String, DownloadLink> foundQualitiesMap_http_urls_via_HLS_master = new HashMap<String, DownloadLink>();
-    /* Important: Keep this updated & keep this in order: Highest --> Lowest */
-    private final List<String>                  all_known_qualities                        = Arrays.asList("http_6666000_1080", "hls_6666000_1080", "http_3773000_720", "hls_3773000_720", "http_1989000_540", "hls_1989000_540", "http_1213000_360", "hls_1213000_360", "http_605000_280", "hls_605000_280", "http_448000_270", "hls_448000_270", "http_317000_270", "hls_317000_270", "http_189000_180", "hls_189000_180", "http_0_0");
-    private final List<String>                  selectedQualities                          = new ArrayList<String>();
-    private final Map<String, Long>             heigth_to_bitrate                          = new HashMap<String, Long>();
-    {
-        heigth_to_bitrate.put("180", 189000l);
-        /* keep in mind that sometimes there are two versions for 270! This is the higher one (default)! */
-        heigth_to_bitrate.put("270", 448000l);
-        heigth_to_bitrate.put("280", 605000l);
-        heigth_to_bitrate.put("360", 1213000l);
-        heigth_to_bitrate.put("540", 1989000l);
-        heigth_to_bitrate.put("576", 1728000l);
-        heigth_to_bitrate.put("720", 3773000l);
-        heigth_to_bitrate.put("1080", 6666000l);
-    }
-    private String             subtitleLink = null;
-    private boolean            grabHLS      = false;
-    private ArdConfigInterface cfg          = null;
+    private final List<String>  all_known_qualities = new ArrayList<String>();
+    private final List<String>  selectedQualities   = new ArrayList<String>();
+    private String              subtitleLink        = null;
+    private boolean             grabHLS             = false;
+    private ArdConfigInterface  cfg                 = null;
 
     public Ardmediathek(final PluginWrapper wrapper) {
         super(wrapper);
@@ -134,77 +119,73 @@ public class Ardmediathek extends PluginForDecrypt {
 
     private void initSelectedQualities() {
         if (cfg.isGrabHLS180pVideoEnabled()) {
-            selectedQualities.add("hls_" + heigth_to_bitrate.get("180") + "_180");
+            selectedQualities.add("hls_180");
         }
         if (cfg.isGrabHLS144pVideoEnabled()) {
-            selectedQualities.add("hls_" + heigth_to_bitrate.get("144") + "_144");
-        }
-        /* TODO: Check if this is still needed */
-        if (cfg.isGrabHLS270pLowerVideoEnabled()) {
-            selectedQualities.add("hls_317000_270");
+            selectedQualities.add("hls_144");
         }
         if (cfg.isGrabHLS270pVideoEnabled()) {
-            selectedQualities.add("hls_" + heigth_to_bitrate.get("270") + "_270");
+            selectedQualities.add("hls_270");
         }
         if (cfg.isGrabHLS280pVideoEnabled()) {
-            selectedQualities.add("hls_" + heigth_to_bitrate.get("280") + "_280");
+            selectedQualities.add("hls_280");
         }
         if (cfg.isGrabHLS288pVideoEnabled()) {
-            selectedQualities.add("hls_" + heigth_to_bitrate.get("288") + "_288");
+            selectedQualities.add("hls_288");
         }
         if (cfg.isGrabHLS360pVideoEnabled()) {
-            selectedQualities.add("hls_" + heigth_to_bitrate.get("360") + "_360");
+            selectedQualities.add("hls_360");
         }
         if (cfg.isGrabHLS540pVideoEnabled()) {
-            selectedQualities.add("hls_" + heigth_to_bitrate.get("540") + "_540");
-        }
-        if (cfg.isGrabHLS576pVideoEnabled()) {
-            selectedQualities.add("hls_" + heigth_to_bitrate.get("576") + "_576");
+            selectedQualities.add("hls_540");
+            selectedQualities.add("hls_544");
         }
         if (cfg.isGrabHLS720pVideoEnabled()) {
-            selectedQualities.add("hls_" + heigth_to_bitrate.get("720") + "_720");
+            selectedQualities.add("hls_720");
         }
         if (cfg.isGrabHLS1080pVideoEnabled()) {
-            selectedQualities.add("hls_" + heigth_to_bitrate.get("1080") + "_1080");
+            selectedQualities.add("hls_1080");
         }
+        /* If user has deselected all HLS qualities, we can later skip HLS crawling entirely which speeds up the crawl process. */
         if (selectedQualities.size() > 0) {
             this.grabHLS = true;
         } else {
             this.grabHLS = false;
         }
         if (cfg.isGrabHTTP144pVideoEnabled()) {
-            selectedQualities.add("http_" + heigth_to_bitrate.get("144") + "_144");
+            selectedQualities.add("http_144");
         }
         if (cfg.isGrabHTTP180pVideoEnabled()) {
-            selectedQualities.add("http_" + heigth_to_bitrate.get("180") + "_180");
-        }
-        /* TODO: Check if this is still needed */
-        if (cfg.isGrabHTTP270pLowerVideoEnabled()) {
-            selectedQualities.add("http_317000_270");
+            selectedQualities.add("http_180");
         }
         if (cfg.isGrabHTTP270pVideoEnabled()) {
-            selectedQualities.add("http_" + heigth_to_bitrate.get("270") + "_270");
+            selectedQualities.add("http_270");
         }
         if (cfg.isGrabHTTP280pVideoEnabled()) {
-            selectedQualities.add("http_" + heigth_to_bitrate.get("280") + "_280");
+            selectedQualities.add("http_280");
         }
         if (cfg.isGrabHTTP288pVideoEnabled()) {
-            selectedQualities.add("http_" + heigth_to_bitrate.get("288") + "_288");
+            selectedQualities.add("http_288");
         }
         if (cfg.isGrabHTTP360pVideoEnabled()) {
-            selectedQualities.add("http_" + heigth_to_bitrate.get("360") + "_360");
+            selectedQualities.add("http_360");
         }
         if (cfg.isGrabHTTP540pVideoEnabled()) {
-            selectedQualities.add("http_" + heigth_to_bitrate.get("540") + "_540");
-        }
-        if (cfg.isGrabHTTP576pVideoEnabled()) {
-            selectedQualities.add("http_" + heigth_to_bitrate.get("576") + "_576");
+            selectedQualities.add("http_540");
+            selectedQualities.add("http_544");
         }
         if (cfg.isGrabHTTP720pVideoEnabled()) {
-            selectedQualities.add("http_" + heigth_to_bitrate.get("720") + "_720");
+            selectedQualities.add("http_720");
         }
         if (cfg.isGrabHTTP1080pVideoEnabled()) {
-            selectedQualities.add("http_" + heigth_to_bitrate.get("1080") + "_1080");
+            selectedQualities.add("http_1080");
+        }
+    }
+
+    private void initKnownQualities() {
+        for (final VideoResolution res : VideoResolution.values()) {
+            all_known_qualities.add("http_" + res.getHeight());
+            all_known_qualities.add("hls_" + res.getHeight());
         }
     }
 
@@ -214,6 +195,7 @@ public class Ardmediathek extends PluginForDecrypt {
         br.setFollowRedirects(true);
         cfg = PluginJsonConfig.get(getConfigInterface());
         initSelectedQualities();
+        initKnownQualities();
         /*
          * 2018-02-22: Important: So far there is only one OLD website, not compatible with the "decryptMediathek" function! Keep this in
          * mind when changing things!
@@ -247,12 +229,7 @@ public class Ardmediathek extends PluginForDecrypt {
      * Find subtitle URL inside xml String
      */
     private String getXMLSubtitleURL(final Browser xmlBR) throws IOException {
-        String subtitleURL = getXML(xmlBR.toString(), "videoSubtitleUrl");
-        /* TODO: Check if we can safely remove the following lines of code */
-        // if (StringUtils.isEmpty(subtitleURL)) {
-        // /* E.g. checkeins.de */
-        // subtitleURL = xmlBR.getRegex("<dataTimedTextNoOffset url=\"((?:https:)?[^<>\"]+\\.xml)\">").getMatch(0);
-        // }
+        final String subtitleURL = getXML(xmlBR.toString(), "videoSubtitleUrl");
         if (subtitleURL != null) {
             return xmlBR.getURL(subtitleURL).toString();
         } else {
@@ -839,6 +816,7 @@ public class Ardmediathek extends PluginForDecrypt {
          */
         final boolean tryToFindAdditionalHTTPURLs = true;
         if (tryToFindAdditionalHTTPURLs && hlsMaster != null) {
+            final HashMap<String, DownloadLink> foundQualitiesMap_http_urls_via_HLS_master = new HashMap<String, DownloadLink>();
             final String http_url_format = getHlsToHttpURLFormat(hlsMaster, exampleHTTPURL);
             final String[] qualities_hls = quality_string != null ? quality_string.split(",") : null;
             if (http_url_format != null && qualities_hls != null && qualities_hls.length > 0) {
@@ -1121,6 +1099,7 @@ public class Ardmediathek extends PluginForDecrypt {
                     resolution = VideoResolution.getByURL(http_url);
                 }
                 if (resolution == null) {
+                    /* Skip unsupported resolutions */
                     logger.warning("Found unsupported resolution for URL: " + http_url);
                     continue;
                 }
@@ -1205,8 +1184,39 @@ public class Ardmediathek extends PluginForDecrypt {
             hlsBR = br.cloneBrowser();
             hlsBR.getPage(hlsMaster);
         }
+        /* Get all HLS qualities */
         final List<HlsContainer> allHlsContainers = HlsContainer.getHlsQualities(hlsBR);
+        final HashMap<Integer, List<HlsContainer>> dupeMap = new HashMap<Integer, List<HlsContainer>>();
         for (final HlsContainer hlscontainer : allHlsContainers) {
+            if (!dupeMap.containsKey(hlscontainer.getWidth())) {
+                dupeMap.put(hlscontainer.getWidth(), new ArrayList<HlsContainer>());
+            }
+            dupeMap.get(hlscontainer.getWidth()).add(hlscontainer);
+        }
+        /* Collect highest bitrate version for each resolution */
+        final List<HlsContainer> allHlsContainersWithoutWidthDupes = new ArrayList<HlsContainer>();
+        for (final List<HlsContainer> hlscontainers : dupeMap.values()) {
+            if (hlscontainers.size() == 1) {
+                allHlsContainersWithoutWidthDupes.add(hlscontainers.get(0));
+            } else {
+                logger.info("Found multiple bitrates for heigth: " + hlscontainers.get(0).getHeight());
+                int maxBandwidth = -1;
+                HlsContainer highestBitrateCandidate = null;
+                for (final HlsContainer hlscontainer : hlscontainers) {
+                    if (hlscontainer.getBandwidth() > maxBandwidth) {
+                        highestBitrateCandidate = hlscontainer;
+                        maxBandwidth = hlscontainer.getBandwidth();
+                    }
+                }
+                if (highestBitrateCandidate == null) {
+                    /* This should never happen */
+                    logger.warning("WTF m3u8 file broken for heigth " + hlscontainers.get(0).getHeight() + "??");
+                } else {
+                    allHlsContainersWithoutWidthDupes.add(highestBitrateCandidate);
+                }
+            }
+        }
+        for (final HlsContainer hlscontainer : allHlsContainersWithoutWidthDupes) {
             if (hlscontainer.isVideo()) {
                 final String final_download_url = hlscontainer.getDownloadurl();
                 final VideoResolution resolution = VideoResolution.getByWidth(hlscontainer.getWidth());
@@ -1230,7 +1240,7 @@ public class Ardmediathek extends PluginForDecrypt {
         } else {
             ext = "mp4";
         }
-        long filesize = 0;
+        long filesize = -1;
         boolean setVerifiedFilesize = false;
         if (filesize_str != null && filesize_str.matches("\\d+")) {
             filesize = Long.parseLong(filesize_str);
@@ -1242,7 +1252,7 @@ public class Ardmediathek extends PluginForDecrypt {
         } else {
             protocol = "http";
             /* Only grab filesize if we need it for BEST-comparison later. */
-            if (cfg.isGrabBESTEnabled() || cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled()) {
+            if (filesize == -1 && (cfg.isGrabBESTEnabled() || cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled())) {
                 final Browser brc = br.cloneBrowser();
                 brc.setFollowRedirects(true);
                 URLConnectionAdapter con = null;
@@ -1285,9 +1295,10 @@ public class Ardmediathek extends PluginForDecrypt {
             data.setReleaseDate(metadata.getDateTimestamp());
         }
         data.setShow(metadata.getSubtitle());
-        link.setFinalFileName(MediathekHelper.getMediathekFilename(link, data, true, true));
+        link.setFinalFileName(MediathekHelper.getMediathekFilename(link, data, true, false));
         link.setContentUrl(param.getCryptedUrl());
         if (metadata.getContentID() == null) {
+            /* ContentID should always be available! */
             logger.log(new Exception("FixMe!"));
         } else {
             /* Needed for linkid / dupe check! */
@@ -1299,6 +1310,7 @@ public class Ardmediathek extends PluginForDecrypt {
             } else {
                 link.setDownloadSize(filesize);
             }
+            /* Filesize available? We know that content is online and can set AvailableStatus right away ("Fast linkcheck"). */
             link.setAvailable(true);
         } else if (cfg.isFastLinkcheckEnabled()) {
             link.setAvailable(true);
@@ -1319,20 +1331,13 @@ public class Ardmediathek extends PluginForDecrypt {
             protocol = "http";
         }
         /* Use this for quality selection as real resolution can be slightly different than the values which our users can select. */
-        int height_corrected;
-        long bitrate_corrected;
+        final int height;
         if (resolution != null) {
-            height_corrected = getHeightForQualitySelection(resolution.getHeight());
-            if (bitrate > 0) {
-                bitrate_corrected = getBitrateForQualitySelection(bitrate, directurl);
-            } else {
-                bitrate_corrected = getDefaultBitrateForHeight(height_corrected);
-            }
+            height = resolution.getHeight();
         } else {
-            height_corrected = 0;
-            bitrate_corrected = 0;
+            height = 0;
         }
-        final String qualityStringForQualitySelection = protocol + "_" + bitrate_corrected + "_" + height_corrected;
+        final String qualityStringForQualitySelection = protocol + "_" + height;
         return qualityStringForQualitySelection;
     }
 
@@ -1344,7 +1349,9 @@ public class Ardmediathek extends PluginForDecrypt {
             /* User wants BEST only */
             finalSelectedQualityMap = findBESTInsideGivenMap(foundQualitiesMap);
         } else {
-            final boolean grabUnknownQualities = cfg.isAddUnknownQualitiesEnabled();
+            /* 2022-01-20: Grabbing unknown qualities is not supported anymore for now. */
+            // final boolean grabUnknownQualities = cfg.isAddUnknownQualitiesEnabled();
+            final boolean grabUnknownQualities = false;
             boolean atLeastOneSelectedItemExists = false;
             for (final String quality : all_known_qualities) {
                 if (selectedQualities.contains(quality) && foundQualitiesMap.containsKey(quality)) {
@@ -1440,23 +1447,11 @@ public class Ardmediathek extends PluginForDecrypt {
         return newMap;
     }
 
-    /* Returns default videoBitrate for width values. */
-    private long getDefaultBitrateForHeight(final int height) {
-        final String height_str = Integer.toString(height);
-        long bitrateVideo;
-        if (heigth_to_bitrate.containsKey(height_str)) {
-            bitrateVideo = heigth_to_bitrate.get(height_str);
-        } else {
-            /* Unknown or audio */
-            bitrateVideo = 0;
-        }
-        return bitrateVideo;
-    }
-
     /**
      * Given width may not always be exactly what we have in our quality selection but we need an exact value to make the user selection
      * work properly!
      */
+    @Deprecated
     private int getHeightForQualitySelection(final int height) {
         final int heightelect;
         if (height > 0 && height <= 250) {
@@ -1478,45 +1473,6 @@ public class Ardmediathek extends PluginForDecrypt {
             heightelect = height;
         }
         return heightelect;
-    }
-
-    /**
-     * Given bandwidth may not always be exactly what we have in our quality selection but we need an exact value to make the user selection
-     * work properly!
-     */
-    private long getBitrateForQualitySelection(final long bandwidth, final String directurl) {
-        final long bandwidthselect;
-        if (directurl != null && directurl.contains(".mp3")) {
-            /* Audio --> There is usually only 1 bandwidth available so for our selection, we use the value 0. */
-            bandwidthselect = 0;
-        } else if (bandwidth > 0 && bandwidth <= 250000) {
-            bandwidthselect = 189000;
-        } else if (bandwidth > 250000 && bandwidth <= 350000) {
-            /* lower 270 */
-            bandwidthselect = 317000;
-        } else if (bandwidth > 350000 && bandwidth <= 480000) {
-            /* higher/normal 270 */
-            bandwidthselect = 448000;
-        } else if (bandwidth > 480000 && bandwidth <= 800000) {
-            /* 280 */
-            bandwidthselect = 605000;
-        } else if (bandwidth > 800000 && bandwidth <= 1600000) {
-            /* 360 */
-            bandwidthselect = 1213000;
-        } else if (bandwidth > 1600000 && bandwidth <= 2800000) {
-            /* 540 */
-            bandwidthselect = 1989000;
-        } else if (bandwidth > 2800000 && bandwidth <= 4500000) {
-            /* 720 */
-            bandwidthselect = 3773000;
-        } else if (bandwidth > 4500000 && bandwidth <= 10000000) {
-            /* 1080 */
-            bandwidthselect = 6666000;
-        } else {
-            /* Probably unknown quality */
-            bandwidthselect = bandwidth;
-        }
-        return bandwidthselect;
     }
 
     public class ArdMetadata {
