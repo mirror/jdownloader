@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -28,11 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wikifortio.com" }, urls = { "http://(www\\.)?wikifortio\\.com/\\d+/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wikifortio.com" }, urls = { "https?://(?:www\\.)?wikifortio\\.com/\\d+/" })
 public class WikiFortioCom extends PluginForHost {
-
     public WikiFortioCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -43,11 +41,11 @@ public class WikiFortioCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(410);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         final int responsecode = this.br.getHttpConnection().getResponseCode();
         if (responsecode == 404 || responsecode == 410 || br.containsHTML("(doesn\\'t exist or has expired and is no longer available<|>We are sorry but file \\')")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -66,11 +64,18 @@ public class WikiFortioCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), "act=download&fid=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)/$").getMatch(0) + "&fileName=" + Encoding.urlEncode(downloadLink.getName()), true, -2);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        if (br.containsHTML("(?i)>Enter password")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected files are not yet supported");
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), "act=download&fid=" + new Regex(link.getDownloadURL(), "(\\d+)/$").getMatch(0) + "&fileName=" + Encoding.urlEncode(link.getName()), true, -2);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -88,5 +93,4 @@ public class WikiFortioCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
