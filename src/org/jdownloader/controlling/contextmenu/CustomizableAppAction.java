@@ -67,7 +67,6 @@ public abstract class CustomizableAppAction extends AppAction {
             this.setupObjects = new HashSet<ActionContext>();
         }
         this.setupObjects.add(contextSetup);
-
     }
 
     public void loadContextSetups() {
@@ -85,20 +84,19 @@ public abstract class CustomizableAppAction extends AppAction {
                 for (GetterSetter f : ReflectionUtils.getGettersSetteres(setupObject.getClass())) {
                     try {
                         if (f.getAnnotation(Customizer.class) != null) {
+                            final Class type = (Class) f.getType();
                             Object v = menuItemData.getActionData().fetchSetup(f.getKey());
                             if (v == null) {
                                 continue;
-                            }
-                            if (Clazz.isEnum(f.getType())) {
-
-                                v = ReflectionUtils.getEnumValueOf((Class<? extends Enum>) f.getType(), v.toString());
+                            } else if (Clazz.isEnum(type)) {
+                                v = ReflectionUtils.getEnumValueOf(type, v.toString());
                                 if (v == null) {
                                     continue;
                                 }
-                            }
-                            if (f.getType() == Modifier.class) {
+                            } else if (f.getType() == Modifier.class) {
                                 v = Modifier.create((String) v);
-
+                            } else if (Clazz.isNumberType(type)) {
+                                v = ReflectionUtils.castNumber((Number) v, type);
                             }
                             f.set(setupObject, v);
                         }
@@ -116,7 +114,6 @@ public abstract class CustomizableAppAction extends AppAction {
     public void requestUpdate(Object requestor) {
         lastRequestUpdate = System.currentTimeMillis();
         fill(setupObjects);
-
     }
 
     @Override
@@ -142,13 +139,11 @@ public abstract class CustomizableAppAction extends AppAction {
                 setTooltipText(actualName);
             }
         }
-
         super.setName(name);
     }
 
     @Override
     public BasicAction setAccelerator(KeyStroke stroke) {
-
         if (menuItemData != null) {
             if (StringUtils.isNotEmpty(menuItemData.getShortcut())) {
                 stroke = KeyStroke.getKeyStroke(menuItemData.getShortcut());
@@ -169,7 +164,6 @@ public abstract class CustomizableAppAction extends AppAction {
     }
 
     public void initContextDefaults() {
-
     }
 
     @Override
@@ -180,9 +174,7 @@ public abstract class CustomizableAppAction extends AppAction {
                 new Exception().printStackTrace();
                 requestUpdate(null);
             }
-
         }
-
         if (iconKey != null && LARGE_ICON_KEY.equalsIgnoreCase(key)) {
             if (MenuItemData.isEmptyValue(iconKey)) {
                 return null;
@@ -198,27 +190,22 @@ public abstract class CustomizableAppAction extends AppAction {
             if (ret != null && ret instanceof Icon && (((Icon) ret).getIconWidth() > size || ((Icon) ret).getIconHeight() > size)) {
                 return IconIO.getScaledInstance((Icon) ret, size, size);
             }
-
         } else if (SMALL_ICON.equalsIgnoreCase(key)) {
             Object ret = super.getValue(key);
             if (ret != null && ret instanceof Icon && (((Icon) ret).getIconWidth() > size || ((Icon) ret).getIconHeight() > size)) {
                 return IconIO.getScaledInstance((Icon) ret, size, size);
             }
-
         }
-
         return super.getValue(key);
     }
 
     public void setMenuItemData(MenuItemData data) {
         this.menuItemData = data;
         fill(setupObjects);
-
     }
 
     @Override
     public void setIconKey(String iconKey) {
-
         if (menuItemData != null) {
             ActionData actionData = menuItemData.getActionData();
             if (StringUtils.isNotEmpty(actionData.getIconKey())) {
@@ -226,10 +213,8 @@ public abstract class CustomizableAppAction extends AppAction {
             }
             if (StringUtils.isNotEmpty(menuItemData.getIconKey())) {
                 iconKey = menuItemData.getIconKey();
-
             }
         }
-
         super.setIconKey(iconKey);
     }
 
@@ -241,23 +226,17 @@ public abstract class CustomizableAppAction extends AppAction {
             return;
         }
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 // the setters read property from the menuItem Data backend. this setName(getName()) makes sense and is NO bug!
-
                 setName(getName());
                 setIconKey(getIconKey());
-
                 setAccelerator(null);
-
             }
         }.getReturnValue();
-
     }
 
     public List<KeyStroke> getAdditionalShortcuts(KeyStroke keystroke) {
         return null;
     }
-
 }

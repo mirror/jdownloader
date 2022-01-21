@@ -12,11 +12,20 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import jd.controlling.proxy.NoProxySelector;
+import jd.controlling.reconnect.ReconnectException;
+import jd.controlling.reconnect.ReconnectInvoker;
+import jd.controlling.reconnect.RouterPlugin;
+import jd.controlling.reconnect.ipcheck.IP;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.IPCheckProvider;
+import jd.controlling.reconnect.ipcheck.InvalidIPException;
+import jd.http.Browser;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.exceptions.WTFException;
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.StorageException;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.uio.UIOManager;
@@ -39,46 +48,24 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 
-import jd.controlling.proxy.NoProxySelector;
-import jd.controlling.reconnect.ReconnectException;
-import jd.controlling.reconnect.ReconnectInvoker;
-import jd.controlling.reconnect.RouterPlugin;
-import jd.controlling.reconnect.ipcheck.IP;
-import jd.controlling.reconnect.ipcheck.IPCheckException;
-import jd.controlling.reconnect.ipcheck.IPCheckProvider;
-import jd.controlling.reconnect.ipcheck.InvalidIPException;
-import jd.http.Browser;
-import net.miginfocom.swing.MigLayout;
-
 /**
  * Plugin to use an extern tool for reconnection
  */
 public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
-
     public static final String             ID = "SpeedPortHybrid";
-
     private Icon                           icon;
-
     private ReconnectInvoker               invoker;
-
     private ExtPasswordField               txtPassword;
-
     private SpeedPortHybridReconnectConfig config;
-
     private ExtTextField                   txtIP;
-
     private Browser                        br;
-
     private String                         derivedk;
-
     private String                         csrf;
-
     private String                         challengev;
 
     public static void main(String[] args) throws StorageException, IOException {
         File file = new File("C:\\Users\\Thomas\\Desktop\\interfaces.json");
         Application.setApplication(".appwork");
-        JSonStorage.setMapper(new JacksonMapper());
         // 'IPv4_address':'87.162.215.207',
         String[] lte_tunnel = new Regex(IO.readFileToString(file), "\\'IPv4_address\\'\\s*\\:\\s*\\'([^']*)").getColumn(0);
         System.out.println(lte_tunnel);
@@ -136,7 +123,6 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
     //
     // System.out.println("Decryption Works: " + (result.contains("onlinestatus") && result.length() == 489));
     // }
-
     public String encrypt(String pt) throws UnsupportedEncodingException, IllegalStateException, InvalidCipherTextException {
         Log.info("Encrypt " + pt);
         byte[] iv = HexFormatter.hexToByteArray(challengev.substring(16, 32));
@@ -165,11 +151,9 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
             byte[] iv = HexFormatter.hexToByteArray(challengev.substring(16, 16 + 16));
             String ads;
             byte[] adata = HexFormatter.hexToByteArray(ads = challengev.substring(32, 32 + 16));
-
             AEADParameters params = new AEADParameters(new KeyParameter(HexFormatter.hexToByteArray(derivedk)), 64, iv);
             CCMBlockCipher dc = new CCMBlockCipher(new AESFastEngine());
             dc.init(false, params);
-
             byte[] enc = HexFormatter.hexToByteArray(hex);
             byte[] tmp = new byte[enc.length + adata.length];
             dc.processAADBytes(adata, 0, adata.length);
@@ -178,14 +162,12 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
             ret = new String(tmp, 0, len, "UTF-8");
             Log.info(ret);
         }
-
         return ret;
     }
 
     // private String getTimeParams() {
     // return "_time=" + System.currentTimeMillis() + "&_rand=" + ((int) (Math.random() * 1000));
     // }
-
     // @Override
     public int getIpCheckInterval() {
         return 1000;
@@ -212,7 +194,6 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
     private IP getExternalIPOnce() throws Exception, InvalidCipherTextException, UnsupportedEncodingException, SessionInvalidException, IOException, IPCheckException {
         ensureSession();
         updateBonding();
-
         Log.info("IP: " + ipv4);
         if (ipv4 != null) {
             return IP.getInstance(ipv4);
@@ -229,15 +210,14 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
     private String dsl_tunnel;
     private String bonding;
     private String ipv4;
-    // private String ipv4Dsl;
 
+    // private String ipv4Dsl;
     public SpeedPortHybrid() {
         super();
         config = JsonConfig.create(SpeedPortHybridReconnectConfig.class);
         icon = new AbstractIcon(IconKey.ICON_RECONNECT, 16);
         // setIPCheckProvider(this);
         invoker = new ReconnectInvoker(this) {
-
             @Override
             protected void testRun() throws ReconnectException, InterruptedException {
                 run();
@@ -278,7 +258,6 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
                 getXHR("/data/Reboot.json", 2);
                 Thread.sleep(2000);
                 postXHR("/data/Reboot.json", "reboot_device=true&csrf_token=" + csrf, true);
-
                 Thread.sleep(60000);
                 // }else{
                 // for (int i = 0; i < 5; i++) {
@@ -329,16 +308,13 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
                     long started = System.currentTimeMillis();
                     while (System.currentTimeMillis() - started < 1 * 60 * 1000l) {
                         logger.info("Wait for onlinestatus==online");
-
                         String crypted = getXHR("/data/Connect.json", 1);
                         String onlineStatus = extractVariable(crypted, "onlinestatus");
-
                         if ("online".equalsIgnoreCase(onlineStatus)) {
                             setStatusString("Connect #" + i + " os " + onlineStatus + " bonding_ok");
                             logger.info("We are online");
                             updateBonding();
                             if (StringUtils.equalsIgnoreCase("Up", dsl_tunnel) && StringUtils.equalsIgnoreCase("Up", bonding)) {
-
                                 return;
                             } else {
                                 logger.info("Wait for Bonding");
@@ -352,7 +328,6 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
                     }
                 }
             }
-
         };
     }
 
@@ -362,7 +337,6 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
             String url = createAbsoluteUrl(rel, timeext);
             Browser clone = br.cloneBrowser();
             String json = decrypt(clone.getPage(url));
-
             String newCsrf = extractVariable(json, "csrf_token");
             if (StringUtils.isNotEmpty(newCsrf) && !StringUtils.equals(csrf, newCsrf)) {
                 Log.info("New CSRF: " + newCsrf);
@@ -371,7 +345,6 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
             try {
                 checkXHRError(clone, json);
             } catch (SessionInvalidException e) {
-
                 if (ii > 0) {
                     throw e;
                 } else {
@@ -385,7 +358,6 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
 
     private String createAbsoluteUrl(String rel, int timeext) {
         String url = "http://" + config.getRouterIP() + rel;
-
         for (int i = 0; i < timeext; i++) {
             if (i > 0) {
                 if (timeext > 0) {
@@ -397,7 +369,6 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
                 }
             }
             url += "_time=" + System.currentTimeMillis() + "&_rand=" + ((int) (Math.random() * 1000));
-
         }
         return url;
     }
@@ -415,31 +386,25 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
     }
 
     private String postXHR(String rel, String postData, boolean encrypt) throws Exception {
-
         for (int ii = 0; ii < 2; ii++) {
             ensureSession();
             String url = "http://" + config.getRouterIP() + rel;
-
             Browser clone = br.cloneBrowser();
             String json = decrypt(clone.postPageRaw(url, encrypt ? encrypt(postData) : postData));
-
             String newCsrf = extractVariable(json, "csrf_token");
             if (StringUtils.isNotEmpty(newCsrf) && !StringUtils.equals(csrf, newCsrf)) {
                 Log.info("New CSRF: " + newCsrf);
                 csrf = newCsrf;
             }
-
             try {
                 checkXHRError(clone, json);
             } catch (SessionInvalidException e) {
-
                 if (ii > 0) {
                     throw e;
                 } else {
                     continue;
                 }
             }
-
             String status = extractVariable(json, "status");
             if ("fail".equals(status) && ii == 0) {
                 br = null;
@@ -448,35 +413,28 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
             return json;
         }
         throw new WTFException();
-
     }
 
     private void updateBonding() throws Exception {
         Log.info("bonding_tunnel.json");
-
         String json = getXHR("/data/bonding_tunnel.json", 0);
         // Log.info(br + "");
         lte_tunnel = new Regex(json, "\\'lte_tunnel\\'\\s*\\:\\s*\\'([^']*)").getMatch(0);
         dsl_tunnel = new Regex(json, "\\'dsl_tunnel\\'\\s*\\:\\s*\\'([^']*)").getMatch(0);
         bonding = new Regex(json, "\\'bonding\\'\\s*\\:\\s*\\'([^']*)").getMatch(0);
         ipv4 = new Regex(json, "\\'ipv4\\'\\s*\\:\\s*\\'([^']*)").getMatch(0);
-
         Log.info("Public IP: " + ipv4);
         Log.info("LTE: " + lte_tunnel);
         Log.info("DSL: " + dsl_tunnel);
         Log.info("Bonding: " + bonding);
-
     }
 
     protected synchronized void ensureSession() throws Exception {
         if (isLoggedIn()) {
-
             return;
         }
-
         try {
             br = new Browser();
-
             br.setVerbose(true);
             br.setDebug(true);
             br.setProxySelector(new NoProxySelector());
@@ -487,14 +445,10 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
             String json = null;
             for (int i = 5; i > 0; i--) {
                 UrlQuery query = new UrlQuery().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("challengev", "null", true);
-
                 json = br.postPage(createAbsoluteUrl("/data/Login.json?lang=de", 0), query);
-
                 if ("2".equals(extractVariable(json, "loginstate"))) {
-
                     br.getPage(createAbsoluteUrl("/data/Login.json", 2));
                     json = br.postPage(createAbsoluteUrl("/data/Login.json?lang=de", 0), query);
-
                 }
                 challengev = extractVariable(json, "challengev");
                 if (StringUtils.isEmpty(challengev)) {
@@ -513,9 +467,7 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
             Log.info("Challenge: " + challengev);
             long start = System.currentTimeMillis();
             do {
-
                 json = br.postPage(createAbsoluteUrl("/data/Login.json?lang=de", 0), new UrlQuery().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("password", Hash.getSHA256(challengev + ":" + config.getPassword()), true));
-
                 Thread.sleep(15000);
             } while ("69".equals(extractVariable(json, "login")) && (System.currentTimeMillis() - start) < 2 * 60 * 1000l);
             String session = br.getCookie("http://" + config.getRouterIP(), "SessionID_R3");
@@ -526,10 +478,8 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
             }
             br.setCookie("http://" + config.getRouterIP(), "derivedk", derivedk = PBKDF2Key(config.getPassword(), challengev.substring(0, 16)));
             br.setCookie("http://" + config.getRouterIP(), "challengev", challengev);
-
             loadFrame("/html/content/internet/connection.html?lang=de");
         } finally {
-
         }
     }
 
@@ -560,16 +510,13 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
 
     @Override
     public JComponent getGUI() {
-
         final JPanel p = new JPanel(new MigLayout("ins 0,wrap 2", "[][grow,fill]", "[][][grow,fill][]"));
         p.setOpaque(false);
-
         txtPassword = new ExtPasswordField() {
             public void onChanged() {
                 config.setPassword(txtPassword.getText());
             };
         };
-
         txtIP = new ExtTextField() {
             @Override
             public void onChanged() {
@@ -607,5 +554,4 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
     public ReconnectInvoker getReconnectInvoker() {
         return invoker;
     }
-
 }
