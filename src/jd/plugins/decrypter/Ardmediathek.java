@@ -138,7 +138,6 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         if (cfg.isGrabHLS540pVideoEnabled()) {
             selectedQualities.add("hls_540");
-            selectedQualities.add("hls_544");
         }
         if (cfg.isGrabHLS720pVideoEnabled()) {
             selectedQualities.add("hls_720");
@@ -172,7 +171,6 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         if (cfg.isGrabHTTP540pVideoEnabled()) {
             selectedQualities.add("http_540");
-            selectedQualities.add("http_544");
         }
         if (cfg.isGrabHTTP720pVideoEnabled()) {
             selectedQualities.add("http_720");
@@ -404,21 +402,30 @@ public class Ardmediathek extends PluginForDecrypt {
 
     /** Last revision with old handling: 38658 */
     private ArrayList<DownloadLink> crawlMediathek(final CryptedLink param) throws Exception {
-        br.getPage(param.getCryptedUrl());
-        if (isOffline(this.br)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         String contentID = null;
-        final Browser brHTML = br.cloneBrowser();
+        Browser brHTML = new Browser();
+        String specialOldJson = null;
         if (param.getCryptedUrl().matches(type_embedded)) {
-            /* Embedded content --> json URL has already been accessed */
-            // brJSON = br.cloneBrowser();
-            /* Do nothing */
+            /* Embedded content */
+            br.getPage(param.getCryptedUrl());
+            if (isOffline(this.br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            /*
+             * 2021-08-11: E.g. wdr.de | type_embedded e.g. when such URLs get crawled before and get re-added to crawler:
+             * https://deviceids-medp-id1.wdr.de/ondemand/123/1234567.js
+             */
+            specialOldJson = br.getRegex("\\$mediaObject\\.jsonpHelper\\.storeAndPlay\\((\\{.*?\\})\\);").getMatch(0);
         } else {
             /**
              * Look for embedded content which will go back into this crawler. Especially needed for: wdr.de, wdrmaus.de, sportschau.de,
              * sandmann.de
              */
+            br.getPage(param.getCryptedUrl());
+            if (isOffline(this.br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            brHTML = br.cloneBrowser();
             final ArrayList<DownloadLink> embeds = crawlEmbeddedContent(this.br);
             if (!embeds.isEmpty()) {
                 return embeds;
@@ -465,11 +472,10 @@ public class Ardmediathek extends PluginForDecrypt {
             if (StringUtils.isEmpty(url_json)) {
                 /* No downloadable content --> URL should be offline (or only text content) */
                 /* 2021-04-07: Check for special case with json inside html e.g. for wdr.de */
-                final String json = br.getRegex("globalObject\\.gseaInlineMediaData\\[\"mdb-\\d+\"\\] =\\s*(\\{.*?\\});\\s*</script>").getMatch(0);
-                if (json == null) {
+                specialOldJson = br.getRegex("globalObject\\.gseaInlineMediaData\\[\"mdb-\\d+\"\\] =\\s*(\\{.*?\\});\\s*</script>").getMatch(0);
+                if (specialOldJson == null) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                br.getRequest().setHtmlCode(json);
             } else {
                 br.getPage(url_json);
                 /* No json --> No media to crawl (rare case!)! */
@@ -478,20 +484,9 @@ public class Ardmediathek extends PluginForDecrypt {
                 }
             }
         }
-        /* 2021-08-11: E.g. wdr.de | type_embedded */
-        final String specialOldJson = regexOldJson(br.toString());
-        if (specialOldJson != null) {
-            br.getRequest().setHtmlCode(specialOldJson);
-        }
         String title = null;
         String show = null;
         String channel = null;
-        Map<String, Object> dataEmbeddedContent = null;
-        try {
-            final String json = regexOldJson(br.toString());
-            dataEmbeddedContent = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-        } catch (final Throwable e) {
-        }
         /* E.g. wdr.de, Tags: schema.org */
         final String jsonSchemaOrg = brHTML.getRegex("<script[^>]*?type=\"application/ld\\+json\"[^>]*?>(.*?)</script>").getMatch(0);
         /* These RegExes should be compatible with all websites */
@@ -502,7 +497,19 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         String description = brHTML.getRegex("<meta property=\"og:description\" content=\"([^\"]+)\"").getMatch(0);
         final String host = getHost();
-        if (jsonSchemaOrg != null) {
+        if (specialOldJson != null) {
+            /* wdr.de (rare case) */
+            if (specialOldJson != null) {
+                br.getRequest().setHtmlCode(specialOldJson);
+            }
+            final Map<String, Object> root = JSonStorage.restoreFromString(specialOldJson, TypeRef.HASHMAP);
+            final Map<String, Object> trackerData = (Map<String, Object>) root.get("trackerData");
+            show = (String) trackerData.get("trackerClipSubcategory");
+            title = (String) trackerData.get("trackerClipTitle");
+            date = (String) trackerData.get("trackerClipAirTime");
+            channel = (String) trackerData.get("trackerClipCategory");
+            contentID = (String) trackerData.get("trackerClipId");
+        } else if (jsonSchemaOrg != null) {
             /* 2018-02-15: E.g. daserste.de, wdr.de */
             final String headline = brHTML.getRegex("<h3 class=\"headline\">([^<>]+)</h3>").getMatch(0);
             try {
@@ -563,14 +570,6 @@ public class Ardmediathek extends PluginForDecrypt {
                 /* Last chance */
                 date = PluginJSonUtils.getJson(br, "trackerClipAirTime");
             }
-        } else if (dataEmbeddedContent != null) {
-            /* E.g. type_embedded --> deviceids-medp-id1.wdr.de/ondemand/123/1234567.js */
-            dataEmbeddedContent = (Map<String, Object>) dataEmbeddedContent.get("trackerData");
-            // final String trackerClipCategory = (String) dataEmbeddedContent.get("trackerClipCategory");
-            show = (String) dataEmbeddedContent.get("trackerClipSubcategory");
-            title = (String) dataEmbeddedContent.get("trackerClipTitle");
-            // final String trackerClipAirTime = (String) dataEmbeddedContent.get("trackerClipAirTime");
-            date = (String) dataEmbeddedContent.get("trackerClipAirTime");
         } else if (host.equalsIgnoreCase("ndr.de") || host.equalsIgnoreCase("eurovision.de")) {
             /* ndr.de */
             if (brHTML.getURL().contains("daserste.ndr.de") && StringUtils.isEmpty(date)) {
@@ -584,40 +583,27 @@ public class Ardmediathek extends PluginForDecrypt {
                     date = new Regex(date, "TV\\-(\\d{8})").getMatch(0);
                 }
             }
-        } else {
-            /* E.g. ardmediathek.de */
-            String newjson = brHTML.getRegex("window\\.__APOLLO_STATE__ = (\\{.*?);\\s+").getMatch(0);
-            if (newjson == null) {
-                newjson = br.toString();
-            }
-            show = PluginJSonUtils.getJson(newjson, "show");
-            title = PluginJSonUtils.getJson(newjson, "clipTitle");
-            if (StringUtils.isEmpty(title)) {
-                /* 2021-04-07: wdr.de */
-                title = PluginJSonUtils.getJson(newjson, "trackerClipTitle");
-            }
-            if (title == null) {
-                title = br.getRegex("<meta name\\s*=\\s*\"dcterms.title\"\\s*content\\s*=\\s*\"(.*?)\"").getMatch(0);
-            }
-            if (date == null) {
-                date = PluginJSonUtils.getJson(newjson, "broadcastedOn");
-            }
         }
         if (StringUtils.isEmpty(title)) {
             /* This should never happen */
             title = "UnknownTitle_" + UniqueAlltimeID.create();
         }
         title = title.trim();
-        if (StringUtils.isEmpty(channel)) {
-            /* Fallback */
-            channel = host.substring(0, host.lastIndexOf(".")).replace(".", "_");
-        }
         title = Encoding.htmlDecode(title);
         title = encodeUnicode(title);
         final ArdMetadata metadata = new ArdMetadata(title);
         metadata.setSubtitle(show);
         if (date != null) {
             metadata.setDateTimestamp(getDateMilliseconds(date));
+        }
+        if (!StringUtils.isEmpty(channel)) {
+            metadata.setChannel(channel);
+        } else {
+            /* Fallback */
+            channel = host.substring(0, host.lastIndexOf(".")).replace(".", "_");
+        }
+        if (contentID != null) {
+            metadata.setContentID(contentID);
         }
         Object entries = null;
         try {
@@ -626,10 +612,6 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         final HashMap<String, DownloadLink> foundQualitiesMap = crawlARDJson(param, metadata, entries);
         return this.handleUserQualitySelection(foundQualitiesMap);
-    }
-
-    private static String regexOldJson(final String html) {
-        return new Regex(html, "\\$mediaObject\\.jsonpHelper\\.storeAndPlay\\((\\{.*?\\})\\);").getMatch(0);
     }
 
     private ArrayList<DownloadLink> crawlEmbeddedContent(final Browser br) {
@@ -732,6 +714,9 @@ public class Ardmediathek extends PluginForDecrypt {
                                 final Object heightO = mediaStream.get("_height");
                                 if (widthO != null && heightO != null) {
                                     resolution = VideoResolution.getByWidth(Integer.parseInt(widthO.toString()));
+                                    if (resolution == null) {
+                                        logger.warning("Unknown width: " + widthO);
+                                    }
                                 }
                                 if (resolution == null) {
                                     resolution = VideoResolution.getByURL(url);
@@ -753,7 +738,7 @@ public class Ardmediathek extends PluginForDecrypt {
                                             break;
                                         }
                                     } else if (quality == 2 && streams.size() == 1) {
-                                        resolution = VideoResolution.P_544;
+                                        resolution = VideoResolution.P_540;
                                     } else if (quality == 2 && streams.size() == 2) {
                                         switch (index) {
                                         case 0:
@@ -918,6 +903,7 @@ public class Ardmediathek extends PluginForDecrypt {
                 }
                 return ret;
             } else {
+                /* Also possible: ~PlayerJson.json --> But this contains much less information! */
                 url_xml = param.getCryptedUrl().replace(".html", "~playerXml.xml");
             }
         } else if (param.getCryptedUrl().matches(".+mdr\\.de/.+/((?:video|audio)\\-\\d+)\\.html")) {
@@ -1088,11 +1074,8 @@ public class Ardmediathek extends PluginForDecrypt {
                     bitrate = 0;
                 }
                 /* Find video resolution */
-                VideoResolution resolution = null;
-                if (width > 0) {
-                    resolution = VideoResolution.getByWidth(width);
-                }
-                if (height > 0 && resolution == null) {
+                VideoResolution resolution = VideoResolution.getByWidth(width);
+                if (resolution == null) {
                     resolution = VideoResolution.getByHeight(height);
                 }
                 if (resolution == null) {
@@ -1102,8 +1085,9 @@ public class Ardmediathek extends PluginForDecrypt {
                     /* Skip unsupported resolutions */
                     logger.warning("Found unsupported resolution for URL: " + http_url);
                     continue;
+                } else {
+                    addQuality(param, metadata, foundQualitiesMap, http_url, filesizeStr, bitrate, resolution, isAudioDescription);
                 }
-                addQuality(param, metadata, foundQualitiesMap, http_url, filesizeStr, bitrate, resolution, isAudioDescription);
             }
         }
         return this.handleUserQualitySelection(foundQualitiesMap);
@@ -1552,7 +1536,8 @@ public class Ardmediathek extends PluginForDecrypt {
         // Order is default quality sort order
         P_1080(1920, 1080),
         P_720(1280, 720),
-        P_544(960, 544),
+        /** 2022-10-21: Removed as we now detect quality/resolution by heigt */
+        // P_544(960, 544)
         P_540(960, 540),
         P_360(640, 360),
         P_288(512, 288),
