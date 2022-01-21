@@ -60,7 +60,6 @@ import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.swing.MigPanel;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -116,7 +115,7 @@ public class ScriptEnvironment {
             } else {
                 try {
                     try {
-                        showMessageDialog(new JacksonMapper().objectToString(objects[0]));
+                        showMessageDialog(JSonStorage.serializeToJson(objects[0]));
                     } catch (Throwable e) {
                         showMessageDialog(format(toJson(objects[0])));
                     }
@@ -128,7 +127,7 @@ public class ScriptEnvironment {
         }
         try {
             try {
-                showMessageDialog(new JacksonMapper().objectToString(objects));
+                showMessageDialog(JSonStorage.serializeToJson(objects));
             } catch (Throwable e) {
                 showMessageDialog(format(toJson(objects)));
             }
@@ -823,7 +822,7 @@ public class ScriptEnvironment {
                 }
                 try {
                     try {
-                        LOGGER.info(new JacksonMapper().objectToString(objects[0]));
+                        LOGGER.info(JSonStorage.serializeToJson(objects[0]));
                     } catch (Throwable e) {
                         LOGGER.info(format(toJson(objects[0])));
                     }
@@ -835,7 +834,7 @@ public class ScriptEnvironment {
         }
         try {
             try {
-                LOGGER.info(new JacksonMapper().objectToString(objects));
+                LOGGER.info(JSonStorage.serializeToJson(objects));
             } catch (Throwable e) {
                 LOGGER.info(format(toJson(objects)));
             }

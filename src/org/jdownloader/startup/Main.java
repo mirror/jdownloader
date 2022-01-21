@@ -27,7 +27,6 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.JsonSerializer;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -165,13 +164,11 @@ public class Main {
     public static void main(String[] args) {
         loadJXBrowser(Main.class.getClassLoader());
         // USe Jacksonmapper in this project
-        JacksonMapper jm = new JacksonMapper();
-        JSonStorage.setMapper(jm);
         // add Serializer to Handle JsonFactoryInterface from MyJDownloaderCLient Project
-        jm.addSerializer(JsonFactoryInterface.class, new JsonSerializer<JsonFactoryInterface>() {
+        JSonStorage.getMapper().putSerializer(JsonFactoryInterface.class, new JsonSerializer() {
             @Override
-            public String toJSonString(JsonFactoryInterface list) {
-                return list.toJsonString();
+            public String toJSonString(Object object, Object mapper) {
+                return ((JsonFactoryInterface) object).toJsonString();
             }
         });
         MyJDJsonMapper.HANDLER = new JSonHandler<Type>() {

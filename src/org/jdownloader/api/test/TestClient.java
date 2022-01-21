@@ -25,7 +25,6 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.JsonSerializer;
 import org.appwork.storage.Storage;
 import org.appwork.storage.TypeRef;
-import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
@@ -200,8 +199,6 @@ public class TestClient {
         register(new RemoveCaptchaTest());
         register(new ExtractionTest());
         register(new ValidateArchiveTest());
-        JacksonMapper jm;
-        JSonStorage.setMapper(jm = new JacksonMapper());
         MyJDJsonMapper.HANDLER = new JSonHandler<Type>() {
             @Override
             public String objectToJSon(final Object payload) {
@@ -214,10 +211,10 @@ public class TestClient {
                 });
             }
         };
-        jm.addSerializer(JsonFactoryInterface.class, new JsonSerializer<JsonFactoryInterface>() {
+        JSonStorage.getMapper().putSerializer(JsonFactoryInterface.class, new JsonSerializer() {
             @Override
-            public String toJSonString(final JsonFactoryInterface list) {
-                return list.toJsonString();
+            public String toJSonString(Object object, Object mapper) {
+                return ((JsonFactoryInterface) object).toJsonString();
             }
         });
         AbstractDialog.setDefaultLocator(new RememberAbsoluteDialogLocator("MYJDTest"));

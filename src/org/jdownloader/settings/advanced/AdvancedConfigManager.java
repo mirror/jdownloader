@@ -137,7 +137,7 @@ public class AdvancedConfigManager {
             final String ifName = hplg.getConfigInterface();
             if (StringUtils.isNotEmpty(ifName)) {
                 try {
-                    final PluginConfigInterface cf = PluginJsonConfig.get((Class<PluginConfigInterface>) pluginClassLoader.loadClass(ifName));
+                    final PluginConfigInterface cf = PluginJsonConfig.get(hplg, (Class<PluginConfigInterface>) pluginClassLoader.loadClass(ifName));
                     for (KeyHandler m : cf._getStorageHandler().getKeyHandler()) {
                         if (m.getAnnotation(AboutConfig.class) != null && (m.getAnnotation(DevConfig.class) == null || !Application.isJared(null))) {
                             if (m.getSetMethod() == null) {

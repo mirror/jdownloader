@@ -7,7 +7,6 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.JsonSerializer;
 import org.appwork.storage.SimpleMapper;
 import org.appwork.storage.TypeRef;
-import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.testframework.AWTest;
 import org.jdownloader.controlling.packagizer.PackagizerRule;
 import org.jdownloader.myjdownloader.client.json.JSonHandler;
@@ -22,6 +21,7 @@ public class JsonTest extends AWTest {
     @Override
     public void runTest() throws Exception {
         MyJDJsonMapper.HANDLER = new JSonHandler<Type>() {
+            // set MyJDownloaderCLient JsonHandler
             @Override
             public String objectToJSon(Object payload) {
                 return JSonStorage.serializeToJson(payload);
@@ -34,12 +34,11 @@ public class JsonTest extends AWTest {
             }
         };
         testMapper(new SimpleMapper());
-        testMapper(new JacksonMapper());
     }
 
-    private void testMapper(JSONMapper mapper) throws Exception {
+    private void testMapper(final JSONMapper mapper) throws Exception {
         JSonStorage.setMapper(mapper);
-        mapper.addSerializer(JsonFactoryInterface.class, new JsonSerializer() {
+        mapper.putSerializer(JsonFactoryInterface.class, new JsonSerializer() {
             @Override
             public String toJSonString(Object object, Object mapper) {
                 return ((JsonFactoryInterface) object).toJsonString();
