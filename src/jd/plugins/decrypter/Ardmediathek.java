@@ -200,7 +200,7 @@ public class Ardmediathek extends PluginForDecrypt {
          */
         final String host = this.getHost();
         if (param.getCryptedUrl().matches(type_embedded)) {
-            return this.crawlWdrMediaObject(param);
+            return this.crawlWdrMediathekEmbedded(param, param.getCryptedUrl());
         } else if (host.equalsIgnoreCase("wdr.de") || host.equalsIgnoreCase("wdrmaus.de")) {
             return this.crawlWdrMediathek(param);
         } else if (host.equalsIgnoreCase("daserste.de") || host.equalsIgnoreCase("kika.de") || host.equalsIgnoreCase("sputnik.de") || host.equalsIgnoreCase("mdr.de")) {
@@ -554,13 +554,31 @@ public class Ardmediathek extends PluginForDecrypt {
         if (!embeds.isEmpty()) {
             return embeds;
         }
-        final String urlJson = this.br.getRegex(".mediaObj.\\s*:\\s*\\{\\s*.url.\\s*:\\s*.(https?://[^<>\"\\']+)").getMatch(0);
-        if (urlJson == null) {
+        /* TODO: Allow for crawling multiple of those */
+        final String jsonInHTML = br.getRegex("globalObject\\.gseaInlineMediaData\\[\"[^\"]+\"\\] =\\s*(\\{.*?\\});\\s*</script>").getMatch(0);
+        if (jsonInHTML != null) {
+            /* E.g. https://www1.wdr.de/orchester-und-chor/wdrmusikvermittlung/videos/video-wdr-dackl-jazz-konzert-100.html */
+            final Map<String, Object> root = JSonStorage.restoreFromString(jsonInHTML, TypeRef.HASHMAP);
+            return crawlWdrMediaObject(param, root);
+        } else {
+            final String urlJson = this.br.getRegex(".mediaObj.\\s*:\\s*\\{\\s*.url.\\s*:\\s*.(https?://[^<>\"\\']+)").getMatch(0);
+            if (urlJson == null) {
+                /* Assume that content is offline */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            return crawlWdrMediathekEmbedded(param, urlJson);
+        }
+    }
+
+    private ArrayList<DownloadLink> crawlWdrMediathekEmbedded(final CryptedLink param, final String url) throws Exception {
+        br.getPage(url);
+        final String json = br.getRegex("\\$mediaObject\\.jsonpHelper\\.storeAndPlay\\((\\{.*?\\})\\);").getMatch(0);
+        if (json == null) {
             /* Assume that content is offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        param.setCryptedUrl(urlJson);
-        return crawlWdrMediaObject(param);
+        final Map<String, Object> root = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+        return crawlWdrMediaObject(param, root);
     }
 
     private ArrayList<DownloadLink> crawlArdMediaObject(final CryptedLink param) throws Exception {
@@ -584,15 +602,8 @@ public class Ardmediathek extends PluginForDecrypt {
         return this.handleUserQualitySelection(foundQualitiesMap);
     }
 
-    private ArrayList<DownloadLink> crawlWdrMediaObject(final CryptedLink param) throws Exception {
-        br.getPage(param.getCryptedUrl());
-        final String json = br.getRegex("\\$mediaObject\\.jsonpHelper\\.storeAndPlay\\((\\{.*?\\})\\);").getMatch(0);
-        if (json == null) {
-            /* Assume that content is offline */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final Map<String, Object> root = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-        final Map<String, Object> trackerData = (Map<String, Object>) root.get("trackerData");
+    private ArrayList<DownloadLink> crawlWdrMediaObject(final CryptedLink param, final Map<String, Object> wdrMediaObject) throws Exception {
+        final Map<String, Object> trackerData = (Map<String, Object>) wdrMediaObject.get("trackerData");
         final String date = (String) trackerData.get("trackerClipAirTime");
         final ArdMetadata metadata = new ArdMetadata(trackerData.get("trackerClipTitle").toString());
         metadata.setSubtitle(trackerData.get("trackerClipSubcategory").toString());
@@ -601,7 +612,7 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         metadata.setChannel(trackerData.get("trackerClipCategory").toString());
         metadata.setContentID(trackerData.get("trackerClipId").toString());
-        final HashMap<String, DownloadLink> foundQualitiesMap = crawlARDJson(param, metadata, root);
+        final HashMap<String, DownloadLink> foundQualitiesMap = crawlARDJson(param, metadata, wdrMediaObject);
         return this.handleUserQualitySelection(foundQualitiesMap);
     }
 
