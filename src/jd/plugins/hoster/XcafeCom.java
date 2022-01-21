@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
@@ -62,5 +63,11 @@ public class XcafeCom extends KernelVideoSharingComV2 {
             fileTitle = super.getFileTitle(link);
         }
         return fileTitle;
+    }
+
+    @Override
+    protected int getMaxChunks(final Account account) {
+        /* 2022-01-21: Limited to 4 although more is possible but can be problematic sometimes. */
+        return 1;
     }
 }

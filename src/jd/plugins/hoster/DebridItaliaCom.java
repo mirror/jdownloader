@@ -153,7 +153,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
             String host_downloadlink = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
             /* Workaround for server side debriditalia bug. */
             /*
-             * Known hosts for which they do definitely not accept https urls [ last updated 2015-10-05]: share-online.biz, inclouddrive.com
+             * Known hosts for which they do definitely not accept https urls [last updated 2015-10-05]: share-online.biz, inclouddrive.com
              */
             host_downloadlink = host_downloadlink.replaceFirst("^https", "http");
             final UrlQuery query = new UrlQuery();
