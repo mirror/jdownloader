@@ -27,17 +27,17 @@ public class RrozhlasCz extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.getPage(parameter.getCryptedUrl());
-        final String audioIDs[] = br.getRegex("https?://prehravac.rozhlas.cz/audio/(\\d+)").getColumn(0);
-        final Set<String> dups = new HashSet<String>();
+        final String audioIDs[] = br.getRegex("https?://prehravac\\.rozhlas\\.cz/audio/(\\d+)").getColumn(0);
         String title = br.getRegex("property=\"og:title\"\\s*content=\"(.*?)\"").getMatch(0);
         if (title == null) {
             /* Fallback */
             title = new Regex(parameter.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         }
         if (audioIDs != null) {
+            final Set<String> dupes = new HashSet<String>();
             for (final String audioID : audioIDs) {
                 final DownloadLink link = createDownloadlink("directhttp://" + br.getURL("//media.rozhlas.cz/_audio/" + audioID + ".mp3").toString());
-                if (dups.add(link.getPluginPatternMatcher())) {
+                if (dupes.add(link.getPluginPatternMatcher())) {
                     if (title != null) {
                         link.setFinalFileName(title + ".mp3");
                     }
