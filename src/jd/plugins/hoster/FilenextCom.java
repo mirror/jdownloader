@@ -18,13 +18,14 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FilenextCom extends XFileSharingProBasic {
@@ -117,5 +118,16 @@ public class FilenextCom extends XFileSharingProBasic {
          */
         regexStuff.add("<div\\s*style\\s*=\\s*\"[^\"]*display:none[^\"]*\"\\s*>(.*?)</div>");
         return regexStuff;
+    }
+
+    @Override
+    public String[] scanInfo(final String html, final String[] fileInfo) {
+        super.scanInfo(html, fileInfo);
+        /* 2022-01-24 */
+        final String betterFilesize = new Regex(html, "class=\"fLeft\"[^>]+><b>([^<>\"]+)</b>").getMatch(0);
+        if (betterFilesize != null) {
+            fileInfo[1] = betterFilesize;
+        }
+        return fileInfo;
     }
 }

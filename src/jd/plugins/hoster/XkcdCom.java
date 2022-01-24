@@ -13,10 +13,11 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -29,8 +30,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-
 /**
  *
  * @author raztoki
@@ -38,7 +37,6 @@ import org.appwork.utils.StringUtils;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xkcd.com" }, urls = { "https?://(?:www\\.)?xkcd\\.com/(\\d+)/" })
 public class XkcdCom extends PluginForHost {
-
     public XkcdCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -54,11 +52,29 @@ public class XkcdCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -67,58 +83,58 @@ public class XkcdCom extends PluginForHost {
     private String dllink = null;
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
-        // lets set a linkid
-        downloadLink.setLinkID(getHost() + "://" + new Regex(downloadLink.getDownloadURL(), this.getSupportedLinks()).getMatch(0));
-        // get the page source
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link) + ".png");
+        }
+        br.getPage(link.getPluginPatternMatcher());
         String filename = this.br.getRegex("id=\"ctitle\">([^<>\"]+)</").getMatch(0);
         if (filename == null) {
             filename = this.br.getRegex("<title>xkcd: ([^<>\"]+)</title>").getMatch(0);
         }
-        dllink = br.getRegex("or hotlinking/embedding\\): (http.*?)[\t\n\r ]+").getMatch(0);
-        if (filename == null || dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        dllink = br.getRegex("or hotlinking/embedding.*?(http[^<>\"\\']+)").getMatch(0);
         if (StringUtils.endsWithCaseInsensitive(dllink, "/comics/")) {
-            downloadLink.setName("Javascript entries are not supported");
+            link.setName("Javascript entries are not supported");
             throw new PluginException(LinkStatus.ERROR_FATAL, "Javascript entries are not supported");
         }
-        // set filename
-        filename = filename.trim();
-        String ext = this.getFileNameExtensionFromURL(dllink);
-        if (ext == null || ext.length() > 5) {
-            ext = ".png";
+        if (filename != null) {
+            // set filename
+            filename = filename.trim();
+            String ext = getFileNameExtensionFromURL(dllink);
+            if (ext == null || ext.length() > 5) {
+                ext = ".png";
+            }
+            // cleanup extra . at the end of filename
+            while (filename.endsWith(".")) {
+                filename = filename.substring(0, filename.length() - 1);
+            }
+            link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         }
-        // cleanup extra . at teh end of filename
-        while (filename.endsWith(".")) {
-            filename = filename.substring(0, filename.length() - 1);
-        }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-
         // do a request to find out the filesize? this can slow down tasks as its another request.
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openHeadConnection(dllink);
-            if (con.isOK() && !con.getContentType().contains("html")) {
-                downloadLink.setVerifiedFileSize(con.getLongContentLength());
-                // incase redirect after advertised img link.
-                dllink = br.getURL();
-                return AvailableStatus.TRUE;
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        } catch (final Throwable e) {
-            return AvailableStatus.UNCHECKABLE;
-        } finally {
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
-                /* make sure we close connection */
-                con.disconnect();
-            } catch (final Throwable e) {
+                con = br.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    // incase redirect after advertised img link.
+                    dllink = br.getURL();
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    /* make sure we close connection */
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -128,5 +144,4 @@ public class XkcdCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
