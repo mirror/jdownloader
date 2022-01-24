@@ -119,6 +119,9 @@ public class FileCryptCc extends PluginForDecrypt {
             if ("53d1b".equals(customLogoID)) {
                 logger.info("Found presumed password by custom logo: " + customLogoID);
                 passwords.add(0, "serienfans.org");
+            } else if ("51967".equals(customLogoID)) {
+                logger.info("Found presumed password by custom logo: " + customLogoID);
+                passwords.add(0, "kellerratte");
             }
             int generalLoopCounter = 0;
             String usedPassword = null;
