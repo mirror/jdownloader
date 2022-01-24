@@ -35,7 +35,7 @@ public class MediathekHelper {
         if (date_formatted != null) {
             filename = date_formatted + "_";
         }
-        filename += channel + "_";
+        filename += channel;
         if (show != null) {
             filename += show + " - ";
         }
