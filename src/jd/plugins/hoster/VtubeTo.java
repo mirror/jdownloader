@@ -80,13 +80,13 @@ public class VtubeTo extends XFileSharingProBasic {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return 0;
+            return 1;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 0;
+            return 1;
         }
     }
 
@@ -113,5 +113,11 @@ public class VtubeTo extends XFileSharingProBasic {
             fileInfo[0] = betterFiletitle;
         }
         return fileInfo;
+    }
+
+    @Override
+    protected boolean supports_availablecheck_filesize_html() {
+        /* 2022-01-24: Disabled else it may pick up false positives! */
+        return false;
     }
 }
