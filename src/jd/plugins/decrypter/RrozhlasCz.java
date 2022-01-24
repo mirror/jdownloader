@@ -6,14 +6,17 @@ import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rozhlas.cz" }, urls = { "https?://(?:[a-z0-9]+\\.)?rozhlas\\.cz/(.*)\\-\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rozhlas.cz" }, urls = { "https?://(?:[a-z0-9]+\\.)?rozhlas\\.cz/([a-z0-9\\-]+)\\-(\\d+)" })
 public class RrozhlasCz extends PluginForDecrypt {
     public RrozhlasCz(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,19 +45,33 @@ public class RrozhlasCz extends PluginForDecrypt {
                 }
             }
         }
-        final String mp3s[] = br.getRegex("(https?://(?:[a-z0-9]+\\.)?rozhlas.cz/[^\"]+\\.mp3(\\?[^\"]+)?)").getColumn(0);
-        if (mp3s != null) {
-            int counter = 0;
-            for (final String mp3 : mp3s) {
-                counter++;
-                final DownloadLink link = createDownloadlink("directhttp://" + mp3);
-                if (dups.add(link.getPluginPatternMatcher())) {
-                    if (title != null) {
-                        link.setFinalFileName(counter + "." + title + ".mp3");
-                    }
-                    ret.add(link);
-                }
+        final String[] htmls = br.getRegex("(<li><div part=.*?</div></li>)").getColumn(0);
+        for (final String html : htmls) {
+            final String trackNumber = new Regex(html, "part=\"(\\d+)\"").getMatch(0);
+            String trackTitle = new Regex(html, "title=\"([^\"]+)\"").getMatch(0);
+            /* 2022-01-24: They've switched to MPD/HLS streaming but some tracks are still streamed via old http streaming. */
+            final String httpStreamingURL = new Regex(html, " href=\"(https?://[^\"]+\\.mp3[^\"]*)\"").getMatch(0);
+            final String mpdStreamingHash = new Regex(html, "https?://cros\\d+://([a-f0-9\\-]+)").getMatch(0);
+            if (trackNumber == null || trackTitle == null || (httpStreamingURL == null && mpdStreamingHash == null)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            trackTitle = Encoding.htmlDecode(trackTitle).trim();
+            final DownloadLink link;
+            final String ext;
+            if (httpStreamingURL != null) {
+                link = this.createDownloadlink("directhttp://" + httpStreamingURL);
+                ext = "mp3";
+            } else {
+                /* 2022-01-24: Website uses MPD, we use HLS */
+                // mpd master: https://croaod.cz/stream/<someHash>.m4a/manifest.mpd
+                // hls master: https://croaod.cz/stream/<someHash>.m4a/master.m3u8
+                // hls chunklist (usually there is only one quality available): https://croaod.cz/stream/<someHash>.m4a/chunklist.m3u8
+                link = this.createDownloadlink("m3u8s://croaod.cz/stream/" + mpdStreamingHash + ".m4a/chunklist.m3u8");
+                ext = "m4a";
+            }
+            link.setFinalFileName(trackNumber + "." + trackTitle + "." + ext);
+            link.setAvailable(true);
+            ret.add(link);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
