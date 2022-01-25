@@ -8,3 +8,4 @@ LogTable_onContextMenu_disable_=不选择
 LogTable_onContextMenu_enable_=选择
 SendLogDialog_SendLogDialog_title_=发送错误报告
 SendLogDialog_layoutDialogContent_desc_=问题何时发生? 请勾选所有值得考虑的条目!
+SendLogDialog_layoutDialogContent_nologs_=找不到可用日志!

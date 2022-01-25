@@ -15,6 +15,7 @@ install_msg=您是否想准备让您的系统准备好使用强制关机功能?
 install_title=安装强制关机
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader 将会关闭!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">系统将会进入休眠模式!</font></h2>
+interaction_shutdown_dialog_msg_logoff=<h2><font color="red">用户将要注销!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">系统将会关机!</font></h2>
 interaction_shutdown_dialog_msg_standby=<h2><font color="red">系统将会进入待机模式!</font></h2>
 interaction_shutdown_dialog_title_closejd=关闭 JDownloader 吗?
