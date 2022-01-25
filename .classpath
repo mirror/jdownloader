@@ -77,9 +77,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/bcprov-jdk15on.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/bctls-jdk15on.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/flatlaf.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/jackson-annotations.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/jackson-core.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/jackson-databind.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/bcutil-jdk15on.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
