@@ -31,6 +31,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.plugins.components.config.DropBoxConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -389,7 +390,8 @@ public class DropBoxCom extends PluginForDecrypt {
         jd.plugins.hoster.DropboxCom.prepBrWebsite(br);
         /* Website may return hige amounts of json/html */
         br.setLoadLimit(br.getLoadLimit() * 4);
-        final boolean forceCrawlSubfolders = param.getDownloadLink() != null && param.getDownloadLink().hasProperty("crawl_subfolders");
+        final boolean enforceCrawlSubfoldersByProperty = param.getDownloadLink() != null && param.getDownloadLink().hasProperty("crawl_subfolders");
+        final boolean askIfSubfoldersShouldbeCrawled = PluginJsonConfig.get(DropBoxConfig.class).isAskIfSubfoldersShouldBeCrawled();
         final AtomicReference<FilePackage> currentPackage = new AtomicReference<FilePackage>();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>() {
             @Override
@@ -448,7 +450,7 @@ public class DropBoxCom extends PluginForDecrypt {
          * 2019-09-24: isSingleFile may sometimes be wrong but if our URL contains 'crawl_subfolders=' we know it has been added via crawler
          * and it is definitely a folder and not a file!
          */
-        if (DropboxCom.isSingleFile(parameter) && forceCrawlSubfolders) {
+        if (DropboxCom.isSingleFile(parameter) && !enforceCrawlSubfoldersByProperty) {
             decryptedLinks.add(createSingleFileDownloadLink(parameter));
             return decryptedLinks;
         }
@@ -485,9 +487,7 @@ public class DropBoxCom extends PluginForDecrypt {
             br.getPage(redirect);
         }
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("sharing/error_shmodel|class=\"not-found\">")) {
-            final DownloadLink dl = this.createOfflinelink(parameter);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String passCode = param.getDecrypterPassword();
         String password_cookie = null;
@@ -599,7 +599,7 @@ public class DropBoxCom extends PluginForDecrypt {
                 json_source = br.toString();
             }
             /* 2017-01-27 new */
-            boolean decryptSubfolders = false;
+            boolean crawlSubfolders = false;
             entries = JavaScriptEngineFactory.jsonToJavaMap(json_source);
             next_request_voucher = (String) entries.get("next_request_voucher");
             final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) entries.get("entries");
@@ -615,14 +615,14 @@ public class DropBoxCom extends PluginForDecrypt {
             }
             // final boolean isSingleFileInsideFolder = ressourcelist_files != null && ressourcelist_files.size() == 1 &&
             // (ressourcelist_folders == null || ressourcelist_folders.size() == 0);
-            if (forceCrawlSubfolders) {
-                decryptSubfolders = true;
-            } else if (ressourcelist_folders.size() > 0 && !askedUserIfHeWantsSubfolders) {
+            if (enforceCrawlSubfoldersByProperty) {
+                crawlSubfolders = true;
+            } else if (askIfSubfoldersShouldbeCrawled && ressourcelist_folders.size() > 0 && !askedUserIfHeWantsSubfolders) {
                 /*
                  * Only ask user if we actually have subfolders that can be decrypted AND if we have not asked him already for this folder
                  * AND if subfolders exist in this folder!
                  */
-                final ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, parameter, "For this URL JDownloader can crawl the files inside the current folder or crawl subfolders as well. What would you like to do?", null, "Add files of current folder AND subfolders?", "Add only files of current folder?") {
+                final ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, parameter, "For this URL JDownloader can crawl only the files inside the current folder or crawl subfolders as well. What would you like to do?", null, "Add files of current folder AND subfolders?", "Add only files of current folder?") {
                     @Override
                     public ModalityType getModalityType() {
                         return ModalityType.MODELESS;
@@ -635,15 +635,15 @@ public class DropBoxCom extends PluginForDecrypt {
                 };
                 try {
                     UIOManager.I().show(ConfirmDialogInterface.class, confirm).throwCloseExceptions();
-                    decryptSubfolders = true;
+                    crawlSubfolders = true;
                 } catch (DialogCanceledException e) {
-                    decryptSubfolders = false;
+                    crawlSubfolders = false;
                 } catch (DialogClosedException e) {
-                    decryptSubfolders = false;
+                    crawlSubfolders = false;
                 }
                 askedUserIfHeWantsSubfolders = true;
             }
-            if (askedUserIfHeWantsSubfolders && !decryptSubfolders && ressourcelist_files.isEmpty()) {
+            if (askedUserIfHeWantsSubfolders && !crawlSubfolders && ressourcelist_files.isEmpty()) {
                 logger.info("User doesn't want subfolders but only subfolders are available!");
                 throw new DecrypterRetryException(RetryReason.PLUGIN_SETTINGS, "SUBFOLDER_CRAWL_DESELECTED_BUT_ONLY_SUBFOLDERS_AVAILABLE_" + userReadableFolderName, "You deselected subfolder crawling but this folder contains only subfolders and no single files!", null);
             }
@@ -670,7 +670,7 @@ public class DropBoxCom extends PluginForDecrypt {
             }
             if (!ressourcelist_folders.isEmpty()) {
                 current_numberof_items += ressourcelist_folders.size();
-                if (decryptSubfolders) {
+                if (crawlSubfolders) {
                     for (final Map<String, Object> folder : ressourcelist_folders) {
                         final DownloadLink dl = this.crawlFolderItem(folder);
                         if (dl == null) {
@@ -684,7 +684,9 @@ public class DropBoxCom extends PluginForDecrypt {
                             currentPath = subFolder;
                         }
                         dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, currentPath);
-                        dl.setProperty("crawl_subfolders", true);
+                        if (askedUserIfHeWantsSubfolders) {
+                            dl.setProperty("crawl_subfolders", true);
+                        }
                         decryptedLinks.add(dl);
                     }
                 }

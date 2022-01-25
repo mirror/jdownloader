@@ -36,6 +36,16 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -63,16 +73,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.GenericM3u8Decrypter;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubCom extends PluginForHost {
     /* Connection stuff */
@@ -95,15 +95,15 @@ public class PornHubCom extends PluginForHost {
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
     /* Quality, { videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate } */
     public static LinkedHashMap<String, String[]> formats                               = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-        {
-            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
-            put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
-            put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
-        }
-    });
+                                                                                            {
+                                                                                                put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+                                                                                                put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+                                                                                                put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+                                                                                                put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+                                                                                                put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
+                                                                                                put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
+                                                                                            }
+                                                                                        });
     public static final String                    BEST_ONLY                             = "BEST_ONLY";
     public static final String                    BEST_SELECTION_ONLY                   = "BEST_SELECTION_ONLY";
     public static final String                    FAST_LINKCHECK                        = "FAST_LINKCHECK";
@@ -115,6 +115,7 @@ public class PornHubCom extends PluginForHost {
     public static final String                    PROPERT_DATE                          = "date";
     public static final String                    PROPERTY_CATEGORIES_COMMA_SEPARATED   = "categories_comma_separated";
     public static final String                    PROPERTY_USERNAME                     = "username";
+    public static final String                    PROPERTY_VIEWKEY                      = "viewkey";
     public static final String                    PROPERTY_ACCOUNT_is_cookie_login_only = "is_cookie_login_only";
 
     public static List<String[]> getPluginDomains() {
@@ -168,23 +169,33 @@ public class PornHubCom extends PluginForHost {
     }
 
     @Override
-    public String getLinkID(DownloadLink link) {
-        final String quality = link.getStringProperty(PROPERT_QUALITY, null);
-        final String viewkey = link.getStringProperty("viewkey", null);
+    public String getMirrorID(final DownloadLink link) {
+        final String quality = link.getStringProperty(PROPERT_QUALITY);
+        final String viewkey = link.getStringProperty(PROPERTY_VIEWKEY);
         if (quality != null && viewkey != null) {
             final StringBuilder sb = new StringBuilder(32);
             sb.append("pornhub://");
             sb.append(viewkey);
-            if (true) {
-                sb.append("_");
-                final String format = link.getStringProperty(PROPERT_FORMAT, null);
-                if (format != null) {
-                    sb.append(format);
-                } else {
-                    // older links
-                    sb.append("mp4");
-                }
-            }
+            sb.append("_");
+            sb.append(getFormat(link));
+            sb.append("_");
+            sb.append(quality);
+            return sb.toString();
+        } else {
+            return super.getMirrorID(link);
+        }
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String quality = link.getStringProperty(PROPERT_QUALITY);
+        final String viewkey = link.getStringProperty(PROPERTY_VIEWKEY);
+        if (quality != null && viewkey != null) {
+            final StringBuilder sb = new StringBuilder(32);
+            sb.append("pornhub://");
+            sb.append(viewkey);
+            sb.append("_");
+            sb.append(getFormat(link));
             sb.append("_");
             sb.append(quality);
             return sb.toString();
@@ -206,6 +217,14 @@ public class PornHubCom extends PluginForHost {
             return createPornhubGifLink(isPremium, viewKey, null);
         } else {
             return createPornhubVideoLink(isPremium, viewKey, null);
+        }
+    }
+
+    private String getFormat(final DownloadLink link) {
+        if (link.hasProperty(PROPERT_FORMAT)) {
+            return link.getStringProperty(PROPERT_FORMAT);
+        } else {
+            return "mp4";
         }
     }
 

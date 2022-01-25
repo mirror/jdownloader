@@ -142,8 +142,8 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_VIDEO_SINGLE_ORIGINAL_LIST        = "https?://[^/]+/video(\\-)?\\d+_\\d+\\?list=[a-z0-9]+";
     private static final String     PATTERN_VIDEO_SINGLE_EMBED                = "https?://[^/]+/video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+.*?";
     private static final String     PATTERN_VIDEO_SINGLE_EMBED_HASH           = "https?://[^/]+/video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+\\&hash=[a-z0-9]+.*?";
-    private static final String     PATTERN_VIDEO_ALBUM                       = "https?://[^/]+/(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged|videos(?:-)?\\d+(?:\\?section=[^\\&]+)?)";
-    private static final String     PATTERN_VIDEO_COMMUNITY_ALBUM             = "https?://[^/]+/video\\?gid=\\d+.*";
+    private static final String     PATTERN_VIDEO_ALBUM                       = "(https?://)?.*?/(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged|video/.*|videos(?:-)?\\d+(?:\\?section=[^\\&]+)?)";
+    private static final String     PATTERN_VIDEO_COMMUNITY_ALBUM             = "(https?://)?[^/]*/video\\?gid=\\d+.*";
     private static final String     PATTERN_PHOTO_SINGLE                      = "https?://[^/]+/photo(\\-)?\\d+_\\d+.*?";
     private static final String     PATTERN_PHOTO_SINGLE_Z                    = "https?://[^/]+/.+z=photo(?:\\-)?\\d+_\\d+.*?";
     private static final String     PATTERN_PHOTO_MODULE                      = "https?://[^/]+/[A-Za-z0-9\\-_\\.]+\\?z=photo(\\-)?\\d+_\\d+/(wall|album)\\-\\d+_\\d+";
@@ -2584,8 +2584,8 @@ public class VKontakteRu extends PluginForDecrypt {
         return input.matches(PATTERN_WALL_POST_LINK);
     }
 
-    private static boolean isVideoAlbum(final String input) {
-        return input.matches(PATTERN_VIDEO_ALBUM) || input.matches(PATTERN_VIDEO_COMMUNITY_ALBUM);
+    private static boolean isVideoAlbum(final String url) {
+        return url.matches(PATTERN_VIDEO_ALBUM) || url.matches(PATTERN_VIDEO_COMMUNITY_ALBUM);
     }
 
     private static boolean isUserStory(final String input) {
