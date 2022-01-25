@@ -256,11 +256,11 @@ public class Xt7Pl extends PluginForHost {
         // wait, workaround
         sleep(1 * 1000l, link);
         int chunks = 0;
-        // generated fileshark/lunaticfiles link allows only 1 chunk
+        // generated fileshark.pl link allows only 1 chunk
         // because download doesn't support more chunks and
         // and resume (header response has no: "Content-Range" info)
         final String url = link.getPluginPatternMatcher();
-        final String oneChunkHostersPattern = ".*(lunaticfiles\\.com|fileshark\\.pl).*";
+        final String oneChunkHostersPattern = ".*fileshark\\.pl.*";
         if (url.matches(oneChunkHostersPattern) || downloadUrl.matches(oneChunkHostersPattern)) {
             chunks = 1;
             resume = false;
