@@ -84,7 +84,7 @@ public class BeegCom extends PluginForHost {
     }
 
     @Override
-    public String getMirrorID(DownloadLink link) {
+    public String getMirrorID(final DownloadLink link) {
         String fid = null;
         if (link != null && StringUtils.equals(getHost(), link.getHost()) && (fid = getFID(link)) != null) {
             return getHost() + "://" + fid;

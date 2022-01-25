@@ -25,7 +25,6 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -81,16 +80,6 @@ public class PixeldrainCom extends PluginForHost {
         return ret.toArray(new String[0]);
     }
 
-    @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        final String fid = this.getFID(link);
-        if (fid != null) {
-            final String newURL = "https://" + this.getHost() + "/u/" + fid;
-            link.setPluginPatternMatcher(newURL);
-            link.setContentUrl(newURL);
-        }
-    }
-
     /* Connection stuff */
     private static final boolean FREE_RESUME               = true;
     private static final int     FREE_MAXCHUNKS            = 0;
@@ -113,20 +102,34 @@ public class PixeldrainCom extends PluginForHost {
         }
     }
 
+    @Override
+    public String getMirrorID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getMirrorID(link);
+        }
+    }
+
     private String getFID(final DownloadLink link) {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     public static Browser prepBR(final Browser br) {
         br.getHeaders().put("User-Agent", "JDownloader");
+        br.setFollowRedirects(true);
         return br;
     }
 
     /** Using API according to https://pixeldrain.com/api */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        return requestFileInformationAPI(link);
+    }
+
+    public AvailableStatus requestFileInformationAPI(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
         prepBR(this.br);
         /* 2020-04-14: According to API docs, multiple files can be checked with one request but I was unable to make this work. */
         br.getPage(API_BASE + "/file/" + this.getFID(link) + "/info");
@@ -142,22 +145,17 @@ public class PixeldrainCom extends PluginForHost {
     }
 
     /** Shared function used by crawler & host plugin. */
-    public static void setDownloadLinkInfo(Plugin plugin, final DownloadLink link, final Map<String, Object> data) throws PluginException {
-        final boolean success = Boolean.TRUE.equals(data.get("success"));
+    public static void setDownloadLinkInfo(final Plugin plugin, final DownloadLink link, final Map<String, Object> data) throws PluginException {
         final String filename = (String) data.get("name");
-        final long filesize = JavaScriptEngineFactory.toLong(data.get("size"), -1);
         if (!StringUtils.isEmpty(filename)) {
             link.setFinalFileName(filename);
         }
-        if (filesize > 0) {
-            link.setVerifiedFileSize(filesize);
+        link.setVerifiedFileSize(((Number) data.get("size")).longValue());
+        final String description = (String) data.get("description");
+        if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
+            link.setComment(description);
         }
-        link.setAvailable(success);
-        if (plugin instanceof PixeldrainCom) {
-            if (!success) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        }
+        link.setAvailable(true);
     }
 
     @Override
@@ -200,10 +198,10 @@ public class PixeldrainCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private boolean login(final Account account, final boolean force) throws Exception {
+    private boolean loginWebsite(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
-                br.setFollowRedirects(true);
+                prepBR(this.br);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
@@ -214,7 +212,7 @@ public class PixeldrainCom extends PluginForHost {
                         return false;
                     }
                     br.getPage("https://" + this.getHost() + "/user");
-                    if (this.isLoggedin()) {
+                    if (this.isLoggedinWebsite(this.br)) {
                         logger.info("Cookie login successful");
                         /* Refresh cookie timestamp */
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -238,7 +236,7 @@ public class PixeldrainCom extends PluginForHost {
                 } else {
                     br.followConnection(true);
                 }
-                if (!isLoggedin()) {
+                if (!isLoggedinWebsite(this.br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -252,7 +250,7 @@ public class PixeldrainCom extends PluginForHost {
         }
     }
 
-    private boolean isLoggedin() {
+    private boolean isLoggedinWebsite(final Browser br) {
         return br.getCookie(this.getHost(), "pd_auth_key", Cookies.NOTDELETEDPATTERN) != null && br.containsHTML("/logout");
     }
 
@@ -265,7 +263,7 @@ public class PixeldrainCom extends PluginForHost {
          * when using those!
          */
         final AccountInfo ai = new AccountInfo();
-        login(account, true);
+        loginWebsite(account, true);
         ai.setUnlimitedTraffic();
         account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
@@ -276,7 +274,7 @@ public class PixeldrainCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
+        loginWebsite(account, false);
         this.handleDownload(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
     }
 

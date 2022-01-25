@@ -16,22 +16,28 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.PixeldrainCom;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixeldrain.com" }, urls = { "https?://(?:www\\.)?pixeldrain\\.com/l/([A-Za-z0-9]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixeldrain.com" }, urls = { "https?://(?:www\\.)?pixeldrain\\.com/l/([A-Za-z0-9]+)(#item=(\\d+))?" })
 public class PixeldrainComFolder extends PluginForDecrypt {
     public PixeldrainComFolder(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,28 +45,47 @@ public class PixeldrainComFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        final String folderID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        final Regex urlinfo = new Regex(param.getCryptedUrl(), this.getSupportedLinks());
+        final String folderID = urlinfo.getMatch(0);
         PixeldrainCom.prepBR(this.br);
         br.getPage(PixeldrainCom.API_BASE + "/list/" + folderID);
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* 2020-10-01: E.g. {"success":false,"value":"not_found","message":"The entity you requested could not be found"} */
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final ArrayList<Object> files = (ArrayList<Object>) entries.get("files");
-        for (final Object fileO : files) {
-            entries = (Map<String, Object>) fileO;
-            final String fileID = (String) entries.get("id");
-            if (StringUtils.isEmpty(fileID)) {
-                /* Skip invalid items */
-                continue;
+        final Map<String, Object> folder = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final String folderName = (String) folder.get("title");
+        final List<Map<String, Object>> files = (List<Map<String, Object>>) folder.get("files");
+        if (files.isEmpty()) {
+            throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "EMPTY_FOLDER_l_" + folderID, "This folder exists but is empty.", null);
+        }
+        Number targetIndex = null;
+        final String targetIndexStr = urlinfo.getMatch(2);
+        if (targetIndexStr != null) {
+            targetIndex = Integer.parseInt(targetIndexStr);
+        }
+        int index = 0;
+        for (final Map<String, Object> file : files) {
+            final DownloadLink dl = this.createDownloadlink("https://" + this.getHost() + "/u/" + file.get("id"));
+            PixeldrainCom.setDownloadLinkInfo(this, dl, file);
+            if (targetIndex != null && index == targetIndex.intValue()) {
+                /* User wants only one item within that folder */
+                logger.info("Found target-file at position: " + index + " | " + dl.getFinalFileName());
+                decryptedLinks.clear();
+                decryptedLinks.add(dl);
+                break;
+            } else {
+                decryptedLinks.add(dl);
+                index += 1;
             }
-            final DownloadLink dl = this.createDownloadlink("https://" + this.getHost() + "/u/" + fileID);
-            PixeldrainCom.setDownloadLinkInfo(this, dl, entries);
-            decryptedLinks.add(dl);
         }
+        final FilePackage fp = FilePackage.getInstance();
+        if (!StringUtils.isEmpty(folderName)) {
+            fp.setName(folderName);
+        } else {
+            fp.setName(folderID);
+        }
+        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 }
