@@ -79,7 +79,7 @@ public class MightyScriptAdLinkFlyDefault extends MightyScriptAdLinkFly {
             /** 2020-01-07: cashurl.win domains */
             "cashurl.win", "todaynewspk.win",
             /** 2019-10-30: exe.io domains */
-            "exe.io", "exe.app", "exee.io", "exey.io", "iddeas.xyz", "artiicle.xyz", "techbeast.xyz", "techofaqs.com", "caat.site", "2xs.io", "wealthh.xyz", "cu6.io", "mediumarticles.com", "bolssc.com", "mealip.com",
+            "exe.io", "exe.app", "exee.io", "exey.io", "iddeas.xyz", "artiicle.xyz", "techbeast.xyz", "techofaqs.com", "caat.site", "2xs.io", "wealthh.xyz", "cu6.io", "mediumarticles.com", "bolssc.com", "mealip.com", "cut-urls.com",
             /** 2020-01-21: encurta.net domains */
             "encurta.net", "enrt.eu",
             /** 2020-01-20: 7r6.com domains */
@@ -122,8 +122,6 @@ public class MightyScriptAdLinkFlyDefault extends MightyScriptAdLinkFly {
             "urlcero.us", "urlcero.com",
             /** eglink.info domains */
             "eglink.info", "egyptiangy.net", "egypt-mix.com",
-            /** cut-urls.com domains */
-            "cut-urls.com", "curs.io", "cuon.io", "cuus.io", "cuto.io", "cu5.io",
             /** wicr.me domains */
             "wicr.me", "wi.cr",
             /** cutwin.com domains */
