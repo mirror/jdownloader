@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Random;
 import java.util.WeakHashMap;
 import java.util.regex.Pattern;
@@ -16,27 +15,6 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-
-import jd.PluginWrapper;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.http.Browser;
-import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.parser.html.Form;
-import jd.parser.html.Form.MethodType;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.DefaultEditAccountPanel;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
@@ -60,6 +38,27 @@ import org.jdownloader.plugins.components.config.DropBoxConfig;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.http.Browser;
+import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.DefaultEditAccountPanel;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?(dl\\-web\\.dropbox\\.com/get/.*?w=[0-9a-f]+|([\\w]+:[\\w]+@)?api\\-content\\.dropbox\\.com/\\d+/files/.+|dropboxdecrypted\\.com/.+)" })
 public class DropboxCom extends PluginForHost {
@@ -141,8 +140,8 @@ public class DropboxCom extends PluginForHost {
         br.setFollowRedirects(true);
         /**
          * 2019-09-24: Consider updating to the new/current website method: https://www.dropbox.com/sharing/fetch_user_content_link. See
-         * also handling for 'TYPE_SC' linktype! </br> This might not be necessary for any other linktype as the old '?dl=1' method is
-         * working just fine!
+         * also handling for 'TYPE_SC' linktype! </br>
+         * This might not be necessary for any other linktype as the old '?dl=1' method is working just fine!
          */
         if (link.getPluginPatternMatcher().matches(TYPE_SC_GALLERY)) {
             String url = link.getPluginPatternMatcher();
@@ -240,6 +239,7 @@ public class DropboxCom extends PluginForHost {
                     }
                     return AvailableStatus.TRUE;
                 } else {
+                    /* Rare case */
                     try {
                         brc.followConnection(true);
                     } catch (IOException e) {
@@ -257,30 +257,8 @@ public class DropboxCom extends PluginForHost {
                     } else {
                         link.setPasswordProtected(false);
                     }
-                    try {
-                        if (RequestMethod.HEAD.equals(con.getRequestMethod())) {
-                            brc.getPage(dllink);
-                        }
-                        String json_source = jd.plugins.decrypter.DropBoxCom.getSharedJsonSource(brc);
-                        final boolean isShared;
-                        if (json_source != null) {
-                            isShared = true;
-                        } else {
-                            isShared = false;
-                            json_source = jd.plugins.decrypter.DropBoxCom.getJsonSource(brc);
-                        }
-                        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json_source);
-                        entries = (Map<String, Object>) jd.plugins.decrypter.DropBoxCom.getFilesList(entries, isShared).get(0);
-                        final String filename = (String) entries.get("filename");
-                        final long filesize = JavaScriptEngineFactory.toLong(entries.get("bytes"), 0);
-                        if (filesize > 0) {
-                            link.setDownloadSize(filesize);
-                        }
-                        if (!StringUtils.isEmpty(filename)) {
-                            link.setName(filename);
-                        }
-                    } catch (final Throwable e) {
-                        logger.log(e);
+                    if (RequestMethod.HEAD.equals(con.getRequestMethod())) {
+                        brc.getPage(dllink);
                     }
                 }
             } finally {
@@ -980,7 +958,8 @@ public class DropboxCom extends PluginForHost {
      * Sets Authorization header. Because once generated, an oauth token is valid 'forever' until user revokes access to application, it
      * must not necessarily be re-validated!
      *
-     * @return true = api_token found and set </br> false = no api_token found
+     * @return true = api_token found and set </br>
+     *         false = no api_token found
      */
     public static boolean setAPILoginHeaders(final Browser br, final Account account) {
         if (account == null || br == null) {
@@ -1003,7 +982,8 @@ public class DropboxCom extends PluginForHost {
     }
 
     /**
-     * Also called App-key and can be found here: https://www.dropbox.com/developers/apps </br> TODO: Change this to public static
+     * Also called App-key and can be found here: https://www.dropbox.com/developers/apps </br>
+     * TODO: Change this to public static
      */
     private String getAPIClientID() throws PluginException {
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && force_dev_values) {
