@@ -477,27 +477,40 @@ public class Ardmediathek extends PluginForDecrypt {
         if (isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final ArrayList<DownloadLink> embeds = crawlEmbeddedContent(this.br);
-        if (!embeds.isEmpty()) {
-            return embeds;
-        }
-        final String[] jsonsInHTML = br.getRegex("globalObject\\.gseaInlineMediaData\\[\"[^\"]+\"\\] =\\s*(\\{.*?\\});\\s*</script>").getColumn(0);
-        if (jsonsInHTML.length > 0) {
-            /* E.g. https://www1.wdr.de/orchester-und-chor/wdrmusikvermittlung/videos/video-wdr-dackl-jazz-konzert-100.html */
-            final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-            for (final String jsonInHTML : jsonsInHTML) {
-                final Map<String, Object> root = JSonStorage.restoreFromString(jsonInHTML, TypeRef.HASHMAP);
-                ret.addAll(crawlWdrMediaObject(param, root));
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String[] jsonURLs = br.getRegex(".mediaObj.\\s*:\\s*\\{\\s*.url.\\s*:\\s*.(https?://[^<>\"\\']+)").getColumn(0);
+        if (jsonURLs.length > 0) {
+            for (final String jsonURL : jsonURLs) {
+                final ArrayList<DownloadLink> results = this.crawlWdrMediathekEmbedded(param, jsonURL);
+                for (final DownloadLink link : results) {
+                    this.distribute(link);
+                    ret.add(link);
+                }
+                if (this.isAbort()) {
+                    break;
+                }
             }
-            return ret;
         } else {
-            final String urlJson = this.br.getRegex(".mediaObj.\\s*:\\s*\\{\\s*.url.\\s*:\\s*.(https?://[^<>\"\\']+)").getMatch(0);
-            if (urlJson == null) {
-                /* Assume that content is offline */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            final String[] jsonsInHTML = br.getRegex("globalObject\\.gseaInlineMediaData\\[\"[^\"]+\"\\] =\\s*(\\{.*?\\});\\s*</script>").getColumn(0);
+            if (jsonsInHTML.length > 0) {
+                /* E.g. https://www1.wdr.de/orchester-und-chor/wdrmusikvermittlung/videos/video-wdr-dackl-jazz-konzert-100.html */
+                for (final String jsonInHTML : jsonsInHTML) {
+                    final Map<String, Object> root = JSonStorage.restoreFromString(jsonInHTML, TypeRef.HASHMAP);
+                    final ArrayList<DownloadLink> results = crawlWdrMediaObject(param, root);
+                    for (final DownloadLink link : results) {
+                        this.distribute(link);
+                        ret.add(link);
+                    }
+                    if (this.isAbort()) {
+                        break;
+                    }
+                }
             }
-            return crawlWdrMediathekEmbedded(param, urlJson);
         }
+        if (ret.isEmpty()) {
+            /* No downloadable content found --> Assume it's offline */
+        }
+        return ret;
     }
 
     private ArrayList<DownloadLink> crawlWdrMediathekEmbedded(final CryptedLink param, final String url) throws Exception {
@@ -544,15 +557,6 @@ public class Ardmediathek extends PluginForDecrypt {
         metadata.setContentID(trackerData.get("trackerClipId").toString());
         final HashMap<String, DownloadLink> foundQualitiesMap = crawlARDJson(param, metadata, wdrMediaObject);
         return this.handleUserQualitySelection(foundQualitiesMap);
-    }
-
-    private ArrayList<DownloadLink> crawlEmbeddedContent(final Browser br) {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String[] embeddedVideosTypeOldJson = br.getRegex("(?:\\'|\")mediaObj(?:\\'|\"):\\s*?\\{\\s*?(?:\\'|\")url(?:\\'|\"):\\s*?(?:\\'|\")(https?://[^<>\"]+\\.js)(?:\\'|\")").getColumn(0);
-        for (final String embeddedVideo : embeddedVideosTypeOldJson) {
-            ret.add(this.createDownloadlink(embeddedVideo));
-        }
-        return ret;
     }
 
     private HashMap<String, DownloadLink> crawlARDJson(final CryptedLink param, final ArdMetadata metadata, final Object mediaCollection) throws Exception {
@@ -813,9 +817,7 @@ public class Ardmediathek extends PluginForDecrypt {
     /**
      * Handling for older ARD websites. </br>
      * INFORMATION: network = akamai or limelight == RTMP </br>
-     * TODO: Refactor this; use json whenever possible
      */
-    @Deprecated
     private ArrayList<DownloadLink> crawlDasersteVideo(final CryptedLink param) throws Exception {
         br.getPage(param.getCryptedUrl());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
@@ -824,7 +826,7 @@ public class Ardmediathek extends PluginForDecrypt {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         String url_xml = null;
-        String contentID = null;
+        final String type_mdr = ".+mdr\\.de/.+/((?:video|audio)\\-\\d+)\\.html";
         if (this.getHost().equalsIgnoreCase("daserste.de")) {
             /* The fast way - we do not even have to access the main URL which the user has added :) */
             final String[] playerConfigs = br.getRegex("data-ctrl-player=\"(\\{[^\"]+)\"").getColumn(0);
@@ -840,10 +842,9 @@ public class Ardmediathek extends PluginForDecrypt {
                 /* Also possible: ~PlayerJson.json --> But this contains much less information! */
                 url_xml = param.getCryptedUrl().replace(".html", "~playerXml.xml");
             }
-        } else if (param.getCryptedUrl().matches(".+mdr\\.de/.+/((?:video|audio)\\-\\d+)\\.html")) {
+        } else if (param.getCryptedUrl().matches(type_mdr)) {
             /* Some special mdr.de URLs --> We do not have to access main URL so this way we can speed up the crawl process a bit :) */
-            contentID = new Regex(param.getCryptedUrl(), "((?:audio|video)\\-\\d+)\\.html$").getMatch(0);
-            url_xml = String.format("https://www.mdr.de/mediathek/mdr-videos/d/%s-avCustom.xml", contentID);
+            url_xml = String.format("https://www.mdr.de/mediathek/mdr-videos/d/%s-avCustom.xml", new Regex(param.getCryptedUrl(), type_mdr).getMatch(0));
         } else {
             /* E.g. kika.de, sputnik.de, mdr.de */
             br.getPage(param.getCryptedUrl());
@@ -855,7 +856,6 @@ public class Ardmediathek extends PluginForDecrypt {
                 if (url_xml.contains("\\")) {
                     url_xml = url_xml.replace("\\", "");
                 }
-                contentID = new Regex(url_xml, "((?:audio|video)\\-\\d+)").getMatch(0);
             }
         }
         if (url_xml == null) {
@@ -865,7 +865,8 @@ public class Ardmediathek extends PluginForDecrypt {
         final HashMap<String, DownloadLink> foundQualitiesMap = new HashMap<String, DownloadLink>();
         br.getPage(url_xml);
         /* Usually daserste.de as there is no way to find a contentID inside URL added by the user. */
-        final String id = br.getRegex("<c7>(.*?)</c7>").getMatch(0);
+        final String id = getXML(br.toString(), "c7");
+        final String tvStation = getXML(br.toString(), "c10");
         if (br.getHttpConnection().getResponseCode() == 404 || !br.getHttpConnection().getContentType().contains("xml")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -901,6 +902,9 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         if (id != null) {
             metadata.setContentID(Hash.getSHA1(id));
+        }
+        if (tvStation != null) {
+            metadata.setChannel(tvStation);
         }
         final ArrayList<String> hls_master_dupelist = new ArrayList<String>();
         final String assetsAudiodescription = br.getRegex("<assets type=\"audiodesc\">(.*?)</assets>").getMatch(0);
@@ -988,7 +992,7 @@ public class Ardmediathek extends PluginForDecrypt {
                 hls_master = getXML(stream, "adaptiveHttpStreamingRedirectorUrl");
             }
             /* HLS master url may exist in every XML item --> We only have to add all HLS qualities once! */
-            if (!StringUtils.isEmpty(hls_master) && !hls_master_dupelist.contains(hls_master)) {
+            if (!StringUtils.isEmpty(hls_master) && !hls_master_dupelist.contains(hls_master) && this.grabHLS) {
                 /* HLS */
                 addHLS(param, metadata, foundQualitiesMap, this.br, hls_master, isAudioDescription);
                 hls_master_dupelist.add(hls_master);
