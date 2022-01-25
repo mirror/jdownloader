@@ -75,6 +75,7 @@ public class DropBoxCom extends PluginForDecrypt {
     private static final String TYPE_REFERRAL              = "https?://[^/]+/referrals/.+";
     private String              subFolder                  = "";
     private final int           website_max_items_per_page = 30;
+    private static final String PROPERTY_CRAWL_SUBFOLDERS  = "crawl_subfolders";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         subFolder = getAdoptedCloudFolderStructure();
@@ -390,7 +391,7 @@ public class DropBoxCom extends PluginForDecrypt {
         jd.plugins.hoster.DropboxCom.prepBrWebsite(br);
         /* Website may return hige amounts of json/html */
         br.setLoadLimit(br.getLoadLimit() * 4);
-        final boolean enforceCrawlSubfoldersByProperty = param.getDownloadLink() != null && param.getDownloadLink().hasProperty("crawl_subfolders");
+        final boolean enforceCrawlSubfoldersByProperty = param.getDownloadLink() != null && param.getDownloadLink().hasProperty(PROPERTY_CRAWL_SUBFOLDERS);
         final boolean askIfSubfoldersShouldbeCrawled = PluginJsonConfig.get(DropBoxConfig.class).isAskIfSubfoldersShouldBeCrawled();
         final AtomicReference<FilePackage> currentPackage = new AtomicReference<FilePackage>();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>() {
@@ -685,7 +686,7 @@ public class DropBoxCom extends PluginForDecrypt {
                         }
                         dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, currentPath);
                         if (askedUserIfHeWantsSubfolders) {
-                            dl.setProperty("crawl_subfolders", true);
+                            dl.setProperty(PROPERTY_CRAWL_SUBFOLDERS, true);
                         }
                         decryptedLinks.add(dl);
                     }
