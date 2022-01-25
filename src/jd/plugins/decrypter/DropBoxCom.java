@@ -21,25 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jd.PluginWrapper;
-import jd.controlling.AccountController;
-import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.parser.html.Form;
-import jd.parser.html.Form.MethodType;
-import jd.plugins.Account;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.hoster.DropboxCom;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -51,6 +32,27 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.plugins.components.config.DropBoxConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.controlling.AccountController;
+import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
+import jd.plugins.Account;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.DropboxCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?dropbox\\.com/(?:(?:sh|s|sc)/[^<>\"]+|l/[A-Za-z0-9]+).*|https?://(www\\.)?db\\.tt/[A-Za-z0-9]+|https?://dl\\.dropboxusercontent\\.com/s/.+" })
 public class DropBoxCom extends PluginForDecrypt {
@@ -108,9 +110,7 @@ public class DropBoxCom extends PluginForDecrypt {
             }
         }
         if (decryptedLinks.size() == 0) {
-            final DownloadLink dl = this.createOfflinelink(param.toString());
-            decryptedLinks.add(dl);
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return decryptedLinks;
     }
@@ -411,9 +411,7 @@ public class DropBoxCom extends PluginForDecrypt {
              */
             br.getPage(parameter);
             if (br.getHttpConnection().getResponseCode() == 404) {
-                final DownloadLink dl = this.createOfflinelink(parameter);
-                decryptedLinks.add(dl);
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String currentGalleryName = null;
             try {
@@ -426,9 +424,9 @@ public class DropBoxCom extends PluginForDecrypt {
                     fp.setName(currentGalleryName);
                     currentPackage.set(fp);
                 }
-                final ArrayList<Object> galleryElements = (ArrayList<Object>) galleryInfo.get("collectionFiles");
-                for (final Object galleryO : galleryElements) {
-                    final DownloadLink dl = this.crawlFileObject(galleryO);
+                final List<Map<String, Object>> galleryElements = (List<Map<String, Object>>) galleryInfo.get("collectionFiles");
+                for (final Map<String, Object> galleryO : galleryElements) {
+                    final DownloadLink dl = this.crawlFolderItem(galleryO);
                     if (dl == null) {
                         continue;
                     }
@@ -436,7 +434,7 @@ public class DropBoxCom extends PluginForDecrypt {
                 }
             } catch (final Throwable e) {
                 /* Fallback - add .zip containing all elements of that gallery! This should never happen! */
-                final DownloadLink dl = this.createSingleDownloadLink(parameter);
+                final DownloadLink dl = this.createSingleFileDownloadLink(parameter);
                 if (currentGalleryName != null) {
                     dl.setFinalFileName("Gallery - " + currentGalleryName + ".zip");
                 } else {
@@ -451,7 +449,7 @@ public class DropBoxCom extends PluginForDecrypt {
          * and it is definitely a folder and not a file!
          */
         if (DropboxCom.isSingleFile(parameter) && forceCrawlSubfolders) {
-            decryptedLinks.add(createSingleDownloadLink(parameter));
+            decryptedLinks.add(createSingleFileDownloadLink(parameter));
             return decryptedLinks;
         }
         br.getPage(parameter);
@@ -462,10 +460,9 @@ public class DropBoxCom extends PluginForDecrypt {
             return decryptedLinks;
         } else if (br.getHttpConnection().getResponseCode() == 460) {
             logger.info("Restricted Content: This file is no longer available. For additional information contact Dropbox Support.");
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection().getResponseCode() == 509) {
-            /* Temporarily unavailable link */
+            /* Temporarily unavailable link --> Rare case */
             final DownloadLink dl = createDownloadlink(parameter.replace("dropbox.com/", "dropboxdecrypted.com/"));
             decryptedLinks.add(dl);
             return decryptedLinks;
@@ -478,7 +475,7 @@ public class DropBoxCom extends PluginForDecrypt {
                 return decryptedLinks;
             } else if (!parameter.matches(TYPES_NORMAL)) {
                 logger.warning("Decrypter broken or unsupported redirect-url: " + parameter);
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         br.setFollowRedirects(true);
@@ -498,7 +495,7 @@ public class DropBoxCom extends PluginForDecrypt {
             final String content_id = new Regex(br.getURL(), "content_id=([^\\&]+)").getMatch(0);
             if (content_id == null) {
                 logger.warning("Failed to find content_id");
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             boolean wrongPass = true;
             int counter = 0;
@@ -526,8 +523,7 @@ public class DropBoxCom extends PluginForDecrypt {
             br.getPage(parameter);
         }
         /* Decrypt file- and folderlinks */
-        boolean hasMore = false;
-        boolean isShared = false;
+        // boolean isShared = false;
         boolean askedUserIfHeWantsSubfolders = false;
         final int page_start = 1;
         int page = page_start;
@@ -548,6 +544,12 @@ public class DropBoxCom extends PluginForDecrypt {
                 }
             }
         }
+        final String userReadableFolderName;
+        if (!StringUtils.isEmpty(currentRootFolderName)) {
+            userReadableFolderName = currentRootFolderName;
+        } else {
+            userReadableFolderName = "Unknown folder name";
+        }
         int current_numberof_items;
         int page_num = 0;
         String next_request_voucher = null;
@@ -556,13 +558,12 @@ public class DropBoxCom extends PluginForDecrypt {
             current_numberof_items = 0;
             logger.info("Crawling page: " + page_num);
             if (page == page_start) {
-                json_source = getSharedJsonSource(br);
-                if (json_source != null) {
-                    isShared = true;
-                } else {
-                    isShared = false;
-                    json_source = getJsonSource(this.br);
+                json_source = br.getRegex("REGISTER_SHARED_LINK_FOLDER_PRELOAD_HANDLER\"\\]\\.responseReceived\\(\"(\\{.*?\\})\"\\)\\}\\);").getMatch(0);
+                if (json_source == null) {
+                    /* Assume that folder is offline */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
+                json_source = PluginJSonUtils.unescape(json_source);
             } else {
                 final Regex urlinfo = new Regex(parameter, "https?://[^/]+/sh/([^/]+)/([^/]+)");
                 final String link_key = urlinfo.getMatch(0);
@@ -597,17 +598,26 @@ public class DropBoxCom extends PluginForDecrypt {
                 br.submitForm(pagination_form);
                 json_source = br.toString();
             }
-            if (json_source == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
             /* 2017-01-27 new */
             boolean decryptSubfolders = false;
             entries = JavaScriptEngineFactory.jsonToJavaMap(json_source);
             next_request_voucher = (String) entries.get("next_request_voucher");
-            final List<Object> ressourcelist_folders = getFoldersList(entries, isShared);
-            final List<Object> ressourcelist_files = getFilesList(entries, isShared);
-            final boolean isSingleFileInsideFolder = ressourcelist_files != null && ressourcelist_files.size() == 1 && (ressourcelist_folders == null || ressourcelist_folders.size() == 0);
-            if (ressourcelist_folders != null && ressourcelist_folders.size() > 0 && !forceCrawlSubfolders && !askedUserIfHeWantsSubfolders) {
+            final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) entries.get("entries");
+            final List<Map<String, Object>> ressourcelist_folders = new ArrayList<Map<String, Object>>();
+            final List<Map<String, Object>> ressourcelist_files = new ArrayList<Map<String, Object>>();
+            /* Separate files/folders */
+            for (final Map<String, Object> folderRessource : ressourcelist) {
+                if ((Boolean) folderRessource.get("is_dir") == Boolean.TRUE) {
+                    ressourcelist_folders.add(folderRessource);
+                } else {
+                    ressourcelist_files.add(folderRessource);
+                }
+            }
+            // final boolean isSingleFileInsideFolder = ressourcelist_files != null && ressourcelist_files.size() == 1 &&
+            // (ressourcelist_folders == null || ressourcelist_folders.size() == 0);
+            if (forceCrawlSubfolders) {
+                decryptSubfolders = true;
+            } else if (ressourcelist_folders.size() > 0 && !askedUserIfHeWantsSubfolders) {
                 /*
                  * Only ask user if we actually have subfolders that can be decrypted AND if we have not asked him already for this folder
                  * AND if subfolders exist in this folder!
@@ -633,10 +643,14 @@ public class DropBoxCom extends PluginForDecrypt {
                 }
                 askedUserIfHeWantsSubfolders = true;
             }
-            if (ressourcelist_files != null) {
+            if (askedUserIfHeWantsSubfolders && !decryptSubfolders && ressourcelist_files.isEmpty()) {
+                logger.info("User doesn't want subfolders but only subfolders are available!");
+                throw new DecrypterRetryException(RetryReason.PLUGIN_SETTINGS, "SUBFOLDER_CRAWL_DESELECTED_BUT_ONLY_SUBFOLDERS_AVAILABLE_" + userReadableFolderName, "You deselected subfolder crawling but this folder contains only subfolders and no single files!", null);
+            }
+            if (!ressourcelist_files.isEmpty()) {
                 current_numberof_items += ressourcelist_files.size();
-                for (final Object o : ressourcelist_files) {
-                    final DownloadLink dl = this.crawlFileObject(o);
+                for (final Map<String, Object> file : ressourcelist_files) {
+                    final DownloadLink dl = this.crawlFolderItem(file);
                     if (dl == null) {
                         continue;
                     }
@@ -654,118 +668,71 @@ public class DropBoxCom extends PluginForDecrypt {
                     decryptedLinks.add(dl);
                 }
             }
-            if (ressourcelist_folders != null) {
+            if (!ressourcelist_folders.isEmpty()) {
                 current_numberof_items += ressourcelist_folders.size();
                 if (decryptSubfolders) {
-                    for (final Object o : ressourcelist_folders) {
-                        entries = (Map<String, Object>) o;
-                        final boolean is_dir = ((Boolean) entries.get("is_dir")).booleanValue();
-                        final String url = (String) entries.get("href");
-                        if (!is_dir || StringUtils.isEmpty(url)) {
+                    for (final Map<String, Object> folder : ressourcelist_folders) {
+                        final DownloadLink dl = this.crawlFolderItem(folder);
+                        if (dl == null) {
                             continue;
                         }
-                        final String name = (String) entries.get("filename");
+                        final String name = (String) folder.get("filename");
                         final String currentPath;
                         if (StringUtils.isNotEmpty(name)) {
                             currentPath = subFolder + "/" + name;
                         } else {
                             currentPath = subFolder;
                         }
-                        final DownloadLink subFolderDownloadLink = this.createDownloadlink(url, currentPath);
-                        subFolderDownloadLink.setProperty("crawl_subfolders", true);
-                        decryptedLinks.add(subFolderDownloadLink);
+                        dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, currentPath);
+                        dl.setProperty("crawl_subfolders", true);
+                        decryptedLinks.add(dl);
                     }
                 }
             }
-            hasMore = current_numberof_items >= website_max_items_per_page;
+            if (current_numberof_items < website_max_items_per_page) {
+                logger.info("Stopping because: Reached end");
+                break;
+            }
             page++;
-        } while (hasMore && !this.isAbort());
+        } while (!this.isAbort());
         return decryptedLinks;
     }
 
-    private DownloadLink crawlFileObject(final Object fileO) {
-        final Map<String, Object> entries = (Map<String, Object>) fileO;
+    private DownloadLink crawlFolderItem(final Map<String, Object> entries) {
         final String url = (String) entries.get("href");
-        final String filename = (String) entries.get("filename");
-        final long filesize = JavaScriptEngineFactory.toLong(entries.get("bytes"), 0);
-        if (StringUtils.isEmpty(url) || StringUtils.isEmpty(filename)) {
+        final Boolean is_dir = (Boolean) entries.get("is_dir");
+        if (StringUtils.isEmpty(url)) {
             return null;
         }
-        final DownloadLink dl = createSingleDownloadLink(url);
-        if (dl == null) {
-            return null;
+        final DownloadLink dl;
+        if (is_dir) {
+            /* Folder --> Will go back into crawler */
+            dl = this.createDownloadlink(url);
+        } else {
+            dl = createSingleFileDownloadLink(url);
+            /* Try to grab special downloadurls needed for items without official download button. */
+            final String filename = (String) entries.get("filename");
+            final long filesize = JavaScriptEngineFactory.toLong(entries.get("bytes"), 0);
+            final String videoStreamURL = (String) JavaScriptEngineFactory.walkJson(entries, "preview/content/transcode_url");
+            final String photoStreamURL = (String) JavaScriptEngineFactory.walkJson(entries, "preview/content/full_size_src");
+            if (filesize > 0) {
+                /*
+                 * Don't set verified filesize here as some files are not officially downloadable but are downloadable as stream -->
+                 * Filesize may vary for those!
+                 */
+                // dl.setVerifiedFileSize(filesize);
+                dl.setDownloadSize(filesize);
+            }
+            dl.setFinalFileName(filename);
+            dl.setAvailable(true);
+            if (!StringUtils.isEmpty(videoStreamURL)) {
+                dl.setProperty(jd.plugins.hoster.DropboxCom.PROPERTY_PREVIEW_DOWNLOADLINK, videoStreamURL);
+            } else if (!StringUtils.isEmpty(photoStreamURL)) {
+                dl.setProperty(jd.plugins.hoster.DropboxCom.PROPERTY_PREVIEW_DOWNLOADLINK, photoStreamURL);
+            }
+            dl.setProperty(jd.plugins.hoster.DropboxCom.PROPERTY_ORIGINAL_FILENAME, filename);
         }
-        /* Try to grab special downloadurls needed for items without official download button. */
-        final String videoStreamURL = (String) JavaScriptEngineFactory.walkJson(entries, "preview/content/transcode_url");
-        final String photoStreamURL = (String) JavaScriptEngineFactory.walkJson(entries, "preview/content/full_size_src");
-        if (filesize > 0) {
-            /*
-             * Don't set verified filesize here as some files are not officially downloadable but are downloadable as stream --> Filesize
-             * may vary for those!
-             */
-            // dl.setVerifiedFileSize(filesize);
-            dl.setDownloadSize(filesize);
-        }
-        dl.setFinalFileName(filename);
-        dl.setAvailable(true);
-        if (!StringUtils.isEmpty(videoStreamURL)) {
-            dl.setProperty(jd.plugins.hoster.DropboxCom.PROPERTY_PREVIEW_DOWNLOADLINK, videoStreamURL);
-        } else if (!StringUtils.isEmpty(photoStreamURL)) {
-            dl.setProperty(jd.plugins.hoster.DropboxCom.PROPERTY_PREVIEW_DOWNLOADLINK, photoStreamURL);
-        }
-        dl.setProperty(jd.plugins.hoster.DropboxCom.PROPERTY_ORIGINAL_FILENAME, filename);
         return dl;
-    }
-
-    public static List<Object> getFoldersList(Map<String, Object> map, boolean isShared) {
-        if (isShared) {
-            final List<Object> entries = (List<Object>) JavaScriptEngineFactory.walkJson(map, "entries");
-            final ArrayList<Object> ret = new ArrayList<Object>();
-            for (final Object entry : entries) {
-                if (Boolean.TRUE.equals(((Map<String, Object>) entry).get("is_dir"))) {
-                    ret.add(entry);
-                }
-            }
-            return ret;
-        } else {
-            if (!map.containsKey("props")) {
-                map = (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "components/{0}");
-            }
-            final List<Object> ret = (List<Object>) JavaScriptEngineFactory.walkJson(map, "props/contents/folders");
-            return ret;
-        }
-    }
-
-    public static List<Object> getFilesList(Map<String, Object> map, boolean isShared) {
-        if (isShared) {
-            final List<Object> entries = (List<Object>) JavaScriptEngineFactory.walkJson(map, "entries");
-            final ArrayList<Object> ret = new ArrayList<Object>();
-            for (final Object entry : entries) {
-                if (!Boolean.TRUE.equals(((Map<String, Object>) entry).get("is_dir"))) {
-                    ret.add(entry);
-                }
-            }
-            return ret;
-        } else {
-            if (!map.containsKey("props")) {
-                map = (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "components/{0}");
-            }
-            List<Object> filesList = (List<Object>) JavaScriptEngineFactory.walkJson(map, "props/contents/files");
-            /* Null? Then we probably have a single file */
-            if (filesList == null) {
-                filesList = (List<Object>) JavaScriptEngineFactory.walkJson(map, "props/files");
-            }
-            if (filesList == null) {
-                // single file
-                final Object file = JavaScriptEngineFactory.walkJson(map, "props/file");
-                if (file != null) {
-                    final ArrayList<Object> ret = new ArrayList<Object>();
-                    ret.add(file);
-                    return ret;
-                }
-            }
-            return filesList;
-        }
     }
 
     @Override
@@ -800,7 +767,7 @@ public class DropBoxCom extends PluginForDecrypt {
         return json_source;
     }
 
-    private DownloadLink createSingleDownloadLink(final String parameter) {
+    private DownloadLink createSingleFileDownloadLink(final String parameter) {
         final String urlpart = new Regex(parameter, "https?://[^/]+/(.+)").getMatch(0);
         if (urlpart == null) {
             return null;
