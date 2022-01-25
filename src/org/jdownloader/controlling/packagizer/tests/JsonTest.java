@@ -45,8 +45,11 @@ public class JsonTest extends AWTest {
             }
         });
         PackagizerRule rule = new PackagizerRule();
-        final PackagizerRule clone = JSonStorage.restoreFromString(JSonStorage.serializeToJson(rule), new TypeRef<PackagizerRule>() {
+        String json = JSonStorage.serializeToJson(rule);
+        final PackagizerRule clone = mapper.stringToObject(json, new TypeRef<PackagizerRule>() {
         });
+        rule.setCreated(0);
+        clone.setCreated(0);
         assertEqualsDeep(rule, clone);
     }
 }
