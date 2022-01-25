@@ -1,14 +1,14 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -87,7 +87,7 @@ public class ThingiverseCom extends antiDDoSForDecrypt {
         String sourceData = PluginJSonUtils.getJsonNested(br, "data");
         sourceData = new Regex(sourceData, "(\\{[^\\}]+\\})").getMatch(0);
         if (sourceData != null) {
-            LinkedHashMap<String, String> searchValues = new ObjectMapper().readValue(sourceData, LinkedHashMap.class);
+            HashMap<String, String> searchValues = JSonStorage.restoreFromString(sourceData, TypeRef.HASHMAP_STRING);
             if (searchValues != null && searchValues.keySet().size() > 0) {
                 searchValues.put("page", "1");
                 searchValues.put("per_page", "999999999");
