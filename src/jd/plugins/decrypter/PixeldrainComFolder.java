@@ -59,10 +59,12 @@ public class PixeldrainComFolder extends PluginForDecrypt {
         if (files.isEmpty()) {
             throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "EMPTY_FOLDER_l_" + folderID, "This folder exists but is empty.", null);
         }
-        Number targetIndex = null;
+        final Number targetIndex;
         final String targetIndexStr = urlinfo.getMatch(2);
         if (targetIndexStr != null) {
             targetIndex = Integer.parseInt(targetIndexStr);
+        } else {
+            targetIndex = null;
         }
         int index = 0;
         for (final Map<String, Object> file : files) {
@@ -83,6 +85,7 @@ public class PixeldrainComFolder extends PluginForDecrypt {
         if (!StringUtils.isEmpty(folderName)) {
             fp.setName(folderName);
         } else {
+            /* Fallback */
             fp.setName(folderID);
         }
         fp.addLinks(decryptedLinks);

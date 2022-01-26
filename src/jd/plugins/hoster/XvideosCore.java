@@ -188,19 +188,18 @@ public abstract class XvideosCore extends PluginForHost {
         }
     }
 
-    private boolean isValidVideoURL(final DownloadLink link, final String url) throws Exception {
+    private boolean isValidVideoURL(final DownloadLink link, final String url, final boolean setFilesize) throws Exception {
         if (StringUtils.isEmpty(url)) {
             return false;
         } else {
             URLConnectionAdapter con = null;
             try {
-                Thread.sleep(2000);
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(Encoding.htmlOnlyDecode(url));
-                if (StringUtils.containsIgnoreCase(con.getContentType(), "video") && con.getResponseCode() == 200) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setDownloadSize(con.getCompleteContentLength());
+                con = br2.openHeadConnection(url);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0 && setFilesize) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                     return true;
                 } else {
@@ -461,24 +460,28 @@ public abstract class XvideosCore extends PluginForHost {
             if (StringUtils.isEmpty(videoURL)) {
                 /* Download http streams */
                 final PreferredHTTPQuality qualityhttp = getPreferredHTTPQuality();
+                boolean foundValidURL = false;
                 switch (qualityhttp) {
                 case HIGH:
                     videoURL = getVideoHigh(br);
-                    if (isValidVideoURL(link, videoURL)) {
+                    if (isValidVideoURL(link, videoURL, true)) {
+                        foundValidURL = true;
                         break;
                     }
                 case LOW:
                     videoURL = getVideoLow(br);
-                    if (isValidVideoURL(link, videoURL)) {
+                    if (isValidVideoURL(link, videoURL, true)) {
+                        foundValidURL = true;
                         break;
                     }
                 default:
                     videoURL = getVideoFlv(br);
-                    if (isValidVideoURL(link, videoURL)) {
+                    if (isValidVideoURL(link, videoURL, true)) {
+                        foundValidURL = true;
                         break;
                     }
                 }
-                if (!isValidVideoURL(link, videoURL)) {
+                if (!foundValidURL) {
                     /* Assume that an account is required to access this content */
                     throw new AccountRequiredException();
                 } else {

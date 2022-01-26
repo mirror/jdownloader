@@ -34,6 +34,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -81,17 +82,18 @@ public class PixeldrainCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME               = true;
-    private static final int     FREE_MAXCHUNKS            = 0;
-    private static final int     FREE_MAXDOWNLOADS         = 20;
-    public static final String   API_BASE                  = "https://pixeldrain.com/api";
-    private static final boolean ACCOUNT_FREE_RESUME       = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS    = 0;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS = 20;
+    private static final boolean FREE_RESUME                  = true;
+    private static final int     FREE_MAXCHUNKS               = 0;
+    private static final int     FREE_MAXDOWNLOADS            = 20;
+    public static final String   API_BASE                     = "https://pixeldrain.com/api";
+    private static final boolean ACCOUNT_FREE_RESUME          = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private static final boolean USE_API_FOR_LOGIN            = true;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
@@ -161,12 +163,12 @@ public class PixeldrainCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS);
     }
 
     private final String CAPTCHA_REQUIRED = "file_rate_limited_captcha_required";
 
-    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks) throws Exception, PluginException {
         final Map<String, Object> data = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         String dllink = API_BASE + "/file/" + this.getFID(link) + "?download";
         if (CAPTCHA_REQUIRED.equals(data.get("availability"))) {
@@ -219,6 +221,7 @@ public class PixeldrainCom extends PluginForHost {
                         return true;
                     } else {
                         logger.info("Cookie login failed");
+                        br.clearCookies(br.getHost());
                     }
                 }
                 logger.info("Performing full login");
@@ -264,10 +267,32 @@ public class PixeldrainCom extends PluginForHost {
          */
         final AccountInfo ai = new AccountInfo();
         loginWebsite(account, true);
-        ai.setUnlimitedTraffic();
-        account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+        br.getPage(API_BASE + "/user");
+        final Map<String, Object> user = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> subscription = (Map<String, Object>) user.get("subscription");
+        ai.setUsedSpace(((Number) user.get("storage_space_used")).longValue());
+        if (USE_API_FOR_LOGIN) {
+            /* Not necessarily a username/mail given but we need one as our "primary key". */
+            account.setUser(user.get("email").toString());
+        }
+        final String subscriptionType = (String) subscription.get("type");
+        if (StringUtils.isEmpty(subscriptionType) || subscriptionType.equalsIgnoreCase("free")) {
+            /* Assume it's a free account */
+            account.setType(AccountType.FREE);
+            ai.setUnlimitedTraffic();
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+        } else {
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+        }
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Registered (free) user");
+        final long monthlyTrafficMax = ((Number) subscription.get("monthly_transfer_cap")).longValue();
+        ai.setTrafficMax(monthlyTrafficMax);
+        ai.setTrafficLeft(monthlyTrafficMax - ((Number) user.get("monthly_transfer_used")).longValue());
+        String accountStatusText = "Package: " + subscription.get("name");
+        final double euroBalance = ((Number) user.get("balance_micro_eur")).doubleValue();
+        accountStatusText += String.format(" | Balance: %2.2f€", euroBalance / 1000000);
+        ai.setStatus(accountStatusText);
         return ai;
     }
 
@@ -275,7 +300,7 @@ public class PixeldrainCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         loginWebsite(account, false);
-        this.handleDownload(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+        this.handleDownload(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
     }
 
     @Override

@@ -26,11 +26,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-/**
- *
- * note: primewire.ag using cloudflare. -raztoki20150225
- *
- */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class OneChannelCh extends antiDDoSForDecrypt {
     public OneChannelCh(PluginWrapper wrapper) {
@@ -40,7 +35,8 @@ public class OneChannelCh extends antiDDoSForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "1channel.ch", "primewire.site", "primewire.li", "primewire.link", "letmewatchthis.fun", "watchfreemovies.ch" });
+        /* New/current domains can always be found here: primewirestatus.org */
+        ret.add(new String[] { "1channel.ch", "primewire.site", "primewire.li", "primewire.link", "letmewatchthis.fun", "watchfreemovies.ch", "primewire.vc", "primewire.ag" });
         return ret;
     }
 
