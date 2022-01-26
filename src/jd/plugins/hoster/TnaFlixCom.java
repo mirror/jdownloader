@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -50,6 +51,30 @@ public class TnaFlixCom extends PluginForHost {
     private static final String  TYPE_NORMAL                     = "https?://[^/]+/(view_video\\.php\\?viewkey=[a-z0-9]+|.*?video\\d+)";
     private static final String  TYPE_embed                      = "https?://[^/]*?player\\.[^/]+/video/(\\d+)";
     private static final String  TYPE_embedding_player           = ".+/embedding_player/embedding_feed\\.php\\?viewkey=([a-z0-9]+)";
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:[a-z0-9]+\\.)?" + buildHostsPatternPart(domains) + "/(view_video\\.php\\?viewkey=[a-z0-9]+|video/\\d+|.*?video\\d+)|https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/embedding_player/embedding_feed\\.php\\?viewkey=[a-z0-9]+");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "tnaflix.com" });
+        return ret;
+    }
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -218,13 +243,7 @@ public class TnaFlixCom extends PluginForHost {
             configLink = br.getRegex("flashvars.config.*?escape\\(.*?(cdn.*?)\"").getMatch(0);
         }
         if (configLink == null && vkey != null && videoid != null && nkey != null) {
-            /* 2019-06-13: Used for tnaflix AND empflix! */
-            if (currenthost.contains("empflix")) {
-                /* 2020-06-02 */
-                configLink = "https://cdn-fck.empflix.com/empflix/" + vkey + "-1.fid?key=" + nkey + "&VID=" + videoid + "&nomp4=1&catID=0&rollover=1&startThumb=6&embed=0&utm_source=0&multiview=0&premium=1&country=0user=0&vip=1&cd=0&ref=0&alpha";
-            } else {
-                configLink = "https://cdn-fck.tnaflix.com/tnaflix/" + vkey + ".fid?key=" + nkey + "&VID=" + videoid + "&nomp4=1&catID=0&rollover=1&startThumb=30&embed=0&utm_source=0&multiview=0&premium=1&country=0user=0&vip=1&cd=0&ref=0&alpha";
-            }
+            configLink = "https://cdn-fck.tnaflix.com/tnaflix/" + vkey + ".fid?key=" + nkey + "&VID=" + videoid + "&nomp4=1&catID=0&rollover=1&startThumb=30&embed=0&utm_source=0&multiview=0&premium=1&country=0user=0&vip=1&cd=0&ref=0&alpha";
         }
         if (configLink == null && download == null && dllink1 == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -304,37 +323,16 @@ public class TnaFlixCom extends PluginForHost {
         if (dl.getConnection().getResponseCode() == 416) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 30 * 60 * 1000l);
         }
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             /* 403 error usually means we've tried to download an official downloadurl which may only be available for loggedin users! */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
         dl.startDownload();
-    }
-
-    public static String[] getAnnotationNames() {
-        return buildAnnotationNames(getPluginDomains());
-    }
-
-    @Override
-    public String[] siteSupportedNames() {
-        return buildSupportedNames(getPluginDomains());
-    }
-
-    public static String[] getAnnotationUrls() {
-        final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:[a-z0-9]+\\.)?" + buildHostsPatternPart(domains) + "/(view_video\\.php\\?viewkey=[a-z0-9]+|video/\\d+|.*?video\\d+)|https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/embedding_player/embedding_feed\\.php\\?viewkey=[a-z0-9]+");
-        }
-        return ret.toArray(new String[0]);
-    }
-
-    public static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "tnaflix.com" });
-        ret.add(new String[] { "empflix.com" });
-        return ret;
     }
 
     @Override
