@@ -705,10 +705,9 @@ public class Ardmediathek extends PluginForDecrypt {
                                 }
                                 final DownloadLink download = addQuality(param, metadata, foundQualitiesMap, url, null, 0, resolution, false);
                                 if (download != null) {
-                                    httpStreamsQualityIdentifiers.add(getQualityIdentifier(url, 0, resolution));
+                                    httpStreamsQualityIdentifiers.add(getQualityIdentifier(url, resolution));
                                     if (cfg.isGrabBESTEnabled()) {
                                         // we iterate mediaStreamArray from best to lowest
-                                        // TODO: optimize for cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled()
                                         break mediaArray;
                                     }
                                 }
@@ -775,7 +774,7 @@ public class Ardmediathek extends PluginForDecrypt {
                             logger.warning("Skipping unsupported width: " + width);
                             continue;
                         }
-                        final String qualityIdentifier = getQualityIdentifier(final_url, 0, resolution);
+                        final String qualityIdentifier = getQualityIdentifier(final_url, resolution);
                         if (!httpStreamsQualityIdentifiers_2_over_hls_master.contains(qualityIdentifier)) {
                             logger.info("Found (additional) http quality via HLS Master: " + qualityIdentifier);
                             addQuality(param, metadata, foundQualitiesMap_http_urls_via_HLS_master, final_url, null, 0, resolution, false);
@@ -1212,7 +1211,7 @@ public class Ardmediathek extends PluginForDecrypt {
                 }
             }
         }
-        final String qualityStringForQualitySelection = getQualityIdentifier(directurl, bitrate, resolution);
+        final String qualityStringForQualitySelection = getQualityIdentifier(directurl, resolution);
         final DownloadLink link = createDownloadlink(directurl.replaceAll("https?://", getHost() + "decrypted://"));
         final MediathekProperties data = link.bindData(MediathekProperties.class);
         data.setTitle(metadata.getTitle());
@@ -1260,7 +1259,7 @@ public class Ardmediathek extends PluginForDecrypt {
     }
 
     /* Returns quality identifier String, compatible with quality selection values. Format: protocol_bitrateCorrected_heightCorrected */
-    private String getQualityIdentifier(final String directurl, long bitrate, final VideoResolution resolution) {
+    private String getQualityIdentifier(final String directurl, final VideoResolution resolution) {
         final String protocol;
         if (directurl.contains("m3u8")) {
             protocol = "hls";
@@ -1279,6 +1278,10 @@ public class Ardmediathek extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> handleUserQualitySelection(final HashMap<String, DownloadLink> foundQualitiesMap) {
+        if (foundQualitiesMap.isEmpty()) {
+            logger.warning("foundQualitiesMap is empty");
+            return null;
+        }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         /* We have to re-add the subtitle for the best quality if wished by the user */
         HashMap<String, DownloadLink> finalSelectedQualityMap = new HashMap<String, DownloadLink>();
@@ -1289,20 +1292,6 @@ public class Ardmediathek extends PluginForDecrypt {
             /* 2022-01-20: Grabbing unknown qualities is not supported anymore for now. */
             // final boolean grabUnknownQualities = cfg.isAddUnknownQualitiesEnabled();
             final boolean grabUnknownQualities = false;
-            boolean atLeastOneSelectedItemExists = false;
-            for (final String quality : all_known_qualities) {
-                if (selectedQualities.contains(quality) && foundQualitiesMap.containsKey(quality)) {
-                    atLeastOneSelectedItemExists = true;
-                }
-            }
-            if (!atLeastOneSelectedItemExists) {
-                /* Only logger */
-                logger.info("Possible user error: User selected only qualities which are not available --> Adding ALL");
-            } else if (selectedQualities.size() == 0) {
-                /* Errorhandling for bad user selection */
-                logger.info("User selected no quality at all --> Adding ALL qualities instead");
-                selectedQualities.addAll(all_known_qualities);
-            }
             final Iterator<Entry<String, DownloadLink>> it = foundQualitiesMap.entrySet().iterator();
             while (it.hasNext()) {
                 final Entry<String, DownloadLink> entry = it.next();
@@ -1315,7 +1304,7 @@ public class Ardmediathek extends PluginForDecrypt {
                         logger.info("Adding unknown quality: " + quality);
                         finalSelectedQualityMap.put(quality, dl);
                     }
-                } else if (selectedQualities.contains(quality) || !atLeastOneSelectedItemExists) {
+                } else if (selectedQualities.contains(quality)) {
                     /* User has selected this particular quality OR we have to add it because user plugin settings were bad! */
                     finalSelectedQualityMap.put(quality, dl);
                 }
@@ -1325,7 +1314,11 @@ public class Ardmediathek extends PluginForDecrypt {
                 finalSelectedQualityMap = findBESTInsideGivenMap(finalSelectedQualityMap);
             }
         }
-        /* Finally add selected URLs */
+        if (finalSelectedQualityMap.isEmpty()) {
+            logger.info("Failed to find any selected quality --> Adding all instead");
+            finalSelectedQualityMap = foundQualitiesMap;
+        }
+        /* Finally add selected URLs - add subtitles if available and wished by user */
         final Iterator<Entry<String, DownloadLink>> it = finalSelectedQualityMap.entrySet().iterator();
         while (it.hasNext()) {
             final Entry<String, DownloadLink> entry = it.next();
@@ -1365,12 +1358,12 @@ public class Ardmediathek extends PluginForDecrypt {
         return isUnsupported;
     }
 
-    private HashMap<String, DownloadLink> findBESTInsideGivenMap(final HashMap<String, DownloadLink> map_with_all_qualities) {
+    private HashMap<String, DownloadLink> findBESTInsideGivenMap(final HashMap<String, DownloadLink> foundQualitiesMap) {
         HashMap<String, DownloadLink> newMap = new HashMap<String, DownloadLink>();
         DownloadLink keep = null;
-        if (map_with_all_qualities.size() > 0) {
+        if (foundQualitiesMap.size() > 0) {
             for (final String quality : all_known_qualities) {
-                keep = map_with_all_qualities.get(quality);
+                keep = foundQualitiesMap.get(quality);
                 if (keep != null) {
                     newMap.put(quality, keep);
                     break;
@@ -1379,37 +1372,9 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         if (newMap.isEmpty()) {
             /* Failover in case of bad user selection or general failure! */
-            newMap = map_with_all_qualities;
+            newMap = foundQualitiesMap;
         }
         return newMap;
-    }
-
-    /**
-     * Given width may not always be exactly what we have in our quality selection but we need an exact value to make the user selection
-     * work properly!
-     */
-    @Deprecated
-    private int getHeightForQualitySelection(final int height) {
-        final int heightelect;
-        if (height > 0 && height <= 250) {
-            heightelect = 180;
-        } else if (height > 250 && height <= 272) {
-            heightelect = 270;
-        } else if (height > 272 && height <= 320) {
-            heightelect = 280;
-        } else if (height > 320 && height <= 400) {
-            heightelect = 360;
-        } else if (height > 400 && height < 576) {
-            heightelect = 540;
-        } else if (height >= 576 && height <= 600) {
-            heightelect = 576;
-        } else if (height > 600 && height <= 800) {
-            heightelect = 720;
-        } else {
-            /* Either unknown quality or audio (0x0) */
-            heightelect = height;
-        }
-        return heightelect;
     }
 
     public class ArdMetadata {
