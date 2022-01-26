@@ -131,8 +131,7 @@ public abstract class XvideosCore extends PluginForHost {
         final String url = link.getPluginPatternMatcher();
         if (url == null) {
             return null;
-        }
-        if (url.matches(type_special1)) {
+        } else if (url.matches(type_special1)) {
             return new Regex(url, type_special1).getMatch(1);
         } else if (url.matches(type_special2)) {
             return new Regex(url, type_special2).getMatch(1);
