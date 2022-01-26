@@ -32,15 +32,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ancensored.com" }, urls = { "http://(www\\.)?ancensored\\.com/clip/[a-z0-9\\-]+/(.+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ancensored.com" }, urls = { "https?://(?:www\\.)?ancensored\\.com/clip/([A-Za-z0-9\\-]+)/([A-Za-z0-9\\-]+)/([a-f0-9]{24})" })
 public class AncensoredCom extends PluginForHost {
     public AncensoredCom(PluginWrapper wrapper) {
         super(wrapper);
     }
     /* DEV NOTES */
-    // Tags:
-    // protocol: no https
-    // other:
+    // Tags: porn plugin
 
     /* Connection stuff */
     private static final boolean free_resume       = true;
@@ -64,11 +62,22 @@ public class AncensoredCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
+    }
+
+    private String getUrlTitleCleaned(final DownloadLink link) {
+        final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks());
+        final String urlTitle = urlinfo.getMatch(0);
+        final String username = urlinfo.getMatch(1);
+        if (urlTitle != null && username != null) {
+            return username.replace("-", " ").trim() + " - " + urlTitle.replace("-", " ").trim();
+        } else {
+            return null;
+        }
     }
 
     @Override
-    public String getMirrorID(DownloadLink link) {
+    public String getMirrorID(final DownloadLink link) {
         String fid = null;
         if (link != null && StringUtils.equals(getHost(), link.getHost()) && (fid = getFID(link)) != null) {
             return getHost() + "://" + fid;
@@ -80,34 +89,22 @@ public class AncensoredCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        link.setFinalFileName(getUrlTitleCleaned(link) + ".mp4");
         dllink = null;
-        br = new Browser();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (!br.getURL().contains("/clip/") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = br.getRegex("<title>([^<>\"]*?)Video Clip \\&lt; ANCENSORED</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?)(\\s*&lt; ANCENSORED)?</title>").getMatch(0);
         }
         dllink = br.getRegex("\"([a-z0-9\\-_]+\\.php\\?file=[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             // this can't actually be downloaded.. but can be used for filename extension
             dllink = br.getRegex("<source type=(\"|'|)\\S+\\1\\s+src=(\"|'|)(.*?)\\2").getMatch(2);
         }
-        if (filename == null || dllink == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
-        link.setFinalFileName(filename);
         {// final dllink...
             final String hash = br.getRegex("data:\\s*\\{hash:\\s*'([a-f0-9]+)'\\}").getMatch(0);
             if (hash != null) {
@@ -131,8 +128,9 @@ public class AncensoredCom extends PluginForHost {
         try {
             con = br2.openHeadConnection(this.dllink);
             if (this.looksLikeDownloadableContent(con)) {
-                link.setDownloadSize(con.getCompleteContentLength());
-                link.setVerifiedFileSize(con.getCompleteContentLength());
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
