@@ -102,9 +102,6 @@ public class PornhdCom extends PluginForHost {
         if (!link.isNameSet()) {
             link.setName(getFallbackTitle(link) + ".mp4");
         }
-        if (true) {
-            return AvailableStatus.TRUE;
-        }
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
