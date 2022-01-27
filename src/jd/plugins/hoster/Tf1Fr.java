@@ -131,23 +131,7 @@ public class Tf1Fr extends PluginForHost {
              */
             throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type MPD with split video audio");
         } else if (finallink.startsWith("rtmp")) {
-            /**
-             * NOT WORKING IN RTMPDUMP
-             */
-            final String nw = "rtmpdump";
-            if (nw.equals("rtmpdump")) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Not supported yet!");
-            }
-            finallink = finallink.replaceAll("^.*?:", "rtmpe:");
-            finallink = finallink.replaceAll("watestreaming/", "watestreaming/#");
-            dl = new RTMPDownload(this, link, finallink);
-            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-            rtmp.setUrl(finallink.substring(0, finallink.indexOf("#")));
-            rtmp.setPlayPath(finallink.substring(finallink.indexOf("#") + 1));
-            rtmp.setApp(new Regex(finallink.substring(0, finallink.indexOf("#")), "[a-zA-Z]+://.*?/(.*?)$").getMatch(0));
-            rtmp.setSwfVfy("http://www.wat.tv/images/v40/PlayerWat.swf");
-            rtmp.setResume(true);
-            ((RTMPDownload) dl).startDownload();
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming protocol");
         } else if (finallink.contains(".f4m?")) {
             // HDS
             br.getPage(finallink);

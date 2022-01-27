@@ -179,8 +179,7 @@ public class ProSevenDe extends PluginForHost {
             // throw new PluginException(LinkStatus.ERROR_FATAL, "This video is not available in your country #2");
         }
         if (json.startsWith("rtmp")) {
-            /* rtmp */
-            downloadRTMP(link);
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported protocol");
         } else if (failed) {
             /* hls - try hls fallback! */
             /* 2016-06-16: TODO: Try APIV2 instead to find higher quality hds versions */
@@ -250,41 +249,6 @@ public class ProSevenDe extends PluginForHost {
             }
             dl.startDownload();
         }
-    }
-
-    @SuppressWarnings("deprecation")
-    private void downloadRTMP(final DownloadLink downloadLink) throws Exception {
-        final String protocol = new Regex(this.json, "^(rtmp(?:e|t)?://)").getMatch(0);
-        String app;
-        if (protocol.equals("rtmpe://")) {
-            app = "psdvodrtmpdrm";
-            /*
-             * We can still get rtmpe urls via the old API but they won't work anyways as they use handshake type 9 which (our) rtmpdump
-             * does not support.
-             */
-            throw new PluginException(LinkStatus.ERROR_FATAL, "rtmpe:// not supported!");
-        } else {
-            app = "psdvodrtmp";
-        }
-        // app = "psdvodrtmpdrm";
-        String url = protocol + app + ".fplive.net:1935/" + app;
-        // url = "rtmpe://psdvodrtmpdrm.fplive.net:1935/psdvodrtmp";
-        final String playpath = new Regex(this.json, "(mp4:.+)").getMatch(0);
-        if (playpath == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        // playpath = playpath.replace("?start_time=", "?country=DE&start_time=");
-        dl = new RTMPDownload(this, downloadLink, json);
-        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        /* Setup connection */
-        rtmp.setApp(app);
-        rtmp.setUrl(url);
-        rtmp.setPlayPath(playpath);
-        rtmp.setFlashVer("WIN 17,0,0,169");
-        rtmp.setSwfVfy("http://is.myvideo.de/player/GP/4.3.6/player.swf");
-        rtmp.setPageUrl(downloadLink.getDownloadURL());
-        rtmp.setResume(true);
-        ((RTMPDownload) dl).startDownload();
     }
 
     private boolean checkDirectLink(final String directurl) {

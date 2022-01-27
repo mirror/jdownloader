@@ -20,8 +20,14 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
 
+import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
+import org.jdownloader.controlling.ffmpeg.FFmpeg;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.controlling.linkcrawler.LinkVariant;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
-import jd.config.ConfigEntry;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -29,13 +35,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.DailyMotionVariant;
-
-import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
-import org.jdownloader.controlling.ffmpeg.FFmpeg;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.controlling.linkcrawler.LinkVariant;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dailymotion.com" }, urls = { "https?://dailymotiondecrypted\\.com/video/\\w+" })
 public class DailyMotionComV2 extends DailyMotionCom {
@@ -126,10 +125,6 @@ public class DailyMotionComV2 extends DailyMotionCom {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         // checkFFmpeg(downloadLink, _GUI.T.YoutubeDash_handleDownload_youtube_demux());
         return super.requestFileInformation(downloadLink);
-    }
-
-    @Override
-    public void addConfigElementHDS(ConfigEntry hq) {
     }
 
     protected boolean checkDirectLink(final DownloadLink downloadLink) throws PluginException {

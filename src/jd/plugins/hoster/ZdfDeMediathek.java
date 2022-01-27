@@ -41,7 +41,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de" }, urls = { "decryptedmediathek://.+" })
 public class ZdfDeMediathek extends PluginForHost {
@@ -127,13 +126,6 @@ public class ZdfDeMediathek extends PluginForHost {
         download(link);
     }
 
-    private void setupRTMPConnection(String stream, DownloadInterface dl) {
-        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        rtmp.setUrl(stream);
-        rtmp.setResume(true);
-        rtmp.setRealTime();
-    }
-
     private void download(final DownloadLink link) throws Exception {
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
@@ -144,9 +136,7 @@ public class ZdfDeMediathek extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nur von 20-06 Uhr verfügbar!", 30 * 60 * 1000l);
         }
         if (dllink.startsWith("rtmp")) {
-            dl = new RTMPDownload(this, link, dllink);
-            setupRTMPConnection(dllink, dl);
-            ((RTMPDownload) dl).startDownload();
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming protocol");
         } else if (dllink.contains("m3u8")) {
             checkFFmpeg(link, "Download a HLS Stream");
             dl = new HLSDownloader(link, br, dllink);

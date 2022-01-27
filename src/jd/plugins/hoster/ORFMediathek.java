@@ -18,6 +18,12 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hds.HDSContainer;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -30,14 +36,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hds.HDSDownloader;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hds.HDSContainer;
-import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orf.at" }, urls = { "https?://tvthek\\.orf\\.atdecrypted\\d+" })
 public class ORFMediathek extends PluginForHost {
@@ -129,7 +128,7 @@ public class ORFMediathek extends PluginForHost {
         } else {
             link.setFinalFileName(link.getStringProperty("directName", null));
         }
-        if ("http".equals(link.getStringProperty("streamingType", "rtmp")) && StringUtils.equalsIgnoreCase("progressive", link.getStringProperty("delivery"))) {
+        if ("http".equals(link.getStringProperty("streamingType")) && StringUtils.equalsIgnoreCase("progressive", link.getStringProperty("delivery"))) {
             final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
@@ -139,8 +138,10 @@ public class ORFMediathek extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 con = br2.openGetConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -156,31 +157,24 @@ public class ORFMediathek extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        download(downloadLink);
-    }
-
-    private void setupRTMPConnection(String stream, DownloadInterface dl) {
-        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        rtmp.setUrl(stream);
-        rtmp.setResume(true);
-        rtmp.setRealTime();
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        download(link);
     }
 
     @SuppressWarnings("deprecation")
-    private void download(final DownloadLink downloadLink) throws Exception {
-        final String dllink = downloadLink.getStringProperty("directURL", null);
+    private void download(final DownloadLink link) throws Exception {
+        final String dllink = link.getStringProperty("directURL", null);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!downloadLink.getDownloadURL().matches(TYPE_AUDIO)) {
+        if (!link.getDownloadURL().matches(TYPE_AUDIO)) {
             if (dllink.contains("hinweis_fsk")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nur von 20-06 Uhr verfügbar!", 30 * 60 * 1000l);
             }
         }
-        if ("hls".equals(downloadLink.getStringProperty("delivery"))) {
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
+        if ("hls".equals(link.getStringProperty("delivery"))) {
+            checkFFmpeg(link, "Download a HLS Stream");
             br.setFollowRedirects(true);
             br.getPage(dllink);
             final HlsContainer best = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br));
@@ -189,9 +183,9 @@ public class ORFMediathek extends PluginForHost {
             } else if (StringUtils.containsIgnoreCase(best.getDownloadurl(), "geoprotection_")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Geo-blocked");
             }
-            dl = new HLSDownloader(downloadLink, br, best.getDownloadurl());
+            dl = new HLSDownloader(link, br, best.getDownloadurl());
             dl.startDownload();
-        } else if ("hds".equals(downloadLink.getStringProperty("delivery"))) {
+        } else if ("hds".equals(link.getStringProperty("delivery"))) {
             br.getPage(dllink);
             br.followRedirect();
             final List<HDSContainer> all = HDSContainer.getHDSQualities(br);
@@ -202,8 +196,8 @@ public class ORFMediathek extends PluginForHost {
             if (hit == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            hit.write(downloadLink);
-            final HDSDownloader dl = new HDSDownloader(downloadLink, br, hit.getFragmentURL()) {
+            hit.write(link);
+            final HDSDownloader dl = new HDSDownloader(link, br, hit.getFragmentURL()) {
                 @Override
                 protected URLConnectionAdapter onNextFragment(URLConnectionAdapter connection, int fragmentIndex) throws IOException, PluginException {
                     if (fragmentIndex == 1 && StringUtils.containsIgnoreCase(connection.getRequest().getLocation(), "geoprotection_")) {
@@ -217,17 +211,15 @@ public class ORFMediathek extends PluginForHost {
             dl.setEstimatedDuration(hit.getDuration());
             dl.startDownload();
         } else if (dllink.startsWith("rtmp")) {
-            downloadLink.setProperty("FLVFIXER", true);
-            dl = new RTMPDownload(this, downloadLink, dllink);
-            setupRTMPConnection(dllink, dl);
-            ((RTMPDownload) dl).startDownload();
+            link.setProperty("FLVFIXER", true);
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported protocol");
         } else {
-            if (downloadLink.getName().endsWith(".srt")) {
+            if (link.getName().endsWith(".srt")) {
                 /* Workaround for old downloadcore bug that can lead to incomplete files */
                 br.getHeaders().put("Accept-Encoding", "identity");
             }
             br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

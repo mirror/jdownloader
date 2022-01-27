@@ -21,7 +21,6 @@ import java.util.Date;
 import java.util.Locale;
 
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 
@@ -62,18 +61,24 @@ public class AlphatvGr extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = new Regex(link.getPluginPatternMatcher(), "id=(\\d+)").getMatch(0);
-        if (linkid != null) {
-            return getHost() + "://" + linkid;
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
         } else {
             return super.getLinkID(link);
         }
     }
 
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "id=(\\d+)").getMatch(0);
+    }
+
     /** Plugin for old website layout: rev: 39318 */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link) + ".mp4");
+        }
         this.setBrowserExclusive();
         prepBR(this.br);
         br.getHeaders().put("x-requested-with", "XMLHttpRequest");
@@ -116,10 +121,9 @@ public class AlphatvGr extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         final String hls_master = null;
-        final String url_rtmp = null;
         /* 2018-11-15: http streaming is the only streaming method at the moment! */
         String json = br.getRegex("id=\"currentvideourl\" data-plugin-player=\"(\\{[^\"]+\\})\"").getMatch(0);
         String url_http = this.br.getRegex("id=\"currentvideourl\" data\\-url=\"(https?://[^\"]+)\"").getMatch(0);
@@ -127,13 +131,17 @@ public class AlphatvGr extends PluginForHost {
             json = Encoding.htmlDecode(json);
             url_http = PluginJSonUtils.getJson(json, "url");
         }
-        if (hls_master == null && url_rtmp == null && url_http == null) {
+        if (hls_master == null && url_http == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (url_http != null) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url_http, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, url_http, true, 0);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 if (br.getHttpConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 3 * 60 * 1000l);
                 } else if (br.getHttpConnection().getResponseCode() == 404) {
@@ -149,27 +157,8 @@ public class AlphatvGr extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final String url_hls = hlsbest.getDownloadurl();
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, url_hls);
-        } else if (url_rtmp != null) {
-            /* Prefer rtmp download */
-            final Regex rtmp_regex = new Regex(url_rtmp, "(^rtmp://[^/]+/)([^/]+)/(_definst_/)?(mp4:.+)");
-            String rtmp_host = rtmp_regex.getMatch(0);
-            final String rtmp_app = rtmp_regex.getMatch(1);
-            final String url_playpath = rtmp_regex.getMatch(3);
-            if (url_playpath == null || rtmp_app == null || rtmp_host == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            rtmp_host += rtmp_app;
-            dl = new RTMPDownload(this, downloadLink, url_rtmp);
-            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-            rtmp.setPlayPath(url_playpath);
-            rtmp.setPageUrl(this.br.getURL());
-            rtmp.setSwfVfy("http://static.adman.gr/jwplayer.flash.swf");
-            // rtmp.setFlashVer("WIN 18,0,0,194");
-            rtmp.setApp(rtmp_app);
-            rtmp.setUrl(url_rtmp);
-            rtmp.setResume(false);
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, url_hls);
         }
         dl.startDownload();
     }
