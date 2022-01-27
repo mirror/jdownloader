@@ -61,7 +61,11 @@ public class PornhdCom extends PluginForHost {
         } else if (link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
             return new Regex(link.getPluginPatternMatcher(), TYPE_EMBED).getMatch(0);
         } else {
-            return new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(1).replace("-", " ");
+            String title = new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(1);
+            /* Cleanup that title */
+            title = title.replace("-", " ").trim();
+            title = title.replaceAll("(?i) on pornhd.*?$", "");
+            return title;
         }
     }
 
@@ -98,6 +102,9 @@ public class PornhdCom extends PluginForHost {
         if (!link.isNameSet()) {
             link.setName(getFallbackTitle(link) + ".mp4");
         }
+        if (true) {
+            return AvailableStatus.TRUE;
+        }
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -105,7 +112,10 @@ public class PornhdCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"player-container no-video\"|class=\"no\\-video\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("name=\"og:title\" content=\"([^<>\"]*?) \\- HD porn video \\| PornHD\"").getMatch(0);
+        String filename = br.getRegex("name=\"og:title\" content=\"([^<>\"]+)\\s*- HD porn video \\| PornHD\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^\"]+)\\s*- HD porn video \\| PornHD</title>").getMatch(0);
+        }
         final String[] qualities = { "1080p", "720p", "480p", "360p", "240p" };
         for (final String quality : qualities) {
             dllink = br.getRegex("(?:\\'|\")" + quality + "(?:\\'|\")\\s*:\\s*(?:\\'|\")((https?|.?/)[^<>\"]*?)(?:\\'|\")").getMatch(0);
@@ -125,6 +135,7 @@ public class PornhdCom extends PluginForHost {
             filename = Encoding.htmlDecode(filename);
             filename = filename.trim();
             filename = encodeUnicode(filename);
+            filename = filename.replaceAll("(?i) on pornhd", "");
             final String ext = ".mp4";
             if (!filename.endsWith(ext)) {
                 filename += ext;

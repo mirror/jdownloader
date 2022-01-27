@@ -15,9 +15,14 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -31,19 +36,24 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vsco.co" }, urls = { "https?://(?:[^/]+\\.vsco\\.co/grid/\\d+|(?:www\\.)?vsco\\.co/[\\w-]+/grid/\\d+|(?:www\\.)?vsco\\.co/[\\w-]+)" })
 public class VscoCo extends PluginForDecrypt {
     public VscoCo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String PROPERTY_USERNAME      = "user";
+    private static final String PROPERTY_DATE          = "date";
+    private static final String PROPERTY_DATE_CAPTURED = "date_captured";
+
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final String username = getUsername(parameter);
+        String username = new Regex(parameter, "https?://([^/]+)\\.vsco\\.co/").getMatch(0);
+        if (username == null) {
+            username = new Regex(parameter, "vsco\\.co/([\\w-]+)").getMatch(0);
+        }
         br.setCurrentURL("https://vsco.co/" + username + "/images/1");
         br.getPage("https://vsco.co/content/Static/userinfo");
         final String cookie_vs = br.getCookie(this.getHost(), "vs");
@@ -59,15 +69,11 @@ public class VscoCo extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(username);
         do {
-            if (this.isAbort()) {
-                logger.info("Decryption aborted by user");
-                break;
-            }
             final Browser ajax = br.cloneBrowser();
             ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             ajax.getPage("/ajxp/" + cookie_vs + "/2.0/medias?site_id=" + siteid + "&page=" + page + "&size=" + max_count_per_page);
-            Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
+            final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
             if (page == 1 || page > 1) {
                 amount_total = JavaScriptEngineFactory.toLong(entries.get("total"), 0);
                 if (page == 1 && amount_total == 0) {
@@ -78,38 +84,51 @@ public class VscoCo extends PluginForDecrypt {
                     return decryptedLinks;
                 }
             }
-            final List<Object> resources = (List) entries.get("media");
-            for (final Object resource : resources) {
-                entries = (Map<String, Object>) resource;
-                final String fid = (String) entries.get("_id");
+            final List<Object> medias = (List) entries.get("media");
+            final SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd");
+            for (final Object resource : medias) {
+                final Map<String, Object> media = (Map<String, Object>) resource;
+                final String fid = (String) media.get("_id");
                 if (fid == null) {
                     return null;
                 }
-                final String medialink = (String) entries.get("permalink");
-                final Boolean isVideo = (Boolean) entries.get("is_video");
+                final String medialink = (String) media.get("permalink");
+                final Boolean isVideo = (Boolean) media.get("is_video");
                 String url_content = null;
                 if (Boolean.TRUE.equals(isVideo)) {
-                    url_content = (String) entries.get("video_url");
+                    url_content = (String) media.get("video_url");
                 } else {
-                    url_content = (String) entries.get("responsive_url");
+                    url_content = (String) media.get("responsive_url");
                 }
-                if (url_content == null) {
+                if (StringUtils.isEmpty(url_content)) {
+                    /* Skip invalid items */
                     continue;
                 }
                 if (!(url_content.startsWith("http") || url_content.startsWith("//"))) {
                     url_content = Request.getLocation("//" + url_content, br.getRequest());
                 }
+                final String description = (String) media.get("description");
                 final String filename = username + "_" + fid + getFileNameExtensionFromString(url_content, Boolean.TRUE.equals(isVideo) ? ".mp4" : ".jpg");
                 final DownloadLink dl = this.createDownloadlink("directhttp://" + url_content);
                 dl.setContentUrl(medialink);
                 dl.setName(filename);
                 dl.setAvailable(true);
+                if (!StringUtils.isEmpty(description)) {
+                    dl.setComment(description);
+                }
+                /* Set some Packagizer properties */
+                dl.setProperty(PROPERTY_USERNAME, username);
+                dl.setProperty(PROPERTY_DATE, sd.format(new Date(((Number) media.get("upload_date")).longValue())));
+                dl.setProperty(PROPERTY_DATE_CAPTURED, sd.format(new Date(((Number) media.get("capture_date_ms")).longValue())));
                 decryptedLinks.add(dl);
                 fp.add(dl);
                 distribute(dl);
             }
-            if (resources.size() < max_count_per_page) {
+            if (medias.size() < max_count_per_page) {
                 /* Fail safe */
+                break;
+            } else if (this.isAbort()) {
+                logger.info("Decryption aborted by user");
                 break;
             }
             page++;
@@ -118,14 +137,5 @@ public class VscoCo extends PluginForDecrypt {
             return null;
         }
         return decryptedLinks;
-    }
-
-    private String getUsername(final String parameter) {
-        final String username = new Regex(parameter, "https?://([^/]+)\\.vsco\\.co/").getMatch(0);
-        if (username == null) {
-            return new Regex(parameter, "vsco\\.co/([\\w-]+)").getMatch(0);
-        } else {
-            return username;
-        }
     }
 }
