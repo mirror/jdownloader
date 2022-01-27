@@ -315,8 +315,6 @@ public class AboutDialog extends AbstractDialog<Integer> {
         stats.add(disable("Copyright \u00A9 2009-2022 JDownloader Community"));
         stats.add(new JLabel("Java Native Access:"), "");
         stats.add(disable("JNA 5.9.0", "https://github.com/java-native-access/jna"));
-        stats.add(new JLabel("RTMP Support:"), "");
-        stats.add(disable("RtmpDump", "https://rtmpdump.mplayerhq.hu"));
         stats.add(new JLabel("UPNP:"), "");
         stats.add(disable("Cling", "https://github.com/4thline/cling"));
         stats.add(new JLabel("Extraction:"));
