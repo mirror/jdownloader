@@ -23,18 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -56,8 +44,19 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.DailyMotionComDecrypter;
-import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://dailymotiondecrypted\\.com/video/\\w+" })
 public class DailyMotionCom extends PluginForHost {
@@ -253,11 +252,7 @@ public class DailyMotionCom extends PluginForHost {
             dl = new HLSDownloader(downloadLink, br, this.dllink);
             dl.startDownload();
         } else if (dllink.startsWith("rtmp")) {
-            downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
-            String[] stream = dllink.split("@");
-            dl = new RTMPDownload(this, downloadLink, stream[0]);
-            setupRTMPConnection(stream, dl);
-            ((RTMPDownload) dl).startDownload();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
             downloadDirect(downloadLink);
         }
@@ -501,13 +496,6 @@ public class DailyMotionCom extends PluginForHost {
 
     private boolean isSubtitle(final DownloadLink dl) {
         return dl.getBooleanProperty("type_subtitle", false);
-    }
-
-    private void setupRTMPConnection(String[] stream, DownloadInterface dl) {
-        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        rtmp.setUrl(stream[0]);
-        rtmp.setSwfVfy(stream[1]);
-        rtmp.setResume(true);
     }
 
     public static Browser prepBrowser(final Browser br) {
