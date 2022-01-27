@@ -598,8 +598,10 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
         /* Set some Packagizer properties */
         link.setProperty(PROPERTY_TITLE, title);
-        link.setProperty(PROPERTY_CHANNELNAME, channel.get("title"));
-        link.setProperty(PROPERTY_CHANNELID, channel.get("id"));
+        if (channel != null) {
+            link.setProperty(PROPERTY_CHANNELNAME, channel.get("title"));
+            link.setProperty(PROPERTY_CHANNELID, channel.get("id"));
+        }
         link.setProperty(PROPERTY_USERNAME, user.get("username"));
         link.setProperty(PROPERTY_USERID, user.get("id"));
         link.setProperty(PROPERTY_DATE, video.get("post_date"));
