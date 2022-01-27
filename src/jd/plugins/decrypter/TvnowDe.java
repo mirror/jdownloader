@@ -75,18 +75,14 @@ public class TvnowDe extends PluginForDecrypt {
                 formatID = new Regex(parameter, "f=(\\d+)").getMatch(0);
                 singleEpisodeID = new Regex(parameter, "e=(\\d+)").getMatch(0);
                 if (deeplinkOffline) {
-                    final DownloadLink offline = this.createOfflinelink(parameter);
-                    offline.setFinalFileName(formatID + "_" + singleEpisodeID);
-                    decryptedLinks.add(offline);
-                    return decryptedLinks;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 url_showname = null;
                 stationName = null;
                 br.getPage(parameter);
                 /* Additional offline-check */
                 if (br.getHttpConnection().getResponseCode() == 404) {
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                    return decryptedLinks;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 url_old = br.getRegex("webLink = \\'(https?://[^/]+/[^<>\"\\']+)\\'").getMatch(0);
                 if (url_old != null) {
@@ -134,7 +130,7 @@ public class TvnowDe extends PluginForDecrypt {
             } else if (jd.plugins.hoster.TvnowDe.isSeriesNew(parameter)) {
                 /* New series linkformat */
                 stationName = null;
-                url_showname = new Regex(parameter, "(?:/(?:serien|shows|specials|rtlplus)/|formatname=)([^/]+)").getMatch(0);
+                url_showname = new Regex(parameter, "(?:/(?:serien|shows|specials|rtlplus)/|formatname=)([^/\\?]+)").getMatch(0);
                 formatID = new Regex(url_showname, ".+\\-(\\d+)$").getMatch(0);
                 url_showname = jd.plugins.hoster.TvnowDe.cleanupShowTitle(url_showname);
                 isMovie = false;
@@ -145,16 +141,13 @@ public class TvnowDe extends PluginForDecrypt {
                 br.getPage(parameter);
                 url_new = br.getRedirectLocation();
                 if (br.getHttpConnection().getResponseCode() == 404) {
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                    return decryptedLinks;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (url_new == null) {
                     logger.warning("rtlplus URL did not redirect to new URL");
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                    return decryptedLinks;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (!jd.plugins.hoster.TvnowDe.isSeriesNew(url_new)) {
                     logger.warning("rtlplus URL did not redirect to supported URL");
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                    return decryptedLinks;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 parameter = url_new;
                 continue;
@@ -186,8 +179,7 @@ public class TvnowDe extends PluginForDecrypt {
                     url_new = getNewURL(url_old);
                     if (url_new == null) {
                         logger.warning("Redirect to new linktype failed --> probably user has added invalid URLs");
-                        decryptedLinks.add(this.createOfflinelink(parameter));
-                        return decryptedLinks;
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                     /* Find the values we need. */
                     urlInfo = new Regex(url_new, "https?://[^/]+/[^/]+/([^/]*?)/([^/]+/)?(.+)");
@@ -195,8 +187,7 @@ public class TvnowDe extends PluginForDecrypt {
                     url_singleEpisodeName = urlInfo.getMatch(2);
                     if (StringUtils.isEmpty(url_showname) || StringUtils.isEmpty(url_singleEpisodeName)) {
                         logger.warning("Failed to extract urlInfo from URL_new  --> probably user has added invalid URLs");
-                        decryptedLinks.add(this.createOfflinelink(parameter));
-                        return decryptedLinks;
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                     singleEpisodeID = new Regex(url_singleEpisodeName, ".+\\-(\\d+)$").getMatch(0);
                     url_singleEpisodeName = jd.plugins.hoster.TvnowDe.cleanupEpisodeTitle(url_singleEpisodeName);
@@ -215,8 +206,7 @@ public class TvnowDe extends PluginForDecrypt {
             if (StringUtils.isEmpty(stationName) || StringUtils.isEmpty(url_showname)) {
                 /* This request is impossible without the correct stationName. */
                 logger.warning("Failed to find stationName - probably invalid/offline URL");
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             jd.plugins.hoster.TvnowDe.prepBRAPI(this.br);
             /* First we need to find the ID of whatever the user added */
@@ -224,8 +214,7 @@ public class TvnowDe extends PluginForDecrypt {
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 /* Rare case */
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             // final boolean hasFreeEpisodes = ((Boolean)entries.get("hasFreeEpisodes")).booleanValue();
             // final boolean isGeoblocked = ((Boolean)entries.get("isGeoblocked")).booleanValue();
@@ -235,8 +224,7 @@ public class TvnowDe extends PluginForDecrypt {
         if (formatID.equals("0")) {
             /* Should never happen */
             logger.warning("Failed to find itemID");
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (StringUtils.isEmpty(formatID) || StringUtils.isEmpty(url_showname)) {
             logger.warning("Failed to find formatID");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -265,8 +253,7 @@ public class TvnowDe extends PluginForDecrypt {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 if (decryptedLinks.isEmpty()) {
                     /* Content offline */
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                    return decryptedLinks;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
                     /* Unexpected error 404 during crawl process */
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

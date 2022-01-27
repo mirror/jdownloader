@@ -145,20 +145,7 @@ public class TubeRampantTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } else if (dllink == null) {
             /* RTMP */
-            final String rtmp_path = br.getRegex("flvMask:([^<>\"]*?);").getMatch(0);
-            final String rtmp_host = br.getRegex("conn:(rtmp://[^<>\"]*?);").getMatch(0);
-            if (rtmp_path == null || rtmp_host == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl = new RTMPDownload(this, downloadLink, rtmp_host);
-            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-            rtmp.setPlayPath("mp4:" + rtmp_path);
-            rtmp.setPageUrl(this.br.getURL());
-            rtmp.setSwfVfy("https://static.rampant.tv/swf/player.swf");
-            rtmp.setApp("tubevideo/");
-            rtmp.setUrl(rtmp_host);
-            rtmp.setResume(true);
-            ((RTMPDownload) dl).startDownload();
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming protocol");
         } else {
             /* HTTP */
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);

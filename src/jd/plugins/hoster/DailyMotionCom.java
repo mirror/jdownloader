@@ -70,7 +70,6 @@ public class DailyMotionCom extends PluginForHost {
     }
 
     public String                dllink                 = null;
-    private static final String  MAINPAGE               = "http://www.dailymotion.com/";
     private static final String  REGISTEREDONLYUSERTEXT = "Download only possible for registered users";
     private static final String  COUNTRYBLOCKUSERTEXT   = "This video is not available for your country";
     /** Settings stuff */
@@ -88,7 +87,6 @@ public class DailyMotionCom extends PluginForHost {
     private static final String  ALLOW_2160             = "ALLOW_7";
     private static final String  ALLOW_OTHERS           = "ALLOW_OTHERS";
     private static final String  ALLOW_AUDIO            = "ALLOW_AUDIO";
-    private static final String  ALLOW_HDS              = "ALLOW_HDS";
     private static final String  CUSTOM_DATE            = "CUSTOM_DATE";
     private static final String  CUSTOM_FILENAME        = "CUSTOM_FILENAME";
     private final static String  defaultCustomFilename  = "*videoname*_*quality**ext*";
@@ -195,8 +193,6 @@ public class DailyMotionCom extends PluginForHost {
                 }
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (downloadLink.getBooleanProperty("isrtmp", false)) {
-            getRTMPlink();
         } else if (isSubtitle(downloadLink)) {
             final String contentURL = downloadLink.getContentUrl();
             if (contentURL != null) {
@@ -507,20 +503,6 @@ public class DailyMotionCom extends PluginForHost {
         return dl.getBooleanProperty("type_subtitle", false);
     }
 
-    private void getRTMPlink() throws Exception {
-        final String[] values = br.getRegex("new SWFObject\\(\"(https?://player\\.grabnetworks\\.com/swf/GrabOSMFPlayer\\.swf)\\?id=\\d+\\&content=v([0-9a-f]+)\"").getRow(0);
-        if (values == null || values.length != 2) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final Browser rtmp = br.cloneBrowser();
-        rtmp.getPage("http://content.grabnetworks.com/v/" + values[1] + "?from=" + dllink);
-        dllink = rtmp.getRegex("\"url\":\"(rtmp[^\"]+)").getMatch(0);
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = dllink + "@" + values[0];
-    }
-
     private void setupRTMPConnection(String[] stream, DownloadInterface dl) {
         jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
         rtmp.setUrl(stream[0]);
@@ -623,7 +605,6 @@ public class DailyMotionCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_OTHERS, JDL.L("plugins.hoster.dailymotioncom.checkother", "Grab other available qualities (RTMP/OTHERS)?")).setDefaultValue(true).setEnabledCondidtion(hq, false).setEnabled(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HLS, JDL.L("plugins.hoster.dailymotioncom.allowhls", "Grab HLS?")).setDefaultValue(default_ALLOW_HLS));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MP4, JDL.L("plugins.hoster.dailymotioncom.allowmp4", "Grab MP4 HTTP?")).setDefaultValue(default_ALLOW_MP4));
-        addConfigElementHDS(hq);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filenames"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.dailymotioncom.customdate", "Define how the date should look.")).setDefaultValue(defaultCustomDate));
@@ -640,11 +621,6 @@ public class DailyMotionCom extends PluginForHost {
         }
         sb.append("</html>");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
-    }
-
-    public void addConfigElementHDS(final ConfigEntry hq) {
-        /* 2016-06-10: Disabled rtmp and hds - should not be needed anymore! */
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HDS, JDL.L("plugins.hoster.dailymotioncom.checkhds", "Grab hds (not downloadable yet!)?")).setDefaultValue(false).setEnabledCondidtion(hq, false).setEnabled(false));
     }
 
     public ConfigEntry addConfigElementBestOnly() {

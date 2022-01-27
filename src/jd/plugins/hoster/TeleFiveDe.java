@@ -31,7 +31,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tele5.de" }, urls = { "tele5decrypted://.+" })
 public class TeleFiveDe extends PluginForHost {
@@ -88,9 +87,7 @@ public class TeleFiveDe extends PluginForHost {
 
     private void download(final DownloadLink downloadLink) throws Exception {
         if (dllink.startsWith("rtmp")) {
-            dl = new RTMPDownload(this, downloadLink, dllink);
-            setupRTMPConnection(dl);
-            ((RTMPDownload) dl).startDownload();
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported protocol");
         } else {
             br.setFollowRedirects(true);
             if (dllink == null) {
@@ -106,17 +103,6 @@ public class TeleFiveDe extends PluginForHost {
             }
             dl.startDownload();
         }
-    }
-
-    private void setupRTMPConnection(DownloadInterface dl) {
-        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        String[] streamValue = dllink.split("@");
-        rtmp.setUrl(streamValue[0]);
-        rtmp.setPlayPath(streamValue[1]);
-        // rtmp.setLive(true);
-        rtmp.setRealTime();
-        rtmp.setSwfVfy("http://medianac.nacamar.de/p/657/sp/65700/flash/kdp3/v3.4.10.1/kdp3.swf");
-        rtmp.setResume(true);
     }
 
     @Override

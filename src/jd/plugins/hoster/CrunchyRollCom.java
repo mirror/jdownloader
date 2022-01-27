@@ -81,9 +81,8 @@ public class CrunchyRollCom extends antiDDoSForHost {
     static private final String RCP_API_VIDEO_PLAYER = "RpcApiVideoPlayer_GetStandardConfig";
     static private final String RCP_API_SUBTITLE     = "RpcApiSubtitle_GetXml";
     static private final String CROLL_MANGA          = "croll_manga";
-    private String              rtmp_path_or_hls_url = null;
+    private String              hls_url              = null;
 
-    @SuppressWarnings("deprecation")
     public CrunchyRollCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.crunchyroll.com/login");
@@ -283,32 +282,6 @@ public class CrunchyRollCom extends antiDDoSForHost {
     }
 
     /**
-     * Attempt to download the given file using RTMP (rtmpdump). Needs to use the properties "valid", "rtmphost", "rtmpfile", "rtmpswf",
-     * "swfdir". These are set by jd.plugins.decrypter.CrchyRollCom.setRMP() through requestFileInformation()
-     *
-     * @param downloadLink
-     *            The DownloadLink to try and download using RTMP
-     */
-    private void downloadRTMP(final DownloadLink downloadLink) throws Exception {
-        // Check if the link appears to be valid
-        if ((Boolean) downloadLink.getProperty("valid", false) && downloadLink.getStringProperty("rtmphost").startsWith("rtmp")) {
-            final String url = downloadLink.getStringProperty("rtmphost") + "/" + downloadLink.getStringProperty("rtmpfile");
-            // Create the download
-            this.dl = new RTMPDownload(this, downloadLink, url);
-            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) this.dl).getRtmpConnection();
-            // Set all of the needed rtmpdump parameters
-            rtmp.setUrl(url);
-            rtmp.setTcUrl(downloadLink.getStringProperty("rtmphost"));
-            rtmp.setPlayPath(rtmp_path_or_hls_url);
-            rtmp.setSwfVfy(downloadLink.getStringProperty("swfdir") + downloadLink.getStringProperty("rtmpswf"));
-            rtmp.setResume(true);
-            ((RTMPDownload) this.dl).startDownload();
-        } else {
-            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, "Invalid download");
-        }
-    }
-
-    /**
      * Download subtitles and convert them to .ass
      *
      * @param downloadLink
@@ -331,7 +304,7 @@ public class CrunchyRollCom extends antiDDoSForHost {
     }
 
     private void downloadHls(final DownloadLink downloadLink) throws Exception {
-        getPage(rtmp_path_or_hls_url);
+        getPage(hls_url);
         final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
         if (hlsbest == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -339,10 +312,10 @@ public class CrunchyRollCom extends antiDDoSForHost {
         if (!downloadLink.getFinalFileName().endsWith(".mp4")) {
             downloadLink.setFinalFileName(downloadLink.getFinalFileName() + ".mp4");
         }
-        rtmp_path_or_hls_url = hlsbest.getDownloadurl();
+        hls_url = hlsbest.getDownloadurl();
         checkFFmpeg(downloadLink, "Download a HLS Stream");
         /* 2016-10-19: Seems like they use crypted HLS (in most cases?!) */
-        dl = new HLSDownloader(downloadLink, br, rtmp_path_or_hls_url);
+        dl = new HLSDownloader(downloadLink, br, hls_url);
         dl.startDownload();
     }
 
@@ -411,35 +384,31 @@ public class CrunchyRollCom extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        downloadLink.setProperty("valid", false);
-        this.requestFileInformation(downloadLink);
-        if (rtmp_path_or_hls_url != null && rtmp_path_or_hls_url.contains(".m3u8")) {
-            downloadHls(downloadLink);
-        } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_VIDEO_PLAYER)) {
-            this.downloadRTMP(downloadLink);
-        } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_SUBTITLE)) {
-            this.downloadSubs(downloadLink);
-        } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.CROLL_MANGA)) {
-            this.downloadManga(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        link.setProperty("valid", false);
+        this.requestFileInformation(link);
+        if (hls_url != null && hls_url.contains(".m3u8")) {
+            downloadHls(link);
+        } else if (link.getDownloadURL().contains(CrunchyRollCom.RCP_API_SUBTITLE)) {
+            this.downloadSubs(link);
+        } else if (link.getDownloadURL().contains(CrunchyRollCom.CROLL_MANGA)) {
+            this.downloadManga(link);
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 
     @Override
-    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        downloadLink.setProperty("valid", false);
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        link.setProperty("valid", false);
         this.login(account, this.br, false);
-        this.requestFileInformation(downloadLink);
-        if (rtmp_path_or_hls_url != null && rtmp_path_or_hls_url.contains(".m3u8")) {
-            downloadHls(downloadLink);
-        } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_VIDEO_PLAYER)) {
-            this.downloadRTMP(downloadLink);
-        } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_SUBTITLE)) {
-            this.downloadSubs(downloadLink);
-        } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.CROLL_MANGA)) {
-            this.downloadManga(downloadLink);
+        this.requestFileInformation(link);
+        if (hls_url != null && hls_url.contains(".m3u8")) {
+            downloadHls(link);
+        } else if (link.getDownloadURL().contains(CrunchyRollCom.RCP_API_SUBTITLE)) {
+            this.downloadSubs(link);
+        } else if (link.getDownloadURL().contains(CrunchyRollCom.CROLL_MANGA)) {
+            this.downloadManga(link);
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -563,7 +532,7 @@ public class CrunchyRollCom extends antiDDoSForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         downloadLink.setProperty("valid", false);
-        rtmp_path_or_hls_url = getRtmpPathOrHlsUrl(downloadLink);
+        hls_url = getRtmpPathOrHlsUrl(downloadLink);
         // Try and find which download type it is
         if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_VIDEO_PLAYER)) {
             // Attempt to login
