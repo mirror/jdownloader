@@ -1183,11 +1183,30 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     filename += username + " - ";
                 }
                 filename += linkid_main;
-                if (orderidFormatted != null && SubConfiguration.getConfig(this.getHost()).getBooleanProperty(InstaGramCom.ADD_ORDERID_TO_FILENAMES, InstaGramCom.defaultADD_ORDERID_TO_FILENAMES)) {
+                /*
+                 * 2022-01-28: For some items, individual ID is available when user is not logged in but isn't available when user is logged
+                 * in.
+                 */
+                final boolean individualShortcodeIsAvailable;
+                if (!StringUtils.isEmpty(shortcode) && !shortcode.equals(linkid_main)) {
+                    individualShortcodeIsAvailable = true;
+                } else {
+                    individualShortcodeIsAvailable = false;
+                }
+                final boolean tryToAddOrderIDToFilename;
+                if (SubConfiguration.getConfig(this.getHost()).getBooleanProperty(InstaGramCom.ADD_ORDERID_TO_FILENAMES, InstaGramCom.defaultADD_ORDERID_TO_FILENAMES)) {
+                    tryToAddOrderIDToFilename = true;
+                } else if (!individualShortcodeIsAvailable) {
+                    /* Enforce this otherwise we might get same filenames for all items! */
+                    tryToAddOrderIDToFilename = true;
+                } else {
+                    tryToAddOrderIDToFilename = false;
+                }
+                if (orderidFormatted != null && tryToAddOrderIDToFilename) {
                     /* By default: Include orderid whenever it is given to prevent duplicate filenames for different files! */
                     filename += " - " + orderidFormatted;
                 }
-                if (!StringUtils.isEmpty(shortcode) && !shortcode.equals(linkid_main)) {
+                if (individualShortcodeIsAvailable) {
                     filename += "_" + shortcode;
                 }
             }

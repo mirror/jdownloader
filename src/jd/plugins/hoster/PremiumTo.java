@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -68,7 +69,6 @@ public class PremiumTo extends UseNet {
     /* storage.premium.to --> Extract remote URLs */
     private static final String      type_storage_remote             = "https?://storage\\.[^/]+/(?:remote|r)/[A-Z0-9]+/[A-Z0-9]+/([A-Z0-9]+)/.+";
     // private static final String type_torrent = "https?://torrent.+";
-    /* 2019-10-23: According to admin, missing https support for API is not an issue */
     private static final String      API_BASE                        = "https://api.premium.to/api/2";
     private static final String      API_BASE_STORAGE                = "https://storage.premium.to/api/2";
     private static final String      API_BASE_TORRENT                = "https://torrent.premium.to/api/2";
@@ -434,8 +434,12 @@ public class PremiumTo extends UseNet {
         } else if (dl.getConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 10 * 60 * 1000l);
         }
-        if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("application/json")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             this.handleErrorsAPI(account, true);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
@@ -560,7 +564,11 @@ public class PremiumTo extends UseNet {
                     dl.close();
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 420", 3 * 60 * 1000);
                 }
-                br.followConnection();
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 this.handleErrorsAPI(account, false);
                 logger.severe("PremiumTo Error");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error", 3 * 60 * 1000);
@@ -747,22 +755,22 @@ public class PremiumTo extends UseNet {
         try {
             /* 2019-10-23: HEADRequest does not work anymore, use GET instead */
             con = br.openGetConnection(dllink);
-            if (con.getResponseCode() == 403) {
-                /* Either invalid URL or user deleted file from Storage/Cloud --> URL is invalid now. */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (con.getContentType().contains("html") || con.getContentType().contains("application/json")) {
+            if (!this.looksLikeDownloadableContent(con)) {
+                if (con.getResponseCode() == 403) {
+                    /* Either invalid URL or user deleted file from Storage/Cloud --> URL is invalid now. */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 br.followConnection();
                 /* We expect an API error */
                 this.handleErrorsAPI(account, true);
                 return AvailableStatus.UNCHECKABLE;
             }
-            long fileSize = con.getLongContentLength();
+            final long fileSize = con.getCompleteContentLength();
             if (fileSize <= 0) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             link.setFinalFileName(getFileNameFromHeader(con));
-            link.setDownloadSize(fileSize);
+            link.setVerifiedFileSize(fileSize);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -824,10 +832,10 @@ public class PremiumTo extends UseNet {
     }
 
     @Override
-    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (account != null) {
             return true;
-        } else if (!requiresAccount(downloadLink)) {
+        } else if (!requiresAccount(link)) {
             /* Some directurls are downloadable without account */
             return true;
         }
@@ -847,8 +855,6 @@ public class PremiumTo extends UseNet {
         final List<UsenetServer> ret = new ArrayList<UsenetServer>();
         ret.addAll(UsenetServer.createServerList("usenet.premium.to", false, 119, 81));
         ret.addAll(UsenetServer.createServerList("usenet.premium.to", true, 444, 563));
-        ret.addAll(UsenetServer.createServerList("usenet2.premium.to", false, 119, 81));
-        ret.addAll(UsenetServer.createServerList("usenet2.premium.to", true, 444, 563));
         return ret;
     }
 }
