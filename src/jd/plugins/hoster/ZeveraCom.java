@@ -15,6 +15,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.awt.Color;
+
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
@@ -29,7 +31,6 @@ import jd.PluginWrapper;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
-import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "https?://(?:[a-z0-9\\.\\-]+)?zevera\\.com/file\\?id=([A-Za-z0-9\\-_]+)" })
@@ -83,17 +84,6 @@ public class ZeveraCom extends ZeveraCore {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
-        if (StringUtils.equals(getHost(), downloadLink.getHost()) && account == null) {
-            // generated links do not require an account
-            return true;
-        } else {
-            /* 2019-02-19: Free acccount downloads are not possible. */
-            return account != null && account.getType() == AccountType.PREMIUM;
-        }
-    }
-
-    @Override
     public FEATURE[] getFeatures() {
         return new FEATURE[] { FEATURE.MULTIHOST };
     }
@@ -120,15 +110,16 @@ public class ZeveraCom extends ZeveraCore {
          */
         private static final long serialVersionUID = 1L;
         private final String      APIKEYHELP       = "Enter your API Key";
+        private final JLabel      apikeyLabel;
 
         private String getPassword() {
             if (this.pass == null) {
                 return null;
-            }
-            if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
+            } else if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
                 return null;
+            } else {
+                return new String(this.pass.getPassword());
             }
-            return new String(this.pass.getPassword());
         }
 
         public boolean updateAccount(Account input, Account output) {
@@ -151,7 +142,7 @@ public class ZeveraCom extends ZeveraCore {
             super("ins 0, wrap 2", "[][grow,fill]", "");
             add(new JLabel("Click here to find your API Key:"));
             add(new JLink("https://www.zevera.com/account"));
-            add(new JLabel("API Key:"));
+            add(apikeyLabel = new JLabel("API Key:"));
             add(this.pass = new ExtPasswordField() {
                 @Override
                 public void onChanged() {
@@ -176,13 +167,14 @@ public class ZeveraCom extends ZeveraCore {
 
         @Override
         public boolean validateInputs() {
-            // final String userName = getUsername();
-            // if (userName == null || !userName.trim().matches("^\\d{9}$")) {
-            // idLabel.setForeground(Color.RED);
-            // return false;
-            // }
-            // idLabel.setForeground(Color.BLACK);
-            return getPassword() != null;
+            final String password = getPassword();
+            if (isAPIKEY(password)) {
+                apikeyLabel.setForeground(Color.BLACK);
+                return true;
+            } else {
+                apikeyLabel.setForeground(Color.RED);
+                return false;
+            }
         }
 
         @Override
