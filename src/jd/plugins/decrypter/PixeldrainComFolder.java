@@ -68,7 +68,9 @@ public class PixeldrainComFolder extends PluginForDecrypt {
         }
         int index = 0;
         for (final Map<String, Object> file : files) {
-            final DownloadLink dl = this.createDownloadlink("https://" + this.getHost() + "/u/" + file.get("id"));
+            final DownloadLink dl = this.createDownloadlink(generateFileURL(file.get("id").toString()));
+            dl.setContentUrl(generateContentURL(folderID, index));
+            dl.setContainerUrl(param.getCryptedUrl());
             PixeldrainCom.setDownloadLinkInfo(this, dl, file);
             if (targetIndex != null && index == targetIndex.intValue()) {
                 /* User wants only one item within that folder */
@@ -90,5 +92,13 @@ public class PixeldrainComFolder extends PluginForDecrypt {
         }
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
+    }
+
+    private String generateFileURL(final String fileID) {
+        return "https://" + this.getHost() + "/u/" + fileID;
+    }
+
+    private String generateContentURL(final String folderID, final int folderIndex) {
+        return "https://" + this.getHost() + "/l/" + folderID + "#item=" + folderIndex;
     }
 }

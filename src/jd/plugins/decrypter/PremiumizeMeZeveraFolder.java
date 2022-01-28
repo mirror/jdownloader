@@ -6,6 +6,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -13,6 +17,7 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -21,10 +26,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.PremiumizeBrowseNode;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
+import jd.plugins.hoster.ZeveraCore;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
@@ -166,7 +168,7 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
         link.setLinkID(link.getHost() + "://" + node.getID());
     }
 
-    public static ArrayList<PremiumizeBrowseNode> getNodes(final Browser br, final Account account, final String url) throws IOException {
+    public static ArrayList<PremiumizeBrowseNode> getNodes(final Browser br, final Account account, final String url) throws IOException, AccountInvalidException {
         String cloudID = jd.plugins.hoster.PremiumizeMe.getCloudID(url);
         if (cloudID == null) {
             /*
@@ -208,7 +210,7 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
         return null;
     }
 
-    public static String accessCloudItem(final Browser br, final Account account, final String url_source) throws IOException {
+    protected static String accessCloudItem(final Browser br, final Account account, final String url_source) throws IOException, AccountInvalidException {
         final boolean pairingLogin = jd.plugins.hoster.ZeveraCore.setAuthHeader(br, account);
         final String itemID = jd.plugins.hoster.PremiumizeMe.getCloudID(url_source);
         final String client_id;
@@ -219,7 +221,7 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
         }
         String getData = "?id=" + itemID + "&client_id=" + client_id;
         if (!pairingLogin) {
-            getData += "&pin=" + Encoding.urlEncode(jd.plugins.hoster.ZeveraCore.getAPIKey(account));
+            getData += "&pin=" + Encoding.urlEncode(ZeveraCore.getAPIKey(account));
         }
         if (StringUtils.containsIgnoreCase(url_source, "folder_id")) {
             /* Folder */

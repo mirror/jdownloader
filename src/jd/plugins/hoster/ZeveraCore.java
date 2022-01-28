@@ -113,6 +113,16 @@ abstract public class ZeveraCore extends UseNet {
         }
     }
 
+    protected static boolean isAPIKEY(final String str) {
+        if (str == null) {
+            return false;
+        } else if (str.matches("[a-z0-9]{16}")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     /**
      * Returns how many max. chunks per file are allowed for current download mode based on account availability and account type. <br />
      * Override this function to set chunks settings!
@@ -207,7 +217,13 @@ abstract public class ZeveraCore extends UseNet {
              * Either only premium accounts are allowed or, if configured by users, free accounts are allowed to be used for downloading too
              * in some cases.
              */
-            return account.getType() == AccountType.PREMIUM || this.supportsFreeAccountDownloadMode(account);
+            if (account.getType() == AccountType.PREMIUM) {
+                return true;
+            } else if (this.supportsFreeAccountDownloadMode(account)) {
+                return true;
+            } else {
+                return false;
+            }
         } else {
             /* Download without account is not possible */
             return false;
@@ -875,8 +891,13 @@ abstract public class ZeveraCore extends UseNet {
         return false;
     }
 
-    public static String getAPIKey(final Account account) {
-        return account.getPass().trim();
+    public static String getAPIKey(final Account account) throws AccountInvalidException {
+        String str = account.getPass().trim();
+        if (isAPIKEY(str)) {
+            return str;
+        } else {
+            throw new AccountInvalidException("Invalid API key format");
+        }
     }
 
     /**
