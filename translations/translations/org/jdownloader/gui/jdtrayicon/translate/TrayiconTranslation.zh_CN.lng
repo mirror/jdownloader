@@ -13,6 +13,7 @@ TrayMenuManager_getName=托盘图标管理器
 getName=托盘图标
 jd_plugins_optional_jdtrayicon_jdlighttray=轻量级托盘
 jd_plugins_optional_jdtrayicon_jdlighttray_description=允许最小化或关闭 JDownloader 到通知区域，以及其它相关的功能，如密码保护等等。
+plugins_optional_JDLightTray_clipboardindicator=托盘图标表示已禁用剪贴板监控
 plugins_optional_JDLightTray_closetotray2=点击'关闭<X>'动作
 plugins_optional_JDLightTray_hideifframevisible=窗口可见时隐藏托盘
 plugins_optional_JDLightTray_minimizetotray=点击'最小化<_>'动作
