@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -80,6 +81,7 @@ public class XHamsterGallery extends PluginForDecrypt {
             sb.append("|my/favorites/videos(?:/[a-f0-9]{24}-[\\w\\-]+)?");
             sb.append("|users/[^/]+/videos");
             sb.append("|users/[^/]+/photos");
+            sb.append("|channels/[^/]+");
             sb.append(")");
             ret.add(sb.toString());
         }
@@ -89,6 +91,7 @@ public class XHamsterGallery extends PluginForDecrypt {
     private static final String TYPE_PHOTO_GALLERY             = "https?://[^/]+/photos/gallery/[0-9A-Za-z_\\-/]+-(\\d+)";
     private static final String TYPE_FAVORITES_OF_CURRENT_USER = "https?://[^/]+/my/favorites/videos(/[a-f0-9]{24}-([\\w\\-]+))?";
     private static final String TYPE_VIDEOS_OF_USER            = "https?://[^/]+/users/([^/]+)/videos";
+    private static final String TYPE_VIDEOS_OF_CHANNEL         = "https?://[^/]+/channels/([^/]+)";
     private static final String TYPE_PHOTO_GALLERIES_OF_USER   = "https?://[^/]+/users/([^/]+)/photos";
 
     public static String buildHostsPatternPart(String[] domains) {
@@ -109,7 +112,7 @@ public class XHamsterGallery extends PluginForDecrypt {
         return pattern.toString();
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         /* Force english language */
         final String replaceStr = new Regex(param.getCryptedUrl(), "(https?://(?:www\\.)?[^/]+/)").getMatch(0);
@@ -123,37 +126,10 @@ public class XHamsterGallery extends PluginForDecrypt {
         br.setFollowRedirects(true);
         if (param.getCryptedUrl().matches(TYPE_VIDEOS_OF_USER)) {
             /* Crawl all videos of a user */
-            br.getPage(param.getCryptedUrl());
-            final String username = new Regex(param.getCryptedUrl(), TYPE_VIDEOS_OF_USER).getMatch(0);
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(username);
-            int page = 1;
-            do {
-                logger.info("Crawling page: " + page);
-                final String[] urlParts = br.getRegex("/videos/([^<>\"']+)").getColumn(0);
-                for (String urlPart : urlParts) {
-                    final DownloadLink dl = this.createDownloadlink(br.getURL("/videos/" + urlPart).toString());
-                    dl.setName(username + "_" + urlPart.replace("-", " ") + ".mp4");
-                    dl.setAvailable(true);
-                    dl._setFilePackage(fp);
-                    decryptedLinks.add(dl);
-                    distribute(dl);
-                }
-                logger.info("Found " + urlParts.length + " items on page: " + page + " [Probably less without dupes]");
-                page++;
-                final String nextpage = br.getRegex("(/users/" + username + "/videos/" + page + ")").getMatch(0);
-                if (urlParts.length == 0) {
-                    /* Fail-safe */
-                    logger.info("Failed to find any URLs on current page --> Stopping");
-                    break;
-                } else if (nextpage != null) {
-                    logger.info("Nextpage available: " + nextpage);
-                    br.getPage(nextpage);
-                } else {
-                    logger.info("No nextpage available --> Stopping");
-                    break;
-                }
-            } while (!this.isAbort());
+            return crawlUser(param);
+        } else if (param.getCryptedUrl().matches(TYPE_VIDEOS_OF_CHANNEL)) {
+            /* Crawl all videos of a channel */
+            return crawlChannel(param);
         } else if (param.getCryptedUrl().matches(TYPE_FAVORITES_OF_CURRENT_USER)) {
             /* Crawl users own favorites */
             if (!isLoggedIN) {
@@ -186,28 +162,7 @@ public class XHamsterGallery extends PluginForDecrypt {
             }
         } else if (param.getCryptedUrl().matches(TYPE_PHOTO_GALLERIES_OF_USER)) {
             /* Crawl all photo galleries of a user --> Goes back into crawler and crawler will crawl the single photos */
-            br.getPage(param.getCryptedUrl());
-            final String username = new Regex(param.getCryptedUrl(), TYPE_PHOTO_GALLERIES_OF_USER).getMatch(0);
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(username);
-            int page = 1;
-            do {
-                logger.info("Crawling page: " + page);
-                final String[] urls = br.getRegex("(/photos/gallery/[a-z0-9\\-]+-\\d+)").getColumn(0);
-                for (String url : urls) {
-                    url = br.getURL(url).toString();
-                    decryptedLinks.add(this.createDownloadlink(url));
-                }
-                page++;
-                final String nextpage = br.getRegex("(/users/" + username + "/photos/" + page + ")").getMatch(0);
-                if (nextpage != null) {
-                    logger.info("Nextpage available: " + nextpage);
-                    br.getPage(nextpage);
-                } else {
-                    logger.info("No nextpage available");
-                    break;
-                }
-            } while (!this.isAbort());
+            return crawlAllGalleriesOfUser(param);
         } else {
             /* Single Photo gallery */
             /* Error handling */
@@ -329,6 +284,113 @@ public class XHamsterGallery extends PluginForDecrypt {
             }
         }
         return decryptedLinks;
+    }
+
+    private ArrayList<DownloadLink> crawlUser(final CryptedLink param) throws IOException, PluginException {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        /* Crawl all videos of a user */
+        br.getPage(param.getCryptedUrl());
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String username = new Regex(param.getCryptedUrl(), TYPE_VIDEOS_OF_USER).getMatch(0);
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(username);
+        int page = 1;
+        do {
+            logger.info("Crawling page: " + page);
+            final String[] urlParts = br.getRegex("/videos/([^<>\"']+)").getColumn(0);
+            for (String urlPart : urlParts) {
+                final DownloadLink dl = this.createDownloadlink(br.getURL("/videos/" + urlPart).toString());
+                dl.setName(username + "_" + urlPart.replace("-", " ") + ".mp4");
+                dl.setAvailable(true);
+                dl._setFilePackage(fp);
+                ret.add(dl);
+                distribute(dl);
+            }
+            logger.info("Found " + urlParts.length + " items on page: " + page + " [Probably less without dupes]");
+            page++;
+            final String nextpage = br.getRegex("(/users/" + username + "/videos/" + page + ")").getMatch(0);
+            if (urlParts.length == 0) {
+                /* Fail-safe */
+                logger.info("Failed to find any URLs on current page --> Stopping");
+                break;
+            } else if (nextpage != null) {
+                logger.info("Nextpage available: " + nextpage);
+                br.getPage(nextpage);
+            } else {
+                logger.info("No nextpage available --> Stopping");
+                break;
+            }
+        } while (!this.isAbort());
+        return ret;
+    }
+
+    private ArrayList<DownloadLink> crawlAllGalleriesOfUser(final CryptedLink param) throws IOException, PluginException {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        br.getPage(param.getCryptedUrl());
+        final String username = new Regex(param.getCryptedUrl(), TYPE_PHOTO_GALLERIES_OF_USER).getMatch(0);
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(username);
+        int page = 1;
+        do {
+            logger.info("Crawling page: " + page);
+            final String[] urls = br.getRegex("(/photos/gallery/[a-z0-9\\-]+-\\d+)").getColumn(0);
+            for (String url : urls) {
+                url = br.getURL(url).toString();
+                ret.add(this.createDownloadlink(url));
+            }
+            page++;
+            final String nextpage = br.getRegex("(/users/" + username + "/photos/" + page + ")").getMatch(0);
+            if (nextpage != null) {
+                logger.info("Nextpage available: " + nextpage);
+                br.getPage(nextpage);
+            } else {
+                logger.info("No nextpage available");
+                break;
+            }
+        } while (!this.isAbort());
+        return ret;
+    }
+
+    private ArrayList<DownloadLink> crawlChannel(final CryptedLink param) throws IOException, PluginException {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        /* Crawl all videos of a user */
+        br.getPage(param.getCryptedUrl());
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String channelname = new Regex(param.getCryptedUrl(), TYPE_VIDEOS_OF_CHANNEL).getMatch(0);
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(channelname);
+        int page = 1;
+        do {
+            logger.info("Crawling page: " + page);
+            final String[] urlParts = br.getRegex("/videos/([^<>\"']+)").getColumn(0);
+            for (String urlPart : urlParts) {
+                final DownloadLink dl = this.createDownloadlink(br.getURL("/videos/" + urlPart).toString());
+                dl.setName(channelname + "_" + urlPart.replace("-", " ") + ".mp4");
+                dl.setAvailable(true);
+                dl._setFilePackage(fp);
+                ret.add(dl);
+                distribute(dl);
+            }
+            logger.info("Found " + urlParts.length + " items on page: " + page + " [Probably less without dupes]");
+            page++;
+            final String nextpage = br.getRegex("(/channels/" + channelname + "/" + page + ")").getMatch(0);
+            if (urlParts.length == 0) {
+                /* Fail-safe */
+                logger.info("Failed to find any URLs on current page --> Stopping");
+                break;
+            } else if (nextpage != null) {
+                logger.info("Nextpage available: " + nextpage);
+                br.getPage(nextpage);
+            } else {
+                logger.info("No nextpage available --> Stopping");
+                break;
+            }
+        } while (!this.isAbort());
+        return ret;
     }
 
     public boolean isProxyRotationEnabledForLinkCrawler() {

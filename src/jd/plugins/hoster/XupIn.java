@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
 import jd.parser.html.Form;
@@ -27,8 +29,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xup.in" }, urls = { "https?://[\\w\\.]*?xup\\.((in|to)/dl,\\d+(/.+)?|raidrush\\.ws/ndl_[a-z0-9]+)" })
 public class XupIn extends PluginForHost {
@@ -49,16 +49,16 @@ public class XupIn extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         this.br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.containsHTML("Datei existiert nicht") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = null;
         String filesize = null;
-        if (downloadLink.getDownloadURL().contains("xup.raidrush.ws/")) {
+        if (link.getPluginPatternMatcher().contains("xup.raidrush.ws/")) {
             filename = br.getRegex("<title>XUP - Download (.*?) \\| ").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<h1>XUP - Download (.*?) \\| ").getMatch(0);
@@ -71,15 +71,15 @@ public class XupIn extends PluginForHost {
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-        downloadLink.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        link.setName(filename.trim());
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink link) throws Exception {
         br.setDebug(true);
-        this.requestFileInformation(downloadLink);
+        this.requestFileInformation(link);
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         Form download = br.getForm(0);
         if (download == null) {
@@ -87,24 +87,24 @@ public class XupIn extends PluginForHost {
         }
         String passCode = null;
         if (download.hasInputFieldByName("vpass")) {
-            if (downloadLink.getStringProperty("pass", null) == null) {
-                passCode = getUserInput(null, downloadLink);
+            if (link.getDownloadPassword() == null) {
+                passCode = getUserInput(null, link);
             } else {
-                /* gespeicherten PassCode holen */
-                passCode = downloadLink.getStringProperty("pass", null);
+                /* Use saved password */
+                passCode = link.getDownloadPassword();
             }
             download.put("vpass", passCode);
         }
         if (download.hasInputFieldByName("vchep")) {
-            final String code = this.getCaptchaCode("http://www0.xup.in/captcha.php", downloadLink);
+            final String code = this.getCaptchaCode("http://www0.xup.in/captcha.php", link);
             download.put("vchep", code);
         }
         download.remove(null);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, download);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, download);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             String page = br.followConnection(true);
             if (page.contains("richtige Passwort erneut ein")) {
-                downloadLink.setProperty("pass", null);
+                link.setDownloadPassword(null);
                 throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.xupin.errors.passwrong", "Password wrong"));
             } else if (br.containsHTML(">Die Sicherheitsfrage wurde falsch eingegeben|/captcha\\.php\"")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -114,7 +114,7 @@ public class XupIn extends PluginForHost {
             }
         }
         if (passCode != null) {
-            downloadLink.setProperty("pass", passCode);
+            link.setDownloadPassword(passCode);
         }
         dl.startDownload();
     }

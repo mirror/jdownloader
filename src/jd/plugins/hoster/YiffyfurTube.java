@@ -48,7 +48,7 @@ public class YiffyfurTube extends antiDDoSForHost {
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
+    private static final int     free_maxchunks    = -2;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
     private boolean              server_issues     = false;

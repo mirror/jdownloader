@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.plugins.Account;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -55,5 +56,11 @@ public class YourlustCom extends KernelVideoSharingComV2 {
     @Override
     protected boolean hasFUIDInsideURL(final String url) {
         return false;
+    }
+
+    @Override
+    protected int getMaxChunks(final Account account) {
+        /* 2022-01-31 */
+        return 1;
     }
 }
