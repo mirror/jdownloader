@@ -42,6 +42,7 @@ import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -159,6 +160,80 @@ public class PixeldrainCom extends PluginForHost {
         return API_BASE + "/user";
     }
 
+    @Override
+    public boolean checkLinks(final DownloadLink[] urls) {
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return this.checkLinks(urls, account);
+    }
+
+    public boolean checkLinks(final DownloadLink[] allLinks, final Account account) {
+        if (allLinks == null || allLinks.length == 0) {
+            return false;
+        }
+        try {
+            if (account != null) {
+                this.login(account, false);
+            }
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                final StringBuilder sb = new StringBuilder();
+                links.clear();
+                while (true) {
+                    /* we test 100 links at once */
+                    if (index == allLinks.length || links.size() == 100) {
+                        break;
+                    } else {
+                        links.add(allLinks[index]);
+                        index++;
+                    }
+                }
+                sb.delete(0, sb.capacity());
+                for (final DownloadLink link : links) {
+                    if (sb.length() > 0) {
+                        /* Append comma */
+                        sb.append("%2C");
+                    }
+                    sb.append(this.getFID(link));
+                }
+                br.getPage(API_BASE + "/file/" + sb.toString() + "/info");
+                final List<Map<String, Object>> items;
+                final Object response = JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
+                if (response instanceof List) {
+                    items = (List<Map<String, Object>>) response;
+                } else {
+                    items = new ArrayList<Map<String, Object>>();
+                    items.add((Map<String, Object>) response);
+                }
+                for (final DownloadLink link : links) {
+                    final String id = this.getFID(link);
+                    Map<String, Object> data = null;
+                    for (final Map<String, Object> item : items) {
+                        final String thisID = (String) item.get("id");
+                        if (StringUtils.equals(thisID, id)) {
+                            data = item;
+                            break;
+                        }
+                    }
+                    if (data == null) {
+                        /* id not in response, so its offline */
+                        link.setAvailable(false);
+                    } else {
+                        setDownloadLinkInfo(this, link, data);
+                    }
+                }
+                if (index == allLinks.length) {
+                    /* We've reached the end */
+                    break;
+                }
+            }
+        } catch (final Exception ignore) {
+            logger.log(ignore);
+            return false;
+        }
+        return true;
+    }
+
     /**
      * Using API according to https://pixeldrain.com/api
      *
@@ -166,28 +241,16 @@ public class PixeldrainCom extends PluginForHost {
      */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, null);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return requestFileInformation(link, account);
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
-        prepBR(this.br);
-        /*
-         * Always login if possible otherwise even premium users may run into captchas (bot protection) when checking a lot of files in a
-         * short time.
-         */
-        if (account != null) {
-            this.login(account, false);
-        }
-        /* 2020-04-14: According to API docs, multiple files can be checked with one request but I was unable to make this work. */
-        br.getPage(API_BASE + "/file/" + this.getFID(link) + "/info");
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            /*
-             * 2020-04-14: E.g. {"success":false,"value":"not_found","message":"The entity you requested could not be found"}
-             */
+        this.checkLinks(new DownloadLink[] { link }, account);
+        checkErrors(br, link, account);
+        if (!link.isAvailable()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> data = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        setDownloadLinkInfo(this, link, data);
         return AvailableStatus.TRUE;
     }
 
@@ -242,6 +305,7 @@ public class PixeldrainCom extends PluginForHost {
             if (API_availability_CAPTCHA_REQUIRED.equals(value)) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA, message);
             }
+            checkErrors(br, link, account);
             /* We're using an API so let's never throw "Plugin defect" errors. */
             if (!StringUtils.isEmpty(message)) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, message, 5 * 60 * 1000l);
@@ -365,6 +429,10 @@ public class PixeldrainCom extends PluginForHost {
             }
             return;
         }
+    }
+
+    private void checkErrors(final Browser br, final DownloadLink link, final Account account) {
+        /* TODO: Add functionality */
     }
 
     private void showApiLoginInformation(final Account account) {
