@@ -114,7 +114,7 @@ public class XHamsterGallery extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        /* Force english language */
+        /* Force English language */
         final String replaceStr = new Regex(param.getCryptedUrl(), "(https?://(?:www\\.)?[^/]+/)").getMatch(0);
         param.setCryptedUrl(param.getCryptedUrl().replace(replaceStr, "https://xhamster.com/"));
         br.addAllowedResponseCodes(410);
@@ -341,10 +341,10 @@ public class XHamsterGallery extends PluginForDecrypt {
                 ret.add(this.createDownloadlink(url));
             }
             page++;
-            final String nextpage = br.getRegex("(/users/" + username + "/photos/" + page + ")").getMatch(0);
-            if (nextpage != null) {
-                logger.info("Nextpage available: " + nextpage);
-                br.getPage(nextpage);
+            final String nextpageURL = br.getRegex("(/users/" + username + "/photos/" + page + ")").getMatch(0);
+            if (nextpageURL != null) {
+                logger.info("Nextpage available: " + nextpageURL);
+                br.getPage(nextpageURL);
             } else {
                 logger.info("No nextpage available");
                 break;
@@ -355,7 +355,6 @@ public class XHamsterGallery extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlChannel(final CryptedLink param) throws IOException, PluginException {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        /* Crawl all videos of a user */
         br.getPage(param.getCryptedUrl());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -377,14 +376,14 @@ public class XHamsterGallery extends PluginForDecrypt {
             }
             logger.info("Found " + urlParts.length + " items on page: " + page + " [Probably less without dupes]");
             page++;
-            final String nextpage = br.getRegex("(/channels/" + channelname + "/" + page + ")").getMatch(0);
+            final String nextpageURL = br.getRegex("(/channels/" + channelname + "/" + page + ")").getMatch(0);
             if (urlParts.length == 0) {
                 /* Fail-safe */
                 logger.info("Failed to find any URLs on current page --> Stopping");
                 break;
-            } else if (nextpage != null) {
-                logger.info("Nextpage available: " + nextpage);
-                br.getPage(nextpage);
+            } else if (nextpageURL != null) {
+                logger.info("Nextpage available: " + nextpageURL);
+                br.getPage(nextpageURL);
             } else {
                 logger.info("No nextpage available --> Stopping");
                 break;
