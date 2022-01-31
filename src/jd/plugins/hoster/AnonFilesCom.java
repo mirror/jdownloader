@@ -18,15 +18,15 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.UnknownHostingScriptCore;
+import org.jdownloader.plugins.components.config.AnonFilesComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.UnknownHostingScriptCore;
-import org.jdownloader.plugins.components.config.AnonFilesComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class AnonFilesCom extends UnknownHostingScriptCore {
@@ -128,5 +128,10 @@ public class AnonFilesCom extends UnknownHostingScriptCore {
     @Override
     protected boolean allowLowerQualityStreamingFallback() {
         return PluginJsonConfig.get(this.getConfigInterface()).isAllowFallbackToLowerQuality();
+    }
+
+    @Override
+    protected String getPreferredCDNNode() {
+        return PluginJsonConfig.get(this.getConfigInterface()).getPreferredCdnNode();
     }
 }

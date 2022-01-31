@@ -28,4 +28,11 @@ public interface AnonFilesComConfig extends PluginConfigInterface {
     boolean isAllowFallbackToLowerQuality();
 
     void setAllowFallbackToLowerQuality(boolean b);
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Define preferred CDN node e.g. 'cdn-104.anonfiles.com'")
+    @Order(30)
+    String getPreferredCdnNode();
+
+    void setPreferredCdnNode(final String str);
 }
