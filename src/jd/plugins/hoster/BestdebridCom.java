@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -41,6 +42,7 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -115,7 +117,7 @@ public class BestdebridCom extends PluginForHost {
                     dllink = "https://" + this.getHost() + "/" + dllink;
                 }
             } else {
-                this.br.getPage(API_BASE + "/generateLink?auth=" + Encoding.urlEncode(this.getApiKey(account)) + "&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+                this.br.getPage(API_BASE + "/generateLink?auth=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
             }
             handleAPIErrors(this.br, account, link);
             dllink = PluginJSonUtils.getJsonValue(br, "link");
@@ -209,9 +211,10 @@ public class BestdebridCom extends PluginForHost {
                 // ai.setTrafficLeft(0);
                 ai.setUnlimitedTraffic();
                 /*
-                 * 2019-08-37: Free-Account Downloads via API are not possible. Allow them anyways just in case this changes in the future.
+                 * 2019-08-37: Free-Account Downloads via API are not possible.
                  */
-                account.setMaxSimultanDownloads(1);
+                ai.setTrafficLeft(0);
+                account.setMaxSimultanDownloads(0);
                 statusAcc += " [Downloads are only possible via browser]";
             }
         } else {
@@ -228,7 +231,7 @@ public class BestdebridCom extends PluginForHost {
             statusAcc += " [" + credit + " credits]";
         }
         ai.setStatus(statusAcc);
-        br.getPage(API_BASE + "/hosts?auth=" + Encoding.urlEncode(this.getApiKey(account)));
+        br.getPage(API_BASE + "/hosts?auth=" + Encoding.urlEncode(account.getPass()));
         final ArrayList<String> supportedhostslist = new ArrayList<String>();
         LinkedHashMap<String, Object> entries;
         final ArrayList<Object> hosters;
@@ -283,7 +286,10 @@ public class BestdebridCom extends PluginForHost {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
-                br.getPage(API_BASE + "/user?auth=" + Encoding.urlEncode(this.getApiKey(account)));
+                if (!isAPIKey(account.getPass())) {
+                    throw new AccountInvalidException("Invalid API key format");
+                }
+                br.getPage(API_BASE + "/user?auth=" + Encoding.urlEncode(account.getPass()));
                 /** 2019-07-05: No idea how long this token is valid! */
                 final String status = PluginJSonUtils.getJson(br, "error");
                 if (status != null && !"0".equals(status)) {
@@ -298,14 +304,14 @@ public class BestdebridCom extends PluginForHost {
                         } else {
                             jdLoginFailedText = "Invalid API Key?\r\nDo NOT enter your username & password here!\r\nEnter your API Key in both fields!\r\nYou will find your API Key here: bestdebrid.com/profile.php";
                         }
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, jdLoginFailedText, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new AccountInvalidException(jdLoginFailedText);
                     } else {
                         /* E.g. {"error":"bad username OR bad password"} */
                         final String fail_reason = PluginJSonUtils.getJson(br, "message");
                         if (!StringUtils.isEmpty(fail_reason)) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Reason: " + fail_reason, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            throw new AccountInvalidException("Reason: " + fail_reason);
                         } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            throw new AccountInvalidException();
                         }
                     }
                 }
@@ -325,41 +331,15 @@ public class BestdebridCom extends PluginForHost {
         }
     }
 
-    // private void loginWebsite(final Account account) throws IOException, PluginException {
-    // synchronized (account) {
-    // try {
-    // br.setFollowRedirects(true);
-    // final Cookies cookies = account.loadCookies("");
-    // boolean loggedIN = false;
-    // if (cookies != null) {
-    // br.setCookies(br.getHost(), cookies);
-    // br.getPage("https://" + this.getHost() + "/");
-    // loggedIN = this.isLoggedinWebsite();
-    // }
-    // if (!loggedIN) {
-    // br.getPage("https://" + this.getHost() + "/");
-    // br.postPage("https://" + this.getHost() + "/ajax/login.php?type=login" + Encoding.urlEncode(this.getApiKey(account)), "username=" +
-    // Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&recaptcha=");
-    // if (!this.isLoggedinWebsite()) {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // }
-    // }
-    // account.saveCookies(br.getCookies(this.getHost()), "");
-    // } catch (PluginException e) {
-    // e.printStackTrace();
-    // if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-    // account.clearCookies("");
-    // }
-    // throw e;
-    // }
-    // }
-    // }
-    //
-    // private boolean isLoggedinWebsite() {
-    // return br.getCookie(this.getHost(), "SID", Cookies.NOTDELETEDPATTERN) != null;
-    // }
-    private String getApiKey(final Account account) {
-        return account.getPass();
+    private static boolean isAPIKey(final String str) {
+        if (str == null) {
+            return false;
+        } else if (str.matches("[a-zA-Z0-9_/\\+\\=\\-]+")) {
+            /* Very simple check for base64 Strings. */
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private void handleAPIErrors(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {
@@ -378,8 +358,6 @@ public class BestdebridCom extends PluginForHost {
         }
     }
 
-    // public static interface BestdebridComConfigInterface extends UsenetAccountConfigInterface {
-    // };
     @Override
     public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
         return new BestdebridAccountFactory(callback);
@@ -391,15 +369,16 @@ public class BestdebridCom extends PluginForHost {
          */
         private static final long serialVersionUID = 1L;
         private final String      PINHELP          = "Enter your Apikey";
+        private final JLabel      apikeyLabel;
 
         private String getPassword() {
             if (this.pass == null) {
                 return null;
-            }
-            if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
+            } else if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
                 return null;
+            } else {
+                return new String(this.pass.getPassword());
             }
-            return new String(this.pass.getPassword());
         }
 
         public boolean updateAccount(Account input, Account output) {
@@ -422,7 +401,7 @@ public class BestdebridCom extends PluginForHost {
             super("ins 0, wrap 2", "[][grow,fill]", "");
             add(new JLabel("Click here to find your API Key:"));
             add(new JLink("https://bestdebrid.com/profile.php"));
-            add(new JLabel("API Key:"));
+            add(apikeyLabel = new JLabel("API Key:"));
             add(this.pass = new ExtPasswordField() {
                 @Override
                 public void onChanged() {
@@ -447,13 +426,14 @@ public class BestdebridCom extends PluginForHost {
 
         @Override
         public boolean validateInputs() {
-            // final String userName = getUsername();
-            // if (userName == null || !userName.trim().matches("^\\d{9}$")) {
-            // idLabel.setForeground(Color.RED);
-            // return false;
-            // }
-            // idLabel.setForeground(Color.BLACK);
-            return getPassword() != null;
+            final String pw = getPassword();
+            if (BestdebridCom.isAPIKey(pw)) {
+                apikeyLabel.setForeground(Color.BLACK);
+                return true;
+            } else {
+                apikeyLabel.setForeground(Color.RED);
+                return false;
+            }
         }
 
         @Override
