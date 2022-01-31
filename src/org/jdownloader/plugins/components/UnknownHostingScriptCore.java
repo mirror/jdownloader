@@ -469,6 +469,7 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
             return null;
         }
         dllink = fixDownloadurl(dllink);
+        dllink = prepareFinalDownloadurl(dllink);
         if (!this.allowLowerQualityStreamingFallback()) {
             this.checkDownloadurl(link, account, true, dllink);
             return dllink;
@@ -522,7 +523,7 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         }
     }
 
-    private String fixDownloadurl(String ret) {
+    private String fixDownloadurl(final String ret) {
         if (Encoding.isHtmlEntityCoded(ret)) {
             return Encoding.htmlDecode(ret);
         } else {
@@ -614,9 +615,10 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         }
     }
 
-    private boolean checkDownloadurl(final DownloadLink link, final Account account, final boolean handleErrors, final String directurl) throws Exception {
+    private boolean checkDownloadurl(final DownloadLink link, final Account account, final boolean handleErrors, String directurl) throws Exception {
         if (directurl != null) {
             try {
+                directurl = prepareFinalDownloadurl(directurl);
                 final boolean resume = this.isResumeable(link, account);
                 final int maxchunks = this.getMaxChunks(account);
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, resume, maxchunks);
@@ -641,6 +643,20 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         } else {
             return false;
         }
+    }
+
+    private String prepareFinalDownloadurl(final String url) {
+        final String preferredCDNNode = getPreferredCDNNode();
+        if (StringUtils.isEmpty(preferredCDNNode)) {
+            return url;
+        } else {
+            final String currentCdn = new Regex(url, "https?://([^/]+)/").getMatch(0);
+            return url.replaceFirst(org.appwork.utils.Regex.escape(currentCdn), preferredCDNNode);
+        }
+    }
+
+    protected String getPreferredCDNNode() {
+        return null;
     }
 
     protected String getProtocol() {
