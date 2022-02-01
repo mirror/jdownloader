@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -312,7 +313,6 @@ public class CocoleechCom extends PluginForHost {
         if (str == null) {
             return false;
         } else if (str.matches("[a-f0-9]{24}")) {
-            /* Very simple check for base64 Strings. */
             return true;
         } else {
             return false;
@@ -334,6 +334,7 @@ public class CocoleechCom extends PluginForHost {
          */
         private static final long serialVersionUID = 1L;
         private final String      APIKEYHELP       = "Enter your API Key";
+        private final JLabel      apikeyLabel;
 
         private String getPassword() {
             if (this.pass == null) {
@@ -346,16 +347,15 @@ public class CocoleechCom extends PluginForHost {
         }
 
         public boolean updateAccount(Account input, Account output) {
-            boolean changed = false;
             if (!StringUtils.equals(input.getUser(), output.getUser())) {
                 output.setUser(input.getUser());
-                changed = true;
-            }
-            if (!StringUtils.equals(input.getPass(), output.getPass())) {
+                return true;
+            } else if (!StringUtils.equals(input.getPass(), output.getPass())) {
                 output.setPass(input.getPass());
-                changed = true;
+                return true;
+            } else {
+                return false;
             }
-            return changed;
         }
 
         private final ExtPasswordField pass;
@@ -365,7 +365,7 @@ public class CocoleechCom extends PluginForHost {
             super("ins 0, wrap 2", "[][grow,fill]", "");
             add(new JLabel("Click here to find your API Key:"));
             add(new JLink("https://members.cocoleech.com/settings"));
-            add(new JLabel("API Key:"));
+            add(apikeyLabel = new JLabel("API Key:"));
             add(this.pass = new ExtPasswordField() {
                 @Override
                 public void onChanged() {
@@ -390,13 +390,14 @@ public class CocoleechCom extends PluginForHost {
 
         @Override
         public boolean validateInputs() {
-            // final String userName = getUsername();
-            // if (userName == null || !userName.trim().matches("^\\d{9}$")) {
-            // idLabel.setForeground(Color.RED);
-            // return false;
-            // }
-            // idLabel.setForeground(Color.BLACK);
-            return getPassword() != null;
+            final String pw = getPassword();
+            if (CocoleechCom.isAPIKey(pw)) {
+                apikeyLabel.setForeground(Color.BLACK);
+                return true;
+            } else {
+                apikeyLabel.setForeground(Color.RED);
+                return false;
+            }
         }
 
         @Override

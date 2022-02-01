@@ -792,10 +792,10 @@ public class InstaGramCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
         synchronized (account) {
             login(account, true);
         }
+        final AccountInfo ai = new AccountInfo();
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setConcurrentUsePossible(true);
@@ -823,10 +823,10 @@ public class InstaGramCom extends PluginForHost {
     }
 
     private void setConfigElements() {
-        final ConfigEntry cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_SERVER_FILENAMES, "Use server-filenames whenever possible?").setDefaultValue(defaultPREFER_SERVER_FILENAMES);
-        getConfig().addEntry(cfg);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ADD_ORDERID_TO_FILENAMES, "Include order-ID in filenames if an album contains more than one element?\r\nCan be useful if you want to be able to keep the original order of multiple elements of an album.").setDefaultValue(defaultADD_ORDERID_TO_FILENAMES).setEnabledCondidtion(cfg, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ADD_SHORTCODE_TO_FILENAMES, "Include 'shortcode' in filenames it is available.").setDefaultValue(defaultADD_SHORTCODE_TO_FILENAMES).setEnabledCondidtion(cfg, false));
+        final ConfigEntry preferServerFilenames = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_SERVER_FILENAMES, "Use server-filenames whenever possible?").setDefaultValue(defaultPREFER_SERVER_FILENAMES);
+        getConfig().addEntry(preferServerFilenames);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ADD_ORDERID_TO_FILENAMES, "Include order-ID in filenames if an album contains more than one element?\r\nCan be useful if you want to be able to keep the original order of multiple elements of an album.").setDefaultValue(defaultADD_ORDERID_TO_FILENAMES).setEnabledCondidtion(preferServerFilenames, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ADD_SHORTCODE_TO_FILENAMES, "Include 'shortcode' in filenames it is available.").setDefaultValue(defaultADD_SHORTCODE_TO_FILENAMES).setEnabledCondidtion(preferServerFilenames, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY, "Try to download original quality (bigger filesize, without image-effects)? [This will slow down the download-process!]").setDefaultValue(defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HASHTAG_CRAWLER_FIND_USERNAMES, "Crawl- and set usernames for filenames when crawling '/explore/tags/<hashtag>' URLs? (Slows down crawl-process!)").setDefaultValue(defaultHASHTAG_CRAWLER_FIND_USERNAMES));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));

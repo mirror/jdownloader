@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zmags.com" }, urls = { "http://(www\\.)?viewer\\.zmags\\.com/publication/[a-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zmags.com" }, urls = { "https?://(?:www\\.)?viewer\\.zmags\\.com/publication/([a-z0-9]+)" })
 public class ZMagsCom extends PluginForHost {
     public ZMagsCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,10 +39,29 @@ public class ZMagsCom extends PluginForHost {
     }
 
     @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    private static final String PROPERTY_TITLE = "title";
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link) + ".pdf");
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 403) {
             /* 2020-05-27: E.g. "The publication you are trying to view has not been activated by the publisher." */
             // throw new AccountRequiredException();
@@ -50,28 +69,42 @@ public class ZMagsCom extends PluginForHost {
         } else if (br.getHttpConnection().getResponseCode() == 404 | br.containsHTML("(>Publication not found<|>The publication you are trying to view does not exist or may have been deleted|Please check the URL and re\\-enter it in the address line of your browser)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"/>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\" />").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        String title = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"/>").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("<meta name=\"title\" content=\"(.*?)\" />").getMatch(0);
+            if (title == null) {
+                title = br.getRegex("<title>(.*?)</title>").getMatch(0);
             }
         }
-        if (filename == null) {
+        if (title == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /** Server often sends us wrong/same filenames */
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        if (title != null) {
+            title = Encoding.htmlDecode(title.trim());
+            link.setProperty(PROPERTY_TITLE, title);
+            link.setName(title + ".pdf");
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://viewer.zmags.com/services/DownloadPDF", "publicationID=" + new Regex(downloadLink.getDownloadURL(), "zmags\\.com/publication/(.+)").getMatch(0) + "&selectedPages=all", false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://viewer.zmags.com/services/DownloadPDF", "publicationID=" + new Regex(link.getDownloadURL(), "zmags\\.com/publication/(.+)").getMatch(0) + "&selectedPages=all", false, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* Previously set name might not contain a file-extension --> Correct that if possible */
+        final String title = link.getStringProperty(PROPERTY_TITLE);
+        final String ext = getExtensionFromMimeType(dl.getConnection().getContentType());
+        if (title != null && ext != null) {
+            link.setFinalFileName(applyFilenameExtension(title, "." + ext));
         }
         dl.startDownload();
     }
