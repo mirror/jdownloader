@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.container.NZB;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -22,7 +23,6 @@ import jd.plugins.components.NZBSAXHandler;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nzbking.com" }, urls = { "https?://[\\w\\.]*nzbking.com/details(:|%3a)[0-9a-zA-Z]+" })
 public class NzbKingCom extends PluginForDecrypt {
-
     public NzbKingCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -51,7 +51,7 @@ public class NzbKingCom extends PluginForDecrypt {
             con = br.openRequestConnection(request);
             if (con.isOK()) {
                 ret.addAll(NZBSAXHandler.parseNZB(con.getInputStream()));
-                final String nzbPassword = new Regex(Plugin.getFileNameFromHeader(con), "\\{\\{(.*?)\\}\\}\\.nzb$").getMatch(0);
+                final String nzbPassword = new Regex(Plugin.getFileNameFromHeader(con), NZB.PATTERN_COMMON_FILENAME_SCHEME).getMatch(1);
                 if (nzbPassword != null) {
                     if (StringUtils.isNotEmpty(nzbPassword)) {
                         archiveInfo = new ArchiveInfo();
