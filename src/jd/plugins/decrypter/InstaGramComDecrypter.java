@@ -1206,7 +1206,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     /* By default: Include orderid whenever it is given to prevent duplicate filenames for different files! */
                     filename += " - " + orderidFormatted;
                 }
-                if (individualShortcodeIsAvailable) {
+                if (individualShortcodeIsAvailable && SubConfiguration.getConfig(this.getHost()).getBooleanProperty(InstaGramCom.ADD_SHORTCODE_TO_FILENAMES, InstaGramCom.defaultADD_SHORTCODE_TO_FILENAMES)) {
                     filename += "_" + shortcode;
                 }
             }

@@ -214,36 +214,48 @@ public class PixeldrainCom extends PluginForHost {
                     sb.append(this.getFID(link));
                 }
                 br.getPage(API_BASE + "/file/" + sb.toString() + "/info");
-                final List<Map<String, Object>> items;
-                final Object response = JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
-                if (response instanceof List) {
-                    items = (List<Map<String, Object>>) response;
-                } else {
-                    /* E.g. when only one fileID was checked API will return a map instead of a list of maps. */
-                    items = new ArrayList<Map<String, Object>>();
-                    items.add((Map<String, Object>) response);
-                }
-                /* Offline/invalid fileIDs won't be returned via API so we'll have to look for the data of our targetID. */
-                for (final DownloadLink link : links) {
-                    final String id = this.getFID(link);
-                    Map<String, Object> data = null;
-                    for (final Map<String, Object> item : items) {
-                        final String thisID = (String) item.get("id");
-                        if (StringUtils.equals(thisID, id)) {
-                            data = item;
-                            break;
+                try {
+                    final List<Map<String, Object>> items;
+                    final Object response = JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
+                    if (response instanceof List) {
+                        items = (List<Map<String, Object>>) response;
+                    } else {
+                        /* E.g. when only one fileID was checked API will return a map instead of a list of maps. */
+                        final Map<String, Object> responseMap = (Map<String, Object>) response;
+                        if ((Boolean) responseMap.get("success") == Boolean.FALSE) {
+                            /* All files checked in this run are offline. */
+                            for (final DownloadLink link : links) {
+                                link.setAvailable(false);
+                            }
+                            continue;
+                        } else {
+                            items = new ArrayList<Map<String, Object>>();
+                            items.add((Map<String, Object>) response);
                         }
                     }
-                    if (data == null) {
-                        /* FileID not in response, so its offline */
-                        link.setAvailable(false);
-                    } else {
-                        setDownloadLinkInfo(this, link, data);
+                    /* Offline/invalid fileIDs won't be returned via API so we'll have to look for the data of our targetID. */
+                    for (final DownloadLink link : links) {
+                        final String id = this.getFID(link);
+                        Map<String, Object> data = null;
+                        for (final Map<String, Object> item : items) {
+                            final String thisID = (String) item.get("id");
+                            if (StringUtils.equals(thisID, id)) {
+                                data = item;
+                                break;
+                            }
+                        }
+                        if (data == null) {
+                            /* FileID not in response, so its offline */
+                            link.setAvailable(false);
+                        } else {
+                            setDownloadLinkInfo(this, link, data);
+                        }
                     }
-                }
-                if (index == allLinks.length) {
-                    /* We've reached the end */
-                    break;
+                } finally {
+                    if (index == allLinks.length) {
+                        /* We've reached the end */
+                        break;
+                    }
                 }
             }
         } catch (final Exception ignore) {
@@ -286,7 +298,16 @@ public class PixeldrainCom extends PluginForHost {
         } else {
             link.removeProperty(PROPERTY_CAPTCHA_REQUIRED);
         }
-        link.setAvailable(true);
+        /*
+         * TODO: If 'availability' field != null && != API_availability_CAPTCHA_REQUIRED --> Also offline (expired due to no downloads for a
+         * longer period of time?).
+         */
+        final String abuse_type = (String) data.get("abuse_type");
+        if (!StringUtils.isEmpty(abuse_type)) {
+            link.setAvailable(false);
+        } else {
+            link.setAvailable(true);
+        }
     }
 
     @Override

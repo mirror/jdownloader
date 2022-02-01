@@ -37,7 +37,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.PixeldrainCom;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixeldrain.com" }, urls = { "https?://(?:www\\.)?pixeldrain\\.com/l/([A-Za-z0-9]+)(#item=(\\d+))?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixeldrain.com" }, urls = { "https?://(?:www\\.)?pixeldrain\\.com/l/([A-Za-z0-9]+)((?:\\?embed)?#item=(\\d+))?" })
 public class PixeldrainComFolder extends PluginForDecrypt {
     public PixeldrainComFolder(PluginWrapper wrapper) {
         super(wrapper);

@@ -20,8 +20,11 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
@@ -42,7 +45,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.XvideosCom;
+import jd.plugins.hoster.XvideosCore;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XvideosComProfile extends PluginForDecrypt {
@@ -134,8 +139,7 @@ public class XvideosComProfile extends PluginForDecrypt {
             /* E.g. no permission to access private favorites list of another user. */
             throw new AccountRequiredException();
         } else if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* E.g. xvideos.com can redirect to xvideos.red when account is active. */
         final boolean premiumAccountActive = this.br.getHost().equals("xvideos.red");
@@ -259,18 +263,15 @@ public class XvideosComProfile extends PluginForDecrypt {
         if (!br.getURL().contains(username)) {
             /* E.g. redirect to mainpage */
             logger.info("Profile does not exist anymore");
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(username.trim()));
         fp.addLinks(decryptedLinks);
         final String url_base = this.br.getURL("/channels/" + username + "/videos/new").toString();
         short pageNum = 0;
-        int decryptedLinksNum;
+        final short maxItemsPerPage = 36;
         do {
-            logger.info(String.format("Crawling page %d", pageNum));
-            decryptedLinksNum = 0;
             if (pageNum == 0) {
                 // br.postPage("https://www.xvideos.com/channels/" + username + "/videos/best", "is_first=true&main_cats=false");
                 br.postPage(url_base, "is_first=true&main_cats=false");
@@ -280,49 +281,60 @@ public class XvideosComProfile extends PluginForDecrypt {
             }
             // users don't always have profile... as bug reporter Guardao finds links from google... false positive.
             if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 400) {
-                return;
+                if (decryptedLinks.isEmpty()) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    /* Stop in the middle -> Should never happen */
+                    logger.info("Stopping because: Server issued error-response during crawl");
+                    break;
+                }
             }
-            final String[] links = br.getRegex("class=\"title\"[^>]*><a href=\"(/prof-video-click/[^/]+/[^/]+/\\d+((?:/THUMBNUM)?/[^/\"\\']+)?)").getColumn(0);
-            if (links.length == 0 && pageNum == 0) {
-                logger.info("Assuming that user doesn't own any uploads");
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                break;
-            } else if (links.length == 0 && pageNum == 0) {
-                logger.info("Stopping because: Failed to find anything on current page");
-                break;
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final int totalNumberofItems = ((Number) entries.get("nb_videos")).intValue();
+            if (totalNumberofItems == 0) {
+                logger.info("Stopping because: User doesn't have any videos");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            final String[] links = new Regex(PluginJSonUtils.unescape(br.toString()), "(/" + org.appwork.utils.Regex.escape(username) + "/\\d+/[\\w\\-]+)").getColumn(0);
+            int numberofItemsOnCurrentPage = 0;
             for (String singleLink : links) {
-                final String videoID = new Regex(singleLink, "prof-video-click/[^/]+/[^/]+/(\\d+)").getMatch(0);
+                final String videoID = new Regex(singleLink, "/[^/]+/(\\d+)").getMatch(0);
                 /* Only add new URLs */
                 if (!dupeList.contains(videoID)) {
-                    singleLink = "https://www." + this.br.getHost() + singleLink;
-                    final String urlTitle = new Regex(singleLink, "/\\d+/(?:THUMBNUM/)?(.+)").getMatch(0);
+                    final String titleURL = new Regex(singleLink, "/([^/]+)$").getMatch(0);
+                    singleLink = "https://www." + this.br.getHost() + "/video" + videoID + "/" + titleURL;
                     final String nameTemp;
                     final DownloadLink dl = createDownloadlink(singleLink);
                     /* Usually we will crawl a lot of URLs at this stage --> Set onlinestatus right away! */
                     dl.setAvailable(true);
                     fp.add(dl);
-                    if (urlTitle != null) {
-                        nameTemp = videoID + "_" + cleanUrlTitle(urlTitle);
+                    if (titleURL != null) {
+                        nameTemp = videoID + "_" + cleanUrlTitle(titleURL);
                     } else {
                         nameTemp = videoID;
                     }
                     dl.setName(nameTemp + ".mp4");
                     /* Packagizer properties */
-                    dl.setProperty("username", username);
+                    dl.setProperty(XvideosCore.PROPERTY_USERNAME, username);
                     decryptedLinks.add(dl);
                     distribute(dl);
-                    decryptedLinksNum++;
+                    numberofItemsOnCurrentPage++;
                     dupeList.add(videoID);
                 } else {
                     // logger.info("Found dupe: " + videoID);
                 }
             }
-            logger.info("Found " + decryptedLinksNum + " items on current page");
-            if (!br.containsHTML("class=\"no-page next-page\"")) {
-                logger.info("Stopping because reached the end");
+            logger.info("Crawled page: " + pageNum + " | Crawled items on current page: " + numberofItemsOnCurrentPage + " | Progress overall: " + decryptedLinks.size() + "/" + totalNumberofItems);
+            if (decryptedLinks.size() >= totalNumberofItems) {
+                /* We found all items */
+                logger.info("Stopping because: Reached the end");
+                break;
+            } else if (numberofItemsOnCurrentPage < maxItemsPerPage) {
+                /* Fail-safe */
+                logger.info("Stopping because: Probably reached the end");
                 break;
             } else {
+                /* Proceed to next page */
                 pageNum++;
             }
         } while (!this.isAbort());
@@ -356,8 +368,7 @@ public class XvideosComProfile extends PluginForDecrypt {
         if (!br.getURL().contains(username)) {
             /* E.g. redirect to mainpage */
             logger.info("Profile does not exist anymore");
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-            return;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(username.trim()));
@@ -397,7 +408,7 @@ public class XvideosComProfile extends PluginForDecrypt {
                     }
                     dl.setName(nameTemp + ".mp4");
                     /* Packagizer properties */
-                    dl.setProperty("username", username);
+                    dl.setProperty(XvideosCore.PROPERTY_USERNAME, username);
                     decryptedLinks.add(dl);
                     distribute(dl);
                     decryptedLinksNum++;
@@ -444,7 +455,7 @@ public class XvideosComProfile extends PluginForDecrypt {
             dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
             dl.setFinalFileName(url_filename);
             /* Packagizer properties */
-            dl.setProperty("username", username);
+            dl.setProperty(XvideosCore.PROPERTY_USERNAME, username);
             decryptedLinks.add(dl);
             distribute(dl);
             counter++;

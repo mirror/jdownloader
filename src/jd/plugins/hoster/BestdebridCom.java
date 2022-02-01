@@ -20,10 +20,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.utils.StringUtils;
@@ -34,7 +37,6 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -71,8 +73,7 @@ public class BestdebridCom extends PluginForHost {
         return "https://bestdebrid.com/";
     }
 
-    private Browser newBrowser() {
-        br = new Browser();
+    private Browser prepBR(final Browser br) {
         br.setCookiesExclusive(true);
         br.getHeaders().put("User-Agent", "JDownloader");
         return br;
@@ -127,8 +128,12 @@ public class BestdebridCom extends PluginForHost {
         }
         link.setProperty(this.getHost() + "directlink", dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, defaultMAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection(true);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             handleAPIErrors(this.br, account, link);
             mhm.handleErrorGeneric(account, link, "unknown_dl_error", 50, 5 * 60 * 1000l);
         }
@@ -142,51 +147,55 @@ public class BestdebridCom extends PluginForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        this.br = newBrowser();
+        this.prepBR(this.br);
         mhm.runCheck(account, link);
         handleDL(account, link);
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    return dllink;
+                } else {
+                    throw new IOException();
                 }
             } catch (final Exception e) {
                 logger.log(e);
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                return null;
             } finally {
                 if (con != null) {
                     con.disconnect();
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        this.br = newBrowser();
+        this.prepBR(this.br);
         final AccountInfo ai = new AccountInfo();
         loginAPI(account);
         /*
          * 2019-07-30: This means that an account is owned by a reseller. Reseller accounts have no limits (no daily bandwidth/numberof
          * links limits even compared to premium).
          */
-        final String bypass_api_limit = PluginJSonUtils.getJson(br, "bypass_api_limit");
-        final String expireStr = PluginJSonUtils.getJson(br, "expire");
+        final Map<String, Object> user = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Boolean bypass_api_limit = (Boolean) user.get("bypass_api_limit");
+        final String expireStr = (String) user.get("expire");
         /* 2019-07-30: E.g. "premium":true --> Website may even show a more exact status e.g. "Debrid Plan : Silver" */
         // final String premium = PluginJSonUtils.getJson(br, "premium");
         /* 2019-07-30: credit value = for resellers --> Money on the account which can be used to 'buy more links'. */
-        final String creditStr = PluginJSonUtils.getJson(br, "credit");
+        final String creditStr = user.get("credit").toString();
         int credit = 0;
         long validuntil = 0;
         if (expireStr != null) {
@@ -199,7 +208,7 @@ public class BestdebridCom extends PluginForHost {
         if (validuntil < System.currentTimeMillis()) {
             account.setType(AccountType.FREE);
             statusAcc = "Free Account";
-            if ("true".equalsIgnoreCase(bypass_api_limit)) {
+            if (bypass_api_limit == Boolean.TRUE) {
                 statusAcc += " [Reseller]";
                 ai.setUnlimitedTraffic();
             } else {
@@ -220,7 +229,7 @@ public class BestdebridCom extends PluginForHost {
         } else {
             account.setType(AccountType.PREMIUM);
             statusAcc = "Premium Account";
-            if ("true".equalsIgnoreCase(bypass_api_limit)) {
+            if (bypass_api_limit == Boolean.TRUE) {
                 statusAcc += " [Reseller]";
             }
             ai.setUnlimitedTraffic();
@@ -284,49 +293,45 @@ public class BestdebridCom extends PluginForHost {
 
     private void loginAPI(final Account account) throws IOException, PluginException {
         synchronized (account) {
-            try {
-                br.setFollowRedirects(true);
-                if (!isAPIKey(account.getPass())) {
-                    throw new AccountInvalidException("Invalid API key format");
-                }
-                br.getPage(API_BASE + "/user?auth=" + Encoding.urlEncode(account.getPass()));
-                /** 2019-07-05: No idea how long this token is valid! */
-                final String status = PluginJSonUtils.getJson(br, "error");
-                if (status != null && !"0".equals(status)) {
-                    if (!account.getBooleanProperty("has_been_checked_successfully_once", false)) {
-                        /*
-                         * This account is checked for the first time --> Show more detailed error message to let user know his potential
-                         * mistake of entering username & password instead of API Key (e.g. Headless/myjd) users.
-                         */
-                        final String jdLoginFailedText;
-                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            jdLoginFailedText = "Ungültiger API Key?\r\nGib hier NICHT deinen Benutzername & Passwort ein!\r\nGib deinen API Key in beide Felder ein!\r\nDiesen findest du hier: bestdebrid.com/profile.php";
-                        } else {
-                            jdLoginFailedText = "Invalid API Key?\r\nDo NOT enter your username & password here!\r\nEnter your API Key in both fields!\r\nYou will find your API Key here: bestdebrid.com/profile.php";
-                        }
-                        throw new AccountInvalidException(jdLoginFailedText);
+            br.setFollowRedirects(true);
+            account.setPass(correctPassword(account.getPass()));
+            if (!isAPIKey(account.getPass())) {
+                throw new AccountInvalidException("Invalid API key format");
+            }
+            br.getPage(API_BASE + "/user?auth=" + Encoding.urlEncode(account.getPass()));
+            /** 2019-07-05: No idea how long this token is valid! */
+            final String status = PluginJSonUtils.getJson(br, "error");
+            if (status != null && !"0".equals(status)) {
+                if (account.getLastValidTimestamp() <= -1) {
+                    /*
+                     * This account is checked for the first time --> Show more detailed error message to let user know his potential
+                     * mistake of entering username & password instead of API Key (e.g. Headless/myjd) users.
+                     */
+                    final String jdLoginFailedText;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        jdLoginFailedText = "Ungültiger API Key?\r\nGib hier NICHT deinen Benutzername & Passwort ein!\r\nGib deinen API Key in beide Felder ein!\r\nDiesen findest du hier: bestdebrid.com/profile.php";
                     } else {
-                        /* E.g. {"error":"bad username OR bad password"} */
-                        final String fail_reason = PluginJSonUtils.getJson(br, "message");
-                        if (!StringUtils.isEmpty(fail_reason)) {
-                            throw new AccountInvalidException("Reason: " + fail_reason);
-                        } else {
-                            throw new AccountInvalidException();
-                        }
+                        jdLoginFailedText = "Invalid API Key?\r\nDo NOT enter your username & password here!\r\nEnter your API Key in both fields!\r\nYou will find your API Key here: bestdebrid.com/profile.php";
+                    }
+                    throw new AccountInvalidException(jdLoginFailedText);
+                } else {
+                    /* E.g. {"error":"bad username OR bad password"} */
+                    final String fail_reason = PluginJSonUtils.getJson(br, "message");
+                    if (!StringUtils.isEmpty(fail_reason)) {
+                        throw new AccountInvalidException("Reason: " + fail_reason);
+                    } else {
+                        throw new AccountInvalidException();
                     }
                 }
-                /*
-                 * Used logs in via apikey - via website, username & email are required. Set mail as username so: 1. User can identify
-                 * different accounts in JD better and 2. If someone steals the users' database he still cannot login via website!
-                 */
-                final String email = PluginJSonUtils.getJson(br, "email");
-                // final String username = PluginJSonUtils.getJson(br, "username");
-                if (!StringUtils.isEmpty(email)) {
-                    account.setUser(email);
-                }
-                account.setProperty("has_been_checked_successfully_once", true);
-            } catch (PluginException e) {
-                throw e;
+            }
+            /*
+             * Used logs in via apikey - via website, username & email are required. Set mail as username so: 1. User can identify different
+             * accounts in JD better and 2. If someone steals the users' database he still cannot login via website!
+             */
+            final String email = PluginJSonUtils.getJson(br, "email");
+            // final String username = PluginJSonUtils.getJson(br, "username");
+            if (!StringUtils.isEmpty(email)) {
+                account.setUser(email);
             }
         }
     }
@@ -340,6 +345,10 @@ public class BestdebridCom extends PluginForHost {
         } else {
             return false;
         }
+    }
+
+    private static String correctPassword(final String pw) {
+        return pw.trim();
     }
 
     private void handleAPIErrors(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {
@@ -377,7 +386,7 @@ public class BestdebridCom extends PluginForHost {
             } else if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
                 return null;
             } else {
-                return new String(this.pass.getPassword());
+                return BestdebridCom.correctPassword(new String(this.pass.getPassword()));
             }
         }
 

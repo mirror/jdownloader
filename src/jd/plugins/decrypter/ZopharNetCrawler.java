@@ -25,6 +25,8 @@ import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -40,27 +42,23 @@ public class ZopharNetCrawler extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(param.toString());
+        br.getPage(param.getCryptedUrl());
         if (!this.canHandle(br.getURL())) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String file = br.getRegex(patternDownload).getMatch(0);
         if (file == null) {
-            if (!br.containsHTML("class=\"tcat\"")) {
-                logger.info("Link offline (unsupported linktype): " + parameter);
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "UNSUPPORTED_URL_OR_OFFLINE");
         }
         final String size = br.getRegex("<b>Filesize</b></td>.*?<td align=\"right\">(\\d+(\\.\\d+)? (KB|MB|B))</td>").getMatch(0);
         final DownloadLink dlLink = createDownloadlink(file);
         if (size != null) {
             dlLink.setDownloadSize(SizeFormatter.getSize(size));
         }
-        dlLink.setName(new Regex(parameter, "/([^<>\"/]*?)\\.html").getMatch(0));
+        dlLink.setName(new Regex(param.getCryptedUrl(), "/([^<>\"/]*?)\\.html").getMatch(0));
         decryptedLinks.add(dlLink);
         return decryptedLinks;
     }

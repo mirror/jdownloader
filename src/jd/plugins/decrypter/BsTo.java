@@ -79,14 +79,14 @@ public class BsTo extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private static final String TYPE_SINGLE = "https?://[^/]+/serie/[^/]+/\\d+/[^/]+/[^/]+/[^/]+";
+    private static final String TYPE_SINGLE = "https?://[^/]+/serie/([^/]+)/(\\d+)/([^/]+)/[^/]+/[^/]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        if (StringUtils.containsIgnoreCase(parameter, "bs.to/out") || StringUtils.containsIgnoreCase(parameter, "burningseries.co/out")) {
+        if (param.getCryptedUrl().matches("https?://[^/]+/out.*")) {
+            /* 2022-02-01: Old single link(?) */
             br.setFollowRedirects(false);
-            br.getPage(parameter);
+            br.getPage(param.getCryptedUrl());
             if (br.getRedirectLocation() == null || br.containsHTML("g-recaptcha")) {
                 Form form = br.getFormbyProperty("id", "gateway");
                 if (form == null) {
@@ -103,13 +103,14 @@ public class BsTo extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.setFollowRedirects(true);
-        br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*Seite nicht gefunden<")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        br.getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*Seite nicht gefunden<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // final String urlpart = new Regex(parameter, "(serie/.+)").getMatch(0);
-        if (parameter.matches(TYPE_SINGLE)) {
+        if (param.getCryptedUrl().matches(TYPE_SINGLE)) {
             String finallink = br.getRegex("\"(https?[^<>\"]*?)\" target=\"_blank\"><span class=\"icon link_go\"").getMatch(0);
             if (finallink == null) {
                 finallink = br.getRegex("<iframe\\s+[^>]+src\\s*=\\s*(\"|'|)(.*?)\\1").getMatch(1);
@@ -165,7 +166,7 @@ public class BsTo extends PluginForDecrypt {
                 /* Crawl all episodes of a series --> All mirrors in that */
                 mirrorlist = br.getRegex("<table class=\"episodes\">.*?</table>").getMatch(-1);
             }
-            final String[] mirrorURLs = new Regex(mirrorlist, "<a[^>]*href=\"(serie/[^/]+/\\d+/[^/]+/[a-z]{2}/[^/\"]+)\"").getColumn(0);
+            final String[] mirrorURLs = new Regex(mirrorlist, "<a[^>]*href=\"(serie/[^/]+/\\d+/[^/]+/[a-z]{2,}/[^/\"]+)\"").getColumn(0);
             if (mirrorURLs == null || mirrorURLs.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

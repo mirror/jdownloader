@@ -253,6 +253,10 @@ public class CocoleechCom extends PluginForHost {
 
     private void login(final Account account) throws Exception {
         synchronized (account) {
+            account.setPass(correctPassword(account.getPass()));
+            if (!isAPIKey(account.getPass())) {
+                throw new AccountInvalidException("Invalid API key format");
+            }
             this.br.getPage(API_ENDPOINT + "/info?key=" + Encoding.urlEncode(account.getPass()));
             /* No error here = account is valid. */
             handleAPIErrors(this.br, account, null);
@@ -304,6 +308,21 @@ public class CocoleechCom extends PluginForHost {
         }
     }
 
+    private static boolean isAPIKey(final String str) {
+        if (str == null) {
+            return false;
+        } else if (str.matches("[a-f0-9]{24}")) {
+            /* Very simple check for base64 Strings. */
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private static String correctPassword(final String pw) {
+        return pw.trim();
+    }
+
     @Override
     public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
         return new CocoleechAccountFactory(callback);
@@ -319,11 +338,11 @@ public class CocoleechCom extends PluginForHost {
         private String getPassword() {
             if (this.pass == null) {
                 return null;
-            }
-            if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
+            } else if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
                 return null;
+            } else {
+                return correctPassword(new String(this.pass.getPassword()));
             }
-            return new String(this.pass.getPassword());
         }
 
         public boolean updateAccount(Account input, Account output) {
