@@ -20,6 +20,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -35,16 +45,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RecurbateCom extends antiDDoSForHost {
@@ -63,6 +63,7 @@ public class RecurbateCom extends antiDDoSForHost {
     /* Free (+ free account) and premium specific limits */
     private static final int     free_maxdownloads    = 1;
     private static final int     premium_maxdownloads = 10;
+    private static final String  PROPERTY_USER        = "username";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -117,9 +118,11 @@ public class RecurbateCom extends antiDDoSForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String performer = br.getRegex("/performer/([^/\"<>]+)").getMatch(0);
+        String performer = br.getRegex("/performer/([^/\"<>]+)").getMatch(0);
         if (performer != null) {
-            link.setFinalFileName(Encoding.htmlDecode(performer).trim() + "_" + this.getFID(link) + ".mp4");
+            performer = Encoding.htmlDecode(performer).trim();
+            link.setProperty(PROPERTY_USER, performer);
+            link.setFinalFileName(performer + "_" + this.getFID(link) + ".mp4");
         } else {
             /* Fallback */
             link.setFinalFileName(this.getFID(link) + ".mp4");
@@ -215,6 +218,7 @@ public class RecurbateCom extends antiDDoSForHost {
                 throw new IOException();
             }
         } catch (final Throwable e) {
+            link.removeProperty(directlinkproperty);
             logger.log(e);
             try {
                 dl.getConnection().disconnect();

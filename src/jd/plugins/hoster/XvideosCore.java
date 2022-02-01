@@ -150,7 +150,7 @@ public abstract class XvideosCore extends PluginForHost {
     private static final String NOCHUNKS          = "NOCHUNKS";
     private String              streamURL         = null;
     private HlsContainer        hlsContainer      = null;
-    private static final String PROPERTY_USERNAME = "username";
+    public static final String  PROPERTY_USERNAME = "username";
     private static final String PROPERTY_TAGS     = "tags";
     private static final String PROPERTY_VIDEOID  = "videoid";
 
@@ -552,7 +552,6 @@ public abstract class XvideosCore extends PluginForHost {
         } else if (hlsContainer != null) {
             final String m3u8 = hlsContainer.getDownloadurl();
             checkFFmpeg(link, "Download a HLS Stream");
-            sleep(2000, link);
             dl = new HLSDownloader(link, br, m3u8);
             dl.startDownload();
         } else {
