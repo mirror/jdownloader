@@ -48,8 +48,7 @@ public class MangadexOrg extends antiDDoSForDecrypt {
         final String chapterID = new Regex(param.getCryptedUrl(), TYPE_CHAPTER).getMatch(0);
         getPage(apiBase + "chapter/" + chapterID + "?includes[]=scanlation_group&includes[]=manga&includes[]=user");
         if (br.getHttpConnection().getResponseCode() == 404) {
-            ret.add(this.createOfflinelink(param.getCryptedUrl()));
-            return ret;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final Map<String, Object> data = (Map<String, Object>) root.get("data");
@@ -67,7 +66,16 @@ public class MangadexOrg extends antiDDoSForDecrypt {
             if (type.equals("manga")) {
                 final Map<String, Object> mangaAttributes = (Map<String, Object>) relationship.get("attributes");
                 if (StringUtils.isEmpty(mangaTitle)) {
-                    mangaTitle = (String) JavaScriptEngineFactory.walkJson(mangaAttributes, "title/en");
+                    final Map<String, String> titles = (Map<String, String>) mangaAttributes.get("title");
+                    if (!titles.isEmpty()) {
+                        /* Prefer english titles */
+                        if (titles.containsKey("en")) {
+                            mangaTitle = titles.get("en");
+                        } else {
+                            /* Auto-use first language in that map */
+                            mangaTitle = titles.entrySet().iterator().next().getValue();
+                        }
+                    }
                 }
                 description = (String) JavaScriptEngineFactory.walkJson(mangaAttributes, "description/en");
                 final String status = (String) mangaAttributes.get("status");
