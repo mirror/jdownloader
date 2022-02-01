@@ -9,13 +9,11 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.parser.Regex;
 import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginsC;
 import jd.plugins.components.NZBSAXHandler;
 
-import org.appwork.utils.StringUtils;
-
 public class NZB extends PluginsC {
-
     public NZB() {
         super("NZB", "file:/.+\\.nzb$", "$Revision: 13393 $");
     }
@@ -24,23 +22,33 @@ public class NZB extends PluginsC {
         return new NZB();
     }
 
+    /* Default .nzb filename scheme containing a title and file-password. */
+    public static final String PATTERN_COMMON_FILENAME_SCHEME = "^([^\\{]+)\\{\\{(.*?)\\}\\}\\.nzb$";
+
     public ContainerStatus callDecryption(final File nzbFile) {
         final ContainerStatus cs = new ContainerStatus(nzbFile);
         final ArrayList<DownloadLink> downloadLinks = new ArrayList<DownloadLink>();
         FileInputStream fileInputStream = null;
         try {
             fileInputStream = new FileInputStream(nzbFile);
-            final String nzbPassword = new Regex(nzbFile.getAbsolutePath(), "\\{\\{(.*?)\\}\\}\\.nzb$").getMatch(0);
+            final Regex nzbCommonFilenameScheme = new Regex(nzbFile.getName(), PATTERN_COMMON_FILENAME_SCHEME);
             downloadLinks.addAll(NZBSAXHandler.parseNZB(fileInputStream));
             final ArrayList<CrawledLink> crawledLinks = new ArrayList<CrawledLink>(downloadLinks.size());
             final ArchiveInfo archiveInfo;
-            if (StringUtils.isNotEmpty(nzbPassword)) {
+            final FilePackage fp;
+            if (nzbCommonFilenameScheme.matches()) {
+                fp = FilePackage.getInstance();
+                fp.setName(nzbCommonFilenameScheme.getMatch(0));
                 archiveInfo = new ArchiveInfo();
-                archiveInfo.addExtractionPassword(nzbPassword);
+                archiveInfo.addExtractionPassword(nzbCommonFilenameScheme.getMatch(1));
             } else {
+                fp = null;
                 archiveInfo = null;
             }
             for (final DownloadLink downloadLink : downloadLinks) {
+                if (fp != null) {
+                    downloadLink._setFilePackage(fp);
+                }
                 final CrawledLink crawledLink = new CrawledLink(downloadLink);
                 crawledLink.setArchiveInfo(archiveInfo);
                 crawledLinks.add(crawledLink);
@@ -71,5 +79,4 @@ public class NZB extends PluginsC {
     public boolean hideLinks() {
         return true;
     }
-
 }

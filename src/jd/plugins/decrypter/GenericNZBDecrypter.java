@@ -3,6 +3,10 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.container.NZB;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.ArchiveInfo;
@@ -17,9 +21,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.NZBSAXHandler;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nzb" }, urls = { "https?://.+/.*\\.nzb($|(\\?|&)[^\\s<>\"']*)" })
 public class GenericNZBDecrypter extends PluginForDecrypt {
@@ -60,7 +61,7 @@ public class GenericNZBDecrypter extends PluginForDecrypt {
             final String contentType = con.getContentType();
             if (StringUtils.containsIgnoreCase(contentType, "nzb") && con.isOK()) {
                 ret.addAll(NZBSAXHandler.parseNZB(con.getInputStream()));
-                final String nzbPassword = new Regex(Plugin.getFileNameFromHeader(con), "\\{\\{(.*?)\\}\\}\\.nzb$").getMatch(0);
+                final String nzbPassword = new Regex(Plugin.getFileNameFromHeader(con), NZB.PATTERN_COMMON_FILENAME_SCHEME).getMatch(1);
                 if (nzbPassword != null) {
                     if (StringUtils.isNotEmpty(nzbPassword)) {
                         archiveInfo = new ArchiveInfo();
@@ -71,7 +72,7 @@ public class GenericNZBDecrypter extends PluginForDecrypt {
                 final String response = br.followConnection();
                 if (response.startsWith("<?xml")) {
                     ret.addAll(NZBSAXHandler.parseNZB(response));
-                    final String nzbPassword = new Regex(Plugin.getFileNameFromHeader(con), "\\{\\{(.*?)\\}\\}\\.nzb$").getMatch(0);
+                    final String nzbPassword = new Regex(Plugin.getFileNameFromHeader(con), NZB.PATTERN_COMMON_FILENAME_SCHEME).getMatch(1);
                     if (nzbPassword != null) {
                         if (StringUtils.isNotEmpty(nzbPassword)) {
                             archiveInfo = new ArchiveInfo();
