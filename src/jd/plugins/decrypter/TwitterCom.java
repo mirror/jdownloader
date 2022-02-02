@@ -68,19 +68,20 @@ public class TwitterCom extends PornEmbedParser {
         super(wrapper);
     }
 
-    private static final String            TYPE_CARD            = "https?://[^/]+/i/cards/tfw/v1/(\\d+)";
-    private static final String            TYPE_USER_ALL        = "https?://[^/]+/([A-Za-z0-9_\\-]+)(?:/(?:media|likes))?(\\?.*)?";
-    private static final String            TYPE_USER_POST       = "https?://[^/]+/([^/]+)/status/(\\d+).*?";
-    private static final String            TYPE_REDIRECT        = "https?://t\\.co/[a-zA-Z0-9]+";
-    private ArrayList<DownloadLink>        decryptedLinks       = new ArrayList<DownloadLink>();
-    private static AtomicReference<String> GUEST_TOKEN          = new AtomicReference<String>();
-    private static AtomicLong              GUEST_TOKEN_TS       = new AtomicLong(-1);
-    public static final String             PROPERTY_USERNAME    = "username";
-    private static final String            PROPERTY_DATE        = "date";
-    public static final String             PROPERTY_MEDIA_INDEX = "mediaindex";
-    public static final String             PROPERTY_MEDIA_ID    = "mediaid";
-    public static final String             PROPERTY_BITRATE     = "bitrate";
-    public static final String             PROPERTY_POST_TEXT   = "post_text";
+    private static final String            TYPE_CARD                      = "https?://[^/]+/i/cards/tfw/v1/(\\d+)";
+    private static final String            TYPE_USER_ALL                  = "https?://[^/]+/([A-Za-z0-9_\\-]+)(?:/(?:media|likes))?(\\?.*)?";
+    private static final String            TYPE_USER_POST                 = "https?://[^/]+/([^/]+)/status/(\\d+).*?";
+    private static final String            TYPE_REDIRECT                  = "https?://t\\.co/[a-zA-Z0-9]+";
+    private ArrayList<DownloadLink>        decryptedLinks                 = new ArrayList<DownloadLink>();
+    private static AtomicReference<String> GUEST_TOKEN                    = new AtomicReference<String>();
+    private static AtomicLong              GUEST_TOKEN_TS                 = new AtomicLong(-1);
+    public static final String             PROPERTY_USERNAME              = "username";
+    private static final String            PROPERTY_DATE                  = "date";
+    public static final String             PROPERTY_MEDIA_INDEX           = "mediaindex";
+    public static final String             PROPERTY_MEDIA_ID              = "mediaid";
+    public static final String             PROPERTY_BITRATE               = "bitrate";
+    public static final String             PROPERTY_POST_TEXT             = "post_text";
+    public static final String             PROPERTY_FILENAME_FROM_CRAWLER = "crawlerfilename";
 
     protected DownloadLink createDownloadlink(final String link, final String tweetid) {
         final DownloadLink ret = super.createDownloadlink(link);
@@ -141,7 +142,7 @@ public class TwitterCom extends PornEmbedParser {
                 dllink = dllink.replace("\\", "");
                 final String filename = tweet_id + "_" + new Regex(dllink, "([^/]+\\.[a-z0-9]+)$").getMatch(0);
                 final DownloadLink dl = this.createDownloadlink(dllink, tweet_id);
-                dl.setProperty("decryptedfilename", filename);
+                dl.setProperty(PROPERTY_FILENAME_FROM_CRAWLER, filename);
                 dl.setName(filename);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
@@ -280,6 +281,9 @@ public class TwitterCom extends PornEmbedParser {
                     dl.setProperty(PROPERTY_MEDIA_ID, media.get("id_str").toString());
                     if (!StringUtils.isEmpty(postText)) {
                         dl.setProperty(PROPERTY_POST_TEXT, postText);
+                    }
+                    if (dl.getFinalFileName() != null) {
+                        dl.setProperty(PROPERTY_FILENAME_FROM_CRAWLER, dl.getFinalFileName());
                     }
                     if (fp != null) {
                         fp.add(dl);
@@ -490,7 +494,7 @@ public class TwitterCom extends PornEmbedParser {
                         }
                         final DownloadLink dl = createDownloadlink(alink, tweet_id);
                         dl.setAvailable(true);
-                        dl.setProperty("decryptedfilename", final_filename);
+                        dl.setProperty(PROPERTY_FILENAME_FROM_CRAWLER, final_filename);
                         dl.setName(final_filename);
                         if (fp != null) {
                             dl._setFilePackage(fp);
@@ -776,17 +780,6 @@ public class TwitterCom extends PornEmbedParser {
             nextURL = br.getRegex("(/[^/]+/media/grid\\?idx=" + index + ")").getMatch(0);
         } while (nextURL != null && !this.isAbort());
         logger.info(String.format("Done after %d pages", index));
-    }
-
-    public static Map<String, Object> getPlayerData(final Browser br) {
-        Map<String, Object> entries = null;
-        try {
-            String json_source = br.getRegex("<div id=\"playerContainer\"[^<>]*?data\\-config=\"([^<>]+)\" >").getMatch(0);
-            json_source = Encoding.htmlDecode(json_source);
-            entries = JavaScriptEngineFactory.jsonToJavaMap(json_source);
-        } catch (final Throwable e) {
-        }
-        return entries;
     }
 
     protected void getPage(final Browser br, final String url) throws Exception {

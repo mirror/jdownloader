@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -312,13 +313,13 @@ public class FakirdebridNet extends PluginForHost {
     private void login(final Account account, final boolean validateToken) throws IOException, PluginException, InterruptedException {
         synchronized (account) {
             prepBR(this.br);
+            if (!isValidAPIPIN(account.getPass())) {
+                throw new AccountInvalidException("Invalid API PIN format.\r\n Find your API PIN here: " + pinURLWithoutProtocol);
+            }
             if (!validateToken) {
                 logger.info("Trust token without login");
                 return;
             } else {
-                if (!isValidAPIPIN(account.getPass())) {
-                    throw new AccountInvalidException("Invalid API PIN format.\r\n Find your API PIN here: " + pinURLWithoutProtocol);
-                }
                 br.getPage(API_BASE + "/info.php?pin=" + Encoding.urlEncode(account.getPass()));
                 handleErrorsAPI(br, this.getDownloadLink(), account);
                 /* Assume successful login if no error has happened! */
@@ -326,7 +327,7 @@ public class FakirdebridNet extends PluginForHost {
         }
     }
 
-    private boolean isValidAPIPIN(final String str) {
+    private static boolean isValidAPIPIN(final String str) {
         if (str == null) {
             return false;
         } else if (str.matches("[A-Za-z0-9]{10,}")) {
@@ -334,6 +335,10 @@ public class FakirdebridNet extends PluginForHost {
         } else {
             return false;
         }
+    }
+
+    private static String correctPassword(final String pw) {
+        return pw.trim();
     }
 
     /**
@@ -371,7 +376,9 @@ public class FakirdebridNet extends PluginForHost {
                     break;
                 case 1001:
                     /* Invalid PIN */
-                    showPINLoginInformation();
+                    if (account.getLastValidTimestamp() == -1) {
+                        showPINLoginInformation();
+                    }
                     throw new AccountInvalidException(message);
                 default:
                     throw new AccountInvalidException(message);
@@ -464,11 +471,11 @@ public class FakirdebridNet extends PluginForHost {
         private String getPassword() {
             if (this.pass == null) {
                 return null;
-            }
-            if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
+            } else if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
                 return null;
+            } else {
+                return correctPassword(new String(this.pass.getPassword()));
             }
-            return new String(this.pass.getPassword());
         }
 
         public boolean updateAccount(Account input, Account output) {
@@ -486,6 +493,7 @@ public class FakirdebridNet extends PluginForHost {
 
         private final ExtPasswordField pass;
         private static String          EMPTYPW = "                 ";
+        private final JLabel           apiPINLabel;
 
         public FakirdebridNetAccountFactory(final InputChangedCallbackInterface callback) {
             super("ins 0, wrap 2", "[][grow,fill]", "");
@@ -495,7 +503,7 @@ public class FakirdebridNet extends PluginForHost {
                 add(new JLabel("Click here to find your API PIN:"));
             }
             add(new JLink("https://fakirdebrid.net/api/login.php"));
-            add(new JLabel("API PIN:"));
+            add(apiPINLabel = new JLabel("API PIN:"));
             add(this.pass = new ExtPasswordField() {
                 @Override
                 public void onChanged() {
@@ -524,13 +532,14 @@ public class FakirdebridNet extends PluginForHost {
 
         @Override
         public boolean validateInputs() {
-            // final String userName = getUsername();
-            // if (userName == null || !userName.trim().matches("^\\d{9}$")) {
-            // idLabel.setForeground(Color.RED);
-            // return false;
-            // }
-            // idLabel.setForeground(Color.BLACK);
-            return getPassword() != null;
+            final String pw = getPassword();
+            if (FakirdebridNet.isValidAPIPIN(pw)) {
+                apiPINLabel.setForeground(Color.BLACK);
+                return true;
+            } else {
+                apiPINLabel.setForeground(Color.RED);
+                return false;
+            }
         }
 
         @Override
