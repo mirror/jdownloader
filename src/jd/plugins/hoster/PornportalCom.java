@@ -86,14 +86,14 @@ public class PornportalCom extends PluginForHost {
         ret.add(new String[] { "metrohd.com", "familyhookups.com", "kinkyspa.com" });
         ret.add(new String[] { "mofos.com", "publicpickups.com", "iknowthatgirl.com", "dontbreakme.com" });
         ret.add(new String[] { "propertysex.com" });
-        ret.add(new String[] { "realitykings.com", "gfleaks.com", "inthevip.com", "mikesapartment.com", "8thstreetlatinas.com", "bignaturals.com", "cumfiesta.com", "happytugs.com", "milfhunter.com", "momsbangteens.com", "momslickteens.com", "moneytalks.com", "roundandbrown.com", "sneakysex.com", "teenslovehugecocks.com", "welivetogether.com" });
-        ret.add(new String[] { "sexyhub.com" });
+        ret.add(new String[] { "realitykings.com", "gfleaks.com", "inthevip.com", "mikesapartment.com", "8thstreetlatinas.com", "bignaturals.com", "cumfiesta.com", "happytugs.com", "milfhunter.com", "momsbangteens.com", "momslickteens.com", "moneytalks.com", "roundandbrown.com", "sneakysex.com", "teenslovehugecocks.com", "welivetogether.com", "blackgfs.com", "daredorm.com" });
+        ret.add(new String[] { "sexyhub.com", "fitnessrooms.com" });
         ret.add(new String[] { "spankwirepremium.com" });
         ret.add(new String[] { "squirted.com" });
         ret.add(new String[] { "transangels.com" });
         ret.add(new String[] { "transsensual.com" });
         ret.add(new String[] { "trueamateurs.com" });
-        ret.add(new String[] { "twistys.com" });
+        ret.add(new String[] { "twistys.com", "teenpinkvideos.com" });
         ret.add(new String[] { "whynotbi.com" });
         return ret;
     }

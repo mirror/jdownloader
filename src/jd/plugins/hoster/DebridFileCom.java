@@ -24,7 +24,6 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -65,8 +64,7 @@ public class DebridFileCom extends PluginForHost {
         return WEBSITE_BASE + "/site/faq";
     }
 
-    private Browser newBrowser() {
-        br = new Browser();
+    private Browser prepBR(final Browser br) {
         br.setCookiesExclusive(true);
         br.getHeaders().put("User-Agent", "JDownloader");
         return br;
@@ -102,8 +100,12 @@ public class DebridFileCom extends PluginForHost {
             maxchunks = account_FREE_maxchunks;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection(true);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             mhm.handleErrorGeneric(account, link, "unknown_dl_error", 10, 5 * 60 * 1000l);
         }
         this.dl.startDownload();
@@ -116,7 +118,7 @@ public class DebridFileCom extends PluginForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        this.br = newBrowser();
+        prepBR(this.br);
         mhm.runCheck(account, link);
         String dllink = checkDirectLink(link, this.getHost() + "directlink");
         br.setFollowRedirects(true);
@@ -137,34 +139,37 @@ public class DebridFileCom extends PluginForHost {
         handleDLMultihoster(account, link, dllink);
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || !con.isOK() || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    return dllink;
+                } else {
+                    throw new IOException();
                 }
             } catch (final Exception e) {
                 logger.log(e);
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                return null;
             } finally {
                 if (con != null) {
                     con.disconnect();
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        this.br = newBrowser();
+        prepBR(this.br);
         final AccountInfo ai = new AccountInfo();
         loginWebsite(account);
         if (br.getURL() == null || !br.getURL().contains("/service")) {
@@ -215,7 +220,7 @@ public class DebridFileCom extends PluginForHost {
                     logger.info("Trying to login via cookies");
                     br.setCookies(WEBSITE_BASE, cookies);
                     br.getPage(WEBSITE_BASE + "/site/login");
-                    if (this.isLoggedIN()) {
+                    if (this.isLoggedIN(this.br)) {
                         logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(br.getHost()), "");
                         return;
@@ -249,7 +254,7 @@ public class DebridFileCom extends PluginForHost {
                     }
                 }
                 br.submitForm(loginform);
-                if (!isLoggedIN()) {
+                if (!isLoggedIN(this.br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(br.getHost()), "");
@@ -262,7 +267,7 @@ public class DebridFileCom extends PluginForHost {
         }
     }
 
-    private boolean isLoggedIN() throws PluginException {
+    private boolean isLoggedIN(final Browser br) throws PluginException {
         if (br.containsHTML("403") && br.containsHTML("Forbidden")) {
             /*
              * 2020-03-27: What does this mean? Is this supposed to be a temporary error? If so, you should use e.g. throw new
@@ -287,6 +292,6 @@ public class DebridFileCom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 }
