@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -95,6 +97,13 @@ public class IntelIobbNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(org.appwork.utils.Regex.escape("/error_page/sorry.png"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String description = br.getRegex("<td>COMMENT</td><td><font[^>]*>([^<]+)</font>").getMatch(0);
+        if (description != null && StringUtils.isEmpty(link.getComment())) {
+            description = Encoding.htmlDecode(description).trim();
+            if (!StringUtils.isEmpty(description)) {
+                link.setComment(description);
+            }
         }
         final String filesizeBytes = br.getRegex("\\((\\d+)bytes\\)").getMatch(0);
         if (filesizeBytes != null) {
