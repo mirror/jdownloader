@@ -293,15 +293,11 @@ public class PixeldrainCom extends PluginForHost {
             link.setComment(description);
         }
         final String availability = (String) data.get("availability");
-        if (StringUtils.equals(availability, API_availability_CAPTCHA_REQUIRED)) {
+        if (isCaptchaRequiredStatus(availability)) {
             link.setProperty(PROPERTY_CAPTCHA_REQUIRED, true);
         } else {
             link.removeProperty(PROPERTY_CAPTCHA_REQUIRED);
         }
-        /*
-         * TODO: If 'availability' field != null && != API_availability_CAPTCHA_REQUIRED --> Also offline (expired due to no downloads for a
-         * longer period of time?).
-         */
         final String abuse_type = (String) data.get("abuse_type");
         if (!StringUtils.isEmpty(abuse_type)) {
             link.setAvailable(false);
@@ -315,15 +311,12 @@ public class PixeldrainCom extends PluginForHost {
         handleDownload(link, null);
     }
 
-    private static String API_availability_CAPTCHA_REQUIRED = "file_rate_limited_captcha_required";
-
     private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
         requestFileInformation(link, account);
-        final Map<String, Object> data = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         String dllink = API_BASE + "/file/" + this.getFID(link);
         final UrlQuery query = new UrlQuery();
         query.add("download", "");
-        if (API_availability_CAPTCHA_REQUIRED.equals(data.get("availability"))) {
+        if (this.hasCaptcha(link, account)) {
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lfbzz4UAAAAAAaBgox1R7jU0axiGneLDkOA-PKf").getToken();
             query.appendEncoded("recaptcha_response", recaptchaV2Response);
         }
@@ -338,9 +331,10 @@ public class PixeldrainCom extends PluginForHost {
             if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            /* TODO: Add json parser here */
             final String value = PluginJSonUtils.getJson(br, "value");
             final String message = PluginJSonUtils.getJson(br, "message");
-            if (API_availability_CAPTCHA_REQUIRED.equals(value)) {
+            if (isCaptchaRequiredStatus(value)) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA, message);
             }
             checkErrors(br, link, account);
@@ -352,6 +346,17 @@ public class PixeldrainCom extends PluginForHost {
             }
         }
         dl.startDownload();
+    }
+
+    private static boolean isCaptchaRequiredStatus(final String str) {
+        if (str == null) {
+            return false;
+        } else if (str.matches(".*_captcha_required$")) {
+            /* 2022-02-03: Either "file_rate_limited_captcha_required" or "virus_detected_captcha_required" */
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private void login(final Account account, final boolean force) throws Exception {

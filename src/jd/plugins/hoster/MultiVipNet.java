@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -33,7 +34,6 @@ import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -47,18 +47,18 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "multivip.net" }, urls = { "" })
 public class MultiVipNet extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static final String                            NOCHUNKS           = "NOCHUNKS";
-    private static final String                            NICE_HOST          = "multivip.net";
-    private static final String                            NICE_HOSTproperty  = "multivipnet";
     private static final String                            APIKEY             = "amQy";
     private static final boolean                           USE_API            = true;
     /* Default value is 10 */
     private static AtomicInteger                           maxPrem            = new AtomicInteger(10);
+    private static final String                            API_BASE           = "http://multivip.net/api.php";
+    private static MultiHosterManagement                   mhm                = new MultiHosterManagement("multivip.net");
 
     public MultiVipNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -71,14 +71,13 @@ public class MultiVipNet extends PluginForHost {
         return "http://multivip.net/contact.php";
     }
 
-    private Browser newBrowser() {
-        br = new Browser();
+    private Browser prepBR(final Browser br) {
         br.setCookiesExclusive(true);
         // define custom browser headers
         br.getHeaders().put("Accept", "application/json");
         br.getHeaders().put("User-Agent", "JDownloader");
         br.setCustomCharset("utf-8");
-        br.setCookie("http://multivip.net/", "lang", "en");
+        br.setCookie(this.getHost(), "lang", "en");
         return br;
     }
 
@@ -98,13 +97,14 @@ public class MultiVipNet extends PluginForHost {
         if (account == null) {
             /* without account its not possible to download the link */
             return false;
+        } else {
+            /* First check if the file is too big */
+            final long max_downloadable_filesize = account.getLongProperty("max_downloadable_filesize", 0);
+            if (max_downloadable_filesize > 0 && downloadLink.getDownloadSize() > max_downloadable_filesize) {
+                return false;
+            }
+            return true;
         }
-        /* First check if the file is too big */
-        final long max_downloadable_filesize = account.getLongProperty("max_downloadable_filesize", 0);
-        if (max_downloadable_filesize > 0 && downloadLink.getDownloadSize() > max_downloadable_filesize) {
-            return false;
-        }
-        return true;
     }
 
     @Override
@@ -128,49 +128,17 @@ public class MultiVipNet extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCurrentURL(null);
         int maxChunks = -2;
-        if (link.getBooleanProperty(NOCHUNKS, false)) {
-            maxChunks = 1;
-        }
         link.setProperty("multivipnetdirectlink", dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            logger.info(NICE_HOST + ": Unknown download error");
-            int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_unknowndlerror", 0);
-            link.getLinkStatus().setRetryCount(0);
-            if (timesFailed <= 2) {
-                timesFailed++;
-                link.setProperty(NICE_HOSTproperty + "timesfailed_unknowndlerror", timesFailed);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
-            } else {
-                link.setProperty(NICE_HOSTproperty + "timesfailed_unknowndlerror", Property.NULL);
-                logger.info(NICE_HOST + ": Unknown error - disabling current host!");
-                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
             }
+            mhm.handleErrorGeneric(account, link, "Final downloadurl did not lead to downloadable content", 50);
         }
-        try {
-            if (!this.dl.startDownload()) {
-                try {
-                    if (dl.externalDownloadStop()) {
-                        return;
-                    }
-                } catch (final Throwable e) {
-                }
-                /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(MultiVipNet.NOCHUNKS, false) == false) {
-                    link.setProperty(MultiVipNet.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            }
-        } catch (final PluginException e) {
-            // New V2 errorhandling
-            /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(MultiVipNet.NOCHUNKS, false) == false) {
-                link.setProperty(MultiVipNet.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            throw e;
-        }
+        dl.startDownload();
     }
 
     @Override
@@ -196,14 +164,14 @@ public class MultiVipNet extends PluginForHost {
                 }
             }
         }
-        this.br = newBrowser();
+        prepBR(this.br);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         showMessage(link, "Task 1: Generating Link");
         String dllink = checkDirectLink(link, "multivipnetdirectlink");
         if (dllink == null) {
             /* request Download */
             if (USE_API) {
-                br.getPage("http://multivip.net/api.php?apipass=" + Encoding.Base64Decode(APIKEY) + "&do=addlink&vipkey=" + Encoding.urlEncode(account.getPass()) + "&ip=&link=" + Encoding.urlEncode(link.getDownloadURL()));
+                br.getPage(API_BASE + "?apipass=" + Encoding.Base64Decode(APIKEY) + "&do=addlink&vipkey=" + Encoding.urlEncode(account.getPass()) + "&ip=&link=" + Encoding.urlEncode(link.getDownloadURL()));
                 /* Should never happen because size limit is set in fetchAccountInfo and handled via canHandle */
                 if ("204".equals(PluginJSonUtils.getJsonValue(br, "error"))) {
                     /*
@@ -253,19 +221,8 @@ public class MultiVipNet extends PluginForHost {
                 }
                 dllink = br.getRegex("\"(http[^<>\"]*?)\"").getMatch(0);
             }
-            if (dllink == null) {
-                logger.info(NICE_HOST + ": Unknown error");
-                int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_unknown", 0);
-                link.getLinkStatus().setRetryCount(0);
-                if (timesFailed <= 2) {
-                    timesFailed++;
-                    link.setProperty(NICE_HOSTproperty + "timesfailed_unknown", timesFailed);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
-                } else {
-                    link.setProperty(NICE_HOSTproperty + "timesfailed_unknown", Property.NULL);
-                    logger.info(NICE_HOST + ": Unknown error - disabling current host!");
-                    tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-                }
+            if (StringUtils.isEmpty(dllink)) {
+                mhm.handleErrorGeneric(account, link, "Failed to obtain final downloadurl", 50);
             }
             dllink = dllink.replace("\\", "");
         }
@@ -273,33 +230,42 @@ public class MultiVipNet extends PluginForHost {
         handleDL(account, link, dllink);
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    return dllink;
+                } else {
+                    throw new IOException();
                 }
-                con.disconnect();
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                logger.log(e);
+                return null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
             }
         }
-        return dllink;
+        return null;
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        this.br = newBrowser();
+        prepBR(this.br);
         final AccountInfo ai = new AccountInfo();
         account.setMaxSimultanDownloads(20);
         maxPrem.set(20);
-        br.getPage("http://multivip.net/api.php?apipass=" + Encoding.Base64Decode(APIKEY) + "&do=keycheck&vipkey=" + Encoding.urlEncode(account.getPass()));
+        br.getPage(API_BASE + "?apipass=" + Encoding.Base64Decode(APIKEY) + "&do=keycheck&vipkey=" + Encoding.urlEncode(account.getPass()));
         final String error = PluginJSonUtils.getJsonValue(br, "error");
         if (error != null) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -371,28 +337,24 @@ public class MultiVipNet extends PluginForHost {
         private String getPassword() {
             if (this.pass == null) {
                 return null;
+            } else {
+                return new String(this.pass.getPassword());
             }
-            if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
-                return null;
-            }
-            return new String(this.pass.getPassword());
         }
 
         public boolean updateAccount(Account input, Account output) {
-            boolean changed = false;
             if (!StringUtils.equals(input.getUser(), output.getUser())) {
                 output.setUser(input.getUser());
-                changed = true;
-            }
-            if (!StringUtils.equals(input.getPass(), output.getPass())) {
+                return true;
+            } else if (!StringUtils.equals(input.getPass(), output.getPass())) {
                 output.setPass(input.getPass());
-                changed = true;
+                return true;
+            } else {
+                return false;
             }
-            return changed;
         }
 
         private final ExtPasswordField pass;
-        private static String          EMPTYPW = "                 ";
 
         public MultiVipNetAccountFactory(final InputChangedCallbackInterface callback) {
             super("ins 0, wrap 2", "[][grow,fill]", "");

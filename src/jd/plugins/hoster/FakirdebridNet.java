@@ -471,8 +471,6 @@ public class FakirdebridNet extends PluginForHost {
         private String getPassword() {
             if (this.pass == null) {
                 return null;
-            } else if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
-                return null;
             } else {
                 return correctPassword(new String(this.pass.getPassword()));
             }
@@ -492,7 +490,6 @@ public class FakirdebridNet extends PluginForHost {
         }
 
         private final ExtPasswordField pass;
-        private static String          EMPTYPW = "                 ";
         private final JLabel           apiPINLabel;
 
         public FakirdebridNetAccountFactory(final InputChangedCallbackInterface callback) {

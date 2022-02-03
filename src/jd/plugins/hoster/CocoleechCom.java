@@ -339,8 +339,6 @@ public class CocoleechCom extends PluginForHost {
         private String getPassword() {
             if (this.pass == null) {
                 return null;
-            } else if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
-                return null;
             } else {
                 return correctPassword(new String(this.pass.getPassword()));
             }
@@ -359,7 +357,6 @@ public class CocoleechCom extends PluginForHost {
         }
 
         private final ExtPasswordField pass;
-        private static String          EMPTYPW = "                 ";
 
         public CocoleechAccountFactory(final InputChangedCallbackInterface callback) {
             super("ins 0, wrap 2", "[][grow,fill]", "");
