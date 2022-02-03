@@ -177,9 +177,6 @@ public class Q32Pw extends PluginForDecrypt {
         int i = -1;
         for (final String ci : captchaImages) {
             i++;
-            if (isAbort()) {
-                throw new InterruptedException();
-            }
             if (ci.matches("[a-zA-Z0-9_/\\+\\=]+")) {
                 /* base64 encoded image */
                 byte[] image_bytes = org.appwork.utils.encoding.Base64.decode(ci);
@@ -205,6 +202,9 @@ public class Q32Pw extends PluginForDecrypt {
                     } catch (final Throwable e) {
                     }
                 }
+            }
+            if (isAbort()) {
+                throw new InterruptedException();
             }
         }
         // display each image within single row, merged image, show in dialog with phrase
