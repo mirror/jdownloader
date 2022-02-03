@@ -244,28 +244,24 @@ public class PremiumizeMe extends ZeveraCore {
         private String getPassword() {
             if (this.pass == null) {
                 return null;
-            } else if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
-                return null;
             } else {
                 return new String(this.pass.getPassword());
             }
         }
 
         public boolean updateAccount(Account input, Account output) {
-            boolean changed = false;
             if (!StringUtils.equals(input.getUser(), output.getUser())) {
                 output.setUser(input.getUser());
-                changed = true;
-            }
-            if (!StringUtils.equals(input.getPass(), output.getPass())) {
+                return true;
+            } else if (!StringUtils.equals(input.getPass(), output.getPass())) {
                 output.setPass(input.getPass());
-                changed = true;
+                return true;
+            } else {
+                return false;
             }
-            return changed;
         }
 
         private final ExtPasswordField pass;
-        private static String          EMPTYPW = "                 ";
 
         public PremiumizeAccountFactory(final InputChangedCallbackInterface callback) {
             super("ins 0, wrap 2", "[][grow,fill]", "");

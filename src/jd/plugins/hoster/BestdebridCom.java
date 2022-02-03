@@ -383,8 +383,6 @@ public class BestdebridCom extends PluginForHost {
         private String getPassword() {
             if (this.pass == null) {
                 return null;
-            } else if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
-                return null;
             } else {
                 return BestdebridCom.correctPassword(new String(this.pass.getPassword()));
             }
@@ -404,7 +402,6 @@ public class BestdebridCom extends PluginForHost {
         }
 
         private final ExtPasswordField pass;
-        private static String          EMPTYPW = "                 ";
 
         public BestdebridAccountFactory(final InputChangedCallbackInterface callback) {
             super("ins 0, wrap 2", "[][grow,fill]", "");

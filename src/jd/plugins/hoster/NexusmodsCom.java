@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -24,6 +25,20 @@ import java.util.Map;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -36,6 +51,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
@@ -43,19 +59,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com+/Core/Libs/Common/Widgets/DownloadPopUp\\?id=(\\d+).+|nxm://([^/]+)/mods/(\\d+)/files/(\\d+)\\?key=([a-zA-Z0-9_/\\+\\=\\-%]+)\\&expires=(\\d+)\\&user_id=\\d+" })
 public class NexusmodsCom extends antiDDoSForHost {
@@ -474,27 +477,33 @@ public class NexusmodsCom extends antiDDoSForHost {
     }
 
     private AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
+        if (isAPIOnlyMode()) {
+            account.setPass(correctPassword(account.getPass()));
+        }
+        if (!isAPIKey(getApikey(account))) {
+            throw new AccountInvalidException("Invalid API key format");
+        }
         final AccountInfo ai = new AccountInfo();
         prepBrAPI(br, account);
         getPage(API_BASE + "/users/validate.json");
         handleErrorsAPI(br);
-        final String is_premium = PluginJSonUtils.getJson(br, "is_premium");
-        /* Censor original username/password to make it harder to make use of stolen account databases! */
-        final String email = PluginJSonUtils.getJson(br, "email");
-        if (!StringUtils.isEmpty(email) && email.length() > 3) {
-            final String censored_email = "***" + email.substring(3);
-            account.setUser(censored_email);
+        final Map<String, Object> user = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final String email = (String) user.get("email");
+        if (!StringUtils.isEmpty(email)) {
+            account.setUser(email);
         }
-        if (!isAPIOnlyMode()) {
-            /* Do not store any old website login credentials! */
-            account.setPass(null);
-        }
-        if ("true".equalsIgnoreCase(is_premium)) {
+        if ((Boolean) user.get("is_premium") == Boolean.TRUE) {
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
             ai.setUnlimitedTraffic();
             ai.setStatus("Premium user");
+        } else if ((Boolean) user.get("is_supporter") == Boolean.TRUE) {
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
+            ai.setUnlimitedTraffic();
+            ai.setStatus("Supporter");
         } else {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
@@ -553,11 +562,14 @@ public class NexusmodsCom extends antiDDoSForHost {
         }
     }
 
+    private static String correctPassword(final String pw) {
+        return pw.trim();
+    }
+
     public static String getApikey(final Account account) {
         if (account == null) {
             return null;
-        }
-        if (isAPIOnlyMode()) {
+        } else if (isAPIOnlyMode()) {
             return account.getPass();
         } else {
             return account.getStringProperty("apikey");
@@ -567,8 +579,9 @@ public class NexusmodsCom extends antiDDoSForHost {
     private void saveApikey(final Account account, final String apikey) {
         if (account == null) {
             return;
+        } else {
+            account.setProperty("apikey", apikey);
         }
-        account.setProperty("apikey", apikey);
     }
 
     @Override
@@ -630,6 +643,16 @@ public class NexusmodsCom extends antiDDoSForHost {
         doFree(link, account, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
     }
 
+    private static boolean isAPIKey(final String str) {
+        if (str == null) {
+            return false;
+        } else if (str.matches("[A-Za-z0-9\\-]{100,}")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     @Override
     public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
         if (isAPIOnlyMode()) {
@@ -647,38 +670,35 @@ public class NexusmodsCom extends antiDDoSForHost {
          */
         private static final long serialVersionUID = 1L;
         private final String      PINHELP          = "Enter your API Key";
+        private final JLabel      apikeyLabel;
 
         private String getPassword() {
             if (this.pass == null) {
                 return null;
+            } else {
+                return NexusmodsCom.correctPassword(new String(this.pass.getPassword()));
             }
-            if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
-                return null;
-            }
-            return new String(this.pass.getPassword());
         }
 
         public boolean updateAccount(Account input, Account output) {
-            boolean changed = false;
             if (!StringUtils.equals(input.getUser(), output.getUser())) {
                 output.setUser(input.getUser());
-                changed = true;
-            }
-            if (!StringUtils.equals(input.getPass(), output.getPass())) {
+                return true;
+            } else if (!StringUtils.equals(input.getPass(), output.getPass())) {
                 output.setPass(input.getPass());
-                changed = true;
+                return true;
+            } else {
+                return false;
             }
-            return changed;
         }
 
         private final ExtPasswordField pass;
-        private static String          EMPTYPW = " ";
 
         public NexusmodsAccountFactory(final InputChangedCallbackInterface callback) {
             super("ins 0, wrap 2", "[][grow,fill]", "");
             add(new JLabel("Click here to find your API Key:"));
             add(new JLink("https://www.nexusmods.com/users/myaccount?tab=api%20access"));
-            add(new JLabel("API Key [premium accounts only]:"));
+            add(apikeyLabel = new JLabel("API Key [premium accounts only]:"));
             add(this.pass = new ExtPasswordField() {
                 @Override
                 public void onChanged() {
@@ -703,13 +723,14 @@ public class NexusmodsCom extends antiDDoSForHost {
 
         @Override
         public boolean validateInputs() {
-            // final String userName = getUsername();
-            // if (userName == null || !userName.trim().matches("^\\d{9}$")) {
-            // idLabel.setForeground(Color.RED);
-            // return false;
-            // }
-            // idLabel.setForeground(Color.BLACK);
-            return getPassword() != null;
+            final String pw = getPassword();
+            if (NexusmodsCom.isAPIKey(pw)) {
+                apikeyLabel.setForeground(Color.BLACK);
+                return true;
+            } else {
+                apikeyLabel.setForeground(Color.RED);
+                return false;
+            }
         }
 
         @Override
