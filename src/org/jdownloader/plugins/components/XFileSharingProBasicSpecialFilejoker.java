@@ -1,9 +1,13 @@
 package org.jdownloader.plugins.components;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -23,10 +27,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
@@ -162,8 +162,8 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
 
     /**
      * Turns on/off special API for (Free-)Account Login & Download. Keep this activated whenever possible as it will solve a lot of
-     * issues/complicated handling which is required for website login and download! </br> Sidenote: API Cookies will work fine for the
-     * website too so if enabled- and later disabled, login-captchas should still be avoided!
+     * issues/complicated handling which is required for website login and download! </br>
+     * Sidenote: API Cookies will work fine for the website too so if enabled- and later disabled, login-captchas should still be avoided!
      */
     protected boolean useAPIZeusCloudManager(final Account account) {
         if (account != null) {
@@ -185,7 +185,8 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
 
     /**
      * API login may avoid the need of login captchas. If enabled, ZeusCloudManagerAPI login will be tried even if API is disabled and
-     * resulting cookies will be used in website mode. Only enable this if tested! </br> default = false
+     * resulting cookies will be used in website mode. Only enable this if tested! </br>
+     * default = false
      */
     protected boolean tryAPILoginInWebsiteMode(final Account account) {
         return false;
@@ -193,8 +194,9 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
 
     /**
      * If enabled [and tryAPILoginInWebsiteMode enabled], API can be used to login- and obtain account information even if API is disabled
-     * and downloads will be executed via website. </br> If disabled [and tryAPILoginInWebsiteMode enabled], API can be used to login in
-     * website mode but account information will be obtained from website.
+     * and downloads will be executed via website. </br>
+     * If disabled [and tryAPILoginInWebsiteMode enabled], API can be used to login in website mode but account information will be obtained
+     * from website.
      */
     protected boolean tryAPILoginInWebsiteMode_get_account_info_from_api(final Account account) {
         return true;
@@ -237,7 +239,8 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
     }
 
     /**
-     * @return true = verified cookies/session </br> false = did not verify cookies/session
+     * @return true = verified cookies/session </br>
+     *         false = did not verify cookies/session
      */
     private final boolean loginAPIZeusCloudManager(final Browser apibr, final Account account, final boolean validateSession) throws Exception {
         synchronized (account) {
@@ -311,7 +314,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
         if (br.getURL() == null || !br.getURL().contains(getRelativeAPIBaseAPIZeusCloudManager() + "?op=my_account&session=")) {
             getPage(br, this.getMainPage() + getRelativeAPIBaseAPIZeusCloudManager() + "?op=my_account&session=" + sessionid);
         }
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         /** 2019-08-20: Better compare expire-date against their serverside time if possible! */
         final String server_timeStr = (String) entries.get("server_time");
         long expire_milliseconds_precise_to_the_second = 0;

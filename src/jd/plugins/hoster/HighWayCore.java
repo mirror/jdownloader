@@ -54,6 +54,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
@@ -748,6 +749,12 @@ public abstract class HighWayCore extends UseNet {
      */
     private boolean login(final Account account, final boolean validateCookies) throws IOException, PluginException, InterruptedException {
         prepBR(this.br);
+        if (this.useApikeyLogin()) {
+            account.setPass(correctPassword(account.getPass()));
+            if (!isAPIKey(account.getPass())) {
+                throw new AccountInvalidException("Invalid API key format");
+            }
+        }
         final Cookies cookies = account.loadCookies("");
         if (cookies != null) {
             this.br.setCookies(this.getHost(), cookies);
@@ -784,6 +791,20 @@ public abstract class HighWayCore extends UseNet {
         /* No Exception --> Assume that login was successful */
         account.saveCookies(this.br.getCookies(this.br.getHost()), "");
         return true;
+    }
+
+    protected static boolean isAPIKey(final String str) {
+        if (str == null) {
+            return false;
+        } else if (str.matches("[A-Za-z0-9]{32}")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static String correctPassword(final String str) {
+        return str.trim();
     }
 
     protected abstract void exceptionAccountInvalid(final Account account) throws PluginException;

@@ -33,11 +33,13 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "udemy.com" }, urls = { "https?://(?:www\\.)?udemy\\.com/course/([^/]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "udemy.com" }, urls = { "https?://(?:www\\.)?udemy\\.com/(?:course/[^/]+|share/.+)" })
 public class UdemyComDecrypter extends PluginForDecrypt {
     public UdemyComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,10 +48,10 @@ public class UdemyComDecrypter extends PluginForDecrypt {
     private static final String     decrypter_domain = "udemydecrypted.com";
     private String                  course_id        = null;
     private ArrayList<DownloadLink> decryptedLinks   = new ArrayList<DownloadLink>();
+    private static final String     TYPE_COURSE      = "https?://(?:www\\.)?udemy\\.com/course/([^/]+)";
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final String parameter = param.toString();
         /* 2020-07-24: Don't do this anymore - always add all items of the course instead! */
         // if (parameter.matches(jd.plugins.hoster.UdemyCom.TYPE_SINGLE_PREMIUM_WEBSITE)) {
         // /* Single links --> Host plugin */
@@ -57,27 +59,26 @@ public class UdemyComDecrypter extends PluginForDecrypt {
         // return decryptedLinks;
         // }
         final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
-        final PluginForHost hostPlugin = JDUtilities.getPluginForHost(this.getHost());
+        final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
         if (aa == null) {
+            /* Account is always required to access udemy.com content. */
             throw new AccountRequiredException();
         }
-        hostPlugin.setBrowser(this.br);
         ((jd.plugins.hoster.UdemyCom) hostPlugin).login(aa, false);
         ((jd.plugins.hoster.UdemyCom) hostPlugin).prepBRAPI(this.br);
-        br.getPage(parameter);
+        br.getPage(param.getCryptedUrl());
         br.followRedirect();
         if (this.br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         course_id = jd.plugins.hoster.UdemyCom.getCourseIDFromHtml(this.br);
         if (course_id == null) {
-            logger.info("Could not find any downloadable content");
-            return decryptedLinks;
+            /* Unsupported URL or offline */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.br.getPage("https://www.udemy.com/api-2.0/courses/" + course_id + "/?fields[course]=title,headline,description,prerequisites,objectives,target_audiences,url,is_published,is_approved,is_practice_test_course,content_length_video,instructional_level,locale,content_length_practice_test_questions,content_info,num_subscribers,visible_instructors,is_paid,is_private,is_owner_terms_banned,is_owned_by_instructor_team,image_240x135,instructor_status,is_cpe_compliant,cpe_field_of_study,cpe_program_level,num_cpe_credits&fields[locale]=simple_english_title&fields[user]=url,title,job_title,image_200_H,description,display_name,image_50x50,initials,url_twitter,url_facebook,url_linkedin,url_youtube,url_personal_website&caching_intent=True");
         Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final String courseSlug = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        final String courseSlug = new Regex(param.getCryptedUrl(), TYPE_COURSE).getMatch(0);
         String courseTitle = (String) entries.get("title");
         if (StringUtils.isEmpty(courseTitle)) {
             /* Fallback */
@@ -88,8 +89,7 @@ public class UdemyComDecrypter extends PluginForDecrypt {
             logger.info("User tried to download content which he did not pay for --> Impossible");
             return decryptedLinks;
         } else if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final List<Object> ressourcelist = (List<Object>) entries.get("results");
