@@ -16,11 +16,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
-import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -31,12 +32,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "doublej.net.au" }, urls = { "http://(www\\.)?doublej\\.net\\.au/programs/[a-z0-9\\-]+/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "doublej.net.au" }, urls = { "https?://(?:www\\.)?doublej\\.net\\.au/programs/[a-z0-9\\-]+/.+|https://(?:www\\.)?abc\\.net\\.au/doublej/programs/[a-z0-9\\-]+/[a-z0-9\\-]+/\\d+" })
 public class DoubleJNetAu extends PluginForHost {
     // raztoki embed video player template.
-    private String[] links = null;
-    private Browser  ajax  = null;
-    private Browser  m3u   = null;
+    private Browser ajax = null;
+    private Browser m3u  = null;
 
     /**
      * @author raztoki
@@ -55,124 +55,60 @@ public class DoubleJNetAu extends PluginForHost {
         return -1;
     }
 
-    public class AudioStream implements Storable {
-        private String arid;
-
-        public String getArid() {
-            return arid;
-        }
-
-        public void setArid(String arid) {
-            this.arid = arid;
-        }
-
-        public String getUrl() {
-            return url;
-        }
-
-        public void setUrl(String url) {
-            this.url = url;
-        }
-
-        public String getType() {
-            return type;
-        }
-
-        public void setType(String tyoe) {
-            this.type = tyoe;
-        }
-
-        private String url;
-        private String type;
-
-        private AudioStream(/* storable */) {
-        }
-    }
-
-    public class Enity implements Storable {
-        private String title;
-
-        public String getTitle() {
-            return title;
-        }
-
-        public void setTitle(String title) {
-            this.title = title;
-        }
-
-        private Enity(/* storable */) {
-        }
-    }
-
-    public class StreamInfo implements Storable {
-        private Enity published_entity;
-
-        public Enity getPublished_entity() {
-            return published_entity;
-        }
-
-        public void setPublished_entity(Enity published_entity) {
-            this.published_entity = published_entity;
-        }
-
-        public AudioStream[] getAudio_streams() {
-            return audio_streams;
-        }
-
-        public void setAudio_streams(AudioStream[] audio_streams) {
-            this.audio_streams = audio_streams;
-        }
-
-        private AudioStream[] audio_streams;
-
-        private StreamInfo(/* storable */) {
-        }
-    }
-
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        br = new Browser();
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", "Opera/9.80 (Windows NT 6.1; Win64; x64) Presto/2.12.388 Version/12.17");
         // first get
         br.getPage(link.getPluginPatternMatcher());
-        // we want to grab the uid, for json requests. (case sensitive, need to grab the one in bracket!
-        final String fuid = br.getRegex("-\\s*On-demand\\s*\\(([A-Za-z0-9]+)\\)</a></h2></div>").getMatch(0);
-        if (fuid == null) {
+        String contentID = br.getRegex("-\\s*On-demand\\s*\\(([A-Za-z0-9]+)\\)</a></h2></div>").getMatch(0);
+        if (contentID == null) {
+            /* 2022-02-08 */
+            contentID = br.getRegex("\"arid\": \"papi:([A-Za-z0-9]+)\"").getMatch(0);
+        }
+        if (contentID == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        link.setLinkID(this.getHost() + "://" + contentID);
         // get associated json crapola
-        getAjax("http://program.abcradio.net.au/api/v1/on_demand/" + fuid + ".json");
-        StreamInfo si = JSonStorage.restoreFromString(ajax.toString(), new TypeRef<StreamInfo>() {
-        });
-        //
-        String url1 = null;
-        for (AudioStream asNode : si.getAudio_streams()) {
-            if ("HLS".equals(asNode.getType())) {
-                // HDS doesn't work... you get 503
-                url1 = asNode.getUrl();
-            }
-        }
-        link.setFinalFileName(si.getPublished_entity().getTitle() + ".m4a");
-        // set m3u stuff
-        getM3u(url1);
-        // url string
-        String url2 = m3u.getRegex("https?://[^\r\n\t]+").getMatch(-1);
-        //
-        url2 = url2 + "";
-        //
-        link.setProperty("m3uUrl", url2);
+        // getAjax("http://program.abcradio.net.au/api/v1/on_demand/" + contentID + ".json");
+        getAjax("https://program.abcradio.net.au/api/v1/programitems/" + contentID + ".json");
+        final Map<String, Object> root = JSonStorage.restoreFromString(ajax.toString(), TypeRef.HASHMAP);
+        link.setFinalFileName(root.get("title").toString() + ".m4a");
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        checkFFmpeg(downloadLink, "Download a HLS Stream");
-        if (links == null || links.length == 0) {
-            requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        final String httpStream = br.getRegex("(?i)Try to\\s*<a href=\"(https?://[^<>\"]+\\.mp3)\"").getMatch(0);
+        if (httpStream != null) {
+            /* Download http stream */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, httpStream, true, 1);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        } else {
+            /* Download HLS stream */
+            checkFFmpeg(link, "Download a HLS Stream");
+            final String hlsMaster = ajax.getRegex("\"(https?://[^\"]+\\.m3u8)").getMatch(0);
+            getM3u(hlsMaster);
+            final HlsContainer best = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(m3u));
+            dl = new HLSDownloader(link, br, best.getDownloadurl());
+            dl.startDownload();
         }
-        dl = new HLSDownloader(downloadLink, br, downloadLink.getStringProperty("m3uUrl"));
-        dl.startDownload();
     }
 
     private void getAjax(final String url) throws IOException {
