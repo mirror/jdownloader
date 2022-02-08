@@ -68,7 +68,7 @@ public class DliveTv extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/p/dlive-(\\d+\\+[A-Za-z0-9\\-]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/p/(?:dlive-)?([^\\+]+\\+[A-Za-z0-9\\-_]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -101,18 +101,18 @@ public class DliveTv extends PluginForHost {
         } else if (br.containsHTML(">\\s*Post not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("property=\"og:title\"[^>]*content=\"([^<>\"]*?)(?: · DLive)?\"").getMatch(0);
-        if (filename != null) {
-            filename = Encoding.htmlDecode(filename).trim();
+        String title = br.getRegex("property=\"og:title\"[^>]*content=\"([^<>\"]*?)(?: · DLive)?\"").getMatch(0);
+        if (!StringUtils.isEmpty(title)) {
+            title = Encoding.htmlDecode(title).trim();
             final Regex usernameAndDate = br.getRegex("content=\"Replay created by ([^ \"]+) on (\\d{1,2}/\\d{1,2}/\\d{4})[^\"]*\"");
             final String username = usernameAndDate.getMatch(0);
             final String dateStr = usernameAndDate.getMatch(1);
             final SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd");
             final Date dateTmp = new Date(TimeFormatter.getMilliSeconds(dateStr, "MM/dd/yyyy", Locale.ENGLISH));
             if (username != null) {
-                filename = sd.format(dateTmp) + "_" + username + filename;
+                title = sd.format(dateTmp) + "_" + username + title;
             }
-            link.setFinalFileName(filename + ".mp4");
+            link.setFinalFileName(title + ".mp4");
         }
         return AvailableStatus.TRUE;
     }

@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2016  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.YetiShareCore;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
@@ -26,25 +26,24 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class DodownloadingCom extends YetiShareCore {
-    public DodownloadingCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+public class ElbarqNet extends XFileSharingProBasic {
+    public ElbarqNet(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(getPurchasePremiumURL());
+        this.enablePremium(super.getPurchasePremiumURL());
     }
 
     /**
-     * DEV NOTES YetiShare<br />
-     ****************************
+     * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: 2021-11-08: null<br />
-     * other: <br />
+     * captchatype-info: null 4dignum solvemedia reCaptchaV2, hcaptcha<br />
+     * other:<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "dodownloading.com" });
+        ret.add(new String[] { "up.elbarq.net" });
         return ret;
     }
 
@@ -58,15 +57,29 @@ public class DodownloadingCom extends YetiShareCore {
     }
 
     public static String[] getAnnotationUrls() {
-        return YetiShareCore.buildAnnotationUrls(getPluginDomains());
+        return ElbarqNet.buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static final String getDefaultAnnotationPatternPartElbarqNet() {
+        /* 2022-02-28: Their URLs contain a port-number. */
+        return "(?::\\d+)?/(?:d/[A-Za-z0-9]+|(?:embed-)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?)";
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://" + buildHostsPatternPart(domains) + ElbarqNet.getDefaultAnnotationPatternPartElbarqNet());
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
             /* Free Account */
             return true;
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return true;
         } else {
@@ -75,11 +88,13 @@ public class DodownloadingCom extends YetiShareCore {
         }
     }
 
+    @Override
     public int getMaxChunks(final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
             /* Free Account */
             return 0;
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return 0;
         } else {
@@ -89,10 +104,11 @@ public class DodownloadingCom extends YetiShareCore {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
+    public int getMaxSimultaneousFreeAnonymousDownloads() {
         return -1;
     }
 
+    @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
         return -1;
     }

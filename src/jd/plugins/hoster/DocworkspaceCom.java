@@ -23,7 +23,6 @@ import java.util.Map;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -52,7 +51,7 @@ public class DocworkspaceCom extends PluginForHost {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "docworkspace.com" });
+        ret.add(new String[] { "docworkspace.com", "docs.wps.com" });
         return ret;
     }
 
@@ -68,7 +67,7 @@ public class DocworkspaceCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://[a-z]{2}\\." + buildHostsPatternPart(domains) + "/d/([A-Za-z0-9]+)");
+            ret.add("https?://[a-z]{2}\\." + buildHostsPatternPart(domains) + "/(?:d|l)/([A-Za-z0-9]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -111,57 +110,62 @@ public class DocworkspaceCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String json = br.getRegex("window\\.__INITIAL_STATE__=(\\{.*?\\});\\(function").getMatch(0);
-        Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-        entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "share/fileinfo");
-        final String result = (String) entries.get("result");
-        if (!result.equalsIgnoreCase("ok")) {
-            /* E.g. "lightLinkNotExist" */
+        final String json = br.getRegex("(\\{\"file\".*?\\});window").getMatch(0);
+        if (json == null) {
+            /* Assume that content is offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final boolean accountRequired = ((Boolean) entries.get("needLogin")).booleanValue();
-        if (accountRequired) {
-            link.setProperty(PROPERTY_ACCOUNT_REQUIRED, true);
-        } else {
-            link.removeProperty(PROPERTY_ACCOUNT_REQUIRED);
-        }
-        String filename = (String) entries.get("doc_name");
-        if (filename == null) {
-            filename = br.getRegex("name=\"title\" content=\"([^\"]+)\"").getMatch(0);
-        }
-        if (filename != null) {
+        final Map<String, Object> root = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+        final Map<String, Object> file = (Map<String, Object>) root.get("file");
+        // final boolean accountRequired = ((Boolean) root.get("needLogin")).booleanValue();
+        // if (accountRequired) {
+        // link.setProperty(PROPERTY_ACCOUNT_REQUIRED, true);
+        // } else {
+        // link.removeProperty(PROPERTY_ACCOUNT_REQUIRED);
+        // }
+        final long filesize = ((Number) file.get("size")).longValue();
+        String filename = (String) file.get("name");
+        if (!StringUtils.isEmpty(filename)) {
             filename = Encoding.htmlDecode(filename).trim();
             link.setName(filename);
+        }
+        if (filesize > 0) {
+            link.setDownloadSize(filesize);
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        if (link.hasProperty(PROPERTY_ACCOUNT_REQUIRED)) {
-            throw new AccountRequiredException();
-        }
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
+            requestFileInformation(link);
+            if (link.hasProperty(PROPERTY_ACCOUNT_REQUIRED)) {
+                throw new AccountRequiredException();
+            }
             final Browser brc = br.cloneBrowser();
             brc.getHeaders().put("Accept", "application/json, text/plain, */*");
             brc.getPage("https://ru-drive.wps.com/api/v3/links/" + this.getFID(link) + "/download?isblocks=false");
-            Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
-            entries = (Map<String, Object>) entries.get("fileinfo");
+            final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> fileInfo = (Map<String, Object>) entries.get("fileinfo");
             /* 2021-06-23: Seems like these hashes do not reflect the original file hashes. */
-            // final String hashMD5 = (String) entries.get("md5");
-            // if (!StringUtils.isEmpty(hashMD5)) {
-            // link.setMD5Hash(hashMD5);
-            // }
-            // final String hashSHA1 = (String) entries.get("sha1");
-            // if (!StringUtils.isEmpty(hashSHA1)) {
-            // link.setSha1Hash(hashSHA1);
-            // }
-            String dllink = (String) entries.get("url");
+            final String hashMD5 = (String) fileInfo.get("md5");
+            if (!StringUtils.isEmpty(hashMD5)) {
+                link.setMD5Hash(hashMD5);
+            }
+            final String hashSHA1 = (String) fileInfo.get("sha1");
+            if (!StringUtils.isEmpty(hashSHA1)) {
+                final boolean sha1FieldActuallyContainsMd5Hash = true;
+                if (sha1FieldActuallyContainsMd5Hash) {
+                    link.setMD5Hash(hashSHA1);
+                } else {
+                    link.setSha1Hash(hashSHA1);
+                }
+            }
+            String dllink = (String) fileInfo.get("url");
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
