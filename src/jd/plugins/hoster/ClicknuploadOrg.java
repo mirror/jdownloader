@@ -46,12 +46,13 @@ public class ClicknuploadOrg extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "clicknupload.cc", "clicknupload.co", "clicknupload.org", "clicknupload.com", "clicknupload.me", "clicknupload.link" });
+        ret.add(new String[] { "clicknupload.to", "clicknupload.cc", "clicknupload.co", "clicknupload.org", "clicknupload.com", "clicknupload.me", "clicknupload.link", "clicknupload.club" });
         return ret;
     }
 
     @Override
-    public String rewriteHost(String host) {
+    public String rewriteHost(final String host) {
+        /* This host is frequently changing its main domain. */
         return this.rewriteHost(getPluginDomains(), host, new String[0]);
     }
 
