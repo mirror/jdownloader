@@ -26,12 +26,10 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.plugins.Account.AccountType;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -70,21 +68,24 @@ public class IcedriveNet extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/0/([A-Za-z0-9]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:0/[A-Za-z0-9]+|file/\\d+)");
         }
         return ret.toArray(new String[0]);
     }
 
-    /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 0;
-    private static final int     FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    @Deprecated
+    private static final String TYPE_OLD                  = "https?://[^/]+/0/([A-Za-z0-9]+)";
+    private static final String TYPE_NEW                  = "https?://[^/]+/file/(\\d+)";
+    private static final String PROPERTY_INTERNAL_FILE_ID = "internal_file_id";
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    public int getMaxChunks(final Account account) {
+        return 0;
+    }
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -97,124 +98,150 @@ public class IcedriveNet extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        if (link.getPluginPatternMatcher() == null) {
+            return null;
+        } else if (link.getPluginPatternMatcher().matches(TYPE_OLD)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_OLD).getMatch(0);
+        } else {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_NEW).getMatch(0);
+        }
+    }
+
+    private String getInternalFileID(final DownloadLink link) {
+        if (link.hasProperty(PROPERTY_INTERNAL_FILE_ID)) {
+            return link.getStringProperty(PROPERTY_INTERNAL_FILE_ID);
+        } else if (link.getPluginPatternMatcher() == null) {
+            return null;
+        } else if (link.getPluginPatternMatcher().matches(TYPE_NEW)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_NEW).getMatch(0);
+        } else {
+            return null;
+        }
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            /* Fallback-filename */
+            link.setName(this.getFID(link));
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = br.getRegex("<title>([^<>\"]+) - Icedrive</title>").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            /* Fallback */
-            filename = this.getFID(link);
-        }
-        String filesize = br.getRegex("<p>Size</p>\\s*<p class=\"value\">([^<>\"]+)</p>").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename).trim();
-        link.setName(filename);
-        if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
-        return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
-    }
-
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(link, directlinkproperty);
-        if (dllink == null) {
+        if (link.getPluginPatternMatcher().matches(TYPE_OLD)) {
+            br.getPage(link.getPluginPatternMatcher());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            String filename = br.getRegex("<title>([^<>\"]+) - Icedrive</title>").getMatch(0);
+            String filesize = br.getRegex("<p>Size</p>\\s*<p class=\"value\">([^<>\"]+)</p>").getMatch(0);
+            if (!StringUtils.isEmpty(filename)) {
+                filename = Encoding.htmlDecode(filename).trim();
+                link.setName(filename);
+            }
+            if (filesize != null) {
+                link.setDownloadSize(SizeFormatter.getSize(filesize));
+            }
             final String internalFileID = br.getRegex("data-id=\"(\\d+)\"").getMatch(0);
             if (internalFileID == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getPage("/dashboard/ajax/get?req=public-download&id=file-" + internalFileID);
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            final boolean error = ((Boolean) entries.get("error")).booleanValue();
-            if (error) {
+            link.setProperty(PROPERTY_INTERNAL_FILE_ID, internalFileID);
+            return AvailableStatus.TRUE;
+        } else {
+            /* 2022-02-08: Don't check at all. */
+            return AvailableStatus.TRUE;
+        }
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        this.handleDownload(link);
+    }
+
+    private void handleDownload(final DownloadLink link) throws Exception, PluginException {
+        final String directlinkproperty = "free_directlink";
+        if (!attemptStoredDownloadurlDownload(link, "free_directlink")) {
+            requestFileInformation(link);
+            final String internalFileID = this.getInternalFileID(link);
+            if (internalFileID == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final Browser brc = br.cloneBrowser();
+            brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            brc.getPage("https://" + this.getHost() + "/dashboard/ajax/get?req=public-download&id=file-" + internalFileID);
+            final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+            final Boolean error = (Boolean) entries.get("error");
+            if (error == Boolean.TRUE) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
             }
             /* 2020-07-22: Usually, only one URL/mirror is given */
-            final ArrayList<Object> mirrors = (ArrayList<Object>) entries.get("urls");
+            final ArrayList<String> mirrors = (ArrayList<String>) entries.get("urls");
             if (mirrors.isEmpty()) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find any download mirror");
             }
-            dllink = (String) mirrors.get(0);
+            final String dllink = mirrors.get(0);
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, isResumeable(link, null), this.getMaxChunks(null));
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    link.setProperty(property, Property.NULL);
-                    dllink = null;
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directurlproperty) throws Exception {
+        final String url = link.getStringProperty(directurlproperty);
+        if (StringUtils.isEmpty(url)) {
+            return false;
+        }
+        boolean valid = false;
+        try {
+            final Browser brc = br.cloneBrowser();
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, this.isResumeable(link, null), this.getMaxChunks(null));
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                valid = true;
+                return true;
+            } else {
+                link.removeProperty(directurlproperty);
+                brc.followConnection(true);
+                throw new IOException();
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+            return false;
+        } finally {
+            if (!valid) {
+                try {
+                    dl.getConnection().disconnect();
+                } catch (Throwable ignore) {
                 }
-            } catch (final Exception e) {
-                logger.log(e);
-                link.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                if (con != null) {
-                    con.disconnect();
-                }
+                this.dl = null;
             }
         }
-        return dllink;
     }
 
     @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (acc.getType() == AccountType.FREE) {
-            /* Free accounts can have captchas */
-            return true;
-        }
-        /* Premium accounts do not have captchas */
         return false;
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return -1;
     }
 
     @Override

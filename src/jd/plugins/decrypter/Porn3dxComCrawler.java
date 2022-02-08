@@ -54,7 +54,9 @@ public class Porn3dxComCrawler extends PluginForDecrypt {
         if (newEmbedURLs.length > 0) {
             /* 2022-02-08 */
             final FilePackage fp = FilePackage.getInstance();
-            if (titleSlug != null) {
+            if (authorSlug != null && titleSlug != null) {
+                fp.setName(authorSlug + " - " + titleSlug);
+            } else if (titleSlug != null) {
                 fp.setName(titleSlug);
             } else {
                 /* Fallback */
