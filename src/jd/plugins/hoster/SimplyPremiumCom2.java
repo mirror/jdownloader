@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -146,33 +147,29 @@ public class SimplyPremiumCom2 extends HighWayCore {
          *
          */
         private static final long serialVersionUID = 1L;
-        private final String      PINHELP          = "Enter your API Key";
+        private final JLabel      apikeyLabel;
 
         private String getPassword() {
             if (this.pass == null) {
                 return null;
+            } else {
+                return correctPassword(new String(this.pass.getPassword()));
             }
-            if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
-                return null;
-            }
-            return new String(this.pass.getPassword());
         }
 
         public boolean updateAccount(Account input, Account output) {
-            boolean changed = false;
             if (!StringUtils.equals(input.getUser(), output.getUser())) {
                 output.setUser(input.getUser());
-                changed = true;
-            }
-            if (!StringUtils.equals(input.getPass(), output.getPass())) {
+                return true;
+            } else if (!StringUtils.equals(input.getPass(), output.getPass())) {
                 output.setPass(input.getPass());
-                changed = true;
+                return true;
+            } else {
+                return false;
             }
-            return changed;
         }
 
         private final ExtPasswordField pass;
-        private static String          EMPTYPW = "                 ";
 
         public SimplyPremiumAccountFactory(final InputChangedCallbackInterface callback) {
             super("ins 0, wrap 2", "[][grow,fill]", "");
@@ -182,7 +179,7 @@ public class SimplyPremiumCom2 extends HighWayCore {
                 add(new JLabel("Click here to find your API Key:"));
             }
             add(new JLink("https://www.simply-premium.com/profile"));
-            add(new JLabel("API Key:"));
+            add(apikeyLabel = new JLabel("API Key:"));
             add(this.pass = new ExtPasswordField() {
                 @Override
                 public void onChanged() {
@@ -211,13 +208,14 @@ public class SimplyPremiumCom2 extends HighWayCore {
 
         @Override
         public boolean validateInputs() {
-            // final String userName = getUsername();
-            // if (userName == null || !userName.trim().matches("^\\d{9}$")) {
-            // idLabel.setForeground(Color.RED);
-            // return false;
-            // }
-            // idLabel.setForeground(Color.BLACK);
-            return getPassword() != null;
+            final String pw = getPassword();
+            if (HighWayCore.isAPIKey(pw)) {
+                apikeyLabel.setForeground(Color.BLACK);
+                return true;
+            } else {
+                apikeyLabel.setForeground(Color.RED);
+                return false;
+            }
         }
 
         @Override
