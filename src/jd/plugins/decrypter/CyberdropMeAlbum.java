@@ -46,6 +46,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "cyberdrop.me" });
+        ret.add(new String[] { "bunkr.is" });// same template/system?
         return ret;
     }
 
@@ -81,6 +82,10 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         String fpName = new Regex(albumjs, "name\\s*:\\s*'([^\\']+)'").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("<h1 id=\"title\"[^>]*title=\"([^\"]+)\"[^>]*>").getMatch(0);
+            if (fpName == null) {
+                // bunkr.is
+                fpName = br.getRegex("<h1 id=\"title\"[^>]*>\\s*(.*?)\\s*<").getMatch(0);
+            }
         }
         final HashSet<String> dups = new HashSet<String>();
         final String albumDescription = br.getRegex("<span id=\"description-box\"[^>]*>([^<>\"]+)</span>").getMatch(0);
@@ -88,8 +93,12 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         final String[] htmls = br.getRegex("<div class=\"image-container column\"[^>]*>(.*?)/p>\\s*</div>").getColumn(0);
         for (final String html : htmls) {
             final String directurl = new Regex(html, "href=\"(https?://[^\"]+)\"").getMatch(0);
-            final String filename = new Regex(html, "target=\"_blank\" title=\"([^<>\"]+)\"").getMatch(0);
-            final String filesizeBytes = new Regex(html, "class=\"is-hidden file-size\"[^>]*>(\\d+) B").getMatch(0);
+            String filename = new Regex(html, "target=\"_blank\" title=\"([^<>\"]+)\"").getMatch(0);
+            if (filename == null) {
+                // bunkr.is
+                filename = new Regex(html, "<p\\s*class\\s*=\\s*\"name\"\\s*>\\s*(.*?)\\s*<").getMatch(0);
+            }
+            final String filesizeBytes = new Regex(html, "class=\"(?:is-hidden)?\\s*file-size\"[^>]*>(\\d+) B").getMatch(0);
             if (dups.add(directurl)) {
                 final DownloadLink dl = this.createDownloadlink(directurl);
                 dl.setAvailable(true);
