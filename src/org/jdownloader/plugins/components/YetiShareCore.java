@@ -259,7 +259,7 @@ public class YetiShareCore extends antiDDoSForHost {
         return -1;
     }
 
-    /** Returns direct-link-property-String for current download mode based on account availibility and account type. */
+    /** Returns direct-link-property-String for current download mode based on account availability and account type. */
     protected static String getDownloadModeDirectlinkProperty(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
