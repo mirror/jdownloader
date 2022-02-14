@@ -62,10 +62,9 @@ import jd.plugins.components.MultiHosterManagement;
 //IMPORTANT: this class must stay in jd.plugins.hoster because it extends another plugin (UseNet) which is only available through PluginClassLoader
 abstract public class ZeveraCore extends UseNet {
     /* Connection limits */
-    private static final boolean         ACCOUNT_PREMIUM_RESUME                      = true;
-    private static final int             ACCOUNT_PREMIUM_MAXCHUNKS                   = 0;
-    private static final String          PROPERTY_ACCOUNT_successfully_loggedin_once = "successfully_loggedin_once";
-    private static MultiHosterManagement mhm                                         = new MultiHosterManagement();
+    private static final boolean         ACCOUNT_PREMIUM_RESUME    = true;
+    private static final int             ACCOUNT_PREMIUM_MAXCHUNKS = 0;
+    private static MultiHosterManagement mhm                       = new MultiHosterManagement();
 
     public ZeveraCore(PluginWrapper wrapper) {
         super(wrapper);
@@ -270,7 +269,7 @@ abstract public class ZeveraCore extends UseNet {
             mhm.runCheck(account, link);
             login(this.br, account, false, getClientID());
             final String dllink = getDllink(this.br, account, link, getClientID(), this);
-            if (dllink == null) {
+            if (StringUtils.isEmpty(dllink)) {
                 handleAPIErrors(this.br, link, account);
                 mhm.handleErrorGeneric(account, link, "dllinknull", 2, 5 * 60 * 1000l);
             }
@@ -310,8 +309,11 @@ abstract public class ZeveraCore extends UseNet {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            // br.followConnection();
-            // handleAPIErrors(this.br);
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content", 3 * 60 * 1000l);
         }
         this.dl.startDownload();
@@ -393,6 +395,7 @@ abstract public class ZeveraCore extends UseNet {
                     throw new IOException();
                 }
             } catch (final Exception e) {
+                link.removeProperty(property);
                 logger.log(e);
                 return null;
             } finally {
@@ -406,17 +409,16 @@ abstract public class ZeveraCore extends UseNet {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = fetchAccountInfoAPI(this.br, getClientID(), account);
-        return ai;
+        return fetchAccountInfoAPI(this.br, getClientID(), account);
     }
 
     public AccountInfo fetchAccountInfoAPI(final Browser br, final String client_id, final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
         login(br, account, true, client_id);
+        final AccountInfo ai = new AccountInfo();
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final String customerID = entries.get("customer_id").toString();
         if (customerID != null && customerID.length() > 2) {
-            /* don't store the complete customer id as a security purpose */
+            /* Don't store the complete customer id as a security purpose. */
             final String shortenedCustomerID = customerID.substring(0, customerID.length() / 2) + "****";
             account.setUser(shortenedCustomerID);
         }
@@ -713,11 +715,11 @@ abstract public class ZeveraCore extends UseNet {
                              */
                             throw new AccountUnavailableException(errormsg, 5 * 60 * 1000l);
                         } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, errormsg, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            throw new AccountInvalidException();
                         }
                     } else if (!"bearer".equals(token_type)) {
                         /* This should never happen! */
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unsupported token_type", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new AccountInvalidException("Unsupported token_type");
                     }
                     account.setProperty("access_token", access_token);
                     account.setProperty("token_valid_until", System.currentTimeMillis() + ((Number) entries.get("expires_in")).longValue());
@@ -725,34 +727,19 @@ abstract public class ZeveraCore extends UseNet {
                     callAPI(br, account, "/api/account/info");
                     this.handleAPIErrors(br, null, account);
                     /* No Exception = Success */
-                    account.setProperty(PROPERTY_ACCOUNT_successfully_loggedin_once, true);
                 } finally {
                     /*
                      * Users may enter logindata through webinterface which means they may even enter their real password which we do not
                      * want to store in our account database. Also we do not want this field to be empty (null) as this would look strange
                      * in the account manager.
                      */
-                    account.setPass("JD_DUMMY_PASSWORD");
+                    account.setPass(null);
                 }
             } else {
                 callAPI(br, account, "/api/account/info");
                 this.handleAPIErrors(br, null, account);
                 /* No Exception = Success */
-                account.setProperty(PROPERTY_ACCOUNT_successfully_loggedin_once, true);
             }
-        }
-    }
-
-    /* 2020-04-1: Temp. workaround for possible API issue */
-    @Deprecated
-    private void loginInvalid(final Account account) throws PluginException {
-        final boolean successfully_loggedin_once = account.getBooleanProperty(PROPERTY_ACCOUNT_successfully_loggedin_once, false);
-        if (successfully_loggedin_once) {
-            /* Display permanent error on next failed login attempt! */
-            account.setProperty(PROPERTY_ACCOUNT_successfully_loggedin_once, false);
-            throw new AccountUnavailableException("Maybe API key invalid! Check API key here: " + account.getHoster() + "/account", 15 * 60 * 1000l);
-        } else {
-            throw new AccountInvalidException("API key invalid! Check API key here: " + account.getHoster() + "/account");
         }
     }
 
@@ -907,19 +894,17 @@ abstract public class ZeveraCore extends UseNet {
      */
     private void handleAPIErrors(final Browser br, final DownloadLink link, final Account account) throws Exception {
         /* E.g. {"status":"error","error":"topup_required","message":"Please purchase premium membership or activate free mode."} */
-        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        Map<String, Object> entries = null;
+        try {
+            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        } catch (final Exception ignore) {
+            throw new AccountUnavailableException("Invalid API response", 60 * 1000);
+        }
         final String status = (String) entries.get("status");
-        if ("error".equalsIgnoreCase(status)) {
+        final String message = (String) entries.get("message");
+        if ("error".equalsIgnoreCase(status) && !StringUtils.isEmpty(message)) {
             /* This field is not always given! */
-            String errortype = (String) entries.get("error");
-            if (errortype == null) {
-                errortype = "unknowndlerror";
-            }
-            String message = (String) entries.get("message");
-            if (message == null) {
-                /* Fallback */
-                message = "Unknown error";
-            }
+            final String errortype = (String) entries.get("error");
             if ("topup_required".equalsIgnoreCase(errortype)) {
                 /**
                  * 2019-07-27: TODO: Premiumize should add an API call which returns whether free account downloads are currently activated
@@ -931,7 +916,7 @@ abstract public class ZeveraCore extends UseNet {
                 if (account.getType() == AccountType.FREE) {
                     /* Free */
                     /* 2019-07-27: Original errormessage may cause confusion so we'll slightly modify that. */
-                    message = "Premium required or activate free mode via premiumize.me/free";
+                    String userMsg = "Premium required or activate free mode via premiumize.me/free";
                     if (this.supportsFreeAccountDownloadMode(account)) {
                         /* Ask user to unlock free account downloads via website */
                         handleFreeModeDownloadDialog(account, "https://www." + this.br.getHost() + "/free");
@@ -940,23 +925,23 @@ abstract public class ZeveraCore extends UseNet {
                          * User has not enabled free account downloads in plugin settings (this is a rare case which may happen in the
                          * moment when a premium account expires and becomes a free account!)
                          */
-                        message += " AND via Settings->Plugins->Premiumize.me";
+                        userMsg += " AND via Settings->Plugins->Premiumize.me";
                     }
-                    mhm.putError(account, link, 5 * 60 * 1000l, message);
+                    mhm.putError(account, link, 5 * 60 * 1000l, userMsg);
                 } else {
                     /* Premium account - probably no traffic left */
-                    message = "Traffic empty or fair use limit reached?";
-                    throw new AccountUnavailableException(message, 5 * 60 * 1000l);
+                    throw new AccountUnavailableException("Traffic empty or fair use limit reached?", 5 * 60 * 1000l);
                 }
             } else if (message.matches("(?i).*customer_id and pin parameter missing or not logged in.*")) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, message, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new AccountInvalidException();
+            } else if (message.matches("(?i).*Not logged in.*")) {
+                throw new AccountInvalidException();
             } else if (message.matches("(?i).*content not in cache.*")) {
                 /* 2019-02-19: Not all errors have an errortype given */
                 /* E.g. {"status":"error","message":"content not in cache"} */
                 if (account.getType() == AccountType.FREE && this.supportsFreeAccountDownloadMode(account)) {
                     /* Case: User tries to download non-cached-file via free account. */
-                    message = "Not downloadable via free account because: " + message;
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, message);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable via free account because: " + message);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, message);
                 }
@@ -976,8 +961,10 @@ abstract public class ZeveraCore extends UseNet {
                 if (link == null) {
                     /* Account/login related error */
                     throw new AccountUnavailableException(message, 5 * 60 * 1000l);
-                } else {
+                } else if (errortype != null) {
                     mhm.handleErrorGeneric(account, link, errortype, 2, 5 * 60 * 1000l);
+                } else {
+                    mhm.handleErrorGeneric(account, link, message, 2, 5 * 60 * 1000l);
                 }
             }
         }
