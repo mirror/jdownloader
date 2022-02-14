@@ -51,7 +51,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "reddit.com" }, urls = { "https?://(?:(?:www|old)\\.)?reddit\\.com/(?:r/[^/]+(?:/comments/[a-z0-9]+/[A-Za-z0-9\\-_]+)?|gallery/[a-z0-9]+|user/[^/]+(?:/saved)?)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "reddit.com" }, urls = { "https?://(?:(?:www|old)\\.)?reddit\\.com/(?:r/[^/]+(?:/comments/[a-z0-9]+(/[A-Za-z0-9\\-_]+/?)?)?|gallery/[a-z0-9]+|user/[^/]+(?:/saved)?)" })
 public class RedditCom extends PluginForDecrypt {
     public RedditCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -63,8 +63,8 @@ public class RedditCom extends PluginForDecrypt {
         return 1;
     }
 
-    private static final String TYPE_SUBREDDIT          = "(?:https?://[^/]+)?/r/([^/]+)";
-    private static final String TYPE_SUBREDDIT_COMMENTS = "(?:https?://[^/]+)?/r/([^/]+)/comments/([a-z0-9]+)/([A-Za-z0-9\\-_]+)/?";
+    private static final String TYPE_SUBREDDIT          = "(?:https?://[^/]+)?/r/([^/]+)$";
+    private static final String TYPE_SUBREDDIT_COMMENTS = "(?:https?://[^/]+)?/r/([^/]+)/comments/([a-z0-9]+)(/([A-Za-z0-9\\-_]+)/?)?";
     private static final String TYPE_GALLERY            = "(?:https?://[^/]+)?/gallery/([a-z0-9]+)";
     private static final String TYPE_USER               = "(?:https?://[^/]+)?/user/([^/]+)";
     private static final String TYPE_USER_SAVED_OBJECTS = "(?:https?://[^/]+)?/user/([^/]+)/saved";
@@ -282,16 +282,16 @@ public class RedditCom extends PluginForDecrypt {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String urlSlug = new Regex(permalink, TYPE_SUBREDDIT_COMMENTS).getMatch(2);
+            final String urlSlug = new Regex(permalink, TYPE_SUBREDDIT_COMMENTS).getMatch(3);
             final ArrayList<DownloadLink> thisCrawledLinks = new ArrayList<DownloadLink>();
             try {
                 if (fp == null) {
                     /* No packagename given? Set FilePackage with name of comment/post. */
                     fp = FilePackage.getInstance();
                     final CommentsPackagenameScheme packagenameScheme = PluginJsonConfig.get(RedditConfig.class).getPreferredCommentsPackagenameScheme();
-                    if (packagenameScheme == CommentsPackagenameScheme.DATE_SUBREDDIT_ID_SLUG && urlSlug != null) {
+                    if (packagenameScheme == CommentsPackagenameScheme.DATE_SUBREDDIT_POSTID_SLUG && urlSlug != null) {
                         fp.setName(dateFormatted + "_" + subredditTitle + "_" + postID + "_" + urlSlug);
-                    } else if (packagenameScheme == CommentsPackagenameScheme.DATE_SUBREDDIT_ID_TITLE) {
+                    } else if (packagenameScheme == CommentsPackagenameScheme.DATE_SUBREDDIT_POSTID_TITLE) {
                         fp.setName(dateFormatted + "_" + subredditTitle + "_" + postID + "_" + title);
                     } else {
                         fp.setName(title);
@@ -305,6 +305,8 @@ public class RedditCom extends PluginForDecrypt {
                     filenameBeginning = dateFormatted + "_" + subredditTitle + "_" + postID + "_";
                 } else if (scheme == FilenameScheme.DATE_SUBREDDIT_POSTID_TITLE) {
                     filenameBase = dateFormatted + "_" + subredditTitle + "_" + postID + " - " + title;
+                } else if (scheme == FilenameScheme.DATE_SUBREDDIT_POSTID_SLUG && urlSlug != null) {
+                    filenameBase = dateFormatted + "_" + subredditTitle + "_" + postID + "_" + urlSlug;
                 } else if (scheme != null) {
                     logger.warning("Developer mistake! Unsupported FilenameScheme: " + scheme.name());
                 }

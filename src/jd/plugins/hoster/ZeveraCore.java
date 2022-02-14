@@ -464,7 +464,14 @@ abstract public class ZeveraCore extends UseNet {
             /* Expired == FREE */
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(getMaxSimultaneousFreeAccountDownloads());
-            setFreeAccountTraffic(account, ai);
+            if (this.supportsFreeAccountDownloadMode(account)) {
+                /** 2019-07-27: TODO: Remove this hardcoded trafficlimit and obtain this value via API (not yet given at the moment)! */
+                ai.setTrafficLeft(5000000000l);
+            } else {
+                /** Default = Free accounts do not have any traffic. */
+                ai.setTrafficLeft(0);
+                ai.setExpired(true);
+            }
         }
         callAPI(br, account, "/api/services/list");
         this.handleAPIErrors(br, null, account);
@@ -633,16 +640,6 @@ abstract public class ZeveraCore extends UseNet {
         thread.setDaemon(true);
         thread.start();
         return thread;
-    }
-
-    protected final void setFreeAccountTraffic(final Account account, final AccountInfo ai) {
-        if (this.supportsFreeAccountDownloadMode(account)) {
-            /** 2019-07-27: TODO: Remove this hardcoded trafficlimit and obtain this value via API (not yet given at the moment)! */
-            ai.setTrafficLeft(5000000000l);
-        } else {
-            /** Default = Free accounts do not have any traffic. */
-            ai.setTrafficLeft(0);
-        }
     }
 
     public void login(Browser br, final Account account, final boolean force, final String clientID) throws Exception {
