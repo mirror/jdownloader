@@ -8,21 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import jd.PluginWrapper;
-import jd.controlling.AccountController;
-import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.plugins.Account;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.hoster.PluralsightCom;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
@@ -33,6 +18,23 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.plugins.components.config.PluralsightComConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.controlling.AccountController;
+import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.hoster.PluralsightCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "pluralsight.com" }, urls = { "https?://(?:app|www)?\\.pluralsight\\.com(\\/library)?\\/courses\\/[^/]+|https://app\\.pluralsight\\.com/course-player\\?(clipId|courseId)=[a-f0-9\\-]+" })
 public class PluralsightComDecrypter extends antiDDoSForDecrypt {
@@ -64,9 +66,10 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Account account = AccountController.getInstance().getValidAccount(getHost());
         if (true) {
-            logger.info("No account - not required");
+            logger.info("No account used - not required");
         } else if (account != null) {
-            PluralsightCom.login(account, br, this, false);
+            final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
+            ((jd.plugins.hoster.PluralsightCom) plg).login(account, false);
             logger.info("Account - Mode:" + account.getUser());
         } else {
             logger.info("No account - Mode");
@@ -88,7 +91,7 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
             if (coursePlayerURL.size() == 0 && clipPlayerURL.size() == 0) {
                 /* Content offline or plugin broken */
                 if (account == null && br.containsHTML(">\\s*Start free tria\\s*l<")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                    throw new AccountRequiredException();
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -185,7 +188,8 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
         final Account account = AccountController.getInstance().getValidAccount(getHost());
         if (account != null) {
             // account login is required for non free courses
-            PluralsightCom.login(account, br, this, false);
+            final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
+            ((jd.plugins.hoster.PluralsightCom) plg).login(account, false);
             logger.info("Account - Mode:" + account.getUser());
         } else {
             logger.info("No account - Mode");

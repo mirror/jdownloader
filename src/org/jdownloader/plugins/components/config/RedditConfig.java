@@ -16,13 +16,19 @@ public interface RedditConfig extends PluginConfigInterface {
         DATE_SUBREDDIT_POSTID_SERVER_FILENAME {
             @Override
             public String getLabel() {
-                return "Date + Subreddit + Post-ID + server internal filename";
+                return "Date_Subreddit_Post-ID_server internal filename";
             }
         },
         DATE_SUBREDDIT_POSTID_TITLE {
             @Override
             public String getLabel() {
-                return "Date + Subreddit + Post-ID + Title + File-extension";
+                return "Date_Subreddit_Post-ID - Title.File-extension";
+            }
+        },
+        DATE_SUBREDDIT_POSTID_SLUG {
+            @Override
+            public String getLabel() {
+                return "Date_Subreddit_Post-ID_slug.File-extension";
             }
         },
         SERVER_FILENAME {
@@ -34,16 +40,16 @@ public interface RedditConfig extends PluginConfigInterface {
     }
 
     public static enum CommentsPackagenameScheme implements LabelInterface {
-        DATE_SUBREDDIT_ID_SLUG {
+        DATE_SUBREDDIT_POSTID_SLUG {
             @Override
             public String getLabel() {
-                return "Date + Subreddit + Post-ID + slug";
+                return "Date_Subreddit_Post-ID_slug";
             }
         },
-        DATE_SUBREDDIT_ID_TITLE {
+        DATE_SUBREDDIT_POSTID_TITLE {
             @Override
             public String getLabel() {
-                return "Date + Subreddit + Post-ID + Post title";
+                return "Date_Subreddit_Post-ID_Post title";
             }
         },
         TITLE {
@@ -61,7 +67,7 @@ public interface RedditConfig extends PluginConfigInterface {
     CommentsPackagenameScheme getPreferredCommentsPackagenameScheme();
 
     @AboutConfig
-    @DefaultEnumValue("DATE_SUBREDDIT_POSTID_SERVER_FILENAME")
+    @DefaultEnumValue("DATE_SUBREDDIT_POSTID_SLUG")
     @Order(15)
     @DescriptionForConfigEntry("Select preferred filename scheme")
     FilenameScheme getPreferredFilenameScheme();

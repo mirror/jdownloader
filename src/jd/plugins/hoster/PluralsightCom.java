@@ -13,6 +13,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -36,19 +45,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.PluralsightComDecrypter;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  *
@@ -89,7 +86,7 @@ public class PluralsightCom extends antiDDoSForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        login(account, br, this, true);
+        login(account, true);
         if (!StringUtils.equals(br.getURL(), "https://app.pluralsight.com/web-analytics/api/v1/users/current")) {
             getRequest(br, this, br.createGetRequest("https://app.pluralsight.com/web-analytics/api/v1/users/current"));
         }
@@ -113,7 +110,7 @@ public class PluralsightCom extends antiDDoSForHost {
                     if (validUntil > System.currentTimeMillis()) {
                         isPremium = true;
                         account.setType(AccountType.PREMIUM);
-                        ai.setStatus("Premium Account:" + subscription.get("name"));
+                        ai.setStatus("Premium Account: " + subscription.get("name"));
                         ai.setValidUntil(validUntil, br);
                         break;
                     }
@@ -129,61 +126,51 @@ public class PluralsightCom extends antiDDoSForHost {
         return ai;
     }
 
-    public static void login(final Account account, final Browser br, final Plugin plugin, final boolean revalidate) throws Exception {
+    public void login(final Account account, final boolean revalidate) throws Exception {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
-                    br.setCookies(plugin.getHost(), cookies);
+                    br.setCookies(this.getHost(), cookies);
                     if (!revalidate) {
                         return;
+                    } else {
+                        logger.info("Attempting cookie login");
+                        getRequest(br, this, br.createGetRequest("https://app.pluralsight.com/web-analytics/api/v1/users/current"));
+                        final Request request = br.getRequest();
+                        if (request.getHttpConnection().getResponseCode() == 200 && br.getHostCookie("PsJwt-production", Cookies.NOTDELETEDPATTERN) != null) {
+                            logger.info("Cookie login successful");
+                            account.saveCookies(br.getCookies(this.getHost()), "");
+                            return;
+                        } else {
+                            /* Full login required */
+                            logger.info("Cookie login failed");
+                            br.clearCookies(br.getHost());
+                        }
                     }
-                    getRequest(br, plugin, br.createGetRequest("https://app.pluralsight.com/web-analytics/api/v1/users/current"));
-                    final Request request = br.getRequest();
-                    if (request.getHttpConnection().getResponseCode() == 200 && br.getHostCookie("PsJwt-production", Cookies.NOTDELETEDPATTERN) != null) {
-                        account.saveCookies(br.getCookies(plugin.getHost()), "");
-                        return;
-                    }
-                    /* Full login required */
                 }
-                // Login
-                // Captcha And Login
-                getRequest(br, plugin, br.createGetRequest("https://app.pluralsight.com/id/"));
+                logger.info("Performing full login");
+                getRequest(br, this, br.createGetRequest("https://app.pluralsight.com/id/"));
                 final Form form = br.getFormbyKey("Username");
                 if (form == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final boolean isCaptchaVisible = br.getRegex("<input\\s+id=\"ReCaptchaSiteKey\"\\s+[\\w\\s\\d=\"]+(type=\"hidden\")[\\w\\s\\d=\"]+\\/>").getMatch(0) == null;
                 if (br.containsHTML("ReCaptchaSiteKey") && isCaptchaVisible) {
-                    final String recaptchaV2Response;
-                    if (plugin instanceof PluginForHost) {
-                        final PluginForHost plg = (PluginForHost) plugin;
-                        final DownloadLink dlinkbefore = plg.getDownloadLink();
-                        if (dlinkbefore == null) {
-                            plg.setDownloadLink(new DownloadLink(plg, "Account", plg.getHost(), "http://" + account.getHoster(), true));
-                        }
-                        recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(plg, br, "6LeVIgoTAAAAAIhx_TOwDWIXecbvzcWyjQDbXsaV").getToken();
-                        if (dlinkbefore != null) {
-                            plg.setDownloadLink(dlinkbefore);
-                        }
-                    } else if (plugin instanceof PluginForDecrypt) {
-                        recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2((PluginForDecrypt) plugin, br, "6LeVIgoTAAAAAIhx_TOwDWIXecbvzcWyjQDbXsaV").getToken();
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LeVIgoTAAAAAIhx_TOwDWIXecbvzcWyjQDbXsaV").getToken();
                     form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 }
                 form.put("Username", URLEncoder.encode(account.getUser(), "UTF-8"));
                 form.put("Password", URLEncoder.encode(account.getPass(), "UTF-8"));
-                getRequest(br, plugin, br.createFormRequest(form));
+                getRequest(br, this, br.createFormRequest(form));
                 if (br.containsHTML(">Invalid user name or password<")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid user name or password", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 if (br.getHostCookie("PsJwt-production", Cookies.NOTDELETEDPATTERN) == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                getRequest(br, plugin, br.createGetRequest("https://app.pluralsight.com/web-analytics/api/v1/users/current"));
+                getRequest(br, this, br.createGetRequest("https://app.pluralsight.com/web-analytics/api/v1/users/current"));
                 final Request request = br.getRequest();
                 if (request.getHttpConnection().getResponseCode() == 401) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -192,7 +179,7 @@ public class PluralsightCom extends antiDDoSForHost {
                 } else if (request.getHttpConnection().getResponseCode() != 200) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                account.saveCookies(br.getCookies(plugin.getHost()), "");
+                account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -237,7 +224,7 @@ public class PluralsightCom extends antiDDoSForHost {
             if (antiAccountBlockProtection(account)) {
                 throw new AccountUnavailableException("Account block protection, please wait!", 5 * 60 * 1000l);
             }
-            login(account, br, this, false);
+            login(account, false);
             return fetchFileInformation(link, account);
         } else {
             return fetchFileInformation(link, null);
@@ -249,6 +236,7 @@ public class PluralsightCom extends antiDDoSForHost {
         HIGH(1024, 768),
         MEDIUM(848, 640),
         LOW(640, 480);
+
         private final int x;
         private final int y;
 
@@ -513,7 +501,7 @@ public class PluralsightCom extends antiDDoSForHost {
         if (!attemptStoredDownloadurlDownload(link, resume, maxchunks)) {
             logger.info("Generating fresh directurl");
             if (account != null) {
-                login(account, br, this, false);
+                login(account, false);
             }
             fetchFileInformation(link, account);
             String streamURL = null;
