@@ -46,6 +46,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
@@ -291,6 +292,20 @@ public class GfyCatCom extends PluginForHost {
                 if (url != null) {
                     ext = ".mp4";
                     break;
+                }
+            }
+            if (selectedSource == null) {
+                /* 2022-02-15: New: Maybe single image (not animated) */
+                final String[] imageSources = new String[] { "large", "medium", "small" };
+                for (final String imageSource : imageSources) {
+                    selectedSource = (Map<String, Object>) sources.get(imageSource);
+                    if (selectedSource != null) {
+                        break;
+                    }
+                }
+                if (selectedSource != null) {
+                    url = (String) selectedSource.get("url");
+                    ext = Plugin.getFileNameExtensionFromURL(url);
                 }
             }
             final String gfyName = (String) entries.get("gfyName");

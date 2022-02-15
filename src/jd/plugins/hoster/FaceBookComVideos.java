@@ -1059,7 +1059,7 @@ public class FaceBookComVideos extends PluginForHost {
             requestFileInformation(link, account, true);
             final String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
             if (dllink == null) {
-                if (link.getBooleanProperty(PROPERTY_ACCOUNT_REQUIRED, false)) {
+                if (isAccountRequired(link)) {
                     /*
                      * If this happens while an account is active this means that the user is either missing the rights to access that item
                      * or the item is offline.
@@ -1080,6 +1080,14 @@ public class FaceBookComVideos extends PluginForHost {
             }
         }
         dl.startDownload();
+    }
+
+    private boolean isAccountRequired(final DownloadLink link) {
+        if (link.hasProperty(PROPERTY_ACCOUNT_REQUIRED)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link) throws Exception {

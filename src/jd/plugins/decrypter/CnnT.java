@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,62 +29,86 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "canna.to" }, urls = { "http://(?:uu\\.canna\\.to|ru\\.canna\\.to|85\\.17\\.36\\.224)/(?:cpuser/)?links\\.php\\?action=[^<>\"/\\&]+\\&kat_id=\\d+\\&fileid=\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CnnT extends PluginForDecrypt {
     public CnnT(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "canna.to", "canna-power.to" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.|[a-z]{2}\\.)?" + buildHostsPatternPart(domains) + "/(?:cpuser/)?links\\.php\\?action=[^<>\"/\\&]+\\&kat_id=\\d+\\&fileid=\\d+");
+        }
+        return ret.toArray(new String[0]);
     }
 
     public static Object LOCK = new Object();
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        final String host = new Regex(parameter, "https?://([^/]+)/").getMatch(0);
-        final String kat_id = new Regex(parameter, "kat_id=(\\d+)").getMatch(0);
-        final String fid = new Regex(parameter, "fileid=(\\d+)").getMatch(0);
-        parameter = "http://uu.canna.to/links.php?action=popup&kat_id=" + kat_id + "&fileid=" + fid;
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String host = new Regex(param.getCryptedUrl(), "https?://([^/]+)/").getMatch(0);
+        final String kat_id = new Regex(param.getCryptedUrl(), "kat_id=(\\d+)").getMatch(0);
+        final String fid = new Regex(param.getCryptedUrl(), "fileid=(\\d+)").getMatch(0);
+        param.setCryptedUrl("https://" + host + "/links.php?action=popup&kat_id=" + kat_id + "&fileid=" + fid);
         boolean valid = false;
         br.setFollowRedirects(true);
-        br.getPage(parameter);
-        if (br.containsHTML(">Versuche es in wenigen Minuten nochmals")) {
-            logger.info("Site overloaded at the moment: " + parameter);
+        br.getPage(param.getCryptedUrl());
+        if (br.containsHTML("(?i)>Versuche es in wenigen Minuten nochmals")) {
+            logger.info("Site overloaded at the moment: " + param.getCryptedUrl());
             return decryptedLinks;
         }
-        if (br.containsHTML("Es existiert kein Eintrag zu dieser ID") || this.br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        if (br.containsHTML("(?i)Es existiert kein Eintrag zu dieser ID") || this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final int maxAttempts = 5;
         synchronized (LOCK) {
-            for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
+            for (int retrycounter = 1; retrycounter <= maxAttempts; retrycounter++) {
                 final Form[] allforms = br.getForms();
                 Form captchaForm = br.getFormbyProperty("name", "download_form");
-                if (captchaForm == null) {
-                    captchaForm = br.getFormbyProperty("name", "download_form");
-                }
                 if (captchaForm == null) {
                     captchaForm = allforms[allforms.length - 1];
                 }
                 final String captchaUrlPart = br.getRegex("\"(securimage_show\\.php\\?sid=[a-z0-9]+)\"").getMatch(0);
                 if (captchaUrlPart == null || captchaForm == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
+                    logger.warning("Decrypter broken for link: " + param.getCryptedUrl());
                     return null;
                 }
                 final String captchaurl;
                 if (this.br.getURL().contains("/cpuser/")) {
                     captchaForm.setAction("/cpuser/links.php?action=load&fileid=" + fid);
-                    captchaurl = "http://" + host + "/cpuser/" + captchaUrlPart;
+                    captchaurl = "/cpuser/" + captchaUrlPart;
                 } else {
                     captchaForm.setAction("/links.php?action=load&fileid=" + fid);
-                    captchaurl = "http://" + host + "/" + captchaUrlPart;
+                    captchaurl = "/" + captchaUrlPart;
                 }
                 final String captchaCode = getCaptchaCode(captchaurl, param);
                 captchaForm.put("cp_captcha", captchaCode);
                 br.submitForm(captchaForm);
-                if (br.containsHTML("Der Sicherheitscode ist falsch!")) {
+                if (br.containsHTML("(?u)Der Sicherheitscode ist falsch")) {
                     /* Falscher Captcha, Seite neu laden */
-                    br.getPage(parameter);
+                    br.getPage(param.getCryptedUrl());
                 } else {
                     valid = true;
                     String finallink = br.getRegex("URL=(.*?)\"").getMatch(0);
@@ -98,17 +123,20 @@ public class CnnT extends PluginForDecrypt {
                     }
                     break;
                 }
+                if (this.isAbort()) {
+                    /* Aborted by user */
+                    return decryptedLinks;
+                }
             }
         }
-        if (valid == false) {
-            logger.info("Captcha for the following link was entered wrong for more than 5 times: " + parameter);
+        if (!valid) {
+            logger.info("Captcha for the following link was entered wrong for more than " + maxAttempts + " times: " + param.getCryptedUrl());
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         return decryptedLinks;
     }
 
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
         return true;
     }
 }
