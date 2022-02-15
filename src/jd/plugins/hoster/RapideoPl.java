@@ -34,6 +34,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -118,8 +119,8 @@ public class RapideoPl extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        throw new AccountRequiredException();
     }
 
     public static String md5HEX(String s) {
@@ -164,7 +165,6 @@ public class RapideoPl extends PluginForHost {
             final String random_session = df.format(random);
             final String filename = link.getName();
             final String filename_encoded = Encoding.urlEncode(filename);
-            String id;
             br.getPage("https://www.rapideo.pl/twoje_pliki");
             br.postPage("https://www.rapideo.pl/twoje_pliki", "loadfiles=1");
             br.postPage("https://www.rapideo.pl/twoje_pliki", "loadfiles=2");
@@ -174,7 +174,7 @@ public class RapideoPl extends PluginForHost {
                 logger.info("Traffic empty");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
-            id = br.getRegex("data\\-id=\"([a-z0-9]+)\"").getMatch(0);
+            String id = br.getRegex("data\\-id=\"([a-z0-9]+)\"").getMatch(0);
             if (id == null) {
                 mhm.handleErrorGeneric(account, link, "id_null", 20);
             }
@@ -268,7 +268,7 @@ public class RapideoPl extends PluginForHost {
                     }
                     logger.info("Checking login cookies");
                     br.getPage("https://www." + this.getHost() + "/");
-                    if (loggedIN()) {
+                    if (loggedIN(this.br)) {
                         logger.info("Successfully loggedin via cookies");
                         account.saveCookies(br.getCookies(this.getHost()), "");
                         return;
@@ -296,7 +296,7 @@ public class RapideoPl extends PluginForHost {
                 if (geoLoginFailure != null) {
                     /* 2020-11-02: Login from unusual location -> User has to confirm via URL send by mail and then try again in JD (?!). */
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, geoLoginFailure + "\r\nOnce done, refresh your account in JDownloader.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                } else if (!loggedIN()) {
+                } else if (!loggedIN(this.br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(this.getHost()), "");
@@ -310,8 +310,12 @@ public class RapideoPl extends PluginForHost {
         }
     }
 
-    private boolean loggedIN() {
-        return br.containsHTML("Logged in as:|Zalogowany jako:");
+    private boolean loggedIN(final Browser br) {
+        if (br.containsHTML("(?i)Logged in as:|Zalogowany jako:")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private String checkDirectLink(final DownloadLink link, final String property) {
