@@ -76,7 +76,7 @@ public class IcedriveNet extends PluginForHost {
     @Deprecated
     private static final String TYPE_OLD                  = "https?://[^/]+/0/([A-Za-z0-9]+)";
     private static final String TYPE_NEW                  = "https?://[^/]+/file/(\\d+)";
-    private static final String PROPERTY_INTERNAL_FILE_ID = "internal_file_id";
+    public static final String  PROPERTY_INTERNAL_FILE_ID = "internal_file_id";
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
@@ -141,7 +141,7 @@ public class IcedriveNet extends PluginForHost {
             if (filesize != null) {
                 link.setDownloadSize(SizeFormatter.getSize(filesize));
             }
-            final String internalFileID = br.getRegex("data-id=\"(\\d+)\"").getMatch(0);
+            final String internalFileID = regexFileID(this.br);
             if (internalFileID == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -151,6 +151,10 @@ public class IcedriveNet extends PluginForHost {
             /* 2022-02-08: Don't check at all. */
             return AvailableStatus.TRUE;
         }
+    }
+
+    public static String regexFileID(final Browser br) {
+        return br.getRegex("data-id=\"(\\d+)\"").getMatch(0);
     }
 
     @Override

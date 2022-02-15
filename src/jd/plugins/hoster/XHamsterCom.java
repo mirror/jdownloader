@@ -1080,7 +1080,7 @@ public class XHamsterCom extends PluginForHost {
         } else {
             logger.warning("Failed to find csrftoken --> Premium login might fail because of this");
         }
-        br.postPageRaw("/api/auth/signin", String.format("{\"login\":\"%s\",\"password\":\"%s\",\"rememberMe\":\"1\",\"trackingParamsBag\":\"W10=\",\"g-recaptcha-response\":\"%s\",\"recaptcha\":\"%s\"}", account.getUser(), account.getPass(), recaptchaV2Response, recaptchaV2Response));
+        br.postPageRaw("/api/auth/signin", String.format("{\"login\":\"%s\",\"password\":\"%s\",\"rememberMe\":\"1\",\"trackingParamsBag\":\"W10=\",\"g-recaptcha-response\":\"%s\",\"recaptcha\":\"%s\"}", account.getUser(), PluginJSonUtils.escape(account.getPass()), recaptchaV2Response, recaptchaV2Response));
         final String userId = PluginJSonUtils.getJson(br, "userId");
         final String success = PluginJSonUtils.getJson(br, "success");
         if ("true".equalsIgnoreCase(success) && !StringUtils.isEmpty(userId)) {

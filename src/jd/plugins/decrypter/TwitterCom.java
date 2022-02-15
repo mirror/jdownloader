@@ -167,7 +167,7 @@ public class TwitterCom extends PornEmbedParser {
             crawlUserViaAPI(param, account);
         }
         if (decryptedLinks.size() == 0) {
-            logger.info("Could not find any media, decrypter might be broken");
+            logger.info("Could not find any media, crawler might be broken");
             return decryptedLinks;
         }
         return decryptedLinks;
@@ -576,6 +576,7 @@ public class TwitterCom extends PornEmbedParser {
         query.append("include_user_entities", "true", false);
         query.append("include_ext_media_color", "true", false);
         query.append("include_ext_media_availability", "true", false);
+        query.append("include_ext_sensitive_media_warning", "true", false);
         query.append("send_error_codes", "true", false);
         query.append("simple_quoted_tweet", "true", false);
         final boolean isGrabLikedTweetsOfUser = param.getCryptedUrl().endsWith("/likes");
@@ -695,6 +696,9 @@ public class TwitterCom extends PornEmbedParser {
             this.sleep(3000l, param);
         } while (!this.isAbort());
         logger.info(String.format("Done after %d pages", index));
+        if (decryptedLinks.isEmpty()) {
+            logger.info("Found nothing --> Either user has posts containing media or those can only be viewed by certain users or only when logged in (explicit content)");
+        }
     }
 
     /**

@@ -105,9 +105,19 @@ public class GigafileNu extends PluginForHost {
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.containsHTML("download\\('" + this.getFID(link))) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<span>([^<>\"]+\\.zip)</span>").getMatch(0);
+        if (filename == null) {
+            /* 2022-02-15 */
+            filename = br.getRegex("onclick=\"download\\([^\\)]+\\);\">([^<>\"]+)</p>").getMatch(0);
+        }
         String filesize = br.getRegex("<span style=\"font-size: 12px;\">（(.*?)）</span>").getMatch(0);
+        if (filesize == null) {
+            /* 2022-02-15 */
+            filesize = br.getRegex("class=\"dl_size\"[^>]*>([^<>\"]+)<").getMatch(0);
+        }
         if (filename != null) {
             filename = Encoding.htmlDecode(filename).trim();
             link.setName(filename);
@@ -130,7 +140,8 @@ public class GigafileNu extends PluginForHost {
             if (fileiidFromURL == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String dllink = "/dl_zip.php?file=" + fileiidFromURL;
+            // final String dllink = "/dl_zip.php?file=" + fileiidFromURL;
+            final String dllink = "/download.php?file=" + fileiidFromURL;
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
@@ -142,6 +153,8 @@ public class GigafileNu extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+                } else if (br.containsHTML("(?i)alert\\(\"ダウンロードキーが異なります")) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected files are not yet supported");
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }

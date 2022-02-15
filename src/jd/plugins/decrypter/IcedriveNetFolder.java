@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,6 +33,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.IcedriveNet;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class IcedriveNetFolder extends PluginForDecrypt {
@@ -62,7 +64,7 @@ public class IcedriveNetFolder extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/s/[A-Za-z0-9]+");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/s/([A-Za-z0-9]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -73,48 +75,66 @@ public class IcedriveNetFolder extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String thisContentID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        final String singleFileID = IcedriveNet.regexFileID(this.br);
         /* Internal folderID (but this can also contain spaces lol) */
         final String folderID = br.getRegex("data-folder-id=\"([^\"]+)").getMatch(0);
         /* Name of current/root folder */
         final String folderName = br.getRegex("data-title=\"([^<>\"]+)\"").getMatch(0);
-        if (folderID == null) {
+        if (singleFileID == null && folderID == null) {
             /* Assume that content is offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getPage("/dashboard/ajax/get?req=list-files&type=public-share&parentId=" + Encoding.urlEncode(folderID));
-        final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        if ((Boolean) root.get("error") == Boolean.TRUE) {
-            /* Assume that content is offline */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final int numberofFiles = ((Number) root.get("results")).intValue();
-        if (numberofFiles <= 0) {
-            /* Empty folder */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) root.get("data");
-        for (final Map<String, Object> resource : ressourcelist) {
-            final Boolean isFolder = (Boolean) resource.get("isFolder");
-            if (isFolder == Boolean.TRUE) {
-                /* TODO: Subfolders are not yet supported (I was unable to find any working examples). */
-                continue;
+        if (folderID != null) {
+            /* Folder */
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.getPage("/dashboard/ajax/get?req=list-files&type=public-share&parentId=" + Encoding.urlEncode(folderID));
+            final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            if ((Boolean) root.get("error") == Boolean.TRUE) {
+                /* Assume that content is offline */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String id = resource.get("id").toString();
-            /* 2022-02-08: Title is sometimes url-encoded in json (space == "+"). */
-            final String title = (String) resource.get("filename");
-            final long filesize = ((Number) resource.get("filesize")).longValue();
-            final DownloadLink dl = this.createDownloadlink("https://" + this.getHost() + "/file/" + id);
-            dl.setFinalFileName(Encoding.htmlDecode(title));
-            dl.setVerifiedFileSize(filesize);
-            dl.setAvailable(true);
+            final int numberofFiles = ((Number) root.get("results")).intValue();
+            if (numberofFiles <= 0) {
+                /* Empty folder */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) root.get("data");
+            for (final Map<String, Object> resource : ressourcelist) {
+                final Boolean isFolder = (Boolean) resource.get("isFolder");
+                if (isFolder == Boolean.TRUE) {
+                    /* TODO: Subfolders are not yet supported (I was unable to find any working examples). */
+                    continue;
+                }
+                final String id = resource.get("id").toString();
+                /* 2022-02-08: Title is sometimes url-encoded in json (space == "+"). */
+                final String title = (String) resource.get("filename");
+                final long filesize = ((Number) resource.get("filesize")).longValue();
+                final DownloadLink dl = this.createDownloadlink(createContentURL(id));
+                dl.setFinalFileName(Encoding.htmlDecode(title));
+                dl.setVerifiedFileSize(filesize);
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+            }
+            if (folderName != null) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(folderName).trim());
+                fp.addLinks(decryptedLinks);
+            }
+        } else {
+            /* Single file */
+            final DownloadLink dl = this.createDownloadlink(createContentURLOld(thisContentID));
+            dl.setProperty(IcedriveNet.PROPERTY_INTERNAL_FILE_ID, singleFileID);
             decryptedLinks.add(dl);
         }
-        if (folderName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(folderName).trim());
-            fp.addLinks(decryptedLinks);
-        }
         return decryptedLinks;
+    }
+
+    private String createContentURL(final String fileID) {
+        return "https://" + this.getHost() + "/file/" + fileID;
+    }
+
+    private String createContentURLOld(final String folderID) {
+        return "https://" + this.getHost() + "/0/" + folderID;
     }
 }
