@@ -20,10 +20,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 
@@ -87,6 +88,8 @@ public class DliveTv extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
+    private static final String hashb64 = "OGZhMmY0YTk0MTc0ZTk1NTJiNzYxOTBhZTg0NzkyNmUyODNmMjkyZTI0YjVmNmI0OTA4YWNmZmI2OTAyODA1Zg";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (!link.isNameSet()) {
@@ -95,24 +98,23 @@ public class DliveTv extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
+        br.postPageRaw("https://graphigo.prd.dlive.tv/", "{\"operationName\":\"PastBroadcastPage\",\"variables\":{\"permlink\":\"" + this.getFID(link) + "\",\"commentsFirst\":20,\"topContributionsFirst\":10,\"isLoggedIn\":false},\"extensions\":{\"persistedQuery\":{\"version\":1,\"sha256Hash\":\"" + Encoding.Base64Decode(hashb64) + "\"}}}");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML(">\\s*Post not found")) {
+        }
+        final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> data = (Map<String, Object>) root.get("data");
+        final Map<String, Object> video = (Map<String, Object>) data.get("pastBroadcast");
+        if (video == null) {
+            /* E.g. {"data":{"pastBroadcast":null}} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String title = br.getRegex("property=\"og:title\"[^>]*content=\"([^<>\"]*?)(?: · DLive)?\"").getMatch(0);
+        final Map<String, Object> user = (Map<String, Object>) video.get("creator");
+        final String title = (String) video.get("title");
         if (!StringUtils.isEmpty(title)) {
-            title = Encoding.htmlDecode(title).trim();
-            final Regex usernameAndDate = br.getRegex("content=\"Replay created by ([^ \"]+) on (\\d{1,2}/\\d{1,2}/\\d{4})[^\"]*\"");
-            final String username = usernameAndDate.getMatch(0);
-            final String dateStr = usernameAndDate.getMatch(1);
             final SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd");
-            final Date dateTmp = new Date(TimeFormatter.getMilliSeconds(dateStr, "MM/dd/yyyy", Locale.ENGLISH));
-            if (username != null) {
-                title = sd.format(dateTmp) + "_" + username + title;
-            }
-            link.setFinalFileName(title + ".mp4");
+            final Date dateTmp = new Date(Long.parseLong(video.get("createdAt").toString()));
+            link.setFinalFileName(user.get("username") + "_" + sd.format(dateTmp) + "_" + title + ".mp4");
         }
         return AvailableStatus.TRUE;
     }
@@ -138,7 +140,7 @@ public class DliveTv extends PluginForHost {
     }
 
     @Override
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
         return false;
     }
 

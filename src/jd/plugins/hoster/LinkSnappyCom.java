@@ -153,13 +153,13 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     ac.setTrafficMax(((Number) entries.get("maxtraffic")).longValue());
                 }
             }
-            /* now it's time to get all supported hosts */
             getPage("https://" + this.getHost() + "/api/FILEHOSTS");
             final String error = getError(br);
             if (error != null) {
                 if (StringUtils.containsIgnoreCase(error, "Account has exceeded the daily quota")) {
                     dailyLimitReached(account);
                 } else {
+                    /* Permanently disable account --> Should not happen often. */
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + error, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
@@ -274,7 +274,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
     }
 
     private void dailyLimitReached(final Account account) throws PluginException {
-        final String host = br.getRegex("You have exceeded the daily ([a-z0-9\\-\\.]+) Download quota \\(").getMatch(0);
+        final String host = br.getRegex("(?i)You have exceeded the daily ([a-z0-9\\-\\.]+) Download quota \\(").getMatch(0);
         if (host != null) {
             /* Daily specific host downloadlimit reached --> Disable host for some time */
             mhm.putError(account, this.getDownloadLink(), 10 * 60 * 1000l, "Daily limit '" + host + "'reached for this host");
@@ -284,9 +284,9 @@ public class LinkSnappyCom extends antiDDoSForHost {
             /* Workaround for account overview display bug so users see at least that there is no traffic left */
             try {
                 account.getAccountInfo().setTrafficLeft(0);
-            } catch (final Throwable e) {
+            } catch (final Throwable ignore) {
             }
-            throw new AccountUnavailableException("Daily download limit reached", 5 * 60 * 1000);
+            throw new AccountUnavailableException("Daily download limit reached", 1 * 60 * 1000);
         }
     }
 
@@ -463,7 +463,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 } catch (final IOException e) {
                     logger.log(e);
                 }
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content");
             }
             link.setProperty(PROPERTY_DIRECTURL, dllink);
         }
@@ -504,7 +504,6 @@ public class LinkSnappyCom extends antiDDoSForHost {
             if (e.getMessage() != null && e.getMessage().contains("java.lang.ArrayIndexOutOfBoundsException")) {
                 if ((tt / 10) > link.getView().getBytesTotal()) {
                     // this is when linksnappy dls text as proper filename
-                    System.out.print("bingo");
                     dl.getConnection().disconnect();
                     mhm.putError(account, link, 5 * 60 * 1000l, "Cache download failure");
                 }
@@ -613,7 +612,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     account.getAccountInfo().setTrafficLeft(0);
                 } catch (final Throwable e) {
                 }
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLimit Reached. Please purchase elite membership!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new AccountUnavailableException("\r\nLimit Reached. Please purchase elite membership!", 1 * 60 * 1000);
             } else if (new Regex(err, "(?i)Invalid .*? link\\. Cannot find Filename").matches()) {
                 logger.info("Error: Disabling current host");
                 mhm.putError(account, this.getDownloadLink(), 5 * 60 * 1000l, "Multihoster issue");
