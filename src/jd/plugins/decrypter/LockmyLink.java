@@ -64,7 +64,6 @@ public class LockmyLink extends PluginForDecrypt {
         /* "Workaround" for json response */
         brc.getRequest().setHtmlCode(PluginJSonUtils.unescape(brc.getRequest().getHtmlCode()));
         final String captchaImageBase64 = brc.getRegex("data:image/png;base64,([a-zA-Z0-9_/\\+\\=]+)").getMatch(0);
-        // final String captchaurl = brc.getRegex("(/api/image\\.php\\?id=[A-Za-z0-9]+)").getMatch(0);
         if (captchaImageBase64 == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

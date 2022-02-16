@@ -56,7 +56,7 @@ public class RarbgTo extends PluginForHost {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "rarbg.to", "rarbgproxied.org" });
+        ret.add(new String[] { "rarbg.to", "rarbgproxied.org", "rarbgproxy.org" });
         return ret;
     }
 
@@ -106,7 +106,7 @@ public class RarbgTo extends PluginForHost {
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
-        loadAntiCaptchaCookies(this.br, this.getHost());
+        loadAntiCaptchaCookies(this.br, this.getHostOfAddedURL(link));
         br.setFollowRedirects(true);
         if (!link.isNameSet()) {
             link.setName(this.getFID(link) + ".torrent");
@@ -330,7 +330,7 @@ public class RarbgTo extends PluginForHost {
                         }
                     }
                     /* Save new cookies to prevent future anti bot challenges */
-                    antiCaptchaCookies.put(this.getHost(), this.br.getCookies(this.getHost()));
+                    antiCaptchaCookies.put(br.getHost(), br.getCookies(br.getHost()));
                     break;
                 }
             }
@@ -361,7 +361,7 @@ public class RarbgTo extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         /* We might not even be able to re-use directurls without valid cookies. */
-        loadAntiCaptchaCookies(this.br, this.getHost());
+        loadAntiCaptchaCookies(this.br, this.getHostOfAddedURL(link));
         if (!attemptStoredDownloadurlDownload(link)) {
             requestFileInformation(link, true);
             this.handleThreadDefence(link, this.br);
@@ -392,6 +392,10 @@ public class RarbgTo extends PluginForHost {
         }
         dl.setFilenameFix(true);
         dl.startDownload();
+    }
+
+    private String getHostOfAddedURL(final DownloadLink link) {
+        return Browser.getHost(link.getPluginPatternMatcher());
     }
 
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link) throws Exception {

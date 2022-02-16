@@ -227,7 +227,7 @@ public class ImageFap extends PluginForHost {
                 }
             }
             if (StringUtils.isEmpty(galleryName) || StringUtils.isEmpty(pictureTitle)) {
-                logger.info("Possobly missing data: galleryName: " + galleryName + " picture_name: " + pictureTitle);
+                logger.info("Possibly missing data: galleryName: " + galleryName + " picture_name: " + pictureTitle);
                 // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             galleryName = Encoding.htmlDecode(galleryName).trim();
