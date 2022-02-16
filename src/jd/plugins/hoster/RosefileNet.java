@@ -182,6 +182,9 @@ public class RosefileNet extends PluginForHost {
                 } catch (final IOException e) {
                     logger.log(e);
                 }
+                if (br.containsHTML("(?i)The file does not exist")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {

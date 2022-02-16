@@ -73,7 +73,6 @@ public class IcedriveNet extends PluginForHost {
         return ret.toArray(new String[0]);
     }
 
-    @Deprecated
     private static final String TYPE_OLD                  = "https?://[^/]+/0/([A-Za-z0-9]+)";
     private static final String TYPE_NEW                  = "https?://[^/]+/file/(\\d+)";
     public static final String  PROPERTY_INTERNAL_FILE_ID = "internal_file_id";

@@ -226,7 +226,7 @@ public class MetArtCom extends PluginForHost {
                     logger.info("Cookie login failed");
                     br.clearAll();
                     if (userCookies != null) {
-                        if (account.getLastValidTimestamp() > 0) {
+                        if (account.hasEverBeenValid()) {
                             throw new AccountInvalidException("Expired login cookies");
                         } else {
                             throw new AccountInvalidException("Invalid login cookies");

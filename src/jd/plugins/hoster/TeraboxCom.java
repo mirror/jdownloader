@@ -270,7 +270,7 @@ public class TeraboxCom extends PluginForHost {
             logger.info("Performing full (user-cookie) login");
             br.setCookies(userCookies);
             if (!this.checkLoginStatus(br)) {
-                if (account.getLastValidTimestamp() > 0) {
+                if (account.hasEverBeenValid()) {
                     throw new AccountInvalidException("Expired login cookies");
                 } else {
                     throw new AccountInvalidException("Invalid login cookies");

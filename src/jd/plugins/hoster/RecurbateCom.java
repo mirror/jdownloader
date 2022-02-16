@@ -238,7 +238,7 @@ public class RecurbateCom extends antiDDoSForHost {
                 if (cookies == null && userCookies == null) {
                     /* 2021-09-28: They're using Cloudflare on their login page thus we only accept cookie login at this moment. */
                     /* Only display cookie login instructions on first login attempt */
-                    if (account.getLastValidTimestamp() == -1) {
+                    if (!account.hasEverBeenValid()) {
                         showCookieLoginInformation();
                     }
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
