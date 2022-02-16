@@ -37,6 +37,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -242,15 +243,17 @@ public class SeedrCc extends PluginForHost {
                     } else {
                         logger.info("User Cookie login failed");
                         showCookieLoginInformation();
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new AccountInvalidException();
                     }
                 }
                 logger.info("Performing full login");
                 if (cookieLoginOnly) {
-                    if (account.getLastValidTimestamp() == -1) {
+                    if (account.hasEverBeenValid()) {
+                        throw new AccountInvalidException("Cookies expired");
+                    } else {
                         showCookieLoginInformation();
+                        throw new AccountInvalidException("Invalid user name or password");
                     }
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 final DownloadLink dlinkbefore = this.getDownloadLink();
                 if (dlinkbefore == null) {

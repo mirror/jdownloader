@@ -36,6 +36,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.BrowserAdapter;
@@ -131,8 +132,14 @@ public class PluralsightCom extends antiDDoSForHost {
             try {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    br.setCookies(this.getHost(), cookies);
+                /* 2022-02-16: Added cookie login as possible workaround for login issues caused by Cloudflare */
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+                if (cookies != null || userCookies != null) {
+                    if (userCookies != null) {
+                        br.setCookies(this.getHost(), userCookies);
+                    } else {
+                        br.setCookies(this.getHost(), cookies);
+                    }
                     if (!revalidate) {
                         return;
                     } else {
@@ -147,6 +154,13 @@ public class PluralsightCom extends antiDDoSForHost {
                             /* Full login required */
                             logger.info("Cookie login failed");
                             br.clearCookies(br.getHost());
+                            if (userCookies != null) {
+                                if (account.hasEverBeenValid()) {
+                                    throw new AccountInvalidException("Cookies expired");
+                                } else {
+                                    throw new AccountInvalidException("Invalid login cookies");
+                                }
+                            }
                         }
                     }
                 }
@@ -165,10 +179,10 @@ public class PluralsightCom extends antiDDoSForHost {
                 form.put("Password", URLEncoder.encode(account.getPass(), "UTF-8"));
                 getRequest(br, this, br.createFormRequest(form));
                 if (br.containsHTML(">Invalid user name or password<")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid user name or password", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException("Invalid user name or password");
                 }
                 if (br.getHostCookie("PsJwt-production", Cookies.NOTDELETEDPATTERN) == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException();
                 }
                 getRequest(br, this, br.createGetRequest("https://app.pluralsight.com/web-analytics/api/v1/users/current"));
                 final Request request = br.getRequest();

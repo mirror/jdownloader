@@ -973,7 +973,7 @@ public class FlickrCom extends PluginForHost {
                 final Map<String, Object> rootAuth = JavaScriptEngineFactory.jsonToJavaMap(loginjson);
                 final Map<String, Object> user = (Map<String, Object>) rootAuth.get("user");
                 if (!(Boolean) rootAuth.get("signedIn")) {
-                    if (account.getLastValidTimestamp() > 0) {
+                    if (account.hasEverBeenValid()) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login cookies expired", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login cookies invalid", PluginException.VALUE_ID_PREMIUM_DISABLE);

@@ -438,9 +438,9 @@ public class GoogleDrive extends PluginForHost {
         /* We hope for the file to be direct-downloadable. */
         if (this.looksLikeDownloadableContent(con)) {
             logger.info("Direct download active");
-            final String fileName = getFileNameFromHeader(con);
-            if (!StringUtils.isEmpty(fileName)) {
-                link.setFinalFileName(fileName);
+            final String fileNameFromHeader = getFileNameFromHeader(con);
+            if (!StringUtils.isEmpty(fileNameFromHeader)) {
+                link.setFinalFileName(fileNameFromHeader);
             }
             if (con.getCompleteContentLength() > 0) {
                 link.setVerifiedFileSize(con.getCompleteContentLength());
@@ -562,7 +562,7 @@ public class GoogleDrive extends PluginForHost {
     }
 
     private static String regexConfirmDownloadurl(final Browser br) {
-        String res = br.getRegex("\"([^\"]*?/uc\\?export=download\\&(amp;)?confirm=[^<>\"]+)\"").getMatch(0);
+        String res = br.getRegex("\"([^\"]*?/uc[^\"]+export=download\\&(amp;)?confirm=[^<>\"]+)\"").getMatch(0);
         if (res != null) {
             res = HTMLEntities.unhtmlentities(res);
         }

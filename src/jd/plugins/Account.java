@@ -739,6 +739,15 @@ public class Account extends Property {
         return isMulti;
     }
 
+    /** Returns true if this account was ever checked before without errors. */
+    public boolean hasEverBeenValid() {
+        if (this.getLastValidTimestamp() == -1) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     public void setLastValidTimestamp(long currentTimeMillis) {
         setProperty(LATEST_VALID_TIMESTAMP, currentTimeMillis);
     }

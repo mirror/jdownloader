@@ -3893,7 +3893,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         return true;
                     } else {
                         logger.info("Cookie login failed");
-                        if (account.getLastValidTimestamp() <= 0) {
+                        if (account.hasEverBeenValid()) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login cookies expired", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         } else {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login cookies invalid", PluginException.VALUE_ID_PREMIUM_DISABLE);

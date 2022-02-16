@@ -593,7 +593,7 @@ public abstract class EvilangelCore extends PluginForHost {
                         account.setProperty(PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIN, true);
                         return;
                     } else {
-                        if (account.getLastValidTimestamp() == -1) {
+                        if (!account.hasEverBeenValid()) {
                             /* Only show this dialog when user is trying to add that account for the first time. */
                             showCookieLoginInformation();
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);

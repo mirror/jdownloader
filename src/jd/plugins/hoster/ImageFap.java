@@ -22,6 +22,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.ReflectionUtils;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -42,10 +46,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.ReflectionUtils;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagefap.com" }, urls = { "https?://(www\\.)?imagefap.com/(imagedecrypted/\\d+|video\\.php\\?vid=\\d+)" })
 public class ImageFap extends PluginForHost {
@@ -207,9 +207,9 @@ public class ImageFap extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(>The image you are trying to access does not exist|<title> \\(Picture 1\\) uploaded by  on ImageFap\\.com</title>)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String picture_name = br.getRegex("<title>\\s*(.*?)\\s*(in gallery|uploaded by|Porn Pic)").getMatch(0);
-            if (StringUtils.isNotEmpty(picture_name)) {
-                link.setProperty("original_filename", picture_name);
+            final String pictureTitle = br.getRegex("<title>\\s*([^<]+)\\s*(in gallery|uploaded by|Porn Pic)").getMatch(0);
+            if (StringUtils.isNotEmpty(pictureTitle)) {
+                link.setProperty("original_filename", pictureTitle);
                 link.removeProperty("incomplete_filename");
             }
             String galleryName = getGalleryName(link);
@@ -226,8 +226,8 @@ public class ImageFap extends PluginForHost {
                     }
                 }
             }
-            if (galleryName == null || picture_name == null) {
-                logger.info("galleryName: " + galleryName + " picture_name: " + picture_name);
+            if (StringUtils.isEmpty(galleryName) || StringUtils.isEmpty(pictureTitle)) {
+                logger.info("Possobly missing data: galleryName: " + galleryName + " picture_name: " + pictureTitle);
                 // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             galleryName = Encoding.htmlDecode(galleryName).trim();
@@ -376,7 +376,7 @@ public class ImageFap extends PluginForHost {
             br.getPage(request);
             if (br.getHttpConnection().getResponseCode() == 429) {
                 /*
-                 * 
+                 *
                  * 100 requests per 1 min 200 requests per 5 min 1000 requests per 1 hour
                  */
                 /* 2020-09-22: Most likely they will allow a retry after one hour. */
