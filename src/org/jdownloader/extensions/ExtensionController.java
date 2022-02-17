@@ -200,7 +200,7 @@ public class ExtensionController implements MenuExtenderHandler {
         for (final LazyExtension lazyExtension : lazyExtensions) {
             lazyExtensionsMap.put(lazyExtension.getClassname(), lazyExtension);
         }
-        optionalExtensions.add(new OptionalExtension("eventscripter", IconKey.ICON_EVENT, _GUI.T.ExtensionController_initUninstalledExtensions_EventScripterExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_EventScripterExtension_description(), lazyExtensionsMap.get(getClassname("eventscripter1"))));
+        optionalExtensions.add(new OptionalExtension("eventscripter", IconKey.ICON_EVENT, _GUI.T.ExtensionController_initUninstalledExtensions_EventScripterExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_EventScripterExtension_description(), lazyExtensionsMap.get(getClassname("eventscripter"))));
         optionalExtensions.add(new OptionalExtension("folderwatch", IconKey.ICON_FOLDER_ADD, _GUI.T.ExtensionController_initUninstalledExtensions_FolderWatchExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_FolderWatchExtension_description(), lazyExtensionsMap.get(getClassname("folderwatch"))));
         optionalExtensions.add(new OptionalExtension("scheduler", IconKey.ICON_WAIT, _GUI.T.ExtensionController_initUninstalledExtensions_SchedulerExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_SchedulerExtension_description(), lazyExtensionsMap.get(getClassname("scheduler"))));
         optionalExtensions.add(new OptionalExtension("shutdown", IconKey.ICON_LOGOUT, _GUI.T.ExtensionController_initUninstalledExtensions_ShutdownExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_ShutdownExtension_description(), lazyExtensionsMap.get(getClassname("shutdown"))));
