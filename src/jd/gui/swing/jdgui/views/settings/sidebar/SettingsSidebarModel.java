@@ -1,10 +1,9 @@
 package jd.gui.swing.jdgui.views.settings.sidebar;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.DefaultListModel;
 import javax.swing.JList;
@@ -19,6 +18,7 @@ import jd.gui.swing.jdgui.views.settings.panels.ReconnectConfigPanel;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManagerSettings;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
 import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.CaptchaConfigPanel;
+import jd.gui.swing.jdgui.views.settings.panels.extensionmanager.OptionalExtensionSettings;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.Linkgrabber;
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.Packagizer;
 import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginSettings;
@@ -34,9 +34,7 @@ import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.ExtensionControllerListener;
-import org.jdownloader.extensions.InstalledExtension;
 import org.jdownloader.extensions.LazyExtension;
-import org.jdownloader.extensions.UninstalledExtension;
 import org.jdownloader.gui.notify.BubbleNotify;
 import org.jdownloader.gui.notify.gui.BubbleNotifyConfigPanel;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -53,15 +51,13 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     private Packagizer                   pz;
     private AdvancedSettings             ads;
     private Linkgrabber                  lg;
-    private ExtensionHeader              eh;
-    private Object                       lock             = new Object();
+    private OptionalExtensionSettings            es;
+    private final Object                 lock             = new Object();
     private SingleReachableState         TREE_COMPLETE    = new SingleReachableState("TREE_COMPLETE");
     private final JList                  list;
     protected MyJDownloaderSettingsPanel myJDownloader;
     protected BubbleNotifyConfigPanel    notifierPanel;
     protected CaptchaConfigPanel         ac;
-    protected UninstalledExtensionHeader ueh;
-    protected InstalledExtensionHeader   ieh;
 
     public SettingsSidebarModel(JList list) {
         super();
@@ -313,51 +309,17 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
         }
     }
 
-    private UninstalledExtensionHeader getUninstalledExtensionHeader() {
-        if (ueh != null) {
-            return ueh;
+    private OptionalExtensionSettings getExtensionSettings() {
+        if (es != null) {
+            return es;
         } else {
-            return new EDTHelper<UninstalledExtensionHeader>() {
-                public UninstalledExtensionHeader edtRun() {
-                    if (ueh != null) {
-                        return ueh;
+            return new EDTHelper<OptionalExtensionSettings>() {
+                public OptionalExtensionSettings edtRun() {
+                    if (es != null) {
+                        return es;
                     } else {
-                        ueh = new UninstalledExtensionHeader();
-                        return ueh;
-                    }
-                }
-            }.getReturnValue();
-        }
-    }
-
-    private InstalledExtensionHeader getInstalledExtensionHeader() {
-        if (ieh != null) {
-            return ieh;
-        } else {
-            return new EDTHelper<InstalledExtensionHeader>() {
-                public InstalledExtensionHeader edtRun() {
-                    if (ieh != null) {
-                        return ieh;
-                    } else {
-                        ieh = new InstalledExtensionHeader();
-                        return ieh;
-                    }
-                }
-            }.getReturnValue();
-        }
-    }
-
-    private ExtensionHeader getExtensionHeader() {
-        if (eh != null) {
-            return eh;
-        } else {
-            return new EDTHelper<ExtensionHeader>() {
-                public ExtensionHeader edtRun() {
-                    if (eh != null) {
-                        return eh;
-                    } else {
-                        eh = new ExtensionHeader();
-                        return eh;
+                        es = new OptionalExtensionSettings();
+                        return es;
                     }
                 }
             }.getReturnValue();
@@ -385,10 +347,10 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                         if (SecondLevelLaunch.EXTENSIONS_LOADED.isReached()) {
                             withExtensions = true;
                         }
-                        LazyExtension extract = null;
+                        LazyExtension extractionExtension = null;
                         try {
                             if (withExtensions) {
-                                extract = ExtensionController.getInstance().getExtension("org.jdownloader.extensions.extraction.ExtractionExtension");
+                                extractionExtension = ExtensionController.getInstance().getExtension("org.jdownloader.extensions.extraction.ExtractionExtension");
                             }
                         } catch (final Throwable e) {
                             /* plugin not loaded yet */
@@ -399,7 +361,6 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                                 removeAllElements();
                             }
                         };
-                        final LazyExtension finalExtract = extract;
                         edtAllElement(getConfigPanelGeneral());
                         edtAllElement(getReconnectSettings());
                         edtAllElement(getProxyConfig());
@@ -412,91 +373,50 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                         edtAllElement(getMyJDownloaderPanel());
                         edtAllElement(getLinkgrabber());
                         edtAllElement(getPackagizer());
-                        if (finalExtract != null) {
-                            edtAllElement(finalExtract);
+                        if (extractionExtension != null) {
+                            edtAllElement(extractionExtension);
                         }
                         edtAllElement(JDGui.getInstance().getTray());
                         edtAllElement(getAdvancedSettings());
                         if (withExtensions) {
-                            final AtomicBoolean firstExtension = new AtomicBoolean(true);
-                            List<Object> pluginsOptional = new ArrayList<Object>();
+                            edtAllElement(getExtensionSettings());
+                            final List<LazyExtension> pluginsOptional = new ArrayList<LazyExtension>();
                             pluginsOptional.addAll(ExtensionController.getInstance().getExtensions());
-                            java.util.Collections.sort(pluginsOptional, new Comparator<Object>() {
+                            Collections.sort(pluginsOptional, new Comparator<LazyExtension>() {
                                 @Override
-                                public int compare(Object a, Object b) {
-                                    String namea = (a instanceof LazyExtension) ? ((LazyExtension) a).getName() : ((UninstalledExtension) a).getName();
-                                    String nameb = (b instanceof LazyExtension) ? ((LazyExtension) b).getName() : ((UninstalledExtension) b).getName();
+                                public int compare(LazyExtension a, LazyExtension b) {
+                                    final String namea = a.getName();
+                                    final String nameb = b.getName();
                                     return namea.compareTo(nameb);
                                 }
                             });
-                            HashSet<String> loadedExtensions = new HashSet<String>();
                             if (pluginsOptional != null) {
-                                for (final Object o : pluginsOptional) {
-                                    if (o instanceof LazyExtension) {
-                                        final LazyExtension plg = (LazyExtension) o;
-                                        if ("org.jdownloader.extensions.extraction.ExtractionExtension".equals(plg.getClassname())) {
-                                            continue;
-                                        }
+                                for (final LazyExtension plg : pluginsOptional) {
+                                    if ("org.jdownloader.extensions.extraction.ExtractionExtension".equals(plg.getClassname())) {
+                                        continue;
+                                    } else if ("org.jdownloader.extensions.jdtrayicon.TrayExtension".equals(plg.getClassname())) {
                                         // avoid that old TrayExtension Jars will get loaded
-                                        if ("org.jdownloader.extensions.jdtrayicon.TrayExtension".equals(plg.getClassname())) {
-                                            continue;
-                                        }
-                                        if (contains(plg)) {
-                                            continue;
-                                        }
-                                        if (CrossSystem.isWindows() && !plg.isWindowsRunnable()) {
-                                            continue;
-                                        }
-                                        if (CrossSystem.isUnix() && !plg.isLinuxRunnable()) {
-                                            /* TODO: add own isBSD runnable or better provide the CrossSytem enum */
-                                            continue;
-                                        }
-                                        if (CrossSystem.isMac() && !plg.isMacRunnable()) {
-                                            continue;
-                                        }
+                                        continue;
+                                    } else if (contains(plg)) {
+                                        continue;
+                                    } else if (CrossSystem.isWindows() && !plg.isWindowsRunnable()) {
+                                        continue;
+                                    } else if (CrossSystem.isUnix() && !plg.isLinuxRunnable()) {
+                                        /* TODO: add own isBSD runnable or better provide the CrossSytem enum */
+                                        continue;
+                                    } else if (CrossSystem.isMac() && !plg.isMacRunnable()) {
+                                        continue;
+                                    } else {
                                         plg._getSettings()._getStorageHandler().getEventSender().addListener(SettingsSidebarModel.this, true);
-                                        loadedExtensions.add(plg.getClassname());
                                         new EDTRunner() {
                                             @Override
                                             protected void runInEDT() {
-                                                if (firstExtension.get()) {
-                                                    addElement(getExtensionHeader());
-                                                    firstExtension.set(false);
-                                                }
                                                 addElement(plg);
                                             }
                                         };
                                     }
                                 }
                             }
-                            final AtomicBoolean firstUninstalledExtension = new AtomicBoolean(true);
-                            for (final UninstalledExtension o : ExtensionController.getInstance().getUninstalledExtensions()) {
-                                // not loaded
-                                new EDTRunner() {
-                                    @Override
-                                    protected void runInEDT() {
-                                        if (firstUninstalledExtension.get()) {
-                                            addElement(getUninstalledExtensionHeader());
-                                            firstUninstalledExtension.set(false);
-                                        }
-                                        addElement(o);
-                                    }
-                                };
-                            }
-                        }
-                        final AtomicBoolean firstInstalledExtension = new AtomicBoolean(true);
-                        for (final InstalledExtension o : ExtensionController.getInstance().getInstalledExtensions()) {
-                            // not loaded
-                            new EDTRunner() {
-                                @Override
-                                protected void runInEDT() {
-                                    if (firstInstalledExtension.get()) {
-                                        addElement(getInstalledExtensionHeader());
-                                        firstInstalledExtension.set(false);
-                                    }
-                                    addElement(o);
-                                }
-                            };
                         }
                     }
                 } finally {
@@ -518,10 +438,9 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     }
 
     public void onUpdated() {
-        if (!JsonConfig.create(GraphicalUserInterfaceSettings.class).isConfigViewVisible()) {
-            return;
+        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isConfigViewVisible()) {
+            fill(true);
         }
-        fill(true);
     }
 
     @Override

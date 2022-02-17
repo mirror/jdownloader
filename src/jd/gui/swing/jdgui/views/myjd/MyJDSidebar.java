@@ -36,23 +36,19 @@ import javax.swing.event.ListSelectionListener;
 
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
-import jd.gui.swing.jdgui.views.settings.sidebar.EmptyExtensionConfigPanel;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.ConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.api.myjdownloader.MyJDownloaderConnectionStatus;
 import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.api.myjdownloader.event.MyJDownloaderListener;
-import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.LazyExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
-import org.jdownloader.extensions.UninstalledExtension;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
@@ -263,34 +259,9 @@ public class MyJDSidebar extends JPanel implements MouseMotionListener, MouseLis
     }
 
     public synchronized SwitchPanel getSelectedPanel() {
-        if (list.getSelectedValue() instanceof UninstalledExtension) {
-            return ((UninstalledExtension) list.getSelectedValue()).getPanel();
-        } else if (list.getSelectedValue() instanceof AbstractExtension) {
-            AbstractExtension<?, ?> ext = ((AbstractExtension) list.getSelectedValue());
-            if (ext.hasConfigPanel()) {
-                return ext.getConfigPanel();
-            } else {
-                return new EmptyExtensionConfigPanel(ext);
-            }
-        } else if (list.getSelectedValue() instanceof LazyExtension) {
-            AbstractExtension<?, ?> ext = ((LazyExtension) list.getSelectedValue())._getExtension();
-            if (ext == null) {
-                try {
-                    ((LazyExtension) list.getSelectedValue()).init();
-                    ext = ((LazyExtension) list.getSelectedValue())._getExtension();
-                } catch (Exception e) {
-                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
-                    Dialog.getInstance().showExceptionDialog("Error", e.getMessage(), e);
-                    return null;
-                }
-            }
-            if (ext.hasConfigPanel()) {
-                return ext.getConfigPanel();
-            } else {
-                return new EmptyExtensionConfigPanel(ext);
-            }
-        } else if (list.getSelectedValue() instanceof SwitchPanel) {
-            return (SwitchPanel) list.getSelectedValue();
+        final Object selectedValue = list.getSelectedValue();
+        if (selectedValue instanceof SwitchPanel) {
+            return (SwitchPanel) selectedValue;
         } else {
             return null;
         }

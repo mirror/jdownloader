@@ -48,11 +48,9 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.ExtensionController;
-import org.jdownloader.extensions.InstalledExtension;
 import org.jdownloader.extensions.LazyExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
-import org.jdownloader.extensions.UninstalledExtension;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
@@ -79,9 +77,6 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
                     final AlphaComposite ac5 = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.1f);
                     g2.setComposite(ac5);
                     int index = locationToIndex(lmouse);
-                    if (index >= 0 && getModel().getElementAt(index) instanceof ExtensionHeader) {
-                        return;
-                    }
                     if (index >= 0 && getModel().getElementAt(index) instanceof AdvancedSettings) {
                         Point p = indexToLocation(index);
                         if (p != null) {
@@ -347,36 +342,36 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
     }
 
     public synchronized SwitchPanel getSelectedPanel() {
-        if (list.getSelectedValue() instanceof InstalledExtension) {
-            return ((InstalledExtension) list.getSelectedValue()).getPanel();
-        } else if (list.getSelectedValue() instanceof UninstalledExtension) {
-            return ((UninstalledExtension) list.getSelectedValue()).getPanel();
-        } else if (list.getSelectedValue() instanceof AbstractExtension) {
-            AbstractExtension<?, ?> ext = ((AbstractExtension) list.getSelectedValue());
+        final Object selectedValue = list.getSelectedValue();
+        if (selectedValue instanceof AbstractExtension) {
+            final AbstractExtension<?, ?> ext = ((AbstractExtension) selectedValue);
             if (ext.hasConfigPanel()) {
                 return ext.getConfigPanel();
             } else {
                 return new EmptyExtensionConfigPanel(ext);
             }
-        } else if (list.getSelectedValue() instanceof LazyExtension) {
-            AbstractExtension<?, ?> ext = ((LazyExtension) list.getSelectedValue())._getExtension();
+        } else if (selectedValue instanceof LazyExtension) {
+            final LazyExtension lazy = (LazyExtension) selectedValue;
+            AbstractExtension<?, ?> ext = lazy._getExtension();
             if (ext == null) {
                 try {
-                    ((LazyExtension) list.getSelectedValue()).init();
-                    ext = ((LazyExtension) list.getSelectedValue())._getExtension();
+                    lazy.init();
+                    ext = lazy._getExtension();
                 } catch (Exception e) {
                     org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                     Dialog.getInstance().showExceptionDialog("Error", e.getMessage(), e);
                     return null;
                 }
             }
-            if (ext.hasConfigPanel()) {
+            if (ext == null) {
+                return null;
+            } else if (ext.hasConfigPanel()) {
                 return ext.getConfigPanel();
             } else {
                 return new EmptyExtensionConfigPanel(ext);
             }
-        } else if (list.getSelectedValue() instanceof SwitchPanel) {
-            return (SwitchPanel) list.getSelectedValue();
+        } else if (selectedValue instanceof SwitchPanel) {
+            return (SwitchPanel) selectedValue;
         } else {
             return null;
         }

@@ -14,9 +14,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
@@ -36,6 +38,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.io.J7FileList;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -69,7 +72,17 @@ public class ExtensionController implements MenuExtenderHandler {
         return ExtensionController.INSTANCE;
     }
 
-    private volatile List<LazyExtension>         list = new ArrayList<LazyExtension>();
+    private volatile List<LazyExtension>         list    = new ArrayList<LazyExtension>();
+    private static final Map<String, String>     MAPPING = new HashMap<String, String>();
+    static {
+        MAPPING.put("eventscripter", "org.jdownloader.extensions.eventscripter.EventScripterExtension");
+        MAPPING.put("folderwatch", "org.jdownloader.extensions.folderwatchV2.FolderWatchExtension");
+        MAPPING.put("scheduler", "org.jdownloader.extensions.schedulerV2.SchedulerExtension");
+        MAPPING.put("shutdown", "org.jdownloader.extensions.shutdown.ShutdownExtension");
+        MAPPING.put("infobar", "org.jdownloader.extensions.infobar.InfoBarExtension");
+        MAPPING.put("chat", "org.jdownloader.extensions.chat.ChatExtension");
+        MAPPING.put("translator", "org.jdownloader.extensions.translator.TranslatorExtension");
+    }
     private final ExtensionControllerEventSender eventSender;
     private final LogSource                      logger;
 
@@ -90,9 +103,8 @@ public class ExtensionController implements MenuExtenderHandler {
         return eventSender;
     }
 
-    private boolean                             cacheInvalidated      = false;
-    private volatile List<UninstalledExtension> uninstalledExtensions = new ArrayList<UninstalledExtension>();
-    private volatile List<InstalledExtension>   installedExtensions   = new ArrayList<InstalledExtension>();
+    private boolean                          cacheInvalidated   = false;
+    private volatile List<OptionalExtension> optionalExtensions = new ArrayList<OptionalExtension>();
 
     public boolean isCacheInvalidated() {
         return cacheInvalidated;
@@ -161,7 +173,7 @@ public class ExtensionController implements MenuExtenderHandler {
                 MenuManagerMainToolbar.getInstance().registerExtender(this);
             }
             list = Collections.unmodifiableList(ret);
-            initUninstalledExtensions();
+            optionalExtensions = initOptionalExtensions(list);
             if (!org.appwork.utils.Application.isHeadless()) {
                 SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
                     public void run() {
@@ -178,72 +190,47 @@ public class ExtensionController implements MenuExtenderHandler {
         getEventSender().fireEvent(new ExtensionControllerEvent(this, ExtensionControllerEvent.Type.UPDATED));
     }
 
-    private void initUninstalledExtensions() {
-        final ArrayList<UninstalledExtension> uninstalled = new ArrayList<UninstalledExtension>();
-        final ArrayList<InstalledExtension> installed = new ArrayList<InstalledExtension>();
-        final HashSet<String> set = new HashSet<String>();
-        for (LazyExtension l : list) {
-            set.add(l.getClassname());
+    private String getClassname(final String extensionID) {
+        return MAPPING.get(StringUtils.toLowerCaseOrNull(extensionID));
+    }
+
+    private List<OptionalExtension> initOptionalExtensions(final List<LazyExtension> lazyExtensions) {
+        final ArrayList<OptionalExtension> optionalExtensions = new ArrayList<OptionalExtension>();
+        final Map<String, LazyExtension> lazyExtensionsMap = new HashMap<String, LazyExtension>();
+        for (final LazyExtension lazyExtension : lazyExtensions) {
+            lazyExtensionsMap.put(lazyExtension.getClassname(), lazyExtension);
         }
-        if (set.contains("org.jdownloader.extensions.eventscripter.EventScripterExtension")) {
-            installed.add(new InstalledExtension("eventscripter", IconKey.ICON_EVENT, _GUI.T.ExtensionController_initUninstalledExtensions_EventScripterExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_EventScripterExtension_description()));
-        } else {
-            uninstalled.add(new UninstalledExtension("eventscripter", IconKey.ICON_EVENT, _GUI.T.ExtensionController_initUninstalledExtensions_EventScripterExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_EventScripterExtension_description()));
-        }
-        if (set.contains("org.jdownloader.extensions.folderwatchV2.FolderWatchExtension")) {
-            installed.add(new InstalledExtension("folderwatch", IconKey.ICON_FOLDER_ADD, _GUI.T.ExtensionController_initUninstalledExtensions_FolderWatchExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_FolderWatchExtension_description()));
-        } else {
-            uninstalled.add(new UninstalledExtension("folderwatch", IconKey.ICON_FOLDER_ADD, _GUI.T.ExtensionController_initUninstalledExtensions_FolderWatchExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_FolderWatchExtension_description()));
-        }
-        if (set.contains("org.jdownloader.extensions.schedulerV2.SchedulerExtension")) {
-            installed.add(new InstalledExtension("scheduler", IconKey.ICON_WAIT, _GUI.T.ExtensionController_initUninstalledExtensions_SchedulerExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_SchedulerExtension_description()));
-        } else {
-            uninstalled.add(new UninstalledExtension("scheduler", IconKey.ICON_WAIT, _GUI.T.ExtensionController_initUninstalledExtensions_SchedulerExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_SchedulerExtension_description()));
-        }
-        if (set.contains("org.jdownloader.extensions.shutdown.ShutdownExtension")) {
-            installed.add(new InstalledExtension("shutdown", IconKey.ICON_LOGOUT, _GUI.T.ExtensionController_initUninstalledExtensions_ShutdownExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_ShutdownExtension_description()));
-        } else {
-            uninstalled.add(new UninstalledExtension("shutdown", IconKey.ICON_LOGOUT, _GUI.T.ExtensionController_initUninstalledExtensions_ShutdownExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_ShutdownExtension_description()));
-        }
+        optionalExtensions.add(new OptionalExtension("eventscripter", IconKey.ICON_EVENT, _GUI.T.ExtensionController_initUninstalledExtensions_EventScripterExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_EventScripterExtension_description(), lazyExtensionsMap.get(getClassname("eventscripter1"))));
+        optionalExtensions.add(new OptionalExtension("folderwatch", IconKey.ICON_FOLDER_ADD, _GUI.T.ExtensionController_initUninstalledExtensions_FolderWatchExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_FolderWatchExtension_description(), lazyExtensionsMap.get(getClassname("folderwatch"))));
+        optionalExtensions.add(new OptionalExtension("scheduler", IconKey.ICON_WAIT, _GUI.T.ExtensionController_initUninstalledExtensions_SchedulerExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_SchedulerExtension_description(), lazyExtensionsMap.get(getClassname("scheduler"))));
+        optionalExtensions.add(new OptionalExtension("shutdown", IconKey.ICON_LOGOUT, _GUI.T.ExtensionController_initUninstalledExtensions_ShutdownExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_ShutdownExtension_description(), lazyExtensionsMap.get(getClassname("shutdown"))));
         // TODO: antistandby are not optional yet
         if (!Application.isHeadless()) {
-            if (set.contains("org.jdownloader.extensions.infobar.InfoBarExtension")) {
-                installed.add(new InstalledExtension("infobar", IconKey.ICON_INFO, _GUI.T.ExtensionController_initUninstalledExtensions_INFOBAR(), _GUI.T.ExtensionController_initUninstalledExtensions_INFOBAR_description()));
-            } else {
-                uninstalled.add(new UninstalledExtension("infobar", IconKey.ICON_INFO, _GUI.T.ExtensionController_initUninstalledExtensions_INFOBAR(), _GUI.T.ExtensionController_initUninstalledExtensions_INFOBAR_description()));
-            }
-            if (set.contains("org.jdownloader.extensions.chat.ChatExtension")) {
-                installed.add(new InstalledExtension("chat", IconKey.ICON_CHAT, _GUI.T.ExtensionController_initUninstalledExtensions_JDChat(), _GUI.T.ExtensionController_initUninstalledExtensions_JDChat_description()));
-            } else {
-                uninstalled.add(new UninstalledExtension("chat", IconKey.ICON_CHAT, _GUI.T.ExtensionController_initUninstalledExtensions_JDChat(), _GUI.T.ExtensionController_initUninstalledExtensions_JDChat_description()));
-            }
-            if (set.contains("org.jdownloader.extensions.translator.TranslatorExtension")) {
-                installed.add(new InstalledExtension("translator", IconKey.ICON_LANGUAGE, _GUI.T.ExtensionController_initUninstalledExtensions_TranslatorExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_TranslatorExtension_description()));
-            } else {
-                uninstalled.add(new UninstalledExtension("translator", IconKey.ICON_LANGUAGE, _GUI.T.ExtensionController_initUninstalledExtensions_TranslatorExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_TranslatorExtension_description()));
-            }
+            optionalExtensions.add(new OptionalExtension("infobar", IconKey.ICON_INFO, _GUI.T.ExtensionController_initUninstalledExtensions_INFOBAR(), _GUI.T.ExtensionController_initUninstalledExtensions_INFOBAR_description(), lazyExtensionsMap.get(getClassname("infobar"))));
+            optionalExtensions.add(new OptionalExtension("chat", IconKey.ICON_CHAT, _GUI.T.ExtensionController_initUninstalledExtensions_JDChat(), _GUI.T.ExtensionController_initUninstalledExtensions_JDChat_description(), lazyExtensionsMap.get(getClassname("chat"))));
+            optionalExtensions.add(new OptionalExtension("translator", IconKey.ICON_LANGUAGE, _GUI.T.ExtensionController_initUninstalledExtensions_TranslatorExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_TranslatorExtension_description(), lazyExtensionsMap.get(getClassname("translator"))));
         }
-        if (UpdateController.getInstance().isHandlerSet()) {
-            // reinstall extensions if we could not load them
-            final ArrayList<String> list = new ArrayList<String>();
-            for (UninstalledExtension ue : uninstalled) {
-                if (UpdateController.getInstance().isExtensionInstalled(ue.getId())) {
-                    list.add(ue.getId());
-                }
-            }
+        final UpdateController updateController = UpdateController.getInstance();
+        if (updateController.isHandlerSet()) {
             try {
+                // reinstall extensions if we could not load them
+                final ArrayList<String> list = new ArrayList<String>();
+                for (final OptionalExtension optionalExtension : optionalExtensions) {
+                    if (!optionalExtension.isInstalled() && updateController.isExtensionInstalled(optionalExtension.getExtensionID())) {
+                        list.add(optionalExtension.getExtensionID());
+                    }
+                }
                 // UpdateController.getInstance().runExtensionUnInstallation(ue.getId());
                 UpdateController.getInstance().runExtensionsFullUpdate(list);
             } catch (Throwable e) {
-                e.printStackTrace();
+                logger.log(e);
             }
         }
-        uninstalledExtensions = Collections.unmodifiableList(uninstalled);
-        installedExtensions = Collections.unmodifiableList(installed);
+        return Collections.unmodifiableList(optionalExtensions);
     }
 
-    private java.util.List<LazyExtension> loadFromCache() throws InstantiationException, IllegalAccessException, ClassNotFoundException, StartException {
-        java.util.List<LazyExtension> cache = JSonStorage.restoreFrom(getCache(), true, null, new TypeRef<ArrayList<LazyExtension>>() {
+    private List<LazyExtension> loadFromCache() throws InstantiationException, IllegalAccessException, ClassNotFoundException, StartException {
+        List<LazyExtension> cache = JSonStorage.restoreFrom(getCache(), true, null, new TypeRef<ArrayList<LazyExtension>>() {
         }, new ArrayList<LazyExtension>());
         java.util.List<LazyExtension> lst = new ArrayList<LazyExtension>(cache);
         for (Iterator<LazyExtension> it = lst.iterator(); it.hasNext();) {
@@ -261,7 +248,7 @@ public class ExtensionController implements MenuExtenderHandler {
         return lst;
     }
 
-    private synchronized java.util.List<LazyExtension> load() {
+    private synchronized List<LazyExtension> load() {
         final List<LazyExtension> ret;
         if (Application.isJared(ExtensionController.class)) {
             ret = loadJared();
@@ -526,10 +513,10 @@ public class ExtensionController implements MenuExtenderHandler {
      *
      * @return
      */
-    public java.util.List<AbstractExtension<?, ?>> getEnabledExtensions() {
-        java.util.List<AbstractExtension<?, ?>> ret = new ArrayList<AbstractExtension<?, ?>>();
-        List<LazyExtension> llist = list;
-        for (LazyExtension aew : llist) {
+    public List<AbstractExtension<?, ?>> getEnabledExtensions() {
+        final List<AbstractExtension<?, ?>> ret = new ArrayList<AbstractExtension<?, ?>>();
+        final List<LazyExtension> list = getExtensions();
+        for (final LazyExtension aew : list) {
             if (aew._getExtension() != null && aew._getExtension().isEnabled()) {
                 ret.add(aew._getExtension());
             }
@@ -537,9 +524,9 @@ public class ExtensionController implements MenuExtenderHandler {
         return ret;
     }
 
-    public <T extends AbstractExtension<?, ?>> LazyExtension getExtension(Class<T> class1) {
-        List<LazyExtension> llist = list;
-        for (LazyExtension l : llist) {
+    public <T extends AbstractExtension<?, ?>> LazyExtension getExtension(final Class<T> class1) {
+        final List<LazyExtension> list = getExtensions();
+        for (final LazyExtension l : list) {
             if (class1.getName().equals(l.getClassname())) {
                 return l;
             }
@@ -548,10 +535,18 @@ public class ExtensionController implements MenuExtenderHandler {
     }
 
     public <T extends AbstractExtension<?, ?>> LazyExtension getExtension(String classname) {
-        List<LazyExtension> llist = list;
-        for (LazyExtension l : llist) {
+        final List<LazyExtension> list = getExtensions();
+        for (final LazyExtension l : list) {
             if (classname.equals(l.getClassname())) {
                 return l;
+            }
+        }
+        classname = getClassname(classname);
+        if (classname != null) {
+            for (final LazyExtension l : list) {
+                if (classname.equals(l.getClassname())) {
+                    return l;
+                }
             }
         }
         return null;
@@ -594,7 +589,7 @@ public class ExtensionController implements MenuExtenderHandler {
 
     @Override
     public MenuItemData updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
-        java.util.List<LazyExtension> pluginsOptional = new ArrayList<LazyExtension>(getExtensions());
+        final List<LazyExtension> pluginsOptional = new ArrayList<LazyExtension>(getExtensions());
         Collections.sort(pluginsOptional, new Comparator<LazyExtension>() {
             public int compare(LazyExtension o1, LazyExtension o2) {
                 return o1.getName().compareTo(o2.getName());
@@ -604,8 +599,9 @@ public class ExtensionController implements MenuExtenderHandler {
             return updateMainToolbar(pluginsOptional, mr);
         } else if (manager instanceof MenuManagerMainmenu) {
             return updateMainMenu(pluginsOptional, mr);
+        } else {
+            return null;
         }
-        return null;
     }
 
     private MenuItemData updateMainMenu(List<LazyExtension> pluginsOptional, MenuContainerRoot mr) {
@@ -696,11 +692,7 @@ public class ExtensionController implements MenuExtenderHandler {
         }
     }
 
-    public List<UninstalledExtension> getUninstalledExtensions() {
-        return uninstalledExtensions;
-    }
-
-    public List<InstalledExtension> getInstalledExtensions() {
-        return installedExtensions;
+    public List<OptionalExtension> getOptionalExtensions() {
+        return optionalExtensions;
     }
 }
