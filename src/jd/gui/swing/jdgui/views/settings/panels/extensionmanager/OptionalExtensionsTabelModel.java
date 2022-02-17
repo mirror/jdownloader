@@ -65,12 +65,7 @@ public class OptionalExtensionsTabelModel extends ExtTableModel<OptionalExtensio
 
             @Override
             public int getMaxWidth() {
-                return 32;
-            }
-
-            @Override
-            protected boolean isDefaultResizable() {
-                return false;
+                return 80;
             }
 
             @Override
@@ -174,22 +169,12 @@ public class OptionalExtensionsTabelModel extends ExtTableModel<OptionalExtensio
             }
 
             @Override
-            public boolean isResizable() {
-                return true;
-            }
-
-            @Override
             public int getMaxWidth() {
-                return 160;
+                return 360;
             }
 
             @Override
             public boolean isSortable(OptionalExtension obj) {
-                return true;
-            }
-
-            @Override
-            protected boolean isDefaultResizable() {
                 return true;
             }
 
@@ -200,7 +185,7 @@ public class OptionalExtensionsTabelModel extends ExtTableModel<OptionalExtensio
 
             @Override
             public int getDefaultWidth() {
-                return 160;
+                return 360;
             }
 
             @Override
@@ -327,7 +312,12 @@ public class OptionalExtensionsTabelModel extends ExtTableModel<OptionalExtensio
             public String getLabelString() {
                 return null;
             }
-        }, 0, ext.getName(), ext.isInstalled() ? _GUI.T.InstalledExtension_getPanel_install_in_progress() : _GUI.T.UninstalledExtension_getPanel_install_in_progress(), null);
+        }, 0, ext.getName(), ext.isInstalled() ? _GUI.T.InstalledExtension_getPanel_install_in_progress() : _GUI.T.UninstalledExtension_getPanel_install_in_progress(), null) {
+            @Override
+            protected int getPreferredWidth() {
+                return 400;
+            }
+        };
         try {
             Dialog.getInstance().showDialog(dialog);
         } catch (DialogNoAnswerException e1) {
