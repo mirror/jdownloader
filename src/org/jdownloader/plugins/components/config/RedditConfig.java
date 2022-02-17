@@ -61,7 +61,7 @@ public interface RedditConfig extends PluginConfigInterface {
     }
 
     @AboutConfig
-    @DefaultEnumValue("DATE_SUBREDDIT_ID_SLUG")
+    @DefaultEnumValue("DATE_SUBREDDIT_POSTID_SLUG")
     @Order(10)
     @DescriptionForConfigEntry("Select preferred filename scheme")
     CommentsPackagenameScheme getPreferredCommentsPackagenameScheme();
