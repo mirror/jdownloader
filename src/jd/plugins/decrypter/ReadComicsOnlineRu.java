@@ -46,18 +46,24 @@ public class ReadComicsOnlineRu extends antiDDoSForDecrypt {
         String itemID = new Regex(parameter, "/comic/([^/]+)").getMatch(0);
         String chapterID = new Regex(parameter, "/comic/[^/]+/([^/]+)").getMatch(0);
         if (StringUtils.isEmpty(chapterID)) {
-            final DownloadLink dl = createDownloadlink(Encoding.htmlOnlyDecode(br.getRegex("class\\s*=\\s*\"[^\"]*chapter-title-rtl[^\"]*\"[^>]*>\\s*<a[^>]*href\\s*=\\s*\"([^\"]+)\"").getMatch(0)));
-            fp.add(dl);
-            distribute(dl);
-            decryptedLinks.add(dl);
+            String[] chapters = br.getRegex("class\\s*=\\s*\"[^\"]*chapter-title-rtl[^\"]*\"[^>]*>\\s*<a[^>]*href\\s*=\\s*\"([^\"]+)\"").getColumn(0);
+            for (String chapter : chapters) {
+                final DownloadLink dl = createDownloadlink(Encoding.htmlOnlyDecode(chapter));
+                fp.add(dl);
+                distribute(dl);
+                decryptedLinks.add(dl);
+            }
         } else {
             String pageBlock = br.getRegex("<div[^>]+id=\"all\"[^>]*>\\s*(<img[^$]*)\\s*<\\/div>").getMatch(0);
             String[] pages = new Regex(pageBlock, "data-src\\s*=\\s*[\"']\\s*([^\"']+)\\s*[\"']").getColumn(0);
             int pageCount = pages.length;
             if (pageCount > 0) {
-                String fpName = br.getRegex("<h3>\\s*(?:<b>)?\\s*([^<]+)\\s*(?:<\\/b>)?\\s*(?:<small>)?Release\\s+Information").getMatch(0);
+                String fpName = Encoding.htmlOnlyDecode(br.getRegex("<h3>\\s*(?:<b>)?\\s*([^<]+)\\s*(?:<\\/b>)?\\s*(?:<small>)?Release\\s+Information").getMatch(0));
                 String title = StringUtils.isEmpty(fpName) ? itemID : fpName;
-                String chapterBlock = br.getRegex("<div[^>]+id=\"all\"[^>]*>\\s*(<img[^$]*)\\s*<\\/div>").getMatch(0);
+                String chapterBlock = br.getRegex("(id=\"chapter-list\" class=\"dropdown\">[^§]*)</ul>").getMatch(0);
+                if (chapterBlock.indexOf("</ul>") > 0) {
+                    chapterBlock = chapterBlock.substring(0, chapterBlock.indexOf("</ul"));
+                }
                 int chapterCount = new Regex(chapterBlock, "<li").count();
                 int chapterNumber = Integer.parseInt(chapterID);
                 int pageNumber = 1;
@@ -68,6 +74,9 @@ public class ReadComicsOnlineRu extends antiDDoSForDecrypt {
                     String page_formatted = String.format(Locale.US, "%0" + pagePadlength + "d", pageNumber++);
                     String ext = getFileNameExtensionFromURL(page, ".jpg");
                     dl.setFinalFileName(title + "_" + chapter_formatted + "_" + page_formatted + ext);
+                    if (StringUtils.isNotEmpty(title)) {
+                        fp.setName(title);
+                    }
                     fp.add(dl);
                     distribute(dl);
                     decryptedLinks.add(dl);
