@@ -41,6 +41,7 @@ import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.io.J7FileList;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.FileCreationManager;
@@ -79,6 +80,7 @@ public class ExtensionController implements MenuExtenderHandler {
         MAPPING.put("folderwatch", "org.jdownloader.extensions.folderwatchV2.FolderWatchExtension");
         MAPPING.put("scheduler", "org.jdownloader.extensions.schedulerV2.SchedulerExtension");
         MAPPING.put("shutdown", "org.jdownloader.extensions.shutdown.ShutdownExtension");
+        MAPPING.put("antishutdown", "org.jdownloader.extensions.antistandby.AntiStandbyExtension");
         MAPPING.put("infobar", "org.jdownloader.extensions.infobar.InfoBarExtension");
         MAPPING.put("chat", "org.jdownloader.extensions.chat.ChatExtension");
         MAPPING.put("translator", "org.jdownloader.extensions.translator.TranslatorExtension");
@@ -204,7 +206,10 @@ public class ExtensionController implements MenuExtenderHandler {
         optionalExtensions.add(new OptionalExtension("folderwatch", IconKey.ICON_FOLDER_ADD, _GUI.T.ExtensionController_initUninstalledExtensions_FolderWatchExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_FolderWatchExtension_description(), lazyExtensionsMap.get(getClassname("folderwatch"))));
         optionalExtensions.add(new OptionalExtension("scheduler", IconKey.ICON_WAIT, _GUI.T.ExtensionController_initUninstalledExtensions_SchedulerExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_SchedulerExtension_description(), lazyExtensionsMap.get(getClassname("scheduler"))));
         optionalExtensions.add(new OptionalExtension("shutdown", IconKey.ICON_LOGOUT, _GUI.T.ExtensionController_initUninstalledExtensions_ShutdownExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_ShutdownExtension_description(), lazyExtensionsMap.get(getClassname("shutdown"))));
-        // TODO: antistandby are not optional yet
+        if (false && (CrossSystem.isWindows() || CrossSystem.isMac())) {
+            // not finished yet
+            optionalExtensions.add(new OptionalExtension("antishutdown", IconKey.ICON_SETTINGS, _GUI.T.ExtensionController_initUninstalledExtensions_AntiShutdownExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_AntiShutdownExtension_description(), lazyExtensionsMap.get(getClassname("antishutdown"))));
+        }
         if (!Application.isHeadless()) {
             optionalExtensions.add(new OptionalExtension("infobar", IconKey.ICON_INFO, _GUI.T.ExtensionController_initUninstalledExtensions_INFOBAR(), _GUI.T.ExtensionController_initUninstalledExtensions_INFOBAR_description(), lazyExtensionsMap.get(getClassname("infobar"))));
             optionalExtensions.add(new OptionalExtension("chat", IconKey.ICON_CHAT, _GUI.T.ExtensionController_initUninstalledExtensions_JDChat(), _GUI.T.ExtensionController_initUninstalledExtensions_JDChat_description(), lazyExtensionsMap.get(getClassname("chat"))));

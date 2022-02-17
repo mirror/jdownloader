@@ -37,6 +37,7 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.antistandby.translate.AntistandbyTranslation;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 
 public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, AntistandbyTranslation> implements ShutdownVetoListener {
@@ -76,7 +77,7 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
 
     @Override
     public String getIconKey() {
-        return "settings";
+        return IconKey.ICON_SETTINGS;
     }
 
     public boolean isQuickToggleEnabled() {
