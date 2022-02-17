@@ -118,7 +118,7 @@ public interface GuiTranslation extends TranslateInterface {
     String gui_plugin_settings_share_online_shared_ip_workaround();
 
     @Default(lngs = { "en", "de" }, values = { "<html>Enable traffic workaround?<br /><p style=\"color:#808080\">Share-online has a premium fair-use-limit of 100 GB per day - if exceeded you can continue downloading but with limited speed.<br />Usually JDownloader disables accounts 'without traffic' - if you activate this setting, share-online accounts will still get used in this case.<br />If you only own a single premium account to download from share-online, it makes sense to use this setting.</p></html>",
-            "<html>Aktiviere traffic workaround?<br /><p style=\"color:#808080\">Share-Online hat ein premium fair-use-Limit von 100 GB pro Tag - danach kann man nur gedrosselt weiter herunterladen.<br />Normalerweise deaktiviert JDownloader Accounts 'ohne Traffic' - aktiviert man diese Einstellung, werden betroffene share-online Accounts in diesem Fall trotzdem weiter verwendet.<br />Sofern du nur einen premium Account zum Download von share-online besitzt ist es sinnvoll, diese Einstellung zu verwenden.</p></html>" })
+    "<html>Aktiviere traffic workaround?<br /><p style=\"color:#808080\">Share-Online hat ein premium fair-use-Limit von 100 GB pro Tag - danach kann man nur gedrosselt weiter herunterladen.<br />Normalerweise deaktiviert JDownloader Accounts 'ohne Traffic' - aktiviert man diese Einstellung, werden betroffene share-online Accounts in diesem Fall trotzdem weiter verwendet.<br />Sofern du nur einen premium Account zum Download von share-online besitzt ist es sinnvoll, diese Einstellung zu verwenden.</p></html>" })
     String gui_plugin_settings_share_online_traffic_workaround();
 
     @Default(lngs = { "en", "de" }, values = { "<html>Enable max. traffic workaround?<br /><p style=\"color:#808080\">The calculation of the traffic is decreased before the download and added again later if necessary. This does not exceed the limit of 100 GB per day.<br />If you only own a single premium account to download from share-online, it makes sense to use this setting.</p></html>", "<html>Aktiviere max. traffic workaround?<br /><p style=\"color:#808080\">Die Berechnung vom Traffic wird vor dem Download abgezogen und später wieder hinzugefügt, wenn erforderlich. Dadurch wird das Limit von 100 GB pro Tag keinesfalls überschritten.<br />Sofern du nur einen premium Account zum Download von share-online besitzt ist es sinnvoll, diese Einstellung zu verwenden.</p></html>" })
@@ -5629,17 +5629,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Listens to internal JDownloader event, and allows to execute relevant scripts (Javascript). This makes JDownloader even more customizable." })
     String ExtensionController_initUninstalledExtensions_EventScripterExtension_description();
 
-    @Default(lngs = { "en" }, values = { "%s1\r\n\r\nThis extension is not installed yet. Click [Install now], and JDownloader will start the installation immediately" })
-    String UninstalledExtension_getDescription_object_(String description);
-
     @Default(lngs = { "en" }, values = { "Installation in Progress" })
     String UninstalledExtension_getPanel_install_in_progress();
 
     @Default(lngs = { "en" }, values = { "Install now" })
     String UninstalledExtension_getPanel_();
-
-    @Default(lngs = { "en" }, values = { "%s1\r\n\r\nThis extension is installed. Click [Remove now], and JDownloader will start the removal immediately" })
-    String InstalledExtension_getDescription_object_(String description);
 
     @Default(lngs = { "en" }, values = { "Removal in Progress" })
     String InstalledExtension_getPanel_install_in_progress();
@@ -5688,12 +5682,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "This Extension can be used to edit JDownloader translations. You need a developer account to use this extension. If you do not want to translate, but just change the current language, please do NOT install this extension, but click on 'User Interface'->'Language' above." })
     String ExtensionController_initUninstalledExtensions_TranslatorExtension_description();
-
-    @Default(lngs = { "en" }, values = { "Not installed yet" })
-    String uninstalledextensionManager_title();
-
-    @Default(lngs = { "en" }, values = { "Installed" })
-    String installedextensionManager_title();
 
     @Default(lngs = { "en" }, values = { "finished package" })
     String lit_finished_package();

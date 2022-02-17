@@ -4,7 +4,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
@@ -35,7 +34,7 @@ import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.api.myjdownloader.MyJDownloaderHttpConnection;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.LazyExtension;
-import org.jdownloader.extensions.UninstalledExtension;
+import org.jdownloader.extensions.OptionalExtension;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
@@ -124,11 +123,12 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
                 }
             }
             if (key != null && key.startsWith("InstallExtension")) {
-                final String toInstall = key.substring("InstallExtension".length()).toLowerCase(Locale.ENGLISH);
+                final String toInstall = StringUtils.toLowerCaseOrNull(key.substring("InstallExtension".length()));
                 installExtension(toInstall);
                 return true;
+            } else {
+                return false;
             }
-            return false;
         }
         final KeyHandler<Object> keyHandler = getKeyHandler(interfaceName, storage, key);
         if (keyHandler != null) {
@@ -310,26 +310,30 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
 
     private List<AdvancedConfigAPIEntry> createExtensionConfigList(final AdvancedConfigQueryStorable query) {
         final ArrayList<AdvancedConfigAPIEntry> ret = new ArrayList<AdvancedConfigAPIEntry>();
-        for (final UninstalledExtension ext : ExtensionController.getInstance().getUninstalledExtensions()) {
-            AdvancedConfigAPIEntry entry = new AdvancedConfigAPIEntry();
-            entry.setAbstractType(AbstractType.BOOLEAN);
-            if (query.isDefaultValues()) {
-                entry.setDefaultValue(false);
+        for (final OptionalExtension ext : ExtensionController.getInstance().getOptionalExtensions()) {
+            if (ext.isInstalled()) {
+                continue;
+            } else {
+                final AdvancedConfigAPIEntry entry = new AdvancedConfigAPIEntry();
+                entry.setInterfaceName(EXTENSION);
+                entry.setAbstractType(AbstractType.BOOLEAN);
+                if (query.isDefaultValues()) {
+                    entry.setDefaultValue(false);
+                }
+                if (query.isDescription()) {
+                    entry.setDocs("Install Extension: " + ext.getName());
+                }
+                final String dummyKey = "InstallExtension" + StringUtils.toUpperCaseOrNull(ext.getExtensionID());
+                entry.setKey(dummyKey);
+                if (query.isValues()) {
+                    entry.setValue(false);
+                }
+                ret.add(entry);
             }
-            if (query.isDescription()) {
-                entry.setDocs("Install Extension: " + ext.getName());
-            }
-            entry.setInterfaceName(EXTENSION);
-            String dummyKey = "InstallExtension" + ext.getId().toUpperCase(Locale.ENGLISH);
-            entry.setKey(dummyKey);
-            if (query.isValues()) {
-                entry.setValue(false);
-            }
-            ret.add(entry);
         }
         for (final LazyExtension ext : ExtensionController.getInstance().getExtensions()) {
-            // enable
-            AdvancedConfigAPIEntry entry = new AdvancedConfigAPIEntry();
+            final AdvancedConfigAPIEntry entry = new AdvancedConfigAPIEntry();
+            entry.setInterfaceName(EXTENSION);
             entry.setAbstractType(AbstractType.BOOLEAN);
             if (query.isDefaultValues()) {
                 entry.setDefaultValue(false);
@@ -337,8 +341,7 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
             if (query.isDescription()) {
                 entry.setDocs("Enable/Disable Extension: " + ext.getName());
             }
-            entry.setInterfaceName(EXTENSION);
-            String dummyKey = createExtensionToggleDummyKey("Enable", ext);
+            final String dummyKey = createExtensionToggleDummyKey("Enable", ext);
             entry.setKey(dummyKey);
             if (query.isValues()) {
                 entry.setValue(ext._isEnabled());
@@ -370,8 +373,8 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
     }
 
     protected String createExtensionToggleDummyKey(String namespace, final LazyExtension ext) {
-        int lastP = ext.getClassname().lastIndexOf(".");
-        String dummyKey = namespace + ext.getClassname().substring(lastP + 1);
+        final int lastP = ext.getClassname().lastIndexOf(".");
+        final String dummyKey = namespace + ext.getClassname().substring(lastP + 1);
         return dummyKey;
     }
 
@@ -412,48 +415,50 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
     }
 
     private void installExtension(final String toInstall) {
-        new Thread("Install Extension") {
-            public void run() {
-                if (UIOManager.I().showConfirmDialog(0, _GUI.T.lit_are_you_sure(), _GUI.T.installExtension_remote_rly(toInstall))) {
-                    UpdaterListener listener = null;
-                    try {
-                        final AtomicLong last = new AtomicLong(System.currentTimeMillis());
-                        UpdateController.getInstance().getEventSender().addListener(listener = new UpdaterListener() {
-                            @Override
-                            public void onUpdatesAvailable(boolean selfupdate, InstallLog installlog) {
-                                System.out.println();
-                            }
-
-                            @Override
-                            public void onUpdaterStatusUpdate(final String label, Icon icon, final double p) {
-                                if (System.currentTimeMillis() - last.get() > 5000) {
-                                    UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.installExtension_remote_title(toInstall), _GUI.T.installExtension_remote_wait(), new AbstractIcon(IconKey.ICON_WAIT, 32), _GUI.T.lit_continue(), null);
-                                    last.set(System.currentTimeMillis());
+        if (StringUtils.isNotEmpty(toInstall)) {
+            new Thread("Install Extension") {
+                public void run() {
+                    if (UIOManager.I().showConfirmDialog(0, _GUI.T.lit_are_you_sure(), _GUI.T.installExtension_remote_rly(toInstall))) {
+                        UpdaterListener listener = null;
+                        try {
+                            final AtomicLong last = new AtomicLong(System.currentTimeMillis());
+                            UpdateController.getInstance().getEventSender().addListener(listener = new UpdaterListener() {
+                                @Override
+                                public void onUpdatesAvailable(boolean selfupdate, InstallLog installlog) {
+                                    System.out.println();
                                 }
+
+                                @Override
+                                public void onUpdaterStatusUpdate(final String label, Icon icon, final double p) {
+                                    if (System.currentTimeMillis() - last.get() > 5000) {
+                                        UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.installExtension_remote_title(toInstall), _GUI.T.installExtension_remote_wait(), new AbstractIcon(IconKey.ICON_WAIT, 32), _GUI.T.lit_continue(), null);
+                                        last.set(System.currentTimeMillis());
+                                    }
+                                }
+                            });
+                            UpdateController.getInstance().runExtensionInstallation(toInstall);
+                            while (true) {
+                                Thread.sleep(1000);
+                                if (!UpdateController.getInstance().isRunning()) {
+                                    break;
+                                }
+                                UpdateController.getInstance().waitForUpdate();
                             }
-                        });
-                        UpdateController.getInstance().runExtensionInstallation(toInstall);
-                        while (true) {
-                            Thread.sleep(1000);
-                            if (!UpdateController.getInstance().isRunning()) {
-                                break;
+                            // boolean installed = UpdateController.getInstance().isExtensionInstalled(id);
+                            final boolean pending = UpdateController.getInstance().hasPendingUpdates();
+                            //
+                            if (UIOManager.I().showConfirmDialog(0, "Install Extension " + toInstall, _GUI.T.UninstalledExtension_waiting_for_restart(), new AbstractIcon(IconKey.ICON_RESTART, 32), _GUI.T.lit_restart_now(), _GUI.T.lit_later())) {
+                                RestartController.getInstance().asyncRestart(new SmartRlyRestartRequest(true));
                             }
-                            UpdateController.getInstance().waitForUpdate();
+                        } catch (Exception e) {
+                            UIOManager.I().showException(_GUI.T.lit_error_occured(), e);
+                        } finally {
+                            UpdateController.getInstance().getEventSender().removeListener(listener);
                         }
-                        // boolean installed = UpdateController.getInstance().isExtensionInstalled(id);
-                        final boolean pending = UpdateController.getInstance().hasPendingUpdates();
-                        //
-                        if (UIOManager.I().showConfirmDialog(0, "Install Extension " + toInstall, _GUI.T.UninstalledExtension_waiting_for_restart(), new AbstractIcon(IconKey.ICON_RESTART, 32), _GUI.T.lit_restart_now(), _GUI.T.lit_later())) {
-                            RestartController.getInstance().asyncRestart(new SmartRlyRestartRequest(true));
-                        }
-                    } catch (Exception e) {
-                        UIOManager.I().showException(_GUI.T.lit_error_occured(), e);
-                    } finally {
-                        UpdateController.getInstance().getEventSender().removeListener(listener);
                     }
-                }
-            };
-        }.start();
+                };
+            }.start();
+        }
     }
     // @Override
     // public List<ConfigInterfaceAPIStorable> queryConfigInterfaces(APIQuery

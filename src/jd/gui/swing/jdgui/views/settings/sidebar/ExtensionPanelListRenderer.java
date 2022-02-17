@@ -16,8 +16,6 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.utils.ColorUtils;
 import org.appwork.utils.swing.renderer.RenderLabel;
 import org.appwork.utils.swing.renderer.RendererCheckBox;
-import org.jdownloader.extensions.InstalledExtension;
-import org.jdownloader.extensions.UninstalledExtension;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
@@ -37,42 +35,8 @@ public class ExtensionPanelListRenderer extends JPanel implements ListCellRender
     private AbstractIcon      removeIcon;
 
     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-        if (value instanceof UninstalledExtension || value instanceof InstalledExtension) {
-            if (value instanceof UninstalledExtension) {
-                UninstalledExtension ext = (UninstalledExtension) value;
-                setText(ext.getName());
-                setIcon(ext.getIcon(32));
-                extensionButton.setIcon(addIcon);
-            } else {
-                InstalledExtension ext = (InstalledExtension) value;
-                setText(ext.getName());
-                setIcon(ext.getIcon(32));
-                extensionButton.setIcon(removeIcon);
-            }
-            cb.setVisible(false);
-            extensionButton.setVisible(true);
-            lbl.setEnabled(cb.isSelected());
-            lbl.setEnabled(true);
-            // downloadButton.setIcon(new AbstractIcon(IconKey.ICON_EXTENSION, 20));
-            if (isSelected) {
-                lbl.setFont(boldFont);
-                // lbl.setBorder(brd);
-                setBackground(b2);
-                // lbl.setForeground(b);
-                setOpaque(true);
-                // lbl.setForeground(b);
-            } else {
-                lbl.setFont(orgFont);
-                if (index % 2 == 0) {
-                    setBackground(a);
-                    setOpaque(true);
-                } else {
-                    setOpaque(false);
-                    setBackground(null);
-                }
-            }
-        } else {
-            CheckBoxedEntry ext = (CheckBoxedEntry) value;
+        if (value instanceof CheckBoxedEntry) {
+            final CheckBoxedEntry ext = (CheckBoxedEntry) value;
             // AddonConfig.getInstance(plg.getSettings(), "", true)
             cb.setVisible(true);
             extensionButton.setVisible(false);

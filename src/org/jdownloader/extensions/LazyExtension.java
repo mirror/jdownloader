@@ -26,26 +26,18 @@ import org.jdownloader.translate._JDT;
  *
  */
 public class LazyExtension implements Storable, CheckBoxedEntry {
-
     private Class<AbstractExtension<?, ?>> clazz;
-
     private boolean                        settings;
-
     private String                         configInterface;
-
     private boolean                        quickToggle;
-
     private boolean                        headlessRunnable;
 
     public static LazyExtension create(String id, Class<AbstractExtension<?, ?>> cls) throws StartException, InstantiationException, IllegalAccessException, IOException {
-
         LazyExtension ret = new LazyExtension();
         long t = System.currentTimeMillis();
         AbstractExtension<?, ?> plg = cls.newInstance();
-
         ret.description = plg.getDescription();
         FileOutputStream fos = null;
-
         ret.iconPath = plg.getIconKey();
         ret.linuxRunnable = plg.isLinuxRunnable();
         ret.macRunnable = plg.isMacRunnable();
@@ -57,13 +49,11 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
         ret.classname = cls.getName();
         ret.extension = plg;
         ret.configInterface = plg.getConfigClass().getName();
-
         ret.quickToggle = plg.isQuickToggleEnabled();
         ret.headlessRunnable = plg.isHeadlessRunnable();
         if (!org.appwork.utils.Application.isHeadless() || ret.headlessRunnable) {
             plg.init();
         }
-
         //
         //
         //
@@ -74,7 +64,6 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
         // IllegalArgumentException("Module is not for mac");
         // if (!plg.isLinuxRunnable() && CrossSystem.isLinux()) throw new
         // IllegalArgumentException("Module is not for linux");
-
         return ret;
     }
 
@@ -115,17 +104,11 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
     }
 
     private String      iconPath;
-
     private boolean     linuxRunnable;
-
     private boolean     macRunnable;
-
     private String      name;
-
     private int         version;
-
     private boolean     windowsRunnable;
-
     private ClassLoader classLoader;
 
     public LazyExtension() {
@@ -139,7 +122,6 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
      * @return
      */
     public AbstractExtension<?, ?> _getExtension() {
-
         return extension;
     }
 
@@ -152,9 +134,7 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
      */
     public Icon _getIcon(int size) {
         if (extension == null) {
-
             return NewTheme.I().getIcon(iconPath, size);
-
         } else {
             return NewTheme.I().getIcon(extension.getIconKey(), size);
         }
@@ -169,7 +149,6 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
     }
 
     public String getName() {
-
         return extension == null ? name : extension.getName();
     }
 
@@ -226,13 +205,11 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
      * @throws StartException
      */
     public void init() throws InstantiationException, IllegalAccessException, ClassNotFoundException, StartException {
-        if (extension != null) {
-            return;
+        if (extension == null) {
+            final AbstractExtension<?, ?> plg = newInstance();
+            plg.init();
+            extension = plg;
         }
-        AbstractExtension<?, ?> plg = newInstance();
-
-        plg.init();
-        extension = plg;
     }
 
     /**
@@ -265,7 +242,6 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
      * @throws InstantiationException
      */
     public void _setEnabled(boolean b) throws StartException, StopException {
-
         if (extension == null) {
             ExtensionConfigInterface ret = _getSettings();
             if (ret == null) {
@@ -282,13 +258,11 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
         } else {
             extension.setEnabled(b);
         }
-
     }
 
     @SuppressWarnings("unchecked")
     public ExtensionConfigInterface _getSettings() {
         try {
-
             return AbstractExtension.createStore(getClassname(), (Class<? extends ExtensionConfigInterface>) Class.forName(getConfigInterface(), true, getClassLoader()));
         } catch (Throwable e) {
             throw new WTFException(e);
@@ -315,7 +289,6 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
     }
 
     private String                                    classname;
-
     protected volatile Class<AbstractExtension<?, ?>> pluginClass;
 
     public void _setPluginClass(Class<AbstractExtension<?, ?>> pluginClass) {
@@ -323,9 +296,7 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
     }
 
     private volatile Constructor<AbstractExtension<?, ?>> constructor;
-
     private String                                        jarPath;
-
     private String                                        className;
 
     public String getClassname() {
@@ -343,7 +314,6 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
         } catch (final Throwable e) {
             throw new WTFException(e);
         }
-
     }
 
     private Constructor<AbstractExtension<?, ?>> _getConstructor() {
@@ -356,11 +326,8 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
             }
             try {
                 constructor = _getPluginClass().getConstructor(new Class[] {});
-
             } catch (Throwable e) {
-
                 throw new WTFException(e);
-
             }
             return constructor;
         }
@@ -382,7 +349,6 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
             }
             return pluginClass;
         }
-
     }
 
     public void setJarPath(String absolutePath) {
@@ -394,13 +360,10 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
     }
 
     public void validateCache() throws InstantiationException {
-
         if (Application.getRessourceURL(iconPath) == null) {
-
             if (!NewTheme.I().hasIcon(iconPath)) {
                 throw new InstantiationException("Cache of " + jarPath + " is invalid. Icon:'" + iconPath + "' is missing");
             }
-
         }
     }
 
@@ -411,5 +374,4 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
     public void setHeadlessRunnable(boolean headless) {
         this.headlessRunnable = headless;
     }
-
 }
