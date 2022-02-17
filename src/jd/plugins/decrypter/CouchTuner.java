@@ -72,7 +72,7 @@ public class CouchTuner extends antiDDoSForDecrypt {
         String page = br.toString();
         String fpName = br.getRegex("(?:og:)?(?:title|description)\\\"[^>]*content=[\\\"'](?:\\s*Watch\\s*Couchtuner\\s*)?([^\\\"\\']+)\\s+(?:online\\s+for\\s+free|\\|)").getMatch(0);
         ArrayList<String> links = new ArrayList<String>();
-        Collections.addAll(links, br.getRegex("<strong>Watch [iI]t [hH]ere\\s*:</strong>\\s*</span>\\s*<a href=\"([^\"\']+)\"").getColumn(0));
+        Collections.addAll(links, br.getRegex("Watch[^\"]*[iI]t[^\"]*[hH]ere.{2,32}<a[^>]+href\\s*=\\s*\"\\s*([^\"]+)\\s*\"").getColumn(0));
         if (links.isEmpty()) {
             Collections.addAll(links, br.getRegex("Watch[^\"]*[iI]t[^\"]*[hH]ere[^\\|]*<a href=\"([^\"]+)\\\"[^\\|]*</a>").getColumn(0));
         }
