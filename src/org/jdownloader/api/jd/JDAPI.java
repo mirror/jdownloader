@@ -10,7 +10,7 @@ public interface JDAPI extends RemoteAPIInterface {
 
     public long version();
 
-    public Integer getCoreRevision();
+    public int getCoreRevision();
 
     public boolean refreshPlugins();
 }

@@ -31,14 +31,14 @@ public class JDAPIImpl implements JDAPI {
     }
 
     @Override
-    public Integer getCoreRevision() {
+    public int getCoreRevision() {
         if (Application.isJared(JDAPIImpl.class)) {
             try {
                 final File buildJson = Application.getResource("build.json");
                 if (buildJson.isFile()) {
                     org.jdownloader.myjdownloader.client.json.JsonMap map = JSonStorage.restoreFromString(IO.readFileToString(buildJson), new TypeRef<org.jdownloader.myjdownloader.client.json.JsonMap>() {
                     });
-                    return (Integer) map.get("JDownloaderRevision");
+                    return ((Number) map.get("JDownloaderRevision")).intValue();
                 }
             } catch (Throwable t) {
                 org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(t);
