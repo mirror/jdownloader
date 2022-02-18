@@ -79,14 +79,17 @@ public class UsenextCom extends UseNet {
         if (value == null) {
             if (def == -1) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "not available:" + id);
+            } else {
+                return def;
             }
-            return def;
         }
         String unit = (String) map.get("unitResourceStringKey");
         if (StringUtils.contains(unit, "GIGA")) {
             unit = "GB";
         } else if (StringUtils.contains(unit, "MEGA")) {
             unit = "MB";
+        } else if (StringUtils.contains(unit, "TERA")) {
+            unit = "TB";
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "unsupported:" + unit);
         }
