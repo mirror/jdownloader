@@ -163,7 +163,6 @@ public class Main {
 
     public static void main(String[] args) {
         loadJXBrowser(Main.class.getClassLoader());
-        // USe Jacksonmapper in this project
         // add Serializer to Handle JsonFactoryInterface from MyJDownloaderCLient Project
         JSonStorage.getMapper().putSerializer(JsonFactoryInterface.class, new JsonSerializer() {
             @Override
