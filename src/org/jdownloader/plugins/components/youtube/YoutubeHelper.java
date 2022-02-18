@@ -1836,7 +1836,7 @@ public class YoutubeHelper {
                 vid.keywords.add(s);
             }
         } else {
-            final ArrayList<String> kws = (ArrayList<String>) JavaScriptEngineFactory.walkJson(getYtInitialPlayerResponse(), "videoDetails/keywords");
+            final List<String> kws = (List<String>) JavaScriptEngineFactory.walkJson(getYtInitialPlayerResponse(), "videoDetails/keywords");
             if (kws != null) {
                 for (String s : kws) {
                     vid.keywords.add(s);
@@ -3484,7 +3484,7 @@ public class YoutubeHelper {
     // it's important to clean fields because YoutubeHelper might be shared instance
     public void parserJson() throws Exception {
         {
-            String ytInitialData = br.getRegex(">\\s*var\\s*ytInitialData\\s*=\\s*(\\{.*?\\})\\s*</script").getMatch(0);
+            String ytInitialData = br.getRegex(">\\s*var\\s*ytInitialData\\s*=\\s*(\\{.*?\\})\\s*;?\\s*</script").getMatch(0);
             if (ytInitialData == null) {
                 ytInitialData = br.getRegex("window\\[\"ytInitialData\"\\]\\s*=\\s*(\\{.*?\\})\\s*;\\s*[\r\n]").getMatch(0);
                 if (ytInitialData == null) {
@@ -3501,7 +3501,7 @@ public class YoutubeHelper {
             }
         }
         {
-            String ytInitialPlayerResponse = br.getRegex(">\\s*var\\s*ytInitialPlayerResponse\\s*=\\s*(\\{.*?\\})\\s*</script").getMatch(0);
+            String ytInitialPlayerResponse = br.getRegex(">\\s*var\\s*ytInitialPlayerResponse\\s*=\\s*(\\{.*?\\})\\s*;?\\s*(</script|var)").getMatch(0);
             if (ytInitialPlayerResponse == null) {
                 ytInitialPlayerResponse = br.getRegex("window\\[\"ytInitialPlayerResponse\"\\]\\s*=\\s*\\(\\s*(\\{.*?\\})\\s*\\)\\s*;\\s*[\r\n]").getMatch(0);
                 if (ytInitialPlayerResponse == null) {
