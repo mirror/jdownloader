@@ -15,6 +15,8 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.Serializable;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -35,9 +37,10 @@ import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
-import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -62,57 +65,83 @@ public class GoogleDrive extends PluginForDecrypt {
     // - with /edit?pli=1 they provide via javascript section partly escaped
     // - with /list?rm=whitebox&hl=en_GB&forcehl=1&pref=2&pli=1"; - not used and commented out, supported except for scanLinks
     // language determined by the accept-language
-    private static final String TYPE_FOLDER_NORMAL               = "https?://(?:www\\.)?docs\\.google\\.com/folder/d/([a-zA-Z0-9\\-_]+)";
-    private static final String TYPE_FOLDER_OLD                  = "https?://(?:www\\.)?docs\\.google\\.com/(?:embedded)?folderview\\?(pli=1\\&id=[A-Za-z0-9_]+(\\&tid=[A-Za-z0-9]+)?|id=[A-Za-z0-9_]+\\&usp=sharing)";
-    private static final String TYPE_FOLDER_CURRENT              = "https?://[^/]+/drive/(?:[\\w\\-]+/)*folders/([^/?]+)(\\?resourcekey=[A-Za-z0-9_\\-]+)?";
+    private static final String  TYPE_FOLDER_NORMAL               = "https?://(?:www\\.)?docs\\.google\\.com/folder/d/([a-zA-Z0-9\\-_]+)";
+    private static final String  TYPE_FOLDER_OLD                  = "https?://(?:www\\.)?docs\\.google\\.com/(?:embedded)?folderview\\?(pli=1\\&id=[A-Za-z0-9_]+(\\&tid=[A-Za-z0-9]+)?|id=[A-Za-z0-9_]+\\&usp=sharing)";
+    private static final String  TYPE_FOLDER_CURRENT              = "https?://[^/]+/drive/(?:[\\w\\-]+/)*folders/([^/?]+)(\\?resourcekey=[A-Za-z0-9_\\-]+)?";
     /* 2021-02-26: Theoretically, "leaf?" does the same but for now we'll only handle "open=" as TYPE_REDIRECT */
-    private static final String TYPE_REDIRECT                    = "https?://[^/]+/open\\?id=([a-zA-Z0-9\\-_]+)";
-    private final String        PROPERTY_SPECIAL_SHORTCUT_FOLDER = "special_shortcut_folder";
+    private static final String  TYPE_REDIRECT                    = "https?://[^/]+/open\\?id=([a-zA-Z0-9\\-_]+)";
+    private final String         PROPERTY_SPECIAL_SHORTCUT_FOLDER = "special_shortcut_folder";
+    /** https://svn.jdownloader.org/issues/88600 */
+    private static final boolean CAN_HANDLE_PRIVATE_FOLDERS       = false;
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         param.setCryptedUrl(param.getCryptedUrl().replaceFirst("(?i)http://", "https://"));
-        if (param.getCryptedUrl().matches(TYPE_REDIRECT)) {
-            /**
-             * Special case: This could either be a file or a folder. Other theoretically possible special cases which we will ignore here:
-             * folderID in file URL --> Un-Downloadable item and can only be handled by API </br>
-             *
-             */
-            logger.info("Checking if we have a file or folder");
-            br.setFollowRedirects(false);
-            int redirectCounter = 0;
-            do {
-                br.getPage(param.getCryptedUrl());
-                if (br.getRedirectLocation() != null) {
-                    if (this.isSingleFileURL(br.getRedirectLocation())) {
-                        logger.info("Found single fileURL");
-                        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-                        ret.add(this.createDownloadlink(br.getRedirectLocation()));
-                        return ret;
-                    } else if (!br.getRedirectLocation().matches(TYPE_REDIRECT)) {
-                        /* Must be folder */
-                        break;
+        try {
+            if (param.getCryptedUrl().matches(TYPE_REDIRECT)) {
+                /**
+                 * Special case: This could either be a file or a folder. Other theoretically possible special cases which we will ignore
+                 * here: folderID in file URL --> Un-Downloadable item and can only be handled by API </br>
+                 *
+                 */
+                logger.info("Checking if we have a file or folder");
+                br.setFollowRedirects(false);
+                int redirectCounter = 0;
+                do {
+                    br.getPage(param.getCryptedUrl());
+                    final String redirect = br.getRedirectLocation();
+                    if (redirect != null) {
+                        logger.info("Detected folder redirect: " + redirect);
+                        if (this.isSingleFileURL(redirect)) {
+                            logger.info("Redirect looks like single file URL --> Returning this as result for host plugin");
+                            final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+                            ret.add(this.createDownloadlink(redirect));
+                            return ret;
+                        } else if (!redirect.matches(TYPE_REDIRECT)) {
+                            /* Must be folder */
+                            break;
+                        } else {
+                            /* E.g. possible http -> https redirect */
+                            logger.info("Redirect URL structure is undefined, following redirect...");
+                            br.followRedirect();
+                        }
                     } else {
-                        /* E.g. possible http -> https redirect */
-                        br.followRedirect();
+                        break;
                     }
-                } else {
-                    break;
+                } while (br.getRedirectLocation() != null && redirectCounter <= 3);
+                if (br.getRedirectLocation() != null && redirectCounter >= 3) {
+                    logger.warning("Possible redirectloop");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else if (br.getHttpConnection().getResponseCode() == 404) {
+                    /* Additional offline check */
+                    throw new GdriveException(GdriveFolderStatus.FOLDER_OFFLINE, new URL(param.getCryptedUrl()).getPath());
                 }
-            } while (br.getRedirectLocation() != null && redirectCounter <= 3);
-            if (br.getRedirectLocation() != null && redirectCounter >= 3) {
-                logger.warning("Possible redirectloop");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else if (br.getHttpConnection().getResponseCode() == 404) {
-                /* Additional offline check */
-                final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-                ret.add(this.createOfflinelink(param.getCryptedUrl()));
-                return ret;
             }
-        }
-        if (jd.plugins.hoster.GoogleDrive.canUseAPI()) {
-            return this.crawlAPI(param);
-        } else {
-            return this.crawlWebsite(param);
+            if (jd.plugins.hoster.GoogleDrive.canUseAPI()) {
+                return this.crawlAPI(param);
+            } else {
+                return this.crawlWebsite(param);
+            }
+        } catch (final GdriveException gde) {
+            final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+            final String privateFoldersUnsupportedInfoText = "JDownloader cannot crawl private folders (yet).\r\nEither make this folder public or in case it is not owned by you, import it into your own google account and create your own public link to this folder and add that link to JDownloader instead.";
+            if (gde.getGdriveStatus() == GdriveFolderStatus.FOLDER_OFFLINE) {
+                ret.add(this.createOfflinelink(param.getCryptedUrl(), "OFFLINE_FOLDER " + gde.getOfflineTitle(), "This folder is offline."));
+            } else if (gde.getGdriveStatus() == GdriveFolderStatus.FOLDER_EMPTY) {
+                ret.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER " + gde.getOfflineTitle(), "This folder is empty."));
+            } else if (gde.getGdriveStatus() == GdriveFolderStatus.FOLDER_EMPTY_OR_PRIVATE_OR_SHORTCUT) {
+                final DownloadLink offlineFolder = this.createOfflinelink(param.getCryptedUrl());
+                offlineFolder.setFinalFileName(gde.getOfflineTitle());
+                offlineFolder.setComment("This folder is empty, a private folder or a folder-shortcut.\r\nIn case this folder is a folder shortcut: Disable API and re-add this URL.\r\nIn case this is a private folder:\r\n" + privateFoldersUnsupportedInfoText);
+                ret.add(offlineFolder);
+            } else if (gde.getGdriveStatus() == GdriveFolderStatus.FOLDER_PRIVATE) {
+                throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, gde.getOfflineTitle(), "This folder is private!\r\n" + privateFoldersUnsupportedInfoText, null);
+            } else if (gde.getGdriveStatus() == GdriveFolderStatus.FOLDER_PRIVATE_NO_ACCESS) {
+                throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "PERMISSIONS_MISSING_" + gde.getOfflineTitle(), "This folder is private!\r\nYour currently added Google Drive account doesn't have the required permission to access this folder.\r\nGet the required permissions or add an account which has the required permissions.\r\nAlso note this:\r\n" + privateFoldersUnsupportedInfoText, null);
+            } else {
+                /* Developer mistake!! */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            return ret;
         }
     }
 
@@ -192,21 +221,16 @@ public class GoogleDrive extends PluginForDecrypt {
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             /* 2020-12-10: Will return empty array for private items too! */
             if (!entries.containsKey("files") || ((List<Object>) entries.get("files")).size() == 0) {
-                final String offlineFolderName;
+                final String offlineFolderTitle;
                 if (!StringUtils.isEmpty(subfolderPath)) {
-                    offlineFolderName = subfolderPath + " " + folderID;
+                    offlineFolderTitle = subfolderPath + " " + folderID;
                 } else {
-                    offlineFolderName = folderID;
+                    offlineFolderTitle = folderID;
                 }
                 /*
                  * 2021-05-31: TODO: Try to find a good(!) way to handle "folder shortcuts" via API completely without website (rare case)!
                  */
-                final String offlineFilename = "EMPTY_OR_PRIVATE_OR_SHORTCUT_FOLDER " + offlineFolderName;
-                final DownloadLink offlineFolder = this.createOfflinelink(param.getCryptedUrl());
-                offlineFolder.setFinalFileName(offlineFilename);
-                offlineFolder.setComment(offlineFilename + "\r\nIn case this folder is a folder shortcut: Disable API and re-add this URL.");
-                decryptedLinks.add(offlineFolder);
-                return decryptedLinks;
+                throw new GdriveException(GdriveFolderStatus.FOLDER_EMPTY_OR_PRIVATE_OR_SHORTCUT, offlineFolderTitle);
             }
             if (page == 0 && subfolderPath == null) {
                 /* Leave this in the loop! It doesn't really belong here but it's only a workaround and only executed once! */
@@ -282,14 +306,13 @@ public class GoogleDrive extends PluginForDecrypt {
             this.parseFolderJsonAPI(decryptedLinks, dupes, entries, this.getAdoptedCloudFolderStructure(), nameOfCurrentFolder);
             if (page == 0 && decryptedLinks.size() == 0) {
                 /* Empty folder - 2nd check which usually won't be required as we're checking for this at the beginning of this function. */
-                final String offlineFolderName;
+                final String offlineFolderTitle;
                 if (!StringUtils.isEmpty(subfolderPath)) {
-                    offlineFolderName = subfolderPath + " " + folderID;
+                    offlineFolderTitle = subfolderPath + " " + folderID;
                 } else {
-                    offlineFolderName = folderID;
+                    offlineFolderTitle = folderID;
                 }
-                decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER " + offlineFolderName, "EMPTY_FOLDER " + offlineFolderName));
-                return decryptedLinks;
+                throw new GdriveException(GdriveFolderStatus.FOLDER_EMPTY, offlineFolderTitle);
             }
             final String nextPageToken = (String) entries.get("nextPageToken");
             if (StringUtils.isEmpty(nextPageToken)) {
@@ -345,23 +368,22 @@ public class GoogleDrive extends PluginForDecrypt {
             folderID = newFolderID;
         }
         String subfolderPath = this.getAdoptedCloudFolderStructure();
-        final String offlineOrEmptyFolderName;
+        final String offlineOrEmptyFolderTitle;
         if (!StringUtils.isEmpty(subfolderPath)) {
-            offlineOrEmptyFolderName = subfolderPath + " " + folderID;
+            offlineOrEmptyFolderTitle = subfolderPath + " " + folderID;
         } else {
-            offlineOrEmptyFolderName = folderID;
+            offlineOrEmptyFolderTitle = folderID;
         }
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<p class=\"errorMessage\" style=\"padding-top: 50px\">Sorry, the file you have requested does not exist\\.</p>")) {
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "OFFLINE_FOLDER " + offlineOrEmptyFolderName, "OFFLINE_FOLDER " + offlineOrEmptyFolderName));
-            return decryptedLinks;
+            throw new GdriveException(GdriveFolderStatus.FOLDER_OFFLINE, offlineOrEmptyFolderTitle);
         }
         // login required!
         if (br.getURL().contains("//accounts.google.com/ServiceLogin?")) {
             // we are logged in but the account doesn't have permission
             if (loggedin) {
-                throw new AccountRequiredException("This account doesn't have the required permission to access this folder");
+                throw new GdriveException(GdriveFolderStatus.FOLDER_PRIVATE_NO_ACCESS, offlineOrEmptyFolderTitle);
             } else {
-                throw new AccountRequiredException("You need an account to access URL");
+                throw new GdriveException(GdriveFolderStatus.FOLDER_PRIVATE, offlineOrEmptyFolderTitle);
             }
         }
         String currentFolderTitle = getCurrentFolderTitleWebsite(this.br);
@@ -397,7 +419,7 @@ public class GoogleDrive extends PluginForDecrypt {
         }
         logger.info("Using key: " + key);
         // final String eof = br.getRegex("\\|eof\\|([^<>\"]*)\\\\x22").getMatch(0);
-        final String teamDriveID = new Regex(json_src, ",null,\\d{10,},\\d+,\"([A-Za-z0-9_]{10,30})\",null,null").getMatch(0);
+        final String teamDriveID = new Regex(json_src, ",null,\\d{10,},\\d+,\"([A-Za-z0-9_\\-]{10,30})\",null,null").getMatch(0);
         final UrlQuery query = new UrlQuery();
         query.add("openDrive", "false");
         query.add("reason", "102");
@@ -409,7 +431,7 @@ public class GoogleDrive extends PluginForDecrypt {
         query.add("spaces", "drive");
         query.add("maxResults", "50");
         query.add("orderBy", "folder%2Ctitle_natural%20asc");
-        // query.add("retryCount", "0");
+        query.add("retryCount", "0");
         query.add("key", key);
         if (folderResourceKey != null) {
             query.add("resourcekey", folderResourceKey);
@@ -446,7 +468,7 @@ public class GoogleDrive extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if (items.isEmpty()) {
                 if (decryptedLinks.isEmpty()) {
-                    decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER " + offlineOrEmptyFolderName, "EMPTY_FOLDER " + offlineOrEmptyFolderName));
+                    throw new GdriveException(GdriveFolderStatus.FOLDER_EMPTY, offlineOrEmptyFolderTitle);
                 } else {
                     break;
                 }
@@ -521,6 +543,7 @@ public class GoogleDrive extends PluginForDecrypt {
             final String title = (String) entries.get("title");
             final String id = (String) entries.get("id");
             final String resourceKey = (String) entries.get("resourceKey");
+            final String teamDriveId = (String) entries.get("teamDriveId");
             if (kind == null || title == null || id == null) {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -568,7 +591,6 @@ public class GoogleDrive extends PluginForDecrypt {
                         dl.setProperty(jd.plugins.hoster.GoogleDrive.PROPERTY_ROOT_DIR, root_dir_name);
                     }
                 }
-                distribute(dl);
             } else {
                 /* Folder */
                 if (subfolder != null) {
@@ -584,6 +606,10 @@ public class GoogleDrive extends PluginForDecrypt {
             if (isShortcutFolder) {
                 dl.setProperty(PROPERTY_SPECIAL_SHORTCUT_FOLDER, true);
             }
+            if (!StringUtils.isEmpty(teamDriveId)) {
+                dl.setProperty(jd.plugins.hoster.GoogleDrive.PROPERTY_TEAM_DRIVE_ID, teamDriveId);
+            }
+            distribute(dl);
             decryptedLinks.add(dl);
         }
     }
@@ -604,6 +630,7 @@ public class GoogleDrive extends PluginForDecrypt {
         return url;
     }
 
+    /** Very similar to the website json but with some differences thus we got separate methods for API and website. */
     private void parseFolderJsonAPI(final ArrayList<DownloadLink> decryptedLinks, final ArrayList<String> dupes, Map<String, Object> entries, String subfolder, final String currentFolderTitle) throws PluginException {
         if (!StringUtils.isEmpty(currentFolderTitle) && StringUtils.isEmpty(subfolder)) {
             /* Begin subfolder structure if not given already */
@@ -626,6 +653,7 @@ public class GoogleDrive extends PluginForDecrypt {
             final String title = (String) entries.get("name");
             final String id = (String) entries.get("id");
             final String resourceKey = (String) entries.get("resourceKey");
+            final String teamDriveId = (String) entries.get("teamDriveId");
             if (StringUtils.isEmpty(kind) || StringUtils.isEmpty(title) || StringUtils.isEmpty(id)) {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -677,8 +705,11 @@ public class GoogleDrive extends PluginForDecrypt {
                     dl.setProperty(PROPERTY_SPECIAL_SHORTCUT_FOLDER, true);
                 }
             }
-            decryptedLinks.add(dl);
+            if (!StringUtils.isEmpty(teamDriveId)) {
+                dl.setProperty(jd.plugins.hoster.GoogleDrive.PROPERTY_TEAM_DRIVE_ID, teamDriveId);
+            }
             this.distribute(dl);
+            decryptedLinks.add(dl);
         }
     }
 
@@ -693,8 +724,36 @@ public class GoogleDrive extends PluginForDecrypt {
         ((jd.plugins.hoster.GoogleDrive) plg).login(this.br, account, false);
     }
 
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
         return false;
+    }
+
+    public class GdriveFolderStatus implements Serializable {
+        public final static int FOLDER_EMPTY                        = 1 << 1;
+        public final static int FOLDER_EMPTY_OR_PRIVATE_OR_SHORTCUT = 1 << 2;
+        public final static int FOLDER_OFFLINE                      = 1 << 3;
+        public final static int FOLDER_PRIVATE                      = 1 << 4;
+        public final static int FOLDER_PRIVATE_NO_ACCESS            = 1 << 5;
+    }
+
+    public class GdriveException extends Exception {
+        private int    gdrivestatus = -1;
+        private String offlineTitle = null;
+        // public GdriveException(final int gdrivestatus) {
+        // this.gdrivestatus = gdrivestatus;
+        // }
+
+        public GdriveException(final int gdrivestatus, final String offlineTitle) {
+            this.gdrivestatus = gdrivestatus;
+            this.offlineTitle = offlineTitle;
+        }
+
+        public int getGdriveStatus() {
+            return this.gdrivestatus;
+        }
+
+        public String getOfflineTitle() {
+            return this.offlineTitle;
+        }
     }
 }
