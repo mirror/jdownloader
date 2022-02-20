@@ -377,12 +377,12 @@ public class GoogleDrive extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<p class=\"errorMessage\" style=\"padding-top: 50px\">Sorry, the file you have requested does not exist\\.</p>")) {
             throw new GdriveException(GdriveFolderStatus.FOLDER_OFFLINE, offlineOrEmptyFolderTitle);
         }
-        // login required!
         if (br.getURL().contains("//accounts.google.com/ServiceLogin?")) {
-            // we are logged in but the account doesn't have permission
             if (loggedin) {
+                /* We are logged in but the account doesn't have permission! */
                 throw new GdriveException(GdriveFolderStatus.FOLDER_PRIVATE_NO_ACCESS, offlineOrEmptyFolderTitle);
             } else {
+                /* Account required! */
                 throw new GdriveException(GdriveFolderStatus.FOLDER_PRIVATE, offlineOrEmptyFolderTitle);
             }
         }
@@ -396,9 +396,6 @@ public class GoogleDrive extends PluginForDecrypt {
         }
         // old type
         String json_src = br.getRegex("window\\['_DRIVE_ivd'\\]\\s*=\\s*'\\[(.*?)';").getMatch(0);
-        if (json_src != null) {
-            // json_src = JSonUtils.unescape(json_src);
-        }
         // new type 20170709-raz
         if (json_src == null) {
             json_src = br.getRegex("window\\['_DRIVE_ivd'\\]\\s*=\\s*'(.*?)';").getMatch(0);
@@ -408,13 +405,12 @@ public class GoogleDrive extends PluginForDecrypt {
             }
         }
         /* Handle the json way. */
-        String key = null;
+        final String key;
         final String keys[] = br.getRegex("\"([A-Za-z0-9\\-_]{6})([A-Za-z0-9\\-_]+)\"\\s*,\\s*\"\\1[A-Za-z0-9\\-_]+\"\\s*,\\s*null").getRow(0);
         logger.info("Keys:" + Arrays.asList(keys));
         if (keys != null && keys.length == 2) {
             key = keys[0] + keys[1];
-        }
-        if (StringUtils.isEmpty(key)) {
+        } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         logger.info("Using key: " + key);
@@ -484,9 +480,10 @@ public class GoogleDrive extends PluginForDecrypt {
                 logger.info("Stopping because: Failed to find any items on current page");
                 break;
             } else {
+                /* Continue to next page */
                 query.addAndReplace("pageToken", Encoding.urlEncode(nextPageToken));
             }
-        } while (key != null && !isAbort());
+        } while (!isAbort());
         if (decryptedLinks.size() == 0) {
             logger.info("Found nothing to download: " + param.getCryptedUrl());
             return decryptedLinks;
@@ -571,7 +568,6 @@ public class GoogleDrive extends PluginForDecrypt {
                     dl.setName(title);
                 }
                 if (fileSize > 0) {
-                    dl.setDownloadSize(fileSize);
                     dl.setVerifiedFileSize(fileSize);
                 }
                 dl.setAvailable(true);
@@ -720,7 +716,6 @@ public class GoogleDrive extends PluginForDecrypt {
 
     public void login(final Browser br, final Account account) throws Exception {
         final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
-        plg.setBrowser(br);
         ((jd.plugins.hoster.GoogleDrive) plg).login(this.br, account, false);
     }
 

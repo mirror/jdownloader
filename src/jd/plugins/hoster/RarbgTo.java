@@ -28,6 +28,7 @@ import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -78,9 +79,10 @@ public class RarbgTo extends PluginForHost {
     }
 
     /* Connection stuff */
+    /* Resume & chunkload is disabled as this website only contains small files. */
     private static final boolean              FREE_RESUME         = false;
     private static final int                  FREE_MAXCHUNKS      = 1;
-    /* 2021-08-30: Only increase this after updating max. simultaneous downloads handling to start one download after another! */
+    /* Only increase this if you previously add handling to this plugin to start one download after another! */
     private static final int                  FREE_MAXDOWNLOADS   = 1;
     protected static HashMap<String, Cookies> antiCaptchaCookies  = new HashMap<String, Cookies>();
     private static final String               PROPERTY_DIRECTLINK = "directlink";
@@ -92,6 +94,15 @@ public class RarbgTo extends PluginForHost {
             return this.getHost() + "://" + fid;
         } else {
             return super.getLinkID(link);
+        }
+    }
+
+    @Override
+    public String getMirrorID(DownloadLink link) {
+        if (link != null && StringUtils.equals(getHost(), link.getHost())) {
+            return link.getLinkID();
+        } else {
+            return super.getMirrorID(link);
         }
     }
 
@@ -110,13 +121,6 @@ public class RarbgTo extends PluginForHost {
         br.setFollowRedirects(true);
         if (!link.isNameSet()) {
             link.setName(this.getFID(link) + ".torrent");
-            /**
-             * Avoid triggering their spam protection! Skip when links get added for the first time. All added URLs of this website are
-             * usually online! </br>
-             * 2021-08-31: Disabled this handling as their website does tolerate more requests now, especially if anto bot cookies are
-             * given!
-             */
-            // return AvailableStatus.TRUE;
         }
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -144,14 +148,24 @@ public class RarbgTo extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    protected void loadAntiCaptchaCookies(final Browser prepBr, final String host) {
+    protected void loadAntiCaptchaCookies(final Browser prepBr, final String targetHost) {
         synchronized (antiCaptchaCookies) {
             if (!antiCaptchaCookies.isEmpty()) {
                 for (final Map.Entry<String, Cookies> cookieEntry : antiCaptchaCookies.entrySet()) {
-                    final String key = cookieEntry.getKey();
-                    if (key != null && key.equals(host)) {
+                    final String cookieHost = cookieEntry.getKey();
+                    if (cookieHost != null) {
                         try {
-                            prepBr.setCookies(key, cookieEntry.getValue(), false);
+                            prepBr.setCookies(cookieHost, cookieEntry.getValue(), false);
+                            /*
+                             * Cookies are interchangable e.g. if challenge has been completed on "rarbg.to", cookies will also work for
+                             * "rarbgproxy.org".
+                             */
+                            if (!cookieHost.equals(targetHost)) {
+                                final List<Cookie> cookies = cookieEntry.getValue().getCookies();
+                                for (final Cookie cookie : cookies) {
+                                    prepBr.setCookie(targetHost, cookie.getKey(), cookie.getValue());
+                                }
+                            }
                         } catch (final Throwable e) {
                         }
                     }
@@ -161,11 +175,15 @@ public class RarbgTo extends PluginForHost {
     }
 
     private boolean isThreadDefenceActive(final Browser br) {
-        return br.getURL().contains("threat_defence.php");
+        if (br.getURL().contains("threat_defence.php")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**
-     * Handles their anti bot protection.
+     * Handles websites' anti bot protection.
      *
      * @throws Exception
      */
@@ -267,9 +285,10 @@ public class RarbgTo extends PluginForHost {
                     /* Request captcha answer of user and verify input. */
                     String code;
                     while (true) {
+                        /* Ask used an unlimited amount of times if he enters a wrong captcha-answer-format. */
                         code = this.getCaptchaCode(captchaImage, link);
                         if (this.isAbort()) {
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                            throw new InterruptedException();
                         } else if (code == null || !code.matches("(?i)[a-z0-9]{5}")) {
                             logger.info("Invalid captcha format");
                             continue;
@@ -321,7 +340,7 @@ public class RarbgTo extends PluginForHost {
                      * wanted to go --> Fix that
                      */
                     if (!br.getURL().contains(this.getFID(link)) && !this.canHandle(br.getURL())) {
-                        logger.info("Accessing contentURL again because anti bot handling redirected us to: " + br.getURL());
+                        logger.info("Accessing contentURL again because anti bot handling redirected us somewhere else instead: " + br.getURL());
                         br.getPage(link.getPluginPatternMatcher());
                         /* One final check */
                         if (isThreadDefenceActive(br)) {
@@ -348,7 +367,7 @@ public class RarbgTo extends PluginForHost {
         } finally {
             try {
                 con.disconnect();
-            } catch (final Throwable e) {
+            } catch (final Throwable ignore) {
             }
         }
         return captchaFile;
@@ -360,7 +379,7 @@ public class RarbgTo extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        /* We might not even be able to re-use directurls without valid cookies. */
+        /* We are not able to re-use directurls without valid cookies! */
         loadAntiCaptchaCookies(this.br, this.getHostOfAddedURL(link));
         if (!attemptStoredDownloadurlDownload(link)) {
             requestFileInformation(link, true);
@@ -429,6 +448,7 @@ public class RarbgTo extends PluginForHost {
 
     @Override
     public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
+        /* Anti-bot captcha is required once per session. */
         return true;
     }
 
@@ -442,6 +462,6 @@ public class RarbgTo extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 }
