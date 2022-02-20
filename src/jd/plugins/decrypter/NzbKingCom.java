@@ -3,7 +3,6 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
 import org.jdownloader.container.NZB;
 
 import jd.PluginWrapper;
@@ -12,11 +11,13 @@ import jd.controlling.linkcrawler.ArchiveInfo;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.NZBSAXHandler;
@@ -37,26 +38,45 @@ public class NzbKingCom extends PluginForDecrypt {
     private ArchiveInfo archiveInfo = null;
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        br.setLoadLimit(Integer.MAX_VALUE);
+        br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         File nzbFile = null;
         try {
-            br.setLoadLimit(Integer.MAX_VALUE);
-            br.setFollowRedirects(true);
             br.getPage(param.getCryptedUrl());
+            final String title = br.getRegex("<div class='post-detail-subject'[^>]*>([^<]+)</div>").getMatch(0);
             final Form form = br.getFormbyAction("/nzb/");
             final Request request = br.createFormRequest(form);
             request.getHeaders().put("Accept-Encoding", "identity");
             con = br.openRequestConnection(request);
             if (con.isOK()) {
                 ret.addAll(NZBSAXHandler.parseNZB(con.getInputStream()));
-                final String nzbPassword = new Regex(Plugin.getFileNameFromHeader(con), NZB.PATTERN_COMMON_FILENAME_SCHEME).getMatch(1);
-                if (nzbPassword != null) {
-                    if (StringUtils.isNotEmpty(nzbPassword)) {
+                final String nzbFilename = Plugin.getFileNameFromHeader(con);
+                final Regex nzbCommonFilenameScheme = new Regex(nzbFilename, NZB.PATTERN_COMMON_FILENAME_SCHEME);
+                if (nzbFilename != null && nzbCommonFilenameScheme.matches()) {
+                    if (nzbCommonFilenameScheme.matches()) {
+                        /* Set extract-password and package name by information grabbed inside .nzb filename. */
                         archiveInfo = new ArchiveInfo();
-                        archiveInfo.addExtractionPassword(nzbPassword);
+                        archiveInfo.addExtractionPassword(nzbCommonFilenameScheme.getMatch(1));
+                        final FilePackage fp = FilePackage.getInstance();
+                        fp.setName(nzbCommonFilenameScheme.getMatch(0));
+                        fp.addLinks(ret);
+                    } else {
+                        final FilePackage fp = FilePackage.getInstance();
+                        fp.setName(nzbFilename);
+                        fp.addLinks(ret);
                     }
+                } else if (title != null) {
+                    final FilePackage fp = FilePackage.getInstance();
+                    fp.setName(Encoding.htmlDecode(title).trim());
+                    fp.addLinks(ret);
+                } else if (nzbFilename != null) {
+                    /* Last chance: Use filename as packagename. */
+                    final FilePackage fp = FilePackage.getInstance();
+                    fp.setName(nzbFilename);
+                    fp.addLinks(ret);
                 }
             } else {
                 br.followConnection();
@@ -74,5 +94,9 @@ public class NzbKingCom extends PluginForDecrypt {
             }
         }
         return ret;
+    }
+
+    public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
+        return false;
     }
 }
