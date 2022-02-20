@@ -185,6 +185,11 @@ public class GoogleDrive extends PluginForHost {
     private static final String PROPERTY_FORCED_FINAL_DOWNLOADURL              = "FORCED_FINAL_DOWNLOADURL";
     private static final String PROPERTY_CAN_DOWNLOAD                          = "CAN_DOWNLOAD";
     private static final String PROPERTY_CAN_STREAM                            = "CAN_STREAM";
+    /**
+     * 2022-02-20: We store this property but we're not using it at this moment. It is required to access some folders though so it's good
+     * to have it set on each DownloadLink if it exists.
+     */
+    public static final String  PROPERTY_TEAM_DRIVE_ID                         = "TEAM_DRIVE_ID";
     /* Packagizer property */
     public static final String  PROPERTY_ROOT_DIR                              = "root_dir";
     /* Account properties */
