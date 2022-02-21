@@ -1,6 +1,7 @@
 package jd.plugins.decrypter;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import org.jdownloader.container.NZB;
@@ -60,7 +61,11 @@ public class NzbKingCom extends PluginForDecrypt {
             br.setLoadLimit(Integer.MAX_VALUE);
             con = br.openRequestConnection(request);
             if (!con.isOK()) {
-                br.followConnection();
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             ret.addAll(NZBSAXHandler.parseNZB(con.getInputStream()));
