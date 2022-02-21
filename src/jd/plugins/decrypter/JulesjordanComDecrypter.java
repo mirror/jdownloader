@@ -36,8 +36,12 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.JulesjordanCom.JulesjordanComConfigInterface;
@@ -55,10 +59,9 @@ public class JulesjordanComDecrypter extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         List<String> all_selected_qualities = new ArrayList<String>();
         final JulesjordanComConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.JulesjordanCom.JulesjordanComConfigInterface.class);
-        final String parameter = param.toString();
         final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
-        final Account aa = AccountController.getInstance().getValidAccount(plg);
-        final String url_name = jd.plugins.hoster.JulesjordanCom.getURLName(parameter);
+        final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
+        final String url_name = jd.plugins.hoster.JulesjordanCom.getURLName(param.getCryptedUrl());
         final boolean grabBest = cfg.isGrabBESTEnabled();
         final boolean grabBestWithinUserSelection = cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled();
         final boolean grabUnknownQualities = cfg.isAddUnknownQualitiesEnabled();
@@ -86,17 +89,31 @@ public class JulesjordanComDecrypter extends PluginForDecrypt {
             ((jd.plugins.hoster.JulesjordanCom) plg).login(aa, false);
         }
         if (aa == null) {
-            /* Only MOCH download and / or trailer download --> Add link for hostplugin */
-            final DownloadLink dl = this.createDownloadlink(parameter);
+            /* Only MOCH download and/or trailer download --> Add link for hostplugin */
+            final DownloadLink dl = this.createDownloadlink(param.getCryptedUrl());
             decryptedLinks.add(dl);
             return decryptedLinks;
         } else {
             /* Normal host account is available */
-            this.br.getPage(jd.plugins.hoster.JulesjordanCom.getURLPremium(parameter));
+            this.br.getPage(jd.plugins.hoster.JulesjordanCom.getURLPremium(param.getCryptedUrl()));
+        }
+        /**
+         * 2022-02-21: This may happen randomly- or only for specific links. This implementation could probably be improved but for now it's
+         * there for testing.
+         */
+        if (isNewDeviceProtectionActive(this.br)) {
+            String activationCode = getUserInput("Enter activation code sent by mail", param);
+            if (activationCode != null) {
+                activationCode = activationCode.trim();
+            }
+            br.getPage(br.getURL() + "?error_code=" + Encoding.urlEncode(activationCode));
+            if (isNewDeviceProtectionActive(this.br)) {
+                final String infoText = this.getHost() + " claims 'New Device or Location Detected!'.\r\n An activation code was sent to your via E-Mail.\r\nYou seem to have entered the wrong activation code for this attempt!\r\nTry again later.";
+                throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "NEW_DEVICE_OR_LOCATION_DETECTION_NOT_PASSED_" + br._getURL().getPath(), infoText, null);
+            }
         }
         if (isOffline(this.br)) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String title = jd.plugins.hoster.JulesjordanCom.getTitle(this.br);
         if (StringUtils.isEmpty(title)) {
@@ -121,7 +138,7 @@ public class JulesjordanComDecrypter extends PluginForDecrypt {
             dl.setProperty("fid", url_name);
             dl.setProperty("quality", quality_url);
             dl.setProperty("decrypter_filename", decrypter_filename);
-            dl.setProperty("mainlink", parameter);
+            dl.setProperty("mainlink", param.getCryptedUrl());
             dl.setLinkID(this.getHost() + "://" + url_name + "/" + quality_url);
             all_found_downloadlinks.put(quality_url, dl);
         }
@@ -137,6 +154,14 @@ public class JulesjordanComDecrypter extends PluginForDecrypt {
         fp.setName(Encoding.htmlDecode(title.trim()));
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
+    }
+
+    public static boolean isNewDeviceProtectionActive(final Browser br) {
+        if (br.containsHTML("(?i)>\\s*New Device or Location Detected")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public static HashMap<String, String> findAllQualities(final Browser br) throws Exception {
@@ -164,6 +189,10 @@ public class JulesjordanComDecrypter extends PluginForDecrypt {
 
     private HashMap<String, DownloadLink> handleQualitySelection(final HashMap<String, DownloadLink> all_found_downloadlinks, final List<String> all_selected_qualities, final boolean grab_best, final boolean grab_best_out_of_user_selection, final boolean grab_unknown) {
         HashMap<String, DownloadLink> all_selected_downloadlinks = new HashMap<String, DownloadLink>();
+        if (all_found_downloadlinks.isEmpty()) {
+            logger.info("Failed to find any qualities");
+            return all_selected_downloadlinks;
+        }
         final Iterator<Entry<String, DownloadLink>> iterator_all_found_downloadlinks = all_found_downloadlinks.entrySet().iterator();
         if (grab_best) {
             for (final String possibleQuality : this.all_known_qualities) {

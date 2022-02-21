@@ -464,6 +464,10 @@ public class GoogleDrive extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if (items.isEmpty()) {
                 if (decryptedLinks.isEmpty()) {
+                    /**
+                     * Important developer note!! If this happens but the folder is not empty, most of all times, "teamDriveId" is missing
+                     * or wrong!
+                     */
                     throw new GdriveException(GdriveFolderStatus.FOLDER_EMPTY, offlineOrEmptyFolderTitle);
                 } else {
                     break;
