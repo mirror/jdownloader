@@ -44,8 +44,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class XunNiuCom extends PluginForHost {
-    public XunNiuCom(PluginWrapper wrapper) {
+public class XunniupanCom extends PluginForHost {
+    public XunniupanCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www." + this.getHost() + "/vip.php");
     }
@@ -53,7 +53,7 @@ public class XunNiuCom extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "xun-niu.com" });
+        ret.add(new String[] { "xunniupan.com", "xun-niu.com" });
         return ret;
     }
 

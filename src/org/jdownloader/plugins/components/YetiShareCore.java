@@ -133,7 +133,7 @@ public class YetiShareCore extends antiDDoSForHost {
      * captchatype: null, solvemedia, reCaptchaV2, hcaptcha<br />
      * Another alternative method of linkchecking (displays filename only): host.tld/<fid>~s (statistics) 2019-06-12: Consider adding API
      * support: https://fhscript.com/api Examples for websites which have the API enabled (but not necessarily unlocked for all users,
-     * usually only special-uploaders): crazyshare.cc, easylinkz.net, freefile.me, fastdrive.io <br />
+     * usually only special-uploaders): easylinkz.net, freefile.me, fastdrive.io <br />
      * 2020-03-30: I failed to make ANY successful API tests. 100% of all websites which support this API are running a broken version!
      */
     @Override
@@ -1687,7 +1687,6 @@ public class YetiShareCore extends antiDDoSForHost {
                     final String action = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
                     loginform.setAction(action);
                     if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(loginform)) {
-                        // /* E.g. crazyshare.cc */
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                         loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                     }

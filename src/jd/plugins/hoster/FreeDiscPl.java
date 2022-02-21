@@ -15,10 +15,16 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.Locale;
 
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
@@ -36,12 +42,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freedisc.pl" }, urls = { "https?://(www\\.)?freedisc\\.pl/(#(!|%21))?[A-Za-z0-9\\-_]+,f-\\d+(,[a-z0-9])?" })
 public class FreeDiscPl extends PluginForHost {
@@ -98,7 +98,7 @@ public class FreeDiscPl extends PluginForHost {
         br.setReadTimeout(3 * 60 * 1000);
         br.setConnectTimeout(3 * 60 * 1000);
         prepBR(this.br);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getRequest().getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Ten plik został usunięty przez użytkownika lub administratora|Użytkownik nie posiada takiego pliku|<title>404 error") || !br.getURL().contains(",f")) {
@@ -166,19 +166,19 @@ public class FreeDiscPl extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void doFree(final DownloadLink link, boolean resumable, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (isBotBlocked(this.br)) {
             this.handleAntiBot(this.br);
             /* Important! Check status if we were blocked before! */
-            requestFileInformation(downloadLink);
+            requestFileInformation(link);
         }
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        final boolean isvideo = downloadLink.getBooleanProperty("isvideo", false);
+        String dllink = checkDirectLink(link, directlinkproperty);
+        final boolean isvideo = link.getBooleanProperty("isvideo", false);
         if (dllink != null) {
             /* Check if directlinks comes from a stream */
             if (isvideo) {
@@ -192,7 +192,7 @@ public class FreeDiscPl extends PluginForHost {
             resumable = true;
             maxchunks = 0;
             // final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
-            final String fid = new Regex(downloadLink.getDownloadURL(), "f-(\\d+)").getMatch(0);
+            final String fid = new Regex(link.getDownloadURL(), "f-(\\d+)").getMatch(0);
             postPageRaw("//freedisc.pl/download/payment_info", "{\"item_id\":\"" + fid + "\",\"item_type\":1,\"code\":\"\",\"file_id\":" + fid + ",\"no_headers\":1,\"menu_visible\":0}");
             br.getRequest().setHtmlCode(Encoding.unicodeDecode(this.br.toString()));
             if (br.containsHTML("Pobranie plików większych jak [0-9\\.]+ (MB|GB|TB), wymaga opłacenia kosztów transferu")) {
@@ -210,7 +210,7 @@ public class FreeDiscPl extends PluginForHost {
                     }
                     if (dllink != null) {
                         logger.info("Stream download handling seems to have worked successfully");
-                        downloadLink.setProperty("isvideo", true);
+                        link.setProperty("isvideo", true);
                     } else {
                         logger.info("Stream download handling seems to have failed");
                     }
@@ -230,12 +230,16 @@ public class FreeDiscPl extends PluginForHost {
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                downloadLink.setProperty("isvideo", false);
+                link.setProperty("isvideo", false);
             }
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumable, maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (this.br.containsHTML("Ten plik jest chwilowo niedos")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             }
@@ -244,8 +248,8 @@ public class FreeDiscPl extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        fileNameHandling(downloadLink, dl.getConnection());
-        downloadLink.setProperty(directlinkproperty, dllink);
+        fileNameHandling(link, dl.getConnection());
+        link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 
@@ -342,24 +346,32 @@ public class FreeDiscPl extends PluginForHost {
         }
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    return dllink;
+                } else {
+                    throw new IOException();
                 }
-                con.disconnect();
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                logger.log(e);
+                return null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override
@@ -368,10 +380,9 @@ public class FreeDiscPl extends PluginForHost {
     }
 
     private static final String MAINPAGE = "http://freedisc.pl";
-    private static Object       LOCK     = new Object();
 
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
@@ -384,12 +395,15 @@ public class FreeDiscPl extends PluginForHost {
                     br.getPage("https://" + this.getHost() + "/");
                     handleAntiBot(br);
                     if (br.containsHTML("id=\"btnLogout\"")) {
+                        logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(this.getHost()), "");
                         return;
                     } else {
-                        br.clearCookies(getHost());
+                        logger.info("Cookie login failed");
+                        br.clearCookies(br.getHost());
                     }
                 }
+                logger.info("Performing full login");
                 br.getPage("https://" + this.getHost() + "/");
                 handleAntiBot(br);
                 // this is done via ajax!
@@ -398,7 +412,7 @@ public class FreeDiscPl extends PluginForHost {
                 br.getHeaders().put("Content-Type", "application/json");
                 br.getHeaders().put("Cache-Control", null);
                 br.postPageRaw("/account/signin_set", "{\"email_login\":\"" + account.getUser() + "\",\"password_login\":\"" + account.getPass() + "\",\"remember_login\":1,\"provider_login\":\"\"}");
-                if (br.getCookie(MAINPAGE, "login_remember") == null && br.getCookie(MAINPAGE, "cookie_login_remember") == null) {
+                if (br.getCookie(MAINPAGE, "login_remember", Cookies.NOTDELETEDPATTERN) == null && br.getCookie(MAINPAGE, "cookie_login_remember", Cookies.NOTDELETEDPATTERN) == null) {
                     final String lang = System.getProperty("user.language");
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -448,7 +462,6 @@ public class FreeDiscPl extends PluginForHost {
             account.setConcurrentUsePossible(true);
             ai.setStatus("Premium Account");
         }
-        account.setValid(true);
         return ai;
     }
 
@@ -470,9 +483,13 @@ public class FreeDiscPl extends PluginForHost {
                 }
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             fileNameHandling(link, dl.getConnection());

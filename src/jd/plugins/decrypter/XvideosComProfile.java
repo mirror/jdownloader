@@ -378,11 +378,13 @@ public class XvideosComProfile extends PluginForDecrypt {
         do {
             logger.info(String.format("Crawling page %d", pageNum));
             decryptedLinksNum = 0;
-            br.getPage("/" + type + "/" + username + "/videos/premium/" + pageNum);
+            br.getPage("/" + type + "/" + username + "/videos-premium/best/" + pageNum);
             // users don't always have profile... as Guardao finds links from google... false positive.
             if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 400) {
                 return;
             }
+            /* Unescape json */
+            br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.getRequest().getHtmlCode()));
             final String[] links = br.getRegex("(/video\\d+/[^\"]+)").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.info("Stopping because: Failed to find anything on current page");

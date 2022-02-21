@@ -36,7 +36,7 @@ public class UploadmxCom extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info: 2021-10-05: No limits at all <br />
+     * limit-info: 2022-02-21 <br />
      * captchatype-info: 2021-10-05: reCaptchaV2<br />
      * other:<br />
      */
@@ -80,24 +80,24 @@ public class UploadmxCom extends XFileSharingProBasic {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return 0;
+            return -2;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 0;
+            return -2;
         }
     }
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return -1;
+        return 1;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return -1;
+        return 1;
     }
 
     @Override

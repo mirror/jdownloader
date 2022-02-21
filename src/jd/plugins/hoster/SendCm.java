@@ -22,12 +22,16 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
+import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SendCm extends XFileSharingProBasic {
@@ -129,6 +133,58 @@ public class SendCm extends XFileSharingProBasic {
             } catch (final Throwable e) {
             }
         }
+    }
+
+    @Override
+    public boolean loginWebsite(final DownloadLink downloadLink, final Account account, final boolean validateCookies) throws Exception {
+        try {
+            super.loginWebsite(downloadLink, account, validateCookies);
+        } catch (final PluginException e) {
+            Form twoFAForm = null;
+            final String formKey2FA = "new_ip_token";
+            final Form[] forms = br.getForms();
+            for (final Form form : forms) {
+                final InputField twoFAField = form.getInputField(formKey2FA);
+                if (twoFAField != null) {
+                    twoFAForm = form;
+                    break;
+                }
+            }
+            if (twoFAForm == null) {
+                /* Login failed */
+                throw e;
+            }
+            logger.info("2FA code required");
+            final DownloadLink dl_dummy;
+            if (this.getDownloadLink() != null) {
+                dl_dummy = this.getDownloadLink();
+            } else {
+                dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+            }
+            String twoFACode = getUserInput("Enter verification code sent to your E-Mail", dl_dummy);
+            if (twoFACode != null) {
+                twoFACode = twoFACode.trim();
+            }
+            if (twoFACode == null || !twoFACode.matches("\\d{6}")) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiges Format der 2-faktor-Authentifizierung!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2-factor-authentication code format!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            logger.info("Submitting 2FA code");
+            twoFAForm.put(formKey2FA, twoFACode);
+            this.submitForm(twoFAForm);
+            if (!this.isLoggedin(br)) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger 2-faktor-Authentifizierungscode!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2-factor-authentication code!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            account.saveCookies(br.getCookies(getMainPage()), "");
+        }
+        return true;
     }
 
     @Override
