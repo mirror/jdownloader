@@ -84,51 +84,7 @@ public class JulesjordanCom extends antiDDoSForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         // final String decrypter_filename = link.getStringProperty("decrypter_filename", null);
-        if (!isTrailerURL(link.getPluginPatternMatcher())) {
-            dllink = link.getPluginPatternMatcher();
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openHeadConnection(dllink);
-                if (con.getResponseCode() == 410) {
-                    logger.info("Directurl expired --> Trying to refresh it");
-                    if (account == null) {
-                        throw new AccountRequiredException();
-                    }
-                    this.login(account, false);
-                    /* Refresh directurl */
-                    final String mainlink = link.getStringProperty("mainlink");
-                    final String quality = link.getStringProperty("quality");
-                    if (mainlink == null || quality == null) {
-                        /* This should never happen */
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    br.getPage(mainlink);
-                    if (jd.plugins.decrypter.JulesjordanComDecrypter.isOffline(this.br)) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    final HashMap<String, String> allQualities = jd.plugins.decrypter.JulesjordanComDecrypter.findAllQualities(this.br);
-                    dllink = allQualities.get(quality);
-                    if (StringUtils.isEmpty(dllink)) {
-                        logger.warning("Failed to refresh directurl");
-                        throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to refresh directurl");
-                    }
-                    con = br.openHeadConnection(dllink);
-                }
-                if (this.looksLikeDownloadableContent(con)) {
-                    link.setFinalFileName(getFileNameFromHeader(con));
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                } else {
-                    this.server_issues = true;
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        } else {
+        if (isTrailerURL(link.getPluginPatternMatcher())) {
             /* Trailer download */
             getPage(getURLFree(link.getDownloadURL()));
             if (jd.plugins.decrypter.JulesjordanComDecrypter.isOffline(this.br)) {
@@ -172,6 +128,53 @@ public class JulesjordanCom extends antiDDoSForHost {
                         con.disconnect();
                     } catch (final Throwable e) {
                     }
+                }
+            }
+        } else {
+            /* Full video (premium) download */
+            dllink = link.getPluginPatternMatcher();
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openHeadConnection(dllink);
+                if (con.getResponseCode() == 410) {
+                    logger.info("Directurl expired --> Trying to refresh it");
+                    if (account == null) {
+                        logger.info("Cannot refresh directurl because: Account missing");
+                        throw new AccountRequiredException();
+                    }
+                    this.login(account, false);
+                    /* Refresh directurl */
+                    final String mainlink = link.getStringProperty("mainlink");
+                    final String quality = link.getStringProperty("quality");
+                    if (mainlink == null || quality == null) {
+                        /* This should never happen */
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    br.getPage(mainlink);
+                    /* Check if content has been removed in the meanwhile. */
+                    if (jd.plugins.decrypter.JulesjordanComDecrypter.isOffline(this.br)) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    final HashMap<String, String> allQualities = jd.plugins.decrypter.JulesjordanComDecrypter.findAllQualities(this.br);
+                    dllink = allQualities.get(quality);
+                    if (StringUtils.isEmpty(dllink)) {
+                        logger.warning("Failed to refresh directurl");
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to refresh directurl");
+                    }
+                    con = br.openHeadConnection(dllink);
+                }
+                if (this.looksLikeDownloadableContent(con)) {
+                    link.setFinalFileName(getFileNameFromHeader(con));
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                } else {
+                    this.server_issues = true;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
                 }
             }
         }

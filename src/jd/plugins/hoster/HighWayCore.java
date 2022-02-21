@@ -70,7 +70,7 @@ import jd.plugins.components.PluginJSonUtils;
 public abstract class HighWayCore extends UseNet {
     protected static MultiHosterManagement                 mhm                                 = new MultiHosterManagement();
     private static final String                            TYPE_TV                             = "https?://[^/]+/onlinetv\\.php\\?id=.+";
-    private static final String                            TYPE_DIRECT                         = "https?://[^/]+/dl(?:u|t)/([a-z0-9]+)/?";
+    private static final String                            TYPE_DIRECT                         = "https?://[^/]+/dl(?:u|t)/(([a-z0-9]+)(?:/$|/.+))";
     private static final int                               STATUSCODE_PASSWORD_NEEDED_OR_WRONG = 13;
     /* Contains <host><Boolean resume possible|impossible> */
     private static Map<String, Map<String, Boolean>>       hostResumeMap                       = new HashMap<String, Map<String, Boolean>>();
@@ -180,7 +180,6 @@ public abstract class HighWayCore extends UseNet {
         if (isUsenetLink(link)) {
             return super.requestFileInformation(link);
         } else if (link.getPluginPatternMatcher().matches(TYPE_TV)) {
-            final String dlink = Encoding.urlDecode(link.getPluginPatternMatcher(), true);
             if (!link.isNameSet()) {
                 link.setName(this.getFID(link) + ".mp4");
             }
@@ -213,7 +212,7 @@ public abstract class HighWayCore extends UseNet {
             } else {
                 URLConnectionAdapter con = null;
                 try {
-                    con = br.openHeadConnection(dlink);
+                    con = br.openHeadConnection(Encoding.urlDecode(link.getPluginPatternMatcher(), true));
                     if (!this.looksLikeDownloadableContent(con) || con.getCompleteContentLength() <= 0) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else {
@@ -231,8 +230,10 @@ public abstract class HighWayCore extends UseNet {
                 link.setFinalFileName(filename);
             }
         } else {
-            if (link.getFinalFileName() == null) {
-                link.setName(this.getFID(link) + ".zip");
+            /* Direct-URL download. */
+            if (!link.isNameSet()) {
+                /* Set fallback name */
+                link.setName(this.getFID(link));
             }
             if (account == null) {
                 link.getLinkStatus().setStatusText("Only downloadable via account!");
@@ -244,8 +245,6 @@ public abstract class HighWayCore extends UseNet {
                 brc.setFollowRedirects(true);
                 con = brc.openHeadConnection(link.getPluginPatternMatcher());
                 if (!this.looksLikeDownloadableContent(con)) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (con.getCompleteContentLength() <= 0) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
                     final String serverFilename = getFileNameFromHeader(con);
@@ -274,7 +273,7 @@ public abstract class HighWayCore extends UseNet {
     @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (account != null && link.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
-            /* This is the only linktype which is only downloadable via account */
+            /* Direct-URLs require an account to be downloaded. */
             return true;
         } else if (account == null) {
             /* without account its not possible to download the link */

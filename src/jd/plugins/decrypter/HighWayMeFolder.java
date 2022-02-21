@@ -54,10 +54,15 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
                 logger.info("Failed to find a complete zip file although we're in the torrent root folder -> Probably torrent is very big and thus no extra .zip file is provided");
             }
         }
-        /* Workaround! We want directURLs to be handled by our high-way.me host plugin, not directhttp! */
+        /*
+         * Workaround! We want directURLs to be handled by our high-way.me host plugin, not directhttp a it's usually expected to happen
+         * with results of the parent plugin "GenericHTTPDirectoryIndexCrawler".
+         */
         for (final DownloadLink link : crawledItems) {
-            link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("directhttp://", ""));
-            link.setHost(this.getHost());
+            if (link.getPluginPatternMatcher().startsWith("directhttp://")) {
+                link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("directhttp://", ""));
+                link.setHost(this.getHost());
+            }
         }
         return crawledItems;
     }
