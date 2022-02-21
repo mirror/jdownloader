@@ -75,7 +75,14 @@ public class NzbindexCom extends PluginForDecrypt {
         if (param.getCryptedUrl().matches(TYPE_SINGLE_SEARCH)) {
             /* URL containing search-query -> Crawl first page of search-results and return direct-URLs to NZB files. */
             final UrlQuery query = UrlQuery.parse(param.getCryptedUrl());
-            query.addIfNoAvailable("p", "0");
+            final int page;
+            final String pageStr = query.get("p");
+            if (pageStr != null && pageStr.matches("\\d+")) {
+                page = Integer.parseInt(pageStr);
+            } else {
+                query.addAndReplace("p", "0");
+                page = 0;
+            }
             final String searchString = query.get("q");
             final String url = query.toString();
             br.getPage("https://" + this.getHost() + "/search/json?" + url.substring(url.lastIndexOf("?") + 1) + "&p=0");
@@ -84,7 +91,7 @@ public class NzbindexCom extends PluginForDecrypt {
             final Map<String, Object> stats = (Map<String, Object>) root.get("stats");
             final int max_page = ((Number) stats.get("max_page")).intValue();
             if (max_page > 0) {
-                logger.info("Multiple pages available! We'll only crawl page 1 of " + (max_page + 1));
+                logger.info("Multiple pages available! We'll only crawl page " + (page + 1) + " of " + (max_page + 1));
             }
             if (results.isEmpty()) {
                 /* User was looking for search query with zero results. */
