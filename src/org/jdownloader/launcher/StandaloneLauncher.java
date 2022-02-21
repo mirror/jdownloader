@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.Arrays;
 
 import org.appwork.app.launcher.parameterparser.ParameterParser;
+import org.appwork.loggingv3.LogV3;
 import org.appwork.resources.AWUTheme;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.utils.Application;
@@ -42,7 +43,8 @@ public class StandaloneLauncher {
             System.setProperty("org.appwork.LoggerFactory", LogSourceRedirector.class.getName());
         }
         org.appwork.utils.Application.setApplication(".jd_home");
-        org.appwork.utils.Application.getRoot(StandaloneLauncher.class);
+        final String root = org.appwork.utils.Application.getRoot(StandaloneLauncher.class);
+        LogV3.info("Application Root: " + root);// DO NOT REMOVE! this is important to have LogSystem initialized first!
         /**
          * The sorting algorithm used by java.util.Arrays.sort and (indirectly) by java.util.Collections.sort has been replaced. The new
          * sort implementation may throw an IllegalArgumentException if it detects a Comparable that violates the Comparable contract. The

@@ -23,6 +23,7 @@ import java.lang.reflect.Type;
 
 import jd.gui.swing.laf.LookAndFeelController;
 
+import org.appwork.loggingv3.LogV3;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.JsonSerializer;
 import org.appwork.storage.TypeRef;
@@ -48,7 +49,8 @@ public class Main {
             System.setProperty("org.appwork.LoggerFactory", LogSourceRedirector.class.getName());
         }
         org.appwork.utils.Application.setApplication(".jd_home");
-        org.appwork.utils.Application.getRoot(jd.SecondLevelLaunch.class);
+        final String root = org.appwork.utils.Application.getRoot(jd.SecondLevelLaunch.class);
+        LogV3.info("Application Root: " + root);// DO NOT REMOVE! this is important to have LogSystem initialized first!
         /**
          * The sorting algorithm used by java.util.Arrays.sort and (indirectly) by java.util.Collections.sort has been replaced. The new
          * sort implementation may throw an IllegalArgumentException if it detects a Comparable that violates the Comparable contract. The
