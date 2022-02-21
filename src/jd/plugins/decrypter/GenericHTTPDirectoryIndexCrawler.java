@@ -16,8 +16,11 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
@@ -59,6 +62,9 @@ public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
             if (this.looksLikeDownloadableContent(con)) {
                 final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
                 final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(getRequest, con);
+                final String pathToFile = getCurrentDirectoryPath(param.getCryptedUrl());
+                final String pathToFolder = pathToFile.substring(0, pathToFile.lastIndexOf("/"));
+                direct.setRelativeDownloadFolderPath(pathToFolder);
                 decryptedLinks.add(direct);
                 return decryptedLinks;
             } else {
@@ -91,7 +97,7 @@ public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
             /* nginx */
             for (final String[] finfo : filesAndFolders) {
                 final DownloadLink downloadLink = parseEntry(DirectoryListingMode.NGINX, br, finfo);
-                downloadLink.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
+                downloadLink.setRelativeDownloadFolderPath(path);
                 downloadLink._setFilePackage(fp);
                 decryptedLinks.add(downloadLink);
             }
@@ -104,7 +110,7 @@ public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
             }
             for (final String[] finfo : filesAndFolders) {
                 final DownloadLink downloadLink = parseEntry(DirectoryListingMode.APACHE, br, finfo);
-                downloadLink.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
+                downloadLink.setRelativeDownloadFolderPath(path);
                 downloadLink._setFilePackage(fp);
                 decryptedLinks.add(downloadLink);
             }
@@ -157,6 +163,7 @@ public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
         }
     }
 
+    /** Returns html-DECODED directory path. */
     protected String getCurrentDirectoryPath(final Browser br) {
         String path = br.getRegex("(?i)<(?:title|h1)>Index of (/[^<]+)</(?:title|h1)>").getMatch(0);
         if (path == null) {
@@ -167,6 +174,16 @@ public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
             }
             return path;
         }
+    }
+
+    /**
+     * Returns url-DECODED path based on given url.
+     *
+     * @throws UnsupportedEncodingException
+     */
+    protected String getCurrentDirectoryPath(final String url) throws UnsupportedEncodingException {
+        final String path = new Regex(url, "(?i)^https?://[^/]+(.+)").getMatch(0);
+        return URLDecoder.decode(path, "UTF-8");
     }
 
     @Override

@@ -155,7 +155,7 @@ public abstract class PluginForDecrypt extends Plugin {
         CrawledLink current = getCurrentLink();
         while (current != null) {
             if (current.getDownloadLink() != null && getSupportedLinks().matcher(current.getURL()).matches()) {
-                final String path = current.getDownloadLink().getStringProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH);
+                final String path = current.getDownloadLink().getRelativeDownloadFolderPath();
                 if (path != null) {
                     return path;
                 } else {

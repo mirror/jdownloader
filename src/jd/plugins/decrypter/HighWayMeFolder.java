@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -82,6 +84,17 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
                 path = path.replaceFirst(removeThis, "");
             }
             return path;
+        }
+    }
+
+    @Override
+    protected String getCurrentDirectoryPath(final String url) throws UnsupportedEncodingException {
+        final String path = new Regex(url, "(?i)^https?://[^/]+/dl(?:u|t)/[a-z0-9]+/(.+)").getMatch(0);
+        if (path != null) {
+            return URLDecoder.decode(path, "UTF-8");
+        } else {
+            /* Root */
+            return "/";
         }
     }
 }
