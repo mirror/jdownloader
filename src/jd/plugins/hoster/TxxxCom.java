@@ -31,7 +31,7 @@ public class TxxxCom extends KernelVideoSharingComV2 {
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
-        ret.add(new String[] { "txxx.com", "tubecup.com", "videotxxx.com" });
+        ret.add(new String[] { "txxx.com", "tubecup.com", "videotxxx.com", "txxx.tube" });
         return ret;
     }
 
@@ -46,6 +46,12 @@ public class TxxxCom extends KernelVideoSharingComV2 {
 
     public static String[] getAnnotationUrls() {
         return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPattern(getPluginDomains());
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        /* 2022-02-21: Moved txxx.tube from KernelVideoSharingComV2HostsDefault into this one. */
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     @Override

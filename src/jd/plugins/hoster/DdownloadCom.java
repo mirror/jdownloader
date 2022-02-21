@@ -18,6 +18,15 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigDdownloadCom;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -34,15 +43,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigDdownloadCom;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DdownloadCom extends XFileSharingProBasic {
@@ -279,9 +279,10 @@ public class DdownloadCom extends XFileSharingProBasic {
             super.loginWebsite(downloadLink, account, validateCookies);
         } catch (final PluginException e) {
             Form twoFAForm = null;
+            final String formKey2FA = "code6";
             final Form[] forms = br.getForms();
             for (final Form form : forms) {
-                final InputField twoFAField = form.getInputField("code6");
+                final InputField twoFAField = form.getInputField(formKey2FA);
                 if (twoFAField != null) {
                     twoFAForm = form;
                     break;
@@ -310,7 +311,7 @@ public class DdownloadCom extends XFileSharingProBasic {
                 }
             }
             logger.info("Submitting 2FA code");
-            twoFAForm.put("code6", twoFACode);
+            twoFAForm.put(formKey2FA, twoFACode);
             this.submitForm(twoFAForm);
             if (!this.br.getURL().contains("?op=my_account")) {
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {

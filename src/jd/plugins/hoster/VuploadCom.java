@@ -116,16 +116,6 @@ public class VuploadCom extends XFileSharingProBasic {
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
-    /* 2021-04-26: Not (yet) required */
-    // @Override
-    // protected String buildEmbedURLPath(final String fuid) {
-    // return "/e/" + fuid;
-    // }
-    //
-    // @Override
-    // protected String buildNormalURLPath(final String fuid) {
-    // return "/v/" + fuid;
-    // }
 
     @Override
     protected boolean isVideohosterEmbedHTML(final Browser br) {
@@ -139,8 +129,27 @@ public class VuploadCom extends XFileSharingProBasic {
 
     @Override
     public String getFUIDFromURL(final DownloadLink dl) {
-        final String result = new Regex(dl.getPluginPatternMatcher(), "https?://[^/]+/(?:embed\\-|emb\\.html\\?|v/|e/)?([a-z0-9]{12})").getMatch(0);
-        return result;
+        return new Regex(dl.getPluginPatternMatcher(), "https?://[^/]+/(?:embed\\-|emb\\.html\\?|v/|e/)?([a-z0-9]{12})").getMatch(0);
+    }
+
+    protected URL_TYPE getURLType(final String url) {
+        if (url != null) {
+            if (url.matches("(?i)^https?://[^/]+/v/[a-z0-9]{12}")) {
+                return URL_TYPE.NORMAL;
+            } else {
+                return super.getURLType(url);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    protected String buildURLPath(final DownloadLink link, final String fuid, final URL_TYPE type) {
+        if (type == URL_TYPE.NORMAL) {
+            return "/v/" + fuid;
+        } else {
+            return super.buildURLPath(link, fuid, type);
+        }
     }
 
     @Override

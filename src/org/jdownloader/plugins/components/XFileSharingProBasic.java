@@ -3987,7 +3987,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
     }
 
-    private Thread showCookieLoginInformation() {
+    protected Thread showCookieLoginInformation() {
         final String host = this.getHost();
         final Thread thread = new Thread() {
             public void run() {

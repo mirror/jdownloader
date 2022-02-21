@@ -22,6 +22,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -113,5 +114,16 @@ public class UploadsMobi extends XFileSharingProBasic {
             fileInfo[0] = br.getRegex("uploads\\.mobi/[a-z0-9]{12}\\]([^<>\"]+) - \\d+\\.\\d{1,2} [A-Za-z]{1,5}").getMatch(0);
         }
         return fileInfo;
+    }
+
+    @Override
+    protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
+        /* 2022-02-21 */
+        final String directurl = br.getRegex("(?i)<a href=\"(https://[^\"]+)\"[^>]*><i class=\"fad fa-cloud-download-alt\"").getMatch(0);
+        if (directurl != null) {
+            return directurl;
+        } else {
+            return super.getDllink(link, account, br, src);
+        }
     }
 }
