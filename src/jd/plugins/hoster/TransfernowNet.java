@@ -23,7 +23,7 @@ import java.util.Map;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -67,7 +67,7 @@ public class TransfernowNet extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/dl/([A-Za-z0-9]+)/([A-Za-z0-9]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(dl/[A-Za-z0-9]+(?:/[A-Za-z0-9]+)?|[a-z]{2,}/dltransfer\\?utm_source=[A-Za-z0-9]+(?:\\&utm_medium=[A-Za-z0-9]+)?)");
         }
         return ret.toArray(new String[0]);
     }
@@ -88,56 +88,95 @@ public class TransfernowNet extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        final Regex finfo = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks());
-        return finfo.getMatch(0) + "_" + finfo.getMatch(1);
+        if (link.getPluginPatternMatcher() == null) {
+            return null;
+        } else if (link.getPluginPatternMatcher().matches(TYPE_1)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_1).getMatch(0);
+        } else {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_2).getMatch(0);
+        }
     }
+
+    private String getSecret(final DownloadLink link) {
+        if (link.getPluginPatternMatcher() == null) {
+            return null;
+        } else if (link.getPluginPatternMatcher().matches(TYPE_1)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_1).getMatch(2);
+        } else {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_2).getMatch(2);
+        }
+    }
+
+    private static final String TYPE_1   = "https?://[^/]+/dl/([A-Za-z0-9]+)(/([A-Za-z0-9]+))?";
+    private static final String TYPE_2   = "https?://[^/]+/[a-z]{2,}/dltransfer\\?utm_source=([A-Za-z0-9]+)(\\&utm_medium=([A-Za-z0-9]+))?";
+    private static final String API_BASE = "https://www.transfernow.net/api";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (!link.isNameSet()) {
             /* Fallback */
-            link.setName(this.getFID(link));
+            link.setName(this.getFID(link) + ".zip");
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
+        final UrlQuery query = new UrlQuery();
+        query.add("transferId", this.getFID(link));
+        final String secret = getSecret(link);
+        query.add("userSecret", secret != null ? secret : "");
+        query.add("preview", "false");
+        br.getPage(API_BASE + "/transfer/downloads/metadata?" + query.toString());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("class=\"icon-engine-warning\"")) {
+        }
+        final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final List<Map<String, Object>> files = (List<Map<String, Object>>) root.get("files");
+        long totalSize = 0;
+        for (final Map<String, Object> file : files) {
+            totalSize += ((Number) file.get("size")).longValue();
+        }
+        link.setPasswordProtected(((Boolean) root.get("needPassword")).booleanValue());
+        String title = (String) root.get("transferName");
+        if (!StringUtils.isEmpty(title)) {
+            link.setFinalFileName(title + ".zip");
+        } else {
+            link.setFinalFileName(this.getFID(link) + ".zip");
+        }
+        link.setDownloadSize(totalSize);
+        /* Files can be offline while file info is still given. */
+        if (!root.get("status").toString().equalsIgnoreCase("ENABLED")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = br.getRegex("data-name\\s*=\\s*\"([^\"]+)").getMatch(0);
-        String filesize = br.getRegex("class\\s*=\\s*\"file-size\">\\s*([^<>\"]+)").getMatch(0);
-        if (filename != null) {
-            filename = Encoding.htmlDecode(filename).trim();
-            link.setName(filename);
-        }
-        if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
-            final String dltoken = br.getRegex("token_download\\s*=\\s*\"([^\"]+)\";").getMatch(0);
-            final String keyFile = br.getRegex("data-key_file\\s*=\\s*\"([^\"]+)").getMatch(0);
-            if (StringUtils.isEmpty(dltoken) || StringUtils.isEmpty(keyFile)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            requestFileInformation(link);
+            final UrlQuery query = new UrlQuery();
+            query.add("transferId", this.getFID(link));
+            final String secret = getSecret(link);
+            query.add("userSecret", secret != null ? secret : "");
+            query.add("preview", "false");
+            query.add("fileId", "");
+            if (link.isPasswordProtected()) {
+                /* Check for stored password. Ask user if none is available. */
+                String passCode = link.getDownloadPassword();
+                if (passCode == null) {
+                    passCode = getUserInput("Password?", link);
+                }
+                query.add("password", Encoding.urlEncode(passCode));
             }
-            final String keyRecipient = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
-            final Browser brc = this.br.cloneBrowser();
-            brc.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            brc.postPage("/script/download/generate/", "token=" + Encoding.urlEncode(dltoken) + "&key_recipient=" + Encoding.urlEncode(keyRecipient) + "&key_file=" + Encoding.urlEncode(keyFile));
-            final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
-            final String dllink = (String) entries.get("download_url");
+            br.getPage(API_BASE + "/transfer/downloads/link?" + query.toString());
+            if (br.getHttpConnection().getResponseCode() == 403 && link.isPasswordProtected()) {
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+            }
+            final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final String dllink = (String) root.get("url");
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

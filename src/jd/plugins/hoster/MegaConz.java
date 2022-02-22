@@ -106,20 +106,21 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(https?://(www\\.)?mega\\.(co\\.)?nz/.*?(#!?N?|\\$)|chrome://mega/content/secure\\.html#)(!|%21|\\?)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-%]{16,}((=###n=|!)[a-zA-Z0-9]+)?|mega:/*#(?:!|%21)[a-zA-Z0-9]+(?:!|%21)[a-zA-Z0-9_,\\-%]{16,}" })
 public class MegaConz extends PluginForHost {
-    private final String   USE_SSL                                                       = "USE_SSL_V3";
-    private final String   CHECK_RESERVED                                                = "CHECK_RESERVED_V2";
-    private final String   USE_TMP                                                       = "USE_TMP_V2";
-    private final String   HIDE_APP                                                      = "HIDE_APP_V2";
-    private final String   ALLOW_MULTIHOST_USAGE                                         = "ALLOW_MULTIHOST_USAGE";
-    private final String   ALLOW_CONCURRENT_DECRYPTION                                   = "ALLOW_CONCURRENT_DECRYPTION";
-    private final String   LIMIT_MODE                                                    = "LIMIT_MODE_2021_01";
-    private final int      default_LIMIT_MODE                                            = 2;
-    private final String[] limitModes                                                    = new String[] { "Global: Wait or get new IP", "Global: wait", "Per file: Wait" };
-    private final String   MAX_LIMIT_WAITTIME                                            = "MAX_LIMIT_WAITTIME";
-    private final long     default_MAX_LIMIT_WAITTIME                                    = 30;
-    private final String   ALLOW_START_FROM_ZERO_IF_DOWNLOAD_WAS_STARTED_VIA_MULTIHOSTER = "ALLOW_START_FROM_ZERO_IF_DOWNLOAD_WAS_STARTED_VIA_MULTIHOSTER";
-    private final String   USED_PLUGIN                                                   = "usedPlugin";
-    private final String   encrypted                                                     = ".encrypted";
+    private final String       USE_SSL                                                       = "USE_SSL_V3";
+    private final String       CHECK_RESERVED                                                = "CHECK_RESERVED_V2";
+    private final String       USE_TMP                                                       = "USE_TMP_V2";
+    private final String       HIDE_APP                                                      = "HIDE_APP_V2";
+    private final String       ALLOW_MULTIHOST_USAGE                                         = "ALLOW_MULTIHOST_USAGE";
+    private final String       ALLOW_CONCURRENT_DECRYPTION                                   = "ALLOW_CONCURRENT_DECRYPTION";
+    private final String       LIMIT_MODE                                                    = "LIMIT_MODE_2021_01";
+    private final int          default_LIMIT_MODE                                            = 2;
+    private final String[]     limitModes                                                    = new String[] { "Global: Wait or get new IP", "Global: wait", "Per file: Wait" };
+    private final String       MAX_LIMIT_WAITTIME                                            = "MAX_LIMIT_WAITTIME";
+    private final long         default_MAX_LIMIT_WAITTIME                                    = 30;
+    private final String       ALLOW_START_FROM_ZERO_IF_DOWNLOAD_WAS_STARTED_VIA_MULTIHOSTER = "ALLOW_START_FROM_ZERO_IF_DOWNLOAD_WAS_STARTED_VIA_MULTIHOSTER";
+    public static final String CRAWLER_SET_FULL_PATH_AS_PACKAGENAME                          = "CRAWLER_SET_FULL_PATH_AS_PACKAGENAME";
+    private final String       USED_PLUGIN                                                   = "usedPlugin";
+    private final String       encrypted                                                     = ".encrypted";
 
     @Override
     public String[] siteSupportedNames() {
@@ -1587,6 +1588,8 @@ public class MegaConz extends PluginForHost {
         }
     }
 
+    public static final boolean default_CRAWLER_SET_FULL_PATH_AS_PACKAGENAME = true;
+
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CHECK_RESERVED, JDL.L("plugins.hoster.megaconz.checkreserved", "Check reserved traffic?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_SSL, JDL.L("plugins.hoster.megaconz.usessl", "Use SSL?")).setDefaultValue(true));
@@ -1603,5 +1606,6 @@ public class MegaConz extends PluginForHost {
         final ConfigEntry cfgMulti = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MULTIHOST_USAGE, "Allow multihoster usage?").setDefaultValue(true);
         getConfig().addEntry(cfgMulti);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_START_FROM_ZERO_IF_DOWNLOAD_WAS_STARTED_VIA_MULTIHOSTER, "Automatically start from zero if file was downloaded partially via multihoster and is then tried to be resumed directly via MEGA?\r\nThis setting is important because JD cannot resume MEGA downloads started via multihoster directly via MEGA!\r\nBy default, JD will not resume in this situation and display an error message instead.").setDefaultValue(false).setEnabledCondidtion(cfgMulti, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CRAWLER_SET_FULL_PATH_AS_PACKAGENAME, "Folder crawler: Set full path as package name (if disabled, only name of respective folder will be used as packagename)?").setDefaultValue(default_CRAWLER_SET_FULL_PATH_AS_PACKAGENAME));
     }
 }

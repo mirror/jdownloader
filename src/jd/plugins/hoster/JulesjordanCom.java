@@ -86,7 +86,7 @@ public class JulesjordanCom extends antiDDoSForHost {
         // final String decrypter_filename = link.getStringProperty("decrypter_filename", null);
         if (isTrailerURL(link.getPluginPatternMatcher())) {
             /* Trailer download */
-            getPage(getURLFree(link.getDownloadURL()));
+            getPage(getURLFree(link.getPluginPatternMatcher()));
             if (jd.plugins.decrypter.JulesjordanComDecrypter.isOffline(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -102,7 +102,7 @@ public class JulesjordanCom extends antiDDoSForHost {
                     dllink = dllink_temp;
                 }
             }
-            final String url_name = getURLName(link.getDownloadURL());
+            final String url_name = getURLName(link.getPluginPatternMatcher());
             String filename = null;
             /* Fallback in case we do not get any filename via html code */
             if (inValidate(filename)) {
@@ -223,7 +223,6 @@ public class JulesjordanCom extends antiDDoSForHost {
 
     @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
-        // return account != null;
         return true;
     }
 

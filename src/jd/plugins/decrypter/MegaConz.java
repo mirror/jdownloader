@@ -20,6 +20,11 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.LinkCrawler;
@@ -33,11 +38,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(?:https?://(www\\.)?mega\\.(co\\.)?nz/[^/:]*#F|chrome://mega/content/secure\\.html#F|mega:/*#F)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-%]{16,}((!|%21)[a-zA-Z0-9]+)?(\\?[a-zA-Z0-9]+)?" })
 public class MegaConz extends PluginForDecrypt {
@@ -308,19 +308,19 @@ public class MegaConz extends PluginForDecrypt {
         }
         /*
          * p = parent node (ID)
-         * 
+         *
          * s = size
-         * 
+         *
          * t = type (0=file, 1=folder, 2=root, 3=inbox, 4=trash
-         * 
+         *
          * ts = timestamp
-         * 
+         *
          * h = node (ID)
-         * 
+         *
          * u = owner
-         * 
+         *
          * a = attribute (contains name)
-         * 
+         *
          * k = node key
          */
         final HashMap<String, MegaFolder> folders = new HashMap<String, MegaFolder>();
@@ -367,7 +367,11 @@ public class MegaConz extends PluginForDecrypt {
                     fp = fpMap.get(path);
                     if (fp == null) {
                         fp = FilePackage.getInstance();
-                        fp.setName(path.substring(path.lastIndexOf("/") + 1));
+                        if (this.getPluginConfig().getBooleanProperty(jd.plugins.hoster.MegaConz.CRAWLER_SET_FULL_PATH_AS_PACKAGENAME, jd.plugins.hoster.MegaConz.default_CRAWLER_SET_FULL_PATH_AS_PACKAGENAME)) {
+                            fp.setName(path);
+                        } else {
+                            fp.setName(path.substring(path.lastIndexOf("/") + 1));
+                        }
                         fpMap.put(path, fp);
                     }
                 } else {
