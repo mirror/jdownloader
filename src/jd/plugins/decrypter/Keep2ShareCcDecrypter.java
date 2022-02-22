@@ -48,9 +48,8 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "k2s.cc", "keep2share.cc", "k2share.cc", "keep2s.cc", "keep2.cc" });
-        ret.add(new String[] { "publish2.me" });
         ret.add(new String[] { "fileboom.me", "fboom.me" });
-        ret.add(new String[] { "tezfiles.com" });
+        ret.add(new String[] { "tezfiles.com", "publish2.me" });
         return ret;
     }
 

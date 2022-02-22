@@ -27,10 +27,19 @@ import jd.plugins.PluginException;
 import org.jdownloader.plugins.components.config.Keep2shareConfig;
 import org.jdownloader.plugins.components.config.Keep2shareConfigTezfiles;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tezfiles.com" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?tezfiles\\.com/(?:f(?:ile)?|preview)/([a-z0-9]{13,})(/([^/\\?]+))?(\\?site=([^\\&]+))?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tezfiles.com" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?(?:tezfiles\\.com|publish2\\.me)/(?:f(?:ile)?|preview)/([a-z0-9]{13,})(/([^/\\?]+))?(\\?site=([^\\&]+))?" })
 public class TezFilesCom extends K2SApi {
     public TezFilesCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null || "publish2.me".equals(host)) {
+            return getHost();
+        } else {
+            return super.rewriteHost(host);
+        }
     }
 
     @Override
@@ -65,7 +74,7 @@ public class TezFilesCom extends K2SApi {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "tezfiles.com" };
+        return new String[] { "tezfiles.com", "publish2.me" };
     }
 
     @Override
