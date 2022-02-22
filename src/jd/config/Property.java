@@ -28,6 +28,7 @@ import java.util.WeakHashMap;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 
 /**
  * Von dieser Klasse kann abgeleitet werden wenn die Neue Klasse Properties unterstützen soll. Die SimpleGUI elemente nutzen das um einfache
@@ -37,22 +38,29 @@ import org.appwork.storage.TypeRef;
  *
  */
 public class Property implements Serializable {
-    private final static WeakHashMap<String, WeakReference<String>> DEDUPEMAP = new WeakHashMap<String, WeakReference<String>>();
+    private final static WeakHashMap<String, WeakReference<String>> DEDUPEMAP   = new WeakHashMap<String, WeakReference<String>>();
+    private final static WeakStringCache                            DEDUPECACHE = new WeakStringCache();
 
     public static String dedupeString(String string) {
         if (string != null) {
-            synchronized (DEDUPEMAP) {
-                String ret = null;
-                WeakReference<String> ref = DEDUPEMAP.get(string);
-                if (ref != null && (ret = ref.get()) != null) {
-                    return ret;
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                synchronized (DEDUPECACHE) {
+                    return DEDUPECACHE.cache(string);
                 }
-                ref = new WeakReference<String>(string);
-                DEDUPEMAP.put(string, ref);
-                return string;
+            } else {
+                synchronized (DEDUPEMAP) {
+                    String ret = null;
+                    WeakReference<String> ref = DEDUPEMAP.get(string);
+                    if (ref != null && (ret = ref.get()) != null) {
+                        return ret;
+                    }
+                    ref = new WeakReference<String>(string);
+                    DEDUPEMAP.put(string, ref);
+                    return string;
+                }
             }
         } else {
-            return null;
+            return string;
         }
     }
 
@@ -263,6 +271,33 @@ public class Property implements Serializable {
         } catch (final Exception e) {
         }
         return def;
+    }
+
+    public int getPropertiesSize() {
+        if (NEWIMPLEMENTATION != null) {
+            synchronized (NEWIMPLEMENTATION) {
+                final Object[] propertiesList = this.propertiesList;
+                int size = 0;
+                if (propertiesList != null) {
+                    final int length = propertiesList.length;
+                    for (int index = 0; index < length; index += 2) {
+                        if (propertiesList[index] != null) {
+                            size++;
+                        }
+                    }
+                }
+                return size;
+            }
+        } else {
+            final HashMap<String, Object> lInternal = properties;
+            if (lInternal == null || lInternal.size() == 0) {
+                return 0;
+            } else {
+                synchronized (lInternal) {
+                    return lInternal.size();
+                }
+            }
+        }
     }
 
     /**

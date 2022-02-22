@@ -36,6 +36,7 @@ import org.appwork.uio.CloseReason;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
@@ -206,8 +207,7 @@ public class ExtensionController implements MenuExtenderHandler {
         optionalExtensions.add(new OptionalExtension("folderwatch", IconKey.ICON_FOLDER_ADD, _GUI.T.ExtensionController_initUninstalledExtensions_FolderWatchExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_FolderWatchExtension_description(), lazyExtensionsMap.get(getClassname("folderwatch"))));
         optionalExtensions.add(new OptionalExtension("scheduler", IconKey.ICON_WAIT, _GUI.T.ExtensionController_initUninstalledExtensions_SchedulerExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_SchedulerExtension_description(), lazyExtensionsMap.get(getClassname("scheduler"))));
         optionalExtensions.add(new OptionalExtension("shutdown", IconKey.ICON_LOGOUT, _GUI.T.ExtensionController_initUninstalledExtensions_ShutdownExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_ShutdownExtension_description(), lazyExtensionsMap.get(getClassname("shutdown"))));
-        if (false && (CrossSystem.isWindows() || CrossSystem.isMac())) {
-            // not finished yet
+        if (CrossSystem.isWindows() || CrossSystem.isMac() || DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             optionalExtensions.add(new OptionalExtension("antishutdown", IconKey.ICON_SETTINGS, _GUI.T.ExtensionController_initUninstalledExtensions_AntiShutdownExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_AntiShutdownExtension_description(), lazyExtensionsMap.get(getClassname("antishutdown"))));
         }
         if (!Application.isHeadless()) {

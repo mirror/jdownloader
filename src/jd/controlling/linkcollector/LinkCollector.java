@@ -3,6 +3,7 @@ package jd.controlling.linkcollector;
 import java.awt.Toolkit;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -11,6 +12,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -81,12 +83,13 @@ import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
-import org.appwork.storage.JSonStorage;
+import org.appwork.storage.SimpleMapper;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.storage.simplejson.JSonFactory;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
@@ -2062,6 +2065,21 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         if (file != null && file.exists()) {
             FileInputStream fis = null;
             ZipInputStream zis = null;
+            final SimpleMapper mapper = new SimpleMapper() {
+                @Override
+                protected JSonFactory newJsonFactory(String jsonString) {
+                    return new JSonFactory(jsonString) {
+                        @Override
+                        protected java.util.WeakHashMap<String, java.lang.ref.WeakReference<String>> getDedupeMap() {
+                            return null;
+                        };
+                    };
+                }
+
+                @Override
+                protected void initMapper() {
+                }
+            };
             try {
                 fis = new FileInputStream(file);
                 zis = new ZipInputStream(new BufferedInputStream(fis, 1 * 1024 * 1024));
@@ -2116,6 +2134,13 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 };
                 int entries = 0;
                 final Pattern entryType = Pattern.compile("(\\d+)(?:_(\\d+))?|extraInfo", Pattern.CASE_INSENSITIVE);
+                final ByteArrayOutputStream bos = new ByteArrayOutputStream() {
+                    @Override
+                    public synchronized byte[] toByteArray() {
+                        return buf;
+                    };
+                };
+                final Charset UTF8 = Charset.forName("UTF-8");
                 while ((entry = zis.getNextEntry()) != null) {
                     try {
                         entries++;
@@ -2130,7 +2155,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                     loadedPackage = new LoadedPackage();
                                     packageMap.put(packageIndex, loadedPackage);
                                 }
-                                final CrawledLinkStorable storable = JSonStorage.getMapper().inputStreamToObject(entryInputStream, crawledLinkStorable);
+                                bos.reset();
+                                IO.readStream((int) entry.getSize(), entryInputStream, bos);
+                                final CrawledLinkStorable storable = mapper.stringToObject(new String(bos.toByteArray(), 0, bos.size(), UTF8), crawledLinkStorable);
                                 if (storable != null) {
                                     loadedPackage.crawledLinks.put(childIndex, storable._getCrawledLink());
                                 } else {
@@ -2139,7 +2166,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             } else if (entryName.group(1) != null) {
                                 // \\d+ CrawledPackageStorable
                                 final Integer packageIndex = Integer.valueOf(entry.getName());
-                                final CrawledPackageStorable storable = JSonStorage.getMapper().inputStreamToObject(entryInputStream, crawledPackageStorable);
+                                bos.reset();
+                                IO.readStream((int) entry.getSize(), entryInputStream, bos);
+                                final CrawledPackageStorable storable = mapper.stringToObject(new String(bos.toByteArray(), 0, bos.size(), UTF8), crawledPackageStorable);
                                 if (storable != null) {
                                     LoadedPackage loadedPackage = packageMap.get(packageIndex);
                                     if (loadedPackage == null) {
@@ -2155,7 +2184,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 }
                             } else {
                                 // extraInfo
-                                lcs = JSonStorage.getMapper().inputStreamToObject(entryInputStream, linkCollectorStorable);
+                                lcs = mapper.inputStreamToObject(entryInputStream, linkCollectorStorable);
                             }
                         }
                     } catch (final Throwable e) {
@@ -2269,6 +2298,26 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         file = Application.getResource("cfg/linkcollector.zip");
                     }
                 }
+                final SimpleMapper mapper = new SimpleMapper() {
+                    @Override
+                    protected JSonFactory newJsonFactory(String jsonString) {
+                        return new JSonFactory(jsonString) {
+                            @Override
+                            protected java.util.WeakHashMap<String, java.lang.ref.WeakReference<String>> getDedupeMap() {
+                                return null;
+                            };
+                        };
+                    }
+
+                    @Override
+                    protected void initMapper() {
+                    }
+
+                    @Override
+                    public boolean isPrettyPrintEnabled() {
+                        return false;
+                    }
+                };
                 boolean deleteFile = true;
                 ZipOutputStream zos = null;
                 FileOutputStream fos = null;
@@ -2357,8 +2406,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                         }
                                         final ZipEntry packageEntry = new ZipEntry(packageEntryID);
                                         packageEntry.setMethod(ZipEntry.DEFLATED);
+                                        final byte[] entryBytes = mapper.objectToByteArray(packageStorable);
+                                        packageEntry.setSize(entryBytes.length);
                                         zos.putNextEntry(packageEntry);
-                                        JSonStorage.getMapper().writeObject(entryOutputStream, packageStorable);
+                                        entryOutputStream.write(entryBytes);
                                         zos.closeEntry();
                                     }
                                     final String childFormat;
@@ -2387,8 +2438,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                         final String childEntryID = String.format(childFormat, childIndex++);
                                         final ZipEntry linkEntry = new ZipEntry(packageEntryID + "_" + childEntryID);
                                         linkEntry.setMethod(ZipEntry.DEFLATED);
+                                        final byte[] entryBytes = mapper.objectToByteArray(linkStorable);
+                                        linkEntry.setSize(entryBytes.length);
                                         zos.putNextEntry(linkEntry);
-                                        JSonStorage.getMapper().writeObject(entryOutputStream, linkStorable);
+                                        entryOutputStream.write(entryBytes);
                                         zos.closeEntry();
                                     }
                                 }
@@ -2409,7 +2462,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         final ZipEntry linkCollectorEntry = new ZipEntry("extraInfo");
                         linkCollectorEntry.setMethod(ZipEntry.DEFLATED);
                         zos.putNextEntry(linkCollectorEntry);
-                        JSonStorage.getMapper().writeObject(entryOutputStream, lcs);
+                        mapper.writeObject(entryOutputStream, lcs);
                         zos.closeEntry();
                         zos.close();
                         zos = null;

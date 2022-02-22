@@ -98,6 +98,15 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
         return abstractNodeProperties;
     }
 
+    public void removeAbstractNodeProperties() {
+        new EDTRunner() {
+            @Override
+            protected void runInEDT() {
+                abstractNodeProperties = null;
+            }
+        };
+    }
+
     protected void setAbstractNodeProperties(final E abstractNodeProperties) {
         new EDTRunner() {
             @Override
@@ -475,7 +484,7 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
     }
 
     protected void onHidden() {
-        save();
+        setAbstractNodeProperties(null);
     }
 
     protected void onShowing() {
@@ -714,18 +723,8 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
             if (checksum.getParent() != null) {
                 String cs = checksum.getText();
                 cs = cs.replaceAll("\\[.*?\\]", "").trim();
-                final HashInfo hashInfo;
-                if (cs.length() == 8) {
-                    hashInfo = HashInfo.newInstanceSafe(cs, HashInfo.TYPE.CRC32);
-                } else if (cs.length() == 32) {
-                    hashInfo = HashInfo.newInstanceSafe(cs, HashInfo.TYPE.MD5);
-                } else if (cs.length() == 40) {
-                    hashInfo = HashInfo.newInstanceSafe(cs, HashInfo.TYPE.SHA1);
-                } else if (cs.length() == 64) {
-                    hashInfo = HashInfo.newInstanceSafe(cs, HashInfo.TYPE.SHA256);
-                } else if (cs.length() == 128) {
-                    hashInfo = HashInfo.newInstanceSafe(cs, HashInfo.TYPE.SHA512);
-                } else {
+                HashInfo hashInfo = HashInfo.parse(cs, true, false);
+                if (hashInfo == null) {
                     hashInfo = new HashInfo("", HashInfo.TYPE.NONE, true, true);
                 }
                 abstractNodes.saveHashInfo(hashInfo);

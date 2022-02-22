@@ -32,6 +32,28 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
+import jd.controlling.linkcollector.LinknameCleaner;
+import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
+import jd.parser.html.HTMLParser.HtmlParserCharSequence;
+import jd.parser.html.HTMLParser.HtmlParserResultSet;
+import jd.plugins.CryptedLink;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginsC;
+import jd.plugins.hoster.DirectHTTP;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.scheduler.DelayedRunnable;
@@ -66,28 +88,6 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
-
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
-import jd.controlling.linkcollector.LinknameCleaner;
-import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.PostRequest;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.parser.html.HTMLParser;
-import jd.parser.html.HTMLParser.HtmlParserCharSequence;
-import jd.parser.html.HTMLParser.HtmlParserResultSet;
-import jd.plugins.CryptedLink;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginsC;
-import jd.plugins.hoster.DirectHTTP;
 
 public class LinkCrawler {
     private static enum DISTRIBUTE {
@@ -211,6 +211,31 @@ public class LinkCrawler {
         }
     }
 
+    protected static class CrawlerPluginLinkCrawlerLock extends LinkCrawlerLock {
+        private final LazyCrawlerPlugin plugin;
+        private final String            pluginID;
+
+        protected CrawlerPluginLinkCrawlerLock(final LazyCrawlerPlugin plugin) {
+            this.plugin = plugin;
+            pluginID = getPluginID(plugin);
+        }
+
+        @Override
+        public boolean matches(LazyCrawlerPlugin plugin, CrawledLink crawledLink) {
+            return StringUtils.equals(pluginID, getPluginID(plugin));
+        }
+
+        @Override
+        public String toString() {
+            return pluginID + "|" + maxConcurrency();
+        }
+
+        @Override
+        public int maxConcurrency() {
+            return Math.max(1, plugin.getMaxConcurrentInstances());
+        }
+    }
+
     protected LinkCrawlerLock getLinkCrawlerLock(final LazyCrawlerPlugin plugin, final CrawledLink crawledLink) {
         synchronized (LOCKS) {
             LinkCrawlerLock ret = null;
@@ -220,24 +245,7 @@ public class LinkCrawler {
                 }
             }
             if (ret == null) {
-                ret = new LinkCrawlerLock() {
-                    private final String pluginID = getPluginID(plugin);
-
-                    @Override
-                    public boolean matches(LazyCrawlerPlugin plugin, CrawledLink crawledLink) {
-                        return StringUtils.equals(pluginID, getPluginID(plugin));
-                    }
-
-                    @Override
-                    public String toString() {
-                        return pluginID + "|" + maxConcurrency();
-                    }
-
-                    @Override
-                    public int maxConcurrency() {
-                        return Math.max(1, plugin.getMaxConcurrentInstances());
-                    }
-                };
+                ret = new CrawlerPluginLinkCrawlerLock(plugin);
                 LOCKS.put(getRoot(), ret);
             }
             return ret;
