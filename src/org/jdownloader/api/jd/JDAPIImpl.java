@@ -1,6 +1,7 @@
 package org.jdownloader.api.jd;
 
 import java.io.File;
+import java.util.Map;
 
 import jd.SecondLevelLaunch;
 import jd.utils.JDUtilities;
@@ -36,8 +37,7 @@ public class JDAPIImpl implements JDAPI {
             try {
                 final File buildJson = Application.getResource("build.json");
                 if (buildJson.isFile()) {
-                    org.jdownloader.myjdownloader.client.json.JsonMap map = JSonStorage.restoreFromString(IO.readFileToString(buildJson), new TypeRef<org.jdownloader.myjdownloader.client.json.JsonMap>() {
-                    });
+                    final Map<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(buildJson), TypeRef.HASHMAP);
                     return ((Number) map.get("JDownloaderRevision")).intValue();
                 }
             } catch (Throwable t) {
