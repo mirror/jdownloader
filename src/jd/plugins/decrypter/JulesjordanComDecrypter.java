@@ -95,8 +95,9 @@ public class JulesjordanComDecrypter extends PluginForDecrypt {
             ((jd.plugins.hoster.JulesjordanCom) plg).login(account, false);
             this.br.getPage(jd.plugins.hoster.JulesjordanCom.getURLPremium(param.getCryptedUrl()));
             /**
-             * 2022-02-21: This may happen randomly- or only for specific links. This implementation could probably be improved but for now
-             * it's there for testing.
+             * 2022-02-21: This may happen randomly- or only for specific links. </br>
+             * Once confirmed in JD (or browser!) we should be able to proceed. The website seems to do this by-IP which is why we do not
+             * have to update the account cookies to prevent further activation-code-prompts.
              */
             if (isNewDeviceProtectionActive(this.br)) {
                 String activationCode = null;
@@ -116,7 +117,7 @@ public class JulesjordanComDecrypter extends PluginForDecrypt {
                 } while (true);
                 br.getPage(br.getURL() + "?error_code=" + Encoding.urlEncode(activationCode));
                 if (isNewDeviceProtectionActive(this.br)) {
-                    final String infoText = this.getHost() + " claims 'New Device or Location Detected!'.\r\n An activation code was sent to your via E-Mail.\r\nYou seem to have entered the wrong activation code for this attempt!\r\nTry again later.";
+                    final String infoText = this.getHost() + " claims 'New Device or Location Detected!'.\r\nAn activation code was sent to your via E-Mail.\r\nYou seem to have entered the wrong activation code for this attempt!\r\nTry again later.";
                     throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "NEW_DEVICE_OR_LOCATION_DETECTION_NOT_PASSED_" + br._getURL().getPath(), infoText, null);
                 }
             }
