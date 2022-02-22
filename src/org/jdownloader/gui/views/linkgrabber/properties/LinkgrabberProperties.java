@@ -4,17 +4,16 @@ import java.awt.Dimension;
 
 import javax.swing.JPopupMenu;
 
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNode;
+
 import org.appwork.swing.MigPanel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNode;
-
 public class LinkgrabberProperties extends MigPanel {
-
     /**
      *
      */
@@ -64,8 +63,6 @@ public class LinkgrabberProperties extends MigPanel {
             linkPanel.setSelectedItem(null);
             pkgPanel.setSelectedItem(null);
         }
-        // System.out.println("UPDATE");
-        // new Exception().printStackTrace();
     }
 
     public void fillPopup(JPopupMenu pu) {
@@ -84,9 +81,13 @@ public class LinkgrabberProperties extends MigPanel {
     public void save() {
         if (linkPanel.isVisible()) {
             linkPanel.save();
-        } else if (pkgPanel.isVisible()) {
+        } else {
+            linkPanel.removeAbstractNodeProperties();
+        }
+        if (pkgPanel.isVisible()) {
             pkgPanel.save();
+        } else {
+            pkgPanel.removeAbstractNodeProperties();
         }
     }
-
 }

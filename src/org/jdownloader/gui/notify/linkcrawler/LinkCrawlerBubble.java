@@ -1,6 +1,7 @@
 package org.jdownloader.gui.notify.linkcrawler;
 
 import java.awt.event.MouseEvent;
+import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -23,7 +24,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleContent> {
-
     @Override
     protected void onMouseClicked(MouseEvent m) {
         super.onMouseClicked(m);
@@ -38,15 +38,15 @@ public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleCon
         ConfigurationView.getInstance().setSelectedSubPanel(BubbleNotifyConfigPanel.class);
     }
 
-    private final JobLinkCrawler crawler;
+    private final WeakReference<JobLinkCrawler> crawler;
 
-    public JobLinkCrawler getCrawler() {
-        return crawler;
+    private JobLinkCrawler getCrawler() {
+        return crawler.get();
     }
 
     public LinkCrawlerBubble(LinkCrawlerBubbleSupport linkCrawlerBubbleSupport, JobLinkCrawler crawler) {
         super(linkCrawlerBubbleSupport, _GUI.T.balloon_new_links(), new LinkCrawlerBubbleContent(crawler));
-        this.crawler = crawler;
+        this.crawler = new WeakReference<JobLinkCrawler>(crawler);
     }
 
     @Override
@@ -59,17 +59,16 @@ public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleCon
     }
 
     private final DelayedRunnable update = new DelayedRunnable(TaskQueue.TIMINGQUEUE, 500l, 1000l) {
+        @Override
+        public String getID() {
+            return "LinkCrawlerBubble";
+        }
 
-                                             @Override
-                                             public String getID() {
-                                                 return "LinkCrawlerBubble";
-                                             }
-
-                                             @Override
-                                             public void delayedrun() {
-                                                 delayedUpdate();
-                                             }
-                                         };
+        @Override
+        public void delayedrun() {
+            delayedUpdate();
+        }
+    };
 
     private final void delayedUpdate() {
         final JobLinkCrawler jlc = getCrawler();
@@ -106,7 +105,6 @@ public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleCon
         }
         getContentComponent().update(jlc);
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 pack();
