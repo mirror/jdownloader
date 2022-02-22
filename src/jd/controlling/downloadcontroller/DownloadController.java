@@ -17,12 +17,14 @@ package jd.controlling.downloadcontroller;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -60,8 +62,10 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.SimpleMapper;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.simplejson.JSonFactory;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
@@ -597,15 +601,15 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
         private final ArrayList<IndexedDownloadLink>         downloadLinks = new ArrayList<IndexedDownloadLink>();
         private final static Comparator<IndexedDownloadLink> COMPARATOR    = new Comparator<IndexedDownloadLink>() {
-            private final int compare(int x, int y) {
-                return (x < y) ? -1 : ((x == y) ? 0 : 1);
-            }
+                                                                               private final int compare(int x, int y) {
+                                                                                   return (x < y) ? -1 : ((x == y) ? 0 : 1);
+                                                                               }
 
-            @Override
-            public int compare(IndexedDownloadLink o1, IndexedDownloadLink o2) {
-                return compare(o1.getIndex(), o2.getIndex());
-            }
-        };
+                                                                               @Override
+                                                                               public int compare(IndexedDownloadLink o1, IndexedDownloadLink o2) {
+                                                                                   return compare(o1.getIndex(), o2.getIndex());
+                                                                               }
+                                                                           };
 
         private FilePackage getLoadedPackage() {
             final FilePackage filePackage = this.filePackage;
@@ -653,6 +657,21 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         if (file != null && file.exists()) {
             FileInputStream fis = null;
             ZipInputStream zis = null;
+            final SimpleMapper mapper = new SimpleMapper() {
+                @Override
+                protected JSonFactory newJsonFactory(String jsonString) {
+                    return new JSonFactory(jsonString) {
+                        @Override
+                        protected java.util.WeakHashMap<String, java.lang.ref.WeakReference<String>> getDedupeMap() {
+                            return null;
+                        };
+                    };
+                }
+
+                @Override
+                protected void initMapper() {
+                }
+            };
             try {
                 fis = new FileInputStream(file);
                 zis = new ZipInputStream(new BufferedInputStream(fis, 1 * 1024 * 1024));
@@ -707,6 +726,13 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 };
                 int entries = 0;
                 final Pattern entryType = Pattern.compile("(\\d+)(?:_(\\d+))?|extraInfo", Pattern.CASE_INSENSITIVE);
+                final ByteArrayOutputStream bos = new ByteArrayOutputStream() {
+                    @Override
+                    public synchronized byte[] toByteArray() {
+                        return buf;
+                    };
+                };
+                final Charset UTF8 = Charset.forName("UTF-8");
                 while ((entry = zis.getNextEntry()) != null) {
                     try {
                         entries++;
@@ -721,7 +747,9 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                                     loadedPackage = new LoadedPackage(null);
                                     packageMap.put(packageIndex, loadedPackage);
                                 }
-                                final DownloadLinkStorable storable = JSonStorage.getMapper().inputStreamToObject(entryInputStream, downloadLinkStorableTypeRef);
+                                bos.reset();
+                                IO.readStream((int) entry.getSize(), entryInputStream, bos);
+                                final DownloadLinkStorable storable = mapper.stringToObject(new String(bos.toByteArray(), 0, bos.size(), UTF8), downloadLinkStorableTypeRef);
                                 if (storable != null) {
                                     loadedPackage.downloadLinks.add(new LoadedPackage.IndexedDownloadLink(childIndex, storable._getDownloadLink()));
                                 } else {
@@ -730,7 +758,9 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                             } else if (entryName.group(1) != null) {
                                 // \\d+ FilePackageStorable
                                 final Integer packageIndex = Integer.valueOf(entry.getName());
-                                final FilePackageStorable storable = JSonStorage.getMapper().inputStreamToObject(entryInputStream, filePackageStorable);
+                                bos.reset();
+                                IO.readStream((int) entry.getSize(), entryInputStream, bos);
+                                final FilePackageStorable storable = mapper.stringToObject(new String(bos.toByteArray(), 0, bos.size(), UTF8), filePackageStorable);
                                 if (storable != null) {
                                     final LoadedPackage loadedPackage = packageMap.get(packageIndex);
                                     if (loadedPackage == null) {
@@ -741,7 +771,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                                 }
                             } else {
                                 // extraInfo
-                                dcs = JSonStorage.getMapper().inputStreamToObject(entryInputStream, downloadControllerStorable);
+                                dcs = mapper.inputStreamToObject(entryInputStream, downloadControllerStorable);
                             }
                         }
                     } catch (Throwable e) {
@@ -1029,6 +1059,26 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 } else {
                     packageFormat = "%02d";
                 }
+                final SimpleMapper mapper = new SimpleMapper() {
+                    @Override
+                    protected JSonFactory newJsonFactory(String jsonString) {
+                        return new JSonFactory(jsonString) {
+                            @Override
+                            protected java.util.WeakHashMap<String, java.lang.ref.WeakReference<String>> getDedupeMap() {
+                                return null;
+                            };
+                        };
+                    }
+
+                    @Override
+                    protected void initMapper() {
+                    }
+
+                    @Override
+                    public boolean isPrettyPrintEnabled() {
+                        return false;
+                    }
+                };
                 boolean deleteFile = true;
                 ZipOutputStream zos = null;
                 FileOutputStream fos = null;
@@ -1081,7 +1131,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                                     final ZipEntry packageEntry = new ZipEntry(packageEntryID);
                                     packageEntry.setMethod(ZipEntry.DEFLATED);
                                     zos.putNextEntry(packageEntry);
-                                    JSonStorage.getMapper().writeObject(entryOutputStream, packageStorable);
+                                    mapper.writeObject(entryOutputStream, packageStorable);
                                     zos.closeEntry();
                                 }
                                 final String childFormat;
@@ -1097,7 +1147,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                                     final ZipEntry linkEntry = new ZipEntry(packageEntryID + "_" + childEntryID);
                                     linkEntry.setMethod(ZipEntry.DEFLATED);
                                     zos.putNextEntry(linkEntry);
-                                    JSonStorage.getMapper().writeObject(entryOutputStream, linkStorable);
+                                    mapper.writeObject(entryOutputStream, linkStorable);
                                     zos.closeEntry();
                                 }
                             }
