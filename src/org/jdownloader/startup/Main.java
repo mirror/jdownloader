@@ -26,8 +26,10 @@ import jd.gui.swing.laf.LookAndFeelController;
 import org.appwork.loggingv3.LogV3;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.JsonSerializer;
+import org.appwork.storage.SimpleMapper;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.simplejson.JSonFactory;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -174,15 +176,47 @@ public class Main {
         });
         MyJDJsonMapper.HANDLER = new JSonHandler<Type>() {
             // set MyJDownloaderCLient JsonHandler
+            final SimpleMapper mapper = new SimpleMapper() {
+                @Override
+                protected JSonFactory newJsonFactory(String jsonString) {
+                    return new JSonFactory(jsonString) {
+                        @Override
+                        protected java.util.WeakHashMap<String, java.lang.ref.WeakReference<String>> getDedupeMap() {
+                            return null;
+                        };
+                    };
+                }
+
+                @Override
+                protected void initMapper() {
+                    super.initMapper();
+                    putSerializer(JsonFactoryInterface.class, new JsonSerializer() {
+                        @Override
+                        public String toJSonString(Object object, Object mapper) {
+                            return ((JsonFactoryInterface) object).toJsonString();
+                        }
+                    });
+                }
+
+                @Override
+                public boolean isPrettyPrintEnabled() {
+                    return false;
+                }
+            };
+
             @Override
             public String objectToJSon(Object payload) {
-                return JSonStorage.serializeToJson(payload);
+                return mapper.objectToString(payload);
             }
 
             @Override
             public <T> T jsonToObject(String dec, final Type clazz) {
-                return JSonStorage.restoreFromString(dec, new TypeRef<T>(clazz) {
-                });
+                if (dec == null || "".equals(dec)) {
+                    return null;
+                } else {
+                    return mapper.stringToObject(dec, new TypeRef<T>(clazz) {
+                    });
+                }
             }
         };
         checkLanguageSwitch(args);
