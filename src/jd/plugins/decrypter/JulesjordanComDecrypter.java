@@ -60,7 +60,13 @@ public class JulesjordanComDecrypter extends PluginForDecrypt {
         List<String> all_selected_qualities = new ArrayList<String>();
         final JulesjordanComConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.JulesjordanCom.JulesjordanComConfigInterface.class);
         final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
-        final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account == null) {
+            /* Only MOCH download and/or trailer download --> Add link for hostplugin -> User might be able to download trailer */
+            final DownloadLink dl = this.createDownloadlink(param.getCryptedUrl());
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         final String url_name = jd.plugins.hoster.JulesjordanCom.getURLName(param.getCryptedUrl());
         final boolean grabBest = cfg.isGrabBESTEnabled();
         final boolean grabBestWithinUserSelection = cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled();
@@ -85,31 +91,34 @@ public class JulesjordanComDecrypter extends PluginForDecrypt {
         if (all_selected_qualities.isEmpty()) {
             all_selected_qualities = all_known_qualities;
         }
-        if (aa != null) {
-            ((jd.plugins.hoster.JulesjordanCom) plg).login(aa, false);
-        }
-        if (aa == null) {
-            /* Only MOCH download and/or trailer download --> Add link for hostplugin */
-            final DownloadLink dl = this.createDownloadlink(param.getCryptedUrl());
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        } else {
-            /* Normal host account is available */
+        synchronized (account) {
+            ((jd.plugins.hoster.JulesjordanCom) plg).login(account, false);
             this.br.getPage(jd.plugins.hoster.JulesjordanCom.getURLPremium(param.getCryptedUrl()));
-        }
-        /**
-         * 2022-02-21: This may happen randomly- or only for specific links. This implementation could probably be improved but for now it's
-         * there for testing.
-         */
-        if (isNewDeviceProtectionActive(this.br)) {
-            String activationCode = getUserInput("Enter activation code sent by mail", param);
-            if (activationCode != null) {
-                activationCode = activationCode.trim();
-            }
-            br.getPage(br.getURL() + "?error_code=" + Encoding.urlEncode(activationCode));
+            /**
+             * 2022-02-21: This may happen randomly- or only for specific links. This implementation could probably be improved but for now
+             * it's there for testing.
+             */
             if (isNewDeviceProtectionActive(this.br)) {
-                final String infoText = this.getHost() + " claims 'New Device or Location Detected!'.\r\n An activation code was sent to your via E-Mail.\r\nYou seem to have entered the wrong activation code for this attempt!\r\nTry again later.";
-                throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "NEW_DEVICE_OR_LOCATION_DETECTION_NOT_PASSED_" + br._getURL().getPath(), infoText, null);
+                String activationCode = null;
+                do {
+                    activationCode = getUserInput("Enter activation code sent by mail", param);
+                    if (activationCode != null) {
+                        activationCode = activationCode.trim();
+                    }
+                    if (this.isAbort()) {
+                        throw new InterruptedException();
+                    } else if (!activationCode.matches("[a-z0-9]{6,}")) {
+                        logger.info("User entered invalid activation code format");
+                        continue;
+                    } else {
+                        break;
+                    }
+                } while (true);
+                br.getPage(br.getURL() + "?error_code=" + Encoding.urlEncode(activationCode));
+                if (isNewDeviceProtectionActive(this.br)) {
+                    final String infoText = this.getHost() + " claims 'New Device or Location Detected!'.\r\n An activation code was sent to your via E-Mail.\r\nYou seem to have entered the wrong activation code for this attempt!\r\nTry again later.";
+                    throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "NEW_DEVICE_OR_LOCATION_DETECTION_NOT_PASSED_" + br._getURL().getPath(), infoText, null);
+                }
             }
         }
         if (isOffline(this.br)) {

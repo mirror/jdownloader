@@ -20,8 +20,14 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
@@ -29,12 +35,12 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -42,21 +48,47 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapideo.pl" }, urls = { "" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RapideoPl extends PluginForHost {
-    private static final String          NOCHUNKS = "NOCHUNKS";
-    private static MultiHosterManagement mhm      = new MultiHosterManagement("rapideo.pl");
+    private static final String          NOCHUNKS           = "NOCHUNKS";
+    private static final String          PROPERTY_DIRECTURL = "rapideopldirectlink";
+    private static MultiHosterManagement mhm                = new MultiHosterManagement("rapideo.net");
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "rapideo.net", "rapideo.pl" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        /* 2022-02-22: Domain has changed from rapideo.pl to rapideo.net */
+        return this.rewriteHost(getPluginDomains(), host);
+    }
+
+    public static String[] getAnnotationUrls() {
+        return new String[] { "" };
+    }
 
     public RapideoPl(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.rapideo.pl/");
+        this.enablePremium("https://www.rapideo.net/");
     }
 
     @Override
     public String getAGBLink() {
-        return "https://www.rapideo.pl/";
+        return "https://www.rapideo.net/";
     }
 
     @Override
@@ -64,24 +96,32 @@ public class RapideoPl extends PluginForHost {
         return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
-    /*
-     * TODO: Probably they also have time accounts (see answer of the browser extension API) --> Implement (we did not yet get such an
-     * account type to test)
-     */
+    private Browser prepBR(final Browser br) {
+        br.setConnectTimeout(60 * 1000);
+        br.setReadTimeout(60 * 1000);
+        return br;
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ac = new AccountInfo();
-        br.setConnectTimeout(60 * 1000);
-        br.setReadTimeout(60 * 1000);
-        // check if account is valid
+        prepBR(this.br);
         login(account, true);
-        /* API used in their browser addons */
-        br.postPage("https://enc." + this.getHost() + "/", "site=newrd&output=json&loc=1&info=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + md5HEX(account.getPass()));
-        final String traffic_left_str = PluginJSonUtils.getJson(br, "balance");
-        long traffic_left = 0;
-        if (traffic_left_str != null && traffic_left_str.matches("\\d+")) {
-            traffic_left = Long.parseLong(traffic_left_str) * 1024;
-            ac.setTrafficLeft(traffic_left);
+        final boolean obtainTrafficViaOldAPI = true;
+        if (obtainTrafficViaOldAPI) {
+            /* API used in their browser addons */
+            br.postPage("https://enc.rapideo.pl/", "site=newrd&output=json&loc=1&info=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + md5HEX(account.getPass()));
+            final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final String trafficLeftStr = root.get("balance").toString();
+            if (trafficLeftStr != null && trafficLeftStr.matches("\\d+")) {
+                ac.setTrafficLeft(Long.parseLong(trafficLeftStr) * 1024);
+            }
+        } else {
+            /* Obtain "Traffic left" value from website */
+            final String trafficLeftStr = br.getRegex("(?i)\">\\s*(?:Account balance|Stan Twojego konta)\\s*:\\s*(\\d+(\\.\\d{1,2})? [A-Za-z]{1,5})").getMatch(0);
+            if (trafficLeftStr != null) {
+                ac.setTrafficLeft(SizeFormatter.getSize(trafficLeftStr));
+            }
         }
         // now let's get a list of all supported hosts:
         br.getPage("https://www." + account.getHoster() + "/twoje_pliki");
@@ -99,7 +139,7 @@ public class RapideoPl extends PluginForHost {
          * They only have accounts with traffic, no free/premium difference (other than no traffic) - we treat no-traffic as FREE --> Cannot
          * download anything
          */
-        if (traffic_left > 0) {
+        if (ac.getTrafficLeft() > 0) {
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(-1);
             ac.setStatus("Premium account");
@@ -151,78 +191,83 @@ public class RapideoPl extends PluginForHost {
      */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         mhm.runCheck(account, link);
-        login(account, false);
+        final boolean resume = true;
         int maxChunks = 0;
         if (link.getBooleanProperty(RapideoPl.NOCHUNKS, false)) {
             maxChunks = 1;
         }
-        String dllink = checkDirectLink(link, "rapideopldirectlink");
-        if (dllink == null) {
-            final String url = Encoding.urlEncode(link.getDownloadURL());
+        if (!this.attemptStoredDownloadurlDownload(link, resume, maxChunks)) {
+            login(account, false);
+            final String url = Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this));
             /* Generate session ID which we use below */
             final int random = new Random().nextInt(1000000);
             final DecimalFormat df = new DecimalFormat("000000");
             final String random_session = df.format(random);
             final String filename = link.getName();
-            final String filename_encoded = Encoding.urlEncode(filename);
-            br.getPage("https://www.rapideo.pl/twoje_pliki");
-            br.postPage("https://www.rapideo.pl/twoje_pliki", "loadfiles=1");
-            br.postPage("https://www.rapideo.pl/twoje_pliki", "loadfiles=2");
-            br.postPage("https://www.rapideo.pl/twoje_pliki", "loadfiles=3");
-            br.postPage("https://www.rapideo.pl/twoje_pliki", "session=" + random_session + "&links=" + url);
-            if (br.containsHTML("strong>Brak transferu</strong>")) {
-                logger.info("Traffic empty");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            br.getPage("https://www." + this.getHost() + "/twoje_pliki");
+            br.postPage("/twoje_pliki", "loadfiles=1");
+            br.postPage("/twoje_pliki", "loadfiles=2");
+            br.postPage("/twoje_pliki", "loadfiles=3");
+            br.postPage("/twoje_pliki", "session=" + random_session + "&links=" + url);
+            if (br.containsHTML("(?i)strong>Brak transferu</strong>")) {
+                throw new AccountUnavailableException("Out of traffic", 1 * 60 * 1000l);
             }
-            String id = br.getRegex("data\\-id=\"([a-z0-9]+)\"").getMatch(0);
+            final String id = br.getRegex("data\\-id=\"([a-z0-9]+)\"").getMatch(0);
             if (id == null) {
-                mhm.handleErrorGeneric(account, link, "id_null", 20);
+                mhm.handleErrorGeneric(account, link, "Failed to find transferID", 20);
             }
-            br.postPage("https://www.rapideo.pl/twoje_pliki", "downloadprogress=1");
-            br.postPage("https://www.rapideo.pl/progress", "session=" + random_session + "&total=1");
-            br.postPage("https://www.rapideo.pl/twoje_pliki", "insert=1&ds=false&di=false&note=false&notepaths=" + url + "&sids=" + id + "&hids=&iids=&wids=");
-            br.postPage("https://www.rapideo.pl/twoje_pliki", "loadfiles=1");
-            br.postPage("https://www.rapideo.pl/twoje_pliki", "loadfiles=2");
-            br.postPage("https://www.rapideo.pl/twoje_pliki", "loadfiles=3");
-            boolean downloading = false;
-            /* Sometimes it takes over 10 minutes until the file is on the MOCH server. */
+            br.postPage("/twoje_pliki", "downloadprogress=1");
+            br.postPage("/progress", "session=" + random_session + "&total=1");
+            br.postPage("/twoje_pliki", "insert=1&ds=false&di=false&note=false&notepaths=" + url + "&sids=" + id + "&hids=&iids=&wids=");
+            br.postPage("/twoje_pliki", "loadfiles=1");
+            br.postPage("/twoje_pliki", "loadfiles=2");
+            br.postPage("/twoje_pliki", "loadfiles=3");
+            /* Sometimes it takes over 10 minutes until the file has been downloaded to the remote server. */
+            String dllink = null;
             for (int i = 1; i <= 280; i++) {
-                br.postPage("https://www.rapideo.pl/twoje_pliki", "downloadprogress=1");
-                final String files_text = br.getRegex("\"StandardFiles\":\\[(.*?)\\]").getMatch(0);
-                final String[] all_links = files_text.split("\\},\\{");
-                for (final String link_info : all_links) {
-                    if (link_info.contains(filename) || link_info.contains(filename_encoded)) {
-                        if (link_info.contains("\"status\":\"initialization\"")) {
-                            downloading = true;
-                            continue;
-                        }
-                        downloading = false;
-                        dllink = new Regex(link_info, "\"download_url\":\"(http[^<>\"]*?)\"").getMatch(0);
+                br.postPage("/twoje_pliki", "downloadprogress=1");
+                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final List<Map<String, Object>> standardFiles = (List<Map<String, Object>>) entries.get("StandardFiles");
+                Map<String, Object> activeDownloadingFileInfo = null;
+                for (final Map<String, Object> standardFile : standardFiles) {
+                    final String thisFilename = (String) standardFile.get("filename");
+                    final String thisFilenameFull = (String) standardFile.get("filename_full");
+                    /* Find our file as multiple files could be downloading at the same time. */
+                    if (thisFilename.equalsIgnoreCase(filename) || thisFilenameFull.equalsIgnoreCase(filename)) {
+                        activeDownloadingFileInfo = standardFile;
                         break;
                     }
                 }
-                /* File is not yet on server, reload progress to check again */
-                if (downloading) {
+                if (activeDownloadingFileInfo == null) {
+                    mhm.handleErrorGeneric(account, link, "Failed to locate added info to actively downloading file", 20);
+                }
+                final String status = activeDownloadingFileInfo.get("status").toString();
+                if (status.equalsIgnoreCase("finish")) {
+                    dllink = (String) activeDownloadingFileInfo.get("download_url");
+                    break;
+                } else if (status.equalsIgnoreCase("initialization")) {
                     this.sleep(3 * 1000l, link);
                     continue;
+                } else {
+                    /* Serverside download has never been started or stopped for unknown reasons. */
+                    logger.warning("Serverside download failed?!");
+                    break;
                 }
-                break;
             }
             if (dllink == null) {
                 mhm.handleErrorGeneric(account, link, "dllink_null", 20);
             }
-            dllink = dllink.replace("\\", "");
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                mhm.handleErrorGeneric(account, link, "Final downloadlink did not lead to downloadable content", 50);
             }
-            mhm.handleErrorGeneric(account, link, "Final downloadlink did not lead to downloadable content", 20);
+            link.setProperty(PROPERTY_DIRECTURL, dllink);
         }
-        link.setProperty("rapideopldirectlink", dllink);
         try {
             if (!this.dl.startDownload()) {
                 try {
@@ -248,6 +293,37 @@ public class RapideoPl extends PluginForHost {
         }
     }
 
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final boolean resume, final int chunks) throws Exception {
+        final String url = link.getStringProperty(PROPERTY_DIRECTURL);
+        if (StringUtils.isEmpty(url)) {
+            return false;
+        }
+        boolean valid = false;
+        try {
+            final Browser brc = br.cloneBrowser();
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resume, chunks);
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                valid = true;
+                return true;
+            } else {
+                link.removeProperty(PROPERTY_DIRECTURL);
+                brc.followConnection(true);
+                throw new IOException();
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+            return false;
+        } finally {
+            if (!valid) {
+                try {
+                    dl.getConnection().disconnect();
+                } catch (Throwable ignore) {
+                }
+                this.dl = null;
+            }
+        }
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         return AvailableStatus.UNCHECKABLE;
@@ -256,7 +332,6 @@ public class RapideoPl extends PluginForHost {
     private void login(final Account account, final boolean verifyCookies) throws Exception {
         synchronized (account) {
             try {
-                // Load cookies
                 br.setCookiesExclusive(true);
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
@@ -337,7 +412,7 @@ public class RapideoPl extends PluginForHost {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         return true;
     }
 
