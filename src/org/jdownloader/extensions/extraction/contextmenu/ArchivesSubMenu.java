@@ -26,7 +26,7 @@ public class ArchivesSubMenu extends MenuContainer {
         setIconKey(org.jdownloader.gui.IconKey.ICON_EXTRACT);
     }
 
-    private SelectionInfo<?, ?> getSelection() {
+    private SelectionInfo<?, ?> _getSelection() {
         final View view = MainTabbedPane.getInstance().getSelectedView();
         if (view instanceof DownloadsView) {
             return DownloadsTable.getInstance().getSelectionInfo();
@@ -40,9 +40,8 @@ public class ArchivesSubMenu extends MenuContainer {
     public JComponent addTo(JComponent root) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
         final JComponent ret = super.addTo(root);
         ret.setEnabled(false);
-        final ArchiveValidation result = ArchiveValidator.validate(getSelection(), true);
+        final ArchiveValidation result = ArchiveValidator.validate(_getSelection(), true);
         result.executeWhenReached(new Runnable() {
-
             @Override
             public void run() {
                 final List<Archive> archives = result.getArchives();
@@ -58,5 +57,4 @@ public class ArchivesSubMenu extends MenuContainer {
         });
         return ret;
     }
-
 }

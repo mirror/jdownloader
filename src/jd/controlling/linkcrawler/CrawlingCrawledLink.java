@@ -1,7 +1,6 @@
 package jd.controlling.linkcrawler;
 
-import java.util.Iterator;
-import java.util.Map.Entry;
+import java.lang.ref.WeakReference;
 import java.util.WeakHashMap;
 
 import jd.config.Property;
@@ -9,15 +8,20 @@ import jd.controlling.linkcollector.LinkCollectingInformation;
 import jd.controlling.linkcollector.LinkCollectingJob;
 
 import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.utils.DebugMode;
 import org.jdownloader.controlling.filter.FilterRule;
 
 public class CrawlingCrawledLink extends Property {
+    private final WeakReference<CrawledLink>                           crawledLink;
     private final static WeakHashMap<CrawledLink, CrawlingCrawledLink> MAP     = new WeakHashMap<CrawledLink, CrawlingCrawledLink>();
-    private final static DelayedRunnable                               CLEANUP = new DelayedRunnable(10 * 1000, 30 * 3000) {
+    private final static DelayedRunnable                               CLEANUP = new DelayedRunnable(5000) {
         @Override
         public void delayedrun() {
             synchronized (MAP) {
                 if (MAP.size() > 0) {
+                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && !LinkCrawler.isCrawling()) {
+                        System.gc();
+                    }
                     CLEANUP.resetAndStart();
                 }
             }
@@ -28,12 +32,16 @@ public class CrawlingCrawledLink extends Property {
         synchronized (MAP) {
             CrawlingCrawledLink ret = MAP.get(crawledLink);
             if (ret == null && createIfNotExists) {
-                ret = new CrawlingCrawledLink();
+                ret = new CrawlingCrawledLink(crawledLink);
                 MAP.put(crawledLink, ret);
                 CLEANUP.resetAndStart();
             }
             return ret;
         }
+    }
+
+    protected CrawlingCrawledLink(final CrawledLink crawledLink) {
+        this.crawledLink = new WeakReference<CrawledLink>(crawledLink);
     }
 
     public UnknownCrawledLinkHandler getUnknownHandler() {
@@ -57,13 +65,9 @@ public class CrawlingCrawledLink extends Property {
         synchronized (MAP) {
             final boolean ret = super.setProperty(key, value);
             if (getPropertiesSize() == 0) {
-                final Iterator<Entry<CrawledLink, CrawlingCrawledLink>> it = MAP.entrySet().iterator();
-                while (it.hasNext()) {
-                    final Entry<CrawledLink, CrawlingCrawledLink> next = it.next();
-                    if (next.getValue() == this) {
-                        it.remove();
-                        break;
-                    }
+                final CrawledLink crawledLink = this.crawledLink.get();
+                if (crawledLink != null) {
+                    MAP.remove(crawledLink);
                 }
             }
             return ret;

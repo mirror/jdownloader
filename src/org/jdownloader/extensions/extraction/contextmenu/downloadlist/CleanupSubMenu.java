@@ -24,10 +24,9 @@ public class CleanupSubMenu extends MenuContainer {
     public CleanupSubMenu() {
         setName(org.jdownloader.extensions.extraction.translate.T.T.context_cleanup());
         setIconKey(IconKey.ICON_DELETE);
-
     }
 
-    private SelectionInfo<?, ?> getSelection() {
+    private SelectionInfo<?, ?> _getSelection() {
         final View view = MainTabbedPane.getInstance().getSelectedView();
         if (view instanceof DownloadsView) {
             return DownloadsTable.getInstance().getSelectionInfo(true, true);
@@ -35,16 +34,14 @@ public class CleanupSubMenu extends MenuContainer {
             return LinkGrabberTable.getInstance().getSelectionInfo();
         }
         return null;
-
     }
 
     @Override
     public JComponent addTo(JComponent root) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
         final JComponent ret = super.addTo(root);
         ret.setEnabled(false);
-        final ArchiveValidation result = ArchiveValidator.validate(getSelection(), true);
+        final ArchiveValidation result = ArchiveValidator.validate(_getSelection(), true);
         result.executeWhenReached(new Runnable() {
-
             @Override
             public void run() {
                 final List<Archive> archives = result.getArchives();
@@ -60,5 +57,4 @@ public class CleanupSubMenu extends MenuContainer {
         });
         return ret;
     }
-
 }
