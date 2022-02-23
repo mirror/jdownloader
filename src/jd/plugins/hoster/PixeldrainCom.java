@@ -352,7 +352,10 @@ public class PixeldrainCom extends PluginForHost {
         if (str == null) {
             return false;
         } else if (str.matches(".*_captcha_required$")) {
-            /* 2022-02-03: Either "file_rate_limited_captcha_required" or "virus_detected_captcha_required" */
+            /*
+             * 2022-02-23: Either "file_rate_limited_captcha_required" or "virus_detected_captcha_required". This can also happen for other
+             * reasons such as reached rate-limits.
+             */
             return true;
         } else {
             return false;
@@ -435,7 +438,7 @@ public class PixeldrainCom extends PluginForHost {
                  * First try to migrate old accounts which still used website login. </br>
                  * Website cookies contain the API key too -> Extract and set this. Then delete cookies as we don't need them anymore.
                  */
-                logger.info("Trying to convert website cookies to first time API key login");
+                logger.info("Trying to convert old website cookies to first time API key login");
                 final List<Cookie> allCookies = cookies.getCookies();
                 Cookie apikeyCookie = null;
                 for (final Cookie cookie : allCookies) {
@@ -452,7 +455,7 @@ public class PixeldrainCom extends PluginForHost {
                     /* This should never happen. In this case user will have to manually re-add account via apikey. */
                     logger.warning("Failed to find apikey in website cookies --> This user will most likely have to re-login");
                 }
-                /* Remove cookies as this is a one try event. */
+                /* Remove cookies as this is a one-try event. */
                 account.clearCookies("");
             }
             final String apikey = account.getPass();
@@ -486,42 +489,45 @@ public class PixeldrainCom extends PluginForHost {
         }
     }
 
+    /** Shows special login information once per account. */
     private void showApiLoginInformation(final Account account) {
         synchronized (account) {
-            if (!account.hasProperty(PROPERTY_ACCOUNT_HAS_SHOWN_APIKEY_HELP_DIALOG)) {
-                /* Only display this dialog once per account! */
-                account.setProperty(PROPERTY_ACCOUNT_HAS_SHOWN_APIKEY_HELP_DIALOG, true);
-                final Thread thread = new Thread() {
-                    public void run() {
-                        try {
-                            String message = "";
-                            final String title;
-                            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                                title = "Pixeldrain - Login";
-                                message += "Hallo liebe(r) Pixeldrain NutzerIn\r\n";
-                                message += "Um deinen Pixeldrain Account in JDownloader verwenden zu können, musst du auf folgender Pixeldrain Seite einen API Key erstellen und ihn in JDownloader ins 'Passwort' bzw. 'API Key' Feld eingeben:\r\n";
-                                message += PIXELDRAIN_JD_API_HELP_PAGE;
-                            } else {
-                                title = "Pixeldrain - Login";
-                                message += "Hello dear Pixeldrain user\r\n";
-                                message += "In order to use an account of this service in JDownloader, you need to generate an API key on the following page and put it into the 'Password' or 'API Key' field in JDownloader:\r\n";
-                                message += PIXELDRAIN_JD_API_HELP_PAGE;
-                            }
-                            final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                            dialog.setTimeout(3 * 60 * 1000);
-                            if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
-                                CrossSystem.openURL(PIXELDRAIN_JD_API_HELP_PAGE);
-                            }
-                            final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
-                            ret.throwCloseExceptions();
-                        } catch (final Throwable e) {
-                            getLogger().log(e);
-                        }
-                    };
-                };
-                thread.setDaemon(true);
-                thread.start();
+            /* Do not display this dialog if it has been displayed before for this account. */
+            if (account.hasProperty(PROPERTY_ACCOUNT_HAS_SHOWN_APIKEY_HELP_DIALOG)) {
+                return;
             }
+            /* Only display this dialog once per account! */
+            account.setProperty(PROPERTY_ACCOUNT_HAS_SHOWN_APIKEY_HELP_DIALOG, true);
+            final Thread thread = new Thread() {
+                public void run() {
+                    try {
+                        String message = "";
+                        final String title;
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            title = "Pixeldrain - Login";
+                            message += "Hallo liebe(r) Pixeldrain NutzerIn\r\n";
+                            message += "Um deinen Pixeldrain Account in JDownloader verwenden zu können, musst du auf folgender Pixeldrain Seite einen API Key erstellen und ihn in JDownloader ins 'Passwort' bzw. 'API Key' Feld eingeben:\r\n";
+                            message += PIXELDRAIN_JD_API_HELP_PAGE;
+                        } else {
+                            title = "Pixeldrain - Login";
+                            message += "Hello dear Pixeldrain user\r\n";
+                            message += "In order to use an account of this service in JDownloader, you need to generate an API key on the following page and put it into the 'Password' or 'API Key' field in JDownloader:\r\n";
+                            message += PIXELDRAIN_JD_API_HELP_PAGE;
+                        }
+                        final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                        dialog.setTimeout(3 * 60 * 1000);
+                        if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                            CrossSystem.openURL(PIXELDRAIN_JD_API_HELP_PAGE);
+                        }
+                        final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                        ret.throwCloseExceptions();
+                    } catch (final Throwable e) {
+                        getLogger().log(e);
+                    }
+                };
+            };
+            thread.setDaemon(true);
+            thread.start();
         }
     }
 
@@ -578,6 +584,11 @@ public class PixeldrainCom extends PluginForHost {
         final double euroBalance = ((Number) user.get("balance_micro_eur")).doubleValue();
         accountStatusText += String.format(" | Balance: %2.2f€", euroBalance / 1000000);
         ai.setStatus(accountStatusText);
+        /**
+         * Limits for anonymous users can be checked here: https://pixeldrain.com/api/misc/rate_limits </br>
+         * Once one of these limits is hit, a captcha will be required for downloading. These captchas can be avoided by using free/paid
+         * accounts.
+         */
         return ai;
     }
 
