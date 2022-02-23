@@ -185,10 +185,10 @@ public class GoogleDrive extends PluginForHost {
     private static final String PROPERTY_FORCED_FINAL_DOWNLOADURL              = "FORCED_FINAL_DOWNLOADURL";
     private static final String PROPERTY_CAN_DOWNLOAD                          = "CAN_DOWNLOAD";
     private static final String PROPERTY_CAN_STREAM                            = "CAN_STREAM";
-    private static final String PROPERTY_IS_ANONYMOUS_QUOTA_REACHED            = "IS_ANONYMOUS_QUOTA_REACHED";
-    private static final String PROPERTY_IS_ACCOUNT_QUOTA_REACHED              = "IS_ACCOUNT_QUOTA_REACHED";
-    private static final String PROPERTY_IS_ANONYMOUS_STREAMING_QUOTA_REACHED  = "IS_ANONYMOUS_STREAMING_QUOTA_REACHED";
-    private static final String PROPERTY_IS_ACCOUNT_STREAMING_QUOTA_REACHED    = "IS_ACCOUNT_STREAMING_QUOTA_REACHED";
+    private static final String PROPERTY_IS_QUOTA_REACHED_ANONYMOUS            = "IS_QUOTA_REACHED_ANONYMOUS";
+    private static final String PROPERTY_IS_QUOTA_REACHED_ACCOUNT              = "IS_QUOTA_REACHED_ACCOUNT";
+    private static final String PROPERTY_IS_STREAMING_QUOTA_REACHED_ANONYMOUS  = "IS_STREAMING_QUOTA_REACHED_ANONYMOUS";
+    private static final String PROPERTY_IS_STREAMING_QUOTA_REACHED_ACCOUNT    = "IS_STREAMING_QUOTA_REACHED_ACCOUNT";
     /**
      * 2022-02-20: We store this property but we're not using it at this moment. It is required to access some folders though so it's good
      * to have it set on each DownloadLink if it exists.
@@ -628,11 +628,6 @@ public class GoogleDrive extends PluginForHost {
             return null;
         }
         logger.info("Attempting stream download");
-        if (userHasDownloadedStreamBefore) {
-            logger.info("Using last used quality: " + preferredQualityHeight);
-        } else {
-            logger.info("Using currently selected quality: " + preferredQualityHeight);
-        }
         synchronized (CAPTCHA_LOCK) {
             if (account != null) {
                 /* Uses a slightly different request than when not logged in but answer is the same. */
@@ -1101,10 +1096,10 @@ public class GoogleDrive extends PluginForHost {
     /** Similar to {@link #errorOriginalFileDownloadTempUnavailableAndOrOnlyViaAccount(Account)} but in stream download handling! */
     private void errorStreamDownloadTempUnavailableAndOrOnlyViaAccount(final DownloadLink link, final Account account) throws PluginException {
         if (account != null) {
-            link.setProperty(PROPERTY_IS_ACCOUNT_STREAMING_QUOTA_REACHED, true);
+            link.setProperty(PROPERTY_IS_STREAMING_QUOTA_REACHED_ACCOUNT, true);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Stream-Download Quota reached: Retry later or import the file into your account and dl it from there or disable stream-download or try again with a different account", 2 * 60 * 60 * 1000);
         } else {
-            link.setProperty(PROPERTY_IS_ANONYMOUS_STREAMING_QUOTA_REACHED, true);
+            link.setProperty(PROPERTY_IS_STREAMING_QUOTA_REACHED_ANONYMOUS, true);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Stream-Download Quota reached: Add Google account and retry or retry later or disable stream-download", 2 * 60 * 60 * 1000);
         }
     }
@@ -1115,7 +1110,7 @@ public class GoogleDrive extends PluginForHost {
      */
     private void errorOriginalFileDownloadTempUnavailableAndOrOnlyViaAccount(final DownloadLink link, final Account account) throws PluginException {
         if (account != null) {
-            link.setProperty(PROPERTY_IS_ACCOUNT_QUOTA_REACHED, true);
+            link.setProperty(PROPERTY_IS_QUOTA_REACHED_ACCOUNT, true);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download Quota reached: Retry later or import the file into your account and dl it from there or try again with a different account", 2 * 60 * 60 * 1000);
         } else {
             /* 2020-03-10: No warranties that a download will work via account but most times it will! */
@@ -1123,7 +1118,7 @@ public class GoogleDrive extends PluginForHost {
              * 2020-08-10: Updated Exception - rather wait and try again later because such file may be downloadable without account again
              * after some time!
              */
-            link.setProperty(PROPERTY_IS_ANONYMOUS_QUOTA_REACHED, true);
+            link.setProperty(PROPERTY_IS_QUOTA_REACHED_ANONYMOUS, true);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download Quota reached: Retry later or add Google account and retry", 2 * 60 * 60 * 1000);
         }
     }
@@ -1329,10 +1324,10 @@ public class GoogleDrive extends PluginForHost {
         if (link != null) {
             link.setProperty("ServerComaptibleForByteRangeRequest", true);
             link.removeProperty(GoogleDrive.PROPERTY_USED_QUALITY);
-            link.removeProperty(PROPERTY_IS_ACCOUNT_QUOTA_REACHED);
-            link.removeProperty(PROPERTY_IS_ANONYMOUS_QUOTA_REACHED);
-            link.removeProperty(PROPERTY_IS_ACCOUNT_STREAMING_QUOTA_REACHED);
-            link.removeProperty(PROPERTY_IS_ANONYMOUS_STREAMING_QUOTA_REACHED);
+            link.removeProperty(PROPERTY_IS_QUOTA_REACHED_ACCOUNT);
+            link.removeProperty(PROPERTY_IS_QUOTA_REACHED_ANONYMOUS);
+            link.removeProperty(PROPERTY_IS_STREAMING_QUOTA_REACHED_ACCOUNT);
+            link.removeProperty(PROPERTY_IS_STREAMING_QUOTA_REACHED_ANONYMOUS);
         }
     }
 
