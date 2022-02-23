@@ -35,7 +35,7 @@ public class Loan2hostCom extends MightyScriptAdLinkFly {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "loan2host.com", "tei.ai" });
+        ret.add(new String[] { "loan2host.com", "tei.ai", "tii.ai", "wishes2.com", "ckk.ai" });
         return ret;
     }
 
