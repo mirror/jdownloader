@@ -1722,37 +1722,23 @@ public class YetiShareCore extends antiDDoSForHost {
                     }
                     if (br.containsHTML("solvemedia\\.com/papi/")) {
                         /* Handle login-captcha if required */
-                        DownloadLink dlinkbefore = this.getDownloadLink();
-                        try {
-                            final DownloadLink dl_dummy;
-                            if (dlinkbefore != null) {
-                                dl_dummy = dlinkbefore;
-                            } else {
-                                dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
-                                this.setDownloadLink(dl_dummy);
-                            }
-                            final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-                            if (br.containsHTML("api\\-secure\\.solvemedia\\.com/")) {
-                                sm.setSecure(true);
-                            }
-                            File cf = null;
-                            try {
-                                cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                            } catch (final Exception e) {
-                                if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
-                                    throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
-                                }
-                                throw e;
-                            }
-                            final String code = getCaptchaCode("solvemedia", cf, dl_dummy);
-                            final String chid = sm.getChallenge(code);
-                            loginform.put("adcopy_challenge", chid);
-                            loginform.put("adcopy_response", "manual_challenge");
-                        } finally {
-                            if (dlinkbefore != null) {
-                                this.setDownloadLink(dlinkbefore);
-                            }
+                        final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
+                        if (br.containsHTML("api\\-secure\\.solvemedia\\.com/")) {
+                            sm.setSecure(true);
                         }
+                        File cf = null;
+                        try {
+                            cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                        } catch (final Exception e) {
+                            if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                                throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                            }
+                            throw e;
+                        }
+                        final String code = getCaptchaCode("solvemedia", cf, new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
+                        final String chid = sm.getChallenge(code);
+                        loginform.put("adcopy_challenge", chid);
+                        loginform.put("adcopy_response", "manual_challenge");
                     } else if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(loginform)) {
                         /* E.g. thotdrive.com */
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();

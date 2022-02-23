@@ -8,17 +8,17 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "archive.org", type = Type.CRAWLER)
 public interface ArchiveOrgConfig extends PluginConfigInterface {
+    public static final TRANSLATION TRANSLATION = new TRANSLATION();
+
     public static class TRANSLATION {
-        public String isPreferOriginal_label() {
+        public String getPreferOriginal_label() {
             return "Prefer original?";
         }
 
-        public String isCrawlArchiveView_label() {
+        public String getCrawlArchiveView_label() {
             return "Also crawl archive view?";
         }
     }
-
-    public static final TRANSLATION TRANSLATION = new TRANSLATION();
 
     @AboutConfig
     @DefaultBooleanValue(false)

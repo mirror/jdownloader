@@ -58,11 +58,6 @@ public class ArchiveOrg extends PluginForDecrypt {
         super(wrapper);
     }
 
-    @Override
-    public Class<? extends PluginConfigInterface> getConfigInterface() {
-        return ArchiveOrgConfig.class;
-    }
-
     private boolean isArchiveURL(final String url) throws MalformedURLException {
         if (url == null) {
             return false;
@@ -453,5 +448,10 @@ public class ArchiveOrg extends PluginForDecrypt {
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return ArchiveOrgConfig.class;
     }
 }

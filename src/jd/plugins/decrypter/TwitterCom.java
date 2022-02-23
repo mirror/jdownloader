@@ -595,10 +595,11 @@ public class TwitterCom extends PornEmbedParser {
             content_type = "media";
             max_countStr = media_count;
         } else {
+            /* 2022-02-23: TODO: Remove this and always grab all "media". */
             logger.info("Grabbing ALL media of a user e.g. also retweets");
             content_type = "profile";
             max_countStr = statuses_count;
-            query.append("include_tweet_replies", "false", false);
+            query.add("include_tweet_replies", "false");
         }
         if (StringUtils.isEmpty(max_countStr)) {
             /* This should never happen */
@@ -706,7 +707,19 @@ public class TwitterCom extends PornEmbedParser {
      * Scroll down to "Twitter API error codes"
      */
     private void handleErrorsAPI(final Browser br) throws Exception {
-        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        Map<String, Object> entries = null;
+        try {
+            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        } catch (final Exception e) {
+            /* Check for some pure http error-responsecodes. */
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.getHttpConnection().getResponseCode() == 429) {
+                throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "Rate-Limit reached");
+            } else if (br.getHttpConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        }
         final Object errorsO = entries.get("errors");
         if (errorsO != null) {
             final List<Map<String, Object>> errors = (List<Map<String, Object>>) errorsO;
@@ -732,14 +745,6 @@ public class TwitterCom extends PornEmbedParser {
                     throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, error.get("message").toString());
                 }
             }
-        }
-        /* Check for some pure http error-responsecodes. */
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.getHttpConnection().getResponseCode() == 429) {
-            throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "Rate-Limit reached");
-        } else if (br.getHttpConnection().getResponseCode() == 403) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 
