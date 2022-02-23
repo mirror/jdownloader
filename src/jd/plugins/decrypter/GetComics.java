@@ -18,7 +18,14 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -32,15 +39,13 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.Base64;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "getcomics.info" }, urls = { "https?://getcomics\\.info/(?!share/|page/)[^/]+/.+" })
 public class GetComics extends antiDDoSForDecrypt {
+    private final String DOWNLOAD_SINGLE_PAGES = "1";
+
     public GetComics(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     @Override
@@ -131,13 +136,21 @@ public class GetComics extends antiDDoSForDecrypt {
                     if (redirect != null) {
                         detectedLink = redirect;
                     }
+                    System.out.println(getPluginConfig().getBooleanProperty(DOWNLOAD_SINGLE_PAGES, true));
                 } else {
                     detectedLink = Encoding.htmlOnlyDecode(link);
                 }
                 if (new Regex(detectedLink, ".*(imgur\\.com|windsplay\\.com|/contact|/sitemap|/how-to-download).*").matches()) {
                     continue;
                 }
-                decryptedLinks.add(createDownloadlink(detectedLink, false));
+                if (!getPluginConfig().getBooleanProperty(DOWNLOAD_SINGLE_PAGES, true)) {
+                    if (StringUtils.containsIgnoreCase(detectedLink, "readcomicsonline.ru")) {
+                        detectedLink = null;
+                    }
+                }
+                if (StringUtils.isNotEmpty(detectedLink)) {
+                    decryptedLinks.add(createDownloadlink(detectedLink, false));
+                }
             }
         }
         if (StringUtils.isEmpty(title)) {
@@ -145,7 +158,10 @@ public class GetComics extends antiDDoSForDecrypt {
             filePackage.setName(Encoding.htmlDecode(title));
             filePackage.addLinks(decryptedLinks);
         }
-        //
         return decryptedLinks;
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DOWNLOAD_SINGLE_PAGES, "Include single-page hosters?").setDefaultValue(true));
     }
 }
