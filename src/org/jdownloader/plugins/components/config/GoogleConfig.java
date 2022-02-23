@@ -1,6 +1,7 @@
 package org.jdownloader.plugins.components.config;
 
 import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
@@ -12,6 +13,22 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "drive.google.com", type = Type.HOSTER)
 public interface GoogleConfig extends PluginConfigInterface {
+    public static final TRANSLATION TRANSLATION = new TRANSLATION();
+
+    public static class TRANSLATION {
+        public String getUserAgent_label() {
+            return "Enter User-Agent which will be used for all Google website http requests";
+        }
+
+        public String getPreferredQuality_label() {
+            return "Select preferred stream-quality.\r\nIf your preferred stream quality is not found, best stream quality will be downloaded instead.";
+        }
+
+        public String getPreferWebsiteOverAPIIfAccountIsAvailable_label() {
+            return "If API Key is given and valid account is available: Prefer website for downloading to avoid 'Quota reached' errors?";
+        }
+    }
+
     @AboutConfig
     @DefaultStringValue("JDDEFAULT")
     @DescriptionForConfigEntry("Enter User-Agent which will be used for all Google website http requests")
@@ -69,9 +86,25 @@ public interface GoogleConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultEnumValue("ORIGINAL")
-    @DescriptionForConfigEntry("If your preferred stream quality is not found, best stream quality will be downloaded instead.")
+    @DescriptionForConfigEntry("Select preferred stream-quality.\r\nIf your preferred stream quality is not found, best stream quality will be downloaded instead.")
     @Order(20)
     PreferredQuality getPreferredQuality();
 
     void setPreferredQuality(final PreferredQuality quality);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("If API Key is given and valid account is available: Prefer website for downloading to avoid 'Quota reached' errors?")
+    @Order(30)
+    boolean isPreferWebsiteOverAPIIfAccountIsAvailable();
+
+    void setPreferWebsiteOverAPIIfAccountIsAvailable(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("If API Key is given: Prefer website for downloading if stream download is preferred and possible?")
+    @Order(40)
+    boolean isPreferWebsiteOverAPIIfStreamDownloadIsWantedAndPossible();
+
+    void setPreferWebsiteOverAPIIfStreamDownloadIsWantedAndPossible(boolean b);
 }

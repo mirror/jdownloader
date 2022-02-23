@@ -41,7 +41,7 @@ import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "getcomics.info" }, urls = { "https?://getcomics\\.info/(?!share/|page/)[^/]+/.+" })
 public class GetComics extends antiDDoSForDecrypt {
-    private final String DOWNLOAD_SINGLE_PAGES = "1";
+    private final String DOWNLOAD_SINGLE_PAGES = "DOWNLOAD_SINGLE_PAGES";
 
     public GetComics(PluginWrapper wrapper) {
         super(wrapper);
@@ -136,7 +136,6 @@ public class GetComics extends antiDDoSForDecrypt {
                     if (redirect != null) {
                         detectedLink = redirect;
                     }
-                    System.out.println(getPluginConfig().getBooleanProperty(DOWNLOAD_SINGLE_PAGES, true));
                 } else {
                     detectedLink = Encoding.htmlOnlyDecode(link);
                 }
