@@ -83,7 +83,10 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         final String sourceHost = Browser.getHost(param.getCryptedUrl());
         correctURL(param);
         handlePreCrawlProcess(param, decryptedLinks);
-        if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
+        if (!decryptedLinks.isEmpty()) {
+            /* E.g. direct redirect */
+            return decryptedLinks;
+        } else if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.toString().length() < 100) {
             /* 2020-05-29: E.g. https://uii.io/full */

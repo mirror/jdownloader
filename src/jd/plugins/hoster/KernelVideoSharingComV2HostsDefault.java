@@ -106,6 +106,8 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "fpo.xxx" });
         /* 2022-01-19 */
         ret.add(new String[] { "ebalka.fun" });
+        /* 2022-02-23 */
+        ret.add(new String[] { "watchporn.to" });
         return ret;
     }
 

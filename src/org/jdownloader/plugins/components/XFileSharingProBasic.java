@@ -3938,19 +3938,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                     loginForm.put("password", Encoding.urlEncode(account.getPass()));
                     /* Handle login-captcha if required */
-                    final DownloadLink dlinkbefore = this.getDownloadLink();
-                    try {
-                        final DownloadLink dl_dummy;
-                        if (dlinkbefore != null) {
-                            dl_dummy = dlinkbefore;
-                        } else {
-                            dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
-                            this.setDownloadLink(dl_dummy);
-                        }
-                        handleCaptcha(dl_dummy, loginForm);
-                    } finally {
-                        this.setDownloadLink(dlinkbefore);
-                    }
+                    handleCaptcha(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true), loginForm);
                     submitForm(loginForm);
                     if (!this.allowsMultipleLoginAttemptsInOneGo()) {
                         break;
