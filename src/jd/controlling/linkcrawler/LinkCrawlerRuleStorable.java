@@ -9,14 +9,14 @@ public class LinkCrawlerRuleStorable extends LinkCrawlerRule implements Storable
 
     public LinkCrawlerRuleStorable(LinkCrawlerRule rule) {
         super(rule.getId());
-        set(rule);
+        _set(rule);
     }
 
     public void setId(long id) {
         this.id.setID(id);
     }
 
-    public void set(LinkCrawlerRule rule) {
+    public void _set(LinkCrawlerRule rule) {
         this.setEnabled(rule.isEnabled());
         this.setName(rule.getName());
         this.setPattern(rule.getPattern());

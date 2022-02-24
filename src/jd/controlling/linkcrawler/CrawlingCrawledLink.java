@@ -68,6 +68,10 @@ public class CrawlingCrawledLink extends Property {
                 final CrawledLink crawledLink = this.crawledLink.get();
                 if (crawledLink != null) {
                     MAP.remove(crawledLink);
+                } else if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    MAP.values().remove(this);
+                } else {
+                    CLEANUP.resetAndStart();
                 }
             }
             return ret;

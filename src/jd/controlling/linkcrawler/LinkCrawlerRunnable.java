@@ -45,7 +45,7 @@ public abstract class LinkCrawlerRunnable implements Runnable {
 
     public void run() {
         final LinkCrawlerLock lock = getLinkCrawlerLock();
-        if (lock == null || lock.maxConcurrency() == Integer.MAX_VALUE || lock.maxConcurrency() > getLinkCrawler().getMaxThreads()) {
+        if (lock == null || !lock.requiresLocking()) {
             run_now();
         } else {
             run_delayed(lock);
@@ -53,7 +53,7 @@ public abstract class LinkCrawlerRunnable implements Runnable {
     }
 
     protected void run_delayed(LinkCrawlerLock lock) {
-        final int maxConcurrency = lock.maxConcurrency();
+        final int maxConcurrency = lock.getMaxConcurrency();
         final LinkCrawlerRunnable startRunnable;
         synchronized (SEQ_RUNNABLES) {
             List<LinkCrawlerRunnable> seqs = SEQ_RUNNABLES.get(lock);

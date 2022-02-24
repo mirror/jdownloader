@@ -173,42 +173,27 @@ public class Ftp extends PluginForDecrypt {
                     synchronized (LIMITS) {
                         LIMITS.put(lockHost, limit);
                     }
-                    getCrawler().addSequentialLockObject(new LinkCrawlerLock() {
+                    getCrawler().addSequentialLockObject(new LinkCrawlerLock(getLazyC()) {
+                        private final String host = Browser.getHost(cLink.getCryptedUrl());
+
                         @Override
-                        public int maxConcurrency() {
+                        public int getMaxConcurrency() {
                             return 1;
                         }
 
-                        private final String pluginID = getPluginID(Ftp.this.getLazyC());
-                        private final String host     = Browser.getHost(cLink.getCryptedUrl());
+                        @Override
+                        public String getMatchingIdentifier() {
+                            return super.getMatchingIdentifier().concat(host);
+                        }
 
                         @Override
                         public String toString() {
-                            return pluginID + "|" + host + "|" + limit;
-                        }
-
-                        @Override
-                        public boolean equals(Object obj) {
-                            if (obj == null) {
-                                return false;
-                            } else if (obj == this) {
-                                return true;
-                            } else if (obj instanceof LinkCrawlerLock) {
-                                final LinkCrawlerLock other = (LinkCrawlerLock) obj;
-                                return StringUtils.equals(toString(), other.toString());
-                            } else {
-                                return false;
-                            }
-                        }
-
-                        @Override
-                        public int hashCode() {
-                            return host.hashCode();
+                            return super.toString() + "|" + host;
                         }
 
                         @Override
                         public boolean matches(LazyCrawlerPlugin plugin, CrawledLink crawledLink) {
-                            return StringUtils.equals(pluginID, getPluginID(plugin)) && StringUtils.equalsIgnoreCase(host, Browser.getHost(crawledLink.getURL()));
+                            return super.matches(plugin, crawledLink) && StringUtils.equalsIgnoreCase(host, Browser.getHost(crawledLink.getURL()));
                         }
                     });
                     sleep(5000, cLink);
