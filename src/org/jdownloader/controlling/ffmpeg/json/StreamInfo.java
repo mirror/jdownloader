@@ -20,15 +20,15 @@ public class StreamInfo implements Storable {
         this.streams = streams;
     }
 
-    public List<Stream> getVideoStreams() {
-        return getStreams("video");
+    public List<Stream> _getVideoStreams() {
+        return _getStreams("video");
     }
 
-    public List<Stream> getAudioStreams() {
-        return getStreams("audio");
+    public List<Stream> _getAudioStreams() {
+        return _getStreams("audio");
     }
 
-    public List<Stream> getStreams(final String type) {
+    private List<Stream> _getStreams(final String type) {
         final List<Stream> ret = new ArrayList<Stream>();
         final List<Stream> streams = getStreams();
         if (streams != null) {

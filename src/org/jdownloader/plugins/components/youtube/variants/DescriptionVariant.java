@@ -4,6 +4,7 @@ import java.util.List;
 
 import javax.swing.Icon;
 
+import org.appwork.testframework.IgnoreInAWTest;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
@@ -15,17 +16,14 @@ import org.jdownloader.plugins.components.youtube.variants.generics.AbstractGene
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
 public class DescriptionVariant extends AbstractVariant<DescriptionGenericInfo> {
+    @IgnoreInAWTest
     public static class DescriptionGenericInfo extends AbstractGenericVariantInfo {
-
         public DescriptionGenericInfo() {
-
         }
-
     }
 
     public DescriptionVariant() {
         super(VariantBase.DESCRIPTION);
-
     }
 
     private static final Icon TEXT = new AbstractIcon(IconKey.ICON_TEXT, 16);
@@ -67,7 +65,5 @@ public class DescriptionVariant extends AbstractVariant<DescriptionGenericInfo> 
     @Override
     public String getTypeId() {
         return getBaseVariant().name();
-
     }
-
 }

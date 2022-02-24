@@ -1,32 +1,37 @@
 package org.jdownloader.api.linkcollector;
 
+import org.appwork.storage.Storable;
+import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
+
 import jd.controlling.linkcrawler.CrawledLink;
 
-import org.appwork.storage.Storable;
-
 public class CrawledLinkAPIStorable implements Storable {
-
     private CrawledLink                                       link;
     private org.jdownloader.myjdownloader.client.json.JsonMap infoMap;
 
     public CrawledLinkAPIStorable(/* Storable */) {
-
     }
 
     public CrawledLinkAPIStorable(CrawledLink link) {
         this.link = link;
     }
 
+    @StorableValidatorIgnoresMissingSetter
     public Long getUuid() {
         CrawledLink llink = link;
-        if (llink != null) return llink.getUniqueID().getID();
+        if (llink != null) {
+            return llink.getUniqueID().getID();
+        }
         return 0l;
     }
 
     // to be compatbile with older API version
+    @StorableValidatorIgnoresMissingSetter
     public Long getUniqueID() {
         CrawledLink llink = link;
-        if (llink != null) return llink.getUniqueID().getID();
+        if (llink != null) {
+            return llink.getUniqueID().getID();
+        }
         return 0l;
     }
 
@@ -36,7 +41,9 @@ public class CrawledLinkAPIStorable implements Storable {
 
     public String getName() {
         CrawledLink llink = link;
-        if (llink != null) return llink.getName();
+        if (llink != null) {
+            return llink.getName();
+        }
         return null;
     }
 

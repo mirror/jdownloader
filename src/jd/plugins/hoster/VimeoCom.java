@@ -1153,7 +1153,7 @@ public class VimeoCom extends PluginForHost {
                     if (StringUtils.isNotEmpty(ext)) {
                         vvc.setExtension("." + ext);
                     } else {
-                        vvc.setExtension();
+                        vvc.updateExtensionFromUrl();
                         if (vvc.getExtension() == null) {
                             ext = plugin.getExtensionFromMimeType((String) info.get("type"));// api.vimeo.com
                             if (ext == null) {
@@ -1190,7 +1190,7 @@ public class VimeoCom extends PluginForHost {
                             vvc.setQuality(Quality.HD);
                         } else {
                             // not provided... determine by x and y
-                            vvc.setQuality();
+                            vvc.updateQualityByHeight();
                         }
                     }
                     ret.add(vvc);
@@ -1240,7 +1240,7 @@ public class VimeoCom extends PluginForHost {
                         downloadURL = (String) item.get("link");// api.vimeo.com
                     }
                     vvc.setDownloadurl(downloadURL);
-                    vvc.setExtension();
+                    vvc.updateExtensionFromUrl();
                     if (vvc.getExtension() == null) {
                         String ext = plugin.getExtensionFromMimeType((String) item.get("type"));// api.vimeo.com
                         if (ext == null) {
@@ -1284,7 +1284,7 @@ public class VimeoCom extends PluginForHost {
                     } else if (StringUtils.contains(rawQuality, "2560")) {
                         vvc.setQuality(Quality.UHD_4K);
                     } else {
-                        vvc.setQuality();
+                        vvc.updateQualityByHeight();
                     }
                     vvc.setCodec(".mp4".equalsIgnoreCase(vvc.getExtension()) ? "h264" : "vp5");
                     vvc.setSource(Source.WEB);

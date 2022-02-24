@@ -104,7 +104,7 @@ public class ScheduleEntryStorable implements Storable {
         return intervalMinute;
     }
 
-    public void setIntervalMin(int intervalMinute) {
+    public void setIntervalMinute(int intervalMinute) {
         this.intervalMinute = intervalMinute;
     }
 

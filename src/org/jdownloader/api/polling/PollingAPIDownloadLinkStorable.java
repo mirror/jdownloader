@@ -1,13 +1,14 @@
 package org.jdownloader.api.polling;
 
-import jd.plugins.DownloadLink;
-
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
 import org.jdownloader.api.downloads.LinkStatusAPIStorable;
 import org.jdownloader.plugins.FinalLinkState;
 
-public class PollingAPIDownloadLinkStorable implements Storable {
+import jd.plugins.DownloadLink;
 
+@StorableValidatorIgnoresMissingSetter
+public class PollingAPIDownloadLinkStorable implements Storable {
     private DownloadLink link;
 
     public PollingAPIDownloadLinkStorable(/* Storable */) {

@@ -3,10 +3,7 @@ package jd.plugins;
 import java.util.HashMap;
 import java.util.Map;
 
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.crypt.JDCrypt;
-import jd.plugins.DownloadLink.AvailableStatus;
-
+import org.appwork.remoteapi.annotations.AllowNonStorableObjects;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
@@ -14,6 +11,10 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
 import org.jdownloader.controlling.UrlProtection;
 import org.jdownloader.plugins.FinalLinkState;
+
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.crypt.JDCrypt;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class DownloadLinkStorable implements Storable {
     private static final byte[]                       KEY      = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
@@ -65,6 +66,7 @@ public class DownloadLinkStorable implements Storable {
         this.link.setNameUnsafe(name);
     }
 
+    @AllowNonStorableObjects
     public Map<String, Object> getProperties() {
         if (crypt()) {
             return null;
@@ -182,15 +184,6 @@ public class DownloadLinkStorable implements Storable {
 
     public void setHost(String host) {
         link.setHost(host);
-    }
-
-    public void setBrowserURL(String url) {
-        if (!StringUtils.isEmpty(url)) {
-            /**
-             * for conversion from own key to property system
-             */
-            link.setOriginUrl(url);
-        }
     }
 
     public long[] getChunkProgress() {

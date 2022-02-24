@@ -67,8 +67,8 @@ public class DownloadsAPIImpl implements DownloadsAPI {
         }
 
         List<FilePackageAPIStorable> ret = new ArrayList<FilePackageAPIStorable>(dlc.size());
-        int startWith = queryParams.getStartAt();
-        int maxResults = queryParams.getMaxResults();
+        int startWith = queryParams._getStartAt();
+        int maxResults = queryParams._getMaxResults();
         if (startWith > packages.size() - 1) {
             return ret;
         }
@@ -209,8 +209,8 @@ public class DownloadsAPIImpl implements DownloadsAPI {
             return result;
         }
 
-        int startWith = queryParams.getStartAt();
-        int maxResults = queryParams.getMaxResults();
+        int startWith = queryParams._getStartAt();
+        int maxResults = queryParams._getMaxResults();
 
         if (startWith > links.size() - 1) {
             return result;

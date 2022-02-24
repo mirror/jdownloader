@@ -1,6 +1,7 @@
 package org.jdownloader.api.linkcollector;
 
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
 
 import jd.controlling.linkcrawler.CrawledPackage;
 
@@ -15,6 +16,7 @@ public class CrawledPackageAPIStorable implements Storable {
         this.pkg = pkg;
     }
 
+    @StorableValidatorIgnoresMissingSetter
     public String getName() {
         CrawledPackage lpkg = pkg;
         if (lpkg != null) {
@@ -23,6 +25,7 @@ public class CrawledPackageAPIStorable implements Storable {
         return null;
     }
 
+    @StorableValidatorIgnoresMissingSetter
     public long getUUID() {
         CrawledPackage lpkg = pkg;
         if (lpkg != null) {

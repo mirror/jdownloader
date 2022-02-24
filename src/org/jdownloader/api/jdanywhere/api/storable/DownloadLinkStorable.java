@@ -1,14 +1,15 @@
 package org.jdownloader.api.jdanywhere.api.storable;
 
-import jd.plugins.DownloadLink;
-
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
 import org.jdownloader.api.jdanywhere.JDAnywhereAPI;
 import org.jdownloader.api.jdanywhere.api.Helper;
 import org.jdownloader.plugins.FinalLinkState;
 
-public class DownloadLinkStorable implements Storable {
+import jd.plugins.DownloadLink;
 
+@StorableValidatorIgnoresMissingSetter
+public class DownloadLinkStorable implements Storable {
     private boolean _messageIsCountdown = false;
 
     public long getId() {
@@ -121,7 +122,6 @@ public class DownloadLinkStorable implements Storable {
         lsj.setFinished(FinalLinkState.CheckFinished(link.getFinalLinkState()));
         lsj.setInProgress(link.getDownloadLinkController() != null);
         lsj.setLinkID(link.getUniqueID().toString());
-
         if (!JDAnywhereAPI.getInstance().events.CheckForProgressMsg(link)) {
             lsj.setStatusText(Helper.getMessage(link));
         } else {
@@ -143,5 +143,4 @@ public class DownloadLinkStorable implements Storable {
     public boolean getMessageIsCountdown() {
         return _messageIsCountdown;
     }
-
 }

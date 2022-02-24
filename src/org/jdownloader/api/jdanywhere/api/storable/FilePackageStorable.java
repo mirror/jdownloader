@@ -3,24 +3,22 @@ package org.jdownloader.api.jdanywhere.api.storable;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.storage.Storable;
+import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
+
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.appwork.storage.Storable;
-
+@StorableValidatorIgnoresMissingSetter
 public class FilePackageStorable implements Storable {
     public String getName() {
         return pkg.getName();
     }
 
-    public void setName(String name) {
-    }
-
     public long getId() {
         return pkg.getUniqueID().getID();
     }
-
     // public String getComment() {
     // String comment = pkg.getComment();
     // if (comment == null || comment.length() == 0) return "";
@@ -49,7 +47,6 @@ public class FilePackageStorable implements Storable {
         synchronized (pkg) {
             for (DownloadLink link : pkg.getChildren()) {
                 if (link.getFinishedDate() == -1) {
-
                     finished = -1;
                     break;
                 }
@@ -57,7 +54,6 @@ public class FilePackageStorable implements Storable {
         }
         return finished;
     }
-
     // public String getDirectory() {
     // return pkg.getDownloadDirectory();
     // }
@@ -76,7 +72,9 @@ public class FilePackageStorable implements Storable {
     public List<String> getHoster() {
         List<String> links = new ArrayList<String>(pkg.size());
         for (DownloadLink link : pkg.getChildren()) {
-            if (!links.contains(link.getHost())) links.add(link.getHost());
+            if (!links.contains(link.getHost())) {
+                links.add(link.getHost());
+            }
         }
         return links;
     }
@@ -106,11 +104,9 @@ public class FilePackageStorable implements Storable {
         }
         return enabled;
     }
-
     // public List<DownloadLinkAPIStorable> getLinks() {
     // return links;
     // }
-
     // public void setLinks(List<DownloadLinkAPIStorable> links) {
     // this.links = links;
     // }

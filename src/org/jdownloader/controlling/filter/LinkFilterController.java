@@ -177,7 +177,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
         final ArrayList<LinkgrabberFilterRuleWrapper> newAcceptlFilters = new ArrayList<LinkgrabberFilterRuleWrapper>();
         synchronized (this) {
             for (final LinkgrabberFilterRule lgr : filter) {
-                if (lgr.isEnabled() && lgr.isValid()) {
+                if (lgr.isEnabled() && lgr._isValid()) {
                     try {
                         final LinkgrabberFilterRuleWrapper compiled = lgr.compile();
                         lgr._setBroken(false);

@@ -26,7 +26,6 @@ import org.jdownloader.extensions.ExtensionNotLoadedException;
 import org.jdownloader.images.NewTheme;
 
 public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
-
     public static final String      EMPTY      = "<EMPTY>";
     /* needed for old values */
     private static final String     EMPTY_NAME = "<NO NAME>";
@@ -42,7 +41,6 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
             if (actionData.getData() != null) {
                 return actionData.getClazzName() + ":" + actionData.getData() + ":" + actionData.getSetup();
             }
-
             return actionData.getClazzName() + ":" + actionData.getSetup();
         }
         if (getClass() != MenuContainer.class && getClass() != MenuItemData.class) {
@@ -65,12 +63,10 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
     }
 
     public String toString() {
-
         return _getIdentifier() + "";
     }
 
     public ActionData getActionData() {
-
         return actionData;
     }
 
@@ -92,7 +88,6 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
     }
 
     public void setClassName(String className) {
-
         this.className = className;
     }
 
@@ -102,17 +97,11 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
     }
 
     private Type                                                                 type    = Type.ACTION;
-
     private boolean                                                              validated;
-
     private Exception                                                            validateException;
-
     private MenuContainerRoot                                                    root;
-
     private String                                                               mnemonic;
-
     private String                                                               shortcut;
-
     private NullsafeAtomicReference<MinTimeWeakReference<CustomizableAppAction>> action  = new NullsafeAtomicReference<MinTimeWeakReference<CustomizableAppAction>>();
     private boolean                                                              visible = true;
 
@@ -126,7 +115,6 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
     }
 
     public void setType(Type type) {
-
         this.type = type;
     }
 
@@ -135,17 +123,14 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
     }
 
     public ArrayList<MenuItemData> getItems() {
-
         return items;
     }
 
     public void setItems(ArrayList<MenuItemData> items) {
-
         this.items = items;
     }
 
     public String getName() {
-
         return name;
     }
 
@@ -177,34 +162,25 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
     }
 
     public MenuItemData createValidatedItem() throws InstantiationException, IllegalAccessException, ClassNotFoundException, ExtensionNotLoadedException {
-
         if (className == null || getClass().getName().equals(className)) {
             this._setValidated(true);
             return this;
         }
-
         MenuItemData ret = createInstance(this);
         ret._setValidated(true);
         ret._setRoot(_getRoot());
         return ret;
-
     }
 
     protected MenuItemData createInstance(MenuItemData menuItemData) throws InstantiationException, IllegalAccessException, ClassNotFoundException, ExtensionNotLoadedException {
-
         if (menuItemData.getClassName() == null) {
             return menuItemData;
         }
-
         MenuItemData ret = null;
-
         String packageName = AbstractExtension.class.getPackage().getName();
         if (menuItemData.getClassName().startsWith(packageName)) {
-
             ret = (MenuItemData) ExtensionController.getInstance().loadClass(menuItemData.getClassName()).newInstance();
-
         } else {
-
             // we renamed SeparatorData.class. and we have to fix the stored name here.
             // we probably can remove this workaround in a few weeks/months
             // 29th august 2014
@@ -213,7 +189,6 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
                 menuItemData.setName("Separator");
             }
             ret = (MenuItemData) Class.forName(menuItemData.getClassName()).newInstance();
-
         }
         ret.setVisible(menuItemData.isVisible());
         if (getActionData() != null) {
@@ -223,13 +198,10 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
         ret.setName(menuItemData.getName());
         ret.setItems(menuItemData.getItems());
         ret.setType(menuItemData.getType());
-
         return ret;
-
     }
 
     public JComponent createItem() throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
-
         if (getActionData() == null || !getActionData()._isValidDataForCreatingAnAction()) {
             //
             throw new WTFException("No ACTION");
@@ -242,7 +214,6 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
         if (!action.isVisible()) {
             return null;
         }
-
         if (action instanceof ComponentProviderInterface) {
             return ((ComponentProviderInterface) action).createComponent(this);
         }
@@ -256,7 +227,6 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
             ret.setIcon(getIcon(iconKey, 20));
         }
         return ret;
-
     }
 
     @SuppressWarnings("unchecked")
@@ -301,7 +271,6 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
         ret.applyMenuItemData();
         ret.initContextDefaults();
         ret.loadContextSetups();
-
         minWeakAction = new MinTimeWeakReference<CustomizableAppAction>(ret, 30 * 1000l, "MenuItemAction", this);
         action.set(minWeakAction);
         return (ret);
@@ -312,35 +281,29 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
             return null;
         }
         JComponent it;
-
         it = createItem();
         if (it == null) {
             return null;
         }
         root.add(it);
         return it;
-
     }
 
     public List<MenuItemData> list() {
-
         List<MenuItemData> set = new ArrayList<MenuItemData>();
         set.add(this);
         if (getItems() != null) {
             for (MenuItemData d : getItems()) {
                 set.addAll(d.list());
             }
-
         }
         return set;
     }
 
     public List<List<MenuItemData>> listPaths() {
-
         List<List<MenuItemData>> set = new ArrayList<List<MenuItemData>>();
         ArrayList<MenuItemData> newPath = new ArrayList<MenuItemData>();
         newPath.add(this);
-
         set.add(newPath);
         if (getItems() != null) {
             for (MenuItemData d : getItems()) {
@@ -351,7 +314,6 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
                     set.add(newPath);
                 }
             }
-
         }
         return set;
     }
@@ -361,7 +323,6 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
             try {
                 return createAction().getTooltipText();
             } catch (Exception e) {
-
             }
         }
         return null;
@@ -408,11 +369,9 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
     }
 
     public void setShortcut(String shortcut) {
-
         this.shortcut = shortcut;
         clearCachedAction();
     }
-
     // public String _getShortcut() {
     // if (StringUtils.isNotEmpty(shortcut)) { return shortcut; }
     // if (getActionData() != null) {
@@ -432,7 +391,6 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
     public void setVisible(boolean b) {
         visible = b;
         clearCachedAction();
-
     }
 
     public void clearCachedAction() {
@@ -456,5 +414,4 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
         }
         return NewTheme.I().getIcon(key, size);
     }
-
 }

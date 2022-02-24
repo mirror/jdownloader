@@ -1,16 +1,15 @@
 package org.jdownloader.captcha.v2.solver.dbc;
 
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 
 public class DBCUploadResponse implements Storable {
-
     public static final TypeRef<DBCUploadResponse> TYPE = new TypeRef<DBCUploadResponse>() {
     };
 
     private DBCUploadResponse(/* Storable */) {
-
     }
 
     private int status;
@@ -19,6 +18,7 @@ public class DBCUploadResponse implements Storable {
         return status;
     }
 
+    @StorableValidatorIgnoresMissingSetter
     public boolean isSolved() {
         return isIs_correct() && StringUtils.isNotEmpty(getText());
     }

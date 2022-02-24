@@ -320,7 +320,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 final int id = Integer.parseInt(modifiers);
                 String output = input;
                 // the i counter allows us to write regular expressions that address a certain line only.
-                final String pattern = lgr.getSourceRule().getPattern().pattern();
+                final String pattern = lgr.getSourceRule()._getPattern().pattern();
                 final boolean indexed = pattern.matches("^\\-?\\d+\\\\\\. .+");
                 final boolean inverted = indexed && pattern.startsWith("-");
                 final String[] sources;
@@ -342,12 +342,12 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                         continue;
                     }
                     final String toMatch = indexed ? (inverted ? "-" : "") + (i++) + ". " + s : s;
-                    Regex regex = new Regex(toMatch, lgr.getSourceRule().getPattern());
+                    Regex regex = new Regex(toMatch, lgr.getSourceRule()._getPattern());
                     String[] values = null;
                     if (regex.matches()) {
                         values = regex.getRow(0);
                     } else {
-                        regex = new Regex(s, lgr.getSourceRule().getPattern());
+                        regex = new Regex(s, lgr.getSourceRule()._getPattern());
                         if (regex.matches()) {
                             values = regex.getRow(0);
                         }
@@ -366,7 +366,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             public String replace(REPLACEVARIABLE replaceVariable, String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
                 final String name = link.getName();
                 if (StringUtils.isNotEmpty(modifiers)) {
-                    final Pattern pattern = lgr.getFileNameRule().getPattern();
+                    final Pattern pattern = lgr.getFileNameRule()._getPattern();
                     final String rep = StringUtils.valueOrEmpty(new Regex(name, pattern).getMatch(Integer.parseInt(modifiers) - 1));
                     return Pattern.compile("<jd:" + ORGFILENAME + ":" + Pattern.quote(modifiers) + "\\s*/?\\s*>").matcher(input).replaceAll(Matcher.quoteReplacement(preprocessReplacement(replaceVariable, rep)));
                 } else {
@@ -397,7 +397,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                     packagename = "";
                 }
                 if (StringUtils.isNotEmpty(modifiers)) {
-                    final Pattern patt = lgr.getPackageNameRule().getPattern();
+                    final Pattern patt = lgr.getPackageNameRule()._getPattern();
                     final String[] matches = new Regex(packagename, patt).getRow(0);
                     return Pattern.compile("<jd:" + ORGPACKAGENAME + ":" + Pattern.quote(modifiers) + "\\s*/?\\s*>").matcher(input).replaceAll(Matcher.quoteReplacement(preprocessReplacement(replaceVariable, StringUtils.valueOrEmpty(matches[Integer.parseInt(modifiers) - 1]))));
                     //
@@ -419,7 +419,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                     fileType = "";
                 }
                 if (StringUtils.isNotEmpty(modifiers)) {
-                    return Pattern.compile("<jd:orgfiletype:" + Pattern.quote(modifiers) + "/?>").matcher(input).replaceAll(Matcher.quoteReplacement(preprocessReplacement(replaceVariable, StringUtils.valueOrEmpty(new Regex(fileType, lgr.getFileNameRule().getPattern()).getRow(0)[Integer.parseInt(modifiers) - 1]))));
+                    return Pattern.compile("<jd:orgfiletype:" + Pattern.quote(modifiers) + "/?>").matcher(input).replaceAll(Matcher.quoteReplacement(preprocessReplacement(replaceVariable, StringUtils.valueOrEmpty(new Regex(fileType, lgr.getFileNameRule()._getPattern()).getRow(0)[Integer.parseInt(modifiers) - 1]))));
                 } else {
                     return pat.matcher(input).replaceAll(Matcher.quoteReplacement(preprocessReplacement(replaceVariable, fileType)));
                 }
@@ -461,7 +461,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 } else {
                     url = link.getURL();
                 }
-                final Regex regex = new Regex(url, lgr.getHosterRule().getPattern());
+                final Regex regex = new Regex(url, lgr.getHosterRule()._getPattern());
                 if (regex.matches()) {
                     final String[] values = regex.getRow(0);
                     return Pattern.compile("<jd:hoster:" + Pattern.quote(String.valueOf(id)) + "/?>").matcher(input).replaceAll(Matcher.quoteReplacement(preprocessReplacement(replaceVariable, Encoding.urlDecode(StringUtils.valueOrEmpty(values[id - 1]), false))));
@@ -622,7 +622,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         final ArrayList<PackagizerRuleWrapper> newRules = new ArrayList<PackagizerRuleWrapper>();
         synchronized (this) {
             for (final PackagizerRule lgr : list) {
-                if (lgr.isEnabled() && lgr.isValid()) {
+                if (lgr.isEnabled() && lgr._isValid()) {
                     try {
                         final PackagizerRuleWrapper compiled = lgr.compile();
                         lgr._setBroken(false);

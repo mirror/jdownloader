@@ -1,14 +1,15 @@
 package org.jdownloader.api.downloads;
 
-import jd.plugins.DownloadLink;
-
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.TimeOutCondition;
 
-public class LinkStatusAPIStorable implements Storable {
+import jd.plugins.DownloadLink;
 
+@StorableValidatorIgnoresMissingSetter
+public class LinkStatusAPIStorable implements Storable {
     public LinkStatusAPIStorable() {
         /* Storable */
     }
@@ -43,21 +44,26 @@ public class LinkStatusAPIStorable implements Storable {
         DownloadLink llink = link;
         if (llink != null) {
             ConditionalSkipReason cond = llink.getConditionalSkipReason();
-            if (cond instanceof TimeOutCondition) { return Math.max(0, ((TimeOutCondition) cond).getTimeOutLeft()); }
+            if (cond instanceof TimeOutCondition) {
+                return Math.max(0, ((TimeOutCondition) cond).getTimeOutLeft());
+            }
         }
         return 0l;
     }
 
     public Boolean getFinished() {
         DownloadLink llink = link;
-        if (llink != null) FinalLinkState.CheckFinished(llink.getFinalLinkState());
+        if (llink != null) {
+            FinalLinkState.CheckFinished(llink.getFinalLinkState());
+        }
         return false;
     }
 
     public Boolean getFailed() {
         DownloadLink llink = link;
-        if (llink != null) return FinalLinkState.CheckFailed(llink.getFinalLinkState());
+        if (llink != null) {
+            return FinalLinkState.CheckFailed(llink.getFinalLinkState());
+        }
         return false;
     }
-
 }

@@ -65,7 +65,7 @@ public class LinkgrabberSearchMenuItem extends MenuItemData implements MenuLink,
         return ret;
     }
 
-    protected int getMaxWidth() {
+    protected int _getMaxWidth() {
         int width = 10000;
 
         try {
@@ -75,7 +75,7 @@ public class LinkgrabberSearchMenuItem extends MenuItemData implements MenuLink,
         return width;
     }
 
-    protected int getMinWidth() {
+    protected int _getMinWidth() {
         int width = 0;
 
         try {
@@ -159,7 +159,7 @@ public class LinkgrabberSearchMenuItem extends MenuItemData implements MenuLink,
         }), "width 22!,height 22!");
 
         p.add(new JLabel(_GUI.T.MenuEditors_boxwidth_min()), "newline");
-        int width = getMinWidth();
+        int width = _getMinWidth();
 
         final ExtSpinner minSpin = new ExtSpinner(new SpinnerNumberModel(width, -1, 10000, 1));
         minSpin.addChangeListener(new ChangeListener() {
@@ -173,7 +173,7 @@ public class LinkgrabberSearchMenuItem extends MenuItemData implements MenuLink,
         //
 
         p.add(new JLabel(_GUI.T.MenuEditors_boxwidth_pref()));
-        width = getPrefWidth();
+        width = _getPrefWidth();
 
         final ExtSpinner prefSpin = new ExtSpinner(new SpinnerNumberModel(width, 0, 10000, 1));
         prefSpin.addChangeListener(new ChangeListener() {
@@ -186,7 +186,7 @@ public class LinkgrabberSearchMenuItem extends MenuItemData implements MenuLink,
         p.add(prefSpin);
         //
         p.add(new JLabel(_GUI.T.MenuEditors_boxwidth_max()));
-        width = getMaxWidth();
+        width = _getMaxWidth();
 
         final ExtSpinner maxSpin = new ExtSpinner(new SpinnerNumberModel(width, 0, 10000, 1));
         maxSpin.addChangeListener(new ChangeListener() {
@@ -201,7 +201,7 @@ public class LinkgrabberSearchMenuItem extends MenuItemData implements MenuLink,
         return p;
     }
 
-    protected int getPrefWidth() {
+    protected int _getPrefWidth() {
         int width = 300;
 
         try {
@@ -213,7 +213,7 @@ public class LinkgrabberSearchMenuItem extends MenuItemData implements MenuLink,
 
     @Override
     public String createConstraints() {
-        return "height 24!,aligny top,pushx,growx,width " + getMinWidth() + ":" + getPrefWidth() + ":" + getMaxWidth();
+        return "height 24!,aligny top,pushx,growx,width " + _getMinWidth() + ":" + _getPrefWidth() + ":" + _getMaxWidth();
     }
     // @Override
     // public String createConstraints() {

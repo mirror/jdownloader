@@ -55,7 +55,7 @@ public class CopyAction extends AppAction {
         ScheduleEntryStorable copyStorable = new ScheduleEntryStorable();
         copyStorable.setEnabled(rule.isEnabled());
         copyStorable.setIntervalHour(rule.getIntervalHour());
-        copyStorable.setIntervalMin(rule.getIntervalMinunte());
+        copyStorable.setIntervalMinute(rule.getIntervalMinunte());
         copyStorable.setName(rule.getName());
         copyStorable._setSelectedDays(new LinkedList<WEEKDAY>(rule.getSelectedDays()));
         copyStorable.setTimestamp(rule.getTimestamp());

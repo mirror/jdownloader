@@ -21,17 +21,13 @@ public class VariantInfoMassengeschmackTv implements Storable, LinkVariant {
         return this.filesize;
     }
 
-    public long getFilesizeLong() {
+    public long _getFilesizeLong() {
         return this.filesizeL;
     }
 
     public void setFilesize(final String filesize) {
         this.filesize = filesize;
         this.filesizeL = SizeFormatter.getSize(filesize);
-    }
-
-    public void setFilesize(final long filesize) {
-        this.filesizeL = filesize;
     }
 
     public String getUrl() {
@@ -46,12 +42,16 @@ public class VariantInfoMassengeschmackTv implements Storable, LinkVariant {
         this.resolution = resolution;
     }
 
+    public String getResolution() {
+        return resolution;
+    }
+
     public void setQualityName(final String qualityName) {
         this.qualityName = qualityName;
     }
 
     /** Returns quality name similar to website but WITHOUT the filesize e.g. 'SD 432p 768x432 (434 MiB)' */
-    public String getVariantName() {
+    public String _getVariantName() {
         String variantName = null;
         if (resolution != null) {
             final String height = new Regex(resolution, "(\\d+)$").getMatch(0);

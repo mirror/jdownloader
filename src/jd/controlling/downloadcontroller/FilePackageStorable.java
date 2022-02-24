@@ -3,14 +3,15 @@ package jd.controlling.downloadcontroller;
 import java.util.ArrayList;
 import java.util.Map;
 
+import org.appwork.remoteapi.annotations.AllowNonStorableObjects;
+import org.appwork.storage.Storable;
+import org.appwork.swing.exttable.ExtColumn;
+
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.PackageControllerComparator;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkStorable;
 import jd.plugins.FilePackage;
-
-import org.appwork.storage.Storable;
-import org.appwork.swing.exttable.ExtColumn;
 
 public class FilePackageStorable implements Storable {
     private FilePackage                          filePackage;
@@ -86,6 +87,7 @@ public class FilePackageStorable implements Storable {
         return filePackage.getProperties();
     }
 
+    @AllowNonStorableObjects(clazz = { Object.class })
     public void setProperties(Map<String, Object> props) {
         filePackage.setProperties(props);
     }

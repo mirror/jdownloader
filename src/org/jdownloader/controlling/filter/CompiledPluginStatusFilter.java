@@ -2,13 +2,18 @@ package org.jdownloader.controlling.filter;
 
 import java.util.List;
 
+import org.appwork.storage.Storable;
+
 import jd.controlling.AccountController;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.PluginStatusFilter;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 
-public class CompiledPluginStatusFilter extends PluginStatusFilter {
+public class CompiledPluginStatusFilter extends PluginStatusFilter implements Storable {
+    private CompiledPluginStatusFilter() {
+    }
+
     public CompiledPluginStatusFilter(PluginStatusFilter pluginStatusFilter) {
         super(pluginStatusFilter.getMatchType(), pluginStatusFilter.isEnabled(), pluginStatusFilter.getPluginStatus());
     }

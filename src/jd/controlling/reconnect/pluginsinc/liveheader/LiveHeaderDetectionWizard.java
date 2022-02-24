@@ -741,9 +741,9 @@ public class LiveHeaderDetectionWizard {
         }
         myUpnpDevice = null;
         for (final UpnpRouterDevice d : devices) {
-            if (d.getHost() != null) {
+            if (d._getHost() != null) {
                 try {
-                    if (gatewayAdress.equals(InetAddress.getByName(d.getHost()))) {
+                    if (gatewayAdress.equals(InetAddress.getByName(d._getHost()))) {
                         myUpnpDevice = d;
                         break;
                     }

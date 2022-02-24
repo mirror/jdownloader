@@ -3,6 +3,8 @@ package org.jdownloader.api.jdanywhere.api.storable;
 import org.appwork.storage.Storable;
 
 public class RunningObjectStorable implements Storable {
+    public RunningObjectStorable() {
+    }
 
     private long packageID;
     private long linkID;
@@ -63,5 +65,4 @@ public class RunningObjectStorable implements Storable {
     public void setDone(long done) {
         this.done = done;
     }
-
 }

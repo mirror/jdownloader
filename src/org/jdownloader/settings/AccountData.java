@@ -4,18 +4,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.remoteapi.annotations.AllowNonStorableObjects;
+import org.appwork.storage.Storable;
+import org.appwork.utils.StringUtils;
+
 import jd.plugins.Account;
 import jd.plugins.Account.AccountError;
 import jd.plugins.AccountInfo;
 
-import org.appwork.storage.Storable;
-import org.appwork.utils.StringUtils;
-
 public class AccountData implements Storable {
     private Map<String, Object> properties;
-
     private String              hoster;
 
+    @AllowNonStorableObjects
     public Map<String, Object> getProperties() {
         return properties;
     }
@@ -57,7 +58,6 @@ public class AccountData implements Storable {
     private long                validUntil;
     private boolean             active;
     private boolean             enabled;
-    private boolean             valid              = true;
     private volatile long       tmpDisabledTimeout = -1;
 
     public long getTmpDisabledTimeout() {
@@ -69,21 +69,14 @@ public class AccountData implements Storable {
     }
 
     private List<String> hosterHistory         = null;
-
     private boolean      trafficUnlimited;
     private boolean      specialtraffic;
     private String       user;
-
     private boolean      concurrentUsePossible = true;
-
     private long         id                    = -1;
-
     private String       errorType;
-
     private String       errorString;
-
     private String       statusString;
-
     private boolean      trafficRefill         = true;
 
     public boolean isTrafficRefill() {
@@ -179,6 +172,7 @@ public class AccountData implements Storable {
         return error == null ? null : error.name();
     }
 
+    @AllowNonStorableObjects
     public Map<String, Object> getInfoProperties() {
         return infoProperties;
     }
@@ -233,16 +227,6 @@ public class AccountData implements Storable {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
-    }
-
-    @Deprecated
-    private boolean isValid() {
-        return valid;
-    }
-
-    @Deprecated
-    private void setValid(boolean valid) {
-        this.valid = valid;
     }
 
     public boolean isTrafficUnlimited() {
@@ -300,9 +284,6 @@ public class AccountData implements Storable {
                 ret.setError(AccountError.valueOf(errorType), getTmpDisabledTimeout(), errorString);
             } catch (Throwable e) {
             }
-        }
-        if (!valid && ret.getError() == null) {
-            ret.setError(AccountError.INVALID, getTmpDisabledTimeout(), null);
         }
         ret.setTmpDisabledTimeout(getTmpDisabledTimeout());
         return ret;

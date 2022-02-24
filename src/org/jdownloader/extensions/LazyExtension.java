@@ -263,13 +263,13 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
     @SuppressWarnings("unchecked")
     public ExtensionConfigInterface _getSettings() {
         try {
-            return AbstractExtension.createStore(getClassname(), (Class<? extends ExtensionConfigInterface>) Class.forName(getConfigInterface(), true, getClassLoader()));
+            return AbstractExtension.createStore(getClassname(), (Class<? extends ExtensionConfigInterface>) Class.forName(getConfigInterface(), true, _getClassLoader()));
         } catch (Throwable e) {
             throw new WTFException(e);
         }
     }
 
-    private synchronized ClassLoader getClassLoader() {
+    private synchronized ClassLoader _getClassLoader() {
         if (classLoader == null) {
             if (jarPath == null || !jarPath.endsWith(".jar")) {
                 classLoader = LazyExtension.class.getClassLoader();
@@ -343,7 +343,7 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
                 return pluginClass;
             }
             try {
-                pluginClass = (Class<AbstractExtension<?, ?>>) Class.forName(classname, true, getClassLoader());
+                pluginClass = (Class<AbstractExtension<?, ?>>) Class.forName(classname, true, _getClassLoader());
             } catch (Throwable e) {
                 throw new WTFException(e);
             }

@@ -476,7 +476,7 @@ public class MassengeschmackTvCrawler extends PluginForDecrypt {
         }
         /* Set properties of variant on DownloadLink */
         final String qualityName = variant.getQualityName();
-        final long filesizeCurrent = variant.getFilesizeLong();
+        final long filesizeCurrent = variant._getFilesizeLong();
         dl.setLinkID(url_videoid + "_" + qualityName);
         if (filesizeCurrent > 0) {
             dl.setDownloadSize(filesizeCurrent);

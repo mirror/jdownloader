@@ -43,7 +43,7 @@ public class HorizontalBoxItem extends MenuItemData implements MenuLink, SelfLay
         MigPanel p = new MigPanel("ins 0,wrap 2", "[grow,fill][]", "[]");
         SwingUtils.setOpaque(p, false);
         p.add(new JLabel(_GUI.T.MenuEditors_boxwidth_min()));
-        int width = getMinWidth();
+        int width = _getMinWidth();
 
         final ExtSpinner minSpin = new ExtSpinner(new SpinnerNumberModel(width, -1, 10000, 1));
         minSpin.addChangeListener(new ChangeListener() {
@@ -57,7 +57,7 @@ public class HorizontalBoxItem extends MenuItemData implements MenuLink, SelfLay
         //
 
         p.add(new JLabel(_GUI.T.MenuEditors_boxwidth_pref()));
-        width = getPrefWidth();
+        width = _getPrefWidth();
 
         final ExtSpinner prefSpin = new ExtSpinner(new SpinnerNumberModel(width, 0, 10000, 1));
         prefSpin.addChangeListener(new ChangeListener() {
@@ -70,7 +70,7 @@ public class HorizontalBoxItem extends MenuItemData implements MenuLink, SelfLay
         p.add(prefSpin);
         //
         p.add(new JLabel(_GUI.T.MenuEditors_boxwidth_max()));
-        width = getMaxWidth();
+        width = _getMaxWidth();
 
         final ExtSpinner maxSpin = new ExtSpinner(new SpinnerNumberModel(width, 0, 10000, 1));
         maxSpin.addChangeListener(new ChangeListener() {
@@ -84,7 +84,7 @@ public class HorizontalBoxItem extends MenuItemData implements MenuLink, SelfLay
         return p;
     }
 
-    protected int getPrefWidth() {
+    protected int _getPrefWidth() {
         int width = 0;
 
         try {
@@ -94,7 +94,7 @@ public class HorizontalBoxItem extends MenuItemData implements MenuLink, SelfLay
         return width;
     }
 
-    protected int getMaxWidth() {
+    protected int _getMaxWidth() {
         int width = 10000;
 
         try {
@@ -104,7 +104,7 @@ public class HorizontalBoxItem extends MenuItemData implements MenuLink, SelfLay
         return width;
     }
 
-    protected int getMinWidth() {
+    protected int _getMinWidth() {
         int width = 0;
 
         try {
@@ -124,7 +124,7 @@ public class HorizontalBoxItem extends MenuItemData implements MenuLink, SelfLay
 
     @Override
     public String createConstraints() {
-        return "height 24!,aligny top,gapleft 2,pushx,growx,width " + getMinWidth() + ":" + getPrefWidth() + ":" + getMaxWidth();
+        return "height 24!,aligny top,gapleft 2,pushx,growx,width " + _getMinWidth() + ":" + _getPrefWidth() + ":" + _getMaxWidth();
     }
 
 }
