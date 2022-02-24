@@ -2232,7 +2232,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             final File dfFolder = new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
             if (!dfFolder.equals(dlFolder) && dlFolder.isDirectory()) {
                 File[] files = dlFolder.listFiles();
-                if (files != null && files.length > 0 && !deleteFiles.values().contains(Boolean.FALSE)) {
+                if (false && files != null && files.length > 0 && !deleteFiles.values().contains(Boolean.FALSE)) {
                     final List<File> remaining = new ArrayList<File>(Arrays.asList(files));
                     remaining.removeAll(deleteFiles.keySet());
                     if (remaining.size() == 0) {
