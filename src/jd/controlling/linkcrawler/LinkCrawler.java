@@ -226,9 +226,11 @@ public class LinkCrawler {
                 // create new LinkCrawlerLock
                 ret = new LinkCrawlerLock(plugin);
             }
-            // share LinkCrawlerLock to all LinkCrawler roots
-            for (final LinkCrawler linkCrawler : LOCKS.keySet()) {
-                addSequentialLockObject(linkCrawler.getRoot(), ret);
+            if (ret != null) {
+                // share LinkCrawlerLock to all LinkCrawler roots
+                for (final LinkCrawler linkCrawler : LOCKS.keySet()) {
+                    addSequentialLockObject(linkCrawler.getRoot(), ret);
+                }
             }
             return ret;
         }
