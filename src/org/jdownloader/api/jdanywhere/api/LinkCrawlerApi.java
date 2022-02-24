@@ -86,7 +86,7 @@ public class LinkCrawlerApi implements ILinkCrawlerApi {
                 for (CrawledLink link : cpkg.getChildren()) {
                     links.add(new CrawledLinkStoreable(link));
                 }
-                pkg.setLinks(links);
+                pkg._setLinks(links);
                 return pkg;
             } finally {
                 cpkg.getModifyLock().readUnlock(readL);

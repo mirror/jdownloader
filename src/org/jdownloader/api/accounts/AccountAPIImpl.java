@@ -35,8 +35,8 @@ public class AccountAPIImpl implements AccountAPI {
     public List<AccountAPIStorable> queryAccounts(APIQuery queryParams) {
         List<Account> accs = AccountController.getInstance().list();
         java.util.List<AccountAPIStorable> ret = new ArrayList<AccountAPIStorable>();
-        int startWith = queryParams.getStartAt();
-        int maxResults = queryParams.getMaxResults();
+        int startWith = queryParams._getStartAt();
+        int maxResults = queryParams._getMaxResults();
         if (startWith > accs.size() - 1) {
             return ret;
         }

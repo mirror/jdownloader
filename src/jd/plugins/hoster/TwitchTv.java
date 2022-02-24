@@ -422,13 +422,13 @@ public class TwitchTv extends PluginForHost {
         if (apply == null) {
             StreamInfo streamInfo = dl.getProbe();
             if (streamInfo != null) {
-                if (streamInfo.getVideoStreams().size() == 0) {
+                if (streamInfo._getVideoStreams().size() == 0) {
                     if (dl.getPlayLists().size() == 1) {
                         logger.info("Apply workaround for first chunk missing video stream!");
                         final M3U8Segment removed = dl.getPlayLists().get(0).removeSegment(0);
                         streamInfo = dl.getProbe();
                         if (streamInfo != null) {
-                            if (streamInfo.getVideoStreams().size() == 0) {
+                            if (streamInfo._getVideoStreams().size() == 0) {
                                 dl.getPlayLists().get(0).addSegment(0, removed);
                                 logger.info("Workaround failed");
                             } else {

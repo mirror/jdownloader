@@ -2,10 +2,15 @@ package org.jdownloader.controlling.filter;
 
 import java.util.HashSet;
 
+import org.appwork.storage.Storable;
+
 import jd.controlling.linkcollector.LinkOrigin;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OriginFilter;
 
-public class CompiledOriginFilter extends OriginFilter {
+public class CompiledOriginFilter extends OriginFilter implements Storable {
+    private CompiledOriginFilter() {
+    }
+
     private OriginFilter        originFilter;
     private HashSet<LinkOrigin> originsSet;
 

@@ -704,7 +704,7 @@ public class MassengeschmackTv extends PluginForHost {
         String qualityName;
         String ext;
         if (variant != null) {
-            qualityName = variant.getVariantName();
+            qualityName = variant._getVariantName();
             if (qualityName == null) {
                 /* This should never happen */
                 qualityName = EMPTY_FILENAME_INFORMATION;

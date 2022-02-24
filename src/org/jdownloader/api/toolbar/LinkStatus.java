@@ -1,10 +1,12 @@
 package org.jdownloader.api.toolbar;
 
-import jd.controlling.linkcrawler.CrawledLink;
-
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 
+import jd.controlling.linkcrawler.CrawledLink;
+
+@StorableValidatorIgnoresMissingSetter
 public class LinkStatus implements Storable {
     private CrawledLink link;
 

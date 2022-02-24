@@ -3,6 +3,7 @@ package org.jdownloader.extensions.eventscripter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.appwork.remoteapi.annotations.AllowNonStorableObjects;
 import org.appwork.storage.Storable;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
@@ -71,6 +72,7 @@ public class ScriptEntry implements Storable {
         this.eventTrigger = eventTrigger;
     }
 
+    @AllowNonStorableObjects
     public synchronized Map<String, Object> getEventTriggerSettings() {
         if (eventTriggerSettings == null) {
             eventTriggerSettings = new ConcurrentHashMap<String, Object>();

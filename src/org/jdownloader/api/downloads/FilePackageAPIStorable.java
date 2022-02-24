@@ -1,8 +1,9 @@
 package org.jdownloader.api.downloads;
 
-import jd.plugins.FilePackage;
-
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
+
+import jd.plugins.FilePackage;
 
 public class FilePackageAPIStorable implements Storable {
     private FilePackage                                       pkg;
@@ -15,15 +16,21 @@ public class FilePackageAPIStorable implements Storable {
         this.pkg = pkg;
     }
 
+    @StorableValidatorIgnoresMissingSetter
     public String getName() {
         FilePackage lpkg = pkg;
-        if (lpkg != null) return lpkg.getName();
+        if (lpkg != null) {
+            return lpkg.getName();
+        }
         return null;
     }
 
+    @StorableValidatorIgnoresMissingSetter
     public long getUUID() {
         FilePackage lpkg = pkg;
-        if (lpkg != null) return lpkg.getUniqueID().getID();
+        if (lpkg != null) {
+            return lpkg.getUniqueID().getID();
+        }
         return 0;
     }
 

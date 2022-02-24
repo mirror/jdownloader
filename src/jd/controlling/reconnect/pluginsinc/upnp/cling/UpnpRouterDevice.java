@@ -50,7 +50,7 @@ public class UpnpRouterDevice implements Storable {
         return serviceType;
     }
 
-    public String getHost() {
+    public String _getHost() {
         try {
             return new URL(getControlURL()).getHost();
         } catch (MalformedURLException e) {

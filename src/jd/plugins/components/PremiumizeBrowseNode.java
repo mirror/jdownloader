@@ -39,7 +39,7 @@ public class PremiumizeBrowseNode implements Storable {
         this.size = size;
     }
 
-    public String getUrl() {
+    public String getLink() {
         return link;
     }
 
@@ -82,7 +82,7 @@ public class PremiumizeBrowseNode implements Storable {
     @Override
     public String toString() {
         if (_isFile()) {
-            return "File>Name:" + getName() + "|Size:" + getSize() + "|URL:" + getUrl();
+            return "File>Name:" + getName() + "|Size:" + getSize() + "|URL:" + getLink();
         } else if (_isDirectory()) {
             return "Dir>Name:" + getName() + "|NumberOfChildren:Unknown";
         }

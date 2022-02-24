@@ -63,7 +63,7 @@ public class ScheduleEntry {
     }
 
     public void setIntervalMin(int intervalMin) {
-        storableEntry.setIntervalMin(intervalMin);
+        storableEntry.setIntervalMinute(intervalMin);
     }
 
     public int getIntervalHour() {

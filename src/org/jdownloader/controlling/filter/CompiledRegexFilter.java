@@ -2,7 +2,12 @@ package org.jdownloader.controlling.filter;
 
 import java.util.regex.Pattern;
 
-public class CompiledRegexFilter extends RegexFilter {
+import org.appwork.storage.Storable;
+
+public class CompiledRegexFilter extends RegexFilter implements Storable {
+    private CompiledRegexFilter() {
+        pattern = null;
+    }
 
     private final Pattern pattern;
 
@@ -11,7 +16,7 @@ public class CompiledRegexFilter extends RegexFilter {
         pattern = LinkgrabberFilterRuleWrapper.createPattern(filter.getRegex(), filter.isUseRegex());
     }
 
-    public Pattern getPattern() {
+    public Pattern _getPattern() {
         return pattern;
     }
 
@@ -35,6 +40,5 @@ public class CompiledRegexFilter extends RegexFilter {
             break;
         }
         return ret;
-
     }
 }

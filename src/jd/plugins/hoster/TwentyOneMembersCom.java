@@ -196,7 +196,7 @@ public class TwentyOneMembersCom extends PluginForHost {
         }
         final String id = downloadLink.getStringProperty("id");
         final List<TwentyOneMembersVariantInfo> variants;
-        if (variant.isPhoto()) {
+        if (variant._isPhoto()) {
             br.getPage("http://21members.com/members/scene/photos/" + id + "?sidi=");
             if (isOffline(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

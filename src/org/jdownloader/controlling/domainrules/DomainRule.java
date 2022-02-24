@@ -66,14 +66,6 @@ public class DomainRule implements Storable {
         this.allowToExceedTheGlobalLimit = maxSimultanDownloadsObeysGlobalLimit;
     }
 
-    /**
-     * @deprecated remove xmas 2014 we keep it to convert settings
-     * @param pattern
-     */
-    public void setPattern(String pattern) {
-        this.domainPattern = pattern;
-    }
-
     public int getMaxSimultanDownloads() {
         return maxSimultanDownloads;
     }

@@ -75,7 +75,7 @@ public class PollingAPIImpl implements PollingAPI {
         List<PollingAPIFilePackageStorable> fpas = new ArrayList<PollingAPIFilePackageStorable>();
         for (FilePackage fp : dwd.getRunningFilePackages()) {
             PollingAPIFilePackageStorable fps = new PollingAPIFilePackageStorable(fp);
-            fps.setSpeed(dwd.getDownloadSpeedbyFilePackage(fp));
+            fps._setSpeed(dwd.getDownloadSpeedbyFilePackage(fp));
             // if packages is expanded in view, current state of all running links inside the package
             if (expandedPackageUUIDs == null || expandedPackageUUIDs.contains(fp.getUniqueID().getID())) {
                 boolean readL = fp.getModifyLock().readLock();

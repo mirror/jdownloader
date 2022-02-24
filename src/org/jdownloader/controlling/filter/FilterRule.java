@@ -139,7 +139,7 @@ public abstract class FilterRule extends AbstractJsonData implements Storable {
      *
      * @return
      */
-    public boolean isValid() {
+    public boolean _isValid() {
         return getPackagenameFilter().isEnabled() || getMatchAlwaysFilter().isEnabled() || getFilenameFilter().isEnabled() || getFilesizeFilter().isEnabled() || getFiletypeFilter().isEnabled() || getHosterURLFilter().isEnabled() || getSourceURLFilter().isEnabled() || getOriginFilter().isEnabled() || getConditionFilter().isEnabled() || getOnlineStatusFilter().isEnabled() || getPluginStatusFilter().isEnabled();
     }
 
@@ -323,7 +323,7 @@ public abstract class FilterRule extends AbstractJsonData implements Storable {
     }
 
     public boolean isEnabled() {
-        return enabled && isValid();
+        return enabled && _isValid();
     }
 
     public void setEnabled(boolean enabled) {

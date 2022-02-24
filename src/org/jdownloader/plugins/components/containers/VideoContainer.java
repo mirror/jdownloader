@@ -83,22 +83,22 @@ public class VideoContainer implements Storable {
         this.downloadurl = downloadurl;
     }
 
-    public final void setDownloadurlAndExtension(final String downloadurl, final String extention) {
+    public final void _setDownloadurlAndExtension(final String downloadurl, final String extention) {
         setDownloadurl(downloadurl);
         setExtension(extention);
     }
 
-    public final void setDownloadurlAndExtension(final String downloadurl) {
+    public final void _setDownloadurlAndExtension(final String downloadurl) {
         setDownloadurl(downloadurl);
-        setExtensionFromUrl(downloadurl);
+        _setExtensionFromUrl(downloadurl);
     }
 
     /**
      * set the extension based on current
      */
-    public final void setExtension() {
+    public final void updateExtensionFromUrl() {
         if (this.downloadurl != null) {
-            setExtensionFromUrl(this.downloadurl);
+            _setExtensionFromUrl(this.downloadurl);
         }
     }
 
@@ -110,7 +110,7 @@ public class VideoContainer implements Storable {
         this.extension = extension != null ? extension.toLowerCase(Locale.ENGLISH) : null;
     }
 
-    public final void setExtensionFromUrl(final String url) {
+    public final void _setExtensionFromUrl(final String url) {
         String extension = null;
         try {
             final UrlQuery query = new UrlQuery().parse(url);

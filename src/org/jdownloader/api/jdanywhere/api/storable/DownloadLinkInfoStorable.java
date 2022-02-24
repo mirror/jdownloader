@@ -1,11 +1,12 @@
 package org.jdownloader.api.jdanywhere.api.storable;
 
+import org.appwork.storage.Storable;
+import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
+
 import jd.plugins.DownloadLink;
 
-import org.appwork.storage.Storable;
-
+@StorableValidatorIgnoresMissingSetter
 public class DownloadLinkInfoStorable implements Storable {
-
     public String getName() {
         if (link == null) {
             return null;

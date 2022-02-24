@@ -7,7 +7,7 @@ import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 
 public class SubtitleVariantInfo extends VariantInfo {
     public SubtitleVariantInfo(SubtitleVariant v, YoutubeClipData vid) {
-        super(v, null, null, createDummyList(vid, v.getGenericInfo().getUrl()));
+        super(v, null, null, createDummyList(vid, v.getGenericInfo()._getUrl()));
     }
 
     @Override

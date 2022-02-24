@@ -95,7 +95,7 @@ public class VimeoContainer extends VideoContainer {
     /**
      * sets quality reference based on current Height value
      */
-    public final void setQuality() {
+    public final void updateQualityByHeight() {
         setQuality(getQuality(getHeight()));
     }
 
@@ -161,7 +161,7 @@ public class VimeoContainer extends VideoContainer {
         vvm.setFramerate(container.getFramerate());
         vvm.setSource(Source.HLS);
         vvm.setQuality(getQuality(container.getHeight()));
-        vvm.setDownloadurlAndExtension(container.getDownloadurl(), ".mp4");
+        vvm._setDownloadurlAndExtension(container.getDownloadurl(), ".mp4");
         return vvm;
     }
 

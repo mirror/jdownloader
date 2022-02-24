@@ -124,7 +124,7 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements P
 
             @Override
             public String getStringValue(PackagizerRule value) {
-                if (!value.isValid()) {
+                if (!value._isValid()) {
                     return _GUI.T.FilterTableModel_getStringValue_name_invalid(value.getName());
                 }
                 if (value.isStaticRule()) {
@@ -141,7 +141,7 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements P
 
             @Override
             public boolean isEnabled(PackagizerRule obj) {
-                if (!obj.isValid()) {
+                if (!obj._isValid()) {
                     return true;
                 }
                 return obj.isEnabled();
@@ -153,7 +153,7 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements P
             }
 
             protected Icon getIcon(final PackagizerRule value) {
-                if (!value.isValid()) {
+                if (!value._isValid()) {
                     return new AbstractIcon(IconKey.ICON_ERROR, 18);
                 }
                 return null;
@@ -165,7 +165,7 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements P
             // }
             @Override
             public String getStringValue(PackagizerRule value) {
-                if (!value.isValid()) {
+                if (!value._isValid()) {
                     return _GUI.T.FilterTableModel_initColumns_invalid_condition_();
                 }
                 return value.toString();

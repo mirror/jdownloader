@@ -31,8 +31,8 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
         List<CrawledPackageAPIStorable> result = new ArrayList<CrawledPackageAPIStorable>();
         LinkCollector lc = LinkCollector.getInstance();
 
-        int startWith = queryParams.getStartAt();
-        int maxResults = queryParams.getMaxResults();
+        int startWith = queryParams._getStartAt();
+        int maxResults = queryParams._getMaxResults();
 
         // filter out packages, if specific packageUUIDs given, else return all packages
         List<CrawledPackage> packages = lc.getPackagesCopy();
@@ -188,8 +188,8 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
             return result;
         }
 
-        int startWith = queryParams.getStartAt();
-        int maxResults = queryParams.getMaxResults();
+        int startWith = queryParams._getStartAt();
+        int maxResults = queryParams._getMaxResults();
 
         if (startWith > links.size() - 1) {
             return result;

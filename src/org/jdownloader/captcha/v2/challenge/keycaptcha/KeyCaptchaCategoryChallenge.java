@@ -1,7 +1,5 @@
 package org.jdownloader.captcha.v2.challenge.keycaptcha;
 
-import jd.plugins.Plugin;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
@@ -12,8 +10,9 @@ import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 
-public class KeyCaptchaCategoryChallenge extends Challenge<String> {
+import jd.plugins.Plugin;
 
+public class KeyCaptchaCategoryChallenge extends Challenge<String> {
     private final KeyCaptcha helper;
     private final boolean    noAutoSolver;
     private final Plugin     plugin;
@@ -65,7 +64,7 @@ public class KeyCaptchaCategoryChallenge extends Challenge<String> {
         return results != null && results.getValue() != null;
     }
 
-    public class APIData implements Storable {
+    public static class APIData implements Storable {
         public APIData(/* Storable */) {
         }
 
@@ -115,5 +114,4 @@ public class KeyCaptchaCategoryChallenge extends Challenge<String> {
         ret.setCategories(IconIO.toDataUrl(data.getBackground(), IconIO.DataURLFormat.JPG));
         return ret;
     }
-
 }

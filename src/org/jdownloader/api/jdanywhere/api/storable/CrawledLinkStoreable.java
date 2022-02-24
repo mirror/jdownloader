@@ -1,16 +1,17 @@
 package org.jdownloader.api.jdanywhere.api.storable;
 
-import jd.controlling.linkcrawler.CrawledLink;
-
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 
-public class CrawledLinkStoreable implements Storable {
+import jd.controlling.linkcrawler.CrawledLink;
 
+@StorableValidatorIgnoresMissingSetter
+public class CrawledLinkStoreable implements Storable {
     public long getId() {
         if (link == null) {
             return 0;
@@ -89,7 +90,6 @@ public class CrawledLinkStoreable implements Storable {
     }
 
     public String getPassword() {
-
         if (link == null) {
             return null;
         }
@@ -123,7 +123,6 @@ public class CrawledLinkStoreable implements Storable {
         }
         return link.getDownloadLink().getComment();
     }
-
     // public LinkStatusJob getLinkStatus() {
     // if (link == null) return null;
     //

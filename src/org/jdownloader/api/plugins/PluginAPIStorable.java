@@ -1,8 +1,10 @@
 package org.jdownloader.api.plugins;
 
+import org.appwork.remoteapi.annotations.AllowNonStorableObjects;
 import org.appwork.storage.Storable;
 import org.jdownloader.myjdownloader.client.bindings.AdvancedConfigEntryDataStorable;
 
+@AllowNonStorableObjects
 public class PluginAPIStorable extends AdvancedConfigEntryDataStorable implements Storable {
     private String className;
     private String displayName;

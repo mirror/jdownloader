@@ -19,7 +19,7 @@ public class CaptchaJob implements Storable {
 
     private String captchaCategory;
     private String explain;
-    private int    timeout   = -1;
+    private long   timeout   = -1;
     private long   created   = -1;
     private int    remaining = -1;
 
@@ -105,7 +105,7 @@ public class CaptchaJob implements Storable {
         return timeout;
     }
 
-    public void setTimeout(int timeout) {
+    public void setTimeout(long timeout) {
         this.timeout = timeout;
     }
 

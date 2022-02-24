@@ -1,13 +1,13 @@
 package org.jdownloader.api.jd;
 
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
 import org.jdownloader.controlling.AggregatedCrawlerNumbers;
 import org.jdownloader.controlling.AggregatedNumbers;
 
+@StorableValidatorIgnoresMissingSetter
 public class AggregatedNumbersAPIStorable implements Storable {
-
     public AggregatedNumbersAPIStorable(/* Storable */) {
-
     }
 
     private AggregatedNumbers        aggregated;

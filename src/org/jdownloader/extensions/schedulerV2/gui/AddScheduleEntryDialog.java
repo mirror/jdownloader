@@ -136,7 +136,7 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
         case CHOOSEINTERVAL: {
             actionStorable.setTimestamp(Calendar.getInstance().getTimeInMillis() / 1000l);
             actionStorable.setIntervalHour((Integer) hourSpinnerInterval.getValue());
-            actionStorable.setIntervalMin((Integer) minuteSpinnerInterval.getValue());
+            actionStorable.setIntervalMinute((Integer) minuteSpinnerInterval.getValue());
         }
             break;
         case ONLYONCE:

@@ -101,7 +101,7 @@ public class YoutubeSubtitleStorable extends AbstractGenericVariantInfo implemen
         this.name = name;
     }
 
-    public String getUrl() {
+    public String _getUrl() {
         final String ret = getFullUrl();
         if (ret != null) {
             return ret;

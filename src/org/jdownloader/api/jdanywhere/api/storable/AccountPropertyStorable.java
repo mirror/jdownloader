@@ -1,11 +1,13 @@
 package org.jdownloader.api.jdanywhere.api.storable;
 
+import org.appwork.remoteapi.annotations.AllowNonStorableObjects;
+import org.appwork.storage.Storable;
+import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
+
 import jd.plugins.AccountProperty;
 
-import org.appwork.storage.Storable;
-
+@StorableValidatorIgnoresMissingSetter
 public class AccountPropertyStorable implements Storable {
-
     private AccountProperty accountProperty;
 
     @SuppressWarnings("unused")
@@ -20,22 +22,28 @@ public class AccountPropertyStorable implements Storable {
     /**
      * @return the Value
      */
+    @AllowNonStorableObjects
     public Object getValue() {
-        if (accountProperty == null) return null;
+        if (accountProperty == null) {
+            return null;
+        }
         return accountProperty.getValue();
     }
 
     /**
      * @return the Property
      */
-    public Object getProperty() {
-        if (accountProperty == null) return null;
+    public jd.plugins.AccountProperty.Property getProperty() {
+        if (accountProperty == null) {
+            return null;
+        }
         return accountProperty.getProperty();
     }
 
-    public Object getAccountID() {
-        if (accountProperty == null) return null;
+    public String getAccountID() {
+        if (accountProperty == null) {
+            return null;
+        }
         return accountProperty.getAccount().getId().toString();
     }
-
 }

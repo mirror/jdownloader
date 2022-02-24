@@ -17,6 +17,10 @@ public class TwentyOneMembersVariantInfo implements Storable, LinkVariant {
         return this.filesize;
     }
 
+    public void setFilesize(String filesize) {
+        this.filesize = filesize;
+    }
+
     public String getUrl() {
         return url;
     }
@@ -85,7 +89,7 @@ public class TwentyOneMembersVariantInfo implements Storable, LinkVariant {
         return "mp4";
     }
 
-    public boolean isPhoto() {
+    public boolean _isPhoto() {
         if (StringUtils.equals("ziph", shortType)) {
             return true;
         }

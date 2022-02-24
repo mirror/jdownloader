@@ -2,13 +2,15 @@ package org.jdownloader.controlling.contextmenu;
 
 import java.util.TreeMap;
 
+import org.appwork.remoteapi.annotations.AllowNonStorableObjects;
+import org.appwork.storage.Storable;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
 import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
 
-public class ActionData extends AbstractJsonData {
+public class ActionData extends AbstractJsonData implements Storable {
     private Class<?>            clazz;
     private static final String PACKAGE_NAME = AbstractExtension.class.getPackage().getName() + ".";
     private String              data;
@@ -107,6 +109,7 @@ public class ActionData extends AbstractJsonData {
         return this;
     }
 
+    @AllowNonStorableObjects
     public TreeMap<String, Object> getSetup() {
         return setup;
     }

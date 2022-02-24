@@ -1,6 +1,11 @@
 package org.jdownloader.controlling.filter;
 
-public class CompiledFilesizeFilter extends FilesizeFilter {
+import org.appwork.storage.Storable;
+
+public class CompiledFilesizeFilter extends FilesizeFilter implements Storable {
+    private CompiledFilesizeFilter() {
+    }
+
     public CompiledFilesizeFilter(FilesizeFilter org) {
         super(org.getFrom(), org.getTo(), org.isEnabled(), org.getMatchType());
     }

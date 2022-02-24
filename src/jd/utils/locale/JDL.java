@@ -13,61 +13,30 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.utils.locale;
 
-import java.util.HashMap;
+import org.jdownloader.logging.LogController;
 
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-
-import org.jdownloader.logging.LogController;
 
 public final class JDL {
     /**
      * Don't let anyone instantiate this class.
      */
     private JDL() {
-
     }
 
-    private static final HashMap<String, JDLocale> CACHE          = new HashMap<String, JDLocale>();
-
-    public static final String                     CONFIG         = "LOCALE";
-
-    public static boolean                          DEBUG          = false;
-
-    public static final JDLocale                   DEFAULT_LOCALE = JDL.getInstance("en");
-
-    /**
-     * Creates a new JDLocale instance or uses a cached one
-     * 
-     * @param lngGeoCode
-     * @return
-     */
-    public synchronized static JDLocale getInstance(final String lngGeoCode) {
-        JDLocale ret;
-        if ((ret = CACHE.get(lngGeoCode)) != null) {
-            return ret;
-        }
-        ret = new JDLocale(lngGeoCode);
-        CACHE.put(lngGeoCode, ret);
-        return ret;
-    }
-
-    public static boolean isGerman() {
-        final String country = System.getProperty("user.country");
-        return country != null && country.equalsIgnoreCase("DE");
-    }
+    public static final String CONFIG = "LOCALE";
+    public static boolean      DEBUG  = false;
 
     public static String L(final String key, final String def) {
-
         return def;
     }
 
     /**
      * Wrapper für String.format(JDL.L(..),args)
-     * 
+     *
      * @param KEY
      * @param def
      * @param args
@@ -99,5 +68,4 @@ public final class JDL {
             return null;
         }
     }
-
 }

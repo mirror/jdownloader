@@ -3,6 +3,8 @@ package org.jdownloader.api.jdanywhere.api.storable;
 import org.appwork.storage.Storable;
 
 public class LinkStatusJobStorable implements Storable {
+    public LinkStatusJobStorable() {
+    }
 
     private String  linkID;
     private int     status;
@@ -49,5 +51,4 @@ public class LinkStatusJobStorable implements Storable {
     public void setInProgress(boolean inProgress) {
         this.inProgress = inProgress;
     }
-
 }
