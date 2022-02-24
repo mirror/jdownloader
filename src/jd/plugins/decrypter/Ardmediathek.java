@@ -16,7 +16,6 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -238,32 +237,6 @@ public class Ardmediathek extends PluginForDecrypt {
         final String subtitleURL = getXML(xmlBR.toString(), "videoSubtitleUrl");
         if (subtitleURL != null) {
             return xmlBR.getURL(subtitleURL).toString();
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * Find subtitle URL inside json String
-     *
-     * @throws MalformedURLException
-     *             </br>
-     *             TODO: Refactor this
-     */
-    @Deprecated
-    private String getJsonSubtitleURL(final Browser jsonBR) throws IOException {
-        String subtitleURL;
-        if (br.getURL().contains("wdr.de/")) {
-            subtitleURL = PluginJSonUtils.getJsonValue(jsonBR, "captionURL");
-            if (subtitleURL == null) {
-                // TODO: check other formats
-                subtitleURL = PluginJSonUtils.getJsonValue(jsonBR, "xml");
-            }
-        } else {
-            subtitleURL = PluginJSonUtils.getJson(jsonBR, "_subtitleUrl");
-        }
-        if (subtitleURL != null) {
-            return jsonBR.getURL(subtitleURL).toString();
         } else {
             return null;
         }
@@ -567,8 +540,6 @@ public class Ardmediathek extends PluginForDecrypt {
          * http://adaptiv.wdr.de/z/medp/ww/fsk0/104/1046579/,1046579_11834667,1046579_11834665,1046579_11834669,.mp4.csmil/manifest.f4
          */
         // //wdradaptiv-vh.akamaihd.net/i/medp/ondemand/weltweit/fsk0/139/1394333/,1394333_16295554,1394333_16295556,1394333_16295555,1394333_16295557,1394333_16295553,1394333_16295558,.mp4.csmil/master.m3u8
-        /* TODO: Fix/Improve subtitle handling */
-        // subtitleLink = getJsonSubtitleURL(this.br);
         final HashMap<String, DownloadLink> foundQualitiesMap = new HashMap<String, DownloadLink>();
         final List<String> httpStreamsQualityIdentifiers = new ArrayList<String>();
         /* For http stream quality identifiers which have been created by the hls --> http URLs converter */
@@ -719,10 +690,6 @@ public class Ardmediathek extends PluginForDecrypt {
                 }
             }
         }
-        /*
-         * TODO: It might only make sense to attempt this if we found more than 3 http qualities previously because usually 3 means we will
-         * also only have 3 hls qualities --> There are no additional http qualities!
-         */
         // hlsMaster =
         // "https://wdradaptiv-vh.akamaihd.net/i/medp/ondemand/weltweit/fsk0/232/2326527/,2326527_32403893,2326527_32403894,2326527_32403895,2326527_32403891,2326527_32403896,2326527_32403892,.mp4.csmil/master.m3u8";
         String http_url_audio = br.getRegex("((?:https?:)?//[^<>\"]+\\.mp3)\"").getMatch(0);
