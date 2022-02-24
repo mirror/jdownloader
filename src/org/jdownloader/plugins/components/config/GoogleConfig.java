@@ -24,8 +24,16 @@ public interface GoogleConfig extends PluginConfigInterface {
             return "Select preferred stream-quality.\r\nIf your preferred stream quality is not found, best stream quality will be downloaded instead.";
         }
 
-        public String getPreferWebsiteOverAPIIfAccountIsAvailable_label() {
-            return "If API Key is given and valid account is available: Prefer website for downloading to avoid 'Quota reached' errors?";
+        public String getGoogleDriveAPIKey_label() {
+            return "Enter Google Drive API key see: developers.google.com/drive/api/v3/enable-drive-api\r\nThis API key will be used for GDrive folder crawling, linkchecking and downloading.";
+        }
+
+        public String getAPIDownloadMode_label() {
+            return "Set preferred API download mode (only relevant if API Key is provided.)";
+        }
+
+        public String getAddStreamQualityIdentifierToFilename_label() {
+            return "Add quality identifier to filename if non-original video stream is downloaded?";
         }
     }
 
@@ -35,15 +43,7 @@ public interface GoogleConfig extends PluginConfigInterface {
     @Order(10)
     String getUserAgent();
 
-    public void setUserAgent(String userAgent);
-
-    @AboutConfig
-    @DefaultStringValue("")
-    @DescriptionForConfigEntry("Enter Google Drive API key see: developers.google.com/drive/api/v3/enable-drive-api\r\nThis API key will be used for GDrive folder crawling, linkchecking and downloading.")
-    @Order(15)
-    String getGoogleDriveAPIKey();
-
-    public void setGoogleDriveAPIKey(String apikey);
+    public void setUserAgent(final String userAgent);
 
     public static enum PreferredQuality implements LabelInterface {
         ORIGINAL {
@@ -87,18 +87,47 @@ public interface GoogleConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultEnumValue("ORIGINAL")
     @DescriptionForConfigEntry("Select preferred stream-quality.\r\nIf your preferred stream quality is not found, best stream quality will be downloaded instead.")
-    @Order(20)
+    @Order(15)
     PreferredQuality getPreferredQuality();
 
     void setPreferredQuality(final PreferredQuality quality);
 
     @AboutConfig
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("If API Key is given and valid account is available: Prefer website for downloading to avoid 'Quota reached' errors?")
-    @Order(30)
-    boolean isPreferWebsiteOverAPIIfAccountIsAvailable();
+    @DefaultStringValue("")
+    @DescriptionForConfigEntry("Enter Google Drive API key see: developers.google.com/drive/api/v3/enable-drive-api\r\nThis API key will be used for GDrive folder crawling, linkchecking and downloading.")
+    @Order(20)
+    String getGoogleDriveAPIKey();
 
-    void setPreferWebsiteOverAPIIfAccountIsAvailable(boolean b);
+    public void setGoogleDriveAPIKey(String apikey);
+
+    public static enum APIDownloadMode implements LabelInterface {
+        API_ONLY {
+            @Override
+            public String getLabel() {
+                return "API only (except for stream downloads)";
+            }
+        },
+        WEBSITE_IF_ACCOUNT_AVAILABLE {
+            @Override
+            public String getLabel() {
+                return "Use website if account is available";
+            }
+        },
+        WEBSITE_IF_ACCOUNT_AVAILABLE_AND_FILE_IS_QUOTA_LIMITED {
+            @Override
+            public String getLabel() {
+                return "Use website if account is available and file is quota limited";
+            }
+        };
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("WEBSITE_IF_ACCOUNT_AVAILABLE_AND_FILE_IS_QUOTA_LIMITED")
+    @DescriptionForConfigEntry("Set preferred API download mode (only relevant if API Key is provided.)")
+    @Order(25)
+    APIDownloadMode getAPIDownloadMode();
+
+    void setAPIDownloadMode(final APIDownloadMode apiDownloadMode);
 
     @AboutConfig
     @DefaultBooleanValue(true)
@@ -107,4 +136,12 @@ public interface GoogleConfig extends PluginConfigInterface {
     boolean isPreferWebsiteOverAPIIfStreamDownloadIsWantedAndPossible();
 
     void setPreferWebsiteOverAPIIfStreamDownloadIsWantedAndPossible(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Adds quality identifier to filename if video stream (= non-original file) is downloaded.")
+    @Order(50)
+    boolean isAddStreamQualityIdentifierToFilename();
+
+    void setAddStreamQualityIdentifierToFilename(boolean b);
 }

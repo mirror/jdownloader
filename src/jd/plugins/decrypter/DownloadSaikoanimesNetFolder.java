@@ -19,6 +19,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -26,12 +31,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DownloadSaikoanimesNetFolder extends PluginForDecrypt {
@@ -70,69 +72,84 @@ public class DownloadSaikoanimesNetFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
         final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
-        final UrlQuery query = new UrlQuery();
-        query.add("withEntries", "true");
-        /* TODO: Add pagination support */
-        query.add("page", "1");
-        br.getPage("https://" + this.getHost() + "/secure/drive/shareable-links/" + folderID + "?" + query.toString());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        }
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final Map<String, Object> folderChildren = (Map<String, Object>) entries.get("folderChildren");
-        final Map<String, Object> linkInfo = (Map<String, Object>) entries.get("link");
-        final Map<String, Object> fileFolderInfo = (Map<String, Object>) linkInfo.get("entry");
-        final String folderName = (String) fileFolderInfo.get("name");
-        final FilePackage fp = FilePackage.getInstance();
-        if (!StringUtils.isEmpty(folderName)) {
-            fp.setName(folderName);
-        } else {
-            /* Fallback */
-            fp.setName(folderID);
-        }
-        /* TODO: Find out what happens when this == false */
-        // final boolean allowDownload = ((Boolean)linkInfo.get("allow_download")).booleanValue();
-        final int linkID = ((Number) linkInfo.get("id")).intValue();
-        List<Map<String, Object>> ressourcelist = null;
-        if (((Number) folderChildren.get("total")).intValue() > 0) {
-            /* Add all items of a folder */
-            ressourcelist = (List<Map<String, Object>>) folderChildren.get("data");
-        } else {
-            /* Assume we got a single file --> Add that */
-            ressourcelist = new ArrayList<Map<String, Object>>();
-            ressourcelist.add(fileFolderInfo);
-        }
-        for (final Map<String, Object> file : ressourcelist) {
-            final String type = (String) file.get("type");
-            final String hash = (String) file.get("hash");
-            if (StringUtils.equalsIgnoreCase("folder", type)) {
-                String folderURL = param.getCryptedUrl();
-                final String nextFolderID;
-                if (folderID.contains(":")) {
-                    nextFolderID = folderID.replaceAll("(:.+)", "hash");
-                } else {
-                    nextFolderID = folderID + ":" + hash;
-                }
-                folderURL = folderURL.replace(folderID, nextFolderID);
-                final DownloadLink dl = this.createDownloadlink(folderURL);
-                distribute(dl);
-                decryptedLinks.add(dl);
-            } else {
-                final String filename = (String) file.get("name");
-                // final String url = (String) entries.get("url");
-                final long filesize = ((Number) file.get("file_size")).longValue();
-                final DownloadLink dl = this.createDownloadlink("directhttp://https://" + this.getHost() + "/secure/uploads/download?hashes=" + hash + "&shareable_link=" + linkID);
-                dl.setFinalFileName(filename);
-                dl.setVerifiedFileSize(filesize);
-                dl.setAvailable(true);
-                dl._setFilePackage(fp);
-                distribute(dl);
-                decryptedLinks.add(dl);
+        int page = 0;
+        do {
+            page++;
+            final UrlQuery query = new UrlQuery();
+            query.add("withEntries", "true");
+            query.add("page", Integer.toString(page));
+            br.getPage("https://" + this.getHost() + "/secure/drive/shareable-links/" + folderID + "?" + query.toString());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-        }
+            final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> folderChildren = (Map<String, Object>) root.get("folderChildren");
+            final int maxItemsPerPage = ((Number) folderChildren.get("per_page")).intValue();
+            final int totalNumberofItems = ((Number) folderChildren.get("total")).intValue();
+            final int lastPage = ((Number) folderChildren.get("last_page")).intValue();
+            final Map<String, Object> linkInfo = (Map<String, Object>) root.get("link");
+            final Map<String, Object> fileFolderInfo = (Map<String, Object>) linkInfo.get("entry");
+            final String folderName = (String) fileFolderInfo.get("name");
+            final FilePackage fp = FilePackage.getInstance();
+            if (!StringUtils.isEmpty(folderName)) {
+                fp.setName(folderName);
+            } else {
+                /* Fallback */
+                fp.setName(folderID);
+            }
+            /* TODO: Find out what happens when this == false */
+            // final boolean allowDownload = ((Boolean)linkInfo.get("allow_download")).booleanValue();
+            final int linkID = ((Number) linkInfo.get("id")).intValue();
+            List<Map<String, Object>> ressourcelist = null;
+            if (((Number) folderChildren.get("total")).intValue() > 0) {
+                /* Add all items of a folder */
+                ressourcelist = (List<Map<String, Object>>) folderChildren.get("data");
+            } else {
+                /* Assume we got a single file --> Add that */
+                ressourcelist = new ArrayList<Map<String, Object>>();
+                ressourcelist.add(fileFolderInfo);
+            }
+            for (final Map<String, Object> file : ressourcelist) {
+                final String type = (String) file.get("type");
+                final String hash = (String) file.get("hash");
+                if (StringUtils.equalsIgnoreCase("folder", type)) {
+                    String folderURL = param.getCryptedUrl();
+                    final String nextFolderID;
+                    if (folderID.contains(":")) {
+                        nextFolderID = folderID.replaceAll("(:.+)", "hash");
+                    } else {
+                        nextFolderID = folderID + ":" + hash;
+                    }
+                    folderURL = folderURL.replace(folderID, nextFolderID);
+                    final DownloadLink dl = this.createDownloadlink(folderURL);
+                    distribute(dl);
+                    decryptedLinks.add(dl);
+                } else {
+                    final String filename = (String) file.get("name");
+                    // final String url = (String) entries.get("url");
+                    final long filesize = ((Number) file.get("file_size")).longValue();
+                    final DownloadLink dl = this.createDownloadlink("directhttp://https://" + this.getHost() + "/secure/uploads/download?hashes=" + hash + "&shareable_link=" + linkID);
+                    dl.setFinalFileName(filename);
+                    dl.setVerifiedFileSize(filesize);
+                    dl.setAvailable(true);
+                    dl._setFilePackage(fp);
+                    distribute(dl);
+                    decryptedLinks.add(dl);
+                }
+            }
+            logger.info("Crawled page " + page + "/" + lastPage + " | Numberof items on current page: " + ressourcelist.size() + " | Total: " + decryptedLinks.size() + "/" + totalNumberofItems);
+            if (this.isAbort()) {
+                break;
+            } else if (page == lastPage) {
+                logger.info("Stopping because: Reached last page: " + lastPage);
+                break;
+            } else if (ressourcelist.size() < maxItemsPerPage) {
+                /* 2nd fail-safe */
+                logger.info("Stopping because: current page contains less items than: " + maxItemsPerPage);
+                break;
+            }
+        } while (true);
         return decryptedLinks;
     }
 }
