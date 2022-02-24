@@ -44,8 +44,9 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de", "mediathek.daserste.de", "sandmann.de", "wdr.de", "sportschau.de", "wdrmaus.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "ndr.de", "tagesschau.de" }, urls = { "ardmediathek\\.dedecrypted://.+", "(?:mediathek\\.)?daserste\\.dedecrypted://.+", "sandmann\\.dedecrypted://.+", "wdr.dedecrypted://.+", "sportschau\\.dedecrypted://.+", "wdrmaus\\.dedecrypted://.+", "kika\\.dedecrypted://.+", "eurovision\\.dedecrypted://.+", "sputnik\\.dedecrypted://.+", "mdr\\.dedecrypted://.+", "ndr\\.dedecrypted://.+", "tagesschau\\.dedecrypted://.+" })
 public class ARDMediathek extends PluginForHost {
-    private String  dllink        = null;
-    private boolean server_issues = false;
+    private String             dllink                           = null;
+    private boolean            server_issues                    = false;
+    public static final String PROPERTY_CRAWLER_FORCED_FILENAME = "crawler_forced_filename";
 
     public ARDMediathek(final PluginWrapper wrapper) {
         super(wrapper);
@@ -86,31 +87,28 @@ public class ARDMediathek extends PluginForHost {
             }
             return ret;
         }
-        final String ret = getUniqueURLServerFilenameString(link.getDownloadURL());
-        if (ret != null) {
-            return ret;
-        } else {
-            return super.getLinkID(link);
-        }
-    }
-
-    @Deprecated
-    public static String getUniqueURLServerFilenameString(final String directurl) {
-        // TODO: very bad, not unique
-        return new Regex(directurl, "/([^/]+\\.(?:mp3|mp4)(?:.+\\.m3u8)?)").getMatch(0);
+        return super.getLinkID(link);
     }
 
     public static boolean isVideoContent(final URLConnectionAdapter con) {
         return con != null && con.getResponseCode() == 200 && StringUtils.containsIgnoreCase(con.getContentType(), "video") && con.getCompleteContentLength() > 512 * 1024l;
     }
 
-    public static boolean isAudioContent(final URLConnectionAdapter con) {
+    private static boolean isAudioContent(final URLConnectionAdapter con) {
         return con != null && con.getResponseCode() == 200 && StringUtils.containsIgnoreCase(con.getContentType(), "audio") && con.getCompleteContentLength() > 512 * 1024l;
+    }
+
+    private static boolean isSubtitleContent(final URLConnectionAdapter con) {
+        return con != null && con.getResponseCode() == 200 && StringUtils.containsIgnoreCase(con.getContentType(), "text/xml");
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = link.getDownloadURL();
+        /* Keep filenames defined by crawler plugin even after user resets this link. */
+        if (link.hasProperty(PROPERTY_CRAWLER_FORCED_FILENAME)) {
+            link.setFinalFileName(link.getStringProperty(PROPERTY_CRAWLER_FORCED_FILENAME));
+        }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -134,7 +132,7 @@ public class ARDMediathek extends PluginForHost {
                 final Browser brc = br.cloneBrowser();
                 brc.getHeaders().put("Accept-Encoding", "identity");
                 con = brc.openHeadConnection(dllink);
-                if (con.getResponseCode() == 404) {
+                if (!looksLikeDownloadableContent(con, link)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             } finally {
@@ -148,13 +146,12 @@ public class ARDMediathek extends PluginForHost {
             try {
                 final Browser brc = br.cloneBrowser();
                 con = brc.openHeadConnection(dllink);
-                if (looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                } else {
-                    /* Content should definitly be offline in this case! */
+                if (!looksLikeDownloadableContent(con, link)) {
+                    /* Content should definitely be offline in this case! */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -166,9 +163,12 @@ public class ARDMediathek extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @Override
-    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter con) {
-        if (isVideoContent(con) || isAudioContent(con) || con.isContentDisposition()) {
+    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter con, final DownloadLink link) {
+        if (super.looksLikeDownloadableContent(con)) {
+            return true;
+        } else if (isVideoContent(con) || isAudioContent(con) || con.isContentDisposition()) {
+            return true;
+        } else if (isSubtitle(link) && isSubtitleContent(con)) {
             return true;
         } else {
             return false;
@@ -204,22 +204,19 @@ public class ARDMediathek extends PluginForHost {
                 maxChunks = 1;
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
-            if (dl.getConnection().getResponseCode() == 403 || dl.getConnection().getResponseCode() == 404) {
+            if (!looksLikeDownloadableContent(dl.getConnection(), link)) {
                 try {
                     br.followConnection(true);
                 } catch (IOException e) {
                     logger.log(e);
                 }
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            /* 2018-03-06: Only investigate by content type if it is supposed to be a video file! */
-            if (dl.getConnection().getContentType().contains("html") && !isSubtitle) {
-                try {
-                    br.followConnection(true);
-                } catch (IOException e) {
-                    logger.log(e);
+                if (br.getHttpConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
                 }
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
             if (this.dl.startDownload()) {
                 this.postprocess(link);
@@ -232,7 +229,7 @@ public class ARDMediathek extends PluginForHost {
             if (!convertSubtitle(link)) {
                 logger.severe("Subtitle conversion failed!");
             } else {
-                link.setFinalFileName(link.getFinalFileName().replace(".xml", ".srt"));
+                link.setFinalFileName(this.correctOrApplyFileNameExtension(link.getFinalFileName(), ".srt"));
             }
         }
     }

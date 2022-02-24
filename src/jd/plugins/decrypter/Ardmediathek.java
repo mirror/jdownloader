@@ -68,6 +68,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.MediathekHelper;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.ARDMediathek;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "sandmann.de", "wdr.de", "sportschau.de", "wdrmaus.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "ndr.de", "tagesschau.de" }, urls = { "https?://(?:[A-Z0-9]+\\.)?ardmediathek\\.de/.+", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/.*?\\.html", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html|https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js", "https?://(?:\\w+\\.)?sportschau\\.de/.*?\\.html", "https?://(?:www\\.)?wdrmaus\\.de/.+", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html",
         "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?ndr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?tagesschau\\.de/[^<>\"]+\\.html" })
@@ -77,7 +78,6 @@ public class Ardmediathek extends PluginForDecrypt {
     /* Variables */
     private final List<String>  all_known_qualities = new ArrayList<String>();
     private final List<String>  selectedQualities   = new ArrayList<String>();
-    private String              subtitleLink        = null;
     private boolean             grabHLS             = false;
     private ArdConfigInterface  cfg                 = null;
 
@@ -326,22 +326,30 @@ public class Ardmediathek extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlArdmediathekDeNew(final CryptedLink param) throws Exception {
         /* E.g. old classic.ardmediathek.de URLs */
-        final boolean requiresOldContentIDHandling;
-        String ardDocumentID = new Regex(param.getCryptedUrl(), "documentId=(\\d+)").getMatch(0);
-        Map<String, Object> entries = null;
+        final String oldArdDocumentIDFromURL = new Regex(param.getCryptedUrl(), "documentId=(\\d+)").getMatch(0);
+        String oldArdDocumentID = null;
         final ArdMetadata metadata = new ArdMetadata();
-        if (ardDocumentID != null) {
-            requiresOldContentIDHandling = true;
-            metadata.setTitle(ardDocumentID);
-            metadata.setContentID(ardDocumentID);
+        final Map<String, Object> streamMap;
+        if (oldArdDocumentIDFromURL != null) {
+            /* Handling for old links */
+            /* 2020-05-26: Also possible: http://page.ardmediathek.de/page-gateway/playerconfig/<documentID> */
+            /* Old way: http://www.ardmediathek.de/play/media/%s?devicetype=pc&features=flash */
+            br.getPage("http://page.ardmediathek.de/page-gateway/mediacollection/" + oldArdDocumentIDFromURL + "?devicetype=pc");
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            streamMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(null, "mediaCollection/embedded");
+            oldArdDocumentID = oldArdDocumentIDFromURL;
+            metadata.setTitle(oldArdDocumentID);
+            metadata.setContentID(oldArdDocumentID);
         } else {
             final URL url = new URL(param.getCryptedUrl());
-            requiresOldContentIDHandling = false;
             String ardBase64;
-            final String pattern_player = ".+/player/([^/]+).*";
-            if (param.getCryptedUrl().matches(pattern_player)) {
+            // final String pattern_player = ".+/player/([^/]+).*";
+            final Regex pattern_player = new Regex(url.getPath(), ".+/player/([^/]+).*");
+            if (pattern_player.matches()) {
                 /* E.g. URLs that are a little bit older */
-                ardBase64 = new Regex(url.getPath(), pattern_player).getMatch(0);
+                ardBase64 = pattern_player.getMatch(0);
             } else {
                 /* New URLs */
                 ardBase64 = new Regex(url.getPath(), "/([^/]+)/?$").getMatch(0);
@@ -363,52 +371,46 @@ public class Ardmediathek extends PluginForDecrypt {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            ardDocumentID = PluginJSonUtils.getJson(br, "contentId");
-            // final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
-            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "widgets/{0}/");
-            final String broadcastedOn = (String) entries.get("broadcastedOn");
-            final String title = (String) entries.get("title");
-            final String showname = (String) JavaScriptEngineFactory.walkJson(entries, "show/title");
-            final String type = (String) entries.get("type");
+            oldArdDocumentID = PluginJSonUtils.getJson(br, "contentId");
+            final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> video = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "widgets/{0}/");
+            final String broadcastedOn = (String) video.get("broadcastedOn");
+            final String title = (String) video.get("title");
+            final String showname = (String) JavaScriptEngineFactory.walkJson(video, "show/title");
+            final String type = (String) video.get("type");
             if ("player_live".equalsIgnoreCase(type)) {
                 logger.info("Cannot download livestreams");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (entries.get("blockedByFsk") == Boolean.TRUE) {
+            } else if (video.get("blockedByFsk") == Boolean.TRUE) {
                 /* AGE restricted content (can only be watched in the night) */
                 throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "FSK_BLOCKED_" + title, "FSK_BLOCKED", null);
             } else if (StringUtils.isEmpty(broadcastedOn)) {
+                /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if (StringUtils.isAllEmpty(title, showname)) {
+                /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            String date_formatted = new Regex(broadcastedOn, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+            final String date_formatted = new Regex(broadcastedOn, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
             if (date_formatted == null) {
-                /* Fallback */
-                date_formatted = broadcastedOn;
+                /* This should never happen */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             metadata.setTitle(title);
             metadata.setSubtitle(showname);
             metadata.setDateTimestamp(getDateMilliseconds(broadcastedOn));
-            if (ardDocumentID != null) {
-                metadata.setContentID(ardDocumentID);
+            if (oldArdDocumentID != null) {
+                metadata.setContentID(oldArdDocumentID);
             }
+            streamMap = root;
         }
         metadata.setChannel("ardmediathek");
-        if (requiresOldContentIDHandling) {
-            if (StringUtils.isEmpty(ardDocumentID)) {
-                /* Probably offline content */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            /* 2020-05-26: Also possible: http://page.ardmediathek.de/page-gateway/playerconfig/<documentID> */
-            /* Old way: http://www.ardmediathek.de/play/media/%s?devicetype=pc&features=flash */
-            br.getPage(String.format("http://page.ardmediathek.de/page-gateway/mediacollection/%s?devicetype=pc", ardDocumentID));
-            entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "mediaCollection/embedded");
-        } else {
-            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final String captionURL = (String) JavaScriptEngineFactory.walkJson(streamMap, "widgets/{0}/mediaCollection/embedded/_subtitleUrl");
+        if (captionURL != null) {
+            metadata.setCaptionsURL(captionURL);
         }
-        final HashMap<String, DownloadLink> foundQualities = crawlARDJson(param, metadata, entries);
-        return this.handleUserQualitySelection(foundQualities);
+        final HashMap<String, DownloadLink> foundQualities = crawlARDJson(param, metadata, streamMap);
+        return this.handleUserQualitySelection(metadata, foundQualities);
     }
 
     private ArrayList<DownloadLink> crawlSandmannDe(final CryptedLink param) throws Exception {
@@ -438,7 +440,7 @@ public class Ardmediathek extends PluginForDecrypt {
             metadata.setContentID(url);
             metadata.setChannel("rbb");
             final HashMap<String, DownloadLink> foundQualitiesMap = this.crawlARDJson(param, metadata, ardJsonRoot);
-            final ArrayList<DownloadLink> results = this.handleUserQualitySelection(foundQualitiesMap);
+            final ArrayList<DownloadLink> results = this.handleUserQualitySelection(metadata, foundQualitiesMap);
             for (final DownloadLink link : results) {
                 ret.add(link);
                 /* Make sure this shows up in linkgrabber right away. */
@@ -542,7 +544,7 @@ public class Ardmediathek extends PluginForDecrypt {
         /* Fallback as they do not provide contentIDs... */
         metadata.setContentID(br.getURL());
         final HashMap<String, DownloadLink> foundQualitiesMap = crawlARDJson(param, metadata, root);
-        return this.handleUserQualitySelection(foundQualitiesMap);
+        return this.handleUserQualitySelection(metadata, foundQualitiesMap);
     }
 
     private ArrayList<DownloadLink> crawlWdrMediaObject(final CryptedLink param, final Map<String, Object> wdrMediaObject) throws Exception {
@@ -556,7 +558,7 @@ public class Ardmediathek extends PluginForDecrypt {
         metadata.setChannel(trackerData.get("trackerClipCategory").toString());
         metadata.setContentID(trackerData.get("trackerClipId").toString());
         final HashMap<String, DownloadLink> foundQualitiesMap = crawlARDJson(param, metadata, wdrMediaObject);
-        return this.handleUserQualitySelection(foundQualitiesMap);
+        return this.handleUserQualitySelection(metadata, foundQualitiesMap);
     }
 
     private HashMap<String, DownloadLink> crawlARDJson(final CryptedLink param, final ArdMetadata metadata, final Object mediaCollection) throws Exception {
@@ -565,10 +567,8 @@ public class Ardmediathek extends PluginForDecrypt {
          * http://adaptiv.wdr.de/z/medp/ww/fsk0/104/1046579/,1046579_11834667,1046579_11834665,1046579_11834669,.mp4.csmil/manifest.f4
          */
         // //wdradaptiv-vh.akamaihd.net/i/medp/ondemand/weltweit/fsk0/139/1394333/,1394333_16295554,1394333_16295556,1394333_16295555,1394333_16295557,1394333_16295553,1394333_16295558,.mp4.csmil/master.m3u8
-        /*
-         * Grab all http qualities inside json
-         */
-        subtitleLink = getJsonSubtitleURL(this.br);
+        /* TODO: Fix/Improve subtitle handling */
+        // subtitleLink = getJsonSubtitleURL(this.br);
         final HashMap<String, DownloadLink> foundQualitiesMap = new HashMap<String, DownloadLink>();
         final List<String> httpStreamsQualityIdentifiers = new ArrayList<String>();
         /* For http stream quality identifiers which have been created by the hls --> http URLs converter */
@@ -869,7 +869,7 @@ public class Ardmediathek extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404 || !br.getHttpConnection().getContentType().contains("xml")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        this.subtitleLink = getXMLSubtitleURL(this.br);
+        final String captionsLink = getXMLSubtitleURL(this.br);
         String date = getXML(br.toString(), "broadcastDate");
         if (StringUtils.isEmpty(date)) {
             /* E.g. kika.de */
@@ -904,6 +904,9 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         if (tvStation != null) {
             metadata.setChannel(tvStation);
+        }
+        if (captionsLink != null) {
+            metadata.setCaptionsURL(captionsLink);
         }
         final ArrayList<String> hls_master_dupelist = new ArrayList<String>();
         final String assetsAudiodescription = br.getRegex("<assets type=\"audiodesc\">(.*?)</assets>").getMatch(0);
@@ -1027,7 +1030,7 @@ public class Ardmediathek extends PluginForDecrypt {
                 }
             }
         }
-        return this.handleUserQualitySelection(foundQualitiesMap);
+        return this.handleUserQualitySelection(metadata, foundQualitiesMap);
     }
 
     private ArrayList<DownloadLink> crawlTagesschauVideos(final CryptedLink param) throws Exception {
@@ -1100,7 +1103,7 @@ public class Ardmediathek extends PluginForDecrypt {
             }
         }
         final HashMap<String, DownloadLink> foundQualitiesMap = this.crawlARDJson(param, metadata, root);
-        return this.handleUserQualitySelection(foundQualitiesMap);
+        return this.handleUserQualitySelection(metadata, foundQualitiesMap);
     }
 
     private void addHLS(final CryptedLink param, final ArdMetadata metadata, final HashMap<String, DownloadLink> foundQualities, final Browser br, final String hlsMaster, final boolean isAudioDescription) throws Exception {
@@ -1228,7 +1231,9 @@ public class Ardmediathek extends PluginForDecrypt {
             data.setReleaseDate(metadata.getDateTimestamp());
         }
         data.setShow(metadata.getSubtitle());
-        link.setFinalFileName(MediathekHelper.getMediathekFilename(link, data, true, false));
+        final String finalFilename = MediathekHelper.getMediathekFilename(link, data, true, false);
+        link.setFinalFileName(finalFilename);
+        link.setProperty(ARDMediathek.PROPERTY_CRAWLER_FORCED_FILENAME, finalFilename);
         link.setContentUrl(param.getCryptedUrl());
         if (metadata.getContentID() == null) {
             /* ContentID should always be available! */
@@ -1277,7 +1282,7 @@ public class Ardmediathek extends PluginForDecrypt {
         return qualityStringForQualitySelection;
     }
 
-    private ArrayList<DownloadLink> handleUserQualitySelection(final HashMap<String, DownloadLink> foundQualitiesMap) {
+    private ArrayList<DownloadLink> handleUserQualitySelection(final ArdMetadata metadata, final HashMap<String, DownloadLink> foundQualitiesMap) {
         if (foundQualitiesMap.isEmpty()) {
             logger.warning("foundQualitiesMap is empty");
             return null;
@@ -1323,8 +1328,8 @@ public class Ardmediathek extends PluginForDecrypt {
         while (it.hasNext()) {
             final Entry<String, DownloadLink> entry = it.next();
             final DownloadLink dl = entry.getValue();
-            if (cfg.isGrabSubtitleEnabled() && !StringUtils.isEmpty(subtitleLink)) {
-                final DownloadLink subtitle = createDownloadlink(subtitleLink.replaceAll("https?://", getHost() + "decrypted://"));
+            if (cfg.isGrabSubtitleEnabled() && !StringUtils.isEmpty(metadata.getCaptionsLink())) {
+                final DownloadLink subtitle = createDownloadlink(metadata.getCaptionsLink().replaceAll("https?://", getHost() + "decrypted://"));
                 final MediathekProperties data_src = dl.bindData(MediathekProperties.class);
                 final MediathekProperties data_subtitle = subtitle.bindData(MediathekProperties.class);
                 data_subtitle.setStreamingType("subtitle");
@@ -1342,7 +1347,9 @@ public class Ardmediathek extends PluginForDecrypt {
                     data_subtitle.setReleaseDate(data_src.getReleaseDate());
                 }
                 subtitle.setAvailable(true);
-                subtitle.setFinalFileName(MediathekHelper.getMediathekFilename(subtitle, data_subtitle, true, true));
+                final String finalFilename = MediathekHelper.getMediathekFilename(subtitle, data_subtitle, true, true);
+                subtitle.setFinalFileName(finalFilename);
+                subtitle.setProperty(ARDMediathek.PROPERTY_CRAWLER_FORCED_FILENAME, finalFilename);
                 subtitle.setProperty("itemId", dl.getProperty("itemId", null));
                 subtitle.setContentUrl(dl.getContentUrl());
                 subtitle._setFilePackage(dl.getFilePackage());
@@ -1383,6 +1390,7 @@ public class Ardmediathek extends PluginForDecrypt {
         private String channel       = null;
         private String description   = null;
         private String contentID     = null;
+        private String captionsURL   = null;
         private long   dateTimestamp = -1;
 
         protected String getTitle() {
@@ -1450,6 +1458,10 @@ public class Ardmediathek extends PluginForDecrypt {
             }
         }
 
+        public String getCaptionsLink() {
+            return this.captionsURL;
+        }
+
         public String getDescription() {
             return description;
         }
@@ -1457,13 +1469,17 @@ public class Ardmediathek extends PluginForDecrypt {
         public void setDescription(String description) {
             this.description = description;
         }
+
+        public void setCaptionsURL(final String captionsURL) {
+            this.captionsURL = captionsURL;
+        }
     }
 
     public enum VideoResolution {
         // Order is default quality sort order
         P_1080(1920, 1080),
         P_720(1280, 720),
-        /** 2022-10-21: Removed as we now detect quality/resolution by heigt */
+        /** 2022-10-21: Removed as we now detect quality/resolution by height. */
         // P_544(960, 544)
         P_540(960, 540),
         P_360(640, 360),
