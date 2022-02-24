@@ -853,7 +853,6 @@ public class GoogleDrive extends PluginForHost {
         if (!resume) {
             maxChunks = 1;
         }
-        boolean checkForAPIErrors = false;
         /* Always use API for linkchecking, even if in the end, website is used for downloading! */
         if (canUseAPI()) {
             /* Additionally use API for availablecheck if possible. */
@@ -872,6 +871,7 @@ public class GoogleDrive extends PluginForHost {
                     this.errorGoogleDocumentDownloadImpossible();
                 }
             } else {
+                /* Check if user prefers stream download which is only possible via website. */
                 if (this.isStreamDownloadPreferredAndAllowed(link) && PluginJsonConfig.get(GoogleConfig.class).isPreferWebsiteOverAPIIfStreamDownloadIsWantedAndPossible()) {
                     if (account != null) {
                         usedAccount = true;
@@ -884,8 +884,7 @@ public class GoogleDrive extends PluginForHost {
                     }
                 }
                 if (this.dllink == null) {
-                    /* Only check for API errors later on if we've actually used it. */
-                    checkForAPIErrors = true;
+                    /* Use API */
                     final UrlQuery queryFile = new UrlQuery();
                     queryFile.appendEncoded("fileId", this.getFID(link));
                     queryFile.add("supportsAllDrives", "true");
@@ -896,11 +895,12 @@ public class GoogleDrive extends PluginForHost {
                 }
             }
         } else {
-            /* Now check again via website as we're downloading via website. */
+            /* Website download */
+            /* Now check availablestatus again via website as we're downloading via website. */
+            requestFileInformationWebsite(link, account, true);
             if (account != null) {
                 usedAccount = true;
             }
-            requestFileInformationWebsite(link, account, true);
             if (StringUtils.isEmpty(this.dllink) && this.isGoogleDocument(link)) {
                 this.errorGoogleDocumentDownloadImpossible();
             } else if (StringUtils.isEmpty(this.dllink)) {
@@ -932,10 +932,10 @@ public class GoogleDrive extends PluginForHost {
             try {
                 dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                 br.followConnection();
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 logger.log(e);
             }
-            if (checkForAPIErrors) {
+            if (br.getHttpConnection().getContentType().contains("application/json")) {
                 this.handleErrorsAPI(this.br, link, account);
             }
             this.handleErrorsWebsite(this.br, link, account);
@@ -1048,12 +1048,13 @@ public class GoogleDrive extends PluginForHost {
             errorsO = (List<Object>) errormap.get("errors");
         } catch (final Throwable e) {
             /* Did not get the expected json response */
+            logger.warning("Got unexpected API response");
             return;
         }
-        /* Most of all times there will be only one error -> Handle that */
         if (errorsO == null || errorsO.size() == 0) {
             return;
         }
+        /* Most of all times there will be only one errort */
         logger.info("Number of detected errors: " + errorsO.size());
         int index = 0;
         for (final Object errorO : errorsO) {
