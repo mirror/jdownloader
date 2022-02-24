@@ -211,45 +211,20 @@ public class LinkCrawler {
         }
     }
 
-    protected static class CrawlerPluginLinkCrawlerLock extends LinkCrawlerLock {
-        private final LazyCrawlerPlugin plugin;
-        private final String            pluginID;
-
-        protected CrawlerPluginLinkCrawlerLock(final LazyCrawlerPlugin plugin) {
-            this.plugin = plugin;
-            pluginID = getPluginID(plugin);
-        }
-
-        @Override
-        public boolean matches(LazyCrawlerPlugin plugin, CrawledLink crawledLink) {
-            return StringUtils.equals(pluginID, getPluginID(plugin));
-        }
-
-        @Override
-        public String toString() {
-            return pluginID + "|" + maxConcurrency();
-        }
-
-        @Override
-        public int maxConcurrency() {
-            return Math.max(1, plugin.getMaxConcurrentInstances());
-        }
-    }
-
     protected LinkCrawlerLock getLinkCrawlerLock(final LazyCrawlerPlugin plugin, final CrawledLink crawledLink) {
         synchronized (LOCKS) {
             LinkCrawlerLock ret = null;
             // find best matching LinkCrawlerLock
             for (final Set<LinkCrawlerLock> locks : LOCKS.values()) {
                 for (final LinkCrawlerLock lock : locks) {
-                    if (ret != lock && (ret == null || lock.maxConcurrency() < ret.maxConcurrency() && lock.matches(plugin, crawledLink))) {
+                    if (ret != lock && (ret == null || lock.getMaxConcurrency() < ret.getMaxConcurrency() && lock.matches(plugin, crawledLink))) {
                         ret = lock;
                     }
                 }
             }
-            if (ret == null) {
+            if (ret == null && LinkCrawlerLock.requiresLocking(plugin)) {
                 // create new LinkCrawlerLock
-                ret = new CrawlerPluginLinkCrawlerLock(plugin);
+                ret = new LinkCrawlerLock(plugin);
             }
             // share LinkCrawlerLock to all LinkCrawler roots
             for (final LinkCrawler linkCrawler : LOCKS.keySet()) {
@@ -314,7 +289,7 @@ public class LinkCrawler {
         return null;
     }
 
-    public int getMaxThreads() {
+    public static int getMaxThreads() {
         return MAX_THREADS;
     }
 
