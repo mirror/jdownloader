@@ -14,7 +14,7 @@ public class CrawledLinkAPIStorableV2 extends CrawledLinkStorable implements Sto
     }
 
     @Override
-    @AllowNonStorableObjects(clazz = { LinkVariantStorable.class })
+    @AllowNonStorableObjects(value = { LinkVariantStorable.class })
     public LinkVariantStorable getVariant() {
         return super.getVariant();
     }

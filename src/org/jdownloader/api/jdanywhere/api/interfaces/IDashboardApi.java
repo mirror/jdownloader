@@ -5,16 +5,15 @@ import java.util.List;
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
+import org.appwork.remoteapi.annotations.AllowNonStorableObjects;
 import org.appwork.remoteapi.annotations.ApiNamespace;
 import org.appwork.remoteapi.annotations.ApiSessionRequired;
 import org.appwork.remoteapi.exceptions.InternalApiException;
-import org.appwork.storage.config.annotations.AllowStorage;
 import org.jdownloader.api.jdanywhere.api.storable.RunningObjectStorable;
 
 @ApiNamespace("jdanywhere/dashboard")
 @ApiSessionRequired
 public interface IDashboardApi extends RemoteAPIInterface {
-
     public abstract List<Integer> speedList();
 
     public abstract boolean start();
@@ -50,7 +49,7 @@ public interface IDashboardApi extends RemoteAPIInterface {
 
     public abstract List<RunningObjectStorable> runningLinks();
 
-    @AllowStorage(value = { Object.class })
+    @AllowNonStorableObjects(value = { Object.class })
     public Object getCompleteState();
 
     public boolean setMaxDL(int value);
@@ -66,5 +65,4 @@ public interface IDashboardApi extends RemoteAPIInterface {
     public boolean activatePremium(boolean value);
 
     public String apiVersion();
-
 }

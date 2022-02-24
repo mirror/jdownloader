@@ -87,7 +87,7 @@ public class FilePackageStorable implements Storable {
         return filePackage.getProperties();
     }
 
-    @AllowNonStorableObjects(clazz = { Object.class })
+    @AllowNonStorableObjects(value = { Object.class })
     public void setProperties(Map<String, Object> props) {
         filePackage.setProperties(props);
     }

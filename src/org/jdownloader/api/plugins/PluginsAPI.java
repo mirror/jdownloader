@@ -9,7 +9,6 @@ import org.appwork.remoteapi.annotations.APIParameterNames;
 import org.appwork.remoteapi.annotations.AllowNonStorableObjects;
 import org.appwork.remoteapi.annotations.ApiNamespace;
 import org.appwork.remoteapi.exceptions.BadParameterException;
-import org.appwork.storage.config.annotations.AllowStorage;
 import org.jdownloader.api.config.AdvancedConfigQueryStorable;
 import org.jdownloader.api.config.InvalidValueException;
 
@@ -23,7 +22,6 @@ public interface PluginsAPI extends RemoteAPIInterface {
     @APIParameterNames({ "query" })
     List<PluginAPIStorable> list(PluginsQueryStorable query);
 
-    @AllowStorage(value = { Object.class })
     @AllowNonStorableObjects
     @APIParameterNames({ "interfaceName", "displayName", "key", "newValue" })
     boolean set(final String interfaceName, final String displayName, String key, final Object newValue) throws BadParameterException, InvalidValueException;
@@ -31,7 +29,7 @@ public interface PluginsAPI extends RemoteAPIInterface {
     @APIParameterNames({ "interfaceName", "displayName", "key" })
     boolean reset(final String interfaceName, final String displayName, String key) throws BadParameterException, InvalidValueException;
 
-    @AllowStorage(value = { Object.class })
+    @AllowNonStorableObjects(value = { Object.class })
     @APIParameterNames({ "interfaceName", "displayName", "key" })
     public Object get(String interfaceName, String displayName, String key) throws BadParameterException;
 
