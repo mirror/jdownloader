@@ -1046,7 +1046,7 @@ public class GoogleDrive extends PluginForHost {
             errormap = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             errormap = (Map<String, Object>) errormap.get("error");
             errorsO = (List<Object>) errormap.get("errors");
-        } catch (final Throwable e) {
+        } catch (final Throwable ignore) {
             /* Did not get the expected json response */
             logger.warning("Got unexpected API response");
             return;
