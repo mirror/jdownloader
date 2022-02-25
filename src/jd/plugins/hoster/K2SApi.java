@@ -21,6 +21,18 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
@@ -48,17 +60,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -407,69 +408,97 @@ public abstract class K2SApi extends PluginForHost {
                         index++;
                     }
                 }
-                postPageRaw(br, "/getfilesinfo", "{\"ids\":[" + sb.toString() + "]}", null);
-                for (final DownloadLink dl : links) {
-                    final String fuid = getFUID(dl);
-                    String filter = br.getRegex("(\\{[^\\}\\{\\[]*\"id\":\"" + fuid + "\"[^\\}]*\\})").getMatch(0);
-                    if (filter == null) {
-                        filter = br.getRegex("(\\{[^\\}\\{\\[]*\"requested_id\":\"" + fuid + "\"[^\\}]*\\})").getMatch(0);
+                try {
+                    try {
+                        postPageRaw(br, "/getfilesinfo", "{\"ids\":[" + sb.toString() + "]}", null);
+                    } catch (final PluginException e) {
+                        if (br.getHttpConnection().getResponseCode() == 400) {
+                            final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                            if (StringUtils.equals((String) root.get("message"), "Invalid request params")) {
+                                /**
+                                 * 2022-02-25: Workaround for when checking only one fileID which is invalid e.g.
+                                 * "2ahUKEwiUlaOqlZv2AhWLyIUKHXOjAmgQuZ0HegQIARBG". </br>
+                                 * This may also happen when there are multiple fileIDs to check and all of them are invalid.
+                                 */
+                                for (final DownloadLink dl : links) {
+                                    dl.setAvailable(false);
+                                }
+                                continue;
+                            } else {
+                                throw e;
+                            }
+                        }
+                        throw e;
                     }
-                    if (filter == null && isSpecialFUID(fuid) && links.size() == 1) {
-                        filter = br.getRegex("(\\{[^\\}\\{\\[]*\"id\"[^\\}]*\\})").getMatch(0);
-                    }
-                    if (filter == null) {
-                        continue;
-                    }
-                    final String id = PluginJSonUtils.getJsonValue(filter, "id");
-                    if (!StringUtils.equals(fuid, id)) {
-                        // convert special ID to normal ID
-                        dl.setProperty("fileID", id);
-                    }
-                    final String status = PluginJSonUtils.getJsonValue(filter, "is_available");
-                    if ("true".equalsIgnoreCase(status)) {
-                        dl.setAvailable(true);
-                    } else {
-                        dl.setAvailable(false);
-                    }
-                    final String name = PluginJSonUtils.getJsonValue(filter, "name");
-                    final String size = PluginJSonUtils.getJsonValue(filter, "size");
-                    final String md5 = PluginJSonUtils.getJsonValue(filter, "md5");// only available for file owner
-                    final String access = PluginJSonUtils.getJsonValue(filter, "access");
-                    final String isFolder = PluginJSonUtils.getJsonValue(filter, "is_folder");
-                    if (dl.getFinalFileName() == null) {
-                        /* 2020-09-21: E.g. keep filenames if user adds an URL and it goes offline after first being online. */
-                        if (!inValidate(name)) {
-                            dl.setFinalFileName(name);
+                    final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    final List<Map<String, Object>> files = (List<Map<String, Object>>) entries.get("files");
+                    for (final DownloadLink dl : links) {
+                        final String fuid = getFUID(dl);
+                        Map<String, Object> fileInfo = null;
+                        for (final Map<String, Object> fileInfoTmp : files) {
+                            final String id = fileInfoTmp.get("id").toString();
+                            if (id.equals(fuid)) {
+                                fileInfo = fileInfoTmp;
+                                break;
+                            }
+                        }
+                        if (fileInfo == null) {
+                            /* ID was not in result --> Probably ID has invalid format --> It's also definitely offline! */
+                            dl.setAvailable(false);
                         } else {
-                            dl.setName(getFallbackFilename(dl));
+                            /* TODO: Is this still needed?? */
+                            final String id = (String) fileInfo.get("id");
+                            if (!StringUtils.equals(fuid, id)) {
+                                // convert special ID to normal ID
+                                dl.setProperty("fileID", id);
+                            }
+                            if (((Boolean) fileInfo.get("is_available")) == Boolean.TRUE) {
+                                dl.setAvailable(true);
+                            } else {
+                                dl.setAvailable(false);
+                            }
+                            final String name = (String) fileInfo.get("name");
+                            final Object sizeO = fileInfo.get("size");
+                            final String md5 = (String) fileInfo.get("md5");// only available for file owner
+                            final String access = (String) fileInfo.get("access");
+                            if (!StringUtils.isEmpty(name)) {
+                                dl.setFinalFileName(name);
+                            } else if (!dl.isNameSet()) {
+                                dl.setName(getFallbackFilename(dl));
+                            }
+                            if (sizeO instanceof Number) {
+                                dl.setVerifiedFileSize(((Number) sizeO).longValue());
+                            }
+                            if (!inValidate(md5)) {
+                                dl.setMD5Hash(md5);
+                            }
+                            if (!StringUtils.isEmpty(access)) {
+                                // access: ['public', 'private', 'premium']
+                                // public = everyone users
+                                // premium = restricted to premium
+                                // private = owner only..
+                                dl.setProperty("access", access);
+                                if (dl.getComment() == null) {
+                                    if ("premium".equalsIgnoreCase(access)) {
+                                        dl.setComment(getErrorMessage(7));
+                                    } else if ("private".equalsIgnoreCase(access)) {
+                                        dl.setComment(getErrorMessage(8));
+                                    }
+                                }
+                            }
+                            if ((Boolean) fileInfo.get("is_folder") == Boolean.TRUE) {
+                                /* This should never happen */
+                                dl.setAvailable(false);
+                                if (dl.getComment() == null) {
+                                    dl.setComment(getErrorMessage(23));
+                                }
+                            }
                         }
                     }
-                    if (!inValidate(size)) {
-                        dl.setVerifiedFileSize(Long.parseLong(size));
+                } finally {
+                    if (index == urls.length) {
+                        break;
                     }
-                    if (!inValidate(md5)) {
-                        dl.setMD5Hash(md5);
-                    }
-                    if (!inValidate(access)) {
-                        // access: ['public', 'private', 'premium']
-                        // public = everyone users
-                        // premium = restricted to premium
-                        // private = owner only..
-                        dl.setProperty("access", access);
-                        if ("premium".equalsIgnoreCase(access)) {
-                            dl.setComment(getErrorMessage(7));
-                        } else if ("private".equalsIgnoreCase(access)) {
-                            dl.setComment(getErrorMessage(8));
-                        }
-                    }
-                    if (!inValidate(isFolder) && "true".equalsIgnoreCase(isFolder)) {
-                        /* This should never happen */
-                        dl.setAvailable(false);
-                        dl.setComment(getErrorMessage(23));
-                    }
-                }
-                if (index == urls.length) {
-                    break;
                 }
             }
         } catch (final Exception e) {

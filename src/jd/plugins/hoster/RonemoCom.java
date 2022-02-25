@@ -106,10 +106,12 @@ public class RonemoCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        final String hlsMaster = br.getRegex("(https?://rocdn\\.org/[^/]+/f/playlist\\.m3u8)").getMatch(0);
-        if (hlsMaster == null) {
+        final Regex hlsinfo = br.getRegex("https?://rocdn\\.org/([a-z0-9]+)/f/playlist\\.m3u8");
+        if (!hlsinfo.matches()) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final String hlsContentID = hlsinfo.getMatch(0);
+        final String hlsMaster = "https://hls." + this.getHost() + "/" + hlsContentID + "/f/playlist.m3u8";
         br.getPage(hlsMaster);
         final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
         checkFFmpeg(link, "Download a HLS Stream");
