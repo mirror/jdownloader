@@ -15,7 +15,10 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.appwork.utils.StringUtils;
@@ -33,6 +36,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -48,13 +52,14 @@ public class FilestoreTo extends PluginForHost {
 
     public FilestoreTo(final PluginWrapper wrapper) {
         super(wrapper);
-        setStartIntervall(10000l);
         enablePremium("https://filestore.to/premium");
         setConfigElements();
     }
 
-    private static final String SETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS        = "WAIT_MINUTES_ON_NO_FREE_SLOTS";
-    private static final int    defaultSETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS = 10;
+    private static final String               SETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS        = "WAIT_MINUTES_ON_NO_FREE_SLOTS";
+    private static final int                  defaultSETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS = 10;
+    /* don't touch the following! */
+    private static Map<String, AtomicInteger> freeRunning                                  = new HashMap<String, AtomicInteger>();
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -94,13 +99,18 @@ public class FilestoreTo extends PluginForHost {
         return ai;
     }
 
-    private boolean isLoggedinHTML() {
-        return br.containsHTML("\"[^\"]*logout\"");
+    private boolean isLoggedinHTML(final Browser br) {
+        if (br.containsHTML("\"[^\"]*logout\"")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private boolean login(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
             final Cookies cookies = account.loadCookies("");
+            this.prepBrowser(br);
             try {
                 if (cookies != null) {
                     br.setCookies(getHost(), cookies);
@@ -109,13 +119,14 @@ public class FilestoreTo extends PluginForHost {
                         return false;
                     }
                     br.getPage("http://" + this.getHost() + "/konto");
-                    if (this.isLoggedinHTML()) {
+                    if (this.isLoggedinHTML(br)) {
                         logger.info("Cookie login successful");
                         /* refresh saved cookies timestamp */
                         account.saveCookies(br.getCookies(getHost()), "");
                         return true;
                     } else {
                         logger.info("Cookie login failed");
+                        br.clearCookies(br.getHost());
                     }
                 }
                 logger.info("Performing full login");
@@ -125,9 +136,8 @@ public class FilestoreTo extends PluginForHost {
                 form.put("EMail", Encoding.urlEncode(account.getUser()));
                 form.put("Password", Encoding.urlEncode(account.getPass()));
                 br.submitForm(form);
-                br.followRedirect();
-                if (!this.isLoggedinHTML()) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!this.isLoggedinHTML(br)) {
+                    throw new AccountInvalidException();
                 }
                 account.saveCookies(br.getCookies(getHost()), "");
                 return true;
@@ -146,9 +156,9 @@ public class FilestoreTo extends PluginForHost {
         login(account, false);
         br.getPage(link.getPluginPatternMatcher());
         if (AccountType.FREE.equals(account.getType())) {
-            download(link, account, true, 1);
+            handleDownload(link, account, true, 1);
         } else {
-            download(link, account, true, 0);
+            handleDownload(link, account, true, 0);
         }
     }
 
@@ -157,9 +167,23 @@ public class FilestoreTo extends PluginForHost {
         return "http://www.filestore.to/?p=terms";
     }
 
+    protected AtomicInteger getFreeRunningDownloads() {
+        synchronized (freeRunning) {
+            AtomicInteger ret = freeRunning.get(getHost());
+            if (ret == null) {
+                ret = new AtomicInteger(0);
+                freeRunning.put(getHost(), ret);
+            }
+            return ret;
+        }
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        final int max = 100;
+        final int running = getFreeRunningDownloads().get();
+        final int ret = Math.min(running + 1, max);
+        return ret;
     }
 
     @Override
@@ -169,26 +193,26 @@ public class FilestoreTo extends PluginForHost {
 
     private static AtomicReference<String> agent = new AtomicReference<String>(null);
 
-    private Browser prepBrowser(final Browser prepBr) {
+    private Browser prepBrowser(final Browser br) {
         if (agent.get() == null) {
             agent.set(UserAgents.stringUserAgent(BrowserName.Chrome));
         }
-        prepBr.getHeaders().put("User-Agent", agent.get());
-        prepBr.setCustomCharset("utf-8");
-        return prepBr;
+        br.getHeaders().put("User-Agent", agent.get());
+        br.setCustomCharset("utf-8");
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         setBrowserExclusive();
         prepBrowser(br);
-        final String url = link.getDownloadURL();
         String filename = null;
         String filesizeStr = null;
         Exception exception = null;
         for (int i = 1; i < 3; i++) {
             try {
-                br.getPage(url);
+                br.getPage(link.getPluginPatternMatcher());
             } catch (final Exception e) {
                 logger.log(e);
                 exception = e;
@@ -236,7 +260,7 @@ public class FilestoreTo extends PluginForHost {
         }
     }
 
-    private void download(final DownloadLink link, final Account account, final boolean resume, int maxChunks) throws Exception {
+    private void handleDownload(final DownloadLink link, final Account account, final boolean resume, int maxChunks) throws Exception {
         final String errorMsg = br.getRegex("class=\"alert alert-danger page-alert mb-2\">\\s*<strong>([^<>]+)</strong>").getMatch(0);
         if (errorMsg != null) {
             /* Check if we should retry */
@@ -290,7 +314,27 @@ public class FilestoreTo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl.startDownload();
+        try {
+            /* Add a download slot */
+            controlMaxFreeDownloads(account, link, +1);
+            /* Start download */
+            dl.startDownload();
+        } finally {
+            /* Remove download slot */
+            controlMaxFreeDownloads(account, link, -1);
+        }
+    }
+
+    protected void controlMaxFreeDownloads(final Account account, final DownloadLink link, final int num) {
+        if (account == null) {
+            final AtomicInteger freeRunning = getFreeRunningDownloads();
+            synchronized (freeRunning) {
+                final int before = freeRunning.get();
+                final int after = before + num;
+                freeRunning.set(after);
+                logger.info("freeRunning(" + link.getName() + ")|max:" + getMaxSimultanFreeDownloadNum() + "|before:" + before + "|after:" + after + "|num:" + num);
+            }
+        }
     }
 
     private void errorNoFreeSlots() throws PluginException {
@@ -304,8 +348,12 @@ public class FilestoreTo extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
+        /* Wait 10 seconds between downloadstarts. */
+        if (this.getFreeRunningDownloads().get() > 1) {
+            this.sleep(10000l, link);
+        }
         requestFileInformation(link);
-        download(link, null, true, 1);
+        handleDownload(link, null, true, 1);
     }
 
     private void processWait(final Browser br) throws PluginException {

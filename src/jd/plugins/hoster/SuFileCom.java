@@ -39,7 +39,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sufile.com" }, urls = { "http://(?:www\\.)?(?:sufile|dufile)\\.com/(?:file|vip)/[a-z0-9]+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sufile.com", "dufile.com" }, urls = { "http://(?:www\\.)?sufile\\.com/(?:file|vip|down)/([a-z0-9]+)\\.html", "https?://(?:www\\.)?dufile\\.com/(?:file|down)/([a-z0-9]+)\\.html" })
 public class SuFileCom extends PluginForHost {
     public SuFileCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -66,14 +66,20 @@ public class SuFileCom extends PluginForHost {
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/vip/", "/file/"));
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("/(vip|down)/", "/file/"));
+    }
+
+    private String getFID(final DownloadLink dl) {
+        return new Regex(dl.getPluginPatternMatcher(), "([a-z0-9]+)\\.html$").getMatch(0);
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("404 Not Found")) {
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)404 Not Found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("class=\"title\">([^<>\"]*?)</h2>").getMatch(0);
@@ -96,12 +102,20 @@ public class SuFileCom extends PluginForHost {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
             requestFileInformation(link);
-            int wait = 30;
-            final String waittime = br.getRegex("id=\"wait_input\" style=\"font-weight:bold;font-size:22px; color: green;\">(\\d+)</span>").getMatch(0);
-            if (waittime != null) {
-                wait = Integer.parseInt(waittime);
+            /* Check for "limit reached" message. */
+            final String waitMinutes = br.getRegex("(?i)id=\"down_interval_tag\"[^>]*>(\\d+)</span>\\s*分钟<").getMatch(0);
+            if (waitMinutes != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waitMinutes) * 60 * 1001l);
             }
-            this.sleep(wait * 1001l, link);
+            final boolean skipWaittime = false;
+            if (!skipWaittime) {
+                int wait = 30;
+                final String waittime = br.getRegex("id=\"wait_input\" style=\"font-weight:bold;font-size:22px; color: green;\">(\\d+)</span>").getMatch(0);
+                if (waittime != null) {
+                    wait = Integer.parseInt(waittime);
+                }
+                this.sleep(wait * 1001l, link);
+            }
             final String fid = getFID(link);
             br.getPage("/down/" + fid + ".html");
             final String code = getCaptchaCode("/down_code.php", link);
@@ -127,25 +141,13 @@ public class SuFileCom extends PluginForHost {
                 logger.log(e);
             }
             if (br.getURL().endsWith("/two.html")) {
-                // this is when you're downloading too much or ip restriction (from google translate)
-                // <div class="title">
-                // <font color="#FF0000">普通用户只允许同时下载一个文件，请您先完成当前下载后，再尝试下载其他文件。</font>
-                // </div>
-                // <br />
-                // <div class="content">
-                // <div class="bottom"><br />
-                // 若您当前并没有下载文件，仍然收到此提示，请通过以下两条进行检查：
-                // <br />1. 如果您之前使用浏览器内置下载工具下载，我们建议您关闭并重新打开浏览器。
-                // <br />
-                // 2. 如果您之前使用迅雷等下载工具下载，我们建议您关闭并重新打开迅雷等下载工具。
-                // <br /><br /><br />
-                // <h1><a href="/pay_vip.php" target="_blank">升级为VIP会员将不受此限制</a></h1><br /><br /><br />
-                // </div>
-                // </div>
-                // </div>
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 20 * 60 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultaneous downloads", 1 * 60 * 1000l);
+            } else if (br.containsHTML(">\\s*普通用户只允许同时下载一个文件")) {
+                /* 2022-02-25 */
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultaneous downloads", 1 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
@@ -177,10 +179,6 @@ public class SuFileCom extends PluginForHost {
             }
         }
         return null;
-    }
-
-    private String getFID(final DownloadLink dl) {
-        return new Regex(dl.getPluginPatternMatcher(), "([a-z0-9]+)\\.html$").getMatch(0);
     }
 
     @Override
