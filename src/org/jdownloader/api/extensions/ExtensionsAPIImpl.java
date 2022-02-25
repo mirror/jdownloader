@@ -55,8 +55,8 @@ public class ExtensionsAPIImpl implements ExtensionsAPI {
         try {
             final List<LazyExtension> installedExtensions = ExtensionController.getInstance().getExtensions();
             final List<OptionalExtension> optionalExtensions = ExtensionController.getInstance().getOptionalExtensions();
-            final ArrayList<ExtensionAPIStorable> result = new ArrayList<ExtensionAPIStorable>(installedExtensions.size() + optionalExtensions.size());
-            if (result.size() > 0) {
+            if (installedExtensions.size() + optionalExtensions.size() > 0) {
+                final ArrayList<ExtensionAPIStorable> result = new ArrayList<ExtensionAPIStorable>(installedExtensions.size() + optionalExtensions.size());
                 final Pattern cPat = StringUtils.isEmpty(query.getPattern()) ? null : Pattern.compile(query.getPattern(), Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
                 for (LazyExtension installedExtension : installedExtensions) {
                     if (cPat == null || cPat.matcher(installedExtension.getClassname()).matches()) {
@@ -111,8 +111,10 @@ public class ExtensionsAPIImpl implements ExtensionsAPI {
                         result.add(extensionStorable);
                     }
                 }
+                return result;
+            } else {
+                return new ArrayList<ExtensionAPIStorable>(0);
             }
-            return result;
         } catch (Exception e) {
             throw new WTFException(e);
         }
