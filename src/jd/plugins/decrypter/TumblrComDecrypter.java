@@ -22,18 +22,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.config.TumblrComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -57,6 +48,14 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.TumblrCom;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.config.TumblrComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https?://(?![a-z0-9]+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/image/\\d+|/post/\\d+|/likes|/?$|/blog/view/[^/]+(?:/\\d+)?)(?:\\?password=.+)?" })
 public class TumblrComDecrypter extends PluginForDecrypt {
@@ -575,9 +574,9 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 }
             }
             // single entry objects are not in 'list'
-            ArrayList<Object> results = null;
+            List<Object> results = null;
             try {
-                results = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(json, "image/@list");
+                results = (List<Object>) JavaScriptEngineFactory.walkJson(json, "image/@list");
             } catch (Throwable t) {
                 // single entry ?
                 final String[] a = new String[] { (String) json.get("image") };
@@ -760,9 +759,9 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 if (gc != null) {
                     final String JSON = new Regex(gc, "<script type=\"application/ld\\+json\">(.*?)</script>").getMatch(0);
                     final Map<String, Object> json = JavaScriptEngineFactory.jsonToJavaMap(JSON);
-                    final ArrayList<Object> results = (ArrayList<Object>) json.get("itemListElement");
+                    final List<Object> results = (List<Object>) json.get("itemListElement");
                     for (final Object result : results) {
-                        final LinkedHashMap<String, Object> j = (LinkedHashMap<String, Object>) result;
+                        final Map<String, Object> j = (Map<String, Object>) result;
                         String url = (String) j.get("url");
                         final String url_corrected = new Regex(url, "(.+/post/\\d+)").getMatch(0);
                         if (url_corrected != null) {
@@ -811,8 +810,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
     }
 
     /**
-     * Crawls all posts of a blog via API: </br>
-     * https://www.tumblr.com/docs/en/api/v2#posts--retrieve-published-posts
+     * Crawls all posts of a blog via API: </br> https://www.tumblr.com/docs/en/api/v2#posts--retrieve-published-posts
      */
     private ArrayList<DownloadLink> decryptUserAPI(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();

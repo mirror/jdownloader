@@ -2,7 +2,8 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -130,11 +131,11 @@ public class CrhyRllCom extends PluginForDecrypt {
                 }
                 String json_source = br.toString();
                 json_source = Encoding.htmlDecode(json_source);
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
-                final ArrayList<Object> chapter_array = (ArrayList<Object>) entries.get("chapters");
+                Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json_source);
+                final List<Object> chapter_array = (List<Object>) entries.get("chapters");
                 String chapter_id = null;
                 for (Object c : chapter_array) {
-                    entries = (LinkedHashMap<String, Object>) c;
+                    entries = (Map<String, Object>) c;
                     final String number = entries.get("number").toString();
                     if (chapter_number.equals(number)) {
                         chapter_id = entries.get("chapter_id").toString();
@@ -148,10 +149,10 @@ public class CrhyRllCom extends PluginForDecrypt {
                 }
                 json_source = br.toString();
                 json_source = Encoding.htmlDecode(json_source);
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
-                final ArrayList<Object> pages_array = (ArrayList<Object>) entries.get("pages");
+                entries = JavaScriptEngineFactory.jsonToJavaMap(json_source);
+                final List<Object> pages_array = (List<Object>) entries.get("pages");
                 for (Object p : pages_array) {
-                    entries = (LinkedHashMap<String, Object>) p;
+                    entries = (Map<String, Object>) p;
                     // Fog: Store this just in case the composed image is not available.
                     final String temp_image = entries.get("image_url").toString();
                     final String page_number = entries.get("number").toString();

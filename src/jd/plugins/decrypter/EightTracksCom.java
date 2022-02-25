@@ -17,10 +17,9 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -34,6 +33,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "8tracks.com" }, urls = { "https?://(www\\.)?8tracks\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+" })
 public class EightTracksCom extends PluginForDecrypt {
@@ -159,8 +160,8 @@ public class EightTracksCom extends PluginForDecrypt {
              * the track-names :)
              */
             this.br.getPage("/mixes/" + mixid + "/tracks_for_international.jsonh");
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("tracks");
+            Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            final List<Object> ressourcelist = (List<Object>) entries.get("tracks");
             final int listmax = ressourcelist.size() - 1;
             final int tracks_in_mix = Integer.parseInt(tracksInMix);
             final DecimalFormat df = (tracks_in_mix < 100 ? new DecimalFormat("00") : new DecimalFormat("000"));
@@ -168,7 +169,7 @@ public class EightTracksCom extends PluginForDecrypt {
                 final String formatted_tracknumber = df.format(i);
                 String temp_name = null;
                 if (i - 1 <= listmax) {
-                    entries = (LinkedHashMap<String, Object>) ressourcelist.get(i - 1);
+                    entries = (Map<String, Object>) ressourcelist.get(i - 1);
                     final String artist = (String) entries.get("performer");
                     final String title = (String) entries.get("name");
                     if (artist != null && !artist.equals("") && title != null && !title.equals("")) {

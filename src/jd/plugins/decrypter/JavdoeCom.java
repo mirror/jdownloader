@@ -16,11 +16,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -31,6 +28,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "javdoe.com" }, urls = { "https?://(?:www\\.)?javdoe\\.(?:tv|com)/movie/([a-z0-9\\-]+)\\.html" })
 public class JavdoeCom extends PluginForDecrypt {
@@ -59,7 +60,7 @@ public class JavdoeCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("list");
+        final List<Object> ressourcelist = (List<Object>) entries.get("list");
         for (final Object ressource : ressourcelist) {
             entries = (Map<String, Object>) ressource;
             final String url = (String) entries.get("url");

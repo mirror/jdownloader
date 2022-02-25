@@ -17,10 +17,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -37,6 +34,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://(?:www\\.)?filesmonster\\.com/(?:download\\.php\\?id=[A-Za-z0-9_-]+(?:\\&wbst=[^\\&]+)?|player/v\\d+/video/[A-Za-z0-9_-]+|dl/[A-Za-z0-9_-]+/free/.+)" })
 public class FilesMonsterDecrypter extends PluginForDecrypt {
@@ -66,7 +67,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
             final ArrayList<Account> accs = new ArrayList<Account>();
             try {
                 // multihoster account!
-                final ArrayList<Account> mHosterAccs = (ArrayList<Account>) AccountController.getInstance().getMultiHostAccounts("filesmonster.com");
+                final List<Account> mHosterAccs = AccountController.getInstance().getMultiHostAccounts("filesmonster.com");
                 if (mHosterAccs != null && mHosterAccs.size() != 0) {
                     accs.addAll(mHosterAccs);
                 }

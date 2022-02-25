@@ -13,11 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -33,9 +33,8 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "huaban.com" }, urls = { "https?://(?:www\\.)?huaban\\.com/boards/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "huaban.com" }, urls = { "https?://(?:www\\.)?huaban\\.com/boards/\\d+" })
 public class HuabanComDecrypter extends PluginForDecrypt {
-
     public HuabanComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -74,22 +73,20 @@ public class HuabanComDecrypter extends PluginForDecrypt {
         long lnumberof_pins = 0;
         fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
-
         String json_source = null;
         String last_pin_id = null;
-        LinkedHashMap<String, Object> entries = null;
+        Map<String, Object> entries = null;
         do {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user: " + parameter);
                 return decryptedLinks;
             }
-
             if (page == 0) {
                 json_source = br.getRegex("app\\.page\\[\"board\"\\] = (\\{.*?\\});[\t\n\r]+").getMatch(0);
                 if (json_source == null) {
                     break;
                 }
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source);
+                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source);
                 lnumberof_pins = JavaScriptEngineFactory.toLong(entries.get("pin_count"), 0);
                 if (lnumberof_pins == 0) {
                     decryptedLinks.add(getOffline(parameter));
@@ -104,13 +101,12 @@ public class HuabanComDecrypter extends PluginForDecrypt {
                 if (json_source == null) {
                     break;
                 }
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source);
-                entries = (LinkedHashMap<String, Object>) entries.get("board");
+                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source);
+                entries = (Map<String, Object>) entries.get("board");
             }
-            final ArrayList<Object> resource_data_list = (ArrayList) entries.get("pins");
+            final List<Object> resource_data_list = (List) entries.get("pins");
             for (final Object pint : resource_data_list) {
-                final LinkedHashMap<String, Object> single_pin_data = (LinkedHashMap<String, Object>) pint;
-
+                final Map<String, Object> single_pin_data = (Map<String, Object>) pint;
                 final String pin_directlink = jd.plugins.hoster.HuabanCom.getDirectlinkFromJson(single_pin_data);
                 final String pin_id = Long.toString(JavaScriptEngineFactory.toLong(single_pin_data.get("pin_id"), 0));
                 // final String description =(String) single_pin_data.get("description");
@@ -123,7 +119,6 @@ public class HuabanComDecrypter extends PluginForDecrypt {
                 String filename = pin_id;
                 final String content_url = "http://huaban.com/pins/" + pin_id;
                 final DownloadLink dl = createDownloadlink(content_url);
-
                 // if (description != null) {
                 // dl.setComment(description);
                 // dl.setProperty("description", description);
@@ -133,7 +128,6 @@ public class HuabanComDecrypter extends PluginForDecrypt {
                 // }
                 filename += jd.plugins.hoster.HuabanCom.default_extension;
                 filename = encodeUnicode(filename);
-
                 dl.setContentUrl(content_url);
                 dl.setLinkID("huabancom://" + pin_id);
                 if (pin_directlink != null) {
@@ -152,7 +146,6 @@ public class HuabanComDecrypter extends PluginForDecrypt {
             logger.info("Decrypter " + decryptedLinks.size() + " of " + lnumberof_pins + " pins");
             page++;
         } while (last_pin_id != null && decryptedLinks.size() < lnumberof_pins);
-
         return decryptedLinks;
     }
 
@@ -161,7 +154,6 @@ public class HuabanComDecrypter extends PluginForDecrypt {
         offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
         return offline;
     }
-
     // /** Log in the account of the hostplugin */
     // @SuppressWarnings({ "deprecation", "static-access" })
     // private boolean getUserLogin(final boolean force) throws Exception {
@@ -179,5 +171,4 @@ public class HuabanComDecrypter extends PluginForDecrypt {
     // }
     // return true;
     // }
-
 }

@@ -16,7 +16,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -68,9 +69,9 @@ public class OpenDriveComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final ArrayList<Object> folders = (ArrayList<Object>) entries.get("Folders");
-        final ArrayList<Object> files = (ArrayList<Object>) entries.get("Files");
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final List<Object> folders = (List<Object>) entries.get("Folders");
+        final List<Object> files = (List<Object>) entries.get("Files");
         String fpName = (String) entries.get("Name");
         // final String name_of_previous_folder = (String) JavaScriptEngineFactory.walkJson(entries, "Breadcrumbs/{0}/Name");
         if (fpName == null) {
@@ -86,7 +87,7 @@ public class OpenDriveComDecrypter extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
         for (final Object fileo : files) {
-            entries = (LinkedHashMap<String, Object>) fileo;
+            entries = (Map<String, Object>) fileo;
             /* Do not use this as linkid as id inside our url is the one we prefer (also unique). */
             // final String fileid = (String)entries.get("FileId");
             final String url = (String) entries.get("Link");
@@ -108,7 +109,7 @@ public class OpenDriveComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
         }
         for (final Object foldero : folders) {
-            entries = (LinkedHashMap<String, Object>) foldero;
+            entries = (Map<String, Object>) foldero;
             String url = (String) entries.get("Link");
             if (StringUtils.isEmpty(url)) {
                 continue;

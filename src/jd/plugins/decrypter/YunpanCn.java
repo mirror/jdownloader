@@ -17,7 +17,8 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import jd.PluginWrapper;
@@ -102,18 +103,18 @@ public class YunpanCn extends antiDDoSForDecrypt {
             json = br.getRegex("data:(\\[.*?\\])").getMatch(0);
         }
         DownloadLink dl = null;
-        HashMap<String, Object> entries = null;
-        final ArrayList<Object> ressourcelist;
+        Map<String, Object> entries = null;
+        final List<Object> ressourcelist;
         final Object jsono = JavaScriptEngineFactory.jsonToJavaObject(json);
-        if (jsono instanceof HashMap) {
+        if (jsono instanceof Map) {
             /* E.g. single file */
             ressourcelist = new ArrayList<Object>();
             ressourcelist.add(jsono);
         } else {
-            ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(json);
+            ressourcelist = (List) JavaScriptEngineFactory.jsonToJavaObject(json);
         }
         for (final Object foldero : ressourcelist) {
-            entries = (HashMap<String, Object>) foldero;
+            entries = (Map<String, Object>) foldero;
             final String nid = (String) entries.get("nid");
             final String name = (String) entries.get("name");
             final String path = (String) entries.get("path");

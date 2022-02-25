@@ -13,12 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import jd.PluginWrapper;
@@ -40,7 +40,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vvvvid.it" }, urls = { "https?://(?:www\\.)?vvvvid\\.it/#\\!show/\\d+/[a-z0-9\\-]+(?:/\\d+/\\d+)?" })
 public class VvvvidIt extends PluginForDecrypt {
-
     public VvvvidIt(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -69,14 +68,13 @@ public class VvvvidIt extends PluginForDecrypt {
             br.getPage(parameter);
             conn_id = getConnID(this.br);
         }
-
         long episode_videoid_target = 0;
         if (episode_videoid != null) {
             episode_videoid_target = Long.parseLong(episode_videoid);
         }
         final long show_id = Long.parseLong(show_id_str);
         final long season_id;
-        LinkedHashMap<String, Object> entries = null;
+        Map<String, Object> entries = null;
         if (season_id_str != null) {
             /* season_id given via URL */
             season_id = Long.parseLong(season_id_str);
@@ -91,12 +89,10 @@ public class VvvvidIt extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+            entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
             final Object season_id_o = JavaScriptEngineFactory.walkJson(entries, "data/{0}/season_id");
             season_id = JavaScriptEngineFactory.toLong(season_id_o, (show_id - 10));
         }
-
         this.br.getPage("/vvvvid/ondemand/" + show_id + "/info/" + "?conn_id=" + conn_id);
         if (this.br.getHttpConnection().getResponseCode() == 403) {
             logger.info("GEO-blocked");
@@ -106,62 +102,50 @@ public class VvvvidIt extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+        entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
         if (br.getHttpConnection().getResponseCode() == 404 || !this.br.getHttpConnection().getContentType().contains("json")) {
             /* Offline or geo-blocked */
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-
-        entries = (LinkedHashMap<String, Object>) entries.get("data");
-
+        entries = (Map<String, Object>) entries.get("data");
         String show_title_main = (String) entries.get("title");
         if (inValidate(show_title_main)) {
             show_title_main = urlinfo.getMatch(1);
         }
-
         this.br.getPage("/vvvvid/ondemand/" + show_id + "/season/" + season_id + "?conn_id=" + conn_id);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(show_title_main);
-
         final DecimalFormat df = new DecimalFormat("00");
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        final ArrayList<Object> resource_data_list = (ArrayList) entries.get("data");
+        entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        final List<Object> resource_data_list = (List) entries.get("data");
         for (final Object resource_o : resource_data_list) {
-            entries = (LinkedHashMap<String, Object>) resource_o;
+            entries = (Map<String, Object>) resource_o;
             final String show_title = (String) entries.get("show_title");
             final String title = (String) entries.get("title");
             final String source_type = (String) entries.get("source_type");
             final String hls_master = (String) entries.get("embed_info");
-
             final long videoid = JavaScriptEngineFactory.toLong(entries.get("video_id"), -1);
             final long season = JavaScriptEngineFactory.toLong(entries.get("season_number"), -1);
             final long episode = JavaScriptEngineFactory.toLong(entries.get("number"), -1);
-
             if (inValidate(hls_master)) {
                 /* Probably video is not playable without account */
                 continue;
             }
-
             if (inValidate(show_title) || inValidate(title) || inValidate(source_type) || season == -1 || episode == -1 || videoid == -1) {
                 return null;
             }
-
             if (!source_type.equals("video")) {
                 continue;
             }
-
             if (episode_videoid_target > 0 && videoid != episode_videoid_target) {
                 /* User wants one specified episode only --> Skip all others! */
                 continue;
             }
-
             final DownloadLink dl = createDownloadlink("http://vvvviddecrypted.it/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
             String filename = show_title + "_S" + df.format(season) + "E" + df.format(episode) + "_" + title + ".mp4";
             dl.setProperty("filename", filename);
@@ -174,7 +158,6 @@ public class VvvvidIt extends PluginForDecrypt {
             distribute(dl);
             decryptedLinks.add(dl);
         }
-
         return decryptedLinks;
     }
 

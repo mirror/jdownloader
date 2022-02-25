@@ -18,13 +18,9 @@ package jd.plugins.decrypter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -41,6 +37,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "https?://(?:pan|yun)\\.baidu\\.com/(?:share|wap)/.+|https?://(?:www\\.)?pan\\.baidu\\.com/s/.+" })
 public class PanBaiduCom extends PluginForDecrypt {
@@ -132,9 +133,9 @@ public class PanBaiduCom extends PluginForDecrypt {
             currentlinksnum = 0;
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getPage(String.format("http://pan.baidu.com/pcloud/feed/getsharelist?t=%d&category=0&auth_type=1&request_location=share_home&start=%d&limit=60&query_uk=%s&channel=chunlei&clienttype=0&web=1&logid=&bdstoken=null", System.currentTimeMillis(), offset, this.uk));
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            final ArrayList<Object> records = (ArrayList<Object>) entries.get("records");
-            ArrayList<Object> filelist = (ArrayList<Object>) entries.get("records");
+            Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final List<Object> records = (List<Object>) entries.get("records");
+            List<Object> filelist = (List<Object>) entries.get("records");
             if (records == null) {
                 /* E.g. {"errno":2,"request_id":123456789123456789} */
                 if (decryptedLinks.size() == 0) {
@@ -143,13 +144,13 @@ public class PanBaiduCom extends PluginForDecrypt {
                 break;
             }
             for (final Object recordo : records) {
-                entries = (LinkedHashMap<String, Object>) recordo;
+                entries = (Map<String, Object>) recordo;
                 final String shorturl_id = (String) entries.get("shorturl");
                 final String shareid = (String) entries.get("shareid");
                 if (shareid == null || shareid.equals("")) {
                     continue;
                 }
-                filelist = (ArrayList<Object>) entries.get("filelist");
+                filelist = (List<Object>) entries.get("filelist");
                 if (filelist == null) {
                     continue;
                 }
@@ -274,8 +275,8 @@ public class PanBaiduCom extends PluginForDecrypt {
         final int maxpages = 10;
         final int maxlinksperpage = 100;
         int currentlinksnum = 0;
-        LinkedHashMap<String, Object> entries = null;
-        ArrayList<Object> ressourcelist = null;
+        Map<String, Object> entries = null;
+        List<Object> ressourcelist = null;
         do {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user");
@@ -284,7 +285,7 @@ public class PanBaiduCom extends PluginForDecrypt {
             currentlinksnum = 0;
             if (currentpage > 1 || is_subfolder) {
                 br.getPage(getFolder(parameter, dir, currentpage, shareid));
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
                 errno = JavaScriptEngineFactory.toLong(entries.get("errno"), -1);
                 if (errno == 2) {
                     /* Empty folder */
@@ -293,7 +294,7 @@ public class PanBaiduCom extends PluginForDecrypt {
                     decryptedLinks.add(dl);
                     return;
                 }
-                ressourcelist = (ArrayList) entries.get("list");
+                ressourcelist = (List) entries.get("list");
             } else {
                 String json = this.br.getRegex("setData\\((\\{.+?\\})\\);").getMatch(0);
                 if (json == null) {
@@ -304,11 +305,11 @@ public class PanBaiduCom extends PluginForDecrypt {
                     logger.warning("json is null");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-                ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "file_list/list");
+                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+                ressourcelist = (List) JavaScriptEngineFactory.walkJson(entries, "file_list/list");
                 if (ressourcelist == null) {
                     /* 2021-03-22 */
-                    ressourcelist = (ArrayList) entries.get("file_list");
+                    ressourcelist = (List) entries.get("file_list");
                 }
             }
             if (ressourcelist.size() == 0 && errno == 0) {
@@ -328,7 +329,7 @@ public class PanBaiduCom extends PluginForDecrypt {
     }
 
     private void crawlFolderObject(final Object fileo, final String shorturl_id, final String shareid) throws UnsupportedEncodingException {
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) fileo;
+        Map<String, Object> entries = (Map<String, Object>) fileo;
         final String server_filename = (String) entries.get("server_filename");
         if (StringUtils.isEmpty(server_filename)) {
             /* Nothing to grab */
@@ -390,7 +391,7 @@ public class PanBaiduCom extends PluginForDecrypt {
             if (StringUtils.isEmpty(md5)) {
                 /* 2019-07-16: Workaround: md5 value is important to have but it is not always given ... */
                 try {
-                    entries = (LinkedHashMap<String, Object>) entries.get("thumbs");
+                    entries = (Map<String, Object>) entries.get("thumbs");
                     final String docpreviewURL = (String) entries.get("docpreview");
                     String checkURL = (String) entries.get("url1");
                     if (StringUtils.isEmpty(checkURL)) {

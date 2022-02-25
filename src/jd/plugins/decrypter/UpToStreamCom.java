@@ -16,18 +16,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.plugins.components.config.UpToBoxComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -45,6 +35,16 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.UpToBoxCom;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.components.config.UpToBoxComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uptostream.com", "uptobox.com" }, urls = { "https?://(?:www\\.)?uptostream\\.com/(?:iframe/)?([a-z0-9]{12})(/([^/]+))?", "https?://(?:www\\.)?uptobox\\.com/(\\?op=user_public\\&|user_public\\?)hash=[a-f0-9]{16}\\&folder=\\d+" })
 public class UpToStreamCom extends antiDDoSForDecrypt {
@@ -84,8 +84,8 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
                     decryptedLinks.add(this.createOfflinelink(parameter));
                     break;
                 }
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-                entries = (LinkedHashMap<String, Object>) entries.get("data");
+                Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                entries = (Map<String, Object>) entries.get("data");
                 if (pageCurrent == 1) {
                     /* Set maxPage on first request */
                     pageMax = (int) JavaScriptEngineFactory.toLong(entries.get("pageCount"), 0);
@@ -94,9 +94,9 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
                  * 2020-04-16: Folders can only contain files. They can contain subfolders and files in the users' account but not in public
                  * URLs.
                  */
-                final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("list");
+                final List<Object> ressourcelist = (List<Object>) entries.get("list");
                 for (final Object fileO : ressourcelist) {
-                    entries = (LinkedHashMap<String, Object>) fileO;
+                    entries = (Map<String, Object>) fileO;
                     final String linkid = (String) entries.get("file_code");
                     final String filename = (String) entries.get("file_name");
                     if (StringUtils.isEmpty(linkid) || StringUtils.isEmpty(filename)) {
@@ -162,7 +162,7 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
                         final String token = account.getPass();
                         this.getPage(UpToBoxCom.API_BASE + "/streaming?token=" + Encoding.urlEncode(token) + "&file_code=" + fuid);
                         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                        final ArrayList<Object> subtitles = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "data/subs");
+                        final List<Object> subtitles = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "data/subs");
                         if (subtitles == null || subtitles.size() == 0) {
                             logger.info("Failed to find any subtitles");
                         } else {

@@ -27,11 +27,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -50,6 +45,11 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.SaveTv;
 
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(www\\.)?save\\.tv/STV/M/obj/archive/(?:Horizontal)?VideoArchive\\.cfm" })
 public class SaveTvDecrypter extends PluginForDecrypt {
     public SaveTvDecrypter(PluginWrapper wrapper) {
@@ -58,43 +58,43 @@ public class SaveTvDecrypter extends PluginForDecrypt {
 
     /* Settings stuff */
     @SuppressWarnings("deprecation")
-    private final SubConfiguration       cfg                                          = SubConfiguration.getConfig("save.tv");
+    private final SubConfiguration   cfg                                          = SubConfiguration.getConfig("save.tv");
     // private static final String ACTIVATE_BETA_FEATURES = "ACTIVATE_BETA_FEATURES";
-    private final String                 CRAWLER_ONLY_ADD_NEW_IDS                     = "CRAWLER_ONLY_ADD_NEW_IDS";
-    private final String                 CRAWLER_ACTIVATE                             = "CRAWLER_ACTIVATE";
-    private static final String          CRAWLER_PROPERTY_TELECASTIDS_ADDED           = "CRAWLER_PROPERTY_TELECASTIDS_ADDED";
-    private static final String          CRAWLER_PROPERTY_LASTCRAWL_NEWLINKS          = "CRAWLER_PROPERTY_LASTCRAWL_NEWLINKS";
-    private static final String          CRAWLER_PROPERTY_LASTCRAWL_LATEST_START_DATE = "CRAWLER_PROPERTY_LASTCRAWL_LATEST_START_DATE";
-    private static final String          CRAWLER_PROPERTY_LASTCRAWL                   = "CRAWLER_PROPERTY_LASTCRAWL";
+    private final String             CRAWLER_ONLY_ADD_NEW_IDS                     = "CRAWLER_ONLY_ADD_NEW_IDS";
+    private final String             CRAWLER_ACTIVATE                             = "CRAWLER_ACTIVATE";
+    private static final String      CRAWLER_PROPERTY_TELECASTIDS_ADDED           = "CRAWLER_PROPERTY_TELECASTIDS_ADDED";
+    private static final String      CRAWLER_PROPERTY_LASTCRAWL_NEWLINKS          = "CRAWLER_PROPERTY_LASTCRAWL_NEWLINKS";
+    private static final String      CRAWLER_PROPERTY_LASTCRAWL_LATEST_START_DATE = "CRAWLER_PROPERTY_LASTCRAWL_LATEST_START_DATE";
+    private static final String      CRAWLER_PROPERTY_LASTCRAWL                   = "CRAWLER_PROPERTY_LASTCRAWL";
     /* Decrypter constants */
-    private static final int             API_ENTRIES_PER_REQUEST                      = 1000;
+    private static final int         API_ENTRIES_PER_REQUEST                      = 1000;
     /* Website gets max 35 items per request. Using too much = server will ate us and return response code 500! */
-    private static final int             SITE_ENTRIES_PER_REQUEST                     = 100;
+    private static final int         SITE_ENTRIES_PER_REQUEST                     = 100;
     /*
      * Max time in which save.tv recordings are saved inside a users' account. This value is only used to cleanup the internal HashMap of
      * 'already downloaded' telecastIDs!
      */
-    private static final long            TELECAST_ID_EXPIRE_TIME                      = 62 * 24 * 60 * 60 * 1000l;
+    private static final long        TELECAST_ID_EXPIRE_TIME                      = 62 * 24 * 60 * 60 * 1000l;
     /* Decrypter variables */
-    final ArrayList<DownloadLink>        decryptedLinks                               = new ArrayList<DownloadLink>();
-    final ArrayList<String>              dupecheckList                                = new ArrayList<String>();
-    private static HashMap<String, Long> crawledTelecastIDsMap                        = new HashMap<String, Long>();
-    private long                         only_grab_entries_of_specified_timeframe     = 0;
-    private long                         tdifference_milliseconds                     = 0;
-    private int                          totalLinksNum                                = 0;
-    private int                          totalAccountsNum                             = 0;
-    private int                          totalAccountsLoggedInSuccessfulNum           = 0;
-    private int                          requestCountMax                              = 1;
-    private long                         timestamp_crawl_started                      = 0;
-    private long                         timestamp_last_crawl_ended                   = 0;
-    private long                         timestamp_last_record_started                = 0;
+    final ArrayList<DownloadLink>    decryptedLinks                               = new ArrayList<DownloadLink>();
+    final ArrayList<String>          dupecheckList                                = new ArrayList<String>();
+    private static Map<String, Long> crawledTelecastIDsMap                        = new HashMap<String, Long>();
+    private long                     only_grab_entries_of_specified_timeframe     = 0;
+    private long                     tdifference_milliseconds                     = 0;
+    private int                      totalLinksNum                                = 0;
+    private int                      totalAccountsNum                             = 0;
+    private int                      totalAccountsLoggedInSuccessfulNum           = 0;
+    private int                      requestCountMax                              = 1;
+    private long                     timestamp_crawl_started                      = 0;
+    private long                     timestamp_last_crawl_ended                   = 0;
+    private long                     timestamp_last_record_started                = 0;
     /* Settings */
-    private boolean                      crawler_DialogsEnabled                       = true;
-    private boolean                      api_enabled                                  = false;
-    private boolean                      only_grab_new_entries                        = false;
+    private boolean                  crawler_DialogsEnabled                       = true;
+    private boolean                  api_enabled                                  = false;
+    private boolean                  only_grab_new_entries                        = false;
     /* If this != null, API is currently used */
-    private boolean                      fast_linkcheck                               = false;
-    private String                       parameter                                    = null;
+    private boolean                  fast_linkcheck                               = false;
+    private String                   parameter                                    = null;
 
     /**
      * JD2 CODE: DO NOIT USE OVERRIDE FOR COMPATIBILITY REASONS!!!!!
@@ -147,8 +147,8 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                 if (only_grab_new_entries) {
                     /* Load list of saved IDs + timestamp when they were added */
                     final Object crawledIDSMap = stvacc.getProperty(CRAWLER_PROPERTY_TELECASTIDS_ADDED);
-                    if (crawledIDSMap != null && crawledIDSMap instanceof HashMap) {
-                        crawledTelecastIDsMap = (HashMap<String, Long>) crawledIDSMap;
+                    if (crawledIDSMap != null && crawledIDSMap instanceof Map) {
+                        crawledTelecastIDsMap = (Map<String, Long>) crawledIDSMap;
                     }
                 } else {
                     tdifference_milliseconds = only_grab_entries_of_specified_timeframe * 24 * 60 * 60 * 1000;

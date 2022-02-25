@@ -18,11 +18,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.MediathekProperties;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -36,6 +34,10 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.MediathekProperties;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kaltura.com" }, urls = { "https?://[^/]+/html5/html5lib/v\\d+\\.\\d{1,2}/mwEmbedFrame\\.php/p/\\d+/uiconf_id/\\d+/entry_id/[a-z0-9_]+.+" })
 public class GenericKalturaVideoPlatformCrawler extends PluginForDecrypt {
@@ -98,9 +100,9 @@ public class GenericKalturaVideoPlatformCrawler extends PluginForDecrypt {
         if (js == null) {
             return null;
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(js);
-        entries = (LinkedHashMap<String, Object>) entries.get("entryResult");
-        final LinkedHashMap<String, Object> meta = (LinkedHashMap<String, Object>) entries.get("meta");
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(js);
+        entries = (Map<String, Object>) entries.get("entryResult");
+        final Map<String, Object> meta = (Map<String, Object>) entries.get("meta");
         final String title = (String) meta.get("name");
         final String description = (String) meta.get("description");
         /** dataUrl or downloadUrl might always be the BEST qualities available! */
@@ -122,9 +124,9 @@ public class GenericKalturaVideoPlatformCrawler extends PluginForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "contextData/flavorAssets");
+        final List<Object> ressourcelist = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "contextData/flavorAssets");
         for (final Object videoo : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) videoo;
+            entries = (Map<String, Object>) videoo;
             final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
             final long width = JavaScriptEngineFactory.toLong(entries.get("width"), 0);
             final long height = JavaScriptEngineFactory.toLong(entries.get("height"), 0);

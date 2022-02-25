@@ -21,21 +21,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -50,6 +40,15 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rai.tv" }, urls = { "https?://[A-Za-z0-9\\.]*?(?:rai\\.tv|raiyoyo\\.rai\\.it)/.+day=\\d{4}\\-\\d{2}\\-\\d{2}.*|https?://[A-Za-z0-9\\.]*?(?:rai\\.tv|rai\\.it|raiplay\\.it)/.+\\.html|https?://(?:www\\.)?raiplay\\.it/programmi/.+" })
 public class RaiItDecrypter extends PluginForDecrypt {
@@ -112,8 +111,8 @@ public class RaiItDecrypter extends PluginForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(date_user_input_underscore);
-        LinkedHashMap<String, Object> entries = null;
-        HashMap<String, Object> entries2 = null;
+        Map<String, Object> entries = null;
+        Map<String, Object> entries2 = null;
         final String channel_name = "Rai" + chnumber_str;
         final String channel_name_with_space = "Rai " + chnumber_str;
         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -125,21 +124,21 @@ public class RaiItDecrypter extends PluginForDecrypt {
         /* Fix sometimes invalid json - very strange way of sending errors! */
         this.br.getRequest().setHtmlCode(this.br.toString().replaceAll("\\[an error occurred\\s*?while processing this directive\\s*?\\]", ""));
         Object parsedJson = JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
-        final ArrayList<Object> daysList;
+        final List<Object> daysList;
         if (parsedJson instanceof HashMap) {
-            entries2 = (HashMap<String, Object>) parsedJson;
-            daysList = (ArrayList<Object>) entries2.get(channel_name_with_space);
+            entries2 = (Map<String, Object>) parsedJson;
+            daysList = (List<Object>) entries2.get(channel_name_with_space);
         } else {
-            entries = (LinkedHashMap<String, Object>) parsedJson;
-            daysList = (ArrayList<Object>) entries.get(channel_name_with_space);
+            entries = (Map<String, Object>) parsedJson;
+            daysList = (List<Object>) entries.get(channel_name_with_space);
         }
         boolean foundUserDate = false;
         /* Walk through all days. */
         for (final Object dayO : daysList) {
             if (dayO instanceof HashMap) {
-                entries2 = (HashMap<String, Object>) dayO;
+                entries2 = (Map<String, Object>) dayO;
             } else {
-                entries = (LinkedHashMap<String, Object>) dayO;
+                entries = (Map<String, Object>) dayO;
             }
             final String date_of_this_item = (String) getObjectFromMap(entries, entries2, "giorno");
             if (date_of_this_item == null || !date_of_this_item.equals(date_user_input_in_json_format)) {
@@ -148,21 +147,21 @@ public class RaiItDecrypter extends PluginForDecrypt {
             }
             foundUserDate = true;
             /* Get all items of the day. */
-            final ArrayList<Object> itemsOfThatDayList = (ArrayList<Object>) getObjectFromMap(entries, entries2, "palinsesto");
+            final List<Object> itemsOfThatDayList = (List<Object>) getObjectFromMap(entries, entries2, "palinsesto");
             for (final Object itemsOfThatDayListO : itemsOfThatDayList) {
-                if (itemsOfThatDayListO instanceof HashMap) {
-                    entries2 = (HashMap<String, Object>) itemsOfThatDayListO;
+                if (itemsOfThatDayListO instanceof Map) {
+                    entries2 = (Map<String, Object>) itemsOfThatDayListO;
                 } else {
-                    entries = (LinkedHashMap<String, Object>) itemsOfThatDayListO;
+                    entries = (Map<String, Object>) itemsOfThatDayListO;
                 }
                 /* Get all programms of that day. */
-                final ArrayList<Object> programmsList = (ArrayList<Object>) getObjectFromMap(entries, entries2, "programmi");
+                final List<Object> programmsList = (List<Object>) getObjectFromMap(entries, entries2, "programmi");
                 /* Finally decrypt the programms. */
                 for (final Object programmO : programmsList) {
-                    if (programmO instanceof HashMap) {
-                        entries2 = (HashMap<String, Object>) programmO;
+                    if (programmO instanceof Map) {
+                        entries2 = (Map<String, Object>) programmO;
                     } else {
-                        entries = (LinkedHashMap<String, Object>) programmO;
+                        entries = (Map<String, Object>) programmO;
                     }
                     if ((entries == null || entries.isEmpty()) && (entries2 == null || entries2.isEmpty())) {
                         continue;
@@ -234,7 +233,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
     }
 
     /* Get value from parsed json if we sometimes have LinkedHashMap and sometimes HashMap. */
-    final Object getObjectFromMap(final LinkedHashMap<String, Object> entries, final HashMap<String, Object> entries2, final String key) {
+    final Object getObjectFromMap(final Map<String, Object> entries, final Map<String, Object> entries2, final String key) {
         final Object jsono;
         if (entries2 != null) {
             jsono = entries2.get(key);
@@ -374,7 +373,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 date = this.br.getRegex("itemprop=\"datePublished\" content=\"(\\d{2}\\-\\d{2}\\-\\d{4})\"").getMatch(0);
             }
         } else {
-            LinkedHashMap<String, Object> entries = null;
+            Map<String, Object> entries = null;
             if (content_id_from_html != null) {
                 /* Easiest way to find videoinfo */
                 this.br.getPage("http://www.rai.tv/dl/RaiTV/programmi/media/ContentItem" + content_id_from_html + ".html?json");
@@ -382,21 +381,21 @@ public class RaiItDecrypter extends PluginForDecrypt {
                     decryptedLinks.add(this.createOfflinelink(parameter));
                     return decryptedLinks;
                 }
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             }
             if (entries == null) {
-                final ArrayList<Object> ressourcelist;
+                final List<Object> ressourcelist;
                 final String list_json_from_html = this.br.getRegex("\"list\"[\t\n\r ]*?:[\t\n\r ]*?(\\[.*?\\}[\t\n\r ]*?\\])").getMatch(0);
                 if (list_json_from_html != null) {
-                    ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(list_json_from_html);
+                    ressourcelist = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(list_json_from_html);
                 } else {
                     br.getPage("http://www.rai.tv/dl/RaiTV/ondemand/ContentSet" + contentset_id + ".html?json");
                     if (br.getHttpConnection().getResponseCode() == 404) {
                         decryptedLinks.add(this.createOfflinelink(parameter));
                         return decryptedLinks;
                     }
-                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                    ressourcelist = (ArrayList<Object>) entries.get("list");
+                    entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                    ressourcelist = (List<Object>) entries.get("list");
                 }
                 if (content_id_from_url == null) {
                     /* Hm probably not a video */
@@ -406,7 +405,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 String content_id_temp = null;
                 boolean foundVideoInfo = false;
                 for (final Object videoo : ressourcelist) {
-                    entries = (LinkedHashMap<String, Object>) videoo;
+                    entries = (Map<String, Object>) videoo;
                     content_id_temp = (String) entries.get("itemId");
                     if (content_id_temp != null && content_id_temp.contains(content_id_from_url)) {
                         foundVideoInfo = true;
@@ -656,8 +655,8 @@ public class RaiItDecrypter extends PluginForDecrypt {
         String jsonUrl = this.br.getRegex("data-video-json=\"(/video/[-\\/A-Za-z0-9]+\\.json)\"").getMatch(0);
         logger.info("found jsonUrl: " + jsonUrl);
         this.br.getPage("https://www.raiplay.it" + jsonUrl);
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
-        String relinkServletUrl = (String) ((LinkedHashMap<String, Object>) entries.get("video")).get("content_url");
+        Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+        String relinkServletUrl = (String) ((Map<String, Object>) entries.get("video")).get("content_url");
         logger.info("found relinkServletUrl: " + relinkServletUrl);
         return relinkServletUrl;
     }

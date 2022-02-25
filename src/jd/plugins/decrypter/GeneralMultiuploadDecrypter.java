@@ -17,13 +17,10 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -39,6 +36,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadonall.com" }, urls = { "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}" })
 public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
@@ -152,9 +153,9 @@ public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
         try {
             boolean noneOK = true;
             final ArrayList<String> links = new ArrayList<String>();
-            final ArrayList<Object> jsonArray = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            final List<Object> jsonArray = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             for (final Object jsonObject : jsonArray) {
-                final LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) jsonObject;
+                final Map<String, Object> json = (Map<String, Object>) jsonObject;
                 final String status = (String) json.get("status");
                 if (!"ok".equalsIgnoreCase(status) && !"checking".equalsIgnoreCase(status)) {
                     notOK = true;

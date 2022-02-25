@@ -17,7 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -189,7 +188,7 @@ public class BoxCom extends antiDDoSForDecrypt {
         do {
             final String json = br.getRegex("<script>\\s*Box\\.postStreamData\\s*=\\s*(\\{.*?\\});\\s*</script>").getMatch(0);
             Map<String, Object> rootMap = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-            Map<String, Object> itemInfoMap = (LinkedHashMap<String, Object>) rootMap.get("/app-api/enduserapp/shared-item");
+            Map<String, Object> itemInfoMap = (Map<String, Object>) rootMap.get("/app-api/enduserapp/shared-item");
             final String itemType = (String) itemInfoMap.get("itemType");
             final long fuidSingle = JavaScriptEngineFactory.toLong(itemInfoMap.get("itemID"), 0);
             if ("file".equalsIgnoreCase(itemType)) {
@@ -201,19 +200,19 @@ public class BoxCom extends antiDDoSForDecrypt {
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
-            rootMap = (LinkedHashMap<String, Object>) rootMap.get("/app-api/enduserapp/shared-folder");
+            rootMap = (Map<String, Object>) rootMap.get("/app-api/enduserapp/shared-folder");
             final long pageNumber = JavaScriptEngineFactory.toLong(rootMap.get("pageNumber"), 1);
             final long pageCount = JavaScriptEngineFactory.toLong(rootMap.get("pageCount"), 1);
             logger.info("Crawling page " + pageNumber + " of " + pageCount);
             Map<String, Object> entries;
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) rootMap.get("items");
+            final List<Object> ressourcelist = (List<Object>) rootMap.get("items");
             if (ressourcelist.size() == 0) {
                 logger.info("Empty folder");
                 decryptedLinks.add(this.createOfflinelink(cryptedlink.toString(), "Folder_empty_" + offlinename, "Empty folder"));
                 return decryptedLinks;
             }
             for (final Object itemO : ressourcelist) {
-                entries = (LinkedHashMap<String, Object>) itemO;
+                entries = (Map<String, Object>) itemO;
                 final String type = (String) entries.get("type");
                 final String item_name = (String) entries.get("name");
                 final long fuid = JavaScriptEngineFactory.toLong(entries.get("id"), 0);

@@ -16,7 +16,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -49,10 +50,10 @@ public class TataTo extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.getRequest().setHtmlCode(Encoding.Base64Decode(this.br.toString()));
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("playinfo");
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final List<Object> ressourcelist = (List<Object>) entries.get("playinfo");
         for (final Object videoo : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) videoo;
+            entries = (Map<String, Object>) videoo;
             final String finallink = (String) entries.get("link_mp4");
             final String quality = Long.toString(JavaScriptEngineFactory.toLong(entries.get("quality"), 0));
             if (StringUtils.isEmpty(finallink) || !finallink.startsWith("http") || quality.equals("0")) {

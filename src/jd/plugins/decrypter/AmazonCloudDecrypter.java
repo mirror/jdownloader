@@ -17,7 +17,7 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Random;
 
 import jd.PluginWrapper;
@@ -71,7 +71,7 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings({ "deprecation", "unchecked" })
     private ArrayList<DownloadLink> handleNewType(ArrayList<DownloadLink> decryptedLinks, CryptedLink parameter, ProgressController progress) throws Exception {
-        LinkedHashMap<String, Object> entries = null;
+        Map<String, Object> entries = null;
         prepBR();
         ArrayList<Object> resource_data_list = null;
         String path_decrypted = "";
@@ -101,8 +101,8 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(createOfflinelink(this.parameter));
                 return decryptedLinks;
             }
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-            final LinkedHashMap<String, Object> nodeInfo = jd.plugins.hoster.AmazonCloud.jsonGetNodeInfo(entries);
+            entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            final Map<String, Object> nodeInfo = jd.plugins.hoster.AmazonCloud.jsonGetNodeInfo(entries);
             final String kind = jd.plugins.hoster.AmazonCloud.jsonGetKind(nodeInfo);
             if (kind.equals(jd.plugins.hoster.AmazonCloud.JSON_KIND_FILE)) {
                 resource_data_list = new ArrayList<Object>();
@@ -128,8 +128,8 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
     @SuppressWarnings("unchecked")
     private DownloadLink crawlSingleObject(final Object o, String path_decrypted) throws IOException {
         final String path_encrypted;
-        final LinkedHashMap<String, Object> nodeInfo = (LinkedHashMap<String, Object>) o;
-        final LinkedHashMap<String, Object> contentProperties = jd.plugins.hoster.AmazonCloud.jsonGetContentProperties(nodeInfo);
+        final Map<String, Object> nodeInfo = (Map<String, Object>) o;
+        final Map<String, Object> contentProperties = jd.plugins.hoster.AmazonCloud.jsonGetContentProperties(nodeInfo);
         final String kind = jd.plugins.hoster.AmazonCloud.jsonGetKind(nodeInfo);
         String name = jd.plugins.hoster.AmazonCloud.jsonGetName(nodeInfo);
         final String id = (String) nodeInfo.get("id");

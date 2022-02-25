@@ -17,19 +17,14 @@ package jd.plugins.decrypter;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -42,6 +37,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.IgnVariant;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ign.com" }, urls = { "https?://(?:[a-z0-9]+)?\\.ign\\.com/(?:dor/objects/\\d+/[A-Za-z0-9_\\-]+/videos/.*?\\d+\\.html|[a-z0-9\\-]+/\\d+/video(/(?!embed)[a-z0-9\\-]+)?)|https?://(?:www\\.)?ign\\.com/videos/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-]+" })
 public class IgnCom extends PluginForDecrypt {
@@ -77,9 +78,9 @@ public class IgnCom extends PluginForDecrypt {
             if (json == null && json_single_video == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            LinkedHashMap<String, Object> entries = null;
+            Map<String, Object> entries = null;
             if (json_single_video != null) {
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_single_video);
+                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_single_video);
                 final String finallink = (String) entries.get("contentUrl");
                 String fileTitle = (String) entries.get("name");
                 if (StringUtils.isEmpty(finallink)) {
@@ -94,8 +95,8 @@ public class IgnCom extends PluginForDecrypt {
                 decryptedLinks.add(dlink);
             } else {
                 // json = Encoding.htmlDecode(json);
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps");
+                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+                entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps");
                 final Object videoO = entries.get("video");
                 if (videoO == null) {
                     /* 2019-08-28: E.g. readable article or livestream */
@@ -103,12 +104,12 @@ public class IgnCom extends PluginForDecrypt {
                     decryptedLinks.add(this.createOfflinelink(parameter));
                     return decryptedLinks;
                 }
-                entries = (LinkedHashMap<String, Object>) videoO;
+                entries = (Map<String, Object>) videoO;
                 /* HLS */
                 // final String hls = (String) entries.get("m3uUrl");
-                final ArrayList<Object> renditions = (ArrayList) entries.get("assets");
+                final List<Object> renditions = (List) entries.get("assets");
                 for (final Object rendition : renditions) {
-                    entries = (LinkedHashMap<String, Object>) rendition;
+                    entries = (Map<String, Object>) rendition;
                     final String finallink = (String) entries.get("url");
                     final String height = Long.toString(JavaScriptEngineFactory.toLong(entries.get("height"), -1));
                     if (finallink == null || height.equals("-1")) {

@@ -13,14 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -31,6 +29,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 /**
  *
  * don't fk with regex, doesn't support any pages or spanning pages.
@@ -39,7 +39,6 @@ import jd.plugins.PluginForDecrypt;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "thesuperficial.com" }, urls = { "https?://(?:www\\.)?thesuperficial\\.com(?!(/$|/photos/?$|/page/?|/page/\\d+|/photos/(?:hot-bodies|candid|red-carpet|sightings|most-important-people|crap-we-missed)(/?|/\\d+|/page|/page/\\d+)))(?:/[^\\s]+|/photos/[^/]+/[^\\s*]+)" })
 public class TheSupCm extends PluginForDecrypt {
-
     @SuppressWarnings("deprecation")
     public TheSupCm(PluginWrapper wrapper) {
         super(wrapper);
@@ -70,10 +69,9 @@ public class TheSupCm extends PluginForDecrypt {
             }
         }
         String fpName = null;
-
         final String filter = br.getRegex("var gallery_data = (.*?\\}\\});").getMatch(0);
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(filter);
-        final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "gallery/slides");
+        final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(filter);
+        final List<Object> ressourcelist = (List) JavaScriptEngineFactory.walkJson(entries, "gallery/slides");
         final DecimalFormat df = new DecimalFormat(ressourcelist.size() < 100 ? "00" : "000");
         for (final Object resource : ressourcelist) {
             if (fpName == null) {
@@ -89,7 +87,6 @@ public class TheSupCm extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName);
@@ -97,5 +94,4 @@ public class TheSupCm extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
 }

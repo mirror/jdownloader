@@ -18,11 +18,10 @@ package jd.plugins.decrypter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -34,6 +33,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redbull.com" }, urls = { "https?://(www\\.)?redbull\\.(?:tv|com/[a-z-]+(/tv)?)/(?:episodes|videos?)(?:/[A-Z0-9-]+)?/[a-z0-9-]+" })
 public class RedbullTv extends PluginForDecrypt {
@@ -77,7 +78,7 @@ public class RedbullTv extends PluginForDecrypt {
             }
             return decryptedLinks;
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final String title = (String) entries.get("title");
         final String subtitle = (String) entries.get("subtitle");
         final String description = (String) entries.get("long_description");
@@ -95,12 +96,12 @@ public class RedbullTv extends PluginForDecrypt {
             main_title += " - S" + df.format(season) + "E" + df.format(episode);
         }
         main_title = main_title + " - " + subtitle;
-        entries = (LinkedHashMap<String, Object>) entries.get("videos");
+        entries = (Map<String, Object>) entries.get("videos");
         if (entries.get("master") != null) {
             httpAvailable = true;
-            entries = (LinkedHashMap<String, Object>) entries.get("master");
+            entries = (Map<String, Object>) entries.get("master");
         } else {
-            entries = (LinkedHashMap<String, Object>) entries.get("demand");
+            entries = (Map<String, Object>) entries.get("demand");
         }
         if (entries == null) {
             /* Probably an ongoing/outstanding live stream --> Offline */
@@ -115,7 +116,7 @@ public class RedbullTv extends PluginForDecrypt {
         fp.setName(main_title);
         if (httpAvailable) {
             /* Typically available for all normal videos. */
-            entries = (LinkedHashMap<String, Object>) entries.get("renditions");
+            entries = (Map<String, Object>) entries.get("renditions");
             final Set<Entry<String, Object>> entryset = entries.entrySet();
             for (Entry<String, Object> entry : entryset) {
                 final String bitrate = entry.getKey();

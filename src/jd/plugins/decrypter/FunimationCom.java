@@ -2,11 +2,8 @@ package jd.plugins.decrypter;
 
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -22,6 +19,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "funimation.com" }, urls = { "http(?:s)://www.funimation.com/(?:shows/)[-0-9a-zA-Z]+/[-0-9a-zA-Z]+.*" })
 public class FunimationCom extends PluginForDecrypt {
@@ -79,25 +79,25 @@ public class FunimationCom extends PluginForDecrypt {
             decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Unable to grab video information"));
             return decryptedLinks;
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
-        final ArrayList<Object> seasons_array = (ArrayList<Object>) entries.get("seasons");
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json_source);
+        final List<Object> seasons_array = (List<Object>) entries.get("seasons");
         // Fog: Huge messy nested for loop incoming, I do plan on cleaning this up eventually
         for (Object s : seasons_array) {
-            entries = (LinkedHashMap<String, Object>) s;
+            entries = (Map<String, Object>) s;
             final String season = entries.get("seasonId").toString();
             if (season_number.equals(season)) {
-                final ArrayList<Object> episodes_array = (ArrayList<Object>) entries.get("episodes");
+                final List<Object> episodes_array = (List<Object>) entries.get("episodes");
                 for (Object e : episodes_array) {
-                    entries = (LinkedHashMap<String, Object>) e;
+                    entries = (Map<String, Object>) e;
                     final String episode = entries.get("episodeId").toString();
                     final String slug = entries.get("slug").toString();
                     if (episode_number.equals(episode) && episode_name.equals(slug)) {
-                        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "languages");
+                        entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "languages");
                         String[] languages_array = entries.keySet().toArray(new String[0]);
                         // Fog: Now grab the video and subtitle files for each language
                         for (String l : languages_array) {
                             // Get video links
-                            LinkedHashMap<String, Object> languages_entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, l + "/alpha/" + alpha);
+                            Map<String, Object> languages_entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, l + "/alpha/" + alpha);
                             final String id = languages_entries.get("experienceId").toString();
                             final String AB = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
                             SecureRandom rnd = new SecureRandom();
@@ -113,10 +113,10 @@ public class FunimationCom extends PluginForDecrypt {
                                 return decryptedLinks;
                             }
                             json_source = Encoding.htmlDecode(json_source);
-                            LinkedHashMap<String, Object> video_entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
-                            final ArrayList<Object> items_array = (ArrayList<Object>) video_entries.get("items");
+                            Map<String, Object> video_entries = JavaScriptEngineFactory.jsonToJavaMap(json_source);
+                            final List<Object> items_array = (List<Object>) video_entries.get("items");
                             for (Object i : items_array) {
-                                video_entries = (LinkedHashMap<String, Object>) i;
+                                video_entries = (Map<String, Object>) i;
                                 final String src = video_entries.get("src").toString();
                                 if (src.contains(".mp4")) {
                                     final String filename = title + "-" + l + "-mobile.mp4";
@@ -152,25 +152,25 @@ public class FunimationCom extends PluginForDecrypt {
                                 decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Unable to grab subtitle links"));
                                 return decryptedLinks;
                             }
-                            LinkedHashMap<String, Object> subtitle_entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
-                            final ArrayList<Object> seasons_array_sub = (ArrayList<Object>) subtitle_entries.get("seasons");
+                            Map<String, Object> subtitle_entries = JavaScriptEngineFactory.jsonToJavaMap(json_source);
+                            final List<Object> seasons_array_sub = (List<Object>) subtitle_entries.get("seasons");
                             for (Object s2 : seasons_array_sub) {
-                                subtitle_entries = (LinkedHashMap<String, Object>) s2;
+                                subtitle_entries = (Map<String, Object>) s2;
                                 final String season_sub = subtitle_entries.get("seasonId").toString();
                                 if (season_number.equals(season_sub)) {
-                                    final ArrayList<Object> episodes_array_sub = (ArrayList<Object>) subtitle_entries.get("episodes");
+                                    final List<Object> episodes_array_sub = (List<Object>) subtitle_entries.get("episodes");
                                     for (Object e2 : episodes_array_sub) {
-                                        subtitle_entries = (LinkedHashMap<String, Object>) e2;
+                                        subtitle_entries = (Map<String, Object>) e2;
                                         final String episode_subs = subtitle_entries.get("episodeId").toString();
                                         final String slug_subs = subtitle_entries.get("slug").toString();
                                         if (episode_number.equals(episode_subs) && episode_name.equals(slug_subs)) {
-                                            subtitle_entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(subtitle_entries, "languages/" + l + "/alpha/" + alpha);
-                                            final ArrayList<Object> sources_array = (ArrayList<Object>) subtitle_entries.get("sources");
+                                            subtitle_entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(subtitle_entries, "languages/" + l + "/alpha/" + alpha);
+                                            final List<Object> sources_array = (List<Object>) subtitle_entries.get("sources");
                                             // Only get the first array as the sources are the same between both arrays
-                                            subtitle_entries = (LinkedHashMap<String, Object>) sources_array.get(0);
-                                            final ArrayList<Object> text_tracks_array = (ArrayList<Object>) subtitle_entries.get("textTracks");
+                                            subtitle_entries = (Map<String, Object>) sources_array.get(0);
+                                            final List<Object> text_tracks_array = (List<Object>) subtitle_entries.get("textTracks");
                                             for (Object t : text_tracks_array) {
-                                                subtitle_entries = (LinkedHashMap<String, Object>) t;
+                                                subtitle_entries = (Map<String, Object>) t;
                                                 final String src = subtitle_entries.get("src").toString();
                                                 if (src.contains(".srt")) {
                                                     final String filename = title + "-" + l + ".srt";

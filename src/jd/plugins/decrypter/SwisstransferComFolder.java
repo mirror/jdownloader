@@ -16,7 +16,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -47,9 +48,9 @@ public class SwisstransferComFolder extends antiDDoSForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        entries = (LinkedHashMap<String, Object>) entries.get("container");
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("files");
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        entries = (Map<String, Object>) entries.get("container");
+        final List<Object> ressourcelist = (List<Object>) entries.get("files");
         String fpName = (String) entries.get("message");
         FilePackage fp = null;
         if (fpName != null) {
@@ -70,7 +71,7 @@ public class SwisstransferComFolder extends antiDDoSForDecrypt {
             // return decryptedLinks;
             // }
             for (final Object fileO : ressourcelist) {
-                entries = (LinkedHashMap<String, Object>) fileO;
+                entries = (Map<String, Object>) fileO;
                 final String filename = (String) entries.get("fileName");
                 final String fileid = (String) entries.get("UUID");
                 final Long filesize = JavaScriptEngineFactory.toLong(entries.get("fileSizeInBytes"), -1);

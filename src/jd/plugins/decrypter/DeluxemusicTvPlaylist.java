@@ -17,13 +17,8 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.DeluxemusicTvConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -35,6 +30,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DeluxemusicTv;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.DeluxemusicTvConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deluxemusic.de" }, urls = { "https?://(?:www\\.)?deluxemusic\\.(?:tv|de)/.*|https?://deluxetv\\-vimp\\.mivitec\\.net/(?!video/|getMedium)[a-z0-9\\-]+(?:/\\d+)?" })
 public class DeluxemusicTvPlaylist extends PluginForDecrypt {
@@ -93,10 +94,10 @@ public class DeluxemusicTvPlaylist extends PluginForDecrypt {
                     decryptedLinks.add(this.createOfflinelink(parameter));
                     return decryptedLinks;
                 }
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-                final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "additional/pl/entries");
+                Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                final List<Object> ressourcelist = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "additional/pl/entries");
                 for (final Object videoO : ressourcelist) {
-                    entries = (LinkedHashMap<String, Object>) videoO;
+                    entries = (Map<String, Object>) videoO;
                     String title = (String) entries.get("title");
                     if (StringUtils.isEmpty(title)) {
                         logger.warning("Failed to find title");
@@ -111,13 +112,13 @@ public class DeluxemusicTvPlaylist extends PluginForDecrypt {
                         fp.setName(title);
                     }
                     final String description = (String) entries.get("description");
-                    final ArrayList<Object> qualities = (ArrayList<Object>) entries.get("videos");
+                    final List<Object> qualities = (List<Object>) entries.get("videos");
                     long maxbandwidth = 0;
                     /* TODO: Maybe add a "BEST quality only" setting. */
                     DownloadLink bestQuality = null;
                     final ArrayList<DownloadLink> allQualities = new ArrayList<DownloadLink>();
                     for (final Object qualityO : qualities) {
-                        entries = (LinkedHashMap<String, Object>) qualityO;
+                        entries = (Map<String, Object>) qualityO;
                         final String url = (String) entries.get("href");
                         final long width = JavaScriptEngineFactory.toLong(entries.get("width"), -1);
                         final long height = JavaScriptEngineFactory.toLong(entries.get("height"), -1);
@@ -166,10 +167,10 @@ public class DeluxemusicTvPlaylist extends PluginForDecrypt {
             /* Important header! */
             br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
             this.br.postPage("https://deluxetv-vimp.mivitec.net/playlist_tag//search_playlist_videos.php", "playlist_id=" + playlist_embed_id);
-            LinkedHashMap<String, Object> entries = null;
-            final ArrayList<Object> mediaObjects = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            Map<String, Object> entries = null;
+            final List<Object> mediaObjects = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             for (final Object mediaObj : mediaObjects) {
-                entries = (LinkedHashMap<String, Object>) mediaObj;
+                entries = (Map<String, Object>) mediaObj;
                 String title = (String) entries.get("title");
                 final String description = (String) entries.get("description");
                 final String mediakey = (String) entries.get("mediakey");

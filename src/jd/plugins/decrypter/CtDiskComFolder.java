@@ -17,17 +17,8 @@ package jd.plugins.decrypter;
 
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -43,6 +34,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class CtDiskComFolder extends PluginForDecrypt {
@@ -299,7 +298,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
         prepAjax(ajax);
         ajax.getPage(ajaxSource);
         // ajax.getHttpConnection().getRequest().setHtmlCode(ajax.toString().replaceAll("\\\\/", "/").replaceAll("\\\\\"", "\""));
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(ajax.toString());
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(ajax.toString());
         /*
          * 2019-07-08: 'iTotalRecords' only counts for images. If we only have folders, it will return 0 although 'aaData' is present and
          * contains objects!
@@ -309,14 +308,14 @@ public class CtDiskComFolder extends PluginForDecrypt {
         // ret.add(this.createOfflinelink(parameter));
         // return;
         // }
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("aaData");
-        ArrayList<Object> fileinfo = (ArrayList<Object>) entries.get("aaData");
+        final List<Object> ressourcelist = (List<Object>) entries.get("aaData");
+        List<Object> fileinfo = (List<Object>) entries.get("aaData");
         if (fileinfo.isEmpty()) {
             ret.add(this.createOfflinelink(parameter));
             return;
         }
         for (final Object fileO : ressourcelist) {
-            fileinfo = (ArrayList<Object>) fileO;
+            fileinfo = (List<Object>) fileO;
             final String objectIDhtml = (String) fileinfo.get(0);
             final String filehtml = (String) fileinfo.get(1);
             final String filesize = (String) fileinfo.get(2);

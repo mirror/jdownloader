@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -38,9 +37,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "de.groups.yahoo.com" }, urls = { "http://(www\\.)?((de|tv|br)\\.)?groups\\.yahoo\\.com/group/[A-Za-z0-9\\-_]+/(files/([^<>\"/]+)?|photos/album/\\d+(/pic)?/list)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "de.groups.yahoo.com" }, urls = { "http://(www\\.)?((de|tv|br)\\.)?groups\\.yahoo\\.com/group/[A-Za-z0-9\\-_]+/(files/([^<>\"/]+)?|photos/album/\\d+(/pic)?/list)" })
 public class DeGroopsYahooCom extends PluginForDecrypt {
-
     /* must be static so all plugins share same lock */
     private static Object LOCK = new Object();
 
@@ -142,7 +140,6 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
             }
             return decryptedLinks;
         }
-
     }
 
     /**
@@ -188,7 +185,7 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
                     }
                 }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    final Map<String, String> cookies = (Map<String, String>) ret;
                     if (cookies.containsKey("SSL")) {
                         for (Map.Entry<String, String> entry : cookies.entrySet()) {
                             this.br.setCookie(MAINPAGE, entry.getKey(), entry.getValue());
@@ -247,7 +244,6 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
                     this.getPluginConfig().save();
                     return true;
                 }
-
             }
         }
         return false;
@@ -257,5 +253,4 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

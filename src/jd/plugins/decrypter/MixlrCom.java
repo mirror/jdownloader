@@ -16,7 +16,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -72,17 +73,17 @@ public class MixlrCom extends PluginForDecrypt {
             }
             return decryptedLinks;
         }
-        ArrayList<Object> ressourcelist;
+        List<Object> ressourcelist;
         if (isShowreelPage) {
-            ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(jsarray);
+            ressourcelist = (List) JavaScriptEngineFactory.jsonToJavaObject(jsarray);
         } else {
             ressourcelist = new ArrayList<Object>();
             ressourcelist.add(JavaScriptEngineFactory.jsonToJavaObject(jsarray));
         }
         for (final Object mobject : ressourcelist) {
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) mobject;
-            final LinkedHashMap<String, Object> streams = (LinkedHashMap<String, Object>) entries.get("streams");
-            final LinkedHashMap<String, Object> stream_http = (LinkedHashMap<String, Object>) streams.get("http");
+            final Map<String, Object> entries = (Map<String, Object>) mobject;
+            final Map<String, Object> streams = (Map<String, Object>) entries.get("streams");
+            final Map<String, Object> stream_http = (Map<String, Object>) streams.get("http");
             final String url = (String) stream_http.get("url");
             final String username = (String) entries.get("username");
             String title = (String) entries.get("title");

@@ -21,18 +21,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -48,6 +40,14 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.BrightcoveDecrypter.BrightcoveEdgeContainer.Protocol;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "brightcove.com" }, urls = { "" })
 public class BrightcoveDecrypter extends PluginForDecrypt {
@@ -81,7 +81,7 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
         if (json == null) {
             return null;
         }
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+        final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         final String publisherName = getPublisherName(entries);
         final String title = getTitle(entries);
         final long creationDate = getCreationDate(entries);
@@ -104,15 +104,15 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static ArrayList<BrightcoveClipData> findAllQualities(final Plugin plugin, final LinkedHashMap<String, Object> map) {
+    public static ArrayList<BrightcoveClipData> findAllQualities(final Plugin plugin, final Map<String, Object> map) {
         final ArrayList<BrightcoveClipData> media = new ArrayList<BrightcoveClipData>();
         final String publisherName = plugin.encodeUnicode(getPublisherName(map));
         final String title = plugin.encodeUnicode(getTitle(map));
         final long creationDate = getCreationDate(map);
-        LinkedHashMap<String, Object> entries = null;
-        final ArrayList<Object> resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(map, "data/programmedContent/videoPlayer/mediaDTO/renditions");
+        Map<String, Object> entries = null;
+        final List<Object> resource_data_list = (List) JavaScriptEngineFactory.walkJson(map, "data/programmedContent/videoPlayer/mediaDTO/renditions");
         for (final Object o : resource_data_list) {
-            entries = (LinkedHashMap<String, Object>) o;
+            entries = (Map<String, Object>) o;
             /* audioOnly == true = untested case */
             // final boolean audioOnly = ((Boolean) entries.get("audioOnly")).booleanValue();
             // if (audioOnly) {
@@ -151,9 +151,9 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
         if (json == null) {
             return null;
         }
-        LinkedHashMap<String, Object> map = null;
+        Map<String, Object> map = null;
         try {
-            map = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+            map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         } catch (final Throwable e) {
             return null;
         }
@@ -161,7 +161,7 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
     }
 
     /** Finds the highest video quality based on the max filesize. */
-    public static BrightcoveClipData findBestVideoByFilesize(final Plugin plugin, final LinkedHashMap<String, Object> map) {
+    public static BrightcoveClipData findBestVideoByFilesize(final Plugin plugin, final Map<String, Object> map) {
         final ArrayList<BrightcoveClipData> media = findAllQualities(plugin, map);
         return findBestVideoByFilesize(media);
     }
@@ -187,15 +187,15 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
         return br.getRegex("var experienceJSON = (\\{.*?);\r").getMatch(0);
     }
 
-    public static String getPublisherName(final LinkedHashMap<String, Object> map) {
+    public static String getPublisherName(final Map<String, Object> map) {
         return (String) JavaScriptEngineFactory.walkJson(map, "data/programmedContent/videoPlayer/mediaDTO/publisherName");
     }
 
-    public static String getTitle(final LinkedHashMap<String, Object> map) {
+    public static String getTitle(final Map<String, Object> map) {
         return (String) JavaScriptEngineFactory.walkJson(map, "data/programmedContent/videoPlayer/mediaDTO/displayName");
     }
 
-    public static long getCreationDate(final LinkedHashMap<String, Object> map) {
+    public static long getCreationDate(final Map<String, Object> map) {
         return JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(map, "data/programmedContent/videoPlayer/mediaDTO/creationDate"), -1);
     }
 
@@ -554,8 +554,8 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
         setAPIHeaders(br, policyKey);
         br.getPage(getAPIPlaybackUrl(accountID, referenceID));
         try {
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            final ArrayList<Object> sources = (ArrayList<Object>) entries.get("sources");
+            Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final List<Object> sources = (List<Object>) entries.get("sources");
             final String name = (String) entries.get("name");
             final String published_at = (String) entries.get("published_at");
             final String created_at = (String) entries.get("created_at");
@@ -591,7 +591,7 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
             String publisher_name = new Regex(publisherInfo, "(?:https?://(?:www\\.)?)?([^/]+)").getMatch(0);
             publisher_name = publisher_name.substring(0, publisher_name.lastIndexOf(".")).replace(".", "_");
             for (final Object sourceo : sources) {
-                entries = (LinkedHashMap<String, Object>) sourceo;
+                entries = (Map<String, Object>) sourceo;
                 final long duration = JavaScriptEngineFactory.toLong(entries.get("duration"), 0);
                 final long width = JavaScriptEngineFactory.toLong(entries.get("width"), 0);
                 final long height = JavaScriptEngineFactory.toLong(entries.get("height"), 0);
@@ -732,8 +732,8 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
         setAPIHeaders(br, policyKey);
         br.getPage(getAPIPlaybackUrl(accountID, referenceID));
         try {
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            final ArrayList<Object> sources = (ArrayList<Object>) entries.get("sources");
+            Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final List<Object> sources = (List<Object>) entries.get("sources");
             final String name = (String) entries.get("name");
             final String published_at = (String) entries.get("published_at");
             final String created_at = (String) entries.get("created_at");
@@ -769,7 +769,7 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
             String publisher_name = new Regex(publisherInfo, "(?:https?://(?:www\\.)?)?([^/]+)").getMatch(0);
             publisher_name = publisher_name.substring(0, publisher_name.lastIndexOf(".")).replace(".", "_");
             for (final Object sourceo : sources) {
-                entries = (LinkedHashMap<String, Object>) sourceo;
+                entries = (Map<String, Object>) sourceo;
                 final long duration = JavaScriptEngineFactory.toLong(entries.get("duration"), 0);
                 final long width = JavaScriptEngineFactory.toLong(entries.get("width"), 0);
                 final long height = JavaScriptEngineFactory.toLong(entries.get("height"), 0);
@@ -942,8 +942,7 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
 
     /**
      * Handles quality selection of given HashMap 'inputmap' with errorhandling for bad user selection! <br />
-     * No matter what the user does - if his selection is bad, this function will simply return all the contents of the inputmap as
-     * result.<br />
+     * No matter what the user does - if his selection is bad, this function will simply return all the contents of the inputmap as result.<br />
      *
      * @param inputmap
      *            : HashMap with previously found BrightcoveEdgeContainer objects

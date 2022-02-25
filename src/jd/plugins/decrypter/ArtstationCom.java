@@ -16,11 +16,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -36,6 +33,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://(?:www\\.)?artstation\\.com/((?:artist|artwork)/[^/]+|(?!about|marketplace|jobs|contests|blogs|users)[^/]+(/likes)?)" })
 public class ArtstationCom extends antiDDoSForDecrypt {
@@ -82,13 +83,13 @@ public class ArtstationCom extends antiDDoSForDecrypt {
             }
             jd.plugins.hoster.ArtstationCom.setHeaders(this.br);
             getPage("https://www.artstation.com/projects/" + project_id + ".json");
-            final LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-            final ArrayList<Object> resource_data_list = (ArrayList<Object>) json.get("assets");
+            final Map<String, Object> json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            final List<Object> resource_data_list = (List<Object>) json.get("assets");
             final String full_name = (String) JavaScriptEngineFactory.walkJson(json, "user/full_name");
             final String username = (String) JavaScriptEngineFactory.walkJson(json, "user/username");
             final String projectTitle = (String) json.get("title");
             for (final Object jsono : resource_data_list) {
-                final LinkedHashMap<String, Object> imageJson = (LinkedHashMap<String, Object>) jsono;
+                final Map<String, Object> imageJson = (Map<String, Object>) jsono;
                 String url = (String) imageJson.get("image_url");
                 final long width = JavaScriptEngineFactory.toLong(imageJson.get("width"), -1l);
                 final String fid = Long.toString(JavaScriptEngineFactory.toLong(imageJson.get("id"), -1));
@@ -192,7 +193,7 @@ public class ArtstationCom extends antiDDoSForDecrypt {
             if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
                 return decryptedLinks;
             }
-            final LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            final Map<String, Object> json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             final String full_name_of_username_in_url = (String) json.get("full_name");
             final String projectTitle = (String) json.get("title");
             final short entries_per_page = 50;
@@ -207,15 +208,15 @@ public class ArtstationCom extends antiDDoSForDecrypt {
             do {
                 logger.info("Crawling page " + page + " | Offset " + offset);
                 getPage("/users/" + username + "/" + type + ".json?randomize=false&page=" + page);
-                final LinkedHashMap<String, Object> pageJson = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                final Map<String, Object> pageJson = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 if (decryptedLinks.size() == 0) {
                     /* We're crawling the first page */
                     entries_total = (int) JavaScriptEngineFactory.toLong(pageJson.get("total_count"), 0);
                 }
-                final ArrayList<Object> ressourcelist = (ArrayList) pageJson.get("data");
+                final List<Object> ressourcelist = (List) pageJson.get("data");
                 for (final Object resource : ressourcelist) {
-                    final LinkedHashMap<String, Object> imageInfo = (LinkedHashMap<String, Object>) resource;
-                    final LinkedHashMap<String, Object> uploaderInfo = (LinkedHashMap<String, Object>) imageInfo.get("user");
+                    final Map<String, Object> imageInfo = (Map<String, Object>) resource;
+                    final Map<String, Object> uploaderInfo = (Map<String, Object>) imageInfo.get("user");
                     final String full_name_of_uploader;
                     if (uploaderInfo != null) {
                         /* E.g. when crawling all likes of a user */

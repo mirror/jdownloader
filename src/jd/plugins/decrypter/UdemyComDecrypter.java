@@ -20,9 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -38,6 +35,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "udemy.com" }, urls = { "https?://(?:www\\.)?udemy\\.com/(?:course/[^/]+|share/.+)" })
 public class UdemyComDecrypter extends PluginForDecrypt {
@@ -93,7 +93,7 @@ public class UdemyComDecrypter extends PluginForDecrypt {
         }
         entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final List<Object> ressourcelist = (List<Object>) entries.get("results");
-        ArrayList<Object> ressourcelist_2 = null;
+        List<Object> ressourcelist_2 = null;
         int positionTOTAL = 1;
         int positionChapter = 0;
         final DecimalFormat chapterFormat = new DecimalFormat("000");
@@ -124,7 +124,7 @@ public class UdemyComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(processAsset(entries, courseSlug, courseTitle, sectionTitle, lecture_id, positionTOTAL));
             /* Add file content */
             if (supplementary_assets != null) {
-                ressourcelist_2 = (ArrayList<Object>) supplementary_assets;
+                ressourcelist_2 = (List<Object>) supplementary_assets;
                 for (final Object supplementary_asseto : ressourcelist_2) {
                     entries = (Map<String, Object>) supplementary_asseto;
                     decryptedLinks.add(processAsset(entries, courseSlug, courseTitle, sectionTitle, lecture_id, positionTOTAL));

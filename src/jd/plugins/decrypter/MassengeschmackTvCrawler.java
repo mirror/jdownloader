@@ -19,13 +19,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -47,6 +43,10 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.VariantInfoMassengeschmackTv;
 import jd.plugins.hoster.MassengeschmackTv;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "massengeschmack.tv" }, urls = { "https?://(?:www\\.)?massengeschmack\\.tv/((?:play|clip)/|index_single\\.php\\?id=)[a-z0-9\\-]+|https?://(?:www\\.)?massengeschmack\\.tv/live/[a-z0-9\\-]+" })
 public class MassengeschmackTvCrawler extends PluginForDecrypt {
@@ -129,14 +129,14 @@ public class MassengeschmackTvCrawler extends PluginForDecrypt {
         try {
             if (parameter.matches(MassengeschmackTv.TYPE_MASSENGESCHMACK_GENERAL) && MassengeschmackTv.VIDEOS_ENABLE_API && loggedin) {
                 br.getPage(String.format(MassengeschmackTv.API_BASE_URL + MassengeschmackTv.API_GET_CLIP, url_videoid));
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
-                final ArrayList<Object> files = (ArrayList) entries.get("files");
+                Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+                final List<Object> files = (List) entries.get("files");
                 channel = (String) entries.get("pdesc");
                 episodename = (String) entries.get("title");
                 description = (String) entries.get("desc");
                 date = Long.toString(JavaScriptEngineFactory.toLong(entries.get("date"), -1));
                 for (final Object fileo : files) {
-                    entries = (LinkedHashMap<String, Object>) fileo;
+                    entries = (Map<String, Object>) fileo;
                     final String qualityDescription = (String) entries.get("desc");
                     final String type = (String) entries.get("t");
                     filesize_temp = JavaScriptEngineFactory.toLong(entries.get("size"), -1);

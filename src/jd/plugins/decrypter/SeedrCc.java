@@ -16,10 +16,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -32,6 +30,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "seedr.cc" }, urls = { "https?://(?:www\\.)?seedr\\.cc/files/\\d+" })
 public class SeedrCc extends PluginForDecrypt {
@@ -56,14 +57,14 @@ public class SeedrCc extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final ArrayList<Object> ressourcelist_files = (ArrayList<Object>) entries.get("files");
-        final ArrayList<Object> ressourcelist_folders = (ArrayList<Object>) entries.get("folders");
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final List<Object> ressourcelist_files = (List<Object>) entries.get("files");
+        final List<Object> ressourcelist_folders = (List<Object>) entries.get("folders");
         final String full_path = (String) entries.get("fullname");
         if (ressourcelist_files != null) {
             /* Crawl files --> Urls go into host plugin */
             for (final Object itemo : ressourcelist_files) {
-                entries = (LinkedHashMap<String, Object>) itemo;
+                entries = (Map<String, Object>) itemo;
                 final String filename = (String) entries.get("name");
                 final String folder_file_id = Long.toString(JavaScriptEngineFactory.toLong(entries.get("folder_file_id"), 0));
                 final String hash = (String) entries.get("hash");
@@ -89,7 +90,7 @@ public class SeedrCc extends PluginForDecrypt {
         if (ressourcelist_folders != null) {
             /* Crawl folders --> These urls go back into decrypter */
             for (final Object itemo : ressourcelist_folders) {
-                entries = (LinkedHashMap<String, Object>) itemo;
+                entries = (Map<String, Object>) itemo;
                 final String id = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), 0));
                 // final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
                 if (id.equals("0")) {

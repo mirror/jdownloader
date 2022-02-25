@@ -16,7 +16,6 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -64,19 +63,19 @@ public class DyskOnetPl extends PluginForDecrypt {
         ajax.getHeaders().put("Accept", "application/json");
         ajax.getHeaders().put("Timestamp-Format", "unix");
         ajax.postPage("/api/manager/?linkinfo", "Link=" + fuid);
-        LinkedHashMap<String, Object> response = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
-        response = (LinkedHashMap<String, Object>) response.get("response");
+        Map<String, Object> response = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
+        response = (Map<String, Object>) response.get("response");
         if ((String) response.get("error") != null) { // && "Public link not found.".equals(response.get("message"))) {
             decryptedLinks.add(createOfflinelink(parameter, fuid, null));
             return decryptedLinks;
         }
         final String description = (String) response.get("description");
         final String fpName = fuid; // description will be too long.
-        final LinkedHashMap<String, Object> elements = (LinkedHashMap<String, Object>) response.get("elements");
+        final Map<String, Object> elements = (Map<String, Object>) response.get("elements");
         for (final Map.Entry<String, Object> entry : elements.entrySet()) {
             final String key = entry.getKey();
             if (key != null && key.matches("\\d+")) {
-                final LinkedHashMap<String, Object> object = fuid.length() == 5 ? (LinkedHashMap<String, Object>) entry.getValue() : (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entry.getValue(), "0");
+                final Map<String, Object> object = fuid.length() == 5 ? (Map<String, Object>) entry.getValue() : (Map<String, Object>) JavaScriptEngineFactory.walkJson(entry.getValue(), "0");
                 final String type = (String) object.get("type");
                 final String name = (String) object.get("displayName");
                 final String size = (String) object.get("size");

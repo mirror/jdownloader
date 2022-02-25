@@ -13,15 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -38,9 +34,11 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fakku.net" }, urls = { "https?://(?:www\\.)?fakku\\.net/(?:(?:viewmanga|viewonline)\\.php\\?id=\\d+|[a-z0-9\\-_]+/[a-z0-9\\-_]+/read)" })
 public class FakkuNet extends antiDDoSForDecrypt {
-
     public FakkuNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -51,7 +49,6 @@ public class FakkuNet extends antiDDoSForDecrypt {
         /* Forced HTTPS */
         String parameter = param.toString().replace("http://", "https://");
         final String url_filename = new Regex(parameter, "fakku\\.net/manga/([^<>\"]*?)/read").getMatch(0);
-
         boolean loggedin = false;
         final PluginForHost plugin = JDUtilities.getPluginForHost("fakku.net");
         final Account aa = AccountController.getInstance().getValidAccount(plugin);
@@ -62,7 +59,6 @@ public class FakkuNet extends antiDDoSForDecrypt {
                 logger.info("Login failed - continuing without login");
             }
         }
-
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(410);
         getPage(parameter);
@@ -86,19 +82,17 @@ public class FakkuNet extends antiDDoSForDecrypt {
             }
             /* Handling for subscription URLs */
             getPage("https://books.fakku.net/manga/" + url_filename + "/read");
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             if (fpName == null) {
                 fpName = (String) JavaScriptEngineFactory.walkJson(entries, "content/content_name");
             }
             long content_pages = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "content/content_pages"), 0);
-            entries = (LinkedHashMap<String, Object>) entries.get("pages");
-
+            entries = (Map<String, Object>) entries.get("pages");
             if (fpName == null || content_pages == 0 || entries == null) {
                 return null;
             }
-
             for (counter = 1; counter <= content_pages; counter++) {
-                LinkedHashMap<String, Object> entries_temp = (LinkedHashMap<String, Object>) entries.get(Long.toString(counter));
+                Map<String, Object> entries_temp = (Map<String, Object>) entries.get(Long.toString(counter));
                 final String directlink = (String) entries_temp.get("image");
                 final DownloadLink dl = createDownloadlink(directlink);
                 final String final_filename = fpName + " - " + df.format(counter) + ".jpg";
@@ -134,7 +128,6 @@ public class FakkuNet extends antiDDoSForDecrypt {
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
 
@@ -142,5 +135,4 @@ public class FakkuNet extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

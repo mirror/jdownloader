@@ -16,10 +16,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,6 +26,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MangahostCom extends antiDDoSForDecrypt {
@@ -95,7 +96,7 @@ public class MangahostCom extends antiDDoSForDecrypt {
         } else {
             // this is JSON, DO NOT universally unescape it.
             String pages = br.getRegex("var pages\\s*=\\s*(\\[\\{[^<>]+\\}\\])\\;").getMatch(0);
-            final ArrayList<Object> resource = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(pages);
+            final List<Object> resource = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(pages);
             if (links == null) {
                 links = new String[resource.size()];
             }

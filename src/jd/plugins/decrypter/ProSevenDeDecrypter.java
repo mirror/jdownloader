@@ -19,11 +19,9 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
-
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -34,6 +32,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prosieben.de", "prosiebenmaxx.de", "the-voice-of-germany.de", "kabeleins.de", "sat1.de", "sat1gold.de", "sixx.de", "kabeleinsdoku.de" }, urls = { "https?://(?:www\\.)?prosieben\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?prosiebenmaxx\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?the\\-voice\\-of\\-germany\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?kabeleins\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?sat1\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?sat1gold\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?sixx\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?kabeleinsdoku\\.(?:de|at|ch)/.+" })
 public class ProSevenDeDecrypter extends PluginForDecrypt {
@@ -72,12 +73,12 @@ public class ProSevenDeDecrypter extends PluginForDecrypt {
         }
         final DecimalFormat df = new DecimalFormat("00");
         final String date_formatted = formatDate(date);
-        final ArrayList<Object> ressources = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(json);
+        final List<Object> ressources = (List) JavaScriptEngineFactory.jsonToJavaObject(json);
         if (ressources == null) {
             return null;
         }
         for (final Object video_o : ressources) {
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) video_o;
+            final Map<String, Object> entries = (Map<String, Object>) video_o;
             /* E.g. skip invalid ContentType 'live'. */
             final String contentType = (String) entries.get("contentType");
             final String formatName = (String) entries.get("formatName");

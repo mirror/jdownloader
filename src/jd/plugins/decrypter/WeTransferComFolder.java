@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -106,7 +107,7 @@ public class WeTransferComFolder extends PluginForDecrypt {
                 shortID = new Regex(shortened_url, shortPattern).getMatch(0);
             }
         }
-        final ArrayList<Object> ressourcelist = map.get("files") != null ? (ArrayList<Object>) map.get("files") : (ArrayList) map.get("items");
+        final List<Object> ressourcelist = map.get("files") != null ? (List<Object>) map.get("files") : (List) map.get("items");
         /* TODO: Handle this case */
         final boolean per_file_download_available = map.containsKey("per_file_download_available") && Boolean.TRUE.equals(map.get("per_file_download_available"));
         /* TODO: Handle this case */

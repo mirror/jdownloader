@@ -16,9 +16,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,6 +27,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "coub.com" }, urls = { "https?://(?:www\\.)?coub\\.com/(?!(view|embed))[^/]+" })
 public class CoubComDecrypter extends PluginForDecrypt {
@@ -57,13 +58,13 @@ public class CoubComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             if (page == 1) {
                 pages_total = (short) JavaScriptEngineFactory.toLong(entries.get("total_pages"), 1);
             }
-            final ArrayList<Object> ressources = (ArrayList) entries.get("coubs");
+            final List<Object> ressources = (List) entries.get("coubs");
             for (final Object ressource : ressources) {
-                entries = (LinkedHashMap<String, Object>) ressource;
+                entries = (Map<String, Object>) ressource;
                 final String coub_type = (String) entries.get("type");
                 final String fid = (String) entries.get("permalink");
                 if (coub_type == null || fid == null) {

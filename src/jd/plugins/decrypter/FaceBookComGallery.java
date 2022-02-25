@@ -17,14 +17,10 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -48,6 +44,11 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @SuppressWarnings("deprecation")
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -107,14 +108,13 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private boolean                     fastLinkcheckPictures           = true;                                                                                                                 // jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES_DEFAULT;
     private boolean                     logged_in                       = false;
     private ArrayList<DownloadLink>     decryptedLinks                  = null;
-    private final LinkedHashSet<String> dupe                            = new LinkedHashSet<String>();;
+    private final LinkedHashSet<String> dupe                            = new LinkedHashSet<String>();                                                                                           ;
     private boolean                     debug                           = false;
 
     /**
      * Dear whoever is looking at this - this is a classic example of spaghetticode. If you like spaghettis, go ahead, and get you some
      * tomatoe sauce and eat it but if not, well have fun re-writing this from scratch ;) Wikipedia:
-     * http://en.wikipedia.org/wiki/Spaghetti_code </br>
-     * 2021-05-26: Nearly all functionality of this plugin is broken!
+     * http://en.wikipedia.org/wiki/Spaghetti_code </br> 2021-05-26: Nearly all functionality of this plugin is broken!
      */
     @Deprecated
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -959,11 +959,11 @@ public class FaceBookComGallery extends PluginForDecrypt {
             this.decryptedLinks = null;
             return;
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+        Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         final Object imagesData = JavaScriptEngineFactory.walkJson(entries, "payload/imagesData");
-        final ArrayList<Object> ressourcelist = (ArrayList) imagesData;
+        final List<Object> ressourcelist = (List) imagesData;
         for (final Object pic_o : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) pic_o;
+            entries = (Map<String, Object>) pic_o;
             final String image_id = (String) entries.get("fbid");
             final String directlink = (String) entries.get("");
             final DownloadLink dl = createPicDownloadlink(image_id);
@@ -974,7 +974,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             }
             this.decryptedLinks.add(dl);
         }
-        // entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "payload/imagesData");
+        // entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "payload/imagesData");
         // final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
         // while (it.hasNext()) {
         // final Entry<String, Object> entry = it.next();

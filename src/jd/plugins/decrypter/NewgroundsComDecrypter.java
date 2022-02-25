@@ -16,11 +16,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,6 +29,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "https?://(?:\\w+\\.)?newgrounds\\.com/(?:art|audio|movies|games)(/view/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+)?/?$" })
 public class NewgroundsComDecrypter extends PluginForDecrypt {
@@ -103,14 +104,14 @@ public class NewgroundsComDecrypter extends PluginForDecrypt {
                     br.getPage(nextPage);
                     json = br.toString();
                 }
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
+                Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
                 nextPage = (String) entries.get("more");
-                final LinkedHashMap<String, Object> years = (LinkedHashMap<String, Object>) entries.get("years");
-                final ArrayList<Object> sequence = (ArrayList<Object>) entries.get("sequence");
+                final Map<String, Object> years = (Map<String, Object>) entries.get("years");
+                final List<Object> sequence = (List<Object>) entries.get("sequence");
                 for (final Object sequenceO : sequence) {
                     final String year = Long.toString(JavaScriptEngineFactory.toLong(sequenceO, 0));
-                    entries = (LinkedHashMap<String, Object>) years.get(year);
-                    final ArrayList<Object> items = (ArrayList<Object>) entries.get("items");
+                    entries = (Map<String, Object>) years.get(year);
+                    final List<Object> items = (List<Object>) entries.get("items");
                     for (final Object itemO : items) {
                         final String html = (String) itemO;
                         String title = new Regex(html, "title=\"([^<>\"]+)\"").getMatch(0);

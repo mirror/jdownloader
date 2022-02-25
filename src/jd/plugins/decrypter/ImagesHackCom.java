@@ -13,11 +13,11 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -34,16 +34,14 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imageshack.com" }, urls = { "https?://(?:www\\.)?imageshack\\.(?:com|us)/(?:user|a)/[A-Za-z0-9\\-_]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imageshack.com" }, urls = { "https?://(?:www\\.)?imageshack\\.(?:com|us)/(?:user|a)/[A-Za-z0-9\\-_]+" })
 public class ImagesHackCom extends PluginForDecrypt {
-
     public ImagesHackCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private static final String TYPE_USER                  = "https?://(?:www\\.)?imageshack\\.(?:com|us)/user/[A-Za-z0-9\\-_]+";
     private static final String TYPE_ALBUM                 = "https?://(?:www\\.)?imageshack\\.(?:com|us)/a/[A-Za-z0-9\\-_]+";
-
     private static final int    api_max_entries_per_offset = 200;
 
     /** Using API: https://api.imageshack.com/ */
@@ -59,21 +57,20 @@ public class ImagesHackCom extends PluginForDecrypt {
         final boolean useAltHandling = false;
         String password = "";
         String pwcookie = null;
-
         final String get_URL;
-        LinkedHashMap<String, Object> json;
+        Map<String, Object> json;
         if (parameter.matches(TYPE_USER)) {
             /*
              * Get user information - count private images as well. TODO: Check if it actually returns IDs of private images - if not, we do
              * not even have to count them!
-             *
-             *
+             * 
+             * 
              * There are API calls to get all albums of a user but then the album objects only always contain 5 images meaning we'd have to
              * decrypt the album URLs and return them back into the decrypter. Instead we'll just decrypt all images, find their
              * corresponding album names (if existant) and set the correct packagenames.
              */
             this.br.getPage("https://api.imageshack.com/v2/user/" + id_main + "/usage?hide_empty=false&show_private=true&show_hidden=false");
-            json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             images_total = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(json, "result/images_count"), 0);
             get_URL = "/v2/user/" + id_main + "/images?hide_folder_images=false&hide_empty=false&show_private=true&show_hidden=false&limit=%d&offset=%d&password=%s";
         } else {
@@ -107,24 +104,21 @@ public class ImagesHackCom extends PluginForDecrypt {
                     break;
                 }
             }
-            json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             images_total = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(json, "result/total"), 0);
             get_URL = "/v2/albums/" + id_main + "?limit=%d&offset=%d&password=%s";
             final String album_owner = (String) JavaScriptEngineFactory.walkJson(json, "result/owner/username");
         }
-
         if (images_total == 0) {
             /* User has no pictures or album is empty */
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-
         do {
             if (this.isAbort()) {
                 logger.info("User aborted decryption");
                 return decryptedLinks;
             }
-
             /* Old: */
             // if (useAltHandling) {
             // br.getPage("https://imageshack.com/rest_api/v2/images?username=" + username + "&limit=" + imagesPerOffset + "&offset=" +
@@ -133,12 +127,11 @@ public class ImagesHackCom extends PluginForDecrypt {
             // br.getPage("https://imageshack.com/rest_api/v2/images?username=" + username + "&limit=10000&offset=0&hide_empty=true&ts="
             // + System.currentTimeMillis());
             // }
-
             this.br.getPage(String.format(get_URL, api_max_entries_per_offset, offset, Encoding.urlEncode(password)));
-            json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-            final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(json, "result/images");
+            json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            final List<Object> ressourcelist = (List) JavaScriptEngineFactory.walkJson(json, "result/images");
             for (final Object resource : ressourcelist) {
-                json = (LinkedHashMap<String, Object>) resource;
+                json = (Map<String, Object>) resource;
                 final String id = jd.plugins.hoster.ImagesHackCom.api_json_get_id(json);
                 final String owner = jd.plugins.hoster.ImagesHackCom.api_json_get_username(json);
                 final String album = jd.plugins.hoster.ImagesHackCom.api_json_get_album(json);
@@ -193,5 +186,4 @@ public class ImagesHackCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

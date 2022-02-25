@@ -17,9 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Random;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -33,12 +32,15 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bloomberg.com" }, urls = { "https?://(?:www\\.)?bloomberg\\.com/news/videos/\\d{4}\\-\\d{2}\\-\\d{2}/[a-z0-9\\-]+" })
 public class BloombergComDecrypter extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public BloombergComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /*
      * Thanks: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/bloomberg.py AND
      * https://github.com/isync/www-video-download/blob/master/bloomberg-downloader.pl
@@ -54,7 +56,6 @@ public class BloombergComDecrypter extends PluginForDecrypt {
      * http://b5vod-vh.akamaihd.net/z/m/NjM3OTczMA/UMIeosVobRQOoUNoqO5oEZVCtsRtSLiUgykdvG9izJgxODhh/8aa4cdbc-7f5e-440a-9717-15c784b10035_
      * ,15,24,44,70,120,180,240,0.mp4.csmil/manifest.f4m?hdcore=1
      */
-
     private static final String DOMAIN         = "bloomberg.com";
     /* Settings stuff */
     private static final String FAST_LINKCHECK = "FAST_LINKCHECK";
@@ -69,7 +70,7 @@ public class BloombergComDecrypter extends PluginForDecrypt {
         String description = null;
         String cdn_server = null;
         String xmlsource = null;
-        LinkedHashMap<String, Object> entries = null;
+        Map<String, Object> entries = null;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final LinkedHashMap<String, String[]> formats = jd.plugins.hoster.BloombergCom.formats;
         final String nicehost = new Regex(parameter, "http://(?:www\\.)?([^/]+)").getMatch(0);
@@ -89,7 +90,7 @@ public class BloombergComDecrypter extends PluginForDecrypt {
             return null;
         }
         br.getPage("https://www.bloomberg.com/api/embed?id=" + vid + "&version=v0.8.14&idType=BMMR");
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         title = (String) entries.get("title");
         title = encodeUnicode(title);
         cdn_server = new Regex((String) entries.get("contentLoc"), "(http://[^<>\"]*)/m/.+").getMatch(0);

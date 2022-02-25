@@ -16,7 +16,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import jd.PluginWrapper;
@@ -278,7 +279,7 @@ public class FourSharedComFolder extends PluginForDecrypt {
          * many that are. Tested up to 300 objects.
          */
         br2.postPage("https://www." + this.getHost() + "/web/accountActions/changeDir", "dirId=" + currentDirID);
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br2.toString());
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br2.toString());
         final String curdirName = (String) entries.get("curdirName");
         FilePackage fp = null;
         if (!StringUtils.isEmpty(curdirName)) {
@@ -289,11 +290,11 @@ public class FourSharedComFolder extends PluginForDecrypt {
         if (subFolderPath == null) {
             subFolderPath = curdirName;
         }
-        entries = (LinkedHashMap<String, Object>) entries.get("info");
-        final ArrayList<Object> dirs = (ArrayList<Object>) entries.get("dirs");
-        final ArrayList<Object> files = (ArrayList<Object>) entries.get("files");
+        entries = (Map<String, Object>) entries.get("info");
+        final List<Object> dirs = (List<Object>) entries.get("dirs");
+        final List<Object> files = (List<Object>) entries.get("files");
         for (final Object fileO : files) {
-            entries = (LinkedHashMap<String, Object>) fileO;
+            entries = (Map<String, Object>) fileO;
             final String fileid = (String) entries.get("id");
             if (StringUtils.isEmpty(fileid)) {
                 continue;
@@ -325,7 +326,7 @@ public class FourSharedComFolder extends PluginForDecrypt {
             decryptedLinks.add(dl);
         }
         for (final Object dirO : dirs) {
-            entries = (LinkedHashMap<String, Object>) dirO;
+            entries = (Map<String, Object>) dirO;
             // final long foldersize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
             final String folderid = (String) entries.get("id");
             String foldername = (String) entries.get("name");

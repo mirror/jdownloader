@@ -26,19 +26,11 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.zip.Inflater;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -54,6 +46,13 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.TeleFiveDe.Tele5DeConfigInterface;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tele5.de" }, urls = { "https?://(?:www\\.)?tele5\\.de/.+" })
 public class TeleFiveDeDecrypter extends PluginForDecrypt {
@@ -106,7 +105,7 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             all_selected_qualities = all_known_qualities;
         }
         final String videoid_inside_url = new Regex(parameter, "v=(\\d+)").getMatch(0);
-        LinkedHashMap<String, Object> entries = null;
+        Map<String, Object> entries = null;
         String json_source;
         FilePackage fp = null;
         br.setFollowRedirects(true);
@@ -140,9 +139,9 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 json_source = this.br.getRegex("\\d+\\s*?:\\s*?(\\{.*?\\}),\\s*?\\}\\);").getMatch(0);
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
+                entries = JavaScriptEngineFactory.jsonToJavaMap(json_source);
                 final String name_category_or_series = (String) entries.get("title");
-                final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("entries");
+                final List<Object> ressourcelist = (List<Object>) entries.get("entries");
                 /* Use FilePackage */
                 if (name_category_or_series != null) {
                     fp = FilePackage.getInstance();
@@ -150,7 +149,7 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
                 }
                 /* Find videoids (episodes). */
                 for (final Object episodeo : ressourcelist) {
-                    entries = (LinkedHashMap<String, Object>) episodeo;
+                    entries = (Map<String, Object>) episodeo;
                     final String videoid = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), 0));
                     final String date = (String) entries.get("vodate");
                     if (videoid.equals("0") || date == null || date.equals("")) {
@@ -176,7 +175,7 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
                 continue;
             }
             json_source = this.br.getRegex("setup:(\\{.*?\\}\\})\\s*?},").getMatch(0);
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
+            entries = JavaScriptEngineFactory.jsonToJavaMap(json_source);
             /* Find dash master url. */
             final Object dash_master_url_o = JavaScriptEngineFactory.walkJson(entries, "playlist/{0}/file");
             if (!(dash_master_url_o instanceof String)) {
@@ -186,7 +185,7 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             final String dash_master_url = (String) dash_master_url_o;
             final String akamaized_videoid = new Regex(dash_master_url, "kamaized\\.net/([^/]+)/").getMatch(0);
             /* Find information about that video. */
-            entries = (LinkedHashMap<String, Object>) entries.get("fw");
+            entries = (Map<String, Object>) entries.get("fw");
             final String name_episode = (String) entries.get("title");
             final Object seasono = entries.get("season");
             final Object episodeo = entries.get("episode");
@@ -577,7 +576,7 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         String sp = null;
         if (source.contains("{")) {
             /* Parse json */
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(source);
+            final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(source);
             entryid = (String) entries.get("entry_id");
             partnerid = (String) entries.get("wid");
             sp = (String) entries.get("sp");

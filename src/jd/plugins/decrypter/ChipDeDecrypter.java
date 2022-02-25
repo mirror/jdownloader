@@ -13,12 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -33,9 +33,8 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "chip.de" }, urls = { "https?://(?:[A-Za-z0-9\\-]+\\.)?chip\\.de/(?!downloads|video)[^/]+/[^/]+_\\d+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "chip.de" }, urls = { "https?://(?:[A-Za-z0-9\\-]+\\.)?chip\\.de/(?!downloads|video)[^/]+/[^/]+_\\d+\\.html" })
 public class ChipDeDecrypter extends PluginForDecrypt {
-
     public ChipDeDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -51,7 +50,6 @@ public class ChipDeDecrypter extends PluginForDecrypt {
         if (parameter.matches(jd.plugins.hoster.ChipDe.type_chip_de_pictures) && !use_api_for_pictures) {
             /* Old website picture handling */
             br.setFollowRedirects(true);
-
             URLConnectionAdapter con = null;
             try {
                 con = br.openGetConnection(parameter);
@@ -66,7 +64,6 @@ public class ChipDeDecrypter extends PluginForDecrypt {
                 } catch (Throwable e) {
                 }
             }
-
             fpName = br.getRegex("<meta property=\"og:title\" content=\"(.*?) \\- Bildergalerie\"/>").getMatch(0);
             if (fpName == null) {
                 fpName = br.getRegex("<title>(.*?) \\- Bilder \\-").getMatch(0);
@@ -104,16 +101,16 @@ public class ChipDeDecrypter extends PluginForDecrypt {
             jd.plugins.hoster.ChipDe.accesscontainerIdBeitrag(this.br, linkid);
             /* We're using an API here so whatever goes wrong - it is probably a website issue / offline content. */
             try {
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+                Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
                 fpName = (String) entries.get("title");
-                final ArrayList<Object> resource_data_list;
+                final List<Object> resource_data_list;
                 if (parameter.matches(jd.plugins.hoster.ChipDe.type_chip_de_pictures)) {
                     final DecimalFormat df = new DecimalFormat("000");
                     int counter = 1;
-                    resource_data_list = (ArrayList) entries.get("pictures");
+                    resource_data_list = (List) entries.get("pictures");
                     for (final Object oo : resource_data_list) {
                         try {
-                            entries = (LinkedHashMap<String, Object>) oo;
+                            entries = (Map<String, Object>) oo;
                             final String description = (String) entries.get("image_text");
                             final String url = (String) entries.get("url");
                             if (inValidate(url)) {
@@ -134,12 +131,11 @@ public class ChipDeDecrypter extends PluginForDecrypt {
                             counter++;
                         }
                     }
-
                 } else {
                     /* User added an article - try to find embedded videos! */
-                    resource_data_list = (ArrayList) entries.get("videos");
+                    resource_data_list = (List) entries.get("videos");
                     for (final Object oo : resource_data_list) {
-                        entries = (LinkedHashMap<String, Object>) oo;
+                        entries = (Map<String, Object>) oo;
                         final String url = (String) entries.get("url");
                         if (inValidate(url) || !url.matches(jd.plugins.hoster.ChipDe.type_chip_de_video)) {
                             continue;
@@ -179,5 +175,4 @@ public class ChipDeDecrypter extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

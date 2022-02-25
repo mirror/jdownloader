@@ -17,12 +17,8 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -34,6 +30,11 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.PixivNet;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sketch.pixiv.net" }, urls = { "https?://sketch\\.pixiv\\.net/(@[^/]+)" })
 public class PixivNetSketch extends PluginForDecrypt {
@@ -79,7 +80,7 @@ public class PixivNetSketch extends PluginForDecrypt {
             }
             Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             next = (String) JavaScriptEngineFactory.walkJson(entries, "_links/next/href");
-            final ArrayList<Object> imgObjects = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "data/items");
+            final List<Object> imgObjects = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "data/items");
             for (final Object imgO : imgObjects) {
                 entries = (Map<String, Object>) imgO;
                 final long sketch_id = JavaScriptEngineFactory.toLong(entries.get("id"), 0);
@@ -90,7 +91,7 @@ public class PixivNetSketch extends PluginForDecrypt {
                     continue;
                 }
                 // Map<String, Object> userInfo = (Map<String, Object>) entries.get("user");
-                final ArrayList<Object> imgObjectsInner = (ArrayList<Object>) entries.get("media");
+                final List<Object> imgObjectsInner = (List<Object>) entries.get("media");
                 for (final Object imgObjectInner : imgObjectsInner) {
                     Map<String, Object> imgInfoInner = (Map<String, Object>) imgObjectInner;
                     final long img_id = JavaScriptEngineFactory.toLong(imgInfoInner.get("id"), 0);

@@ -4,11 +4,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -24,6 +22,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ted.com" }, urls = { "https?://(?:www\\.)?ted\\.com/(talks/(?:lang/[a-zA-Z\\-]+/)?[\\w_]+|[\\w_]+\\?language=\\w+|playlists/\\d+/[^/]+)" })
 public class TedCom extends PluginForDecrypt {
@@ -121,7 +122,7 @@ public class TedCom extends PluginForDecrypt {
         final LinkedHashMap<String, String[]> formats = jd.plugins.hoster.TedCom.formats;
         final LinkedHashMap<String, DownloadLink> foundVideoLinks = new LinkedHashMap();
         final String json;
-        LinkedHashMap<String, Object> entries;
+        Map<String, Object> entries;
         if (parameter.matches(TYPE_PLAYLIST)) {
             /*
              * We could crawl from here straight away but this way we won't be able to find all qualities thus we prefer to decrypt one by
@@ -137,11 +138,11 @@ public class TedCom extends PluginForDecrypt {
                 return;
             }
             json = this.br.getRegex("<script>q\\(\"permalink\\.init\",(\\{.*?)</script>").getMatch(0);
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-            entries = (LinkedHashMap<String, Object>) entries.get("__INITIAL_DATA__");
-            final ArrayList<Object> videos = (ArrayList) entries.get("talks");
+            entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+            entries = (Map<String, Object>) entries.get("__INITIAL_DATA__");
+            final List<Object> videos = (List) entries.get("talks");
             for (final Object videoo : videos) {
-                entries = (LinkedHashMap<String, Object>) videoo;
+                entries = (Map<String, Object>) videoo;
                 final String url_single_video = (String) entries.get("canonical");
                 if (url_single_video == null) {
                     throw new DecrypterException("Decrypter broken");
@@ -163,15 +164,15 @@ public class TedCom extends PluginForDecrypt {
                 this.decryptedLinks.add(this.createOfflinelink(parameter));
                 return;
             }
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-            entries = (LinkedHashMap<String, Object>) entries.get("__INITIAL_DATA__");
+            entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+            entries = (Map<String, Object>) entries.get("__INITIAL_DATA__");
             // This is needed later for the subtitle decrypter
             final String subtitleText = br.getRegex("<select name=\"languageCode\" id=\"languageCode\"><option value=\"\">Show transcript</option>(.*?)</select>").getMatch(0);
             /** Decrypt video */
             final Object externalMedia = JavaScriptEngineFactory.walkJson(entries, "media/external");
             if (externalMedia != null) {
                 logger.info("Found external media");
-                entries = (LinkedHashMap<String, Object>) externalMedia;
+                entries = (Map<String, Object>) externalMedia;
                 final String mediaCode = (String) entries.get("code");
                 final String service = (String) entries.get("service");
                 if (!StringUtils.isEmpty(service) && !StringUtils.isEmpty(mediaCode) && service.equalsIgnoreCase("youtube")) {
@@ -185,13 +186,13 @@ public class TedCom extends PluginForDecrypt {
                 return;
             }
             /* Official download-URLs */
-            LinkedHashMap<String, Object> http_download_url_list = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "talks/{0}/downloads/nativeDownloads");
+            Map<String, Object> http_download_url_list = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "talks/{0}/downloads/nativeDownloads");
             /* Stream-URLs */
-            LinkedHashMap<String, Object> http_stream_url_list = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "media/internal");
+            Map<String, Object> http_stream_url_list = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "media/internal");
             if (http_stream_url_list == null) {
-                http_stream_url_list = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "talks/{0}/player_talks/{0}/resources");
+                http_stream_url_list = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "talks/{0}/player_talks/{0}/resources");
             }
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "talks/{0}");
+            entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "talks/{0}");
             String title = (String) entries.get("title");
             if (title == null) {
                 throw new DecrypterException("Decrypter broken");
@@ -236,11 +237,11 @@ public class TedCom extends PluginForDecrypt {
                         continue;
                     }
                     final String qualityKey = currentObject.getKey();
-                    final LinkedHashMap<String, Object> tmp;
+                    final Map<String, Object> tmp;
                     if (currentObject.getValue() instanceof List) {
-                        tmp = (LinkedHashMap<String, Object>) ((List<Object>) currentObject.getValue()).get(0);
+                        tmp = (Map<String, Object>) ((List<Object>) currentObject.getValue()).get(0);
                     } else {
-                        tmp = (LinkedHashMap<String, Object>) currentObject.getValue();
+                        tmp = (Map<String, Object>) currentObject.getValue();
                     }
                     final long filesize = JavaScriptEngineFactory.toLong(tmp.get("filesize_bytes"), 0);
                     String url_http = (String) tmp.get("uri");
@@ -340,8 +341,8 @@ public class TedCom extends PluginForDecrypt {
             }
             /** Decrypt subtitles */
             if (subtitleText != null && tedID != null || entries.containsKey("languages")) {
-                final String[][] allSubtitleValues = { { "sq", "Albanian" }, { "ar", "Arabic" }, { "hy", "Armenian" }, { "az", "Azerbaijani" }, { "bn", "Bengali" }, { "bg", "Bulgarian" }, { "zh-cn", "Chinese, Simplified" }, { "zh-tw", "Chinese, Traditional" }, { "hr", "Croatian" }, { "cs", "Czech" }, { "da", "Danish" }, { "nl", "Dutch" }, { "en", "English" }, { "et", "Estonian" }, { "fi", "Finnish" }, { "fr", "French" }, { "ka", "Georgian" }, { "de", "German" }, { "el", "Greek" }, { "he", "Hebrew" }, { "hu", "Hungarian" }, { "id", "Indonesian" }, { "it", "Italian" }, { "ja", "Japanese" }, { "ko", "Korean" }, { "ku", "Kurdish" }, { "lt", "Lithuanian" }, { "mk", "Macedonian" }, { "ms", "Malay" }, { "nb", "Norwegian Bokmal" }, { "fa", "Persian" }, { "pl", "Polish" }, { "pt", "Portuguese" }, { "pt-br", "Portuguese, Brazilian" }, { "ro", "Romanian" }, { "ru", "Russian" }, { "sr", "Serbian" },
-                        { "sk", "Slovak" }, { "sl", "Slovenian" }, { "es", "Spanish" }, { "sv", "Swedish" }, { "th", "Thai" }, { "tr", "Turkish" }, { "uk", "Ukrainian" }, { "vi", "Vietnamese" } };
+                final String[][] allSubtitleValues = { { "sq", "Albanian" }, { "ar", "Arabic" }, { "hy", "Armenian" }, { "az", "Azerbaijani" }, { "bn", "Bengali" }, { "bg", "Bulgarian" }, { "zh-cn", "Chinese, Simplified" }, { "zh-tw", "Chinese, Traditional" }, { "hr", "Croatian" }, { "cs", "Czech" }, { "da", "Danish" }, { "nl", "Dutch" }, { "en", "English" }, { "et", "Estonian" }, { "fi", "Finnish" }, { "fr", "French" }, { "ka", "Georgian" }, { "de", "German" }, { "el", "Greek" }, { "he", "Hebrew" }, { "hu", "Hungarian" }, { "id", "Indonesian" }, { "it", "Italian" }, { "ja", "Japanese" }, { "ko", "Korean" }, { "ku", "Kurdish" }, { "lt", "Lithuanian" }, { "mk", "Macedonian" }, { "ms", "Malay" }, { "nb", "Norwegian Bokmal" }, { "fa", "Persian" }, { "pl", "Polish" }, { "pt", "Portuguese" }, { "pt-br", "Portuguese, Brazilian" }, { "ro", "Romanian" }, { "ru", "Russian" },
+                        { "sr", "Serbian" }, { "sk", "Slovak" }, { "sl", "Slovenian" }, { "es", "Spanish" }, { "sv", "Swedish" }, { "th", "Thai" }, { "tr", "Turkish" }, { "uk", "Ukrainian" }, { "vi", "Vietnamese" } };
                 final ArrayList<String[]> selectedSubtitles = new ArrayList<String[]>();
                 final LinkedHashMap<String, String> foundSubtitles = new LinkedHashMap();
                 if (subtitleText != null) {
@@ -351,10 +352,10 @@ public class TedCom extends PluginForDecrypt {
                     }
                 } else {
                     // back ported for JSON
-                    final ArrayList<Object> subtitles = (ArrayList) entries.get("languages");
+                    final List<Object> subtitles = (List) entries.get("languages");
                     if (subtitles != null) {
                         for (final Object result : subtitles) {
-                            final LinkedHashMap<String, String> yay = (LinkedHashMap<String, String>) result;
+                            final Map<String, String> yay = (Map<String, String>) result;
                             // assume its the lower case one from the code below.
                             final String langCode = yay.get("languageCode");
                             foundSubtitles.put(langCode, Request.getLocation("/talks/subtitles/id/" + tedID + "/lang/" + langCode + "/format/srt", br.getRequest()));
