@@ -349,7 +349,7 @@ public class FilestoreTo extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         /* Wait 10 seconds between downloadstarts. */
-        if (this.getFreeRunningDownloads().get() > 1) {
+        if (this.getFreeRunningDownloads().get() > 0) {
             this.sleep(10000l, link);
         }
         requestFileInformation(link);
