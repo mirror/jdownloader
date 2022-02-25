@@ -29,7 +29,11 @@ public interface GoogleConfig extends PluginConfigInterface {
         }
 
         public String getAPIDownloadMode_label() {
-            return "Set preferred API download mode (only relevant if API Key is provided.)";
+            return "Set API download mode (only relevant if API Key is provided.)";
+        }
+
+        public String getPreferWebsiteOverAPIIfStreamDownloadIsWantedAndPossible_label() {
+            return "If API Key is given: Prefer website for downloading if stream download is preferred and possible?";
         }
 
         public String getAddStreamQualityIdentifierToFilename_label() {
@@ -123,7 +127,7 @@ public interface GoogleConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultEnumValue("WEBSITE_IF_ACCOUNT_AVAILABLE_AND_FILE_IS_QUOTA_LIMITED")
-    @DescriptionForConfigEntry("Set preferred API download mode (only relevant if API Key is provided.)")
+    @DescriptionForConfigEntry("Set API download mode (only relevant if API Key is provided.)")
     @Order(25)
     APIDownloadMode getAPIDownloadMode();
 
