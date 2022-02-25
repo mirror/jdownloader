@@ -13,11 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -30,12 +30,10 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tv.adobe.com" }, urls = { "http://(www\\.)?tv\\.adobe\\.com/watch/[a-z0-9\\-]+/[a-z0-9\\-]+/?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tv.adobe.com" }, urls = { "http://(www\\.)?tv\\.adobe\\.com/watch/[a-z0-9\\-]+/[a-z0-9\\-]+/?" })
 public class TvAdbCm extends PluginForDecrypt {
-
     // dev notes
     // final links seem to not have any session info bound, nor restricted to IP and are hotlinkable, hoster plugin not required.
-
     /**
      * @author raztoki
      * */
@@ -76,14 +74,14 @@ public class TvAdbCm extends PluginForDecrypt {
             return null;
         }
         // parse for qualities
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(html5player);
-        final ArrayList<Object> sources = (ArrayList) entries.get("sources");
+        Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(html5player);
+        final List<Object> sources = (List) entries.get("sources");
         String name = (String) entries.get("title");
         if (name == null) {
             name = url_name;
         }
         for (final Object videoo : sources) {
-            entries = (LinkedHashMap<String, Object>) videoo;
+            entries = (Map<String, Object>) videoo;
             final String q = Long.toString(JavaScriptEngineFactory.toLong(entries.get("bitrate"), -1));
             final String u = (String) entries.get("fsrc");
             if (q == null || u == null || !u.startsWith("http")) {
@@ -96,8 +94,6 @@ public class TvAdbCm extends PluginForDecrypt {
         FilePackage fp = FilePackage.getInstance();
         fp.setName(name);
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
-
 }

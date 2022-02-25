@@ -23,13 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -46,14 +39,21 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.VivaTv;
 import jd.utils.JDUtilities;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mtv.de", "mtviggy.com", "southpark.de", "southpark.cc.com", "mtv.com.au", "mtv.co.uk", "mtv.com", "cc.com", "funnyclips.cc", "comedycentral.tv", "nick.de", "tvland.com", "spike.com", "thedailyshow.cc.com", "tosh.cc.com", "mtvu.com" }, urls = { "https?://(?:www\\.)?mtv\\.de/.+", "https?://(?:www\\.)?(?:mtviggy|mtvdesi|mtvk)\\.com/.+", "https?://(?:www\\.)?southpark\\.de/.+", "https?://southpark\\.cc\\.com/.+", "https?://(?:www\\.)?mtv\\.com\\.au/.+", "https?://(?:www\\.)?mtv\\.co\\.uk/.+", "https?://(?:www\\.)?mtv\\.com/.+", "https?://(?:www\\.)?cc\\.com/.+", "https?://de\\.funnyclips\\.cc/.+", "https?://(?:www\\.)?comedycentral\\.tv/.+", "https?://(?:www\\.)?nick\\.de/.+", "https?://(?:www\\.)?tvland\\.com/.+", "https?://(?:www\\.)?spike\\.com/.+", "https?://thedailyshow\\.cc\\.com/.+",
         "https?://tosh\\.cc\\.com/.+", "https?://(?:www\\.)?mtvu\\.com/.+" })
 public class VivaTvDecrypt extends PluginForDecrypt {
     public VivaTvDecrypt(PluginWrapper wrapper) {
         super(wrapper);
     }
-    /** Tags: Viacom International Media Networks Northern Europe, mrss, gameone.de */
 
+    /** Tags: Viacom International Media Networks Northern Europe, mrss, gameone.de */
     /** Additional thanks goes to: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/mtv.py */
     /* Additional information/methods can be found in the VivaTv host plugin */
     /** TODO: mtvplay.tv */
@@ -307,11 +307,11 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             /* Fallback to url-packagename */
             fpName = new Regex(param.getCryptedUrl(), "https?://[^/]+/(.+)").getMatch(0);
         }
-        ArrayList<Object> ressourcelist = null;
+        List<Object> ressourcelist = null;
         Map<String, Object> entries = null;
         try {
             final String json = this.br.getRegex("window\\.pagePlaylist = (\\[\\{.*?\\}\\])").getMatch(0);
-            ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(json);
+            ressourcelist = (List) JavaScriptEngineFactory.jsonToJavaObject(json);
             for (final Object object : ressourcelist) {
                 entries = (Map<String, Object>) object;
                 final String path = (String) entries.get("path");
@@ -478,14 +478,14 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         try {
             Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(js);
             final Map<String, Object> vimn_video = (Map<String, Object>) entries.get("vimn_video");
-            ArrayList<Object> resources = null;
+            List<Object> resources = null;
             final Object playlist_o = vimn_video.get("playlists");
             final Object embedded_videos_o = vimn_video.get("embedded_videos");
-            if (!(playlist_o instanceof ArrayList)) {
+            if (!(playlist_o instanceof List)) {
                 /* Playlist */
                 entries = (Map<String, Object>) playlist_o;
                 entries = (Map<String, Object>) entries.get(playlist_id);
-                resources = (ArrayList) entries.get("items");
+                resources = (List) entries.get("items");
                 final Object title_object = entries.get("title");
                 if (title_object instanceof String) {
                     fpName = (String) entries.get("title");
@@ -509,8 +509,8 @@ public class VivaTvDecrypt extends PluginForDecrypt {
                     decryptedLinks.add(fina);
                 }
             }
-            if (embedded_videos_o instanceof ArrayList) {
-                resources = (ArrayList) embedded_videos_o;
+            if (embedded_videos_o instanceof List) {
+                resources = (List) embedded_videos_o;
                 for (final Object pt : resources) {
                     final Map<String, Object> playlistentry = (Map<String, Object>) pt;
                     final String mgid = (String) playlistentry.get("video_id");

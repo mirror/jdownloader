@@ -18,10 +18,9 @@ package jd.plugins.decrypter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -33,6 +32,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "younow.com" }, urls = { "https?://(?:www\\.)?younow\\.com/[^/]+(?:/\\d+)?" })
 public class YounowComChannel extends PluginForDecrypt {
@@ -81,16 +82,16 @@ public class YounowComChannel extends PluginForDecrypt {
                 // this.br.getHeaders().put("Origin", "https://www.younow.com");
                 // br.getPage("https://cdn2.younow.com/php/api/post/getBroadcasts/channelId=" + userid + "/startFrom=" + (addedlinks + 1));
                 br.getPage("https://cdn.younow.com/php/api/moment/profile/channelId=" + userid + "/createdBefore=" + timestampValue + "/records=" + maxItemsPerPage);
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 hasMore = ((Boolean) entries.get("hasMore")).booleanValue();
-                final ArrayList<Object> ressourcelist = (ArrayList) entries.get("items");
+                final List<Object> ressourcelist = (List) entries.get("items");
                 if (ressourcelist == null) {
                     break;
                 }
                 for (final Object objecto : ressourcelist) {
                     addedlinks++;
                     addedlinks_temp++;
-                    entries = (LinkedHashMap<String, Object>) objecto;
+                    entries = (Map<String, Object>) objecto;
                     final String type = (String) entries.get("type");
                     // final long mediatype = JavaScriptEngineFactory.toLong(entries.get("type"), 0);
                     if (type == null || !type.equalsIgnoreCase("collection")) {

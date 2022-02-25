@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -678,12 +677,12 @@ public class AppleTrailer extends PluginForDecrypt {
         }
         Browser br2 = br.cloneBrowser();
         br2.getPage("//trailers.apple.com/trailers/feeds/data/" + filmID + ".json");
-        final LinkedHashMap<String, Object> json;
+        final Map<String, Object> json;
         try {
             if (br2.containsHTML("404 - Page Not Found")) {
                 return;
             }
-            json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br2.toString());
+            json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br2.toString());
         } catch (Exception e) {
             return;
         }

@@ -20,11 +20,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -37,8 +35,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "creative.arte.tv_extern" }, urls = { "http://creative\\.arte\\.tv/(de|fr)/scald_dmcloud_json/\\d+" })
-@Deprecated // Deprecated as of 2022-01-10
+@Deprecated
+// Deprecated as of 2022-01-10
 public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
     private static final String           EXCEPTION_LINKOFFLINE                       = "EXCEPTION_LINKOFFLINE";
     private static final String           TYPE_CREATIVE                               = "http://creative\\.arte\\.tv/(de|fr)/scald_dmcloud_json/\\d+";
@@ -133,8 +134,8 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
                     logger.info("This language is not available: " + selectedLanguage);
                     continue;
                 }
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                final LinkedHashMap<String, Object> videoJsonPlayer = (LinkedHashMap<String, Object>) entries.get("videoJsonPlayer");
+                final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                final Map<String, Object> videoJsonPlayer = (Map<String, Object>) entries.get("videoJsonPlayer");
                 sourceURL = (String) videoJsonPlayer.get("VTR");
                 title = encodeUnicode((String) videoJsonPlayer.get("VTI"));
                 description = (String) videoJsonPlayer.get("VDE");
@@ -153,12 +154,12 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
                 if (thumbnailUrl == null) {
                     thumbnailUrl = (String) videoJsonPlayer.get("programImage");
                 }
-                final Collection<Object> vsr_quals = ((LinkedHashMap<String, Object>) videoJsonPlayer.get("VSR")).values();
+                final Collection<Object> vsr_quals = ((Map<String, Object>) videoJsonPlayer.get("VSR")).values();
                 /* One packagename for every language */
                 fp = FilePackage.getInstance();
                 fp.setName(title);
                 for (final Object o : vsr_quals) {
-                    final LinkedHashMap<String, Object> qualitymap = (LinkedHashMap<String, Object>) o;
+                    final Map<String, Object> qualitymap = (Map<String, Object>) o;
                     final String quality = (String) qualitymap.get("quality");
                     final String url = (String) qualitymap.get("url");
                     if (url.contains(".m3u8") || url.contains("/hls/")) {
@@ -225,7 +226,7 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
     }
 
     @SuppressWarnings("deprecation")
-    private void getHLSQualities(final LinkedHashMap<String, Object> qualitymap, final String selectedLanguage) throws DecrypterException, IOException {
+    private void getHLSQualities(final Map<String, Object> qualitymap, final String selectedLanguage) throws DecrypterException, IOException {
         final String protocol = "hls_extern";
         int videoBitrate = 0;
         String filename;
@@ -276,7 +277,7 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
     }
 
     @SuppressWarnings("deprecation")
-    private void getHTTPQuality(final LinkedHashMap<String, Object> qualitymap, final String selectedLanguage) throws DecrypterException {
+    private void getHTTPQuality(final Map<String, Object> qualitymap, final String selectedLanguage) throws DecrypterException {
         final String protocol;
         final String quality = (String) qualitymap.get("quality");
         final String url = (String) qualitymap.get("url");

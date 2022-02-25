@@ -26,15 +26,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -65,6 +56,15 @@ import jd.plugins.hoster.VKontakteRuHoster;
 import jd.plugins.hoster.VKontakteRuHoster.Quality;
 import jd.plugins.hoster.VKontakteRuHoster.QualitySelectionMode;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink)[a-z0-9_/=\\.\\-\\?&%@]+|vk\\.cc/[A-Za-z0-9]+)" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -433,7 +433,7 @@ public class VKontakteRu extends PluginForDecrypt {
             postData = "access_hash=&act=load_section&al=1&claim=0&offset=0&is_loading_all=1&owner_id=" + owner_ID + "&playlist_id=-1&type=playlist";
         }
         br.postPage(getBaseURL() + "/al_audio.php", postData);
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         if (StringUtils.isEmpty(fpName)) {
             fpName = (String) entries.get("title");
         }
@@ -444,7 +444,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
         /* TODO: 2020-05-11: Fix this */
-        final ArrayList<Object> audioData = (ArrayList<Object>) entries.get("payload");
+        final List<Object> audioData = (List<Object>) entries.get("payload");
         if (audioData == null || audioData.size() == 0) {
             logger.info("Nothing found --> Probably offline");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -535,8 +535,8 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.info("Found " + decryptedLinks.size() + " items");
             return;
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
-        final ArrayList<Object> audiolist = (ArrayList<Object>) entries.get("list");
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
+        final List<Object> audiolist = (List<Object>) entries.get("list");
         addJsonAudioObjects(audiolist, fp);
         logger.info("Found " + decryptedLinks.size() + " items");
     }
@@ -548,7 +548,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final String playlist_id = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "_(\\d+)$").getMatch(0);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage(getBaseURL() + "/al_audio.php", "access_hash=&act=load_section&al=1&claim=0&is_loading_all=1&offset=0&owner_id=" + owner_ID + "&playlist_id=-1&type=playlist");
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(regexJsonInsideHTML(this.br));
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(regexJsonInsideHTML(this.br));
         String fpName = (String) entries.get("title");
         if (StringUtils.isEmpty(fpName)) {
             /* Last chance fallback */
@@ -557,7 +557,7 @@ public class VKontakteRu extends PluginForDecrypt {
         /* Important! Even inside json, they html_encode some Strings! */
         fpName = Encoding.htmlDecode(fpName.trim());
         fp.setName(fpName);
-        final ArrayList<Object> audioData = (ArrayList<Object>) entries.get("list");
+        final List<Object> audioData = (List<Object>) entries.get("list");
         if (audioData == null || audioData.size() == 0) {
             logger.info("Nothing found --> Probably offline");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -566,9 +566,9 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /** Creates DownloadLink Objects out of Objects of vk Audio Albums / Playlists after request of '/al_audio.php' */
-    private void addJsonAudioObjects(final ArrayList<Object> audioData, final FilePackage fp) {
+    private void addJsonAudioObjects(final List<Object> audioData, final FilePackage fp) {
         for (final Object audioDataSingle : audioData) {
-            final ArrayList<Object> singleAudioDataAsArray = (ArrayList<Object>) audioDataSingle;
+            final List<Object> singleAudioDataAsArray = (List<Object>) audioDataSingle;
             final String content_id = Long.toString(JavaScriptEngineFactory.toLong(singleAudioDataAsArray.get(0), 0));
             final String owner_id = Long.toString(JavaScriptEngineFactory.toLong(singleAudioDataAsArray.get(1), 0));
             final String directlink = (String) singleAudioDataAsArray.get(2);

@@ -16,14 +16,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -34,6 +28,13 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bt.com" }, urls = { "https?://(?:www\\.)?btcloud\\.bt\\.com/web/app/share/invite/([A-Za-z0-9]+)|https://cloud\\.bt\\.comdecrypted/\\?.+" })
 public class BtCom extends PluginForDecrypt {
@@ -96,7 +97,7 @@ public class BtCom extends PluginForDecrypt {
         entries = (Map<String, Object>) entries.get("nodeCollection");
         final Object foldersO = entries.get("folder");
         if (foldersO != null) {
-            final ArrayList<Object> folders = (ArrayList<Object>) foldersO;
+            final List<Object> folders = (List<Object>) foldersO;
             for (final Object folderO : folders) {
                 folderInfo = (Map<String, Object>) folderO;
                 final String uri = (String) JavaScriptEngineFactory.walkJson(folderInfo, "uri/$");
@@ -113,10 +114,10 @@ public class BtCom extends PluginForDecrypt {
                 decryptedLinks.add(this.createDownloadlink("https://cloud.bt.comdecrypted/?" + query.toString()));
             }
         }
-        final ArrayList<Object> files;
+        final List<Object> files;
         final Object filesO = entries.get("file");
         if (filesO instanceof ArrayList) {
-            files = (ArrayList<Object>) entries.get("file");
+            files = (List<Object>) entries.get("file");
         } else {
             /* Single file in folder */
             files = new ArrayList<Object>();

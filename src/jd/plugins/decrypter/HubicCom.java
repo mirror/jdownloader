@@ -17,7 +17,6 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -78,14 +77,14 @@ public class HubicCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         if (isOffline(this.br, entries)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final ArrayList<Object> ressourcelist = getList(entries);
+        final List<Object> ressourcelist = getList(entries);
         for (final Object fileo : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) fileo;
+            entries = (Map<String, Object>) fileo;
             final String hash = (String) entries.get("hash");
             final String name = (String) entries.get("name");
             final String url = (String) entries.get("url");
@@ -114,26 +113,26 @@ public class HubicCom extends PluginForDecrypt {
         br.postPage("https://hubic.com/home/pub/get/", "ruid=" + Encoding.urlEncode(ruid_b64) + "&path=%2F");
     }
 
-    public static boolean isOffline(final Browser br, final LinkedHashMap<String, Object> entries) {
+    public static boolean isOffline(final Browser br, final Map<String, Object> entries) {
         final boolean is_offline = br.getHttpConnection().getResponseCode() == 401 || br.getHttpConnection().getResponseCode() == 405 || (entries != null && entries.get("error") != null);
         return is_offline;
     }
 
-    public static ArrayList<Object> getList(LinkedHashMap<String, Object> entries) throws Exception {
+    public static List<Object> getList(Map<String, Object> entries) throws Exception {
         if (entries.containsKey("answer")) {
-            entries = (LinkedHashMap<String, Object>) entries.get("answer");
+            entries = (Map<String, Object>) entries.get("answer");
         }
         if (entries.get("list") instanceof Map) {
             final Object ret = ((Map<String, Object>) entries.get("list")).get("/");
             if (ret instanceof List) {
-                return (ArrayList<Object>) ret;
+                return (List<Object>) ret;
             } else if (ret instanceof Map) {
                 return new ArrayList<Object>(((Map<String, Object>) ret).values());
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } else {
-            return (ArrayList<Object>) entries.get("list");
+            return (List<Object>) entries.get("list");
         }
     }
 }

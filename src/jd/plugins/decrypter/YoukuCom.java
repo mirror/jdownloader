@@ -20,14 +20,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -40,6 +36,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.YoukuCom.YoukuComConfigInterface;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /** See also youtube-dl: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/youku.py */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youku.com", "video.tudou.com", "tudou.com" }, urls = { "https?://v\\.youku\\.com/v_show/id_[A-Za-z0-9=]+", "https?://video\\.tudou\\.com/v/[A-Za-z0-9=]+", "https?://(?:www\\.)?tudou\\.com/programs/view/[A-Za-z0-9\\-_]+" })
@@ -119,11 +119,11 @@ public class YoukuCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        entries = (LinkedHashMap<String, Object>) entries.get("data");
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("stream");
-        ArrayList<Object> segment_list;
-        entries = (LinkedHashMap<String, Object>) entries.get("video");
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        entries = (Map<String, Object>) entries.get("data");
+        final List<Object> ressourcelist = (List<Object>) entries.get("stream");
+        List<Object> segment_list;
+        entries = (Map<String, Object>) entries.get("video");
         String title = (String) entries.get("title");
         if (StringUtils.isEmpty(title)) {
             /* Fallback */
@@ -135,9 +135,9 @@ public class YoukuCom extends PluginForDecrypt {
         String protocol;
         for (final Object streamo : ressourcelist) {
             protocol = "hls";
-            entries = (LinkedHashMap<String, Object>) streamo;
+            entries = (Map<String, Object>) streamo;
             final String url_hls = (String) entries.get("m3u8_url");
-            segment_list = (ArrayList<Object>) entries.get("segs");
+            segment_list = (List<Object>) entries.get("segs");
             final String width = Long.toString(JavaScriptEngineFactory.toLong(entries.get("width"), 0));
             final String height = Long.toString(JavaScriptEngineFactory.toLong(entries.get("height"), 0));
             long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
@@ -168,7 +168,7 @@ public class YoukuCom extends PluginForDecrypt {
             quality_key = String.format(quality_key_format, protocol, height);
             final DownloadLink[] httpSegments = new DownloadLink[segment_list.size()];
             for (final Object segmento : segment_list) {
-                entries = (LinkedHashMap<String, Object>) segmento;
+                entries = (Map<String, Object>) segmento;
                 final String url_http = (String) entries.get("cdn_url");
                 filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
                 if (StringUtils.isEmpty(url_http)) {

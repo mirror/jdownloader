@@ -21,19 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.plugins.components.config.DropBoxConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -54,6 +41,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DropboxCom;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.plugins.components.config.DropBoxConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?dropbox\\.com/(?:(?:sh|s|sc)/[^<>\"]+|l/[A-Za-z0-9]+).*|https?://(www\\.)?db\\.tt/[A-Za-z0-9]+|https?://dl\\.dropboxusercontent\\.com/s/.+" })
 public class DropBoxCom extends PluginForDecrypt {
@@ -210,7 +210,7 @@ public class DropBoxCom extends PluginForDecrypt {
                 counter++;
             }
         } while (url_is_password_protected && counter <= 3);
-        ArrayList<Object> ressourcelist = new ArrayList<Object>();
+        List<Object> ressourcelist = new ArrayList<Object>();
         Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final String object_type = (String) entries.get(".tag");
         if (!StringUtils.isEmpty(error_summary)) {
@@ -277,7 +277,7 @@ public class DropBoxCom extends PluginForDecrypt {
             }
             final Object entriesO = entries.get("entries");
             if (entriesO != null) {
-                ressourcelist = (ArrayList<Object>) entries.get("entries");
+                ressourcelist = (List<Object>) entries.get("entries");
             }
             for (final Object folderO : ressourcelist) {
                 entries = (Map<String, Object>) folderO;

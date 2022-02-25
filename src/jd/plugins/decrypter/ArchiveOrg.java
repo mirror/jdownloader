@@ -18,21 +18,10 @@ package jd.plugins.decrypter;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.ArchiveOrgConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -51,6 +40,18 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.ArchiveOrgConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org", "subdomain.archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/(?:details|download|stream|embed)/(?!copyrightrecords)@?.+", "https?://[^/]+\\.archive\\.org/view_archive\\.php\\?archive=[^\\&]+(?:\\&file=[^\\&]+)?" })
 public class ArchiveOrg extends PluginForDecrypt {
@@ -170,7 +171,7 @@ public class ArchiveOrg extends PluginForDecrypt {
             final Map<String, Object> brOptions = (Map<String, Object>) data.get("brOptions");
             final String bookId = brOptions.get("bookId").toString();
             final String title = (String) brOptions.get("bookTitle");
-            final ArrayList<Object> imagesO = (ArrayList<Object>) brOptions.get("data");
+            final List<Object> imagesO = (List<Object>) brOptions.get("data");
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(title);
             long loanedUntilTimestamp = 0;
@@ -190,7 +191,7 @@ public class ArchiveOrg extends PluginForDecrypt {
                  * Most of all objects will contain an array with 2 items --> Books always have two viewable pages. Exception = First page
                  * --> Cover
                  */
-                final ArrayList<Object> pagesO = (ArrayList<Object>) imageO;
+                final List<Object> pagesO = (List<Object>) imageO;
                 for (final Object pageO : pagesO) {
                     /* Grab "Preview"(???) version --> Usually "pageType":"NORMAL", "pageSide":"L", "viewable":true */
                     final Map<String, Object> bookPage = (Map<String, Object>) pageO;

@@ -16,10 +16,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -30,6 +28,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yumpu.com" }, urls = { "https?://(?:www\\.)?yumpu\\.com/[a-z]{2}/document/read/(\\d+)/([a-z0-9\\-]+)" })
 public class YumpuCom extends PluginForDecrypt {
@@ -48,15 +49,15 @@ public class YumpuCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final Object errorO = entries.get("error");
         if (errorO != null) {
             /* E.g. {"error":{"reason":"deleted","message":"Document deleted"}} */
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        entries = (LinkedHashMap<String, Object>) entries.get("document");
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("pages");
+        entries = (Map<String, Object>) entries.get("document");
+        final List<Object> ressourcelist = (List<Object>) entries.get("pages");
         final String description = (String) entries.get("description");
         String fpName = (String) entries.get("title");
         if (StringUtils.isEmpty(fpName)) {
@@ -64,9 +65,9 @@ public class YumpuCom extends PluginForDecrypt {
             fpName = url_name;
         }
         final String base_path = (String) entries.get("base_path");
-        entries = (LinkedHashMap<String, Object>) entries.get("images");
+        entries = (Map<String, Object>) entries.get("images");
         final String base_title = (String) entries.get("title");
-        final LinkedHashMap<String, Object> dimensions = (LinkedHashMap<String, Object>) entries.get("dimensions");
+        final Map<String, Object> dimensions = (Map<String, Object>) entries.get("dimensions");
         final String best_resolution = (String) dimensions.get("big");
         if (StringUtils.isEmpty(base_path) || StringUtils.isEmpty(base_title) || StringUtils.isEmpty(best_resolution) || ressourcelist == null || ressourcelist.size() == 0) {
             return null;

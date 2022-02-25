@@ -17,10 +17,8 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -31,6 +29,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvnow.de" }, urls = { "https?://(?:www\\.)?tvnow\\.(?:at|ch|de)/.+|https?://link\\.tvnow\\.de/\\?f=\\d+\\&e=\\d+" })
 public class TvnowDe extends PluginForDecrypt {
@@ -199,7 +200,7 @@ public class TvnowDe extends PluginForDecrypt {
             }
         }
         String formatTitle = null;
-        LinkedHashMap<String, Object> entries = null;
+        Map<String, Object> entries = null;
         if (formatID == null) {
             /* Required for old URLs which contain showname and stationName but not the formatID. */
             /* 2019-01-21: TODO: Find a way to find the stationName if it is not given at this stage! */
@@ -211,7 +212,7 @@ public class TvnowDe extends PluginForDecrypt {
             jd.plugins.hoster.TvnowDe.prepBRAPI(this.br);
             /* First we need to find the ID of whatever the user added */
             br.getPage(jd.plugins.hoster.TvnowDe.API_BASE + "/formats/seo?fields=id,title,hasFreeEpisodes,isGeoblocked&name=" + url_showname + ".php&station=" + stationName);
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 /* Rare case */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -259,14 +260,14 @@ public class TvnowDe extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             if (page == 1) {
                 /* Set total number of items on first loop */
                 totalNumerOfItems = (int) JavaScriptEngineFactory.toLong(entries.get("total"), 0);
             }
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("items");
+            final List<Object> ressourcelist = (List<Object>) entries.get("items");
             for (final Object videoO : ressourcelist) {
-                entries = (LinkedHashMap<String, Object>) videoO;
+                entries = (Map<String, Object>) videoO;
                 final String episodeID = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), -1));
                 final String seasonnumber = Long.toString(JavaScriptEngineFactory.toLong(entries.get("season"), -1));
                 final String episodenumber = jd.plugins.hoster.TvnowDe.getEpisodeNumber(entries);

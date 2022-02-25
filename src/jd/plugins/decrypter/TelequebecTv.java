@@ -16,7 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -46,7 +46,7 @@ public class TelequebecTv extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         // final boolean canPlay = ((Boolean) entries.get("canPlay")).booleanValue();
         // if (!canPlay) {
         // logger.info("Possibly GEO-blocked");

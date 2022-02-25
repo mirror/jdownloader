@@ -16,7 +16,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -40,9 +41,9 @@ public class VineCoDecrypter extends PluginForDecrypt {
         long count_decrypted = 0;
         final long count_per_page = 99;
         int page_current = 1;
-        LinkedHashMap<String, Object> entries = null;
+        Map<String, Object> entries = null;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        ArrayList<Object> resource_data_list = null;
+        List<Object> resource_data_list = null;
         final String parameter = param.toString().replace("http://", "https://");
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("class=\"?profile-details\"?")) {
@@ -72,8 +73,8 @@ public class VineCoDecrypter extends PluginForDecrypt {
             }
             /* Max API return = 99 */
             this.br.getPage("https://vine.co/api/timelines/users/" + userid + "?page=" + page_current + "&anchor=00&size=" + count_per_page);
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-            resource_data_list = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "data/records");
+            entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            resource_data_list = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "data/records");
             count_total = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "data/count"), -1);
             if (count_total < 1) {
                 /* The user did not post any videos --> Link offline */
@@ -85,7 +86,7 @@ public class VineCoDecrypter extends PluginForDecrypt {
                 break;
             }
             for (final Object o : resource_data_list) {
-                entries = (LinkedHashMap<String, Object>) o;
+                entries = (Map<String, Object>) o;
                 final String description = (String) entries.get("description");
                 final String permalinkUrl = (String) entries.get("permalinkUrl");
                 if (permalinkUrl == null) {

@@ -22,11 +22,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -41,6 +36,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tiktok.com" }, urls = { "https?://[A-Za-z0-9]+\\.tiktok\\.com/.+" })
 public class TiktokCom extends PluginForDecrypt {
@@ -111,7 +111,7 @@ public class TiktokCom extends PluginForDecrypt {
             if (paginationBroken) {
                 logger.warning("Plugin not yet finished, API signing is missing");
                 /* We can only return the elements we find on their website when we cannot use their API! */
-                ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/items");
+                ressourcelist = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/items");
                 for (final Object videoO : ressourcelist) {
                     entries = (Map<String, Object>) videoO;
                     final String videoID = (String) entries.get("id");

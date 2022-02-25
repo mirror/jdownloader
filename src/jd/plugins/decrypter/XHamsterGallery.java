@@ -22,9 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -43,6 +40,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XHamsterGallery extends PluginForDecrypt {
@@ -239,7 +239,7 @@ public class XHamsterGallery extends PluginForDecrypt {
                 final String json_source = br.getRegex("\"photos\":(\\[\\{.*?\\}\\])").getMatch(0);
                 // logger.info("json_source: " + json_source);
                 if (json_source != null) {
-                    final ArrayList<Object> lines = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(json_source);
+                    final List<Object> lines = (List) JavaScriptEngineFactory.jsonToJavaObject(json_source);
                     for (final Object line : lines) {
                         // logger.info("line: " + line);
                         if (line instanceof Map) {

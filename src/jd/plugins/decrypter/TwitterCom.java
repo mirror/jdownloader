@@ -29,15 +29,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -61,6 +52,15 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(?:www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/status/\\d+|https?://(?:www\\.|mobile\\.)?twitter\\.com/(?!i/)[A-Za-z0-9_\\-]{2,}(?:/(?:media|likes))?(\\?.*)?|https://twitter\\.com/i/cards/tfw/v1/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" })
 public class TwitterCom extends PornEmbedParser {
@@ -377,7 +377,7 @@ public class TwitterCom extends PornEmbedParser {
         final boolean useOriginalFilenames = PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class).isUseOriginalFilenames();
         final String tweetID = (String) entries.get("id_str");
         final String formattedDate = formatTwitterDate((String) entries.get("created_at"));
-        final ArrayList<Map<String, Object>> ressourcelist = (ArrayList<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "entities/media");
+        final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "entities/media");
         if (ressourcelist == null) {
             logger.info("This tweet does not contain any media objects: " + tweetID);
             return;
@@ -637,7 +637,7 @@ public class TwitterCom extends PornEmbedParser {
             br.getPage(url + "?" + thisquery.toString());
             handleErrorsAPI(this.br);
             entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            final ArrayList<Object> pagination_info = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "timeline/instructions/{0}/addEntries/entries");
+            final List<Object> pagination_info = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "timeline/instructions/{0}/addEntries/entries");
             final Map<String, Object> tweetMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "globalObjects/tweets");
             if (tweetMap == null || tweetMap.isEmpty()) {
                 logger.info("Found 0 tweets on current page --> Stopping");
@@ -703,8 +703,7 @@ public class TwitterCom extends PornEmbedParser {
     }
 
     /**
-     * https://developer.twitter.com/en/support/twitter-api/error-troubleshooting </br>
-     * Scroll down to "Twitter API error codes"
+     * https://developer.twitter.com/en/support/twitter-api/error-troubleshooting </br> Scroll down to "Twitter API error codes"
      */
     private void handleErrorsAPI(final Browser br) throws Exception {
         Map<String, Object> entries = null;

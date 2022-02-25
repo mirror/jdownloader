@@ -13,11 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -31,7 +31,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "https?://(?:www\\.)?ge\\.tt/(?!api)#?[A-Za-z0-9]+(?:/v/\\d+)?" })
 public class GeTtDecrypter extends PluginForDecrypt {
-
     public GeTtDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -40,38 +39,30 @@ public class GeTtDecrypter extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         final String parameter = param.toString().replace("#", "");
-
         if (parameter.matches("https?://(?:www\\.)?ge\\.tt/(?:developers|press|tools|notifications|blog|about|javascript|button|contact|terms|api|m).*?")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-
         br.setAllowedResponseCodes(410);
         br.getPage(parameter);
-
         if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 410 || br.containsHTML("Page not found|The page you were looking for was not found|Files removed|These files have been removed by the owner")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-
         // final String singleFile = new Regex(parameter, "/v/(\\d+)").getMatch(0);
         final String folderid = new Regex(parameter, "ge\\.tt/([A-Za-z0-9]+)(/v/\\d+)?").getMatch(0);
         br.getHeaders().put("Accept", "application/json, text/plain, */*");
         br.getPage("//api.ge.tt/1/shares/" + folderid);
-
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final String error = (String) entries.get("error");
-
         if (error != null || br.containsHTML(">404 Not Found<")) {
             final DownloadLink dlink = this.createOfflinelink(parameter);
             decryptedLinks.add(dlink);
             return decryptedLinks;
         }
-
-        final ArrayList<Object> files = (ArrayList<Object>) entries.get("files");
-
+        final List<Object> files = (List<Object>) entries.get("files");
         for (final Object fileo : files) {
-            entries = (LinkedHashMap<String, Object>) fileo;
+            entries = (Map<String, Object>) fileo;
             final String filename = (String) entries.get("filename");
             final String fileid = (String) entries.get("fileid");
             final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
@@ -82,7 +73,6 @@ public class GeTtDecrypter extends PluginForDecrypt {
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
-
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             logger.info("ge.tt: Folder is empty! Link: " + parameter);
             final DownloadLink dlink = this.createOfflinelink(parameter);
@@ -96,5 +86,4 @@ public class GeTtDecrypter extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

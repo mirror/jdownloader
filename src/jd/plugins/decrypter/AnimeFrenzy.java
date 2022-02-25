@@ -18,12 +18,8 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -33,6 +29,11 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animefrenzy.eu" }, urls = { "https?://(www\\.)?animefrenzy\\.(?:eu|net|org)/(?:anime|cartoon|watch|stream)/[^/]+" })
 public class AnimeFrenzy extends antiDDoSForDecrypt {
@@ -58,13 +59,13 @@ public class AnimeFrenzy extends antiDDoSForDecrypt {
         if (StringUtils.isNotEmpty(showSlug)) {
             Browser br2 = br.cloneBrowser();
             getPage(br2, "https://ani.api-web.site/anime/slug/" + showSlug + "?token=Yopgjtcustomer7NX1Oe");
-            LinkedHashMap<String, Object> jsonEntries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br2.toString());
+            Map<String, Object> jsonEntries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br2.toString());
             if (jsonEntries.get("data") != null) {
-                LinkedHashMap<String, Object> jsonData = (LinkedHashMap<String, Object>) jsonEntries.get("data");
+                Map<String, Object> jsonData = (Map<String, Object>) jsonEntries.get("data");
                 if (jsonData.get("episodes") != null) {
-                    ArrayList<LinkedHashMap<String, Object>> jsonEpisodes = (ArrayList<LinkedHashMap<String, Object>>) jsonData.get("episodes");
+                    List<Map<String, Object>> jsonEpisodes = (List<Map<String, Object>>) jsonData.get("episodes");
                     if (jsonEpisodes.size() > 0) {
-                        for (LinkedHashMap<String, Object> jsonEpisode : jsonEpisodes) {
+                        for (Map<String, Object> jsonEpisode : jsonEpisodes) {
                             if (StringUtils.isNotEmpty((String) jsonEpisode.get("slug"))) {
                                 links.add(br.getURL("/anime/" + (String) jsonEpisode.get("slug")).toString());
                             }
@@ -77,13 +78,13 @@ public class AnimeFrenzy extends antiDDoSForDecrypt {
         if (StringUtils.isNotEmpty(showSlug)) {
             Browser br2 = br.cloneBrowser();
             getPage(br2, "https://ani.api-web.site/anime-episode/slug/" + showSlug + "?token=Yopgjtcustomer7NX1Oe");
-            LinkedHashMap<String, Object> jsonEntries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br2.toString());
+            Map<String, Object> jsonEntries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br2.toString());
             if (jsonEntries.get("data") != null) {
-                LinkedHashMap<String, Object> jsonData = (LinkedHashMap<String, Object>) jsonEntries.get("data");
+                Map<String, Object> jsonData = (Map<String, Object>) jsonEntries.get("data");
                 if (jsonData.get("videos") != null) {
-                    ArrayList<LinkedHashMap<String, Object>> jsonEpisodes = (ArrayList<LinkedHashMap<String, Object>>) jsonData.get("videos");
+                    List<Map<String, Object>> jsonEpisodes = (List<Map<String, Object>>) jsonData.get("videos");
                     if (jsonEpisodes.size() > 0) {
-                        for (LinkedHashMap<String, Object> jsonEpisode : jsonEpisodes) {
+                        for (Map<String, Object> jsonEpisode : jsonEpisodes) {
                             if (StringUtils.isNotEmpty((String) jsonEpisode.get("host")) && StringUtils.isNotEmpty((String) jsonEpisode.get("video_id"))) {
                                 String host = (String) jsonEpisode.get("host");
                                 String video_id = (String) jsonEpisode.get("video_id");

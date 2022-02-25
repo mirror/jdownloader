@@ -13,11 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -31,9 +31,8 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "photobucket.com" }, urls = { "https?://(?:www\\.)?s\\d+\\.photobucket\\.com/user/[^/]+/library.+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "photobucket.com" }, urls = { "https?://(?:www\\.)?s\\d+\\.photobucket\\.com/user/[^/]+/library.+" })
 public class PhotobucketComAlbum extends PluginForDecrypt {
-
     public PhotobucketComAlbum(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -41,7 +40,7 @@ public class PhotobucketComAlbum extends PluginForDecrypt {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        LinkedHashMap<String, Object> json;
+        Map<String, Object> json;
         final String parameter = param.toString();
         br = new Browser();
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.97");
@@ -53,26 +52,21 @@ public class PhotobucketComAlbum extends PluginForDecrypt {
             return decryptedLinks;
         }
         final String token = this.br.getRegex("name=\"token\" id=\"token\" value=\"([^<>\"]*?)\"").getMatch(0);
-
         final FilePackage fp = FilePackage.getInstance();
-
         long image_count_total = 0;
         int page = 1;
-
         final String albumdeds = br.getRegex("collectionData:\\s*(\\{.*?\\}),\\s*collectionId:").getMatch(0);
         if (albumdeds == null) {
             return null;
         }
-        json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(albumdeds);
+        json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(albumdeds);
         if (image_count_total == 0) {
             image_count_total = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(json, "items/total"), 0);
         }
         /* Don't try more than 24 per page - it won't work - state 2015-10-28 */
         // final long max_entries_per_page = 24;
         final long max_entries_per_page = JavaScriptEngineFactory.toLong(json.get("pageSize"), 24);
-
         final String fpName = (String) json.get("albumName");
-
         if (fpName != null) {
             fp.setName(Encoding.htmlDecode(fpName.trim()));
         }
@@ -93,11 +87,11 @@ public class PhotobucketComAlbum extends PluginForDecrypt {
                 br.getHeaders().put("application/json", "text/javascript, */*; q=0.01");
                 final String url = libraryUrl + "/component/Common-PageCollection-Album-AlbumPageCollection?filters[album]=" + currentAlbumPath + "&filters[album_content]=2&sort=3&limit=" + max_entries_per_page + "&page=" + page + "&linkerMode=&json=1&hash=" + token + "&_=" + System.currentTimeMillis();
                 br.getPage(url);
-                json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             }
-            final ArrayList<Object> ressourcelist = (ArrayList) (decryptedLinks.isEmpty() ? JavaScriptEngineFactory.walkJson(json, "items/objects") : JavaScriptEngineFactory.walkJson(json, "body/objects"));
+            final List<Object> ressourcelist = (List) (decryptedLinks.isEmpty() ? JavaScriptEngineFactory.walkJson(json, "items/objects") : JavaScriptEngineFactory.walkJson(json, "body/objects"));
             for (final Object pico : ressourcelist) {
-                json = (LinkedHashMap<String, Object>) pico;
+                json = (Map<String, Object>) pico;
                 final String fname = (String) json.get("name");
                 final String dlink = (String) json.get("linkUrl");
                 final String userid = Long.toString(JavaScriptEngineFactory.toLong(json.get("userId"), -1));
@@ -118,7 +112,6 @@ public class PhotobucketComAlbum extends PluginForDecrypt {
             }
             page++;
         } while (decryptedLinks.size() < image_count_total);
-
         return decryptedLinks;
     }
 }

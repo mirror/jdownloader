@@ -16,7 +16,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import jd.PluginWrapper;
@@ -69,10 +70,10 @@ public class JianguoyunCom extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         br.getPage("https://www.jianguoyun.com/d/ajax/dirops/pubDIRBrowse?hash=" + fid + "&relPath=" + subfolder + "&_=" + System.currentTimeMillis());
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        final ArrayList<Object> ressourcelist = (ArrayList) entries.get("objects");
+        Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        final List<Object> ressourcelist = (List) entries.get("objects");
         for (final Object foldero : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) foldero;
+            entries = (Map<String, Object>) foldero;
             final String type = (String) entries.get("type");
             final String relPath = (String) entries.get("relPath");
             final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);

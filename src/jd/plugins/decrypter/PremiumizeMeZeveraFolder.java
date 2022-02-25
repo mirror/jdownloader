@@ -6,10 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -27,6 +23,10 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.PremiumizeBrowseNode;
 import jd.plugins.hoster.ZeveraCore;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
@@ -183,7 +183,7 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
         final ArrayList<PremiumizeBrowseNode> browseNodes = new ArrayList<PremiumizeBrowseNode>();
         if (StringUtils.equals("success", status)) {
             /* Folder */
-            final List<Object> folderContents = (ArrayList<Object>) responseMap.get("content");
+            final List<Object> folderContents = (List<Object>) responseMap.get("content");
             final String folderName = (String) responseMap.get("name");
             final String parentID = (String) responseMap.get("parent_id");
             for (final Object jsonObject : folderContents) {

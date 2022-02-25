@@ -16,17 +16,11 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -37,6 +31,12 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "newasiantv.tv" }, urls = { "https?://(?:\\w+\\.)?newasiantv\\.(tv|ch|biz|com)/(?:(?:watch|files)/.+\\.html?|embed\\.php\\?.+|\\?xlink=.+)" })
 public class NewAsianTv extends PluginForDecrypt {
@@ -60,7 +60,7 @@ public class NewAsianTv extends PluginForDecrypt {
                 for (Object jsonObject : jsonArray) {
                     final Browser br2 = br.cloneBrowser();
                     final String apiUrl = "https://player.newasiantv.com/v2/loader.php";
-                    HashMap map = (HashMap) jsonObject;
+                    Map map = (Map) jsonObject;
                     String url = String.valueOf(map.getOrDefault("url", ""));
                     String subUrl = String.valueOf(map.getOrDefault("subUrl", ""));
                     String episodeID = String.valueOf(map.getOrDefault("episodeId", ""));

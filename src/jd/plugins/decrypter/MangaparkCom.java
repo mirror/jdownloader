@@ -17,10 +17,8 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -34,6 +32,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangapark.com" }, urls = { "https://(?:www\\.)?manga(?:park|tank|window)\\.(?:com|me|net)/manga/[\\w\\-\\.\\%]+/i\\d+/c\\d+" })
 public class MangaparkCom extends PluginForDecrypt {
@@ -113,12 +114,12 @@ public class MangaparkCom extends PluginForDecrypt {
         final String json = br.getRegex("var _load_pages\\s*=\\s*(\\[[^\\]]+\\])").getMatch(0);
         if (json != null) {
             /* 2020-02-24 */
-            LinkedHashMap<String, Object> entries;
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+            Map<String, Object> entries;
+            final List<Object> ressourcelist = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
             int counter = 0;
             for (final Object picO : ressourcelist) {
                 counter++;
-                entries = (LinkedHashMap<String, Object>) picO;
+                entries = (Map<String, Object>) picO;
                 final String url = (String) entries.get("u");
                 if (StringUtils.isEmpty(url) || !url.startsWith("http")) {
                     continue;

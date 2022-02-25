@@ -219,7 +219,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                     decryptAgainLinks = ajax.getRegex("/videos/(\\d+)").getColumn(0);
                     /* TODO: Walk through json instead of using RegEx */
                     Map<String, Object> entries = JSonStorage.restoreFromString(ajax.toString(), TypeRef.HASHMAP);
-                    final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("videos");
+                    final List<Object> ressourcelist = (List<Object>) entries.get("videos");
                     if (ressourcelist.size() == 0) {
                         decryptedLinks.add(this.createOfflinelink(parameter));
                         return decryptedLinks;

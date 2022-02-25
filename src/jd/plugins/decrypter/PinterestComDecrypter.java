@@ -170,7 +170,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         br.getPage(pin_json_url);
         Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         if (entries.containsKey("resource_data_cache")) {
-            resource_data_cache = (ArrayList) entries.get("resource_data_cache");
+            resource_data_cache = (List) entries.get("resource_data_cache");
         } else {
             /* 2020-02-17 */
             final Object pinO = entries.get("resource_response");
@@ -277,7 +277,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             logger.info("Crawling sections page: " + (sectionPage + 1));
             final Map<String, Object> sectionsData = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
             // Map<String, Object> json_root = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
-            final List<Object> sections = (ArrayList) JavaScriptEngineFactory.walkJson(sectionsData, "resource_response/data");
+            final List<Object> sections = (List) JavaScriptEngineFactory.walkJson(sectionsData, "resource_response/data");
             int sectionCounter = 1;
             for (final Object sectionO : sections) {
                 final Map<String, Object> entries = (Map<String, Object>) sectionO;
@@ -340,7 +340,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             final Map<String, Object> sectionPaginationInfo = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
             final Object bookmarksO = JavaScriptEngineFactory.walkJson(sectionPaginationInfo, "resource/options/bookmarks");
             final String bookmarks = (String) JavaScriptEngineFactory.walkJson(sectionPaginationInfo, "resource/options/bookmarks/{0}");
-            final List<Object> pins = (ArrayList) JavaScriptEngineFactory.walkJson(sectionPaginationInfo, "resource_response/data");
+            final List<Object> pins = (List) JavaScriptEngineFactory.walkJson(sectionPaginationInfo, "resource_response/data");
             final int sizeBefore = decryptedLinks.size();
             for (final Object pinO : pins) {
                 final Map<String, Object> pinMap = (Map<String, Object>) pinO;

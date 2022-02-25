@@ -115,7 +115,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                 /* == click on "Load more" */
                 br.getPage(String.format("https://www.%s/ajax/illust/%s/pages?lang=en", this.getHost(), itemID));
                 entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                final ArrayList<Object> additionalpics = (ArrayList<Object>) entries.get("body");
+                final List<Object> additionalpics = (List<Object>) entries.get("body");
                 int counter = 0;
                 for (final Object picO : additionalpics) {
                     counter++;

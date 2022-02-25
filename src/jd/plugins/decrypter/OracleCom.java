@@ -17,11 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -38,6 +35,10 @@ import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.BrightcoveDecrypter.BrightcoveEdgeContainer;
 import jd.plugins.decrypter.BrightcoveDecrypter.BrightcoveEdgeContainer.Protocol;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "oracle.com" }, urls = { "https?://learn\\.oracle\\.com/ols/course/[a-z0-9\\-]+/\\d+/\\d+/\\d+|https?://learn\\.oracle\\.com/ords/training/DL4_EKITDOCUMENT\\.getPDF\\?p_url=[^\\&]+" })
 public class OracleCom extends PluginForDecrypt {
@@ -105,7 +106,7 @@ public class OracleCom extends PluginForDecrypt {
             final String json = br.getRegex("var globalConsData =\\s*(\\{.+\\});").getMatch(0);
             Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
             final String title = (String) entries.get("name");
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("components");
+            final List<Object> ressourcelist = (List<Object>) entries.get("components");
             /* Grab http qualities only! */
             final ArrayList<Protocol> allowedProtocols = new ArrayList<Protocol>();
             allowedProtocols.add(Protocol.HTTP);

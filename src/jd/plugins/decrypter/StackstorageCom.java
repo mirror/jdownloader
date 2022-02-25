@@ -16,12 +16,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,6 +28,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stackstorage.com" }, urls = { "https?://([a-z0-9]+)\\.stackstorage\\.com/s/([A-Za-z0-9]+)(\\?dir=([^\\&]+)\\&node\\-id=(\\d+))?" })
 public class StackstorageCom extends antiDDoSForDecrypt {
@@ -84,8 +85,8 @@ public class StackstorageCom extends antiDDoSForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("nodes");
+            Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            List<Object> ressourcelist = (List<Object>) entries.get("nodes");
             if (page == 0 && ressourcelist == null && entries != null && entries.containsKey("fileId")) {
                 /* Looks like we got a single file only! */
                 ressourcelist = new ArrayList<Object>();
@@ -96,7 +97,7 @@ public class StackstorageCom extends antiDDoSForDecrypt {
                 break;
             }
             for (final Object fileO : ressourcelist) {
-                entries = (LinkedHashMap<String, Object>) fileO;
+                entries = (Map<String, Object>) fileO;
                 String path_with_filename = (String) entries.get("path");
                 final String fileid = Long.toString(JavaScriptEngineFactory.toLong(entries.get("fileId"), 0));
                 final String mimetype = (String) entries.get("mimetype");

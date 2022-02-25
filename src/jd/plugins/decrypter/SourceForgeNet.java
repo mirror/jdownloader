@@ -16,15 +16,10 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -36,6 +31,11 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sourceforge.net" }, urls = { "https?://(?:www\\.)?sourceforge\\.net/(?:projects/[^/]+/files/[^\\?<>\"]{0,}|settings/mirror_choices\\?projectname=.+\\&filename=.+)" })
 public class SourceForgeNet extends PluginForDecrypt {
@@ -135,11 +135,11 @@ public class SourceForgeNet extends PluginForDecrypt {
             fp = FilePackage.getInstance();
             fp.setName(title);
         }
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+        final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         final Set<Entry<String, Object>> entryset = entries.entrySet();
         for (Entry<String, Object> entry : entryset) {
             final DownloadLink dl;
-            final LinkedHashMap<String, Object> data = (LinkedHashMap<String, Object>) entries.get(entry.getKey());
+            final Map<String, Object> data = (Map<String, Object>) entries.get(entry.getKey());
             final String filename = (String) data.get("name");
             final String sha1 = (String) data.get("sha1");
             final String md5 = (String) data.get("md5");

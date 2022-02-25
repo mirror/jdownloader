@@ -19,14 +19,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -43,6 +39,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobox.com" }, urls = { "https?://(?:www\\.)?videobox\\.com/(?:movie\\-details\\?contentId=|.*?flashPage/)\\d+" })
 public class VideoBoxComDecrypter extends PluginForDecrypt {
@@ -80,25 +80,25 @@ public class VideoBoxComDecrypter extends PluginForDecrypt {
         final String sessionID = br.getCookie("https://videobox.com/", "JSESSIONID");
         final String videoID = new Regex(parameter, "(\\d+)$").getMatch(0);
         br.getPage("https://www." + this.getHost() + "/content/details/generate/" + videoID + "/content-column.json?x-user-name=" + encodedUsername + "&x-session-key=" + sessionID + "&callback=metai.buildMovieDetails");
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.getRegex("\\((.+)\\);$").getMatch(0));
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "details/{0}");
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRegex("\\((.+)\\);$").getMatch(0));
+        entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "details/{0}");
         String fpName = (String) entries.get("name");
         if (StringUtils.isEmpty(fpName)) {
             /* Fallback */
             fpName = videoID;
         }
         final boolean canDownload = ((Boolean) entries.get("canDownload")).booleanValue();
-        final ArrayList<Object> scenes = (ArrayList<Object>) entries.get("scenes");
+        final List<Object> scenes = (List<Object>) entries.get("scenes");
         /* Access downloadURLs to either find downloadurls or at least filesize information for stream download */
         br.getPage("/content/download/options/" + videoID + ".json?x-user-name=" + encodedUsername + "&x-session-key=" + sessionID + "&callback=metai.buildDownloadLinks");
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.getRegex("\\((.+)\\);$").getMatch(0));
-        ArrayList<Object> resolutions = (ArrayList<Object>) entries.get("content");
+        entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRegex("\\((.+)\\);$").getMatch(0));
+        List<Object> resolutions = (List<Object>) entries.get("content");
         /* 2018-04-30: Official download possible? / They have "Download" accounts and "Streaming" accounts! */
         final HashMap<String, DownloadLink> all_found_downloadlinks = new HashMap<String, DownloadLink>();
         if (canDownload) {
             /* Download via official download URLs */
             for (final Object resO : resolutions) {
-                entries = (LinkedHashMap<String, Object>) resO;
+                entries = (Map<String, Object>) resO;
                 final String directLink = (String) entries.get("url");
                 final String downloadSize = (String) entries.get("size");
                 final String quality = (String) entries.get("res");
@@ -122,7 +122,7 @@ public class VideoBoxComDecrypter extends PluginForDecrypt {
                 /* TODO: Check this! */
                 int currentSceneNumber = 1;
                 for (final Object sceneO : scenes) {
-                    entries = (LinkedHashMap<String, Object>) sceneO;
+                    entries = (Map<String, Object>) sceneO;
                     final String sceneName = (String) entries.get("name");
                     final String sceneID = (String) entries.get("id");
                     if (sceneName == null || sceneID == null) {
@@ -130,10 +130,10 @@ public class VideoBoxComDecrypter extends PluginForDecrypt {
                         return null;
                     }
                     br.getPage("/content/download/options/" + sceneID + ".json?x-user-name=" + encodedUsername + "&x-session-key=" + sessionID + "&callback=metai.buildDownloadLinks");
-                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.getRegex("\\((.+)\\);$").getMatch(0));
-                    resolutions = (ArrayList<Object>) entries.get("content");
+                    entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRegex("\\((.+)\\);$").getMatch(0));
+                    resolutions = (List<Object>) entries.get("content");
                     for (final Object resO : resolutions) {
-                        entries = (LinkedHashMap<String, Object>) resO;
+                        entries = (Map<String, Object>) resO;
                         final String directLink = (String) entries.get("url");
                         final String downloadSize = (String) entries.get("size");
                         final String quality = (String) entries.get("res");
@@ -157,7 +157,7 @@ public class VideoBoxComDecrypter extends PluginForDecrypt {
             } else {
                 /* Download stream */
                 br.getPage("/content/download/url/" + videoID + ".json?x-user-name=" + encodedUsername + "&x-session-key=&callback=metai.loadHtml5Video");
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.getRegex("\\((.+)\\);$").getMatch(0));
+                entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRegex("\\((.+)\\);$").getMatch(0));
                 final String quality;
                 final String quality_website;
                 String urlStream = (String) entries.get("urlHD");
@@ -187,7 +187,7 @@ public class VideoBoxComDecrypter extends PluginForDecrypt {
                 if (resolutions != null && resolutions.size() > 0) {
                     for (final Object resO : resolutions) {
                         /* Try to set filesize as the highest downloadable item == stream filesize */
-                        entries = (LinkedHashMap<String, Object>) resO;
+                        entries = (Map<String, Object>) resO;
                         final String downloadSize = (String) entries.get("size");
                         final String quality_this_item = (String) entries.get("res");
                         if (!StringUtils.isEmpty(downloadSize) && !StringUtils.isEmpty(quality_this_item) && quality_this_item.equalsIgnoreCase(quality_website)) {

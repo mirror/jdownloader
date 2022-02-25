@@ -18,10 +18,9 @@ package jd.plugins.decrypter;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -35,6 +34,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "music.163.com" }, urls = { "https?://(?:www\\.)?music\\.163\\.com/(?:#/)?(?:album\\?id=|artist/album\\?id=|playlist\\?id=)\\d+" })
 public class Music163Com extends PluginForDecrypt {
@@ -61,8 +62,8 @@ public class Music163Com extends PluginForDecrypt {
         final SubConfiguration cfg = SubConfiguration.getConfig("music.163.com");
         final boolean fastcheck = cfg.getBooleanProperty(FAST_LINKCHECK, false);
         final String[] qualities = jd.plugins.hoster.Music163Com.audio_qualities;
-        LinkedHashMap<String, Object> entries = null;
-        ArrayList<Object> resourcelist = null;
+        Map<String, Object> entries = null;
+        List<Object> resourcelist = null;
         jd.plugins.hoster.Music163Com.prepareAPI(this.br);
         if (parameter.matches(TYPE_ARTIST)) {
             br.getPage("http://music.163.com/api/artist/albums/" + lid + "?id=" + lid + "&offset=0&total=true&limit=1000");
@@ -70,17 +71,17 @@ public class Music163Com extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-            resourcelist = (ArrayList) entries.get("hotAlbums");
+            entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            resourcelist = (List) entries.get("hotAlbums");
             for (final Object albumo : resourcelist) {
-                final LinkedHashMap<String, Object> album_info = (LinkedHashMap<String, Object>) albumo;
+                final Map<String, Object> album_info = (Map<String, Object>) albumo;
                 final String album_id = Long.toString(JavaScriptEngineFactory.toLong(album_info.get("id"), -1));
                 final DownloadLink dl = createDownloadlink("http://music.163.com/album?id=" + album_id);
                 decryptedLinks.add(dl);
             }
         } else {
             long publishedTimestamp = 0;
-            LinkedHashMap<String, Object> artistinfo = null;
+            Map<String, Object> artistinfo = null;
             String name_artist = null;
             String name_album = null;
             String fpName = null;
@@ -94,10 +95,10 @@ public class Music163Com extends PluginForDecrypt {
                     decryptedLinks.add(this.createOfflinelink(parameter));
                     return decryptedLinks;
                 }
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                entries = (LinkedHashMap<String, Object>) entries.get("result");
-                artistinfo = (LinkedHashMap<String, Object>) entries.get("creator");
-                resourcelist = (ArrayList) entries.get("tracks");
+                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                entries = (Map<String, Object>) entries.get("result");
+                artistinfo = (Map<String, Object>) entries.get("creator");
+                resourcelist = (List) entries.get("tracks");
                 coverurl = (String) entries.get("coverImgUrl");
                 name_playlist = (String) entries.get("name");
                 name_creator = (String) artistinfo.get("signature");
@@ -109,12 +110,12 @@ public class Music163Com extends PluginForDecrypt {
                     decryptedLinks.add(this.createOfflinelink(parameter));
                     return decryptedLinks;
                 }
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                entries = (LinkedHashMap<String, Object>) entries.get("album");
-                artistinfo = (LinkedHashMap<String, Object>) entries.get("artist");
+                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                entries = (Map<String, Object>) entries.get("album");
+                artistinfo = (Map<String, Object>) entries.get("artist");
                 coverurl = (String) entries.get("picUrl");
                 publishedTimestamp = JavaScriptEngineFactory.toLong(entries.get("publishTime"), 0);
-                resourcelist = (ArrayList) entries.get("songs");
+                resourcelist = (List) entries.get("songs");
                 name_album = (String) entries.get("name");
                 name_artist = (String) artistinfo.get("name");
                 fpName = name_artist + " - " + name_album;
@@ -133,9 +134,9 @@ public class Music163Com extends PluginForDecrypt {
             for (final Object songo : resourcelist) {
                 String ext = null;
                 long filesize = 0;
-                final LinkedHashMap<String, Object> song_info = (LinkedHashMap<String, Object>) songo;
-                final ArrayList<Object> artists = (ArrayList) song_info.get("artists");
-                final LinkedHashMap<String, Object> artist_info = (LinkedHashMap<String, Object>) artists.get(0);
+                final Map<String, Object> song_info = (Map<String, Object>) songo;
+                final List<Object> artists = (List) song_info.get("artists");
+                final Map<String, Object> artist_info = (Map<String, Object>) artists.get(0);
                 final String content_title = (String) song_info.get("name");
                 final String fid = Long.toString(JavaScriptEngineFactory.toLong(song_info.get("id"), -1));
                 final String tracknumber = df.format(counter);
@@ -144,7 +145,7 @@ public class Music163Com extends PluginForDecrypt {
                 for (final String quality : qualities) {
                     final Object musicO = song_info.get(quality);
                     if (musicO != null) {
-                        final LinkedHashMap<String, Object> musicmap = (LinkedHashMap<String, Object>) musicO;
+                        final Map<String, Object> musicmap = (Map<String, Object>) musicO;
                         ext = (String) musicmap.get("extension");
                         filesize = JavaScriptEngineFactory.toLong(musicmap.get("size"), -1);
                         break;

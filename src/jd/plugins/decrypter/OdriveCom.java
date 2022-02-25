@@ -16,11 +16,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -33,6 +30,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "odrive.com" }, urls = { "https?://(?:www\\.)?odrive\\.com/(s/[a-f0-9\\-]+|folder/(.+))" })
 public class OdriveCom extends PluginForDecrypt {
@@ -79,10 +80,10 @@ public class OdriveCom extends PluginForDecrypt {
         if (passwordFailure) {
             throw new DecrypterException(DecrypterException.PASSWORD);
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        entries = (LinkedHashMap<String, Object>) entries.get("data");
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        entries = (Map<String, Object>) entries.get("data");
         // final String nextPageToken = (String) entries.get("nextPageToken");
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("items");
+        final List<Object> ressourcelist = (List<Object>) entries.get("items");
         if (ressourcelist.size() == 0) {
             logger.info("Empty folder?");
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -95,7 +96,7 @@ public class OdriveCom extends PluginForDecrypt {
         final UrlQuery querypw = new UrlQuery();
         querypw.add("password", passCode);
         for (final Object fileO : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) fileO;
+            entries = (Map<String, Object>) fileO;
             final String fileType = (String) entries.get("fileType");
             final String title = (String) entries.get("name");
             String linkUri = (String) entries.get("linkUri");

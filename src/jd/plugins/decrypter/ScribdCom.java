@@ -16,10 +16,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -35,6 +33,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "scribd.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?scribd\\.com/(?:(?!doc/)collections/\\d+/[A-Za-z0-9\\-_%]+|user/\\d+/[^/]+|(?:audiobook|listen)/\\d+(?:/[^/]+)?)" })
 public class ScribdCom extends PluginForDecrypt {
@@ -132,11 +133,11 @@ public class ScribdCom extends PluginForDecrypt {
             }
             String title = null;
             br.getPage("https://de." + this.getHost() + "/listen/" + bookID);
-            LinkedHashMap<String, Object> entries = null;
+            Map<String, Object> entries = null;
             String session_key = null;
             try {
                 final String json = br.getRegex("ReactDOM\\.render\\(React\\.createElement\\(Scribd\\.Audiobooks\\.Show, (\\{.*?\\})\\), document\\.getElementById").getMatch(0);
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
+                entries = JavaScriptEngineFactory.jsonToJavaMap(json);
                 title = (String) JavaScriptEngineFactory.walkJson(entries, "doc/title");
                 session_key = (String) JavaScriptEngineFactory.walkJson(entries, "audiobook/session_key");
             } catch (final Throwable e) {
@@ -165,17 +166,17 @@ public class ScribdCom extends PluginForDecrypt {
             /* This call will also provide more details about the audiobook e.g. 'drm_free' */
             // br.getPage("https://dailyplanet.findawayworld.com/v1/keys?session_key=" + session_key);
             br.getPage("https://api.findawayworld.com/v4/accounts/scribd-" + userID + "/audiobooks/" + external_id);
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             /* There are multiple licenses available. Use the first one. */
             license_id = (String) JavaScriptEngineFactory.walkJson(entries, "licenses/{0}/id");
             /* 2019-08-12: Generated directurls will usually be valid for ~48 hours */
             br.postPageRaw("https://api.findawayworld.com/v4/audiobooks/" + external_id + "/playlists", "{\"license_id\":\"" + license_id + "\"}");
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("playlist");
+            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final List<Object> ressourcelist = (List<Object>) entries.get("playlist");
             int counter = 0;
             for (final Object audioO : ressourcelist) {
                 counter++;
-                entries = (LinkedHashMap<String, Object>) audioO;
+                entries = (Map<String, Object>) audioO;
                 String filename = title;
                 final String downloadurl = (String) entries.get("url");
                 final long part_number = JavaScriptEngineFactory.toLong(entries.get("part_number"), 0);

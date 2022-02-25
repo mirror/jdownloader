@@ -13,13 +13,13 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -43,19 +43,13 @@ import org.xml.sax.helpers.DefaultHandler;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "metalinker.org" }, urls = { "http://[\\d\\w\\.:\\-@]*/.*?\\.(metalink|meta4)" })
 public class MtLnk extends PluginForDecrypt {
-
     private ArrayList<DownloadLink>         decryptedLinks;
-
     /* we use identity as package name if available */
     private String                          packageName   = null;
-
     private String                          publisherName = null;
-
     private String                          publisherURL  = null;
-
     final private UnknownCrawledLinkHandler handler       = new UnknownCrawledLinkHandler() {
-
-                                                              @Override
+        @Override
                                                               public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
                                                                   final DownloadLink dlLink = link.getDownloadLink();
                                                                   if (dlLink != null && !StringUtils.startsWithCaseInsensitive(dlLink.getPluginPatternMatcher(), "directhttp://")) {
@@ -84,7 +78,7 @@ public class MtLnk extends PluginForDecrypt {
 
     public boolean pluginAPI(String method, Object input, Object output) throws Exception {
         if ("decryptString".equalsIgnoreCase(method)) {
-            ((ArrayList<DownloadLink>) output).addAll(decryptString((String) input));
+            ((List<DownloadLink>) output).addAll(decryptString((String) input));
             return true;
         }
         return false;
@@ -109,7 +103,6 @@ public class MtLnk extends PluginForDecrypt {
         } catch (Throwable t) {
             logger.log(t);
         }
-
         if (packageName != null) {
             final FilePackage pgk = FilePackage.getInstance();
             pgk.setName(packageName);
@@ -130,7 +123,6 @@ public class MtLnk extends PluginForDecrypt {
         Attributes              atr;
         String                  path   = "";
         private DownloadLink    dLink  = null;
-
         private String          md5    = null;
         private String          sha1   = null;
         private String          sha256 = null;
@@ -207,5 +199,4 @@ public class MtLnk extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

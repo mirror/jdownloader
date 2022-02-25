@@ -20,11 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -33,6 +28,11 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "degoo.com" }, urls = { "https?://(?:cloud|app)\\.degoo\\.com/share/([A-Za-z0-9\\-_]+)(.*\\?ID=\\d+)?" })
 public class DegooCom extends PluginForDecrypt {
@@ -79,7 +79,7 @@ public class DegooCom extends PluginForDecrypt {
             }
             Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             nextPageToken = (String) entries.get("NextToken");
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("Items");
+            final List<Object> ressourcelist = (List<Object>) entries.get("Items");
             if (ressourcelist.size() == 0) {
                 if (decryptedLinks.size() == 0) {
                     logger.info("Empty folder");
@@ -99,7 +99,7 @@ public class DegooCom extends PluginForDecrypt {
             for (final Object ressourceO : ressourcelist) {
                 page++;
                 logger.info("Crawling page: " + page);
-                entries = (HashMap<String, Object>) ressourceO;
+                entries = (Map<String, Object>) ressourceO;
                 final String title = (String) entries.get("Name");
                 final int filesize = ((Integer) entries.get("Size")).intValue();
                 final boolean isFolder = ((Boolean) entries.get("IsContainer")).booleanValue();

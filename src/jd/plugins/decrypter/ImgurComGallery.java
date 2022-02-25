@@ -22,14 +22,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -51,6 +43,14 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.ImgurComHoster;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /*Only accept single-imag URLs with an LID-length or either 5 OR 7 - everything else are invalid links or thumbnails*/
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -572,8 +572,8 @@ public class ImgurComGallery extends PluginForDecrypt {
         final Object dataO = entries.get("data");
         if (!(dataO instanceof Map)) {
             /**
-             * 2020-10-06: Offline content or single item e.g.: {"data":[],"success":true,"status":200} </br>
-             * We've checked for offline already so let's just add it as a single item.
+             * 2020-10-06: Offline content or single item e.g.: {"data":[],"success":true,"status":200} </br> We've checked for offline
+             * already so let's just add it as a single item.
              */
             final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
             plg.setBrowser(brc);
@@ -635,7 +635,7 @@ public class ImgurComGallery extends PluginForDecrypt {
             logger.info("Crawling page: " + page);
             apiCrawlJsonMultipleItems(entries, index);
             // final int imgcount = (int) JavaScriptEngineFactory.toLong(entries.get("images_count"), 0);
-            final ArrayList<Object> data = (ArrayList<Object>) entries.get("images");
+            final List<Object> data = (List<Object>) entries.get("images");
             index += data.size();
             if (data.size() < 100) {
                 logger.info("Stopping because current page contained less than " + maxcount + " items");
@@ -693,7 +693,7 @@ public class ImgurComGallery extends PluginForDecrypt {
 
     /** Website- and API json are very similar. Keep the crawlers in separate methods nonetheless!! */
     private void websiteCrawlJsonMultipleItems(Map<String, Object> entries) throws ParseException {
-        final ArrayList<Object> imagesO = (ArrayList<Object>) entries.get("images");
+        final List<Object> imagesO = (List<Object>) entries.get("images");
         int itemNumber = 0;
         final int padLength = getPadLength(imagesO.size());
         for (final Object imageO : imagesO) {

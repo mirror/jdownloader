@@ -17,8 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import jd.PluginWrapper;
@@ -112,8 +112,8 @@ public class EmbedyCc extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "response/1/files");
+            Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
+            entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "response/1/files");
             final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
             while (it.hasNext()) {
                 final Entry<String, Object> ipentry = it.next();

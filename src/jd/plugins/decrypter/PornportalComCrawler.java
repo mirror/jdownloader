@@ -22,14 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.PornportalComConfig;
-import org.jdownloader.plugins.components.config.PornportalComConfig.FilenameScheme;
-import org.jdownloader.plugins.components.config.PornportalComConfig.QualitySelectionMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -49,6 +41,14 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.hoster.PornportalCom;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.PornportalComConfig;
+import org.jdownloader.plugins.components.config.PornportalComConfig.FilenameScheme;
+import org.jdownloader.plugins.components.config.PornportalComConfig.QualitySelectionMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class PornportalComCrawler extends PluginForDecrypt {
@@ -252,7 +252,7 @@ public class PornportalComCrawler extends PluginForDecrypt {
         /* Look for more objects e.g. video split into multiple parts/scenes(??!) */
         final Object videoChildrenO = result.get("children");
         if (videoChildrenO != null) {
-            final ArrayList<Map<String, Object>> children = (ArrayList<Map<String, Object>>) videoChildrenO;
+            final List<Map<String, Object>> children = (List<Map<String, Object>>) videoChildrenO;
             videoObjects.addAll(children);
         }
         final boolean isPremium = account != null && account.getType() == AccountType.PREMIUM;

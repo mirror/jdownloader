@@ -17,7 +17,8 @@ package jd.plugins.decrypter;
 
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import jd.PluginWrapper;
@@ -66,8 +67,8 @@ public class PCloudComFolder extends PluginForDecrypt {
             decryptedLinks.add(main);
             return decryptedLinks;
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        entries = (LinkedHashMap<String, Object>) entries.get("metadata");
+        Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        entries = (Map<String, Object>) entries.get("metadata");
         final String folderNameMain = (String) entries.get("name");
         addFolder(entries, null);
         if (decryptedLinks.size() > 1 && SubConfiguration.getConfig(this.getHost()).getBooleanProperty(DOWNLOAD_ZIP, false)) {
@@ -85,15 +86,15 @@ public class PCloudComFolder extends PluginForDecrypt {
 
     /** Recursive function to crawl all folders/subfolders */
     @SuppressWarnings("unchecked")
-    private void addFolder(final LinkedHashMap<String, Object> entries, String lastFpname) {
-        ArrayList<Object> ressourcelist_temp = null;
+    private void addFolder(final Map<String, Object> entries, String lastFpname) {
+        List<Object> ressourcelist_temp = null;
         final boolean isFolder = ((Boolean) entries.get("isfolder"));
         if (isFolder) {
             /* Only update lastFoldername if we actually have a folder ... */
             lastFpname = (String) entries.get("name");
-            ressourcelist_temp = (ArrayList<Object>) entries.get("contents");
+            ressourcelist_temp = (List<Object>) entries.get("contents");
             for (final Object ressorceo : ressourcelist_temp) {
-                final LinkedHashMap<String, Object> tempmap = (LinkedHashMap<String, Object>) ressorceo;
+                final Map<String, Object> tempmap = (Map<String, Object>) ressorceo;
                 addFolder(tempmap, lastFpname);
             }
         } else {
@@ -101,7 +102,7 @@ public class PCloudComFolder extends PluginForDecrypt {
         }
     }
 
-    private void addSingleItem(final LinkedHashMap<String, Object> entries, final String fpName) {
+    private void addSingleItem(final Map<String, Object> entries, final String fpName) {
         final DownloadLink dl = createDownloadlink("http://pclouddecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
         final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
         String filename = (String) entries.get("name");

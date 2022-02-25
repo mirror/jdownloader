@@ -19,7 +19,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -102,11 +103,11 @@ public class ProDjCm extends PluginForDecrypt {
     private void passItOn(ArrayList<DownloadLink> ret, HashSet<String> filter, String grabThis) throws Exception {
         String fpName = null;
         if (grabThis.matches(type_json)) {
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-            entries = (LinkedHashMap<String, Object>) entries.get("playlist");
-            final ArrayList<Object> ressourcelist = (ArrayList) entries.get("item");
-            entries = (LinkedHashMap<String, Object>) ressourcelist.get(0);
-            entries = (LinkedHashMap<String, Object>) entries.get("play");
+            Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            entries = (Map<String, Object>) entries.get("playlist");
+            final List<Object> ressourcelist = (List) entries.get("item");
+            entries = (Map<String, Object>) ressourcelist.get(0);
+            entries = (Map<String, Object>) entries.get("play");
             final String finallink = (String) entries.get("@download_url");
             if (finallink == null || finallink.matches(type_json)) {
                 logger.warning("Decrypter broken for link: " + grabThis);
