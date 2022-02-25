@@ -91,7 +91,11 @@ public class PimpRollHostedTube extends PluginForHost {
     }
 
     public static String constructUrl(final String host) {
-        /* 2018-04-11: e.g. not accept http://www.adult-lock.com/aactors/12345 */
+        /**
+         * 2018-04-11: e.g. not accept http://www.adult-lock.com/aactors/12345 </br>
+         * 2022-02-25: Now accept such URLs too as old RegEx blocked some legit video URLs too. </br>
+         * This will now handle such URLs and display them as offline if they do not lead to video content.
+         */
         return "http://(?:(?:www|m)\\.)?" + Pattern.quote(host) + "/[\\w\\-]+/\\d+";
     }
 
