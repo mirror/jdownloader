@@ -2,10 +2,7 @@ package jd.plugins.decrypter;
 
 import java.io.File;
 import java.util.ArrayList;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.container.NZB;
-import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -21,6 +18,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.NZBSAXHandler;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.container.NZB;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nzb" }, urls = { "https?://.+/.*\\.nzb($|(\\?|&)[^\\s<>\"']*)" })
 public class GenericNZBDecrypter extends PluginForDecrypt {
@@ -50,10 +53,21 @@ public class GenericNZBDecrypter extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String url = param.getCryptedUrl();
+        final List<LazyCrawlerPlugin> nextLazyCrawlerPlugins = findNextLazyCrawlerPlugins(url);
+        if (nextLazyCrawlerPlugins.size() > 0) {
+            ret.add(createDownloadlink(url));
+            return ret;
+        }
+        final List<LazyHostPlugin> nextLazyHostPlugins = findNextLazyHostPlugins(url);
+        if (nextLazyHostPlugins.size() > 0) {
+            ret.add(createDownloadlink(url));
+            return ret;
+        }
         URLConnectionAdapter con = null;
         File nzbFile = null;
         try {
-            final Request request = new GetRequest(param.getCryptedUrl());
+            final Request request = new GetRequest(url);
             request.getHeaders().put("Accept-Encoding", "identity");
             br.setFollowRedirects(true);
             br.setLoadLimit(br.getLoadLimit() * 4);
