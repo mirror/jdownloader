@@ -2379,7 +2379,7 @@ public class LinkCrawler {
         return null;
     }
 
-    protected List<LazyCrawlerPlugin> getSortedLazyCrawlerPlugins() {
+    public List<LazyCrawlerPlugin> getSortedLazyCrawlerPlugins() {
         final LinkCrawler parent = getParent();
         if (parent != null) {
             return parent.getSortedLazyCrawlerPlugins();
