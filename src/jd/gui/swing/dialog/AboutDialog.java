@@ -378,7 +378,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
             /**
              *
              */
-            private static final long serialVersionUID = 1L;
+            private static final long serialVersionUID = 2L;
             {
                 if (StringUtils.startsWithCaseInsensitive(url, "http") && CrossSystem.isOpenBrowserSupported()) {
                     setName("<html><u>" + object + "</u></html>");
