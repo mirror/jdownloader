@@ -29,6 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -63,21 +64,26 @@ public class TrainbitCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains(":8080/")) {
-            free_directlink = br.getRedirectLocation();
+        br.setFollowRedirects(true);
+        final URLConnectionAdapter con = br.openGetConnection(link.getPluginPatternMatcher());
+        if (this.looksLikeDownloadableContent(con)) {
+            this.free_directlink = con.getURL().toString();
+            link.setVerifiedFileSize(con.getCompleteContentLength());
+            link.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con));
+            con.disconnect();
             return AvailableStatus.TRUE;
-        }
-        if (br.getRedirectLocation() != null) {
-            br.setFollowRedirects(true);
-            br.followRedirect(true);
+        } else {
+            br.followConnection();
         }
         final String filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
-        final String filesize = br.getRegex("span class=\"badge badge-success\\s*mb-3\">([^<>\"]+)</span>").getMatch(0);
+        String filesize = br.getRegex("span class=\"badge badge-success\\s*mb-3\">([^<>\"]+)</span>").getMatch(0);
+        if (filesize == null) {
+            /* 2022-02-25 */
+            filesize = br.getRegex("for=\"filesize\"[^>]*>([^<]+)<").getMatch(0);
+        }
         if (filename != null) {
             link.setName(Encoding.htmlDecode(filename.trim()));
         }
@@ -98,12 +104,17 @@ public class TrainbitCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(link, directlinkproperty);
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        requestFileInformation(link);
+        String dllink;
+        if (free_directlink != null) {
+            dllink = free_directlink;
+        } else {
+            dllink = checkDirectLink(link, directlinkproperty);
+        }
         if (dllink == null) {
             Form dlform = this.br.getFormbyProperty("id", "form1");
             if (dlform == null) {
@@ -133,6 +144,7 @@ public class TrainbitCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dl.setFilenameFix(true);
         link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
