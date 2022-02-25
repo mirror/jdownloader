@@ -16,7 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -127,19 +127,19 @@ public class Puls4Com extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404 || this.br.toString().length() <= 10) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+            final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
             date = (String) entries.get("broadcast_date");
             filename = (String) entries.get("title");
             /* Get highest quality downloadlink */
-            final LinkedHashMap<String, Object> files = (LinkedHashMap<String, Object>) entries.get("files");
+            final Map<String, Object> files = (Map<String, Object>) entries.get("files");
             if (files == null) {
                 /* Video should be offline! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            LinkedHashMap<String, Object> currentQualityMap = null;
+            Map<String, Object> currentQualityMap = null;
             final String[] qualities = { "h3", "h1", "h2", "h4" };
             for (final String quality : qualities) {
-                currentQualityMap = (LinkedHashMap<String, Object>) files.get(quality);
+                currentQualityMap = (Map<String, Object>) files.get(quality);
                 if (currentQualityMap != null) {
                     dllink = (String) currentQualityMap.get("url");
                     break;

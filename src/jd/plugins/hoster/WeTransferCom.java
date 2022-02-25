@@ -17,7 +17,6 @@ package jd.plugins.hoster;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -182,7 +181,7 @@ public class WeTransferCom extends PluginForHost {
                 /* 2019-09-30 e.g. {"success":false,"message":"This collection does not exist","error_key":"board_deleted"} */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             String filename = (String) entries.get("name");
             final String filesize = PluginJSonUtils.getJson(br, "size");
             if (StringUtils.isEmpty(filename)) {

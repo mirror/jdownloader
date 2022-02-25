@@ -15,8 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -83,7 +83,7 @@ public class JavhdCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final String id = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), 0));
         if (!id.equals(linkid)) {
             /* Offline = all values will be null */
@@ -103,9 +103,9 @@ public class JavhdCom extends PluginForHost {
                 String quality_temp_str = null;
                 long quality_best = 0;
                 String dllink_temp = null;
-                final ArrayList<Object> ressourcelist = (ArrayList) entries.get("sources");
+                final List<Object> ressourcelist = (List) entries.get("sources");
                 for (final Object videoo : ressourcelist) {
-                    entries = (LinkedHashMap<String, Object>) videoo;
+                    entries = (Map<String, Object>) videoo;
                     dllink_temp = (String) entries.get("src");
                     quality_temp_o = entries.get("label");
                     if (quality_temp_o != null && quality_temp_o instanceof Long) {

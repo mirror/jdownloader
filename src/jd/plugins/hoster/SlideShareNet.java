@@ -13,11 +13,9 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -47,7 +45,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "slideshare.net" }, urls = { "https?://(?:www\\.)?(slidesharedecrypted\\.net/[a-z0-9\\-_]+/[a-z0-9\\-_]+|slidesharepicturedecrypted\\.net/\\d+)" })
 public class SlideShareNet extends PluginForHost {
-
     public SlideShareNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.slideshare.net/business/premium/plans?cmp_src=main_nav");
@@ -68,7 +65,6 @@ public class SlideShareNet extends PluginForHost {
 
     private static final String PICTURELINK     = "https?://slidesharepicturedecrypted\\.net/\\d+";
     private static final String NOTDOWNLOADABLE = "class=\"sprite iconNoDownload j\\-tooltip\"";
-
     private String              dllink          = null;
     private boolean             isVideo         = false;
     private boolean             server_issues   = false;
@@ -130,8 +126,8 @@ public class SlideShareNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String json = this.br.getRegex("slideshare_object,\\s*?(\\{.*?)\\);").getMatch(0);
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
-            entries = (LinkedHashMap<String, Object>) entries.get("slideshow");
+            Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
+            entries = (Map<String, Object>) entries.get("slideshow");
             final String url_filename = new Regex(link.getDownloadURL(), "https?://[^/]+/([a-z0-9\\-_]+/[a-z0-9\\-_]+)").getMatch(0).replace("/", " - ");
             String filename = (String) entries.get("title");
             final String type = (String) entries.get("type");
@@ -143,7 +139,7 @@ public class SlideShareNet extends PluginForHost {
             filename = Encoding.htmlDecode(filename).trim();
             if ("video".equalsIgnoreCase(type)) {
                 /* Video */
-                // entries = (LinkedHashMap<String, Object>) entries.get("jsplayer");
+                // entries = (Map<String, Object>) entries.get("jsplayer");
                 ext = ".mp4";
                 isVideo = true;
                 /* Easier to RegEx as it can be found in multiple places in the json. */
@@ -232,7 +228,6 @@ public class SlideShareNet extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, this.dllink, true, getMaxChunks());
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
@@ -267,8 +262,8 @@ public class SlideShareNet extends PluginForHost {
                 if (acmatch) {
                     acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
                 }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                if (acmatch && ret != null && ret instanceof Map<?, ?> && !force) {
+                    final Map<String, String> cookies = (Map<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
@@ -464,13 +459,11 @@ public class SlideShareNet extends PluginForHost {
     }
 
     public static interface SlideshareNetConfigInterface extends PluginConfigInterface {
-
         @DefaultBooleanValue(true)
         @Order(10)
         boolean getPreferServerFilenames();
 
         void setPreferServerFilenames(boolean b);
-
     }
 
     @Override
@@ -490,5 +483,4 @@ public class SlideShareNet extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

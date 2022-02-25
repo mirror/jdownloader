@@ -445,7 +445,7 @@ public class OffCloudCom extends UseNet {
             allowedHostStates.add("awaiting demand");
         }
         entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        ressourcelist = (ArrayList) entries.get("fs");
+        ressourcelist = (List) entries.get("fs");
         /**
          * Explanation of their status-types: Healthy = working, Fragile = may work or not - if not will be fixed within the next 72 hours
          * (support also said it means that they currently have no accounts for this host), Limited = broken, will be fixed tomorrow, dead =
@@ -626,7 +626,7 @@ public class OffCloudCom extends UseNet {
                 logger.info("Decrypting requestIDs of page: " + page);
                 this.postRawAPISafe("https://offcloud.com/" + downloadtype + "/history", "{\"page\":" + page + "}");
                 final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                final ArrayList<Object> history = (ArrayList) entries.get("history");
+                final List<Object> history = (List) entries.get("history");
                 for (final Object historyentry_object : history) {
                     final Map<String, Object> historyentry = (Map<String, Object>) historyentry_object;
                     final String status = (String) historyentry.get("status");
@@ -947,7 +947,7 @@ public class OffCloudCom extends UseNet {
             case 15:
                 /*
                  * Current host is only supported via cloud downloading --> Add to Cloud-Array and try again
-                 * 
+                 *
                  * This should only happen if e.g. a user starts JD and starts downloads right away before the cloudOnlyHosts array gets
                  * updated. This cann be considered as a small workaround.
                  */
@@ -957,7 +957,7 @@ public class OffCloudCom extends UseNet {
             case 16:
                 /*
                  * Current host is only supported via cloud downloading --> Add to Cloud-Array and try again
-                 * 
+                 *
                  * This should only happen if e.g. a user starts JD and starts downloads right away before the cloudOnlyHosts array gets
                  * updated. This extra errorhandling can be considered as a small workaround.
                  */

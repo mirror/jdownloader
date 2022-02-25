@@ -238,11 +238,11 @@ public class CloudMailRu extends PluginForHost {
                     // using linkedhashmap here will result in exception
                     // java.lang.ClassCastException: java.util.HashMap cannot be cast to java.util.LinkedHashMap
                     // irc report - raztoki20160619
-                    // final HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(web_json);
+                    // final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(web_json);
                     // dataserver = (String) JavaScriptEngineFactory.walkJson(entries, "dispatcher/weblink_get/{0}/url");
                     // pageid = (String) JavaScriptEngineFactory.walkJson(entries, "params/x-page-id");
-                    // final LinkedHashMap<String, Object> page_info = (LinkedHashMap<String, Object>) entries.get("");
-                    // final ArrayList<Object> ressourcelist = (ArrayList) entries.get("");
+                    // final Map<String, Object> page_info = (Map<String, Object>) entries.get("");
+                    // final List<Object> ressourcelist = (List) entries.get("");
                 }
                 if (pageid == null) {
                     pageid = PluginJSonUtils.getJson(br, "x-page-id");

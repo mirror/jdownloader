@@ -1,7 +1,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -121,7 +120,7 @@ public class RedTubeCom extends PluginForHost {
         final String playervars = br.getRegex("playervars: (.+?\\}),\n").getMatch(0);
         if (playervars != null) {
             final Map<String, Object> values = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(playervars);
-            List<HashMap<String, Object>> list = (List<HashMap<String, Object>>) values.get("mediaDefinitions");
+            List<Map<String, Object>> list = (List<Map<String, Object>>) values.get("mediaDefinitions");
             for (Map<String, Object> entry : list) {
                 final String videoUrl = (String) entry.get("videoUrl");
                 final String format = (String) entry.get("format");
@@ -130,7 +129,7 @@ public class RedTubeCom extends PluginForHost {
                 } else if (StringUtils.equals("mp4", format)) {
                     final Browser brc = br.cloneBrowser();
                     brc.getPage(videoUrl);
-                    list = JSonStorage.restoreFromString(brc.toString(), TypeRef.LIST_HASHMAP);
+                    list = (List<Map<String, Object>>) JSonStorage.restoreFromString(brc.toString(), TypeRef.OBJECT);
                     break;
                 }
             }

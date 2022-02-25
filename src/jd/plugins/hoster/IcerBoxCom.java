@@ -18,8 +18,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -307,7 +307,7 @@ public class IcerBoxCom extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Password expired. Enter your Account page and change it.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
+                final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
                 final Boolean is_premium = (Boolean) JavaScriptEngineFactory.walkJson(entries, "data/has_premium");
                 final String expire = (String) JavaScriptEngineFactory.walkJson(entries, "data/premium/date");
                 final Number bandwidth_Max = (Number) JavaScriptEngineFactory.walkJson(entries, "data/package/bandwidth");

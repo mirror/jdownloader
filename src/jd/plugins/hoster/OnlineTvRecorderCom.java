@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.BufferedReader;
@@ -48,7 +47,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "onlinetvrecorder.com" }, urls = { "http://(www\\.)?81\\.95\\.11\\.\\d{1,2}/download/\\d+/\\d+/\\d+/[a-f0-9]{32}/de/[^<>\"/]+" })
 public class OnlineTvRecorderCom extends PluginForHost {
-
     public OnlineTvRecorderCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
@@ -73,7 +71,6 @@ public class OnlineTvRecorderCom extends PluginForHost {
         br.setAllowedResponseCodes(new int[] { 503 });
         final String filename = new Regex(downloadLink.getDownloadURL(), "/([^<>\"/]+)$").getMatch(0);
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-
         final boolean downloadInNightOnly = this.getPluginConfig().getBooleanProperty(NIGHTDOWNLOAD, true);
         Calendar cal = new GregorianCalendar();
         cal.setTimeZone(TimeZone.getTimeZone("Europe/Berlin"));
@@ -108,7 +105,6 @@ public class OnlineTvRecorderCom extends PluginForHost {
                 } catch (Throwable e) {
                 }
             }
-
         } else {
             DOWNLOADNOW = false;
             downloadLink.getLinkStatus().setStatusText("Not downloadable before 12 o'clock.");
@@ -181,8 +177,8 @@ public class OnlineTvRecorderCom extends PluginForHost {
                 if (acmatch) {
                     acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
                 }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                if (acmatch && ret != null && ret instanceof Map<?, ?> && !force) {
+                    final Map<String, String> cookies = (Map<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
@@ -248,7 +244,6 @@ public class OnlineTvRecorderCom extends PluginForHost {
         // requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 503) {
@@ -298,7 +293,6 @@ public class OnlineTvRecorderCom extends PluginForHost {
                 f.close();
             } catch (Throwable e) {
             }
-
         }
     }
 
@@ -323,5 +317,4 @@ public class OnlineTvRecorderCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

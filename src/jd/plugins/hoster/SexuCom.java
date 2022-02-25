@@ -15,11 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -32,6 +29,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexu.com" }, urls = { "https?://(?:www\\.)?sexu\\.com/(\\d+)/" })
 public class SexuCom extends PluginForHost {
@@ -96,14 +96,14 @@ public class SexuCom extends PluginForHost {
             // js = js.replace("'", "\"");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(js);
-        final ArrayList<Object> sources = (ArrayList) entries.get("sources");
+        final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(js);
+        final List<Object> sources = (List<Object>) entries.get("sources");
         if (sources != null) {
             /* Find best quality */
             boolean done = false;
             for (final String quality : qualities) {
                 for (final Object qualinfo : sources) {
-                    final HashMap<String, Object> qual_info = (HashMap<String, Object>) qualinfo;
+                    final Map<String, Object> qual_info = (Map<String, Object>) qualinfo;
                     final String currquality = (String) qual_info.get("quality");
                     if (currquality.contains(quality)) {
                         dllink = (String) qual_info.get("src");

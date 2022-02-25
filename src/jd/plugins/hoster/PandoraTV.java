@@ -13,10 +13,9 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
-import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -38,20 +37,17 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pandora.tv" }, urls = { "http://(?:.+)?channel\\.pandora\\.tv/channel/video\\.ptv\\?.+|http://(?:www\\.)?pandora\\.tv/my\\.[^/]+/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pandora.tv" }, urls = { "http://(?:.+)?channel\\.pandora\\.tv/channel/video\\.ptv\\?.+|http://(?:www\\.)?pandora\\.tv/my\\.[^/]+/\\d+" })
 public class PandoraTV extends PluginForHost {
-
     public PandoraTV(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private LinkedHashMap<String, Object> entries  = null;
-
-    private static final String           TYPE1    = "http://(?:.+)?channel\\.pandora\\.tv/channel/video\\.ptv\\?.+";
-    private static final String           TYPE2    = "http://(?:www\\.)?pandora\\.tv/my\\.[^/]+/\\d+";
-
-    private static final String           MAINPAGE = "http://www.pandora.tv";
-    private static final String           DLPAGE   = "http://trans-idx.pandora.tv/flvorgx.pandora.tv";
+    private Map<String, Object> entries  = null;
+    private static final String TYPE1    = "http://(?:.+)?channel\\.pandora\\.tv/channel/video\\.ptv\\?.+";
+    private static final String TYPE2    = "http://(?:www\\.)?pandora\\.tv/my\\.[^/]+/\\d+";
+    private static final String MAINPAGE = "http://www.pandora.tv";
+    private static final String DLPAGE   = "http://trans-idx.pandora.tv/flvorgx.pandora.tv";
 
     private String decodeUnicode(final String s) {
         final Pattern p = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
@@ -108,8 +104,8 @@ public class PandoraTV extends PluginForHost {
         if (json == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-        entries = (LinkedHashMap<String, Object>) entries.get("flvInfo");
+        entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+        entries = (Map<String, Object>) entries.get("flvInfo");
         String filename = (String) entries.get("title");
         long filesize = JavaScriptEngineFactory.toLong(entries.get("filesize"), 0);
         if (filename == null || filesize == 0) {
@@ -207,5 +203,4 @@ public class PandoraTV extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
-
 }

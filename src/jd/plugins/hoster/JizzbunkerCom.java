@@ -16,11 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -33,16 +30,19 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jizzbunker.com" }, urls = { "https?://(?:www\\.)?jizzbunker\\.com/(?:[a-z]{2}/)?(\\d+)/([a-z0-9\\-]+)\\.html" })
 public class JizzbunkerCom extends PluginForHost {
     public JizzbunkerCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     // Tags: Porn plugin
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
@@ -87,14 +87,14 @@ public class JizzbunkerCom extends PluginForHost {
         final String jssource = br.getRegex("sources[\t\n\r ]*?:[\t\n\r ]*?(\\[.*?\\])").getMatch(0);
         if (jssource != null) {
             try {
-                HashMap<String, Object> entries = null;
+                Map<String, Object> entries = null;
                 Object quality_temp_o = null;
                 long quality_temp = 0;
                 long quality_best = 0;
                 String dllink_temp = null;
-                final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(jssource);
+                final List<Object> ressourcelist = (List) JavaScriptEngineFactory.jsonToJavaObject(jssource);
                 for (final Object videoo : ressourcelist) {
-                    entries = (HashMap<String, Object>) videoo;
+                    entries = (Map<String, Object>) videoo;
                     dllink_temp = (String) entries.get("file");
                     quality_temp_o = entries.get("label");
                     if (quality_temp_o != null && quality_temp_o instanceof Long) {

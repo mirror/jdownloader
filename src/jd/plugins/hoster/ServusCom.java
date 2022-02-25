@@ -26,14 +26,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.requests.GetRequest;
@@ -46,6 +38,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ServusCom extends PluginForHost {
@@ -213,7 +213,7 @@ public class ServusCom extends PluginForHost {
                 logger.info("Content is not downloadable");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final ArrayList<Object> attributes = (ArrayList<Object>) entries.get("attributes");
+            final List<Object> attributes = (List<Object>) entries.get("attributes");
             /* Note: This is NOT the release-date!! */
             // date = (String) entries.get("lastPublished");
             title = (String) this.getAttribute(attributes, "title");
@@ -314,7 +314,7 @@ public class ServusCom extends PluginForHost {
     }
 
     /** 2020-10-19: Wrapper for sparkle-api.liiift.io json. Contains ArrayLists with maps containing keys and values. */
-    private Object getAttribute(final ArrayList<Object> fields, final String targetKey) {
+    private Object getAttribute(final List<Object> fields, final String targetKey) {
         Map<String, Object> entries = null;
         for (final Object fieldO : fields) {
             entries = (Map<String, Object>) fieldO;

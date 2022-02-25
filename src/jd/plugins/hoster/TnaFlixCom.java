@@ -17,11 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -38,6 +35,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TnaFlixCom extends PluginForHost {
@@ -164,7 +164,7 @@ public class TnaFlixCom extends PluginForHost {
         if (videoid_type_2 != null) {
             /* 2019-06-11: New: Ajax-linkcheck, old handling should not get used anymore! */
             br.getPage("https://dyn." + Browser.getHost(link.getPluginPatternMatcher(), false) + "/ajax/info.php?action=video&vid=" + videoid_type_2);
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             filename = (String) entries.get("title");
             // final boolean mp4download = ((Boolean) entries.get("mp4download")).booleanValue();
             // if (mp4download) {

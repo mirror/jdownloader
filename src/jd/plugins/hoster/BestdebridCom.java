@@ -19,22 +19,12 @@ import java.awt.Color;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -53,6 +43,17 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bestdebrid.com" }, urls = { "" })
 public class BestdebridCom extends PluginForHost {
@@ -242,13 +243,13 @@ public class BestdebridCom extends PluginForHost {
         ai.setStatus(statusAcc);
         br.getPage(API_BASE + "/hosts?auth=" + Encoding.urlEncode(account.getPass()));
         final ArrayList<String> supportedhostslist = new ArrayList<String>();
-        LinkedHashMap<String, Object> entries;
-        final ArrayList<Object> hosters;
+        Map<String, Object> entries;
+        final List<Object> hosters;
         final Object hostersO = JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         int counter = 0;
         if (hostersO instanceof LinkedHashMap) {
             /* 2019-07-15: They are using a map with numbers as String as key --> This is a workaround for that */
-            entries = (LinkedHashMap<String, Object>) hostersO;
+            entries = (Map<String, Object>) hostersO;
             hosters = new ArrayList<Object>();
             Object tempO = null;
             do {
@@ -268,10 +269,10 @@ public class BestdebridCom extends PluginForHost {
             } while (tempO != null && counter > 1);
         } else {
             /* 2019-07-15: In case they ever correct their Map to an Array, we will need the following line. */
-            hosters = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            hosters = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         }
         for (final Object hosterO : hosters) {
-            entries = (LinkedHashMap<String, Object>) hosterO;
+            entries = (Map<String, Object>) hosterO;
             // final String downsincedate = (String)entries.get("downsincedate");
             final String status = (String) entries.get("status");
             /* 2019-07-12: TLDs are missing - admin has been advised to change this! */

@@ -16,8 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -91,9 +91,9 @@ public class WistiaCom extends PluginForHost {
             /* Offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
-        entries = (LinkedHashMap<String, Object>) entries.get("media");
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("assets");
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
+        entries = (Map<String, Object>) entries.get("media");
+        final List<Object> ressourcelist = (List<Object>) entries.get("assets");
         String filename = (String) entries.get("name");
         final String description = (String) entries.get("seoDescription");
         if (filename == null) {
@@ -105,7 +105,7 @@ public class WistiaCom extends PluginForHost {
         String ext = null;
         String dllink_temp = null;
         for (final Object videoo : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) videoo;
+            entries = (Map<String, Object>) videoo;
             final String type = (String) entries.get("type");
             if (type.contains("hls")) {
                 /* 2017-10-05: Skip hls for now as we do not need it */

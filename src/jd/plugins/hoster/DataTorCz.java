@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
@@ -23,8 +22,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -45,13 +42,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datator.cz" }, urls = { "https?://(?:www\\.)?datator\\.cz/soubor-ke-stazeni-.*?(\\d+)\\.html" })
 public class DataTorCz extends PluginForHost {
-
     // devnotes
     // number before .html is the file uid
     // to make valid link soubor-ke-stazeni- + number + .html
-
     private static Object ACCLOCK  = new Object();
     private final String  language = System.getProperty("user.language");
 
@@ -106,7 +103,6 @@ public class DataTorCz extends PluginForHost {
                 if (accounts != null && accounts.size() != 0) {
                     // lets sort, premium > non premium
                     Collections.sort(accounts, new Comparator<Account>() {
-
                         @Override
                         public int compare(Account o1, Account o2) {
                             final int io1 = o1.getBooleanProperty("free", false) ? 0 : 1;
@@ -248,8 +244,8 @@ public class DataTorCz extends PluginForHost {
                 prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = (Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser()))) && Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass()))) && ret != null && ret instanceof HashMap<?, ?> && account.isValid() && !loginFull ? true : false);
-                if (acmatch) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                if (acmatch && ret instanceof Map) {
+                    final Map<String, String> cookies = (Map<String, String>) ret;
                     // hashmap could theoretically be empty.
                     if (!cookies.isEmpty()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {

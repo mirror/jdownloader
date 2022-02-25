@@ -19,8 +19,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -77,7 +77,7 @@ public class WeltDeMediathek extends PluginForHost {
         final String json_source_videourl = this.br.getRegex("\"page\"\\s*?:\\s*?(\\{.*?\\}),\\s+").getMatch(0);
         /* Tags: schema.org */
         final String json_source_videoinfo = this.br.getRegex("<script[^>]*?type=\"application/ld\\+json[^>]*?\">(.*?)</script>").getMatch(0);
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source_videoinfo);
+        Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source_videoinfo);
         String filename = "";
         String title = (String) entries.get("headline");
         final String description = (String) entries.get("description");
@@ -98,7 +98,7 @@ public class WeltDeMediathek extends PluginForHost {
         filename = encodeUnicode(filename);
         /* Find downloadlink */
         try {
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source_videourl);
+            entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source_videourl);
             dllink = (String) JavaScriptEngineFactory.walkJson(entries, "content/media/{0}/file");
             if (dllink == null) {
                 dllink = br.getRegex("(https?://[^\"]*?[A-Za-z0-9_]+_(2000|1500|1000|200)\\.mp4)").getMatch(0);

@@ -16,15 +16,9 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -43,6 +37,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megarapido.net" }, urls = { "" })
 public class MegarapidoNet extends antiDDoSForHost {
@@ -204,9 +205,9 @@ public class MegarapidoNet extends antiDDoSForHost {
             account.setType(AccountType.PREMIUM);
         }
         getPage("/api/servers/list");
-        final ArrayList<LinkedHashMap<String, Object>> hostDomainsInfo = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        final List<Map<String, Object>> hostDomainsInfo = (List) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final ArrayList<String> supportedHosts = new ArrayList<String>();
-        for (final LinkedHashMap<String, Object> entry : hostDomainsInfo) {
+        for (final Map<String, Object> entry : hostDomainsInfo) {
             final String crippledhost = ((String) entry.get("nome")).toLowerCase(Locale.ENGLISH);
             final String status = (String) entry.get("status");
             // Disponível = Available

@@ -22,15 +22,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -51,6 +46,12 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mountfile.net" }, urls = { "https?://(www\\.)?mountfile\\.net/(?!d/)[A-Za-z0-9]+" })
 public class MountFileNet extends antiDDoSForHost {
     private final String                   MAINPAGE                   = "http://mountfile.net";
@@ -58,7 +59,7 @@ public class MountFileNet extends antiDDoSForHost {
     private static Object                  CTRLLOCK                   = new Object();
     private final String                   EXPERIMENTALHANDLING       = "EXPERIMENTALHANDLING";
     private final String[]                 IPCHECK                    = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
-    private static HashMap<String, Long>   blockedIPsMap              = new HashMap<String, Long>();
+    private static Map<String, Long>       blockedIPsMap              = new HashMap<String, Long>();
     private static final String            PROPERTY_LASTDOWNLOAD      = "mountfilenet_lastdownload_timestamp";
     private final String                   LASTIP                     = "LASTIP";
     private static AtomicReference<String> lastIP                     = new AtomicReference<String>();
@@ -126,8 +127,8 @@ public class MountFileNet extends antiDDoSForHost {
         synchronized (CTRLLOCK) {
             /* Load list of saved IPs + timestamp of last download */
             final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
-            if (lastdownloadmap != null && lastdownloadmap instanceof HashMap && blockedIPsMap.isEmpty()) {
-                blockedIPsMap = (HashMap<String, Long>) lastdownloadmap;
+            if (lastdownloadmap != null && lastdownloadmap instanceof Map && blockedIPsMap.isEmpty()) {
+                blockedIPsMap = (Map<String, Long>) lastdownloadmap;
             }
         }
         if (useExperimentalHandling) {

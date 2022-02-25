@@ -16,11 +16,7 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -34,6 +30,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pbs.org" }, urls = { "https?://video\\.pbs\\.org/video/\\d+|https?://(?:www\\.)?pbs\\.org/.+|https?://player\\.pbs\\.org/[a-z]+/\\d+" })
 public class PbsOrg extends PluginForHost {
@@ -183,8 +183,8 @@ public class PbsOrg extends PluginForHost {
         String availability = null;
         try {
             final String json = br.getRegex("window\\.videoBridge = (\\{.*?\\});\\s*</script>").getMatch(0);
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
-            // final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
+            // final List<Object> ressourcelist = (List<Object>) entries.get("");
             title = (String) entries.get("title");
             availability = (String) entries.get("availability");
         } catch (final Throwable e) {

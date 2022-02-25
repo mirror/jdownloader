@@ -16,14 +16,8 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -38,6 +32,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SaruchCo extends PluginForHost {
@@ -76,9 +75,9 @@ public class SaruchCo extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean          FREE_RESUME       = true;
-    private static final int              FREE_MAXCHUNKS    = 0;
-    private static final int              FREE_MAXDOWNLOADS = 20;
+    private static final boolean FREE_RESUME       = true;
+    private static final int     FREE_MAXCHUNKS    = 0;
+    private static final int     FREE_MAXDOWNLOADS = 20;
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
     // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
@@ -88,8 +87,8 @@ public class SaruchCo extends PluginForHost {
     //
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
-    private LinkedHashMap<String, Object> entries           = null;
-    private Object                        videoError        = null;
+    private Map<String, Object>  entries           = null;
+    private Object               videoError        = null;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -117,10 +116,10 @@ public class SaruchCo extends PluginForHost {
             /* 2019-10-14: E.g. {"message":"Video not found"} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         videoError = entries.get("message");
-        entries = (LinkedHashMap<String, Object>) entries.get("video");
-        // final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
+        entries = (Map<String, Object>) entries.get("video");
+        // final List<Object> ressourcelist = (List<Object>) entries.get("");
         final Object error = entries.get("error_code");
         if (error != null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -161,7 +160,7 @@ public class SaruchCo extends PluginForHost {
              */
             final String[] possibleStreamURLObjectNames = new String[] { "file" };
             try {
-                HashMap<String, Object> entries = null;
+                Map<String, Object> entries = null;
                 Object quality_temp_o = null;
                 long quality_temp = 0;
                 /*
@@ -169,7 +168,7 @@ public class SaruchCo extends PluginForHost {
                  */
                 long quality_best = -1;
                 String dllink_temp = null;
-                final ArrayList<Object> ressourcelist = (ArrayList) this.entries.get("sources");
+                final List<Object> ressourcelist = (List) this.entries.get("sources");
                 final boolean onlyOneQualityAvailable = ressourcelist.size() == 1;
                 for (final Object videoo : ressourcelist) {
                     if (videoo instanceof String && onlyOneQualityAvailable) {
@@ -180,7 +179,7 @@ public class SaruchCo extends PluginForHost {
                             break;
                         }
                     }
-                    entries = (HashMap<String, Object>) videoo;
+                    entries = (Map<String, Object>) videoo;
                     for (final String possibleStreamURLObjectName : possibleStreamURLObjectNames) {
                         if (entries.containsKey(possibleStreamURLObjectName)) {
                             dllink_temp = (String) entries.get(possibleStreamURLObjectName);

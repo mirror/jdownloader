@@ -20,15 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.config.OkRuConfig;
-import org.jdownloader.plugins.components.config.OkRuConfig.Quality;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -47,6 +38,15 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.OkRuConfig;
+import org.jdownloader.plugins.components.config.OkRuConfig.Quality;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?ok\\.ru/(?:video|videoembed|web-api/video/moviePlayer|live)/(\\d+(-\\d+)?)" })
 public class OkRu extends PluginForHost {
@@ -101,7 +101,7 @@ public class OkRu extends PluginForHost {
                 br.postPage(metadataUrl, "st.location=AutoplayLayerMovieRBlock%2FanonymVideo%2Fanonym");
                 metadataSrc = br.toString();
             }
-            // final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
+            // final List<Object> ressourcelist = (List<Object>) entries.get("");
             entries = JavaScriptEngineFactory.jsonToJavaMap(metadataSrc);
             return entries;
         } catch (final Throwable e) {
@@ -197,8 +197,7 @@ public class OkRu extends PluginForHost {
                 } else {
                     /* Prefer http - only use HLS if http is not available! */
                     /**
-                     * 2021-09-10: Some users also get: "ondemandHls" and "ondemandDash" </br>
-                     * No idea if "ondemandHls" == "hlsManifestUrl"
+                     * 2021-09-10: Some users also get: "ondemandHls" and "ondemandDash" </br> No idea if "ondemandHls" == "hlsManifestUrl"
                      */
                     if (userPreferredQuality != null) {
                         logger.info("Trying HLS fallback because user selected quality hasn't been found!");

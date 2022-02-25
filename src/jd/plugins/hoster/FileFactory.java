@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -120,7 +121,7 @@ public class FileFactory extends PluginForHost {
         String code = new Regex(br.getURL(), "(?:\\?|&)code=(\\d+)").getMatch(0);
         if (code == null) {
             @SuppressWarnings("unchecked")
-            final ArrayList<String> redirectUrls = (ArrayList<String>) this.getDownloadLink().getProperty(dlRedirects, null);
+            final List<String> redirectUrls = (List<String>) this.getDownloadLink().getProperty(dlRedirects, null);
             if (redirectUrls != null) {
                 for (final String url : redirectUrls) {
                     code = new Regex(url, "(?:\\?|&)code=(\\d+)").getMatch(0);

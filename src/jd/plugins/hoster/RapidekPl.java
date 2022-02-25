@@ -17,7 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -267,7 +267,7 @@ public class RapidekPl extends PluginForHost {
                  */
                 /* Possible "Status" values: Initialization, Failure, Succeeded, (?? more?) */
                 try {
-                    final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                    final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
                     final String status = (String) entries.get("Status");
                     if ("Failure".equalsIgnoreCase(status)) {
                         /* Stop immediately on failure. */
@@ -368,7 +368,7 @@ public class RapidekPl extends PluginForHost {
         } else {
             br.getPage(API_BASE + "/services/list");
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            final ArrayList<Object> hostsO = (ArrayList<Object>) entries.get("Services");
+            final List<Object> hostsO = (List<Object>) entries.get("Services");
             for (final Object hostO : hostsO) {
                 supportedHosts.add((String) hostO);
             }

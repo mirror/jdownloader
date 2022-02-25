@@ -16,22 +16,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hds.HDSDownloader;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.config.MediathekProperties;
-import org.jdownloader.plugins.components.config.TvnowConfigInterface;
-import org.jdownloader.plugins.components.config.TvnowConfigInterface.Quality;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -52,6 +39,19 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.MediathekHelper;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.MediathekProperties;
+import org.jdownloader.plugins.components.config.TvnowConfigInterface;
+import org.jdownloader.plugins.components.config.TvnowConfigInterface.Quality;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvnow.de" }, urls = { "tvnowdecrypted://.+" })
 public class TvnowDe extends PluginForHost {
     public TvnowDe(final PluginWrapper wrapper) {
@@ -61,16 +61,16 @@ public class TvnowDe extends PluginForHost {
 
     /* Settings */
     /* Tags: rtl-interactive.de, RTL, rtlnow, rtl-now */
-    private static final String           TYPE_GENERAL_ALRIGHT           = "https?://[^/]+/[^/]+/[a-z0-9\\-]+/[^/\\?]+";
+    private static final String TYPE_GENERAL_ALRIGHT           = "https?://[^/]+/[^/]+/[a-z0-9\\-]+/[^/\\?]+";
     /* Old + new movie-linktype */
-    public static final String            TYPE_MOVIE_OLD                 = "https?://[^/]+/[^/]+/[^/]+";
-    public static final String            TYPE_MOVIE_NEW                 = "https?://[^/]+/filme/.+";
-    public static final String            TYPE_SERIES_SINGLE_EPISODE_NEW = "https?://[^/]+/(?:serien|shows)/([^/]+)/(?:[^/]+/)?(?!staffel\\-\\d+)([^/]+)$";
-    public static final String            TYPE_DEEPLINK                  = "^[a-z]+://link\\.[^/]+/.+";
-    public static final String            API_BASE                       = "https://api.tvnow.de/v3";
-    public static final String            CURRENT_DOMAIN                 = "tvnow.de";
-    private LinkedHashMap<String, Object> entries                        = null;
-    private boolean                       usingNewAPI                    = false;
+    public static final String  TYPE_MOVIE_OLD                 = "https?://[^/]+/[^/]+/[^/]+";
+    public static final String  TYPE_MOVIE_NEW                 = "https?://[^/]+/filme/.+";
+    public static final String  TYPE_SERIES_SINGLE_EPISODE_NEW = "https?://[^/]+/(?:serien|shows)/([^/]+)/(?:[^/]+/)?(?!staffel\\-\\d+)([^/]+)$";
+    public static final String  TYPE_DEEPLINK                  = "^[a-z]+://link\\.[^/]+/.+";
+    public static final String  API_BASE                       = "https://api.tvnow.de/v3";
+    public static final String  CURRENT_DOMAIN                 = "tvnow.de";
+    private Map<String, Object> entries                        = null;
+    private boolean             usingNewAPI                    = false;
 
     public static Browser prepBRAPI(final Browser br) {
         br.getHeaders().put("Accept", "application/json, text/plain, */*");
@@ -152,11 +152,11 @@ public class TvnowDe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "403 GEO-blocked or account required");
             }
         }
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         String tv_station = null;
         String formatTitle = null;
         if (!this.usingNewAPI) {
-            final LinkedHashMap<String, Object> format = (LinkedHashMap<String, Object>) entries.get("format");
+            final Map<String, Object> format = (Map<String, Object>) entries.get("format");
             tv_station = (String) format.get("station");
             formatTitle = (String) format.get("title");
         }
@@ -169,7 +169,7 @@ public class TvnowDe extends PluginForHost {
     }
 
     /** Parses API json to find important downloadlink properties. */
-    public static AvailableStatus parseInformation(final DownloadLink link, LinkedHashMap<String, Object> entries, final String tv_station, String formatTitle, final boolean newAPI) {
+    public static AvailableStatus parseInformation(final DownloadLink link, Map<String, Object> entries, final String tv_station, String formatTitle, final boolean newAPI) {
         /* In case anything serious goes wrong user should still be able to see that this is supposed to be a video-file. */
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         final boolean isFree;
@@ -206,7 +206,7 @@ public class TvnowDe extends PluginForHost {
                     geoBLOCKED = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "config/boards/geoBlocking/block"));
                 }
                 /* TODO: Re-Check this - this might not be the same as "broadcastDate" in the old API! */
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "videoConfig/meta");
+                entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "videoConfig/meta");
                 date = (String) entries.get("previewStart");
                 if (StringUtils.isEmpty(formatTitle)) {
                     formatTitle = (String) entries.get("format");
@@ -306,7 +306,7 @@ public class TvnowDe extends PluginForHost {
     }
 
     /** Returns (modified) episodenumber (source = json) */
-    public static String getEpisodeNumber(final LinkedHashMap<String, Object> entries) {
+    public static String getEpisodeNumber(final Map<String, Object> entries) {
         final Object episodeO = getEpisodeNumberRAW(entries);
         String episodenumber = null;
         if (episodeO != null && episodeO instanceof String) {
@@ -333,7 +333,7 @@ public class TvnowDe extends PluginForHost {
     }
 
     /** Returns RAW String of episodenumber from json */
-    public static Object getEpisodeNumberRAW(final LinkedHashMap<String, Object> entries) {
+    public static Object getEpisodeNumberRAW(final Map<String, Object> entries) {
         if (entries.containsKey("episode")) {
             return entries.get("episode");
         } else {
@@ -390,8 +390,8 @@ public class TvnowDe extends PluginForHost {
                         /* 2020-10-23: Website-way -> debug test */
                         final String urlpart = getURLPart(link);
                         br.getPage(API_BASE + "/movies/" + urlpart + "?fields=manifest");
-                        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                        entries = (LinkedHashMap<String, Object>) entries.get("manifest");
+                        entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                        entries = (Map<String, Object>) entries.get("manifest");
                         /* Make sure not to fail here in case no streams are given! */
                         /* 2018-04-18: So far I haven't seen a single http stream! */
                         // final String urlHTTP = (String) entries.get("hbbtv");
@@ -417,8 +417,8 @@ public class TvnowDe extends PluginForHost {
                     br.getPage(link.getPluginPatternMatcher());
                     String json = br.getRegex("<script id=\"now-web-state\" type=\"application/json\">(.*?)</script>").getMatch(0);
                     json = json.replace("&q;", "\"");
-                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, apiURL + "/body/videoConfig/videoSource/streams");
+                    entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+                    entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, apiURL + "/body/videoConfig/videoSource/streams");
                     /* 2020-10-21: Only hls and dash given */
                     hlsMaster = (String) entries.get("hlsHdUrl");
                     if (StringUtils.isEmpty(hlsMaster)) {
@@ -431,8 +431,8 @@ public class TvnowDe extends PluginForHost {
         }
         try {
             if (grabStreamDataFromNewAPIJson) {
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "videoConfig/videoSource/streams");
+                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "videoConfig/videoSource/streams");
                 /* 2020-10-21: Only hls and dash given */
                 hlsMaster = (String) entries.get("hlsHdUrl");
                 if (StringUtils.isEmpty(hlsMaster)) {
@@ -861,14 +861,14 @@ public class TvnowDe extends PluginForHost {
             br.getPage("https://my-prod.tvnow.de/api/subscription");
         }
         /** We can get A LOT of information here ... but we really only want to know if we have a free- or a premium account. */
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final Object currentSubscriptionPackage = JavaScriptEngineFactory.walkJson(entries, "items/{0}");
         if (currentSubscriptionPackage != null) {
             /*
              * Old handling because before, they would list an Array of packages from which we only required the current one (the first
              * one)!
              */
-            entries = (LinkedHashMap<String, Object>) currentSubscriptionPackage;
+            entries = (Map<String, Object>) currentSubscriptionPackage;
         }
         long expiredateTimestamp = 0;
         final String productName = (String) entries.get("productName");

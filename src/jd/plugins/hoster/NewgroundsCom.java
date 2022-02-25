@@ -16,15 +16,10 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -38,6 +33,11 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "https?://(?:www\\.)?newgrounds\\.com/(?:portal/view/|audio/listen/)(\\d+)" })
 public class NewgroundsCom extends antiDDoSForHost {
@@ -156,7 +156,7 @@ public class NewgroundsCom extends antiDDoSForHost {
                 while (iterator.hasNext()) {
                     final Entry<String, Object> entry = iterator.next();
                     final String qualityStr = entry.getKey();
-                    final ArrayList<Object> qualityInfoArray = (ArrayList<Object>) entry.getValue();
+                    final List<Object> qualityInfoArray = (List<Object>) entry.getValue();
                     final Map<String, Object> qualityInfo = (Map<String, Object>) qualityInfoArray.get(0);
                     final String url = (String) qualityInfo.get("src");
                     if (!qualityStr.matches("\\d+p") || StringUtils.isEmpty(url)) {

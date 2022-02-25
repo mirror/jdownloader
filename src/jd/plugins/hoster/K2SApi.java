@@ -8,7 +8,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -21,17 +20,6 @@ import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -61,6 +49,17 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
  * <a href="https://github.com/keep2share/api/">Github documentation</a>
@@ -83,7 +82,7 @@ public abstract class K2SApi extends PluginForHost {
     private final Pattern                  IPREGEX               = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
     private static AtomicReference<String> lastIP                = new AtomicReference<String>();
     private static AtomicReference<String> currentIP             = new AtomicReference<String>();
-    private static HashMap<String, Long>   blockedIPsMap         = new HashMap<String, Long>();
+    private static Map<String, Long>       blockedIPsMap         = new HashMap<String, Long>();
     private String                         PROPERTY_LASTIP       = "K2S_PROPERTY_LASTIP";
     private final String                   PROPERTY_LASTDOWNLOAD = "_lastdownload_timestamp";
     private final long                     FREE_RECONNECTWAIT    = 1 * 60 * 60 * 1000L;
@@ -603,8 +602,8 @@ public abstract class K2SApi extends PluginForHost {
                         synchronized (CTRLLOCK) {
                             /* Load list of saved IPs + timestamp of last download */
                             final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
-                            if (lastdownloadmap != null && lastdownloadmap instanceof HashMap && blockedIPsMap.isEmpty()) {
-                                blockedIPsMap = (HashMap<String, Long>) lastdownloadmap;
+                            if (lastdownloadmap != null && lastdownloadmap instanceof Map && blockedIPsMap.isEmpty()) {
+                                blockedIPsMap = (Map<String, Long>) lastdownloadmap;
                             }
                         }
                     }
@@ -763,14 +762,14 @@ public abstract class K2SApi extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final String filename = (String) entries.get("name");
         // final String access = (String)entries.get("access");
         final boolean isDeleted = ((Boolean) entries.get("isDeleted")).booleanValue();
         final boolean isAvailableForFree = ((Boolean) entries.get("isAvailableForFree")).booleanValue();
         // final boolean hasAbuse = ((Boolean) entries.get("hasAbuse")).booleanValue();
         final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
-        // final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
+        // final List<Object> ressourcelist = (List<Object>) entries.get("");
         if (!StringUtils.isEmpty(filename)) {
             link.setFinalFileName(filename);
         }

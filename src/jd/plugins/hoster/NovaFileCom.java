@@ -23,12 +23,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasicSpecialFilejoker;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -42,6 +40,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasicSpecialFilejoker;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
@@ -275,8 +276,8 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
             synchronized (CTRLLOCK) {
                 /* Load list of saved IPs + timestamp of last download */
                 final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
-                if (lastdownloadmap != null && lastdownloadmap instanceof HashMap && blockedIPsMap.isEmpty()) {
-                    blockedIPsMap = (HashMap<String, Long>) lastdownloadmap;
+                if (lastdownloadmap != null && lastdownloadmap instanceof Map && blockedIPsMap.isEmpty()) {
+                    blockedIPsMap = (Map<String, Long>) lastdownloadmap;
                 }
             }
             /**
@@ -304,7 +305,7 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
     private Pattern                        IPREGEX                    = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
     private static AtomicReference<String> lastIP                     = new AtomicReference<String>();
     private static AtomicReference<String> currentIP                  = new AtomicReference<String>();
-    private static HashMap<String, Long>   blockedIPsMap              = new HashMap<String, Long>();
+    private static Map<String, Long>       blockedIPsMap              = new HashMap<String, Long>();
     private static Object                  CTRLLOCK                   = new Object();
     private String                         PROPERTY_LASTIP            = "NOVAFILE_PROPERTY_LASTIP";
     private static final String            PROPERTY_LASTDOWNLOAD      = "NOVAFILE_lastdownload_timestamp";

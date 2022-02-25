@@ -17,13 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -44,6 +39,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filebit.pl" }, urls = { "" })
 public class FileBitPl extends PluginForHost {
@@ -289,17 +290,17 @@ public class FileBitPl extends PluginForHost {
     }
 
     /**
-     * 2019-08-19: Keep in mind: This may waste traffic as it is not (yet) able to re-use previously generated "filebit.pl fileIDs".</br>
-     * DO NOT USE THIS AS LONG AS THEIR API IS WORKING FINE!!!
+     * 2019-08-19: Keep in mind: This may waste traffic as it is not (yet) able to re-use previously generated "filebit.pl fileIDs".</br> DO
+     * NOT USE THIS AS LONG AS THEIR API IS WORKING FINE!!!
      */
     private String getDllinkWebsite(final Account account, final DownloadLink link) throws Exception {
         this.loginWebsite(account);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         // do not change to new method, admin is working on new api
         br.postPage("/includes/ajax.php", "a=serverNewFile&url=" + Encoding.urlEncode(link.getDownloadURL()) + "&t=" + System.currentTimeMillis());
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) ressourcelist.get(0);
-        entries = (LinkedHashMap<String, Object>) entries.get("array");
+        final List<Object> ressourcelist = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        Map<String, Object> entries = (Map<String, Object>) ressourcelist.get(0);
+        entries = (Map<String, Object>) entries.get("array");
         // final String downloadlink_expires = (String) entries.get("expire");
         // final String internal_id = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), 0));
         return (String) entries.get("download");

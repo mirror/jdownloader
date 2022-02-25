@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -36,13 +35,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yahoo.com" }, urls = { "http://(www\\.)?de\\.groups\\.decryptedhahoo\\.com/group/[a-z0-9]+/photos/album/\\d+/pic/\\d+/view\\?.*?yahoolink" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yahoo.com" }, urls = { "http://(www\\.)?de\\.groups\\.decryptedhahoo\\.com/group/[a-z0-9]+/photos/album/\\d+/pic/\\d+/view\\?.*?yahoolink" })
 public class YahooCom extends PluginForHost {
-
     private static Object       LOCK     = new Object();
-
     private static final String MAINPAGE = "www.yahoo.com";
-
     private static final String USERTEXT = "Only downloadable for registered users!";
 
     public YahooCom(PluginWrapper wrapper) {
@@ -100,7 +96,9 @@ public class YahooCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         String finallink = br.getRegex("class=\"ygrp-photos-body-image\" style=\"height: \\d+px;\"><img src=\"(http://.*?)\"").getMatch(0);
-        if (finallink == null) finallink = br.getRegex("\"(http://xa\\.yimg\\.com/kq/groups/\\d+/.*?)\"").getMatch(0);
+        if (finallink == null) {
+            finallink = br.getRegex("\"(http://xa\\.yimg\\.com/kq/groups/\\d+/.*?)\"").getMatch(0);
+        }
         if (finallink == null) {
             logger.warning("finallink is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -109,15 +107,18 @@ public class YahooCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            if (br.containsHTML("(We are sorry, you can not display images hosted by Yahoo|Groups on non Yahoo\\! Groups pages\\.)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.yahoocom.servererror", "Server error"), 10 * 60 * 1000l);
+            if (br.containsHTML("(We are sorry, you can not display images hosted by Yahoo|Groups on non Yahoo\\! Groups pages\\.)")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.yahoocom.servererror", "Server error"), 10 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // We HAVE to do this, server doesn't send filename correctly!
         final String getExt = dl.getConnection().getContentType();
-        if (getExt.contains("jpeg"))
+        if (getExt.contains("jpeg")) {
             link.setFinalFileName(link.getName() + ".jpeg");
-        else
+        } else {
             link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
+        }
         dl.startDownload();
     }
 
@@ -128,9 +129,11 @@ public class YahooCom extends PluginForHost {
             br.setCookiesExclusive(true);
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+            if (acmatch) {
+                acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            }
+            if (acmatch && ret != null && ret instanceof Map<?, ?> && !force) {
+                final Map<String, String> cookies = (Map<String, String>) ret;
                 if (cookies.containsKey("SSL") && account.isValid()) {
                     for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                         final String key = cookieEntry.getKey();
@@ -149,7 +152,9 @@ public class YahooCom extends PluginForHost {
             loginForm.put("login", Encoding.urlEncode(account.getUser()));
             loginForm.put("passwd", Encoding.urlEncode(account.getPass()));
             br.submitForm(loginForm);
-            if (br.getCookie(MAINPAGE, "PH") == null || br.getCookie(MAINPAGE, "SSL") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (br.getCookie(MAINPAGE, "PH") == null || br.getCookie(MAINPAGE, "SSL") == null) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();
             final Cookies add = this.br.getCookies(MAINPAGE);
@@ -175,5 +180,4 @@ public class YahooCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

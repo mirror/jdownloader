@@ -13,10 +13,9 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
-import java.util.LinkedHashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -31,9 +30,8 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "play.fm" }, urls = { "https?://(?:www\\.)?play\\.fm/[a-z0-9\\-_]+/[a-z0-9\\-_]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "play.fm" }, urls = { "https?://(?:www\\.)?play\\.fm/[a-z0-9\\-_]+/[a-z0-9\\-_]+" })
 public class PlayFm extends PluginForHost {
-
     private String DLLINK = null;
 
     public PlayFm(final PluginWrapper wrapper) {
@@ -57,22 +55,18 @@ public class PlayFm extends PluginForHost {
         setBrowserExclusive();
         this.br.setAllowedResponseCodes(410);
         br.setFollowRedirects(true);
-
         final String linkpart = new Regex(downloadLink.getDownloadURL(), "play\\.fm/(.+)").getMatch(0);
         this.br.getPage("https://v2api.play.fm/recordings/slug/" + linkpart);
         if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-
+        final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final String title = (String) entries.get("title");
         final String description = (String) entries.get("description");
         DLLINK = (String) entries.get("audio");
-
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         String filename;
         if (title != null) {
             filename = title;
@@ -81,13 +75,10 @@ public class PlayFm extends PluginForHost {
         }
         filename += ".mp3";
         filename = encodeUnicode(filename);
-
         if (description != null && downloadLink.getComment() == null) {
             downloadLink.setComment(description);
         }
-
         downloadLink.setFinalFileName(filename);
-
         final Browser br2 = br.cloneBrowser();
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
@@ -129,5 +120,4 @@ public class PlayFm extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
-
 }

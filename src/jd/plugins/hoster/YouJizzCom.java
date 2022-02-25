@@ -16,15 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.config.YouJizzComConfig;
-import org.jdownloader.plugins.components.config.YouJizzComConfig.PreferredStreamQuality;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -37,6 +30,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.config.YouJizzComConfig;
+import org.jdownloader.plugins.components.config.YouJizzComConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youjizz.com" }, urls = { "https?://(?:www\\.)?youjizz\\.com/videos/(embed/\\d+|.*?\\-\\d+\\.html)" })
 public class YouJizzCom extends PluginForHost {
@@ -99,12 +99,12 @@ public class YouJizzCom extends PluginForHost {
         // 20170717
         final String filter = br.getRegex("dataEncodings\\s*=\\s*(\\[.*?\\]);").getMatch(0);
         if (filter != null) {
-            final ArrayList<Object> results = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(filter);
+            final List<Object> results = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(filter);
             // mobile has mp4 and non mobile is hls
             int qualityMax = 0;
             final String preferredQuality = getPreferredStreamQuality();
             for (final Object resultz : results) {
-                final LinkedHashMap<String, Object> result = (LinkedHashMap<String, Object>) resultz;
+                final Map<String, Object> result = (Map<String, Object>) resultz;
                 final Object q = result.get("quality");
                 final String d = (String) result.get("filename");
                 if (q == null || d == null) {

@@ -15,11 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -32,6 +30,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tvigle.ru" }, urls = { "http://cloud\\.tvigle\\.ru/video/\\d+|http://www\\.tvigle\\.ru/video/[a-z0-9\\-]+/" })
 public class TvigleRu extends PluginForHost {
@@ -58,7 +58,7 @@ public class TvigleRu extends PluginForHost {
         String filename;
         long filesize = 0;
         final String[] qualities = { "1080p", "720p", "480p", "360p", "240p", "180p" };
-        LinkedHashMap<String, Object> api_data;
+        Map<String, Object> api_data;
         String videoID = downloadLink.getStringProperty("videoID", null);
         dllink = null;
         this.setBrowserExclusive();
@@ -97,9 +97,9 @@ public class TvigleRu extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || !br.getHttpConnection().getContentType().contains("application/json")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        api_data = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        api_data = (LinkedHashMap<String, Object>) api_data.get("playlist");
-        api_data = (LinkedHashMap<String, Object>) ((ArrayList) api_data.get("items")).get(0);
+        api_data = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        api_data = (Map<String, Object>) api_data.get("playlist");
+        api_data = (Map<String, Object>) ((List) api_data.get("items")).get(0);
         final Object error_object = api_data.get("errorType");
         if (error_object != null) {
             final long error_code = ((Number) error_object).longValue();
@@ -108,10 +108,10 @@ public class TvigleRu extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final LinkedHashMap<String, Object> videos = (LinkedHashMap<String, Object>) api_data.get("videos");
-        final LinkedHashMap<String, Object> videolinks_map = (LinkedHashMap<String, Object>) videos.get("mp4");
-        final LinkedHashMap<String, Object> video_files_size = (LinkedHashMap<String, Object>) api_data.get("video_files_size");
-        final LinkedHashMap<String, Object> video_files_size_map = (LinkedHashMap<String, Object>) video_files_size.get("mp4");
+        final Map<String, Object> videos = (Map<String, Object>) api_data.get("videos");
+        final Map<String, Object> videolinks_map = (Map<String, Object>) videos.get("mp4");
+        final Map<String, Object> video_files_size = (Map<String, Object>) api_data.get("video_files_size");
+        final Map<String, Object> video_files_size_map = (Map<String, Object>) video_files_size.get("mp4");
         for (final String quality : qualities) {
             dllink = (String) videolinks_map.get(quality);
             if (dllink != null) {

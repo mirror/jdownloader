@@ -378,7 +378,7 @@ public class BoxbitApp extends PluginForHost {
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final String message = (String) entries.get("message");
             /* All possible error-keys go along with http response 422 except "busy_worker" --> 429 */
-            final ArrayList<String> errors = (ArrayList<String>) entries.get("errors");
+            final List<String> errors = (List<String>) entries.get("errors");
             for (final String error : errors) {
                 if (error.equals("subscription_not_active ")) {
                     /* Account doesn't have any paid subscription package */

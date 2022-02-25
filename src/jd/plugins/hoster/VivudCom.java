@@ -16,8 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import jd.PluginWrapper;
@@ -79,7 +79,7 @@ public class VivudCom extends PluginForHost {
         final String jssource = br.getRegex("\"urls_CDN\"\\s*?:\\s*?(\\{.*?\\})").getMatch(0);
         if (jssource != null) {
             try {
-                HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(jssource);
+                Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(jssource);
                 long quality_temp = 0;
                 long quality_best = 0;
                 String dllink_temp = null;

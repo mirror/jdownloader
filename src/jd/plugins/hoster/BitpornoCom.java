@@ -16,14 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -39,6 +33,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitporno.com" }, urls = { "https?://(?:www\\.)?bitporno\\.(?:sx|com)/(?:\\?v=|v/|embed/)([A-Za-z0-9]+)" })
 public class BitpornoCom extends PluginForHost {
@@ -155,7 +155,7 @@ public class BitpornoCom extends PluginForHost {
             String dllink_user_prefered = null;
             String dllink_temp = null;
             String dllink_best = null;
-            final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(json_source);
+            final List<Object> ressourcelist = (List) JavaScriptEngineFactory.jsonToJavaObject(json_source);
             Map<String, Object> entries = null;
             int maxvalue = 0;
             int tempvalue = 0;

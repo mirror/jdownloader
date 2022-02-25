@@ -16,12 +16,7 @@
 package jd.plugins.hoster;
 
 import java.text.DecimalFormat;
-import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -33,11 +28,17 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tv.nrk.no" }, urls = { "https?://(?:www\\.)?tv\\.nrk\\.no/serie/[a-z0-9\\-]+(?:/[A-Z]{4}\\d{8})?/sesong(?:\\-|/)\\d+/episode(?:\\-|/)\\d+" })
 public class TvNrkNo extends PluginForHost {
     public TvNrkNo(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     // Tags:
     // protocol: https possible (without API)
@@ -47,12 +48,11 @@ public class TvNrkNo extends PluginForHost {
     // http://nordond27b-f.akamaihd.net/z/wo/open/f9/f90fe5e8dce1f147096b40bbb7354ecc3d09f420/b3a61e83-df5a-463a-bebe-420f24fb6455_,141,316,563,1266,2250,.mp4.csmil/manifest.f4m
     // Example hls:
     // http://nordond27b-f.akamaihd.net/i/wo/open/f9/f90fe5e8dce1f147096b40bbb7354ecc3d09f420/b3a61e83-df5a-463a-bebe-420f24fb6455_,141,316,563,1266,2250,.mp4.csmil/master.m3u8
-
     /* Connection stuff */
-    private static final int              free_maxdownloads = -1;
-    private boolean                       isAvailable       = true;
-    private boolean                       newAPI            = false;
-    private LinkedHashMap<String, Object> entries           = null;
+    private static final int    free_maxdownloads = -1;
+    private boolean             isAvailable       = true;
+    private boolean             newAPI            = false;
+    private Map<String, Object> entries           = null;
 
     @Override
     public String getAGBLink() {
@@ -60,8 +60,7 @@ public class TvNrkNo extends PluginForHost {
     }
 
     /**
-     * Using API: http://v8.psapi.nrk.no/Help </br>
-     * 2019-09-16: Also added support for new API: https://psapi-ne.nrk.no/documentation/
+     * Using API: http://v8.psapi.nrk.no/Help </br> 2019-09-16: Also added support for new API: https://psapi-ne.nrk.no/documentation/
      */
     @SuppressWarnings({ "unchecked" })
     @Override
@@ -109,7 +108,7 @@ public class TvNrkNo extends PluginForHost {
                 /* 404 handling is enough to determine offline state (via API AND website)! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             series_title = (String) entries.get("seriesTitle");
             episode_title = (String) entries.get("title");
             description = (String) entries.get("longDescription");
@@ -126,7 +125,7 @@ public class TvNrkNo extends PluginForHost {
                 /* 404 handling is enough to determine offline state (via API AND website)! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             isAvailable = ((Boolean) entries.get("isAvailable")).booleanValue();
             series_title = (String) entries.get("seriesTitle");
             episode_title = (String) entries.get("title");
@@ -172,7 +171,7 @@ public class TvNrkNo extends PluginForHost {
              * HLS-master manually.
              */
             try {
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "mediaAssetsOnDemand/{0}");
+                entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "mediaAssetsOnDemand/{0}");
                 url_hds = (String) entries.get("hdsUrl");
                 hls_master = (String) entries.get("hlsUrl");
             } catch (final Throwable e) {

@@ -17,16 +17,10 @@ package jd.plugins.hoster;
 
 import java.net.MalformedURLException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
-
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -37,6 +31,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rai.tv" }, urls = { "https?://rai_host_plugin_notneeded_at_the_moment" })
 public class RaiTv extends PluginForHost {
@@ -95,24 +95,24 @@ public class RaiTv extends PluginForHost {
             date = this.br.getRegex("id=\"myGenDate\">(\\d{2}\\-\\d{2}\\-\\d{4} \\d{2}:\\d{2})<").getMatch(0);
             possibleNotDownloadableMSSilverlight = this.br.containsHTML("id=\"silverlightControlHost\"");
         } else {
-            LinkedHashMap<String, Object> entries = null;
+            Map<String, Object> entries = null;
             if (content_id_from_html != null) {
                 /* Easiest way to find videoinfo */
                 this.br.getPage("http://www.rai.tv/dl/RaiTV/programmi/media/ContentItem" + content_id_from_html + ".html?json");
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             }
             if (entries == null) {
-                final ArrayList<Object> ressourcelist;
+                final List<Object> ressourcelist;
                 final String list_json_from_html = this.br.getRegex("\"list\"[\t\n\r ]*?:[\t\n\r ]*?(\\[.*?\\}[\t\n\r ]*?\\])").getMatch(0);
                 if (list_json_from_html != null) {
-                    ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(list_json_from_html);
+                    ressourcelist = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(list_json_from_html);
                 } else {
                     br.getPage("http://www.rai.tv/dl/RaiTV/ondemand/ContentSet" + contentset_id + ".html?json");
                     if (br.getHttpConnection().getResponseCode() == 404) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                    ressourcelist = (ArrayList<Object>) entries.get("list");
+                    entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                    ressourcelist = (List<Object>) entries.get("list");
                 }
                 if (content_id_from_url == null) {
                     /* Hm probably not a video */
@@ -121,7 +121,7 @@ public class RaiTv extends PluginForHost {
                 String content_id_temp = null;
                 boolean foundVideoInfo = false;
                 for (final Object videoo : ressourcelist) {
-                    entries = (LinkedHashMap<String, Object>) videoo;
+                    entries = (Map<String, Object>) videoo;
                     content_id_temp = (String) entries.get("itemId");
                     if (content_id_temp != null && content_id_temp.contains(content_id_from_url)) {
                         foundVideoInfo = true;

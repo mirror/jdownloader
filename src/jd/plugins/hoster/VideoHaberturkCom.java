@@ -15,9 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -115,8 +115,8 @@ public class VideoHaberturkCom extends PluginForHost {
 
     private void processJavascript(String json) {
         try {
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-            final ArrayList<Object> test = (ArrayList<Object>) entries.get("ht_files");
+            final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+            final List<Object> test = (List<Object>) entries.get("ht_files");
             // we are still in the order from the website, lets shuffle
             Collections.shuffle(test);
             // ok there are hls and web links, lets prefer the web links!
@@ -124,16 +124,16 @@ public class VideoHaberturkCom extends PluginForHost {
             final String[] keys = new String[] { "mp4", "m3u8" };
             for (final String key : keys) {
                 for (final Object a : test) {
-                    final LinkedHashMap<String, Object> yay1 = (LinkedHashMap<String, Object>) a;
+                    final Map<String, Object> yay1 = (Map<String, Object>) a;
                     if (!yay1.containsKey(key)) {
                         continue;
                     }
                     // another array
-                    final ArrayList<Object> yay2 = (ArrayList<Object>) yay1.get(key);
+                    final List<Object> yay2 = (List<Object>) yay1.get(key);
                     int p = 0;
                     String file = null;
                     for (final Object b : yay2) {
-                        final LinkedHashMap<String, Object> yay3 = (LinkedHashMap<String, Object>) b;
+                        final Map<String, Object> yay3 = (Map<String, Object>) b;
                         // multiple qualities.
                         final String tmpfile = (String) yay3.get("file");
                         final String name = (String) yay3.get("name");
