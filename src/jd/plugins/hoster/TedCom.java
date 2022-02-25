@@ -86,17 +86,17 @@ public class TedCom extends PluginForHost {
     private static final String                   GRAB_SUBTITLE_VIETNAMESE           = "GRAB_SUBTITLE_VIETNAMESE";
     public static LinkedHashMap<String, String[]> formats                            = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
                                                                                          {
-                                                                                                                                                                                            /*
-                                                                                                                                                                                             * Format
-                                                                                                                                                                                             * -
-                                                                                                                                                                                             * name
-                                                                                                                                                                                             * :
-                                                                                                                                                                                             * videoCodec,
-                                                                                                                                                                                             * videoBitrate,
-                                                                                                                                                                                             * videoResolution,
-                                                                                                                                                                                             * audioCodec,
-                                                                                                                                                                                             * audioBitrate
-                                                                                                                                                                                             */
+                                                                                                                                                                                                  /*
+                                                                                                                                                                                                   * Format
+                                                                                                                                                                                                   * -
+                                                                                                                                                                                                   * name
+                                                                                                                                                                                                   * :
+                                                                                                                                                                                                   * videoCodec,
+                                                                                                                                                                                                   * videoBitrate,
+                                                                                                                                                                                                   * videoResolution,
+                                                                                                                                                                                                   * audioCodec,
+                                                                                                                                                                                                   * audioBitrate
+                                                                                                                                                                                                   */
                                                                                              put("64k", new String[] { "AVC", "40", "320x180", "AAC LC", "24" });
                                                                                              // put("podcast-light", new String[] { "AVC",
                                                                                              // "40", "320x180", "AAC LC", "24" });
@@ -151,8 +151,8 @@ public class TedCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
+            if (this.looksLikeDownloadableContent(con)) {
+                link.setVerifiedFileSize(con.getCompleteContentLength());
                 link.setFinalFileName(link.getStringProperty("finalfilename", null));
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -167,11 +167,15 @@ public class TedCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, maxChunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, maxChunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.dl.startDownload();

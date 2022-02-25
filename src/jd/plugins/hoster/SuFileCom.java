@@ -88,21 +88,21 @@ public class SuFileCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        final String fid = getFID(link);
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
+            requestFileInformation(link);
             int wait = 30;
             final String waittime = br.getRegex("id=\"wait_input\" style=\"font-weight:bold;font-size:22px; color: green;\">(\\d+)</span>").getMatch(0);
             if (waittime != null) {
                 wait = Integer.parseInt(waittime);
             }
             this.sleep(wait * 1001l, link);
+            final String fid = getFID(link);
             br.getPage("/down/" + fid + ".html");
             final String code = getCaptchaCode("/down_code.php", link);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -188,30 +188,31 @@ public class SuFileCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static final String MAINPAGE = "http://sufile.com";
-    private static Object       LOCK     = new Object();
-
     @SuppressWarnings("deprecation")
     private void login(final Account account) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
+                    logger.info("Verifying login cookies");
                     this.br.setCookies(this.getHost(), cookies);
-                    br.getPage("http://sufile.com/member/");
+                    br.getPage("http://" + this.getHost() + "/member/");
                     if (this.br.containsHTML("/logout.php")) {
                         /* Save cookie timestamp. */
+                        logger.info("Cookie login successful");
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
                         return;
+                    } else {
+                        logger.info("Cookie login failed");
+                        br.clearCookies(br.getHost());
                     }
-                    this.br = new Browser();
                 }
                 br.setFollowRedirects(false);
-                br.getPage("http://www.sufile.com/login.html");
+                br.getPage("http://www." + this.getHost() + "/login.html");
                 String postData = "type=login&nick=" + Encoding.urlEncode(account.getUser()) + "&pwd=" + Encoding.urlEncode(account.getPass());
                 if (this.br.containsHTML("yzm\\.php")) {
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "sufile.com", MAINPAGE, true);
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "sufile.com", "http://" + this.getHost(), true);
                     final String code = getCaptchaCode("/yzm.php", dummyLink);
                     postData += "&yzm=" + Encoding.urlEncode(code);
                 }
@@ -235,12 +236,7 @@ public class SuFileCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account);
         br.getPage("/member/userinfo.php");
         final String expire = br.getRegex(">到期时间：</span><span class=\\\\mr15 w300 dib\">([^<>\"]*?)</span>").getMatch(0);
         ai.setUnlimitedTraffic();
@@ -265,20 +261,18 @@ public class SuFileCom extends PluginForHost {
         return ai;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        login(account);
-        br.setFollowRedirects(false);
         if (account.getBooleanProperty("free", false)) {
-            br.getPage(link.getDownloadURL());
-            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+            handleDownload(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
             String dllink = this.checkDirectLink(link, "premium_directlink");
             if (dllink == null) {
+                requestFileInformation(link);
+                login(account);
+                br.setFollowRedirects(false);
                 br.setFollowRedirects(true);
-                br.getPage(link.getDownloadURL());
+                br.getPage(link.getPluginPatternMatcher());
                 /* Example of a finallink: \"(https?://vip\\d+[a-z0-9\\-\\.]+\\.sufile.net:3660/down/filename?key=xxx */
                 dllink = br.getRegex("\"(https?://vip\\d+[a-z0-9\\-\\.]+\\.sufile[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {

@@ -8,6 +8,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -22,9 +25,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ted.com" }, urls = { "https?://(?:www\\.)?ted\\.com/(talks/(?:lang/[a-zA-Z\\-]+/)?[\\w_]+|[\\w_]+\\?language=\\w+|playlists/\\d+/[^/]+)" })
 public class TedCom extends PluginForDecrypt {
@@ -159,76 +159,69 @@ public class TedCom extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(externalLink));
                 return;
             }
-            json = this.br.getRegex("<script[^>]*>q\\(\"talkPage\\.init\",\\s*?(\\{.*?)\\)</script>").getMatch(0);
+            json = this.br.getRegex("id=\"__NEXT_DATA__\" type=\"application/json\">(\\{.*?\\})</script>").getMatch(0);
             if (json == null) {
                 this.decryptedLinks.add(this.createOfflinelink(parameter));
                 return;
             }
-            entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-            entries = (Map<String, Object>) entries.get("__INITIAL_DATA__");
-            // This is needed later for the subtitle decrypter
+            final Map<String, Object> root = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+            final Map<String, Object> videoData = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "props/pageProps/videoData");
+            final String playerDataJson = (String) videoData.get("playerData");
+            final Map<String, Object> playerData = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(playerDataJson);
+            /* 2022-02-25: Subtitle handling is broken! */
             final String subtitleText = br.getRegex("<select name=\"languageCode\" id=\"languageCode\"><option value=\"\">Show transcript</option>(.*?)</select>").getMatch(0);
             /** Decrypt video */
-            final Object externalMedia = JavaScriptEngineFactory.walkJson(entries, "media/external");
-            if (externalMedia != null) {
+            final Object externalMediaO = playerData.get("external");
+            if (externalMediaO != null) {
                 logger.info("Found external media");
-                entries = (Map<String, Object>) externalMedia;
-                final String mediaCode = (String) entries.get("code");
-                final String service = (String) entries.get("service");
+                final Map<String, Object> externalMedia = (Map<String, Object>) externalMediaO;
+                final String mediaCode = (String) externalMedia.get("code");
+                final String service = (String) externalMedia.get("service");
                 if (!StringUtils.isEmpty(service) && !StringUtils.isEmpty(mediaCode) && service.equalsIgnoreCase("youtube")) {
-                    decryptedLinks.add(createDownloadlink(String.format("https://www.youtube.com/watch?v=%s", mediaCode)));
+                    decryptedLinks.add(createDownloadlink("https://www.youtube.com/watch?v=" + mediaCode));
                 }
-                final String uri = (String) entries.get("uri");
+                final String uri = (String) externalMedia.get("uri");
                 if (!StringUtils.isEmpty(uri)) {
                     /* Sometimes, a mirror is available e.g. YouTube (above code) and vimeo (here via URL). */
                     decryptedLinks.add(createDownloadlink(uri));
                 }
                 return;
             }
-            /* Official download-URLs */
-            Map<String, Object> http_download_url_list = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "talks/{0}/downloads/nativeDownloads");
-            /* Stream-URLs */
-            Map<String, Object> http_stream_url_list = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "media/internal");
-            if (http_stream_url_list == null) {
-                http_stream_url_list = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "talks/{0}/player_talks/{0}/resources");
-            }
-            entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "talks/{0}");
-            String title = (String) entries.get("title");
-            if (title == null) {
-                throw new DecrypterException("Decrypter broken");
-            }
+            /* All streaming resources */
+            /* TODO: Check for official downloads */
+            final Map<String, Object> resources = (Map<String, Object>) playerData.get("resources");
+            final List<Map<String, Object>> httpStreams = (List<Map<String, Object>>) resources.get("h264");
+            final Map<String, Object> hls = (Map<String, Object>) playerData.get("hls");
+            final String title = (String) videoData.get("title");
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(title);
-            final String tedID = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), -1));
+            final String tedID = videoData.get("id").toString();
             String url_mp3 = null;
             long filesize_mp3 = 0;
-            if (http_download_url_list != null && !http_download_url_list.isEmpty()) {
-                /* Prefer official download-URLs over stream-URLs */
-                final Iterator<Entry<String, Object>> iteratorAvailableQualities = http_download_url_list.entrySet().iterator();
-                while (iteratorAvailableQualities.hasNext()) {
-                    final Entry<String, Object> currentObject = iteratorAvailableQualities.next();
-                    final String qualityKey = currentObject.getKey();
-                    final String downloadurl = (String) currentObject.getValue();
-                    if (StringUtils.isEmpty(downloadurl)) {
-                        /* E.g. "high=null" --> Skip unavailable items */
-                        continue;
-                    }
+            if (httpStreams != null && !httpStreams.isEmpty()) {
+                for (final Map<String, Object> httpStream : httpStreams) {
+                    final String bitrate = httpStream.get("bitrate").toString();
                     final DownloadLink dl = createDownloadlink("decrypted://decryptedtedcom.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-                    dl.setProperty("directlink", downloadurl);
+                    dl.setProperty("directlink", httpStream.get("file").toString());
                     dl.setProperty("type", "video");
-                    dl.setProperty("selectedvideoquality", qualityKey);
+                    dl.setProperty("selectedvideoquality", bitrate);
                     if (cfg.getBooleanProperty(CHECKFAST_VIDEOS, false)) {
                         dl.setAvailable(true);
                     }
-                    final String finalName = title + "_" + qualityKey + ".mp4";
+                    final String finalName = title + "_" + bitrate + ".mp4";
                     dl.setFinalFileName(finalName);
                     dl.setProperty("finalfilename", finalName);
                     dl.setLinkID(finalName);
                     dl._setFilePackage(fp);
                     dl.setContentUrl(parameter);
-                    foundVideoLinks.put(qualityKey, dl);
+                    foundVideoLinks.put(bitrate, dl);
                 }
             } else {
+                final Map http_stream_url_list = null;
+                /* 2022-02-25: Did not implement HLS support for now. */
+                if (true) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 final Iterator<Entry<String, Object>> iteratorAvailableQualities = http_stream_url_list.entrySet().iterator();
                 while (iteratorAvailableQualities.hasNext()) {
                     final Entry<String, Object> currentObject = iteratorAvailableQualities.next();
@@ -309,7 +302,6 @@ public class TedCom extends PluginForDecrypt {
                     foundVideoLinks.put(qualityKey, dl);
                 }
             }
-            title = encodeUnicode(title);
             /* Add user selected video qualities */
             final Iterator<Entry<String, String[]>> it = formats.entrySet().iterator();
             while (it.hasNext()) {
@@ -340,9 +332,10 @@ public class TedCom extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
             /** Decrypt subtitles */
-            if (subtitleText != null && tedID != null || entries.containsKey("languages")) {
-                final String[][] allSubtitleValues = { { "sq", "Albanian" }, { "ar", "Arabic" }, { "hy", "Armenian" }, { "az", "Azerbaijani" }, { "bn", "Bengali" }, { "bg", "Bulgarian" }, { "zh-cn", "Chinese, Simplified" }, { "zh-tw", "Chinese, Traditional" }, { "hr", "Croatian" }, { "cs", "Czech" }, { "da", "Danish" }, { "nl", "Dutch" }, { "en", "English" }, { "et", "Estonian" }, { "fi", "Finnish" }, { "fr", "French" }, { "ka", "Georgian" }, { "de", "German" }, { "el", "Greek" }, { "he", "Hebrew" }, { "hu", "Hungarian" }, { "id", "Indonesian" }, { "it", "Italian" }, { "ja", "Japanese" }, { "ko", "Korean" }, { "ku", "Kurdish" }, { "lt", "Lithuanian" }, { "mk", "Macedonian" }, { "ms", "Malay" }, { "nb", "Norwegian Bokmal" }, { "fa", "Persian" }, { "pl", "Polish" }, { "pt", "Portuguese" }, { "pt-br", "Portuguese, Brazilian" }, { "ro", "Romanian" }, { "ru", "Russian" },
-                        { "sr", "Serbian" }, { "sk", "Slovak" }, { "sl", "Slovenian" }, { "es", "Spanish" }, { "sv", "Swedish" }, { "th", "Thai" }, { "tr", "Turkish" }, { "uk", "Ukrainian" }, { "vi", "Vietnamese" } };
+            final List<Map<String, Object>> subtitles = (List<Map<String, Object>>) playerData.get("languages");
+            if (subtitles != null) {
+                final String[][] allSubtitleValues = { { "sq", "Albanian" }, { "ar", "Arabic" }, { "hy", "Armenian" }, { "az", "Azerbaijani" }, { "bn", "Bengali" }, { "bg", "Bulgarian" }, { "zh-cn", "Chinese, Simplified" }, { "zh-tw", "Chinese, Traditional" }, { "hr", "Croatian" }, { "cs", "Czech" }, { "da", "Danish" }, { "nl", "Dutch" }, { "en", "English" }, { "et", "Estonian" }, { "fi", "Finnish" }, { "fr", "French" }, { "ka", "Georgian" }, { "de", "German" }, { "el", "Greek" }, { "he", "Hebrew" }, { "hu", "Hungarian" }, { "id", "Indonesian" }, { "it", "Italian" }, { "ja", "Japanese" }, { "ko", "Korean" }, { "ku", "Kurdish" }, { "lt", "Lithuanian" }, { "mk", "Macedonian" }, { "ms", "Malay" }, { "nb", "Norwegian Bokmal" }, { "fa", "Persian" }, { "pl", "Polish" }, { "pt", "Portuguese" }, { "pt-br", "Portuguese, Brazilian" }, { "ro", "Romanian" }, { "ru", "Russian" }, { "sr", "Serbian" },
+                        { "sk", "Slovak" }, { "sl", "Slovenian" }, { "es", "Spanish" }, { "sv", "Swedish" }, { "th", "Thai" }, { "tr", "Turkish" }, { "uk", "Ukrainian" }, { "vi", "Vietnamese" } };
                 final ArrayList<String[]> selectedSubtitles = new ArrayList<String[]>();
                 final LinkedHashMap<String, String> foundSubtitles = new LinkedHashMap();
                 if (subtitleText != null) {
@@ -352,14 +345,15 @@ public class TedCom extends PluginForDecrypt {
                     }
                 } else {
                     // back ported for JSON
-                    final List<Object> subtitles = (List) entries.get("languages");
-                    if (subtitles != null) {
-                        for (final Object result : subtitles) {
-                            final Map<String, String> yay = (Map<String, String>) result;
-                            // assume its the lower case one from the code below.
-                            final String langCode = yay.get("languageCode");
-                            foundSubtitles.put(langCode, Request.getLocation("/talks/subtitles/id/" + tedID + "/lang/" + langCode + "/format/srt", br.getRequest()));
-                        }
+                    final String hlsMetadataURL = (String) hls.get("metadata");
+                    final String project_masterID = new Regex(hlsMetadataURL, "project_masters/(\\d+)").getMatch(0);
+                    if (project_masterID == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    for (final Map<String, Object> subtitle : subtitles) {
+                        // assume its the lower case one from the code below.
+                        final String langCode = subtitle.get("languageCode").toString();
+                        foundSubtitles.put(langCode, "https://hls.ted.com/project_masters/" + project_masterID + "/subtitles/" + langCode + "/full.vtt");
                     }
                 }
                 if (cfg.getBooleanProperty(GRAB_ALL_AVAILABLE_SUBTITLES, false)) {
@@ -509,7 +503,7 @@ public class TedCom extends PluginForDecrypt {
                     if (foundSubtitleDirectLink != null) {
                         final String subtitleName = selectedSubtitle[1];
                         final DownloadLink dl = createDownloadlink("decrypted://decryptedtedcom.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-                        final String finalName = title + "_subtitle_" + subtitleName + ".srt";
+                        final String finalName = title + "_subtitle_" + subtitleName + ".vtt";
                         dl.setFinalFileName(finalName);
                         dl.setProperty("finalfilename", finalName);
                         dl.setProperty("directlink", foundSubtitleDirectLink);
