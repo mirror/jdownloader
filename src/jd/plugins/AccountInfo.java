@@ -588,7 +588,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
                         final LazyHostPlugin plugin = plugins.iterator().next();
                         final String pluginHost = plugin.getHost();
                         ret.add(pluginHost);
-                        if (list.contains(pluginHost)) {
+                        if (!list.contains(pluginHost)) {
                             list.add(pluginHost);
                         }
                         continue;
@@ -609,7 +609,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
                             final LazyHostPlugin plugin = best.get(0);
                             final String pluginHost = plugin.getHost();
                             ret.add(pluginHost);
-                            if (list.contains(pluginHost)) {
+                            if (!list.contains(pluginHost)) {
                                 list.add(pluginHost);
                             }
                             continue;
