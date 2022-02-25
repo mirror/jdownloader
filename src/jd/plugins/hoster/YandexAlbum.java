@@ -16,7 +16,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -84,12 +83,12 @@ public class YandexAlbum extends PluginForHost {
             }
         }
         /* Find json object for current link ... */
-        final ArrayList<Object> modelObjects = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(jd.plugins.decrypter.DiskYandexNetFolder.regExJSON(this.br));
+        final List<Object> modelObjects = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(jd.plugins.decrypter.DiskYandexNetFolder.regExJSON(this.br));
         Map<String, Object> entries = jd.plugins.decrypter.DiskYandexNetFolder.findModel(modelObjects, "resources");
         if (entries == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final ArrayList<Object> mediaObjects = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "data/resources");
+        final List<Object> mediaObjects = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "data/resources");
         boolean foundObject = false;
         final String item_id = this.albumGetID(link);
         for (final Object mediao : mediaObjects) {

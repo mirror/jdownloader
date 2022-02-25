@@ -21,22 +21,10 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
-
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -69,6 +57,17 @@ import jd.plugins.components.UserAgents.BrowserName;
 import jd.plugins.decrypter.VKontakteRu;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://vkontaktedecrypted\\.ru/(picturelink/(?:-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:-)?\\d+_\\d+)|https?://(?:new\\.)?vk\\.com/(doc[\\d\\-]+_[\\d\\-]+|video[\\d\\-]+_[\\d\\-]+(?:#quality=\\d+p)?)(\\?hash=[a-f0-9]+(\\&dl=[a-f0-9]{18})?)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip).+|[rz][0-9]{2}.+)" })
@@ -1506,10 +1505,10 @@ public class VKontakteRuHoster extends PluginForHost {
         }
         if (picture_preview_json != null) {
             try {
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(picture_preview_json);
+                Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(picture_preview_json);
                 if (entries.containsKey("temp")) {
                     /* 2020-01-28 */
-                    entries = (LinkedHashMap<String, Object>) entries.get("temp");
+                    entries = (Map<String, Object>) entries.get("temp");
                 }
                 final String base = (String) entries.get("base");
                 final Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
@@ -1520,10 +1519,10 @@ public class VKontakteRuHoster extends PluginForHost {
                     final Entry<String, Object> entry = iterator.next();
                     final Object picO = entry.getValue();
                     /* Skip invalid objects */
-                    if (!(picO instanceof ArrayList)) {
+                    if (!(picO instanceof List)) {
                         continue;
                     }
-                    final ArrayList<Object> ressourcelist = (ArrayList<Object>) picO;
+                    final List<Object> ressourcelist = (List<Object>) picO;
                     qualityTemp = (int) JavaScriptEngineFactory.toLong(ressourcelist.get(1), 0);
                     dllink_temp = (String) ressourcelist.get(0);
                     if (qualityTemp > qualityMax) {
@@ -1625,13 +1624,13 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     /** Returns ArrayList of audio Objects for Playlists/Albums after '/al_audio.php' request. */
-    public static ArrayList<Object> getAudioDataArray(final Browser br) throws Exception {
+    public static List<Object> getAudioDataArray(final Browser br) throws Exception {
         final String json = jd.plugins.decrypter.VKontakteRu.regexJsonInsideHTML(br);
         if (json == null) {
             return null;
         }
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("list");
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
+        final List<Object> ressourcelist = (List<Object>) entries.get("list");
         return ressourcelist;
     }
 

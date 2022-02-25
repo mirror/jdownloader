@@ -17,15 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.HashMap;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.jdownloader.translate._JDT;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -44,6 +36,15 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "julesjordan.com" }, urls = { "https?://dl\\d+\\.julesjordan\\.com/dl/.+|https?://(?:www\\.)?julesjordan\\.com/(?:trial|members)/(?:movies|scenes)/[^/]+\\.html" })
 public class JulesjordanCom extends antiDDoSForHost {
@@ -94,7 +95,7 @@ public class JulesjordanCom extends antiDDoSForHost {
             String dllink_temp = null;
             final String[] jsons = this.br.getRegex("movie\\[\"[^\"]+\"\\]\\[\"[^\"]+\"\\] = (\\{.*?\\})").getColumn(0);
             for (final String json : jsons) {
-                final HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
+                final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
                 final long width = JavaScriptEngineFactory.toLong(entries.get("movie_width"), 0);
                 dllink_temp = (String) entries.get("path");
                 if (width > width_max && !StringUtils.isEmpty(dllink_temp)) {

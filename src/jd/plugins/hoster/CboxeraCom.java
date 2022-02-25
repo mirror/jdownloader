@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -92,7 +93,7 @@ public class CboxeraCom extends PluginForHost {
             return false;
         } else if (individualHostLimits.containsKey(link.getHost()) && filesize > 0) {
             /* Check if we can download from this individual host --> Lowers required http requests */
-            final LinkedHashMap<String, Long> hostlimits = (LinkedHashMap<String, Long>) individualHostLimits.get(link.getHost());
+            final Map<String, Long> hostlimits = (Map<String, Long>) individualHostLimits.get(link.getHost());
             final long bandwidth_limit = hostlimits.get("bandwidth_limit");
             final long size_limit = hostlimits.get("size_limit");
             if (bandwidth_limit > -1 && filesize > bandwidth_limit) {
@@ -192,9 +193,9 @@ public class CboxeraCom extends PluginForHost {
             br.getPage(API_BASE + "/private/user/info");
             handleErrors(br, account, null);
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         /* 2020-03-24: E.g. free account: "subscription":{"is_vip":false,"bw_limit":"25GB","days":0} */
-        entries = (LinkedHashMap<String, Object>) entries.get("subscription");
+        entries = (Map<String, Object>) entries.get("subscription");
         boolean is_premium = ((Boolean) entries.get("is_vip"));
         final String trafficleft = (String) entries.get("bw_limit");
         if (!is_premium) {
@@ -218,17 +219,17 @@ public class CboxeraCom extends PluginForHost {
             account_type_key = "vip";
         }
         final ArrayList<String> supportedhostslist = new ArrayList<String>();
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        final List<Object> ressourcelist = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final PluginFinder finder = new PluginFinder();
         for (final Object hostO : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) hostO;
+            entries = (Map<String, Object>) hostO;
             final String host = (String) entries.get("name");
             if (StringUtils.isEmpty(host)) {
                 /* This should never happen */
                 continue;
             }
             /* Get host information for on current account type. */
-            entries = (LinkedHashMap<String, Object>) entries.get(account_type_key);
+            entries = (Map<String, Object>) entries.get(account_type_key);
             final String supported = (String) entries.get("supported");
             if ("no".equalsIgnoreCase(supported)) {
                 logger.info("Skipping host because: unsupported (according to API json): " + host);

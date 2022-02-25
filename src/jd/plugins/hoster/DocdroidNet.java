@@ -15,12 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -36,6 +32,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "docdroid.net" }, urls = { "https?://(?:www\\.)?(?:docdroid\\.net|docdro\\.id)/([A-Za-z0-9\\-]+)(?:/[^/]+)?" })
 public class DocdroidNet extends PluginForHost {
@@ -58,7 +58,7 @@ public class DocdroidNet extends PluginForHost {
         }
     }
 
-    private LinkedHashMap<String, Object> entries = null;
+    private Map<String, Object> entries = null;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -94,8 +94,8 @@ public class DocdroidNet extends PluginForHost {
             }
         } else {
             try {
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-                entries = (LinkedHashMap<String, Object>) entries.get("data");
+                entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                entries = (Map<String, Object>) entries.get("data");
             } catch (final Throwable e) {
             }
             filename = (String) entries.get("filename");
@@ -167,7 +167,7 @@ public class DocdroidNet extends PluginForHost {
                     br.getPage(downloadLink.getPluginPatternMatcher());
                 }
                 final String json = br.getRegex("json=\\'(\\{.*?\\})\\'").getMatch(0);
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
+                entries = JavaScriptEngineFactory.jsonToJavaMap(json);
                 dllink = getDllink();
             }
         }
@@ -200,9 +200,9 @@ public class DocdroidNet extends PluginForHost {
     private String getDllink() {
         String dllink = null;
         try {
-            ArrayList<Object> linklist = (ArrayList<Object>) entries.get("links");
+            List<Object> linklist = (List<Object>) entries.get("links");
             for (final Object linkO : linklist) {
-                entries = (LinkedHashMap<String, Object>) linkO;
+                entries = (Map<String, Object>) linkO;
                 final String type = (String) entries.get("rel");
                 final String url = (String) entries.get("uri");
                 if ("download".equalsIgnoreCase(type) && !StringUtils.isEmpty(url)) {

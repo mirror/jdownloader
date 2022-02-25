@@ -16,13 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -34,6 +29,11 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yiffyfur.tube" }, urls = { "https?://(?:www\\.)?yiffyfur\\.tube/video/(\\d+)/([A-Za-z0-9\\-]+)" })
 public class YiffyfurTube extends antiDDoSForHost {
@@ -83,7 +83,7 @@ public class YiffyfurTube extends antiDDoSForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        ArrayList<Object> ressourcelist = null;
+        List<Object> ressourcelist = null;
         String filename = null;
         String dllink_fallback = null;
         final String streamtype_fallback = "iphone";
@@ -94,7 +94,7 @@ public class YiffyfurTube extends antiDDoSForHost {
         }
         final String jssource = br.getRegex("videoFilesJson(?:\")?\\s*(?::|=)\\s*(\\[.*?\\])").getMatch(0);
         if (jssource != null) {
-            ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(jssource);
+            ressourcelist = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(jssource);
         }
         final String url_filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
         if (StringUtils.isEmpty(filename)) {
@@ -104,14 +104,14 @@ public class YiffyfurTube extends antiDDoSForHost {
         /* RegExes sometimes used for streaming */
         if (ressourcelist != null) {
             try {
-                HashMap<String, Object> entries = null;
+                Map<String, Object> entries = null;
                 Object quality_temp_o = null;
                 long quality_temp = 0;
                 String quality_temp_str = null;
                 long quality_best = 0;
                 String dllink_temp = null;
                 for (final Object videoo : ressourcelist) {
-                    entries = (HashMap<String, Object>) videoo;
+                    entries = (Map<String, Object>) videoo;
                     dllink_temp = (String) entries.get("file");
                     quality_temp_o = entries.get("label");
                     if (quality_temp_o != null && quality_temp_o instanceof Long) {

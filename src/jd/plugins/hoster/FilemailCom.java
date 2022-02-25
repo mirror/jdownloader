@@ -15,11 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -29,6 +26,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filemail.com" }, urls = { "https?://(?:www\\.)?(filemail\\.com/d/[A-Za-z0-9]+|fil\\.email/[A-Za-z0-9]+)" })
 public class FilemailCom extends PluginForHost {
@@ -84,15 +84,15 @@ public class FilemailCom extends PluginForHost {
         }
         final long filesize;
         final String filename;
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        entries = (LinkedHashMap<String, Object>) entries.get("transfer");
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        entries = (Map<String, Object>) entries.get("transfer");
         final boolean isExpired = ((Boolean) entries.get("isexpired")).booleanValue();
         if (isExpired) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("files");
+        final List<Object> ressourcelist = (List<Object>) entries.get("files");
         if (ressourcelist.size() == 1) {
-            entries = (LinkedHashMap<String, Object>) ressourcelist.get(0);
+            entries = (Map<String, Object>) ressourcelist.get(0);
             filename = (String) entries.get("filename");
             dllink = (String) entries.get("downloadurl");
             filesize = JavaScriptEngineFactory.toLong(entries.get("filesize"), 0);

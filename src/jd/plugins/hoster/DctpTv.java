@@ -15,13 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
@@ -31,6 +25,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dctp.tv" }, urls = { "https?://(?:www\\.)?dctp\\.tv/filme/([a-z0-9_\\-]+)/?" })
 public class DctpTv extends PluginForHost {
@@ -44,7 +44,7 @@ public class DctpTv extends PluginForHost {
     }
 
     /* Tags: spiegel.tv, dctp.tv */
-    private LinkedHashMap<String, Object> entries = null;
+    private Map<String, Object> entries = null;
 
     @SuppressWarnings("deprecation")
     @Override
@@ -61,14 +61,14 @@ public class DctpTv extends PluginForHost {
             /* 2020-03-16 */
             json = br.getRegex("type=\"application/json\">(.*?)</script>").getMatch(0);
         }
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
+        entries = JavaScriptEngineFactory.jsonToJavaMap(json);
         Object mediaInfo = JavaScriptEngineFactory.walkJson(entries, "ivms/media_items/{0}");
         if (mediaInfo == null) {
             /* 2020-03-16 */
             mediaInfo = JavaScriptEngineFactory.walkJson(entries, "props/pageProps/media");
         }
-        entries = (LinkedHashMap<String, Object>) mediaInfo;
-        // final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
+        entries = (Map<String, Object>) mediaInfo;
+        // final List<Object> ressourcelist = (List<Object>) entries.get("");
         String title = (String) entries.get("title");
         String date = (String) entries.get("airdate");
         if (StringUtils.isEmpty(date)) {

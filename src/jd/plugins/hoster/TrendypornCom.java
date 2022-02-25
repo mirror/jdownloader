@@ -17,12 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -34,15 +30,19 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TrendypornCom extends antiDDoSForHost {
     public TrendypornCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     // Tags: Porn plugin
     // other:
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
@@ -146,7 +146,7 @@ public class TrendypornCom extends antiDDoSForHost {
         final String jssource = br.getRegex("sources(?:\")?\\s*?:\\s*?(\\[.*?\\])").getMatch(0);
         if (jssource != null) {
             try {
-                HashMap<String, Object> entries = null;
+                Map<String, Object> entries = null;
                 Object quality_temp_o = null;
                 long quality_temp = 0;
                 String quality_temp_str = null;
@@ -154,7 +154,7 @@ public class TrendypornCom extends antiDDoSForHost {
                 String dllink_temp = null;
                 final List<Object> ressourcelist = (List) JavaScriptEngineFactory.jsonToJavaObject(jssource);
                 for (final Object videoo : ressourcelist) {
-                    entries = (HashMap<String, Object>) videoo;
+                    entries = (Map<String, Object>) videoo;
                     dllink_temp = (String) entries.get("src");
                     quality_temp_o = entries.get("label");
                     if (quality_temp_o != null && quality_temp_o instanceof Long) {

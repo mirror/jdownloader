@@ -15,10 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -31,6 +28,9 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "coub.com" }, urls = { "https?://(?:www\\.)?coub\\.com/(?:view|embed)/([A-Za-z0-9]+)" })
 public class CoubCom extends PluginForHost {
@@ -83,7 +83,7 @@ public class CoubCom extends PluginForHost {
         final String fid = getFID(link);
         /* 2020-06-23: Some items only have downloadlinks available in the website-json (??) */
         final boolean use_api = true;
-        final LinkedHashMap<String, Object> entries;
+        final Map<String, Object> entries;
         if (use_api) {
             this.br.getPage("https://" + this.getHost() + "/api/v2/coubs/" + fid);
             if (this.br.getHttpConnection().getResponseCode() == 403) {
@@ -93,14 +93,14 @@ public class CoubCom extends PluginForHost {
             } else if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         } else {
             this.br.getPage("https://" + this.getHost() + "/view/" + fid);
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String json = br.getRegex("<script [^>]*coubPageCoubJson[^>]*>(.*?)</script>").getMatch(0);
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+            entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         }
         final String created_at = (String) entries.get("created_at");
         String filename = getFilename(this, entries, fid);
@@ -136,7 +136,7 @@ public class CoubCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public static String getFilename(final Plugin plugin, final LinkedHashMap<String, Object> entries, final String fid) {
+    public static String getFilename(final Plugin plugin, final Map<String, Object> entries, final String fid) {
         String filename = (String) entries.get("raw_video_title");
         if (StringUtils.isEmpty(filename)) {
             filename = (String) entries.get("title");

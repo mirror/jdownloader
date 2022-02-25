@@ -18,18 +18,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -40,6 +30,15 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SrfCh extends PluginForHost {
@@ -153,21 +152,21 @@ public class SrfCh extends PluginForHost {
         String url_http_download = null;
         String url_hls_master = null;
         String url_rtmp = null;
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        ArrayList<Object> ressourcelist;
+        Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        List<Object> ressourcelist;
         try {
             if (useV2) {
                 final Map<String, String> hlsMap = new HashMap<String, String>();
                 final Map<String, String> mp4Map = new HashMap<String, String>();
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "chapterList/{0}");
+                entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "chapterList/{0}");
                 if (StringUtils.isEmpty(blockReason)) {
                     /* 2020-07-29: New */
                     blockReason = (String) entries.get("blockReason");
                 }
                 // final String id = (String) entries.get("id");
-                ressourcelist = (ArrayList<Object>) entries.get("resourceList");
+                ressourcelist = (List<Object>) entries.get("resourceList");
                 for (final Object ressourceO : ressourcelist) {
-                    entries = (LinkedHashMap<String, Object>) ressourceO;
+                    entries = (Map<String, Object>) ressourceO;
                     final String protocol = (String) entries.get("protocol");
                     if (protocol.equals("HTTP")) {
                         final String url = (String) entries.get("url");
@@ -216,8 +215,8 @@ public class SrfCh extends PluginForHost {
                     }
                     acl += "/*";
                     br.getPage("https://player.rts.ch/akahd/token?acl=" + acl);
-                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                    entries = (LinkedHashMap<String, Object>) entries.get("token");
+                    entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                    entries = (Map<String, Object>) entries.get("token");
                     /* 2019-08-09: TODO: Cleanup this encoding mess ... */
                     String authparams = (String) entries.get("authparams");
                     if (StringUtils.isEmpty(authparams)) {
@@ -238,13 +237,13 @@ public class SrfCh extends PluginForHost {
                     }
                 }
             } else {
-                entries = (LinkedHashMap<String, Object>) entries.get("Video");
-                LinkedHashMap<String, Object> temp = null;
+                entries = (Map<String, Object>) entries.get("Video");
+                Map<String, Object> temp = null;
                 /* Try to find http downloadurl (not always available) */
                 try {
-                    ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "Downloads/Download");
+                    ressourcelist = (List) JavaScriptEngineFactory.walkJson(entries, "Downloads/Download");
                     for (final Object streamtypeo : ressourcelist) {
-                        temp = (LinkedHashMap<String, Object>) streamtypeo;
+                        temp = (Map<String, Object>) streamtypeo;
                         final String protocol = (String) temp.get("@protocol");
                         if (protocol == null) {
                             continue;
@@ -259,9 +258,9 @@ public class SrfCh extends PluginForHost {
                 }
                 /* Try to find hls master (usually available) */
                 try {
-                    ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "Playlists/Playlist");
+                    ressourcelist = (List) JavaScriptEngineFactory.walkJson(entries, "Playlists/Playlist");
                     for (final Object streamtypeo : ressourcelist) {
-                        temp = (LinkedHashMap<String, Object>) streamtypeo;
+                        temp = (Map<String, Object>) streamtypeo;
                         final String protocol = (String) temp.get("@protocol");
                         if (protocol == null) {
                             continue;
@@ -276,9 +275,9 @@ public class SrfCh extends PluginForHost {
                 }
                 /* Try to find rtmp url (sometimes available, sometimes the only streamtype available) */
                 try {
-                    ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "Playlists/Playlist");
+                    ressourcelist = (List) JavaScriptEngineFactory.walkJson(entries, "Playlists/Playlist");
                     for (final Object streamtypeo : ressourcelist) {
-                        temp = (LinkedHashMap<String, Object>) streamtypeo;
+                        temp = (Map<String, Object>) streamtypeo;
                         final String protocol = (String) temp.get("@protocol");
                         if (protocol == null) {
                             continue;
@@ -361,13 +360,13 @@ public class SrfCh extends PluginForHost {
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    private String findBestQualityForStreamtype(LinkedHashMap<String, Object> temp) {
+    private String findBestQualityForStreamtype(Map<String, Object> temp) {
         final String[] possibleQualities = { "HD", "HQ", "MQ", "SQ", "SD" };
         String best_quality = null;
-        ArrayList<Object> ressourcelist2 = (ArrayList) temp.get("url");
+        List<Object> ressourcelist2 = (List) temp.get("url");
         for (final String possible_quality : possibleQualities) {
             for (final Object hlso : ressourcelist2) {
-                temp = (LinkedHashMap<String, Object>) hlso;
+                temp = (Map<String, Object>) hlso;
                 final String quality = (String) temp.get("@quality");
                 if (quality == null) {
                     continue;

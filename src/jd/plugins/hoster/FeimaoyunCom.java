@@ -16,13 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
 import java.util.Locale;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -42,6 +37,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "feimaoyun.com" }, urls = { "https?://(?:www\\.)?feemoo\\.com/(file\\-\\d+\\.html|#/s/\\d+)" })
 public class FeimaoyunCom extends PluginForHost {
@@ -100,12 +100,12 @@ public class FeimaoyunCom extends PluginForHost {
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final long status = JavaScriptEngineFactory.toLong(entries.get("status"), 0);
         if (status == 0) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/file");
+        entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/file");
         String filename = (String) entries.get("file_name");
         final String filesize = (String) entries.get("file_size");
         if (!StringUtils.isEmpty(filename)) {
@@ -245,11 +245,10 @@ public class FeimaoyunCom extends PluginForHost {
 
     /**
      * @param validateCookies
-     *            true = check cookies for validity, perform full login if necessary </br>
-     *            false = Just set cookies and return false if cookies are younger than 300000l
+     *            true = check cookies for validity, perform full login if necessary </br> false = Just set cookies and return false if
+     *            cookies are younger than 300000l
      *
-     * @return true = Cookies are validated </br>
-     *         false = Cookies are not validated (only set on current Browser instance)
+     * @return true = Cookies are validated </br> false = Cookies are not validated (only set on current Browser instance)
      */
     @SuppressWarnings("deprecation")
     private boolean login(final Account account, final boolean validateCookies) throws Exception {

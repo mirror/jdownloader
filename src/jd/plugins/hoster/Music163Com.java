@@ -20,11 +20,11 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -59,26 +59,26 @@ public class Music163Com extends PluginForHost {
     }
 
     /** Settings stuff */
-    private static final String           FAST_LINKCHECK          = "FAST_LINKCHECK";
-    private static final String           GRAB_COVER              = "GRAB_COVER";
-    private static final String           SETTING_CUSTOM_FILENAME = "SETTING_CUSTOM_FILENAME_2";
-    private static final String           SETTING_CUSTOM_DATE     = "SETTING_CUSTOM_DATE";
-    private static final String           TYPE_MUSIC              = "http://(www\\.)?music\\.163\\.com/(?:#/)?song\\?id=\\d+";
-    private static final String           TYPE_VIDEO              = "http://(www\\.)?music\\.163\\.com/(?:#/)?mv\\?id=\\d+";
-    private static final String           TYPE_COVER              = "decrypted://music\\.163\\.comcover\\d+";
+    private static final String  FAST_LINKCHECK          = "FAST_LINKCHECK";
+    private static final String  GRAB_COVER              = "GRAB_COVER";
+    private static final String  SETTING_CUSTOM_FILENAME = "SETTING_CUSTOM_FILENAME_2";
+    private static final String  SETTING_CUSTOM_DATE     = "SETTING_CUSTOM_DATE";
+    private static final String  TYPE_MUSIC              = "http://(www\\.)?music\\.163\\.com/(?:#/)?song\\?id=\\d+";
+    private static final String  TYPE_VIDEO              = "http://(www\\.)?music\\.163\\.com/(?:#/)?mv\\?id=\\d+";
+    private static final String  TYPE_COVER              = "decrypted://music\\.163\\.comcover\\d+";
     /** TODO 2016-02-??: server seem to have changed from m5.music.126.net to ?.music.126.net or linkformat has changed or encryption. */
     /* 2016-02-15 testing m9 server */
-    private static final String           dlurl_format            = "http://m9.music.126.net/%s/%s.mp3";
+    private static final String  dlurl_format            = "http://m9.music.126.net/%s/%s.mp3";
     /* Qualities from highest to lowest in KB/s: 320, 160, 96. 'hMusic' is officially only available for logged-in users! */
-    public static final String[]          audio_qualities         = { "hMusic", "mMusic", "lMusic", "bMusic" };
-    public static final String[]          video_qualities         = { "1080", "720", "360", "240" };
-    public static final String            dateformat_en           = "yyyy-MM-dd";
+    public static final String[] audio_qualities         = { "hMusic", "mMusic", "lMusic", "bMusic" };
+    public static final String[] video_qualities         = { "1080", "720", "360", "240" };
+    public static final String   dateformat_en           = "yyyy-MM-dd";
     /* Connection stuff */
-    private static final boolean          FREE_RESUME             = true;
-    private static final int              FREE_MAXCHUNKS          = 0;
-    private static final int              FREE_MAXDOWNLOADS       = 20;
-    private String                        DLLINK                  = null;
-    private LinkedHashMap<String, Object> entries                 = null;
+    private static final boolean FREE_RESUME             = true;
+    private static final int     FREE_MAXCHUNKS          = 0;
+    private static final int     FREE_MAXDOWNLOADS       = 20;
+    private String               DLLINK                  = null;
+    private Map<String, Object>  entries                 = null;
 
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
@@ -119,15 +119,15 @@ public class Music163Com extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() != 200) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-            entries = (LinkedHashMap<String, Object>) entries.get("data");
+            entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            entries = (Map<String, Object>) entries.get("data");
             artist = (String) entries.get("artistName");
             content_title = (String) entries.get("name");
             final String publishDate = (String) entries.get("publishTime");
             if (publishDate != null) {
                 publishedTimestamp = TimeFormatter.getMilliSeconds(publishDate, "yyyy-MM-dd", Locale.ENGLISH);
             }
-            entries = (LinkedHashMap<String, Object>) entries.get("brs");
+            entries = (Map<String, Object>) entries.get("brs");
             for (final String quality : video_qualities) {
                 DLLINK = (String) entries.get(quality);
                 if (DLLINK != null) {
@@ -147,20 +147,20 @@ public class Music163Com extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() != 200) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-            final ArrayList<Object> songs = (ArrayList) entries.get("songs");
+            entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            final List<Object> songs = (List) entries.get("songs");
             if (songs == null || songs.size() == 0) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            entries = (LinkedHashMap<String, Object>) songs.get(0);
-            final ArrayList<Object> artists = (ArrayList) entries.get("artists");
-            final LinkedHashMap<String, Object> album_info = (LinkedHashMap<String, Object>) entries.get("album");
-            final LinkedHashMap<String, Object> artist_info = (LinkedHashMap<String, Object>) artists.get(0);
+            entries = (Map<String, Object>) songs.get(0);
+            final List<Object> artists = (List) entries.get("artists");
+            final Map<String, Object> album_info = (Map<String, Object>) entries.get("album");
+            final Map<String, Object> artist_info = (Map<String, Object>) artists.get(0);
             /* Now find the highest quality available (check later down below if it is actually downloadable) */
             for (final String quality : audio_qualities) {
                 final Object musicO = entries.get(quality);
                 if (musicO != null) {
-                    final LinkedHashMap<String, Object> musicmap = (LinkedHashMap<String, Object>) musicO;
+                    final Map<String, Object> musicmap = (Map<String, Object>) musicO;
                     ext = (String) musicmap.get("extension");
                     filesize = JavaScriptEngineFactory.toLong(musicmap.get("size"), -1);
                     break;
@@ -212,8 +212,8 @@ public class Music163Com extends PluginForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.getPage("http://music.163.com/api/song/lyric?id=" + downloadLink.getLinkID() + "&lv=-1&tv=-1&csrf_token=");
-                LinkedHashMap<String, Object> entries_lyrics = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br2.toString());
-                entries_lyrics = (LinkedHashMap<String, Object>) entries.get("lrc");
+                Map<String, Object> entries_lyrics = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br2.toString());
+                entries_lyrics = (Map<String, Object>) entries.get("lrc");
                 final String lyrics = (String) entries_lyrics.get("lyric");
                 downloadLink.setComment(lyrics);
                 logger.info("Successfully set lyrics");
@@ -230,7 +230,7 @@ public class Music163Com extends PluginForHost {
                 }
                 final Object musicO = entries.get(quality);
                 if (musicO != null) {
-                    final LinkedHashMap<String, Object> musicmap = (LinkedHashMap<String, Object>) musicO;
+                    final Map<String, Object> musicmap = (Map<String, Object>) musicO;
                     final String dfsid = Long.toString(JavaScriptEngineFactory.toLong(musicmap.get("dfsId"), -1));
                     final String encrypted_dfsid = encrypt_dfsId(dfsid);
                     /*
@@ -396,23 +396,23 @@ public class Music163Com extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("FAST_LINKCHECK", "Enable fast linkcheck for cover-urls?\r\nNOTE: If enabled, before mentioned linktypes will appear faster but filesize won't be shown before downloadstart.");
-                                                      put("GRAB_COVER", "For albums & playlists: Grab cover?");
-                                                      put("CUSTOM_DATE", "Enter your custom date:");
-                                                      put("SETTING_TAGS", "Explanation of the available tags:\r\n*date* = Release date of the content (appears in the user defined format above)\r\n*artist* = Name of the artist\r\n*album* = Name of the album (not always available)\r\n*title* = Title of the content\r\n*tracknumber* = Position of a track (not always available)\r\n*contentid* = Internal id of the content e.g. '01485'\r\n*ext* = Extension of the file");
-                                                      put("LABEL_FILENAME", "Define custom filename:");
-                                                  }
-                                              };
+        {
+            put("FAST_LINKCHECK", "Enable fast linkcheck for cover-urls?\r\nNOTE: If enabled, before mentioned linktypes will appear faster but filesize won't be shown before downloadstart.");
+            put("GRAB_COVER", "For albums & playlists: Grab cover?");
+            put("CUSTOM_DATE", "Enter your custom date:");
+            put("SETTING_TAGS", "Explanation of the available tags:\r\n*date* = Release date of the content (appears in the user defined format above)\r\n*artist* = Name of the artist\r\n*album* = Name of the album (not always available)\r\n*title* = Title of the content\r\n*tracknumber* = Position of a track (not always available)\r\n*contentid* = Internal id of the content e.g. '01485'\r\n*ext* = Extension of the file");
+            put("LABEL_FILENAME", "Define custom filename:");
+        }
+    };
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-                                                  {
-                                                      put("FAST_LINKCHECK", "Aktiviere schnellen Linkcheck für cover-urls?\r\nWICHTIG: Falls aktiviert werden genannte Linktypen schneller im Linkgrabber erscheinen aber dafür ist deren Dateigröße erst beim Downloadstart sichtbar.");
-                                                      put("GRAB_COVER", "Für Alben und Playlists: Cover auch herunterladen?");
-                                                      put("CUSTOM_DATE", "Definiere dein gewünschtes Datumsformat:");
-                                                      put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*date* = Erscheinungsdatum (erscheint im oben definierten Format)\r\n*artist* = Name des Authors\r\n*album* = Name des Albums (nicht immer verfügbar)\r\n*title* = Titel des Inhaltes\r\n*tracknumber* = Position eines Songs (nicht immer verfügbar)\r\n*contentid* = Interne id des Inhaltes z.B. '01485'\r\n*ext* = Dateiendung");
-                                                      put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
-                                                  }
-                                              };
+        {
+            put("FAST_LINKCHECK", "Aktiviere schnellen Linkcheck für cover-urls?\r\nWICHTIG: Falls aktiviert werden genannte Linktypen schneller im Linkgrabber erscheinen aber dafür ist deren Dateigröße erst beim Downloadstart sichtbar.");
+            put("GRAB_COVER", "Für Alben und Playlists: Cover auch herunterladen?");
+            put("CUSTOM_DATE", "Definiere dein gewünschtes Datumsformat:");
+            put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*date* = Erscheinungsdatum (erscheint im oben definierten Format)\r\n*artist* = Name des Authors\r\n*album* = Name des Albums (nicht immer verfügbar)\r\n*title* = Titel des Inhaltes\r\n*tracknumber* = Position eines Songs (nicht immer verfügbar)\r\n*contentid* = Interne id des Inhaltes z.B. '01485'\r\n*ext* = Dateiendung");
+            put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
+        }
+    };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and

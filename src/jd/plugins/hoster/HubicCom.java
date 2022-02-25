@@ -15,8 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -95,14 +95,14 @@ public class HubicCom extends PluginForHost {
                 br.getPage("https://" + this.getHost() + "/home/pub/?ruid=" + ruid_b64);
                 prepBRAjax(this.br);
                 jd.plugins.decrypter.HubicCom.accessRUID(this.br, ruid_b64);
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
                 if (jd.plugins.decrypter.HubicCom.isOffline(this.br, entries)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 boolean success = false;
-                final ArrayList<Object> ressourcelist = jd.plugins.decrypter.HubicCom.getList(entries);
+                final List<Object> ressourcelist = jd.plugins.decrypter.HubicCom.getList(entries);
                 for (final Object fileo : ressourcelist) {
-                    entries = (LinkedHashMap<String, Object>) fileo;
+                    entries = (Map<String, Object>) fileo;
                     final String hash_temp = (String) entries.get("hash");
                     final String url = (String) entries.get("url");
                     if (StringUtils.isEmpty(hash_temp) || StringUtils.isEmpty(url) || !url.startsWith("http")) {

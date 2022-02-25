@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.HashMap;
@@ -41,7 +40,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xyou.com" }, urls = { "http://(?:www\\.|members\\.)?xyou\\.com/[a-z]{2}/s\\d+/episode/\\d+" })
 public class XyouCom extends PluginForHost {
-
     @SuppressWarnings("deprecation")
     public XyouCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,7 +51,6 @@ public class XyouCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Connection stuff */
     private static final boolean FREE_RESUME               = false;
     private static final int     FREE_MAXCHUNKS            = 1;
@@ -61,7 +58,6 @@ public class XyouCom extends PluginForHost {
     private static final boolean ACCOUNT_FREE_RESUME       = false;
     private static final int     ACCOUNT_FREE_MAXCHUNKS    = 1;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS = 20;
-
     private String               dllink                    = null;
 
     @Override
@@ -181,8 +177,8 @@ public class XyouCom extends PluginForHost {
                 if (acmatch) {
                     acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
                 }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                if (acmatch && ret != null && ret instanceof Map<?, ?> && !force) {
+                    final Map<String, String> cookies = (Map<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();

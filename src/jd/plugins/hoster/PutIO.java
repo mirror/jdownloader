@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -74,8 +75,8 @@ public class PutIO extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
         }
-        final HashMap<String, Object> infoResponse = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final HashMap<String, Object> info = (HashMap<String, Object>) infoResponse.get("info");
+        final Map<String, Object> infoResponse = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> info = (Map<String, Object>) infoResponse.get("info");
         final String dateExpireStr = (String) info.get("plan_expiration_date");
         final long dateExpire = TimeFormatter.getMilliSeconds(dateExpireStr, "yyyy-MM-dd'T'HH:mm:ss", Locale.ENGLISH);
         if (dateExpire - System.currentTimeMillis() > 0) {

@@ -13,10 +13,9 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
-import java.util.LinkedHashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -34,9 +33,8 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "givemegay.com" }, urls = { "http://(www\\.)?givemegay\\.com/\\d+/[a-z0-9\\-]+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "givemegay.com" }, urls = { "http://(www\\.)?givemegay\\.com/\\d+/[a-z0-9\\-]+\\.html" })
 public class GivemegayCom extends PluginForHost {
-
     public GivemegayCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -51,7 +49,6 @@ public class GivemegayCom extends PluginForHost {
     private static final int     FREE_MAXCHUNKS    = 0;
     private static final int     FREE_MAXDOWNLOADS = 20;
     private static final String  default_extension = ".mp4";
-
     private String               DLLINK            = null;
 
     @SuppressWarnings({ "deprecation", "unchecked" })
@@ -77,8 +74,8 @@ public class GivemegayCom extends PluginForHost {
         }
         /* This 'API' is usually only available for registered users in the form of a download button. */
         br.getPage("http://www.givemegay.com/?action=show_download_link&gallery_id=" + vid);
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        final LinkedHashMap<String, Object> page_info = (LinkedHashMap<String, Object>) entries.get("data");
+        final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        final Map<String, Object> page_info = (Map<String, Object>) entries.get("data");
         final String filesize = (String) page_info.get("filesize");
         DLLINK = (String) page_info.get("download_url");
         if (filename == null || filesize == null) {
@@ -153,5 +150,4 @@ public class GivemegayCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

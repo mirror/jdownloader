@@ -17,17 +17,9 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.plugins.controller.host.PluginFinder;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -45,6 +37,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.plugins.controller.host.PluginFinder;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mydebrid.com" }, urls = { "" })
 public class MydebridCom extends antiDDoSForHost {
@@ -116,7 +117,7 @@ public class MydebridCom extends antiDDoSForHost {
         boolean resume = defaultRESUME;
         int maxchunks = defaultMAXCHUNKS;
         if (individualHostLimits.containsKey(link.getHost())) {
-            final LinkedHashMap<String, Long> limitMap = (LinkedHashMap<String, Long>) individualHostLimits.get(link.getHost());
+            final Map<String, Long> limitMap = (Map<String, Long>) individualHostLimits.get(link.getHost());
             resume = limitMap.get("resumable") == 1 ? true : false;
             maxchunks = ((Number) limitMap.get("max_chunks")).intValue();
         }
@@ -177,7 +178,7 @@ public class MydebridCom extends antiDDoSForHost {
             this.postPage(API_BASE + "/account-status", "token=" + Encoding.urlEncode(token));
             handleErrors(br, account, null);
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         boolean is_premium = "premium".equalsIgnoreCase((String) entries.get("accountType"));
         /* 2020-05-06: This will usually return "unlimited" */
         // final String trafficleft = (String) entries.get("remainingTraffic");
@@ -198,12 +199,12 @@ public class MydebridCom extends antiDDoSForHost {
             ai.setUnlimitedTraffic();
         }
         postPage(API_BASE + "/get-hosts", "token=" + token);
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final ArrayList<String> supportedhostslist = new ArrayList<String>();
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("hosts");
+        final List<Object> ressourcelist = (List<Object>) entries.get("hosts");
         final PluginFinder finder = new PluginFinder();
         for (final Object hostO : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) hostO;
+            entries = (Map<String, Object>) hostO;
             final String host = (String) entries.get("name");
             if (StringUtils.isEmpty(host)) {
                 /* This should never happen */

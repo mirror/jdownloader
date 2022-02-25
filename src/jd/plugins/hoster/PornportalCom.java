@@ -23,15 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.PornportalComConfig;
-import org.jdownloader.plugins.controller.host.PluginFinder;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -55,6 +46,15 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.PornportalComConfig;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class PornportalCom extends PluginForHost {
@@ -157,6 +157,7 @@ public class PornportalCom extends PluginForHost {
             return true;
         }
     }
+
     // @Override
     // public void correctDownloadLink(final DownloadLink link) {
     // final String fuid = this.fuid != null ? this.fuid : getFUIDFromURL(link);
@@ -170,7 +171,6 @@ public class PornportalCom extends PluginForHost {
     // link.setLinkID(getHost() + "://" + fuid);
     // }
     // }
-
     /*
      * Debug function: Can be used to quickly find the currently used pornportal version of all supported websites and compare against
      * previously set expected version value.
@@ -213,7 +213,7 @@ public class PornportalCom extends PluginForHost {
             }
             br.getPage("https://ppp.contentdef.com/thirdparty?sid=" + sid + "&_=" + System.currentTimeMillis());
             Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            final ArrayList<Object> domaininfos = (ArrayList<Object>) entries.get("notificationNetworks");
+            final List<Object> domaininfos = (List<Object>) entries.get("notificationNetworks");
             final PluginFinder finder = new PluginFinder();
             for (final Object domaininfo : domaininfos) {
                 entries = (Map<String, Object>) domaininfo;
@@ -761,8 +761,8 @@ public class PornportalCom extends PluginForHost {
                     ai.setStatus("Free Account (Trial)");
                 } else {
                     /**
-                     * Premium accounts must not have any expire-date! </br>
-                     * 2021-06-05: Only set expire-date if it is still valid. Premium accounts are premium as long as "isExpired" != true.
+                     * Premium accounts must not have any expire-date! </br> 2021-06-05: Only set expire-date if it is still valid. Premium
+                     * accounts are premium as long as "isExpired" != true.
                      */
                     account.setType(AccountType.PREMIUM);
                     final String expiryDate = (String) map.get("expiryDate");
@@ -781,8 +781,8 @@ public class PornportalCom extends PluginForHost {
                 }
                 if (!foundValidExpireDate && map.containsKey("addons")) {
                     /**
-                     * Try to find alternative expire-date inside users' additional purchased "bundles". </br>
-                     * Each bundle can have different expire-dates and also separate pricing and so on.
+                     * Try to find alternative expire-date inside users' additional purchased "bundles". </br> Each bundle can have
+                     * different expire-dates and also separate pricing and so on.
                      */
                     logger.info("Looking for alternative expiredate");
                     long highestExpireTimestamp = -1;
@@ -851,7 +851,7 @@ public class PornportalCom extends PluginForHost {
                         final Browser brContentdef = br.cloneBrowser();
                         brContentdef.getPage(String.format("https://ppp.contentdef.com/notification/list?page=1&type=1&network=1&archived=0&ajaxCounter=1&sid=%s&data=%s&_=%d", sid, Encoding.urlEncode(data), System.currentTimeMillis()));
                         Map<String, Object> entries = JSonStorage.restoreFromString(brContentdef.toString(), TypeRef.HASHMAP);
-                        final ArrayList<Object> notificationNetworks = (ArrayList<Object>) entries.get("notificationNetworks");
+                        final List<Object> notificationNetworks = (List<Object>) entries.get("notificationNetworks");
                         final ArrayList<String> supportedHostsTmp = new ArrayList<String>();
                         final ArrayList<String> allowedHosts = getAllSupportedPluginDomainsFlat();
                         final ArrayList<String> blacklistedHosts = getAllBlacklistedDomains();

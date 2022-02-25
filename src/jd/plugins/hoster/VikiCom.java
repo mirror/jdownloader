@@ -16,24 +16,8 @@
 package jd.plugins.hoster;
 
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.crypto.macs.HMac;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.config.VikiComConfig;
-import org.jdownloader.plugins.components.config.VikiComConfig.PreferredStreamQuality;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -53,6 +37,21 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.macs.HMac;
+import org.bouncycastle.crypto.params.KeyParameter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.VikiComConfig;
+import org.jdownloader.plugins.components.config.VikiComConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viki.com" }, urls = { "https?://(?:www\\.)?viki\\.(?:com|mx|jp)/videos/(\\d+v)" })
 public class VikiCom extends PluginForHost {
@@ -123,15 +122,15 @@ public class VikiCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         /* 2020-06-16: E.g. no DRM = Int9Ig== */
         final String drm_base64 = (String) entries.get("drm");
         if (drm_base64 != null && drm_base64.length() > 20) {
             this.blocking_drm = true;
         }
         hls_master = (String) JavaScriptEngineFactory.walkJson(entries, "streams/hls/url");
-        entries = (LinkedHashMap<String, Object>) entries.get("video");
-        // final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
+        entries = (Map<String, Object>) entries.get("video");
+        // final List<Object> ressourcelist = (List<Object>) entries.get("");
         String filename = (String) JavaScriptEngineFactory.walkJson(entries, "container/i18n_title");
         blocking_geoblocked = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "blocking/geo")).booleanValue();
         blocking_paywall = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "blocking/paywall")).booleanValue();
@@ -177,7 +176,7 @@ public class VikiCom extends PluginForHost {
             apiUrl += "?app=" + APP_ID + "&t=" + System.currentTimeMillis() / 1000 + "&site=www.viki.com";
             apiUrl += "&sig=" + getSignature(apiUrl.replaceFirst("https?://[^/]+", ""));
             cbr.getPage(apiUrl);
-            LinkedHashMap<String, Object> jsonEntries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(cbr.toString());
+            Map<String, Object> jsonEntries = JavaScriptEngineFactory.jsonToJavaMap(cbr.toString());
             int maxQuality = 0;
             final int qualityUserPreferred = getPreferredQuality();
             String urlBEST = null;

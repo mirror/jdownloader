@@ -22,8 +22,6 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -37,6 +35,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cliphunter.com" }, urls = { "http://cliphunterdecrypted\\.com/\\d+" })
 public class ClipHunterCom extends PluginForHost {
@@ -179,12 +179,12 @@ public class ClipHunterCom extends PluginForHost {
         String currentSr, tmpUrl, ext;
         if (json_full != null) {
             /* 2016-03-30: New json handling */
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_full);
+            final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_full);
             final boolean has_only_one_entry = entries.size() == 1;
-            LinkedHashMap<String, Object> videoinfo = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_full);
+            Map<String, Object> videoinfo = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_full);
             for (final Map.Entry<String, Object> videoQualityEntry : entries.entrySet()) {
                 final String videoname = videoQualityEntry.getKey();
-                videoinfo = (LinkedHashMap<String, Object>) videoQualityEntry.getValue();
+                videoinfo = (Map<String, Object>) videoQualityEntry.getValue();
                 ext = (String) videoinfo.get("fmt");
                 final String url = (String) videoinfo.get("url");
                 System.out.println("url: " + url);

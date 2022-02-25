@@ -24,8 +24,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -43,6 +41,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freshfile.pl" }, urls = { "https?://freshfile\\.pl/dl/(.*)" })
 public class FreshfilePl extends PluginForHost {
@@ -174,7 +174,7 @@ public class FreshfilePl extends PluginForHost {
         br.getPage("http://freshfile.pl/");
         br.setCookiesExclusive(true);
         final Object ret = account.getProperty("cookies", null);
-        final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+        final Map<String, String> cookies = (Map<String, String>) ret;
         if (account.isValid()) {
             for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                 final String key = cookieEntry.getKey();

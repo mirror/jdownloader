@@ -144,7 +144,7 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
             final int itemsPerRequest = 50;
             int index = 0;
             int totalNumberofItems = 0;
-            ArrayList<Object> ressourcelist = null;
+            List<Object> ressourcelist = null;
             do {
                 try {
                     br.getPage("https://instances.joinpeertube.org/api/v1/instances?start=" + index + "&count=" + itemsPerRequest + "&sort=-createdAt");
@@ -152,7 +152,7 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
                     if (index == 0) {
                         totalNumberofItems = ((Number) entries.get("total")).intValue();
                     }
-                    ressourcelist = (ArrayList<Object>) entries.get("data");
+                    ressourcelist = (List<Object>) entries.get("data");
                     for (final Object siteO : ressourcelist) {
                         entries = (Map<String, Object>) siteO;
                         String host = (String) entries.get("host");

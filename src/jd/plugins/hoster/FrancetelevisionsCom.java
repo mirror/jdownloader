@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
@@ -52,7 +51,7 @@ public class FrancetelevisionsCom extends PluginForHost {
         return "http://www.francetv.fr/";
     }
 
-    LinkedHashMap<String, Object> entries = null;
+    Map<String, Object> entries = null;
 
     /**
      * Basically all french public TV stations use 1 network / API and we only need this one API request to get all information needed to
@@ -75,7 +74,7 @@ public class FrancetelevisionsCom extends PluginForHost {
         if (responsecode == 400 || responsecode == 404 || json == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+        entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         String title = (String) JavaScriptEngineFactory.walkJson(entries, "meta/title");
         if (StringUtils.isEmpty(title)) {
             title = (String) JavaScriptEngineFactory.walkJson(entries, "markers/npaw/title");
@@ -202,7 +201,7 @@ public class FrancetelevisionsCom extends PluginForHost {
             // this.br.getPage("http://hdfauthftv-a.akamaihd.net/esi/TA?format=json&url=" + Encoding.urlEncode(hls_master) +
             // "&callback=_jsonp_loader_callback_request_2");
             // final String json = this.br.getRegex("^_jsonp_loader_callback_request_2\\((.+)\\)$").getMatch(0);
-            // entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+            // entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
             // hls_master = (String) entries.get("url");
             // this.br.getPage(hls_master);
             /* Download hls */

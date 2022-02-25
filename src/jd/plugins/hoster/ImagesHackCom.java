@@ -16,7 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -103,8 +103,8 @@ public class ImagesHackCom extends PluginForHost {
                 /* Typically response 500 for offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-            json = (LinkedHashMap<String, Object>) json.get("result");
+            Map<String, Object> json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            json = (Map<String, Object>) json.get("result");
             final AvailableStatus status = apiImageGetAvailablestatus(this, link, json);
             DLLINK = (String) json.get("direct_link");
             if (DLLINK == null) {
@@ -147,7 +147,7 @@ public class ImagesHackCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public static AvailableStatus apiImageGetAvailablestatus(final Plugin plugin, final DownloadLink dl, LinkedHashMap<String, Object> json) {
+    public static AvailableStatus apiImageGetAvailablestatus(final Plugin plugin, final DownloadLink dl, Map<String, Object> json) {
         final Object error = json.get("error");
         if (error != null) {
             /* Whatever it is - our picture is probably offline! */
@@ -195,15 +195,15 @@ public class ImagesHackCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public static String api_json_get_album(final LinkedHashMap<String, Object> json) {
+    public static String api_json_get_album(final Map<String, Object> json) {
         return (String) JavaScriptEngineFactory.walkJson(json, "album/title");
     }
 
-    public static String api_json_get_id(final LinkedHashMap<String, Object> json) {
+    public static String api_json_get_id(final Map<String, Object> json) {
         return (String) json.get("id");
     }
 
-    public static String api_json_get_username(final LinkedHashMap<String, Object> json) {
+    public static String api_json_get_username(final Map<String, Object> json) {
         return (String) JavaScriptEngineFactory.walkJson(json, "owner/username");
     }
 

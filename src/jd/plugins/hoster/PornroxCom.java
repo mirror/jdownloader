@@ -16,12 +16,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -34,16 +31,19 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornrox.com" }, urls = { "https?://(?:www\\.)?(?:pornrox|pornroxxx)\\.com/videos/\\d+(?:/[a-z0-9\\-]+)?" })
 public class PornroxCom extends PluginForHost {
     public PornroxCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     // Tags: Porn plugin
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
@@ -89,7 +89,7 @@ public class PornroxCom extends PluginForHost {
         final String jssource = br.getRegex("sources[\t\n\r ]*?:[\t\n\r ]*?(\\{.*?\\})").getMatch(0); // n/a
         if (jssource != null) {
             try {
-                HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(jssource);
+                Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(jssource);
                 long quality_temp = 0;
                 long quality_best = 0;
                 String dllink_temp = null;

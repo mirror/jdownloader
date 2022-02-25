@@ -15,21 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.jdownloader.translate._JDT;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -42,6 +31,17 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youku.com" }, urls = { "https?://k\\.youku\\.com/player/getFlvPath/.*?fileid/[A-F0-9\\-]+.+|https?://[A-Za-z0-9\\-]+\\.youku\\.com/playlist/m3u8.*?psid=[a-f0-9]{32}.+" })
 public class YoukuCom extends antiDDoSForHost {
@@ -142,7 +142,7 @@ public class YoukuCom extends antiDDoSForHost {
         this.br = new Browser();
         jd.plugins.decrypter.YoukuCom.accessVideoJson(this.br, mainlink);
         handleGeneralErrors(this.br);
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         findDirecturlKamikaze(entries, height, (int) segment_position, isHLS);
         if (this.dllink != null) {
             logger.info("Successfully refreshed downloadlink");
@@ -157,9 +157,9 @@ public class YoukuCom extends antiDDoSForHost {
      */
     @SuppressWarnings("unchecked")
     private void findDirecturlKamikaze(final Object jsono, final String height, final int segment_position, final boolean isHLS) {
-        LinkedHashMap<String, Object> test;
-        if (jsono instanceof LinkedHashMap) {
-            test = (LinkedHashMap<String, Object>) jsono;
+        Map<String, Object> test;
+        if (jsono instanceof Map) {
+            test = (Map<String, Object>) jsono;
             if (findDirecturlInJson(test, height, segment_position, isHLS)) {
                 return;
             } else {
@@ -170,15 +170,15 @@ public class YoukuCom extends antiDDoSForHost {
                     findDirecturlKamikaze(mapObject, height, segment_position, isHLS);
                 }
             }
-        } else if (jsono instanceof ArrayList) {
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) jsono;
+        } else if (jsono instanceof List) {
+            final List<Object> ressourcelist = (List<Object>) jsono;
             for (final Object listo : ressourcelist) {
                 findDirecturlKamikaze(listo, height, segment_position, isHLS);
             }
         }
     }
 
-    private boolean findDirecturlInJson(LinkedHashMap<String, Object> entries, final String height, final int segment_position, final boolean isHLS) {
+    private boolean findDirecturlInJson(Map<String, Object> entries, final String height, final int segment_position, final boolean isHLS) {
         final String m3u8_url = (String) entries.get("m3u8_url");
         final Object segso = entries.get("segs");
         final String height_current = Long.toString(JavaScriptEngineFactory.toLong(entries.get("height"), 0));
@@ -194,8 +194,8 @@ public class YoukuCom extends antiDDoSForHost {
             return true;
         } else {
             /* We have to find the segment object which contains the new http downloadurl. */
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) segso;
-            entries = (LinkedHashMap<String, Object>) ressourcelist.get(segment_position);
+            final List<Object> ressourcelist = (List<Object>) segso;
+            entries = (Map<String, Object>) ressourcelist.get(segment_position);
             this.dllink = (String) entries.get("cdn_url");
             return true;
         }
@@ -240,14 +240,14 @@ public class YoukuCom extends antiDDoSForHost {
 
     public static void handleGeneralErrors(final Browser br) throws PluginException {
         /* Fill me up */
-        LinkedHashMap<String, Object> entries;
+        Map<String, Object> entries;
         int errorcode = 0;
         String errormessage = null;
         try {
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            entries = (LinkedHashMap<String, Object>) entries.get("data");
+            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            entries = (Map<String, Object>) entries.get("data");
             final Object erroro = entries.get("error");
-            final LinkedHashMap<String, Object> errormap = erroro != null ? (LinkedHashMap<String, Object>) erroro : null;
+            final Map<String, Object> errormap = erroro != null ? (Map<String, Object>) erroro : null;
             if (errormap != null) {
                 errormessage = (String) errormap.get("note");
                 errorcode = (int) JavaScriptEngineFactory.toLong(errormap.get("code"), 0);

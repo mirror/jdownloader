@@ -16,12 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -36,6 +32,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onedrive.live.com" }, urls = { "http://onedrivedecrypted\\.live\\.com/\\d+" })
 public class OneDriveLiveCom extends PluginForHost {
@@ -152,7 +151,7 @@ public class OneDriveLiveCom extends PluginForHost {
             if (error != null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, error.toString());
             }
-            final List<Object> ressourcelist = (ArrayList) entries.get("items");
+            final List<Object> ressourcelist = (List) entries.get("items");
             final String itemId = dl.getStringProperty("plain_item_id", null);
             if (itemId != null) {
                 for (Object ressource : ressourcelist) {

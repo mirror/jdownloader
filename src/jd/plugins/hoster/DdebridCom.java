@@ -17,14 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.plugins.controller.host.PluginFinder;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -42,6 +36,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.plugins.controller.host.PluginFinder;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ddebrid.com" }, urls = { "" })
 public class DdebridCom extends PluginForHost {
@@ -217,7 +218,7 @@ public class DdebridCom extends PluginForHost {
         br.getPage(API_BASE + "/status");
         entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final ArrayList<String> supportedhostslist = new ArrayList<String>();
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("result");
+        final List<Object> ressourcelist = (List<Object>) entries.get("result");
         final PluginFinder finder = new PluginFinder();
         for (final Object hostO : ressourcelist) {
             entries = (Map<String, Object>) hostO;

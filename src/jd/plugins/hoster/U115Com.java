@@ -13,14 +13,11 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -43,9 +40,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "u.115.com" }, urls = { "http://(www\\.)?(u\\.)?115\\.com/file/[a-z0-9]+" })
 public class U115Com extends PluginForHost {
-
     private final String        ua                                 = RandomUserAgent.generate();
     private static final String MAINPAGE                           = "http://115.com/";
     private static final String UNDERMAINTENANCEURL                = "http://u.115.com/weihu.html";
@@ -177,8 +175,8 @@ public class U115Com extends PluginForHost {
             if (acmatch) {
                 acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
             }
-            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+            if (acmatch && ret != null && ret instanceof Map<?, ?> && !force) {
+                final Map<String, String> cookies = (Map<String, String>) ret;
                 if (account.isValid()) {
                     for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                         final String key = cookieEntry.getKey();
@@ -194,7 +192,6 @@ public class U115Com extends PluginForHost {
             String vcode = key.toUpperCase();
             String sh1pw = JDHash.getSHA1(account.getPass());
             String sh1user = JDHash.getSHA1(account.getUser());
-
             // final byte[] md5bytespw = MessageDigest.getInstance("MD5").digest(sh1pw.getBytes());
             // final byte[] md5bytesuser = MessageDigest.getInstance("MD5").digest(sh1user.getBytes());
             // final byte[] concatBytes = appendData(md5bytespw, md5bytesuser);
@@ -203,12 +200,10 @@ public class U115Com extends PluginForHost {
             // String two = new String(MessageDigest.getInstance("MD5").digest(one.getBytes())) + vcode;
             // String three = JDHash.getSHA1(two);
             // String four = new String(MessageDigest.getInstance("MD5").digest(three.getBytes()));
-
             // String post_data = "login[ssoent]=B1&login[version]=2.0&login[ssoext]=" + key + "&login[ssoln]=" + account.getUser() +
             // "&login[ssopw]=" + four + "&login[ssovcode]=" + key +
             // "&login[safe]=1&login[time]=1&login[safe_login]=0&login[goto]=http://www.115.com/";
             // br.postPageRaw("http://passport.115.com/?ct=login&ac=ajax&is_ssl=1", post_data);
-
             // sh1pw = JDHash.getSHA1(Encoding.UTF8Encode(account.getPass()));
             // sh1user = JDHash.getSHA1(Encoding.UTF8Encode(account.getUser()));
             // sh1pw = toHex(sh1pw.getBytes());
@@ -227,7 +222,6 @@ public class U115Com extends PluginForHost {
             // "&login[safe]=1&login[time]=0&login[safe_login]=0&login[goto]=http://www.115.com/";
             // br.postPageRaw("http://passport.115.com/?ct=login&ac=ajax&is_ssl=1", post_data);
             // String wtf = unescape(br.toString());
-
             if (br.getCookie(MAINPAGE, "OOFL") == null || br.containsHTML("\"err_code\":")) {
                 final String lang = System.getProperty("user.language");
                 if ("de".equalsIgnoreCase(lang)) {
@@ -285,7 +279,6 @@ public class U115Com extends PluginForHost {
     // }
     // return formatter.toString();
     // }
-
     @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
@@ -432,12 +425,9 @@ public class U115Com extends PluginForHost {
 
     @Override
     public void reset() {
-
     }
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-
     }
-
 }

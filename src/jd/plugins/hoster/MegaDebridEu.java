@@ -16,11 +16,8 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -38,6 +35,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mega-debrid.eu" }, urls = { "" })
 public class MegaDebridEu extends PluginForHost {
@@ -84,17 +85,17 @@ public class MegaDebridEu extends PluginForHost {
         }
         // now it's time to get all supported hosts
         br.getPage("/api.php?action=getHostersList");
-        final LinkedHashMap<String, Object> results = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Map<String, Object> results = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         if (!"ok".equalsIgnoreCase((String) results.get("response_code"))) {
             throw new AccountInvalidException();
         }
         final ArrayList<String> supportedHosts = new ArrayList<String>();
-        for (final Object resultz : (ArrayList<Object>) results.get("hosters")) {
-            final LinkedHashMap<String, Object> r = (LinkedHashMap<String, Object>) resultz;
+        for (final Object resultz : (List<Object>) results.get("hosters")) {
+            final Map<String, Object> r = (Map<String, Object>) resultz;
             if (!"up".equals(r.get("status")) || r.get("domains") == null) {
                 continue;
             }
-            for (final String domain : (ArrayList<String>) r.get("domains")) {
+            for (final String domain : (List<String>) r.get("domains")) {
                 supportedHosts.add(domain);
             }
         }

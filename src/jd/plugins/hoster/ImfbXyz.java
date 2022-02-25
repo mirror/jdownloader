@@ -16,16 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -37,15 +29,22 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imfb.xyz" }, urls = { "https?://(?:www\\.)?imfb\\.xyz/v/([a-z0-9]+)" })
 public class ImfbXyz extends antiDDoSForHost {
     public ImfbXyz(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     // Tags: Porn plugin
     // other: Helper plugin for URLs from fbjav.net, fbjav.com
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
@@ -96,7 +95,7 @@ public class ImfbXyz extends antiDDoSForHost {
             String dllink_temp = null;
             final List<Object> ressourcelist = (List) entries.get("data");
             for (final Object videoo : ressourcelist) {
-                entries = (HashMap<String, Object>) videoo;
+                entries = (Map<String, Object>) videoo;
                 dllink_temp = (String) entries.get("file");
                 quality_temp_o = entries.get("label");
                 if (quality_temp_o != null && quality_temp_o instanceof Long) {

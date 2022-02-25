@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.TimeZone;
@@ -90,7 +91,7 @@ public class UpstoRe extends antiDDoSForHost {
     private Pattern                        IPREGEX                       = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
     private static AtomicReference<String> lastIP                        = new AtomicReference<String>();
     private static AtomicReference<String> currentIP                     = new AtomicReference<String>();
-    private static HashMap<String, Long>   blockedIPsMap                 = new HashMap<String, Long>();
+    private static Map<String, Long>       blockedIPsMap                 = new HashMap<String, Long>();
     private static Object                  CTRLLOCK                      = new Object();
     private String                         PROPERTY_LASTIP               = "UPSTORE_PROPERTY_LASTIP";
     private static final String            PROPERTY_LASTDOWNLOAD         = "UPSTORE_lastdownload_timestamp";
@@ -158,7 +159,7 @@ public class UpstoRe extends antiDDoSForHost {
             /* Load list of saved IPs + timestamp of last download */
             final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
             if (lastdownloadmap != null && lastdownloadmap instanceof HashMap && blockedIPsMap.isEmpty()) {
-                blockedIPsMap = (HashMap<String, Long>) lastdownloadmap;
+                blockedIPsMap = (Map<String, Long>) lastdownloadmap;
             }
         }
         String dllink = checkDirectLink(link, "freelink");

@@ -16,7 +16,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -108,9 +107,9 @@ public class LiveStreamCom extends PluginForHost {
         if (json == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-        entries = (LinkedHashMap<String, Object>) entries.get("event");
-        entries = (LinkedHashMap<String, Object>) entries.get("feed");
+        Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+        entries = (Map<String, Object>) entries.get("event");
+        entries = (Map<String, Object>) entries.get("feed");
         Map<String, Object> entry = getEntry(entryId, (List<Map<String, Object>>) entries.get("data"));
         if (entry == null) {
             final String eventsID = new Regex(downloadLink.getPluginPatternMatcher(), "/events/(\\d+)/").getMatch(0);
@@ -118,7 +117,7 @@ public class LiveStreamCom extends PluginForHost {
             if (eventsID != null) {
                 final Browser brc = br.cloneBrowser();
                 brc.getPage("https://api.new.livestream.com/accounts/" + accountID + "/events/" + eventsID + "/feed.json?id=" + entryId + "&type=video&newer=1&older=1");
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(brc.toString());
+                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(brc.toString());
                 entry = getEntry(entryId, (List<Map<String, Object>>) entries.get("data"));
             }
         }

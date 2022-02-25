@@ -18,21 +18,9 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -54,6 +42,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deepbrid.com" }, urls = { "https?://(?:www\\.)?deepbrid\\.com/dl\\?f=([a-f0-9]{32})" })
 public class DeepbridCom extends antiDDoSForHost {
@@ -319,13 +319,13 @@ public class DeepbridCom extends antiDDoSForHost {
             }
         }
         this.getAPISafe(API_BASE + "?page=api&action=hosters", account, null);
-        LinkedHashMap<String, Object> entries;
-        final ArrayList<Object> supportedhostslistO = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        Map<String, Object> entries;
+        final List<Object> supportedhostslistO = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final ArrayList<String> supportedhostslist = new ArrayList<String>();
         for (final Object hostO : supportedhostslistO) {
             /* List can be given in two different varieties */
-            if (hostO instanceof LinkedHashMap) {
-                entries = (LinkedHashMap<String, Object>) hostO;
+            if (hostO instanceof Map) {
+                entries = (Map<String, Object>) hostO;
                 for (final String host : entries.keySet()) {
                     final String isUP = (String) entries.get(host);
                     if (!"up".equalsIgnoreCase(isUP)) {

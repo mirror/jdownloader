@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.text.DecimalFormat;
@@ -39,9 +38,8 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "abbywinters.com" }, urls = { "http://(www\\.)?abbywinters\\.com/shoot/[a-z0-9\\-_]+/(images/stills/[a-z0-9\\-_]+|videos/video/clip)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "abbywinters.com" }, urls = { "http://(www\\.)?abbywinters\\.com/shoot/[a-z0-9\\-_]+/(images/stills/[a-z0-9\\-_]+|videos/video/clip)" })
 public class AbbyWintersCom extends PluginForHost {
-
     public AbbyWintersCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.abbywinters.com/tour");
@@ -130,8 +128,8 @@ public class AbbyWintersCom extends PluginForHost {
                 if (acmatch) {
                     acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
                 }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                if (acmatch && ret != null && ret instanceof Map<?, ?> && !force) {
+                    final Map<String, String> cookies = (Map<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();

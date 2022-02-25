@@ -93,7 +93,7 @@ public class Uploadedto extends PluginForHost {
     private Pattern                        IPREGEX                                   = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
     private static AtomicReference<String> lastIP                                    = new AtomicReference<String>();
     private static AtomicReference<String> currentIP                                 = new AtomicReference<String>();
-    private static HashMap<String, Long>   blockedIPsMap                             = new HashMap<String, Long>();
+    private static Map<String, Long>       blockedIPsMap                             = new HashMap<String, Long>();
     private static Object                  CTRLLOCK                                  = new Object();
     private static String[]                IPCHECK                                   = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
     private static AtomicBoolean           usePremiumAPI                             = new AtomicBoolean(true);
@@ -742,7 +742,7 @@ public class Uploadedto extends PluginForHost {
                 /* Load list of saved IPs + timestamp of last download */
                 final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
                 if (lastdownloadmap != null && lastdownloadmap instanceof HashMap && blockedIPsMap.isEmpty()) {
-                    blockedIPsMap = (HashMap<String, Long>) lastdownloadmap;
+                    blockedIPsMap = (Map<String, Long>) lastdownloadmap;
                 }
             }
         } else {
@@ -1669,8 +1669,8 @@ public class Uploadedto extends PluginForHost {
                 if (acmatch) {
                     acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
                 }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                if (acmatch && ret != null && ret instanceof Map<?, ?>) {
+                    final Map<String, String> cookies = (Map<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();

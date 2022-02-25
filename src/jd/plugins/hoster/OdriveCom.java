@@ -16,11 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -35,6 +32,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "odrive.com" }, urls = { "http://odrivedecrypted/.+" })
 public class OdriveCom extends PluginForHost {
@@ -91,11 +91,11 @@ public class OdriveCom extends PluginForHost {
                 /* No way to find correct downloadurl --> This should never happen */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            entries = (LinkedHashMap<String, Object>) entries.get("data");
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("items");
+            Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            entries = (Map<String, Object>) entries.get("data");
+            final List<Object> ressourcelist = (List<Object>) entries.get("items");
             for (final Object fileO : ressourcelist) {
-                entries = (LinkedHashMap<String, Object>) fileO;
+                entries = (Map<String, Object>) fileO;
                 final String filenameTemp = (String) entries.get("name");
                 if (filenameTemp != null && filenameTemp.equals(targetFilename)) {
                     logger.info("Found item");

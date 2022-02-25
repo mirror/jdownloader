@@ -16,8 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -297,8 +297,8 @@ public class MyMailRu extends PluginForHost {
                 if (acmatch) {
                     acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
                 }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                if (acmatch && ret != null && ret instanceof Map<?, ?> && !force) {
+                    final Map<String, String> cookies = (Map<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
@@ -411,7 +411,7 @@ public class MyMailRu extends PluginForHost {
         String bestDirecturl = null;
         final String preferredQuality = getConfiguredQuality();
         final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        final ArrayList<Object> videoQualities = (ArrayList) entries.get("videos");
+        final List<Object> videoQualities = (List) entries.get("videos");
         String directurl = null;
         for (final Object quality : videoQualities) {
             final Map<String, Object> quality_map = (Map<String, Object>) quality;

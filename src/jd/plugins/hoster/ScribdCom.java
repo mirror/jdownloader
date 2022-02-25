@@ -18,17 +18,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -49,6 +42,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/(doc|document|book|embeds|read)/\\d+" })
 public class ScribdCom extends PluginForHost {
@@ -222,7 +223,7 @@ public class ScribdCom extends PluginForHost {
             brc.getPage("/account-settings/payment-transactions");
             try {
                 Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
-                final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("payment_transactions");
+                final List<Object> ressourcelist = (List<Object>) entries.get("payment_transactions");
                 for (final Object transactionO : ressourcelist) {
                     entries = (Map<String, Object>) transactionO;
                     final boolean refunded = ((Boolean) entries.get("refunded")).booleanValue();
@@ -529,7 +530,7 @@ public class ScribdCom extends PluginForHost {
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         entries = (Map<String, Object>) entries.get("document");
         String firstAvailableFormat = null;
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("formats");
+        final List<Object> ressourcelist = (List<Object>) entries.get("formats");
         String filesize = null;
         String firstFilesize = null;
         for (final Object typeO : ressourcelist) {
@@ -645,8 +646,8 @@ public class ScribdCom extends PluginForHost {
         prepBRGeneral(prepBR);
         // loading previous cookie session results in less captchas
         synchronized (cookieMonster) {
-            if (cookieMonster.get() != null && cookieMonster.get() instanceof HashMap<?, ?>) {
-                final HashMap<String, String> cookies = (HashMap<String, String>) cookieMonster.get();
+            if (cookieMonster.get() != null && cookieMonster.get() instanceof Map<?, ?>) {
+                final Map<String, String> cookies = (Map<String, String>) cookieMonster.get();
                 for (Map.Entry<String, String> entry : cookies.entrySet()) {
                     prepBR.setCookie(this.getHost(), entry.getKey(), entry.getValue());
                 }

@@ -16,10 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -32,16 +29,19 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimple.ru" }, urls = { "https?://player\\.vimple\\.ru/iframe/[a-f0-9]{32}" })
 public class VimpleRu extends PluginForHost {
     public VimpleRu(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     // Tags:
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
@@ -76,7 +76,7 @@ public class VimpleRu extends PluginForHost {
         final String jssource = br.getRegex("sprutoData:(\\{.+\\})\\s+").getMatch(0);
         if (jssource != null) {
             try {
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(jssource);
+                final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(jssource);
                 dllink = (String) JavaScriptEngineFactory.walkJson(entries, "playlist/{0}/video/{0}/url");
             } catch (final Throwable e) {
                 logger.info("BEST handling for multiple video source failed");

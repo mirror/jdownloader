@@ -16,7 +16,8 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -185,8 +186,8 @@ public class AmazonCloud extends PluginForHost {
 
     @SuppressWarnings("unchecked")
     private String refreshDirectlink(final DownloadLink dl) throws Exception {
-        LinkedHashMap<String, Object> entries = null;
-        ArrayList<Object> resource_data_list = null;
+        Map<String, Object> entries = null;
+        List<Object> resource_data_list = null;
         final String plain_domain = dl.getStringProperty("plain_domain", null);
         final String plain_folder_id = dl.getStringProperty("plain_folder_id", null);
         final String subfolder_id = dl.getStringProperty("subfolder_id", null);
@@ -214,8 +215,8 @@ public class AmazonCloud extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             try {
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                final LinkedHashMap<String, Object> nodeInfo = jsonGetNodeInfo(entries);
+                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                final Map<String, Object> nodeInfo = jsonGetNodeInfo(entries);
                 final String kind = jsonGetKind(entries);
                 if (kind.equals(JSON_KIND_FILE)) {
                     resource_data_list = new ArrayList<Object>();
@@ -226,8 +227,8 @@ public class AmazonCloud extends PluginForHost {
         }
         try {
             for (final Object data_o : resource_data_list) {
-                final LinkedHashMap<String, Object> nodeInfo = (LinkedHashMap<String, Object>) data_o;
-                final LinkedHashMap<String, Object> contentProperties = jd.plugins.hoster.AmazonCloud.jsonGetContentProperties(nodeInfo);
+                final Map<String, Object> nodeInfo = (Map<String, Object>) data_o;
+                final Map<String, Object> contentProperties = jd.plugins.hoster.AmazonCloud.jsonGetContentProperties(nodeInfo);
                 final String kind = jd.plugins.hoster.AmazonCloud.jsonGetKind(nodeInfo);
                 if (!kind.equals(jd.plugins.hoster.AmazonCloud.JSON_KIND_FILE)) {
                     /* We want files (our file!), not folders! */
@@ -256,28 +257,28 @@ public class AmazonCloud extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    public static LinkedHashMap<String, Object> jsonGetNodeInfo(final LinkedHashMap<String, Object> entries) {
-        return (LinkedHashMap<String, Object>) entries.get("nodeInfo");
+    public static Map<String, Object> jsonGetNodeInfo(final Map<String, Object> entries) {
+        return (Map<String, Object>) entries.get("nodeInfo");
     }
 
     @SuppressWarnings("unchecked")
-    public static LinkedHashMap<String, Object> jsonGetContentProperties(final LinkedHashMap<String, Object> entries) {
-        return (LinkedHashMap<String, Object>) entries.get("contentProperties");
+    public static Map<String, Object> jsonGetContentProperties(final Map<String, Object> entries) {
+        return (Map<String, Object>) entries.get("contentProperties");
     }
 
-    public static String jsonGetKind(final LinkedHashMap<String, Object> entries) {
+    public static String jsonGetKind(final Map<String, Object> entries) {
         return (String) entries.get("kind");
     }
 
-    public static String jsonGetMd5(final LinkedHashMap<String, Object> entries) {
+    public static String jsonGetMd5(final Map<String, Object> entries) {
         return (String) entries.get("md5");
     }
 
-    public static String jsonGetName(final LinkedHashMap<String, Object> entries) {
+    public static String jsonGetName(final Map<String, Object> entries) {
         return (String) entries.get("name");
     }
 
-    public static String jsonGetFinallink(final LinkedHashMap<String, Object> entries) {
+    public static String jsonGetFinallink(final Map<String, Object> entries) {
         return (String) entries.get("tempLink");
     }
 
@@ -301,9 +302,9 @@ public class AmazonCloud extends PluginForHost {
                 br.getHeaders().put("Referer", "https://www." + domain + "/");
                 getPage(br, "https://www." + domain + "/drive/v1/nodes/" + nodeid + "/children?asset=ALL&tempLink=true&limit=" + max_items_per_page + "&sort=%5B%27kind+DESC%27%2C+%27name+ASC%27%5D&searchOnFamily=false&shareId=" + plain_folder_id + "&offset=" + offsetAll + "&resourceVersion=V2&ContentType=JSON&_t=" + System.currentTimeMillis());
                 int tempOffset = 0;
-                final LinkedHashMap<String, Object> entries_tmp = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                final ArrayList<Object> resource_data_list_tmp = (ArrayList) entries_tmp.get("data");
-                final ArrayList<Object> tempResources = new ArrayList<Object>();
+                final Map<String, Object> entries_tmp = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                final List<Object> resource_data_list_tmp = (List) entries_tmp.get("data");
+                final List<Object> tempResources = new ArrayList<Object>();
                 for (final Object fileo : resource_data_list_tmp) {
                     tempResources.add(fileo);
                     tempFound++;

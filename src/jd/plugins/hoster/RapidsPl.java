@@ -18,18 +18,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -47,6 +37,17 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapids.pl" }, urls = { "" })
 public class RapidsPl extends PluginForHost {
@@ -185,7 +186,7 @@ public class RapidsPl extends PluginForHost {
                 try {
                     /* We have to use the parser here because json contains two 'status' objects ;) */
                     Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                    final ArrayList<Object> data = (ArrayList<Object>) entries.get("data");
+                    final List<Object> data = (List<Object>) entries.get("data");
                     if (data.size() > 1) {
                         /* This should never happen */
                         logger.warning("WTF data array contains more than one item");
@@ -308,15 +309,15 @@ public class RapidsPl extends PluginForHost {
             ai.setTrafficLeft(Long.parseLong(trafficleft));
         }
         br.getPage(API_BASE + "/services");
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final ArrayList<String> supportedhostslist = new ArrayList<String>();
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("data");
+        final List<Object> ressourcelist = (List<Object>) entries.get("data");
         for (final Object hostO : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) hostO;
+            entries = (Map<String, Object>) hostO;
             final String main_domain_without_tld = (String) entries.get("name");
             final boolean is_active = ((Boolean) entries.get("is_active")).booleanValue();
             // final boolean download_by_direct = ((Boolean) entries.get("download_by_direct")).booleanValue();
-            final ArrayList<String> domains = (ArrayList<String>) entries.get("domains");
+            final List<String> domains = (List<String>) entries.get("domains");
             if (StringUtils.isEmpty(main_domain_without_tld)) {
                 /* This should never happen */
                 continue;

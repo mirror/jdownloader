@@ -1,12 +1,7 @@
 package jd.plugins.hoster;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -24,6 +19,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision: 41665 $", interfaceVersion = 3, names = { "get24.org" }, urls = { "" })
 public class GeT24Org extends PluginForHost {
@@ -71,7 +71,7 @@ public class GeT24Org extends PluginForHost {
         account.setConcurrentUsePossible(true);
         // hosts list
         response = br.getPage("https://get24.org/api/hosts/enabled");
-        ArrayList<String> supportedHosts = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(response);
+        List<String> supportedHosts = (List) JavaScriptEngineFactory.jsonToJavaObject(response);
         acc_info.setMultiHostSupport(this, supportedHosts);
         account.setType(AccountType.PREMIUM);
         // acc_info.setStatus("Premium User");

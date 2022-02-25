@@ -25,14 +25,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtTextField;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -52,6 +44,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "emuparadise.me" }, urls = { "https?://(?:www\\.)?emuparadise\\.me/(roms/roms\\.php\\?gid=\\d+|roms/get-download\\.php\\?gid=\\d+|[^<>/]+/[^<>/]+/\\d+)" })
 public class EmuParadiseMe extends PluginForHost {
@@ -216,8 +216,8 @@ public class EmuParadiseMe extends PluginForHost {
         synchronized (LOCK) {
             /* Re-uses saved cookies to avoid captchas */
             final Object ret = this.getPluginConfig().getProperty("cookies", null);
-            if (ret != null) {
-                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+            if (ret != null && ret instanceof Map) {
+                final Map<String, String> cookies = (Map<String, String>) ret;
                 for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                     final String key = cookieEntry.getKey();
                     final String value = cookieEntry.getValue();

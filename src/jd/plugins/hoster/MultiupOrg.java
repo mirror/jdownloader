@@ -18,15 +18,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -46,6 +41,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "multiup.org" }, urls = { "" })
 public class MultiupOrg extends PluginForHost {
@@ -240,11 +241,11 @@ public class MultiupOrg extends PluginForHost {
         /* Continue via API */
         this.getAPISafe(API_BASE + "/get-list-hosts-debrid", account, null);
         try {
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final Object hostsO = entries.get("hosts");
             final ArrayList<String> supportedhostslist = new ArrayList<String>();
-            if (hostsO instanceof LinkedHashMap) {
-                entries = (LinkedHashMap<String, Object>) hostsO;
+            if (hostsO instanceof Map) {
+                entries = (Map<String, Object>) hostsO;
                 final Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
                 while (iterator.hasNext()) {
                     final Entry<String, Object> entry = iterator.next();
@@ -252,7 +253,7 @@ public class MultiupOrg extends PluginForHost {
                     supportedhostslist.add(host);
                 }
             } else {
-                final ArrayList<Object> hostlistO = (ArrayList<Object>) hostsO;
+                final List<Object> hostlistO = (List<Object>) hostsO;
                 for (final Object hostO : hostlistO) {
                     supportedhostslist.add((String) hostO);
                 }

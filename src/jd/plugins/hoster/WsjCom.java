@@ -13,18 +13,14 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
-
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -39,9 +35,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wsj.com" }, urls = { "https?://(?:www\\.)?((?:wsj|barrons)\\.com/video/[^/]+/[A-F0-9]{8}\\-[A-F0-9]{4}\\-[A-F0-9]{4}\\-[A-F0-9]{4}\\-[A-F0-9]{12}\\.html|allthingsd\\.com/video/\\?video_id=[A-F0-9]{8}\\-[A-F0-9]{4}\\-[A-F0-9]{4}\\-[A-F0-9]{4}\\-[A-F0-9]{12})" })
 public class WsjCom extends PluginForHost {
-
     public WsjCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -52,22 +50,20 @@ public class WsjCom extends PluginForHost {
     // other:
     /*
      * E.g. HTTP- and HLS URL comparison:
-     *
-     *
+     * 
+     * 
      * http://www.wsj.com/video/mossberg-reviews-the-roku-3/3B86D721-7315-494C-BB6A-44A0B13DDAEE.html
-     *
+     * 
      * http://m.wsj.net/video/20130305/030513ptechroku/030513ptechroku_v2_ec2564k.mp4
-     *
-     *
+     * 
+     * 
      * http://wsjvod-i.akamaihd.net/i/video/20130305/030513ptechroku/030513ptechroku_v2_ec,464,174,264,664,1264,1864,2564,k.mp4.csmil/
      * master. m3u8
      */
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
 
     @Override
@@ -88,12 +84,11 @@ public class WsjCom extends PluginForHost {
         if (this.br.toString().length() < 100 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "items/{0}");
+        Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+        entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "items/{0}");
         final String description = (String) entries.get("description");
         final String date = (String) entries.get("formattedCreationDate");
         String filename = (String) entries.get("name");
-
         int bitrate_max = 0;
         int bitrate_temp = 0;
         String dllink_temp = null;
@@ -109,9 +104,7 @@ public class WsjCom extends PluginForHost {
                     dllink = dllink_temp;
                 }
             }
-
         }
-
         if (filename == null || dllink == null || date == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

@@ -15,9 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.LinkedHashMap;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -31,6 +29,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yande.re" }, urls = { "https?://yande\\.re/post/show/(\\d+)" })
 public class YandeRe extends PluginForHost {
@@ -64,8 +64,8 @@ public class YandeRe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String json = this.br.getRegex("Post\\.register_resp\\((.*?)\\);").getMatch(0);
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "posts/{0}");
+        Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+        entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "posts/{0}");
         long filesize = 0;
         String ext = null;
         final String url_filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
