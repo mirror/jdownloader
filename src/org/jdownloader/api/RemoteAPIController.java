@@ -18,6 +18,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import jd.nutils.DiffMatchPatch;
+import jd.nutils.DiffMatchPatch.Diff;
+import jd.nutils.DiffMatchPatch.Patch;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -109,10 +113,6 @@ import org.jdownloader.myjdownloader.client.bindings.interfaces.EventsInterface;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.Linkable;
 import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
 import org.jdownloader.myjdownloader.client.json.ObjectData;
-
-import jd.nutils.DiffMatchPatch;
-import jd.nutils.DiffMatchPatch.Diff;
-import jd.nutils.DiffMatchPatch.Patch;
 
 public class RemoteAPIController {
     private static RemoteAPIController INSTANCE = new RemoteAPIController();
@@ -252,8 +252,16 @@ public class RemoteAPIController {
                                     super.sendText(request, response, JSonStorage.serializeToJson(od));
                                 }
                             } else {
-                                super.sendText(request, response, JSonStorage.serializeToJson(new ObjectData(JSonStorage.restoreFromString(text, new TypeRef<Object>() {
-                                }, null), ri.getRid())));
+                                final Object object = JSonStorage.restoreFromString(text, new TypeRef<Object>() {
+                                });
+                                final ObjectData od = new ObjectData(object, ri.getRid());
+                                String json = JSonStorage.serializeToJson(od);
+                                // HOTFIX for MyJDownloader Android APP. json is parsed via contains/regex and searches for '"data" :'
+                                json = json.replaceFirst("\"data\":", "\"data\" :");
+                                if (!isJared) {
+                                    logger.info("\r\n===========API Call Result:==============\r\n" + request.toString() + "\r\nObjectData:\r\n" + json + "\r\n" + "=========================================");
+                                }
+                                super.sendText(request, response, json);
                             }
                         } else {
                             super.sendText(request, response, text);

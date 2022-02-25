@@ -46,7 +46,7 @@ import org.jdownloader.myjdownloader.client.exceptions.ExceptionResponse;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
 
 public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
-    private LogSource logger;
+    private LogSource logger = null;
 
     @Override
     protected byte[] base64decode(String base64encodedString) {
