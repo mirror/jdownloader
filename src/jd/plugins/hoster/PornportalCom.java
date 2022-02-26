@@ -23,6 +23,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.PornportalComConfig;
+import org.jdownloader.plugins.controller.host.PluginFinder;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -46,15 +55,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.PornportalComConfig;
-import org.jdownloader.plugins.controller.host.PluginFinder;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class PornportalCom extends PluginForHost {
@@ -504,8 +504,8 @@ public class PornportalCom extends PluginForHost {
                     }
                     final PostRequest postRequest = brlogin.createPostRequest(api_base + "/v1/authenticate/redirect", JSonStorage.serializeToJson(logindata));
                     brlogin.getPage(postRequest);
-                    entries = JSonStorage.restoreFromString(brlogin.toString(), TypeRef.HASHMAP);
-                    final String authenticationUrl = (String) entries.get("authenticationUrl");
+                    final Map<String, Object> authInfo = JSonStorage.restoreFromString(brlogin.toString(), TypeRef.HASHMAP);
+                    final String authenticationUrl = (String) authInfo.get("authenticationUrl");
                     if (StringUtils.isEmpty(authenticationUrl)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
@@ -669,12 +669,12 @@ public class PornportalCom extends PluginForHost {
     }
 
     public static Map<String, Object> getJsonJuanEawInstance(final Browser br) {
-        final String json = br.getRegex("window\\.__JUAN\\.rawInstance = (\\{.*?);\\s*\\}\\)\\(\\);").getMatch(0);
+        final String json = br.getRegex("window\\.__JUAN\\.rawInstance = (\\{.*?\\});\n").getMatch(0);
         return JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
     }
 
     public static Map<String, Object> getJsonJuanInitialState(final Browser br) {
-        final String json = br.getRegex("window\\.__JUAN\\.initialState = (\\{.*?);\\s*\\}\\)\\(\\);").getMatch(0);
+        final String json = br.getRegex("window\\.__JUAN\\.initialState = (\\{.*?\\});\\s+").getMatch(0);
         return JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
     }
 
@@ -761,8 +761,8 @@ public class PornportalCom extends PluginForHost {
                     ai.setStatus("Free Account (Trial)");
                 } else {
                     /**
-                     * Premium accounts must not have any expire-date! </br> 2021-06-05: Only set expire-date if it is still valid. Premium
-                     * accounts are premium as long as "isExpired" != true.
+                     * Premium accounts must not have any expire-date! </br>
+                     * 2021-06-05: Only set expire-date if it is still valid. Premium accounts are premium as long as "isExpired" != true.
                      */
                     account.setType(AccountType.PREMIUM);
                     final String expiryDate = (String) map.get("expiryDate");
@@ -781,8 +781,8 @@ public class PornportalCom extends PluginForHost {
                 }
                 if (!foundValidExpireDate && map.containsKey("addons")) {
                     /**
-                     * Try to find alternative expire-date inside users' additional purchased "bundles". </br> Each bundle can have
-                     * different expire-dates and also separate pricing and so on.
+                     * Try to find alternative expire-date inside users' additional purchased "bundles". </br>
+                     * Each bundle can have different expire-dates and also separate pricing and so on.
                      */
                     logger.info("Looking for alternative expiredate");
                     long highestExpireTimestamp = -1;

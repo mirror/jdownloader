@@ -6,6 +6,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -20,13 +25,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.PremiumizeBrowseNode;
 import jd.plugins.hoster.ZeveraCore;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
@@ -74,8 +74,9 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
         setBrowserExclusive();
         final Account account = accs.get(0);
         final ArrayList<PremiumizeBrowseNode> nodes = getNodes(br, account, parameter.getCryptedUrl());
+        final Map<String, Object> data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         if (nodes == null) {
-            final String status = PluginJSonUtils.getJson(br, "status");
+            final String status = (String) data.get("status");
             if ("error".equals(status)) {
                 /* E.g. "{"status":"error","message":"customer_id and pin param missing or not logged in "}" */
                 logger.info("Either invalid logindata, wrong account (you can only download your own cloud files) OR offline content");
@@ -90,9 +91,47 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
             return null;
         }
         /* Find path from previous craw process if available. */
-        final String folderPath = this.getAdoptedCloudFolderStructure();
+        String folderPath = this.getAdoptedCloudFolderStructure();
+        if (folderPath == null) {
+            /* Try to find complete path by going back until we reach the root folder. */
+            folderPath = this.getFullFolderPath(account, "", data, new ArrayList<String>());
+        }
         ret.addAll(convert(parameter.getCryptedUrl(), nodes, folderPath));
         return ret;
+    }
+
+    /**
+     * Recursive function that finds full path to a folder by going up until the root folder. </br>
+     * This is needed because the API we use does not contain absolute paths.
+     *
+     * @throws Exception
+     */
+    private String getFullFolderPath(final Account account, String path, final Map<String, Object> data, final ArrayList<String> dupes) throws Exception {
+        final String parent_id = (String) data.get("parent_id");
+        final String currentFolderName = (String) data.get("name");
+        if (StringUtils.isEmpty(parent_id) || StringUtils.isEmpty(currentFolderName)) {
+            /* This should never happen */
+            return null;
+        } else if (dupes.contains(parent_id)) {
+            /* Fail safe was triggered */
+            return path;
+        } else if (parent_id.equals("0")) {
+            /* We've reached the end (root) */
+            return path;
+        } else if (currentFolderName.equalsIgnoreCase("root")) {
+            /* We've reached the end (root) */
+            return path;
+        } else {
+            dupes.add(parent_id);
+            if (path.length() == 0) {
+                path = currentFolderName;
+            } else {
+                path = currentFolderName + "/" + path;
+            }
+            final String response = accessCloudItem(br, account, createFolderURL(this.getHost(), parent_id));
+            final Map<String, Object> dataNew = JavaScriptEngineFactory.jsonToJavaMap(response);
+            return getFullFolderPath(account, path, dataNew, dupes);
+        }
     }
 
     private static FilePackage getFilePackage(Map<String, FilePackage> filePackages, PremiumizeBrowseNode node) {
@@ -169,14 +208,6 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
     }
 
     public static ArrayList<PremiumizeBrowseNode> getNodes(final Browser br, final Account account, final String url) throws IOException, AccountInvalidException {
-        String cloudID = jd.plugins.hoster.PremiumizeMe.getCloudID(url);
-        if (cloudID == null) {
-            /*
-             * 2018-02-24: No cloudID found? Fallback to root folder. This may happen if only a file_id is given --> It must be located in
-             * the root dir.
-             */
-            cloudID = "0";
-        }
         final String response = accessCloudItem(br, account, url);
         final Map<String, Object> responseMap = JSonStorage.restoreFromString(response, TypeRef.HASHMAP);
         final String status = (String) responseMap.get("status");

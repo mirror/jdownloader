@@ -1,6 +1,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 //jDownloader - Downloadmanager
 //Copyright (C) 2013  JD-Team support@jdownloader.org
@@ -45,7 +46,6 @@ import jd.http.Cookie;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.FormData;
 import jd.http.requests.PostFormDataRequest;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -277,7 +277,6 @@ abstract public class ZeveraCore extends UseNet {
             try {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
                 dl.setFilenameFix(true);
-                final long completeContentLength = dl.getConnection().getCompleteContentLength();
                 if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                     try {
                         br.followConnection(true);
@@ -288,6 +287,7 @@ abstract public class ZeveraCore extends UseNet {
                     mhm.handleErrorGeneric(account, link, "unknowndlerror", 50, 5 * 60 * 1000l);
                 }
                 final long verifiedFileSize = link.getVerifiedFileSize();
+                final long completeContentLength = dl.getConnection().getCompleteContentLength();
                 if (completeContentLength != verifiedFileSize) {
                     logger.info("Update Filesize: old=" + verifiedFileSize + "|new=" + completeContentLength);
                     link.setVerifiedFileSize(completeContentLength);
@@ -967,11 +967,17 @@ abstract public class ZeveraCore extends UseNet {
         }
     }
 
-    public static String getCloudID(final String url) {
-        if (url.contains("folder_id")) {
-            return new Regex(url, "folder_id=([a-zA-Z0-9\\-_]+)").getMatch(0);
+    public static String getCloudID(final String url) throws MalformedURLException {
+        if (url == null) {
+            return null;
         } else {
-            return new Regex(url, "id=([a-zA-Z0-9\\-_]+)").getMatch(0);
+            final UrlQuery query = UrlQuery.parse(url);
+            final String folder_id = query.get("folder_id");
+            if (folder_id != null) {
+                return folder_id;
+            } else {
+                return query.get("id");
+            }
         }
     }
 

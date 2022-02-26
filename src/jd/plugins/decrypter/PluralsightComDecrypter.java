@@ -74,6 +74,7 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
         } else {
             logger.info("No account - Mode");
         }
+        PluralsightCom.prepBR(this.br);
         br.setFollowRedirects(true);
         final String courseURL = new Regex(param.getCryptedUrl(), "https?://(?:app|www)?\\.pluralsight\\.com(?:\\/library)?\\/courses\\/([^/]+)").getMatch(0);
         if (courseURL != null) {
