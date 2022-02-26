@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,6 +21,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.PluralsightComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -72,12 +75,12 @@ public class PluralsightCom extends antiDDoSForHost {
     /* Packagizer properties */
     public static final String                      PROPERTY_MODULE_TITLE                = "module_title";
     public static final String                      PROPERTY_MODULE_CLIP_TITLE           = "module_clip_title";
+    public static final String                      WEBSITE_BASE_APP                     = "https://app.pluralsight.com";
+    private static final AtomicLong                 timestampLastDownloadStarted         = new AtomicLong(0);
 
     public PluralsightCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.pluralsight.com/pricing");
-        /* 2020-02-17: According to: https://board.jdownloader.org/showthread.php?t=82533 */
-        this.setStartIntervall(60 * 1000l);
     }
 
     @Override
@@ -85,11 +88,21 @@ public class PluralsightCom extends antiDDoSForHost {
         return "https://www.pluralsight.com/terms";
     }
 
+    public static Browser prepBR(final Browser br) {
+        final PluralsightComConfig cfg = PluginJsonConfig.get(PluralsightComConfig.class);
+        final String customUserAgent = cfg.getUserAgent();
+        if (!StringUtils.isEmpty(customUserAgent) && !StringUtils.equalsIgnoreCase(customUserAgent, "JDDEFAULT")) {
+            br.getHeaders().put("User-Agent", customUserAgent);
+        }
+        br.setFollowRedirects(true);
+        return br;
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         login(account, true);
-        if (!StringUtils.equals(br.getURL(), "https://app.pluralsight.com/web-analytics/api/v1/users/current")) {
-            getRequest(br, this, br.createGetRequest("https://app.pluralsight.com/web-analytics/api/v1/users/current"));
+        if (!StringUtils.equals(br.getURL(), WEBSITE_BASE_APP + "/web-analytics/api/v1/users/current")) {
+            getRequest(br, this, br.createGetRequest(WEBSITE_BASE_APP + "/web-analytics/api/v1/users/current"));
         }
         final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         List<Map<String, Object>> subscriptions = (List<Map<String, Object>>) map.get("userSubscriptions");
@@ -131,6 +144,7 @@ public class PluralsightCom extends antiDDoSForHost {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
+                prepBR(br);
                 final Cookies cookies = account.loadCookies("");
                 /* 2022-02-16: Added cookie login as possible workaround for login issues caused by Cloudflare */
                 final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
@@ -144,7 +158,7 @@ public class PluralsightCom extends antiDDoSForHost {
                         return;
                     } else {
                         logger.info("Attempting cookie login");
-                        getRequest(br, this, br.createGetRequest("https://app.pluralsight.com/web-analytics/api/v1/users/current"));
+                        getRequest(br, this, br.createGetRequest(WEBSITE_BASE_APP + "/web-analytics/api/v1/users/current"));
                         final Request request = br.getRequest();
                         if (request.getHttpConnection().getResponseCode() == 200 && br.getHostCookie("PsJwt-production", Cookies.NOTDELETEDPATTERN) != null) {
                             logger.info("Cookie login successful");
@@ -165,7 +179,7 @@ public class PluralsightCom extends antiDDoSForHost {
                     }
                 }
                 logger.info("Performing full login");
-                getRequest(br, this, br.createGetRequest("https://app.pluralsight.com/id/"));
+                getRequest(br, this, br.createGetRequest(WEBSITE_BASE_APP + "/id/"));
                 final Form form = br.getFormbyKey("Username");
                 if (form == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -184,7 +198,7 @@ public class PluralsightCom extends antiDDoSForHost {
                 if (br.getHostCookie("PsJwt-production", Cookies.NOTDELETEDPATTERN) == null) {
                     throw new AccountInvalidException();
                 }
-                getRequest(br, this, br.createGetRequest("https://app.pluralsight.com/web-analytics/api/v1/users/current"));
+                getRequest(br, this, br.createGetRequest(WEBSITE_BASE_APP + "/web-analytics/api/v1/users/current"));
                 final Request request = br.getRequest();
                 if (request.getHttpConnection().getResponseCode() == 401) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -233,7 +247,7 @@ public class PluralsightCom extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        final Account account = AccountController.getInstance().getValidAccount(this);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         if (account != null) {
             if (antiAccountBlockProtection(account)) {
                 throw new AccountUnavailableException("Account block protection, please wait!", 5 * 60 * 1000l);
@@ -309,9 +323,9 @@ public class PluralsightCom extends antiDDoSForHost {
                 } else {
                     params.put("versionId", "");
                 }
-                request = br.createPostRequest("https://app.pluralsight.com/video/clips/v3/viewclip", JSonStorage.toString(params));
+                request = br.createPostRequest(WEBSITE_BASE_APP + "/video/clips/v3/viewclip", JSonStorage.toString(params));
                 request.setContentType("application/json;charset=UTF-8");
-                request.getHeaders().put("Origin", "https://app.pluralsight.com");
+                request.getHeaders().put("Origin", WEBSITE_BASE_APP);
                 getRequest(br, plugin, request);
                 /*
                  * 2020-04-21: E.g.
@@ -474,7 +488,11 @@ public class PluralsightCom extends antiDDoSForHost {
 
     @Override
     protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
-        return super.looksLikeDownloadableContent(urlConnection) && urlConnection.getCompleteContentLength() > 0;
+        if (super.looksLikeDownloadableContent(urlConnection) && urlConnection.getCompleteContentLength() > 0) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public static String correctFileName(String fileName) {
@@ -506,6 +524,13 @@ public class PluralsightCom extends antiDDoSForHost {
     }
 
     private void downloadStream(final DownloadLink link, final Account account) throws Exception {
+        /** 2020-02-17: Wait between download-starts according to: https://board.jdownloader.org/showthread.php?t=82533 */
+        final long waitMillisBetweenDownloads = PluginJsonConfig.get(PluralsightComConfig.class).getWaittimeBetweenDownloadsSeconds() * 1000;
+        final long passedMillisSinceLastDownload = System.currentTimeMillis() - timestampLastDownloadStarted.get();
+        if (passedMillisSinceLastDownload < waitMillisBetweenDownloads) {
+            final long wait = Math.min(waitMillisBetweenDownloads - passedMillisSinceLastDownload, waitMillisBetweenDownloads);
+            this.sleep(wait, link);
+        }
         final boolean resume = true;
         /*
          * More possible but let's limit it to 1 as this website doesn't like users establishing a lot of connections at the same/in a short
@@ -553,6 +578,9 @@ public class PluralsightCom extends antiDDoSForHost {
          * Files.getFileNameWithoutExtension(link.getName()); String fullPath = path + "\\" + finalNameNoEx + ".srt";
          * java.nio.file.Files.write(Paths.get(fullPath), subtitles.getBytes()); } }
          */
+        synchronized (timestampLastDownloadStarted) {
+            timestampLastDownloadStarted.set(System.currentTimeMillis());
+        }
         dl.startDownload();
     }
 
@@ -576,6 +604,7 @@ public class PluralsightCom extends antiDDoSForHost {
                 dl.getConnection().disconnect();
             } catch (Throwable ignore) {
             }
+            /* Do not retry with same invalid directURL. */
             link.removeProperty(PROPERTY_DIRECTURL);
             return false;
         }
@@ -675,5 +704,10 @@ public class PluralsightCom extends antiDDoSForHost {
     @Override
     public String getDescription() {
         return "Download videos course from Pluralsight.com";
+    }
+
+    @Override
+    public Class<? extends PluralsightComConfig> getConfigInterface() {
+        return PluralsightComConfig.class;
     }
 }

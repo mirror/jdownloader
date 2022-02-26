@@ -57,6 +57,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -421,14 +422,19 @@ public class FShareVn extends PluginForHost {
                 if (ajax.containsHTML("url")) {
                     break;
                 }
-                if (ajax.containsHTML("Too many download sessions") || ajax.containsHTML("Quá nhiều phiên tải")) {
+                if (ajax.containsHTML("(?i)Too many download sessions") || ajax.containsHTML("(?i)Quá nhiều phiên tải")) {
                     sleep(10 * 1001l, link);
                 }
             }
-            if (ajax.containsHTML("Too many download sessions") || ajax.containsHTML("Quá nhiều phiên tải")) {
+            if (ajax.containsHTML("(?i)Too many download sessions") || ajax.containsHTML("(?i)Quá nhiều phiên tải")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many download sessions", 3 * 60 * 1000l);
-            } else if (ajax.containsHTML("\"errors\":")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, ajax.toString(), 3 * 60 * 1000l);
+            } else if (ajax.getHttpConnection().getContentType().contains("application/json")) {
+                final Map<String, Object> data = JavaScriptEngineFactory.jsonToJavaMap(ajax.toString());
+                if (data.containsKey("errors")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, ajax.toString(), 3 * 60 * 1000l);
+                } else if (((Boolean) data.get("policydowload")) == Boolean.TRUE) {
+                    throw new AccountRequiredException();
+                }
             }
             if (StringUtils.containsIgnoreCase(PluginJSonUtils.getJsonValue(ajax, "msg"), "Server error") && StringUtils.containsIgnoreCase(PluginJSonUtils.getJsonValue(ajax, "msg"), "please try again later")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);

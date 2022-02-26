@@ -15,19 +15,17 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.config.FilestoreToConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -48,18 +46,13 @@ import jd.plugins.components.UserAgents.BrowserName;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestore.to" }, urls = { "https?://(?:www\\.)?filestore\\.to/\\?d=([A-Z0-9]+)" })
 public class FilestoreTo extends PluginForHost {
-    private String aBrowser = "";
-
     public FilestoreTo(final PluginWrapper wrapper) {
         super(wrapper);
-        enablePremium("https://filestore.to/premium");
-        setConfigElements();
+        enablePremium("http://filestore.to/premium");
     }
 
-    private static final String               SETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS        = "WAIT_MINUTES_ON_NO_FREE_SLOTS";
-    private static final int                  defaultSETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS = 10;
-    /* don't touch the following! */
-    private static Map<String, AtomicInteger> freeRunning                                  = new HashMap<String, AtomicInteger>();
+    /* Don't touch the following! */
+    final AtomicInteger freeRunning = new AtomicInteger(0);
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -164,26 +157,24 @@ public class FilestoreTo extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.filestore.to/?p=terms";
+        return "http://filestore.to/?p=terms";
     }
 
     protected AtomicInteger getFreeRunningDownloads() {
-        synchronized (freeRunning) {
-            AtomicInteger ret = freeRunning.get(getHost());
-            if (ret == null) {
-                ret = new AtomicInteger(0);
-                freeRunning.put(getHost(), ret);
-            }
-            return ret;
-        }
+        return freeRunning;
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        final int max = 100;
-        final int running = getFreeRunningDownloads().get();
-        final int ret = Math.min(running + 1, max);
-        return ret;
+        if (PluginJsonConfig.get(FilestoreToConfig.class).isStartFreeDownloadsSequentially()) {
+            // final int max = 100;
+            final int running = getFreeRunningDownloads().get();
+            // final int ret = Math.min(running + 1, max);
+            return running + 1;
+        } else {
+            /* Allow unlimited amount of downloads to start at the same time. */
+            return -1;
+        }
     }
 
     @Override
@@ -195,7 +186,12 @@ public class FilestoreTo extends PluginForHost {
 
     private Browser prepBrowser(final Browser br) {
         if (agent.get() == null) {
-            agent.set(UserAgents.stringUserAgent(BrowserName.Chrome));
+            final String customUserAgent = PluginJsonConfig.get(FilestoreToConfig.class).getUserAgent();
+            if (StringUtils.isEmpty(customUserAgent) || StringUtils.equalsIgnoreCase(customUserAgent, "JDDEFAULT")) {
+                agent.set(UserAgents.stringUserAgent(BrowserName.Chrome));
+            } else {
+                agent.set(customUserAgent);
+            }
         }
         br.getHeaders().put("User-Agent", agent.get());
         br.setCustomCharset("utf-8");
@@ -207,8 +203,6 @@ public class FilestoreTo extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         setBrowserExclusive();
         prepBrowser(br);
-        String filename = null;
-        String filesizeStr = null;
         Exception exception = null;
         for (int i = 1; i < 3; i++) {
             try {
@@ -218,20 +212,20 @@ public class FilestoreTo extends PluginForHost {
                 exception = e;
                 continue;
             }
-            haveFun();
-            filename = br.getRegex("class=\"file\">\\s*(.*?)\\s*</").getMatch(0);
+            final String html = getCorrectedHTML(this.br.toString());
+            String filename = new Regex(html, "class=\"file\">\\s*(.*?)\\s*</").getMatch(0);
             if (filename == null) {
-                filename = new Regex(aBrowser, "\\s*(File:|Filename:?|Dateiname:?)\\s*(.*?)\\s*(Dateigr??e|(File)?size|Gr??e):?\\s*(\\d+(,\\d+)? (B|KB|MB|GB))").getMatch(1);
+                filename = new Regex(html, "\\s*(File:|Filename:?|Dateiname:?)\\s*(.*?)\\s*(Dateigr??e|(File)?size|Gr??e):?\\s*(\\d+(,\\d+)? (B|KB|MB|GB))").getMatch(1);
                 if (filename == null) {
-                    filename = new Regex(aBrowser, "und starte dann den Download\\.\\.\\.\\.\\s*[A-Za-z]+:?\\s*([^<>\"/]*\\.(3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bat|bz2|cbr|cbz|ccf|chm|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|load|m2ts|mws|mv|m4v|m4a|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|[r-z]\\d{2}|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|swf|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tiff|tif|ts|txt|viv|vivo|vob|webm|wav|wmv|wma|xla|xls|xpi|zeno|zip|z\\d+|_[_a-z]{2}))").getMatch(0);
+                    filename = new Regex(html, "und starte dann den Download\\.\\.\\.\\.\\s*[A-Za-z]+:?\\s*([^<>\"/]*\\.(3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bat|bz2|cbr|cbz|ccf|chm|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|load|m2ts|mws|mv|m4v|m4a|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|[r-z]\\d{2}|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|swf|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tiff|tif|ts|txt|viv|vivo|vob|webm|wav|wmv|wma|xla|xls|xpi|zeno|zip|z\\d+|_[_a-z]{2}))").getMatch(0);
                 }
             }
-            filesizeStr = new Regex(aBrowser, "(Dateigr??e|(File)?size|Gr??e):?\\s*(\\d+(,\\d+)? (B|KB|MB|GB))").getMatch(1);
+            String filesizeStr = new Regex(html, "(Dateigr??e|(File)?size|Gr??e):?\\s*(\\d+(,\\d+)? (B|KB|MB|GB))").getMatch(1);
             if (filesizeStr == null) {
-                filesizeStr = new Regex(aBrowser, "(\\d+(,\\d+)? (B|KB|MB|GB))").getMatch(0);
+                filesizeStr = new Regex(html, "(\\d+(,\\d+)? (B|KB|MB|GB))").getMatch(0);
             }
             if (filename != null) {
-                link.setName(Encoding.htmlDecode(filename.trim()));
+                link.setName(Encoding.htmlDecode(filename).trim());
             }
             if (filesizeStr != null) {
                 link.setDownloadSize(SizeFormatter.getSize(filesizeStr.replaceAll(",", "\\.").trim()));
@@ -246,7 +240,7 @@ public class FilestoreTo extends PluginForHost {
         }
     }
 
-    private void checkFileErrors(final DownloadLink downloadlink) throws PluginException {
+    private void checkFileErrors(final DownloadLink link) throws PluginException {
         if (br.containsHTML("(?i)>\\s*Datei nicht gefunden") || br.containsHTML("(?i)>\\s*DIE DATEI EXISTIERT LEIDER NICHT MEHR")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("(?i)>\\s*Datei gesperrt")) {
@@ -281,7 +275,12 @@ public class FilestoreTo extends PluginForHost {
         if (f != null) {
             // not enforced
             if (account == null || AccountType.FREE.equals(account.getType())) {
-                processWait(br);
+                final String waittime = br.getRegex("data-wait=\"(\\d+)\"").getMatch(0);
+                int wait = 10;
+                if (waittime != null) {
+                    wait = Integer.parseInt(waittime);
+                }
+                sleep(wait * 1001l, getDownloadLink());
             }
             br.submitForm(f);
         }
@@ -290,11 +289,10 @@ public class FilestoreTo extends PluginForHost {
             checkFileErrors(link);
             if (br.containsHTML("(?i)>\\s*Leider sind aktuell keine freien Downloadslots für Freeuser verfügbar")) {
                 errorNoFreeSlots();
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (resume == false) {
+        if (!resume) {
             maxChunks = 1;
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
@@ -306,7 +304,7 @@ public class FilestoreTo extends PluginForHost {
                 br.getPage(location);
             }
             checkFileErrors(link);
-            if (br.containsHTML("Derzeit haben wir leider keinen freien Downloadslots frei\\. Bitte nochmal versuchen\\.")) {
+            if (br.containsHTML("(?i)Derzeit haben wir leider keinen freien Downloadslots frei\\. Bitte nochmal versuchen\\.")) {
                 errorNoFreeSlots();
             } else if (br.getURL().contains("/error/limit")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
@@ -338,31 +336,19 @@ public class FilestoreTo extends PluginForHost {
     }
 
     private void errorNoFreeSlots() throws PluginException {
-        final int waitMinutes = this.getPluginConfig().getIntegerProperty(SETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS, defaultSETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS);
+        final int waitMinutes = PluginJsonConfig.get(FilestoreToConfig.class).getWaittimeOnNoFreeSlotsMinutes();
         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", waitMinutes * 60 * 1000l);
-    }
-
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS, "Wait minutes on error 'no free slots available'", 1, 600, 1).setDefaultValue(defaultSETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS));
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        /* Wait 10 seconds between downloadstarts. */
-        if (this.getFreeRunningDownloads().get() > 0) {
-            this.sleep(10000l, link);
+        /** Wait user defined number of seconds between downloadstarts if downloads are supposed to start sequentially. */
+        final FilestoreToConfig cfg = PluginJsonConfig.get(FilestoreToConfig.class);
+        if (cfg.isStartFreeDownloadsSequentially() && this.getFreeRunningDownloads().get() > 0) {
+            this.sleep(cfg.getWaittimeBetweenDownloadStartsSeconds() * 1000l, link);
         }
         requestFileInformation(link);
         handleDownload(link, null, true, 1);
-    }
-
-    private void processWait(final Browser br) throws PluginException {
-        final String waittime = br.getRegex("data-wait=\"(\\d+)\"").getMatch(0);
-        int wait = 10;
-        if (waittime != null && Integer.parseInt(waittime) < 61) {
-            wait = Integer.parseInt(waittime);
-        }
-        sleep(wait * 1001l, getDownloadLink());
     }
 
     private String getDllink(final Browser br) {
@@ -379,13 +365,14 @@ public class FilestoreTo extends PluginForHost {
     // prepBr.getHeaders().put("X-Requested-With:", "XMLHttpRequest");
     // return prepBr;
     // }
-    public void haveFun() throws Exception {
-        aBrowser = br.toString();
-        aBrowser = aBrowser.replaceAll("(<(p|div)[^>]+(display:none|top:-\\d+)[^>]+>.*?(<\\s*(/\\2\\s*|\\2\\s*/\\s*)>){2})", "");
-        aBrowser = aBrowser.replaceAll("(<(table).*?class=\"hide\".*?<\\s*(/\\2\\s*|\\2\\s*/\\s*)>)", "");
-        aBrowser = aBrowser.replaceAll("[\r\n\t]+", " ");
-        aBrowser = aBrowser.replaceAll("&nbsp;", " ");
-        aBrowser = aBrowser.replaceAll("(<[^>]+>)", " ");
+    private static String getCorrectedHTML(final String html) throws Exception {
+        String ret = html;
+        ret = ret.replaceAll("(<(p|div)[^>]+(display:none|top:-\\d+)[^>]+>.*?(<\\s*(/\\2\\s*|\\2\\s*/\\s*)>){2})", "");
+        ret = ret.replaceAll("(<(table).*?class=\"hide\".*?<\\s*(/\\2\\s*|\\2\\s*/\\s*)>)", "");
+        ret = ret.replaceAll("[\r\n\t]+", " ");
+        ret = ret.replaceAll("&nbsp;", " ");
+        // ret = ret.replaceAll("(<[^>]+>)", " ");
+        return ret;
     }
 
     @Override
@@ -403,5 +390,10 @@ public class FilestoreTo extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
+    }
+
+    @Override
+    public Class<? extends FilestoreToConfig> getConfigInterface() {
+        return FilestoreToConfig.class;
     }
 }
