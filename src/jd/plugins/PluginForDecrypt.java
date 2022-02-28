@@ -394,7 +394,7 @@ public abstract class PluginForDecrypt extends Plugin {
         final LinkCrawler crawler = getCrawler();
         final List<LazyCrawlerPlugin> sortedLazyCrawlerPlugins = crawler.getSortedLazyCrawlerPlugins();
         for (final LazyCrawlerPlugin lazyCrawlerPlugin : sortedLazyCrawlerPlugins) {
-            if (crawler.canHandle(lazyCrawlerPlugin, url, getCurrentLink()) && !getLazyC().equals(lazyCrawlerPlugin)) {
+            if (crawler.canHandle(lazyCrawlerPlugin, url, getCurrentLink()) && !getLazyC().equals(lazyCrawlerPlugin) && !crawler.breakPluginForDecryptLoop(lazyCrawlerPlugin, getCurrentLink())) {
                 ret.add(lazyCrawlerPlugin);
             }
         }
