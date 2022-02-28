@@ -148,7 +148,7 @@ public class DegooCom extends PluginForHost {
         }
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final String filename = (String) entries.get("Name");
-        final int filesize = ((Integer) entries.get("Size")).intValue();
+        final int filesize = ((Number) entries.get("Size")).intValue();
         this.dllink = (String) entries.get("URL");
         if (!StringUtils.isEmpty(filename)) {
             link.setFinalFileName(filename);

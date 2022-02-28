@@ -20,6 +20,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -27,12 +32,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "degoo.com" }, urls = { "https?://(?:cloud|app)\\.degoo\\.com/share/([A-Za-z0-9\\-_]+)(.*\\?ID=\\d+)?" })
 public class DegooCom extends PluginForDecrypt {
@@ -50,11 +52,12 @@ public class DegooCom extends PluginForDecrypt {
         if (path == null) {
             path = "";
         }
-        FilePackage fp = null;
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setProperty("ALLOW_MERGE", true);
         if (!StringUtils.isEmpty(path)) {
-            fp = FilePackage.getInstance();
-            fp.setProperty("ALLOW_MERGE", true);
             fp.setName(path);
+        } else {
+            fp.setName(folderID);
         }
         String nextPageToken = null;
         final List<String> dupeList = new ArrayList<String>();
@@ -70,22 +73,17 @@ public class DegooCom extends PluginForDecrypt {
             br.postPageRaw("https://rest-api.degoo.com/shared", JSonStorage.serializeToJson(params));
             if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
                 /* Empty folder e.g.: {"Error": "Got empty result!"} */
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
-            } else if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
-                /* Offline folder */
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             nextPageToken = (String) entries.get("NextToken");
-            final List<Object> ressourcelist = (List<Object>) entries.get("Items");
+            final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) entries.get("Items");
             if (ressourcelist.size() == 0) {
                 if (decryptedLinks.size() == 0) {
                     logger.info("Empty folder");
                     final DownloadLink offline = this.createOfflinelink(parameter);
                     if (!StringUtils.isEmpty(path)) {
-                        offline.setName(path);
+                        offline.setFinalFileName("EMPTY_FOLDER_" + path);
                     }
                     decryptedLinks.add(offline);
                     return decryptedLinks;
@@ -96,22 +94,21 @@ public class DegooCom extends PluginForDecrypt {
                 }
             }
             int page = 0;
-            for (final Object ressourceO : ressourcelist) {
+            for (final Map<String, Object> resource : ressourcelist) {
                 page++;
                 logger.info("Crawling page: " + page);
-                entries = (Map<String, Object>) ressourceO;
-                final String title = (String) entries.get("Name");
-                final int filesize = ((Integer) entries.get("Size")).intValue();
-                final boolean isFolder = ((Boolean) entries.get("IsContainer")).booleanValue();
+                final String title = (String) resource.get("Name");
+                final int filesize = ((Number) resource.get("Size")).intValue();
+                final boolean isFolder = ((Boolean) resource.get("IsContainer")).booleanValue();
                 // final int categoryID = ((Integer) entries.get("Category")).intValue();
-                final String id = Long.toString(((Long) entries.get("ID")).longValue());
+                final String id = Long.toString(((Number) resource.get("ID")).longValue());
                 if (StringUtils.isEmpty(title) || id.equals("0")) {
                     /* Skip invalid items */
                     continue;
                 }
                 if (!isFolder) {
                     /* File */
-                    final String directurl = (String) entries.get("URL");
+                    final String directurl = (String) resource.get("URL");
                     final String contentURL = "https://cloud.degoo.com/share/" + folderID + "?ID=" + id;
                     final DownloadLink dl = this.createDownloadlink(contentURL);
                     dl.setContentUrl(contentURL);
