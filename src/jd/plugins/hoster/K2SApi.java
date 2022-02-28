@@ -84,7 +84,8 @@ public abstract class K2SApi extends PluginForHost {
     private static AtomicReference<String> lastIP                = new AtomicReference<String>();
     private static AtomicReference<String> currentIP             = new AtomicReference<String>();
     private static Map<String, Long>       blockedIPsMap         = new HashMap<String, Long>();
-    private String                         PROPERTY_LASTIP       = "K2S_PROPERTY_LASTIP";
+    private static final String            PROPERTY_LASTIP       = "K2S_PROPERTY_LASTIP";
+    private static final String            PROPERTY_FILE_ID      = "fileID";
     private final String                   PROPERTY_LASTDOWNLOAD = "_lastdownload_timestamp";
     private final long                     FREE_RECONNECTWAIT    = 1 * 60 * 60 * 1000L;
     private static final String[]          IPCHECK               = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
@@ -299,7 +300,7 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     protected String getFUID(final DownloadLink link) {
-        final String fileID = link.getStringProperty("fileID", null);
+        final String fileID = link.getStringProperty(PROPERTY_FILE_ID);
         if (StringUtils.isNotEmpty(fileID)) {
             return fileID;
         } else {
@@ -340,36 +341,36 @@ public abstract class K2SApi extends PluginForHost {
         totalMaxSimultanFreeDownload.set(PluginJsonConfig.get(this.getConfigInterface()).getMaxSimultaneousFreeDownloads());
     }
 
-    protected Browser prepBrowser(final Browser prepBr) {
+    protected Browser prepBrowser(final Browser br) {
         // define custom browser headers and language settings.
         // required for native cloudflare support, without the need to repeat requests.
-        prepBr.addAllowedResponseCodes(new int[] { 429, 503, 520, 522 });
+        br.addAllowedResponseCodes(new int[] { 429, 503, 520, 522 });
         synchronized (antiDDoSCookies) {
             if (!antiDDoSCookies.isEmpty()) {
                 for (final Map.Entry<String, String> cookieEntry : antiDDoSCookies.entrySet()) {
                     final String key = cookieEntry.getKey();
                     final String value = cookieEntry.getValue();
-                    prepBr.setCookie(this.getHost(), key, value);
+                    br.setCookie(this.getHost(), key, value);
                 }
             }
         }
-        prepBr.getHeaders().put("User-Agent", "JDownloader." + getVersion());
-        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
-        prepBr.getHeaders().put("Accept-Charset", null);
+        br.getHeaders().put("User-Agent", "JDownloader." + getVersion());
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+        br.getHeaders().put("Accept-Charset", null);
         // prepBr.getHeaders().put("Cache-Control", null);
-        prepBr.getHeaders().put("Pragma", null);
-        prepBr.setConnectTimeout(90 * 1000);
-        prepBr.setReadTimeout(90 * 1000);
+        br.getHeaders().put("Pragma", null);
+        br.setConnectTimeout(90 * 1000);
+        br.setReadTimeout(90 * 1000);
         prepBrSet = true;
-        return prepBr;
+        return br;
     }
 
-    private Browser prepAPI(final Browser prepBr) {
+    private Browser prepAPI(final Browser br) {
         // prep site variables, this links back to prepADB from Override
-        prepBrowser(prepBr);
+        prepBrowser(br);
         // api && dl server response codes
-        prepBr.addAllowedResponseCodes(new int[] { 400, 401, 403, 406 });
-        return prepBr;
+        br.addAllowedResponseCodes(new int[] { 400, 401, 403, 406 });
+        return br;
     }
 
     /**
@@ -437,7 +438,12 @@ public abstract class K2SApi extends PluginForHost {
                         Map<String, Object> fileInfo = null;
                         for (final Map<String, Object> fileInfoTmp : files) {
                             final String id = fileInfoTmp.get("id").toString();
+                            final String requested_id = (String) fileInfoTmp.get("requested_id");
                             if (id.equals(fuid)) {
+                                fileInfo = fileInfoTmp;
+                                break;
+                            } else if (StringUtils.equals(requested_id, fuid)) {
+                                /* For links with two/old/special fileIDs. */
                                 fileInfo = fileInfoTmp;
                                 break;
                             }
@@ -446,11 +452,11 @@ public abstract class K2SApi extends PluginForHost {
                             /* ID was not in result --> Probably ID has invalid format --> It's also definitely offline! */
                             dl.setAvailable(false);
                         } else {
-                            /* TODO: Is this still needed?? */
+                            /* 2022-02-28: Some links basically have two fileIDs */
                             final String id = (String) fileInfo.get("id");
                             if (!StringUtils.equals(fuid, id)) {
-                                // convert special ID to normal ID
-                                dl.setProperty("fileID", id);
+                                /* Convert special ID to normal ID */
+                                dl.setProperty(PROPERTY_FILE_ID, id);
                             }
                             if (((Boolean) fileInfo.get("is_available")) == Boolean.TRUE) {
                                 dl.setAvailable(true);
