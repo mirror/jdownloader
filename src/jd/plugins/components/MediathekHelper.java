@@ -33,19 +33,20 @@ public class MediathekHelper {
         final int episodeNumber = data.getEpisodeNumber();
         String filename = "";
         if (date_formatted != null) {
-            filename = date_formatted + "_";
+            filename = date_formatted + "_" + channel;
+        } else {
+            filename = channel;
         }
-        filename += channel;
         if (show != null) {
-            filename += show + " - ";
+            filename += "_" + show;
         }
         /* TODO: value zero is not possible at the moment! */
         if (seasonNumber > 0 && episodeNumber > 0) {
             /* TODO: Check if we can have the case that only episode- or seasonnumber is given! */
-            filename += String.format(Locale.US, "S%0" + getPadLength(seasonNumber) + "d" + "E%0" + getPadLength(episodeNumber) + "d", seasonNumber, episodeNumber);
+            filename += " - " + String.format(Locale.US, "S%0" + getPadLength(seasonNumber) + "d" + "E%0" + getPadLength(episodeNumber) + "d", seasonNumber, episodeNumber);
         }
         if (title != null) {
-            filename += "_" + title;
+            filename += " - " + title;
         }
         /* Only add protocol to filename if we can have multiple protocols */
         if (multipleProtocolsAvailable) {
