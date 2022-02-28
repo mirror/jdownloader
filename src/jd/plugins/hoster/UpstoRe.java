@@ -29,6 +29,12 @@ import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -49,12 +55,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upstore.net", "upsto.re" }, urls = { "https?://(www\\.)?(upsto\\.re|upstore\\.net)/[A-Za-z0-9]+", "ejnz905rj5o0jt69pgj50ujz0zhDELETE_MEew7th59vcgzh59prnrjhzj0" })
 public class UpstoRe extends antiDDoSForHost {
@@ -120,7 +120,7 @@ public class UpstoRe extends antiDDoSForHost {
         this.setBrowserExclusive();
         correctDownloadLink(link);
         br.setFollowRedirects(true);
-        if (link.getDownloadURL().matches(INVALIDLINKS)) {
+        if (link.getPluginPatternMatcher().matches(INVALIDLINKS)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         getPage(link.getPluginPatternMatcher());
@@ -208,6 +208,7 @@ public class UpstoRe extends antiDDoSForHost {
             final long timeBefore = System.currentTimeMillis();
             final String waittimeStr = br.getRegex("var sec = (\\d+)").getMatch(0);
             int wait = Integer.parseInt(waittimeStr);
+            logger.info("Detected total waittime: " + wait);
             if (br.containsHTML("<div id=\"(\\w+)\".+grecaptcha\\.render\\(\\s*'\\1',")) {
                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                 final int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
@@ -349,7 +350,7 @@ public class UpstoRe extends antiDDoSForHost {
                 if (cookies != null) {
                     br.setCookies(MAINPAGE, cookies);
                     getPage("https://" + this.getHost());
-                    if (!this.isLoggedinHTML()) {
+                    if (!this.isLoggedinHTML(br)) {
                         logger.info("Cookie login failed");
                         br.clearCookies(MAINPAGE);
                     } else {
@@ -392,7 +393,7 @@ public class UpstoRe extends antiDDoSForHost {
                 } else if (br.containsHTML(regexLoginCaptcha)) {
                     // incorrect captcha, or form values changed
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                } else if (!this.isLoggedinHTML()) {
+                } else if (!this.isLoggedinHTML(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 // Save cookies
@@ -517,8 +518,12 @@ public class UpstoRe extends antiDDoSForHost {
     // lifetime account
     private String lifetimeAccount = "eternal premium";
 
-    private boolean isLoggedinHTML() {
-        return br.containsHTML("account/logout/?\"");
+    private boolean isLoggedinHTML(final Browser br) {
+        if (br.containsHTML("account/logout/?\"")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private final String premDlLimit = "It is strange, but you have reached a download limit for today";
@@ -541,7 +546,7 @@ public class UpstoRe extends antiDDoSForHost {
         requestFileInformation(link);
         this.login(account, false);
         br.setFollowRedirects(false);
-        getPage(link.getDownloadURL());
+        getPage(link.getPluginPatternMatcher());
         if (br.containsHTML(premDlLimit)) {
             trafficLeft(account);
         }
@@ -557,7 +562,7 @@ public class UpstoRe extends antiDDoSForHost {
         }
         if (dllink == null) {
             handleErrorsJson();
-            if (!this.isLoggedinHTML()) {
+            if (!this.isLoggedinHTML(br)) {
                 throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
             }
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
