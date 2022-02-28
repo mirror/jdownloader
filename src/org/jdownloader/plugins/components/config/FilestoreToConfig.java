@@ -17,6 +17,10 @@ public interface FilestoreToConfig extends PluginConfigInterface {
     public static TRANSLATION TRANSLATION = new TRANSLATION();
 
     public static class TRANSLATION {
+        public String getGlobalNoFreeSlotsBlockModeEnabled_label() {
+            return "Block all links of this host on error 'No free slots available'?";
+        }
+
         public String getWaittimeOnNoFreeSlotsMinutes_label() {
             return "Wait minutes on error 'no free slots available'";
         }
@@ -33,6 +37,14 @@ public interface FilestoreToConfig extends PluginConfigInterface {
             return "Enter User-Agent which will be used for all website http requests:";
         }
     }
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @Order(5)
+    @DescriptionForConfigEntry("Block all links of this host on error 'No free slots available'?")
+    public boolean isGlobalNoFreeSlotsBlockModeEnabled();
+
+    public void setGlobalNoFreeSlotsBlockModeEnabled(boolean b);
 
     @AboutConfig
     @DefaultIntValue(10)
