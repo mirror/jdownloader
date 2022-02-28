@@ -2,7 +2,12 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -72,6 +77,31 @@ public class RrozhlasCz extends PluginForDecrypt {
             link.setFinalFileName(trackNumber + "." + trackTitle + "." + ext);
             link.setAvailable(true);
             ret.add(link);
+        }
+        /* 2022-02-28 */
+        final String json = br.getRegex("data-player='(\\{.*?\\})'").getMatch(0);
+        if (json != null) {
+            final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+            final List<Map<String, Object>> playlist = (List<Map<String, Object>>) data.get("playlist");
+            for (final Map<String, Object> audio : playlist) {
+                final String trackTitle = (String) audio.get("title");
+                // final long duration = ((Number) audio.get("duration")).longValue();
+                final List<Map<String, Object>> audioLinks = (List<Map<String, Object>>) audio.get("audioLinks");
+                int index = 0;
+                for (final Map<String, Object> audioInfo : audioLinks) {
+                    // final Number bitrate = (Number) audioInfo.get("bitrate");
+                    final DownloadLink link = this.createDownloadlink(audioInfo.get("url").toString());
+                    if (audioLinks.size() > 1) {
+                        link.setFinalFileName(trackTitle + "_" + (index + 1) + ".mp3");
+                    } else {
+                        link.setFinalFileName(trackTitle + ".mp3");
+                    }
+                    link.setAvailable(true);
+                    ret.add(link);
+                    index++;
+                }
+            }
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
