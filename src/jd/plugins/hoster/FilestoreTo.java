@@ -52,7 +52,7 @@ public class FilestoreTo extends PluginForHost {
     }
 
     /* Don't touch the following! */
-    final AtomicInteger freeRunning = new AtomicInteger(0);
+    private static final AtomicInteger freeRunning = new AtomicInteger(0);
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -160,16 +160,13 @@ public class FilestoreTo extends PluginForHost {
         return "http://filestore.to/?p=terms";
     }
 
-    protected AtomicInteger getFreeRunningDownloads() {
-        return freeRunning;
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         if (PluginJsonConfig.get(FilestoreToConfig.class).isStartFreeDownloadsSequentially()) {
             // final int max = 100;
-            final int running = getFreeRunningDownloads().get();
+            final int running = freeRunning.get();
             // final int ret = Math.min(running + 1, max);
+            // return ret;
             return running + 1;
         } else {
             /* Allow unlimited amount of downloads to start at the same time. */
@@ -325,7 +322,6 @@ public class FilestoreTo extends PluginForHost {
 
     protected void controlMaxFreeDownloads(final Account account, final DownloadLink link, final int num) {
         if (account == null) {
-            final AtomicInteger freeRunning = getFreeRunningDownloads();
             synchronized (freeRunning) {
                 final int before = freeRunning.get();
                 final int after = before + num;
@@ -337,14 +333,19 @@ public class FilestoreTo extends PluginForHost {
 
     private void errorNoFreeSlots() throws PluginException {
         final int waitMinutes = PluginJsonConfig.get(FilestoreToConfig.class).getWaittimeOnNoFreeSlotsMinutes();
-        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", waitMinutes * 60 * 1000l);
+        final String errorMsg = "No free slots available, wait or buy premium!";
+        if (PluginJsonConfig.get(FilestoreToConfig.class).isGlobalNoFreeSlotsBlockModeEnabled()) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errorMsg, waitMinutes * 60 * 1000l);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg, waitMinutes * 60 * 1000l);
+        }
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         /** Wait user defined number of seconds between downloadstarts if downloads are supposed to start sequentially. */
         final FilestoreToConfig cfg = PluginJsonConfig.get(FilestoreToConfig.class);
-        if (cfg.isStartFreeDownloadsSequentially() && this.getFreeRunningDownloads().get() > 0) {
+        if (cfg.isStartFreeDownloadsSequentially() && this.freeRunning.get() > 0) {
             this.sleep(cfg.getWaittimeBetweenDownloadStartsSeconds() * 1000l, link);
         }
         requestFileInformation(link);
