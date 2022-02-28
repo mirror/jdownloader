@@ -21,7 +21,6 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -73,21 +72,25 @@ public class MywikifeetCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String galleryID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        // final String galleryID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("(?i)\"This page is not available")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String fpName = br.getRegex("(?i)<TITLE>([^<]*) - my\\.wikiFeet</TITLE>").getMatch(0);
-        if (fpName == null) {
-            fpName = galleryID;
-        }
         final String json = br.getRegex("g\\.plan = (\\{.*?\\})</script>").getMatch(0);
         final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
         final Map<String, Object> data = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "populate/data");
+        final Map<String, Object> model = (Map<String, Object>) data.get("model");
+        final String galleryTitle = (String) data.get("name");
         final String description = (String) data.get("description");
+        final FilePackage fp = FilePackage.getInstance();
+        final String fpName = model.get("name") + "_" + galleryTitle;
+        fp.setName(Encoding.htmlDecode(fpName).trim());
+        if (!StringUtils.isEmpty(description)) {
+            fp.setComment(description);
+        }
         final List<Map<String, Object>> photos = (List<Map<String, Object>>) data.get("photos");
         for (final Map<String, Object> photo : photos) {
             final String imageID = photo.get("idx").toString();
@@ -96,12 +99,6 @@ public class MywikifeetCom extends PluginForDecrypt {
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName).trim());
-        if (!StringUtils.isEmpty(description)) {
-            fp.setComment(description);
-        }
-        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 }

@@ -16,6 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
@@ -28,6 +30,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -53,7 +56,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.fc2.com", "video.laxd.com" }, urls = { "https?://(?:video\\.fc2\\.com|xiaojiadianvideo\\.asia|jinniumovie\\.be)/((?:[a-z]{2}/)?(?:a/)?flv2\\.swf\\?i=|(?:[a-z]{2}/)?(?:a/)?content/)\\w+", "https?://video\\.laxd\\.com/a/content/\\w+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class VideoFCTwoCom extends PluginForHost {
     public VideoFCTwoCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -61,15 +64,35 @@ public class VideoFCTwoCom extends PluginForHost {
         setConfigElements();
     }
 
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "video.fc2.com", "xiaojiadianvideo.asia", "jinniumovie.be" });
+        ret.add(new String[] { "video.laxd.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "video.fc2.com", "xiaojiadianvideo.asia", "jinniumovie.be" };
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://" + buildHostsPatternPart(domains) + "/((?:[a-z]{2}/)?(?:a/)?flv2\\.swf\\?i=|(?:[a-z]{2}/)?(?:a/)?content/)\\w+");
+        }
+        return ret.toArray(new String[0]);
     }
 
     private String              httpDownloadurl              = null;
     private String              hlsMaster                    = null;
+    private String              hlsDownloadurl               = null;
     private String              trailerURL                   = null;
-    private boolean             server_issues                = false;
     private static final String fastLinkCheck                = "fastLinkCheck";
     private final boolean       fastLinkCheck_default        = true;
     private static final String allowTrailerDownload         = "allowTrailerDownload";
@@ -95,10 +118,10 @@ public class VideoFCTwoCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), "(?:i=|content/)(.+)").getMatch(0);
     }
 
-    private Browser prepareBrowser(final Browser prepBr) {
-        prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36");
-        prepBr.setCustomCharset("utf-8");
-        return prepBr;
+    private Browser prepareBrowser(final Browser br) {
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36");
+        br.setCustomCharset("utf-8");
+        return br;
     }
 
     @Override
@@ -215,8 +238,12 @@ public class VideoFCTwoCom extends PluginForHost {
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
+                } else if (con.getContentType().contains("application/vnd.apple.mpegurl")) {
+                    /* HLS download */
+                    this.hlsDownloadurl = con.getURL().toString();
+                    this.httpDownloadurl = null;
                 } else {
-                    server_issues = true;
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Broken video?");
                 }
             } finally {
                 try {
@@ -481,9 +508,7 @@ public class VideoFCTwoCom extends PluginForHost {
                 logger.info("video.fc2.com: Unknown error code: " + error);
             }
         }
-        if (this.server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(this.httpDownloadurl) && StringUtils.isEmpty(this.hlsMaster)) {
+        if (StringUtils.isEmpty(this.httpDownloadurl) && StringUtils.isEmpty(this.hlsMaster) && StringUtils.isEmpty(this.hlsDownloadurl)) {
             if (!StringUtils.isEmpty(this.trailerURL)) {
                 /* Even premium accounts won't be able to watch such content - it has to be bought separately! */
                 logger.info("This content needs to be purchased individually otherwise only a trailer is available!");
@@ -498,9 +523,13 @@ public class VideoFCTwoCom extends PluginForHost {
         /* Only download HLS streams if no http download is available */
         if (StringUtils.isEmpty(this.httpDownloadurl)) {
             /* hls download */
-            br.getPage(this.hlsMaster);
+            if (StringUtils.isEmpty(this.hlsDownloadurl)) {
+                br.getPage(this.hlsMaster);
+                final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+                this.hlsDownloadurl = hlsbest.getDownloadurl();
+            }
             checkFFmpeg(link, "Download a HLS Stream");
-            dl = new HLSDownloader(link, br, this.hlsMaster);
+            dl = new HLSDownloader(link, br, this.hlsDownloadurl);
             dl.startDownload();
         } else {
             /* http download */
