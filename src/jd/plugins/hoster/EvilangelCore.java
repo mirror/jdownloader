@@ -736,7 +736,7 @@ public abstract class EvilangelCore extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = account.getAccountInfo() != null ? account.getAccountInfo() : new AccountInfo();
         login(account, true);
-        final String json = br.getRegex("window\\.context\\s*=\\s*(\\{.+\\});\\s+").getMatch(0);
+        final String json = br.getRegex("window\\.context\\s*=\\s*(\\{.*?\\});\n").getMatch(0);
         final Map<String, Object> root = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
         final Map<String, Object> site = (Map<String, Object>) root.get("site");
         final List<String> contentSources = (List<String>) site.get("contentSource");
