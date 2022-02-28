@@ -134,16 +134,6 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
         }
     }
 
-    private static FilePackage getFilePackage(Map<String, FilePackage> filePackages, PremiumizeBrowseNode node) {
-        FilePackage ret = filePackages.get(node._getParentID());
-        if (ret == null && StringUtils.isNotEmpty(node._getParentName())) {
-            ret = FilePackage.getInstance();
-            ret.setName(node._getParentName());
-            filePackages.put(node._getParentID(), ret);
-        }
-        return ret;
-    }
-
     public static List<DownloadLink> convert(final String url_source, ArrayList<PremiumizeBrowseNode> premiumizeNodes, String currentPath) {
         final List<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (premiumizeNodes == null || premiumizeNodes.size() == 0) {
@@ -180,10 +170,9 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
                 final String url_for_hostplugin = "https://" + host + "/file?id=" + nodeCloudID;
                 final DownloadLink link = new DownloadLink(null, null, host, url_for_hostplugin, true);
                 setPremiumizeBrowserNodeInfoOnDownloadlink(link, node);
-                final FilePackage filePackage = getFilePackage(filePackages, node);
-                if (filePackage != null) {
-                    filePackage.add(link);
-                }
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(currentPath);
+                link._setFilePackage(fp);
                 if (addPath && StringUtils.isNotEmpty(currentPath)) {
                     link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, currentPath);
                 }
