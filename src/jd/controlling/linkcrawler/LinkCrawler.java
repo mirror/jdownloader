@@ -1590,7 +1590,7 @@ public class LinkCrawler {
      * @param link
      * @return
      */
-    protected boolean breakPluginForDecryptLoop(final LazyCrawlerPlugin pDecrypt, final CrawledLink link) {
+    public boolean breakPluginForDecryptLoop(final LazyCrawlerPlugin pDecrypt, final CrawledLink link) {
         final boolean canHandle = canHandle(pDecrypt, link.getURL(), link.getSourceLink());
         if (canHandle) {
             if (!AvailableLinkState.UNKNOWN.equals(link.getLinkState())) {
@@ -1607,7 +1607,8 @@ public class LinkCrawler {
                 }
                 source = source.getSourceLink();
             }
-            return dontRetry.contains(pDecrypt.getDisplayName() + pDecrypt.getClassName());
+            final boolean ret = dontRetry.contains(pDecrypt.getDisplayName() + pDecrypt.getClassName());
+            return ret;
         } else {
             return false;
         }
