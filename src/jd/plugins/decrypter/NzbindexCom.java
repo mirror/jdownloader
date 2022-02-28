@@ -62,12 +62,12 @@ public class NzbindexCom extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:search/\\?q=.+|collection/\\d+/[^/]+\\.nzb)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:(?:search/)?\\?q=.+|collection/\\d+/[^/]+\\.nzb)");
         }
         return ret.toArray(new String[0]);
     }
 
-    private static final String TYPE_SINGLE_SEARCH = "https?://[^/]+/search/\\?q=.+";
+    private static final String TYPE_SINGLE_SEARCH = "https?://[^/]+/(?:search/)?\\?q=.+";
     private static final String TYPE_SINGLE_NZB    = "https?://[^/]+/collection/((\\d+)/([^/]+\\.nzb))";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
