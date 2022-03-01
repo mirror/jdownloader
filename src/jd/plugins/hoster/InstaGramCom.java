@@ -17,11 +17,20 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.net.URL;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -51,17 +60,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "instagrammdecrypted://[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)?" })
 public class InstaGramCom extends PluginForHost {
@@ -102,6 +100,7 @@ public class InstaGramCom extends PluginForHost {
     public static final String  QUIT_ON_RATE_LIMIT_REACHED                        = "QUIT_ON_RATE_LIMIT_REACHED";
     public static final String  HASHTAG_CRAWLER_FIND_USERNAMES                    = "HASHTAG_CRAWLER_FIND_USERNAMES";
     public static final String  PREFER_SERVER_FILENAMES                           = "PREFER_SERVER_FILENAMES";
+    public static final String  ADD_DATE_TO_FILENAMES                             = "ADD_DATE_TO_FILENAMES";
     public static final String  ADD_ORDERID_TO_FILENAMES                          = "ADD_ORDERID_TO_FILENAMES";
     public static final String  ADD_SHORTCODE_TO_FILENAMES                        = "ADD_SHORTCODE_TO_FILENAMES";
     private final String        ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY              = "ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY";
@@ -112,6 +111,7 @@ public class InstaGramCom extends PluginForHost {
     /* Settings default values */
     public static final boolean defaultPREFER_SERVER_FILENAMES                    = false;
     public static final boolean defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY       = false;
+    public static final boolean defaultADD_DATE_TO_FILENAMES                      = false;
     public static final boolean defaultADD_ORDERID_TO_FILENAMES                   = false;
     public static final boolean defaultADD_SHORTCODE_TO_FILENAMES                 = false;
     public static final boolean defaultQUIT_ON_RATE_LIMIT_REACHED                 = false;
@@ -119,7 +119,7 @@ public class InstaGramCom extends PluginForHost {
     public static final boolean defaultONLY_GRAB_X_ITEMS                          = false;
     public static final int     defaultONLY_GRAB_X_ITEMS_NUMBER                   = 25;
     public static final boolean defaultPREFER_ALTERNATIVE_API_FOR_PROFILE_CRAWLER = false;
-    /* DownloadLink properties */
+    /* DownloadLink/Packagizer properties */
     public static final String  PROPERTY_has_tried_to_crawl_original_url          = "has_tried_to_crawl_original_url";
     public static final String  PROPERTY_is_part_of_story                         = "is_part_of_story";
     public static final String  PROPERTY_DIRECTURL                                = "directurl";
@@ -127,6 +127,12 @@ public class InstaGramCom extends PluginForHost {
     public static final String  PROPERTY_postid                                   = "postid";
     public static final String  PROPERTY_orderid                                  = "orderid";
     public static final String  PROPERTY_orderid_raw                              = "orderid_raw";
+    public static final String  PROPERTY_shortcode                                = "shortcode";
+    public static final String  PROPERTY_description                              = "description";
+    public static final String  PROPERTY_uploader                                 = "uploader";
+    public static final String  PROPERTY_is_video                                 = "isvideo";
+    public static final String  PROPERTY_date                                     = "date";
+    public static final String  PROPERTY_filename_from_crawler                    = "decypter_filename";
 
     public void correctDownloadLink(final DownloadLink link) {
         String newurl = link.getPluginPatternMatcher().replace("instagrammdecrypted://", "https://www.instagram.com/p/");
@@ -179,7 +185,7 @@ public class InstaGramCom extends PluginForHost {
             } else {
                 // decrypter has set the proper name!
                 // if the user toggles PREFER_SERVER_FILENAMES setting many times the name can change.
-                final String name = link.getStringProperty("decypter_filename", null);
+                final String name = link.getStringProperty(PROPERTY_filename_from_crawler);
                 if (name != null) {
                     link.setFinalFileName(name);
                 } else {
@@ -218,7 +224,13 @@ public class InstaGramCom extends PluginForHost {
     }
 
     private boolean isVideo(final DownloadLink link) {
-        return link.getBooleanProperty("isvideo", false) || (link.getFinalFileName() != null && link.getFinalFileName().contains(".mp4"));
+        if (link.getBooleanProperty(PROPERTY_is_video, false)) {
+            return true;
+        } else if (link.getFinalFileName() != null && link.getFinalFileName().contains(".mp4")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private static boolean isPartOfStory(final DownloadLink link) {
@@ -428,14 +440,6 @@ public class InstaGramCom extends PluginForHost {
                 }
             }
         }
-    }
-
-    public static void setReleaseDate(final DownloadLink dl, final long date) {
-        final String targetFormat = "yyyy-MM-dd";
-        final Date theDate = new Date(date * 1000);
-        final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
-        final String formattedDate = formatter.format(theDate);
-        dl.setProperty("date", formattedDate);
     }
 
     public static String fixServerFilename(String server_filename, final String correctExtension) {
@@ -825,8 +829,9 @@ public class InstaGramCom extends PluginForHost {
     private void setConfigElements() {
         final ConfigEntry preferServerFilenames = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_SERVER_FILENAMES, "Use server-filenames whenever possible?").setDefaultValue(defaultPREFER_SERVER_FILENAMES);
         getConfig().addEntry(preferServerFilenames);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ADD_DATE_TO_FILENAMES, "Include date (yyyy-MM-dd) in filenames?").setDefaultValue(defaultADD_DATE_TO_FILENAMES).setEnabledCondidtion(preferServerFilenames, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ADD_ORDERID_TO_FILENAMES, "Include order-ID in filenames if an album contains more than one element?\r\nCan be useful if you want to be able to keep the original order of multiple elements of an album.").setDefaultValue(defaultADD_ORDERID_TO_FILENAMES).setEnabledCondidtion(preferServerFilenames, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ADD_SHORTCODE_TO_FILENAMES, "Include 'shortcode' in filenames it is available.").setDefaultValue(defaultADD_SHORTCODE_TO_FILENAMES).setEnabledCondidtion(preferServerFilenames, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ADD_SHORTCODE_TO_FILENAMES, "Include 'shortcode' in filenames if it is available?").setDefaultValue(defaultADD_SHORTCODE_TO_FILENAMES).setEnabledCondidtion(preferServerFilenames, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY, "Try to download original quality (bigger filesize, without image-effects)? [This will slow down the download-process!]").setDefaultValue(defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HASHTAG_CRAWLER_FIND_USERNAMES, "Crawl- and set usernames for filenames when crawling '/explore/tags/<hashtag>' URLs? (Slows down crawl-process!)").setDefaultValue(defaultHASHTAG_CRAWLER_FIND_USERNAMES));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
