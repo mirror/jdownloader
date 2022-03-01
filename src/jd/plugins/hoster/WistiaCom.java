@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -29,8 +31,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wistia.com" }, urls = { "https?://(?:www\\.)?ksmedia\\-gmbh\\.wistia\\.com/medias/[A-Za-z0-9]+|https?://fast\\.wistia\\.net/embed/iframe/[a-z0-9]+" })
 public class WistiaCom extends PluginForHost {
@@ -82,7 +82,7 @@ public class WistiaCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String json = this.br.getRegex("(\\{.+);").getMatch(0);
+        final String json = this.br.getRegex("(\\{.*?);\n").getMatch(0);
         if (json == null) {
             /* Hm possibly offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
