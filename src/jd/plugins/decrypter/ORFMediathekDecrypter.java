@@ -73,26 +73,21 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                 br.getPage(parameter);
             }
         } else if (status != 200) {
-            final DownloadLink link = this.createOfflinelink(parameter);
-            decryptedLinks.add(link);
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML("(404 \\- Seite nicht gefunden\\.|area_headline error_message\">Keine Sendung vorhanden<)") || !br.containsHTML("jsb_VideoPlaylist") || status == 404 || status == 500) {
-            final DownloadLink link = this.createOfflinelink(parameter);
-            link.setName(new Regex(parameter, "tvthek\\.orf\\.at/programs/(.+)").getMatch(0));
-            decryptedLinks.add(link);
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        decryptedLinks.addAll(getDownloadLinks(parameter, SubConfiguration.getConfig("orf.at")));
+        decryptedLinks.addAll(getDownloadLinks(param, SubConfiguration.getConfig("orf.at")));
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             if (br.containsHTML("DRMTestbetrieb")) {
                 logger.info("DRMTestbetrieb");
                 return decryptedLinks;
             } else {
                 if (parameter.matches(TYPE_TOPIC)) {
-                    logger.warning("MAYBE Decrypter out of date for link: " + parameter);
+                    logger.warning("MAYBE crawler out of date for link: " + parameter);
                 } else {
-                    logger.warning("Decrypter for sure out of date for link: " + parameter);
+                    logger.warning("Crawler for sure out of date for link: " + parameter);
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -101,9 +96,9 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
     }
 
     @SuppressWarnings({ "deprecation", "unchecked", "unused", "rawtypes" })
-    private ArrayList<DownloadLink> getDownloadLinks(final String data, final SubConfiguration cfg) {
+    private ArrayList<DownloadLink> getDownloadLinks(final CryptedLink param, final SubConfiguration cfg) {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String nicehost = new Regex(data, "https?://(?:www\\.)?([^/]+)").getMatch(0);
+        final String nicehost = new Regex(param.getCryptedUrl(), "https?://(?:www\\.)?([^/]+)").getMatch(0);
         final String decryptedhost = "http://" + nicehost + "decrypted";
         String date_formatted = null;
         String date = PluginJSonUtils.getJsonValue(this.br, "date");
@@ -200,6 +195,8 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                     String vIdTemp = "";
                     String bestFMT = null;
                     String subtitle = null;
+                    int numberofSkippedDRMItems = 0;
+                    boolean foundDownloadableVideoStreams = false;
                     for (final Object sourceo : sources_video) {
                         subtitle = null;
                         final Map<String, Object> entry_source = (Map<String, Object>) sourceo;
@@ -210,6 +207,9 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         final String delivery = (String) entry_source.get("delivery");
                         // final String subtitleUrl = (String) entry_source.get("SubTitleUrl");
                         if (isEmpty(url_directlink_video) && isEmpty(fmt) && isEmpty(protocol) && isEmpty(delivery)) {
+                            continue;
+                        } else if (StringUtils.equals(fmt, "QXADRM")) {
+                            numberofSkippedDRMItems++;
                             continue;
                         }
                         if (sources_subtitle_o != null) {
@@ -255,6 +255,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         boolean sub = true;
                         if (fileName.equals(vIdTemp)) {
                             sub = false;
+                            foundDownloadableVideoStreams = true;
                         }
                         if ("VERYHIGH".equals(fmt) || "ADAPTIV".equals(fmt) || BEST) {
                             /*
@@ -337,7 +338,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         } else {
                             if (unknownQualityIdentifier(fmt)) {
                                 logger.info("ORFMediathek Decrypter: unknown quality identifier --> " + fmt);
-                                logger.info("Link: " + data);
+                                logger.info("Link: " + param.getCryptedUrl());
                             }
                             continue;
                         }
@@ -346,12 +347,12 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         final DownloadLink link = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
                         final String server_filename = getFileNameFromURL(new URL(url_directlink_video));
                         link.setFinalFileName(final_filename_video);
-                        link.setContentUrl(data);
+                        link.setContentUrl(param.getCryptedUrl());
                         link.setProperty("directURL", url_directlink_video);
                         link.setProperty("directName", final_filename_video);
                         link.setProperty("directFMT", fmt);
                         link.setProperty("directQuality", fmtQuality);
-                        link.setProperty("mainlink", data);
+                        link.setProperty("mainlink", param.getCryptedUrl());
                         if (protocol == null && delivery == null) {
                             link.setAvailable(true);
                             link.setProperty("streamingType", "rtmp");
@@ -390,10 +391,10 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                                     subtitle_downloadlink.setProperty("directURL", subtitle);
                                     subtitle_downloadlink.setProperty("directName", final_filename_subtitle);
                                     subtitle_downloadlink.setProperty("streamingType", "subtitle");
-                                    subtitle_downloadlink.setProperty("mainlink", data);
+                                    subtitle_downloadlink.setProperty("mainlink", param.getCryptedUrl());
                                     subtitle_downloadlink.setAvailable(true);
                                     subtitle_downloadlink.setFinalFileName(final_filename_subtitle);
-                                    subtitle_downloadlink.setContentUrl(data);
+                                    subtitle_downloadlink.setContentUrl(param.getCryptedUrl());
                                     subtitle_downloadlink.setLinkID(linkid_video + "_subtitle");
                                     if (fp != null) {
                                         subtitle_downloadlink._setFilePackage(fp);
@@ -409,6 +410,11 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                                 }
                             }
                         }
+                    }
+                    if (!foundDownloadableVideoStreams && numberofSkippedDRMItems > 0) {
+                        /* Seems like all available video streams are DRM protected. */
+                        final DownloadLink dummy = this.createOfflinelink(br.getURL(), "DRM_" + titlethis, "This video is DRM protected and cannot be downloaded with JDownloader.");
+                        ret.add(dummy);
                     }
                     if (thumbnail != null && cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.Q_THUMBNAIL, false)) {
                         final DownloadLink dl = this.createDownloadlink("directhttp://" + thumbnail);
@@ -441,8 +447,8 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                     map.clear();
                 }
             }
-        } catch (final Throwable e) {
-            logger.log(e);
+        } catch (final Throwable ignore) {
+            logger.log(ignore);
         }
         return ret;
     }
