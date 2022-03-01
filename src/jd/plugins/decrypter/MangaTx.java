@@ -34,7 +34,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "manga-tx.com" }, urls = { "https?://(?:www\\.)?manga-tx\\.com/manga/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "manga-tx.com" }, urls = { "https?://(?:www\\.)?manga-tx\\.com/manga/[\\w\\-]+/(?:chapter-\\d+/)?" })
 public class MangaTx extends antiDDoSForDecrypt {
     public MangaTx(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,8 +45,10 @@ public class MangaTx extends antiDDoSForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final FilePackage fp = FilePackage.getInstance();
-        ArrayList<String> links = new ArrayList<String>();
         String itemID = new Regex(parameter, "/manga/([^/]+)").getMatch(0);
         String chapterID = new Regex(parameter, "/manga/[^/]+/([^/]+)").getMatch(0);
         if (StringUtils.isEmpty(chapterID)) {
