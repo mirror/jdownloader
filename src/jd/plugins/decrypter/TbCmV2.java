@@ -836,7 +836,7 @@ public class TbCmV2 extends PluginForDecrypt {
                     altIds.add(vi.getVariant().getStorableString());
                 }
             }
-            final DownloadLink ret = createDownloadlink(YoutubeHelper.createLinkID(clip.videoID, variantInfo.getVariant(), altIds));
+            final DownloadLink ret = createDownloadlink(YoutubeHelper.createLinkID(clip.videoID, variantInfo.getVariant()));
             final YoutubeHelper helper = new YoutubeHelper(br, getLogger());
             ClipDataCache.referenceLink(helper, ret, clip);
             // thislink.setAvailable(true);
@@ -862,7 +862,7 @@ public class TbCmV2 extends PluginForDecrypt {
             // variantInfo.fillExtraProperties(thislink, alternatives);
             String filename = helper.createFilename(ret);
             ret.setFinalFileName(filename);
-            ret.setLinkID(YoutubeHelper.createLinkID(clip.videoID, variantInfo.getVariant(), altIds));
+            ret.setLinkID(YoutubeHelper.createLinkID(clip.videoID, variantInfo.getVariant()));
             FilePackage fp = FilePackage.getInstance();
             final String fpName = helper.replaceVariables(ret, helper.getConfig().getPackagePattern());
             // req otherwise returned "" value = 'various', regardless of user settings for various!

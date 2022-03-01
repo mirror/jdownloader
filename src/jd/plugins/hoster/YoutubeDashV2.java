@@ -115,6 +115,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo.PluginView;
 import org.jdownloader.gui.views.linkgrabber.columns.VariantColumn;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
@@ -173,6 +174,32 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
     @Override
     public boolean isSpeedLimited(DownloadLink link, Account account) {
         return false;
+    }
+
+    @Override
+    public boolean assignPlugin(DownloadLink link) {
+        final boolean ret = super.assignPlugin(link);
+        final long convertTimestamp = 1645833600000l;
+        if (ret && link.getCreated() < convertTimestamp && link.getLongProperty("assignPlugin", -1l) < convertTimestamp) {
+            try {
+                final AbstractVariant variant = getVariant(link);
+                if (variant instanceof SubtitleVariant) {
+                    // update linkID due to changed JSON parser/formatter
+                    // see AbstractVariant._getUniqueId
+                    final String youtubeID = link.getStringProperty(YoutubeHelper.YT_ID);
+                    if (StringUtils.isNotEmpty(youtubeID)) {
+                        final String linkID = YoutubeHelper.createLinkID(youtubeID, variant);
+                        if (StringUtils.isNotEmpty(linkID)) {
+                            link.setPluginPatternMatcher(linkID);
+                            link.setProperty("assignPlugin", convertTimestamp);
+                        }
+                    }
+                }
+            } catch (PluginException e) {
+                LogController.CL(true).log(e);
+            }
+        }
+        return ret;
     }
 
     @Override
@@ -280,7 +307,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         if (linkid != null && !isDownloading) {
             switch (variant.getType()) {
             case SUBTITLES: {
-                final String subtitleID = YoutubeHelper.createLinkID(downloadLink.getStringProperty(YoutubeHelper.YT_ID), variant, Arrays.asList(getVariantsIDList(downloadLink)));
+                final String subtitleID = YoutubeHelper.createLinkID(downloadLink.getStringProperty(YoutubeHelper.YT_ID), variant);
                 if (!subtitleID.equals(linkid)) {
                     // update it
                     downloadLink.setLinkID(subtitleID);
@@ -291,7 +318,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             case VIDEO:
             case DASH_AUDIO:
             case DASH_VIDEO: {
-                final String videoID = YoutubeHelper.createLinkID(downloadLink.getStringProperty(YoutubeHelper.YT_ID), variant, Arrays.asList(getVariantsIDList(downloadLink)));
+                final String videoID = YoutubeHelper.createLinkID(downloadLink.getStringProperty(YoutubeHelper.YT_ID), variant);
                 if (!videoID.equals(linkid)) {
                     // update it
                     downloadLink.setLinkID(videoID);
@@ -2422,9 +2449,9 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     cl.setName(oldName.replaceFirst("(\\." + oldExt + ")$", "." + newExt));
                 }
             }
-            downloadLink.setPluginPatternMatcher(YoutubeHelper.createLinkID(downloadLink.getStringProperty(YoutubeHelper.YT_ID), (AbstractVariant) variant, Arrays.asList(getVariantsIDList(downloadLink))));
+            downloadLink.setPluginPatternMatcher(YoutubeHelper.createLinkID(downloadLink.getStringProperty(YoutubeHelper.YT_ID), (AbstractVariant) variant));
             downloadLink.setContentUrl("https://www.youtube.com" + "/watch?v=" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "#variant=" + Encoding.urlEncode(Base64.encode(v.getStorableString())));
-            downloadLink.setLinkID(YoutubeHelper.createLinkID(downloadLink.getStringProperty(YoutubeHelper.YT_ID), (AbstractVariant) variant, Arrays.asList(getVariantsIDList(downloadLink))));
+            downloadLink.setLinkID(YoutubeHelper.createLinkID(downloadLink.getStringProperty(YoutubeHelper.YT_ID), (AbstractVariant) variant));
         }
         if (downloadLink.getStringProperty(YoutubeHelper.YT_TITLE, null) == null) {
             // old link?

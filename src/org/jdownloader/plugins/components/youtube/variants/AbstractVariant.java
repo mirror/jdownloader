@@ -6,12 +6,15 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
+import jd.config.Property;
 import jd.http.Request;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.SimpleMapper;
+import org.appwork.storage.simplejson.JSonFactory;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.Log;
 import org.appwork.utils.parser.UrlQuery;
@@ -129,10 +132,10 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
 
     abstract public void setJson(String jsonString);
 
-    private VariantBase baseVariant;
+    protected final VariantBase baseVariant;
     // private YoutubeBasicVariantStorable storable;
-    private Data        genericInfo;
-    private VariantInfo variantInfo;
+    private Data                genericInfo;
+    private VariantInfo         variantInfo;
 
     // public YoutubeBasicVariant(YoutubeBasicVariantStorable base, YoutubeVariant baseVariant) {
     // this.baseVariant = baseVariant;
@@ -242,15 +245,45 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
         return baseVariant.hasConverter(downloadLink);
     }
 
+    private volatile String storableString = null;
+
     public List<File> listProcessFiles(DownloadLink link) {
         return baseVariant.listProcessFiles(link);
     }
 
+    private static final SimpleMapper MAPPER = new SimpleMapper() {
+                                                 @Override
+                                                 protected JSonFactory newJsonFactory(String jsonString) {
+                                                     return new JSonFactory(jsonString) {
+                                                         @Override
+                                                         protected java.util.WeakHashMap<String, java.lang.ref.WeakReference<String>> getDedupeMap() {
+                                                             return null;
+                                                         };
+                                                     };
+                                                 }
+
+                                                 @Override
+                                                 protected void initMapper() {
+                                                 }
+
+                                                 @Override
+                                                 public boolean isPrettyPrintEnabled() {
+                                                     return false;
+                                                 }
+                                             };
+
     public String getStorableString() {
-        YoutubeBasicVariantStorable storable = new YoutubeBasicVariantStorable();
-        storable.setId(baseVariant.name());
-        storable.setData(JSonStorage.serializeToJson(genericInfo));
-        return JSonStorage.serializeToJson(storable);
+        String ret = storableString;
+        if (ret == null) {
+            synchronized (this) {
+                final YoutubeBasicVariantStorable storable = new YoutubeBasicVariantStorable();
+                storable.setId(getBaseVariant().name());
+                storable.setData(MAPPER.objectToString(getGenericInfo()));
+                ret = MAPPER.objectToString(storable);
+                storableString = Property.dedupeString(ret);
+            }
+        }
+        return ret;
     }
 
     public static AbstractVariant get(DownloadLink downloadLink) {
@@ -321,6 +354,7 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
     //
     // }
     public void setGenericInfo(Data genericInfo) {
+        storableString = null;
         this.genericInfo = genericInfo;
     }
 

@@ -66,6 +66,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
     private final int         labelsSize       = 6;
     private final Icon        skipped;
     private final Icon        forced;
+    private final Icon        tls;
     private DownloadWatchDog  dlWatchdog;
     private final Icon        url;
 
@@ -98,6 +99,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
         directConnection = NewTheme.I().getIcon(IconKey.ICON_MODEM, 16);
         proxyConnection = NewTheme.I().getIcon(IconKey.ICON_PROXY_ROTATE, 16);
         connections = NewTheme.I().getIcon(IconKey.ICON_CHUNKS, 16);
+        tls = NewTheme.I().getIcon(IconKey.ICON_INFO, 16);
         url = NewTheme.I().getIcon(IconKey.ICON_URL, 16);
         panel.setLayout(new MigLayout("ins 0 0 0 0", sb.toString(), "[grow,fill]"));
         // panel.add(Box.createGlue(), "pushx,growx");
@@ -290,7 +292,6 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
         private static final long serialVersionUID = -6581783135666367021L;
 
         public ConnectionTooltip(final DownloadLink link) {
-            JLabel lbl;
             this.panel = new TooltipPanel("ins 3,wrap 1", "[grow,fill]", "[grow,fill]");
             final SingleDownloadController sdc = link.getDownloadLinkController();
             final DownloadInterface dli;
@@ -302,23 +303,17 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
             {
                 if (dlWatchdog.isLinkForced(link) && link.getFinalLinkState() == null && link.isEnabled()) {
                     if (dli == null) {
-                        panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_DownloadIsForcedWaiting(), forced, JLabel.LEADING));
+                        add(new JLabel(_GUI.T.ConnectionColumn_DownloadIsForcedWaiting(), forced, JLabel.LEADING));
                     } else {
-                        panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_DownloadIsForced(), forced, JLabel.LEADING));
+                        add(new JLabel(_GUI.T.ConnectionColumn_DownloadIsForced(), forced, JLabel.LEADING));
                     }
-                    SwingUtils.setOpaque(lbl, false);
-                    lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
                 }
                 final SkipReason skipReason = link.getSkipReason();
                 if (skipReason != null) {
-                    panel.add(lbl = new JLabel(skipReason.getExplanation(ConnectionColumn.this), skipped, JLabel.LEADING));
-                    SwingUtils.setOpaque(lbl, false);
-                    lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
+                    add(new JLabel(skipReason.getExplanation(ConnectionColumn.this), skipped, JLabel.LEADING));
                 }
                 if (link.isResumeable() && link.getFinalLinkState() == null) {
-                    panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_DownloadIsResumeable(), resumeIndicator, JLabel.LEADING));
-                    SwingUtils.setOpaque(lbl, false);
-                    lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
+                    add(new JLabel(_GUI.T.ConnectionColumn_DownloadIsResumeable(), resumeIndicator, JLabel.LEADING));
                 }
             }
             if (sdc != null) {
@@ -341,11 +336,9 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                     } else {
                         proxyString = proxy.toString();
                     }
-                    panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_getStringValue_connection(proxyString + " (000.000.000.000)"), proxy.isRemote() ? proxyConnection : directConnection, JLabel.LEADING));
-                    SwingUtils.setOpaque(lbl, false);
-                    lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
                     final HTTPProxy finalProxy = proxy;
-                    final JLabel finalLbl = lbl;
+                    final JLabel finalLbl = new JLabel(_GUI.T.ConnectionColumn_getStringValue_connection(proxyString + " (000.000.000.000)"), proxy.isRemote() ? proxyConnection : directConnection, JLabel.LEADING);
+                    add(finalLbl);
                     final long taskID = TASK.incrementAndGet();
                     SCHEDULER.execute(new Runnable() {
                         @Override
@@ -390,9 +383,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                     final DomainInfo domainInfo = DomainInfo.getInstance(plugin.getHost(link, sdc.getAccount()));
                     if (domainInfo != null) {
                         final Icon icon = domainInfo.getFavIcon();
-                        panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_DownloadUsesAccount(GUIUtils.getAccountName(sdc.getAccount().getUser())), icon, JLabel.LEADING));
-                        SwingUtils.setOpaque(lbl, false);
-                        lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
+                        add(new JLabel(_GUI.T.ConnectionColumn_DownloadUsesAccount(GUIUtils.getAccountName(sdc.getAccount().getUser())), icon, JLabel.LEADING));
                     }
                 }
             }
@@ -407,20 +398,27 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 }
                 final URLConnectionAdapter con = dli.getConnection();
                 if (con != null) {
-                    panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_getStringValue_from(con.getURL().getProtocol() + "@" + dli.getDownloadable().getHost()), icon, JLabel.LEADING));
+                    add(new JLabel(_GUI.T.ConnectionColumn_getStringValue_from(con.getURL().getProtocol() + "@" + dli.getDownloadable().getHost()), icon, JLabel.LEADING));
+                    final String cipher = con.getCipherSuite();
+                    if (cipher != null) {
+                        add(new JLabel(cipher, tls, JLabel.LEADING));
+                    }
                 } else {
-                    panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_getStringValue_from(dli.getDownloadable().getHost()), icon, JLabel.LEADING));
+                    add(new JLabel(_GUI.T.ConnectionColumn_getStringValue_from(dli.getDownloadable().getHost()), icon, JLabel.LEADING));
                 }
-                SwingUtils.setOpaque(lbl, false);
-                lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
-                panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_getStringValue_chunks(dli.getManagedConnetionHandler().size()), connections, JLabel.LEADING));
-                SwingUtils.setOpaque(lbl, false);
-                lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
+                add(new JLabel(_GUI.T.ConnectionColumn_getStringValue_chunks(dli.getManagedConnetionHandler().size()), connections, JLabel.LEADING));
             }
             this.panel.setOpaque(false);
             if (panel.getComponentCount() > 0) {
                 add(panel);
             }
+        }
+
+        private JLabel add(JLabel lbl) {
+            SwingUtils.setOpaque(lbl, false);
+            lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
+            panel.add(lbl);
+            return lbl;
         }
 
         @Override
