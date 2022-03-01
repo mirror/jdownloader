@@ -3364,7 +3364,7 @@ public class YoutubeHelper {
         return list;
     }
 
-    public static String createLinkID(String videoID, AbstractVariant variant, List<String> variants) {
+    public static String createLinkID(String videoID, AbstractVariant variant) {
         return "youtubev2://" + videoID + "/" + Hash.getMD5(Encoding.urlEncode(variant._getUniqueId()));
     }
 
