@@ -1154,7 +1154,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         String dateFormatted = null;
-        if (cfg.getBooleanProperty(InstaGramCom.ADD_DATE_TO_FILENAMES, InstaGramCom.defaultADD_DATE_TO_FILENAMES) && date > 0) {
+        if (date > 0) {
             final String targetFormat = "yyyy-MM-dd";
             final Date theDate = new Date(date * 1000);
             final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
@@ -1171,7 +1171,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             server_filename = jd.plugins.hoster.InstaGramCom.fixServerFilename(server_filename, ext);
             filename = server_filename;
         } else {
-            if (date > 0) {
+            if (cfg.getBooleanProperty(InstaGramCom.ADD_DATE_TO_FILENAMES, InstaGramCom.defaultADD_DATE_TO_FILENAMES) && dateFormatted != null) {
                 filename = dateFormatted + "_";
             } else {
                 filename = "";
