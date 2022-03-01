@@ -34,6 +34,7 @@ import jd.parser.Regex;
 import jd.plugins.components.ThrowingRunnable;
 
 import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.SimpleTypeRef;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.reflection.Clazz;
@@ -470,9 +471,9 @@ public class JavaScriptEngineFactory {
                 /*
                  * script may use Java primitive wrapper type objects (such as java.lang.Integer, java.lang.Boolean etc) explicitly. If we
                  * unwrap, then these script objects will become script primitive types. For example,
-                 *
+                 * 
                  * var x = new java.lang.Double(3.0); print(typeof x);
-                 *
+                 * 
                  * will print 'number'. We don't want that to happen.
                  */
                 Object obj = njb.unwrap();
@@ -978,8 +979,7 @@ public class JavaScriptEngineFactory {
 
     public static Object jsonToJavaObject(String string) throws Exception {
         try {
-            return org.appwork.storage.JSonStorage.restoreFromString(string, new org.appwork.storage.TypeRef<Object>() {
-            });
+            return org.appwork.storage.JSonStorage.restoreFromString(string, SimpleTypeRef.OBJECT);
         } catch (JSonMapperException e) {
             /* supports unquoted keys, example {_test:true} */
             try {
