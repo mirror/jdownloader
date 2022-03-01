@@ -17,35 +17,28 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class MywikifeetCom extends PluginForDecrypt {
-    public MywikifeetCom(PluginWrapper wrapper) {
+public class TubePerverzijaCom extends PluginForDecrypt {
+    public TubePerverzijaCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        /* Sister-site of wikifeet.com */
-        ret.add(new String[] { "mywikifeet.com" });
+        ret.add(new String[] { "tube.perverzija.com" });
         return ret;
     }
 
@@ -65,40 +58,27 @@ public class MywikifeetCom extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/sets/(\\d+)");
+            ret.add("https?://" + buildHostsPatternPart(domains) + "/[\\w\\-]+/?");
         }
         return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        // final String galleryID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("(?i)\"This page is not available")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String json = br.getRegex("g\\.plan = (\\{.*?\\})</script>").getMatch(0);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-        final Map<String, Object> data = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "populate/data");
-        final Map<String, Object> model = (Map<String, Object>) data.get("model");
-        final String galleryTitle = (String) data.get("name");
-        final String description = (String) data.get("description");
-        final FilePackage fp = FilePackage.getInstance();
-        final String fpName = model.get("name") + " -- " + galleryTitle;
-        fp.setName(Encoding.htmlDecode(fpName).trim());
-        if (!StringUtils.isEmpty(description)) {
-            fp.setComment(description);
-        }
-        final List<Map<String, Object>> photos = (List<Map<String, Object>>) data.get("photos");
-        for (final Map<String, Object> photo : photos) {
-            final String imageID = photo.get("idx").toString();
-            final DownloadLink dl = createDownloadlink("https://" + this.getHost() + "/photos/" + imageID + ".jpg");
-            dl.setFinalFileName(fpName + "_" + imageID + ".jpg");
-            dl.setAvailable(true);
-            dl._setFilePackage(fp);
-            decryptedLinks.add(dl);
+        final PluginForHost plg = this.getNewPluginForHostInstance("xtremestream.co");
+        final String[] links = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+        for (final String singleLink : links) {
+            if (plg.canHandle(singleLink)) {
+                final DownloadLink dl = createDownloadlink(singleLink);
+                /* Required in order to access embedded content later. */
+                dl.setReferrerUrl(this.br.getURL());
+                decryptedLinks.add(dl);
+            }
         }
         return decryptedLinks;
     }

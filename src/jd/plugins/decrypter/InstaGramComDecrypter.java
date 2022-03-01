@@ -18,7 +18,9 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -1150,6 +1152,14 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 logger.log(e);
             }
         }
+        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
+        String dateFormatted = null;
+        if (cfg.getBooleanProperty(InstaGramCom.ADD_DATE_TO_FILENAMES, InstaGramCom.defaultADD_DATE_TO_FILENAMES) && date > 0) {
+            final String targetFormat = "yyyy-MM-dd";
+            final Date theDate = new Date(date * 1000);
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            dateFormatted = formatter.format(theDate);
+        }
         String filename;
         final String ext;
         if (isVideo) {
@@ -1161,13 +1171,17 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             server_filename = jd.plugins.hoster.InstaGramCom.fixServerFilename(server_filename, ext);
             filename = server_filename;
         } else {
-            filename = "";
+            if (date > 0) {
+                filename = dateFormatted + "_";
+            } else {
+                filename = "";
+            }
             if (isPartOfStory) {
                 /* Use slightly different filenames for items that are part of a users' story */
                 if (!StringUtils.isEmpty(username)) {
                     filename += username + " - ";
                 }
-                if (orderidFormatted != null && SubConfiguration.getConfig(this.getHost()).getBooleanProperty(InstaGramCom.ADD_ORDERID_TO_FILENAMES, InstaGramCom.defaultADD_ORDERID_TO_FILENAMES)) {
+                if (orderidFormatted != null && cfg.getBooleanProperty(InstaGramCom.ADD_ORDERID_TO_FILENAMES, InstaGramCom.defaultADD_ORDERID_TO_FILENAMES)) {
                     /* By default: Include orderid whenever it is given to prevent duplicate filenames for different files! */
                     filename += orderidFormatted;
                 }
@@ -1194,7 +1208,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     individualShortcodeIsAvailable = false;
                 }
                 final boolean tryToAddOrderIDToFilename;
-                if (SubConfiguration.getConfig(this.getHost()).getBooleanProperty(InstaGramCom.ADD_ORDERID_TO_FILENAMES, InstaGramCom.defaultADD_ORDERID_TO_FILENAMES)) {
+                if (cfg.getBooleanProperty(InstaGramCom.ADD_ORDERID_TO_FILENAMES, InstaGramCom.defaultADD_ORDERID_TO_FILENAMES)) {
                     tryToAddOrderIDToFilename = true;
                 } else if (!individualShortcodeIsAvailable) {
                     /* Enforce this otherwise we might get same filenames for all items! */
@@ -1212,7 +1226,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     includeShortcodesInFilename = true;
                 } else {
                     /* Respect user-setting */
-                    includeShortcodesInFilename = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(InstaGramCom.ADD_SHORTCODE_TO_FILENAMES, InstaGramCom.defaultADD_SHORTCODE_TO_FILENAMES);
+                    includeShortcodesInFilename = cfg.getBooleanProperty(InstaGramCom.ADD_SHORTCODE_TO_FILENAMES, InstaGramCom.defaultADD_SHORTCODE_TO_FILENAMES);
                 }
                 if (individualShortcodeIsAvailable && includeShortcodesInFilename) {
                     filename += "_" + shortcode;
@@ -1240,13 +1254,13 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             fp.add(dl);
         }
         dl.setAvailable(true);
-        dl.setProperty("decypter_filename", filename);
+        dl.setProperty(InstaGramCom.PROPERTY_filename_from_crawler, filename);
         dl.setFinalFileName(filename);
-        if (date > 0) {
-            jd.plugins.hoster.InstaGramCom.setReleaseDate(dl, date);
+        if (dateFormatted != null) {
+            dl.setProperty(InstaGramCom.PROPERTY_date, dateFormatted);
         }
         if (!StringUtils.isEmpty(shortcode)) {
-            dl.setProperty("shortcode", shortcode);
+            dl.setProperty(InstaGramCom.PROPERTY_shortcode, shortcode);
         }
         if (!StringUtils.isEmpty(dllink)) {
             dl.setProperty(InstaGramCom.PROPERTY_DIRECTURL, dllink);
@@ -1256,8 +1270,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         if (!StringUtils.isEmpty(description)) {
             dl.setComment(description);
-            /* For custom packagizer filenames */
-            dl.setProperty("description", orderidFormatted);
+            /* For custom Packagizer filenames */
+            dl.setProperty(InstaGramCom.PROPERTY_description, description);
         }
         if (!StringUtils.isEmpty(orderidFormatted)) {
             /* For custom packagizer filenames */
@@ -1267,13 +1281,13 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         dl.setProperty(InstaGramCom.PROPERTY_postid, itemID);
         if (!StringUtils.isEmpty(username)) {
             /* Packagizer Property */
-            dl.setProperty("uploader", username);
+            dl.setProperty(InstaGramCom.PROPERTY_uploader, username);
         }
         if (isPartOfStory) {
             dl.setProperty(InstaGramCom.PROPERTY_is_part_of_story, true);
             dl.setContentUrl(param.getCryptedUrl());
         }
-        dl.setProperty("isvideo", isVideo);
+        dl.setProperty(InstaGramCom.PROPERTY_is_video, isVideo);
         decryptedLinks.add(dl);
         distribute(dl);
     }

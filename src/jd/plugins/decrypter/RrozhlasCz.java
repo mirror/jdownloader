@@ -38,6 +38,7 @@ public class RrozhlasCz extends PluginForDecrypt {
             /* Fallback */
             title = new Regex(parameter.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         }
+        title = Encoding.htmlDecode(title).trim();
         if (audioIDs != null) {
             final Set<String> dupes = new HashSet<String>();
             for (final String audioID : audioIDs) {
@@ -88,20 +89,61 @@ public class RrozhlasCz extends PluginForDecrypt {
                 final String trackTitle = (String) audio.get("title");
                 // final long duration = ((Number) audio.get("duration")).longValue();
                 final List<Map<String, Object>> audioLinks = (List<Map<String, Object>>) audio.get("audioLinks");
-                int index = 0;
+                if (audioLinks.isEmpty()) {
+                    logger.warning("Failed to find any downloadurls for item : " + trackTitle);
+                }
+                final ArrayList<String> validAudioLinks = new ArrayList<String>();
                 for (final Map<String, Object> audioInfo : audioLinks) {
+                    final String url = audioInfo.get("url").toString();
                     // final Number bitrate = (Number) audioInfo.get("bitrate");
-                    final DownloadLink link = this.createDownloadlink(audioInfo.get("url").toString());
-                    if (audioLinks.size() > 1) {
-                        link.setFinalFileName(trackTitle + "_" + (index + 1) + ".mp3");
+                    /* 2022-03-01: Skip DASH streams */
+                    if (url.endsWith(".mpd")) {
+                        continue;
                     } else {
-                        link.setFinalFileName(trackTitle + ".mp3");
+                        validAudioLinks.add(url);
                     }
-                    link.setAvailable(true);
+                }
+                if (audioLinks.isEmpty()) {
+                    logger.warning("Failed to find any valid downloadurls for item: " + trackTitle);
+                    continue;
+                }
+                int index = 0;
+                for (final String validAudioLink : validAudioLinks) {
+                    final boolean isHLSStreaming = validAudioLink.contains(".m3u8");
+                    final DownloadLink link = this.createDownloadlink(validAudioLink);
+                    final String ext;
+                    if (isHLSStreaming) {
+                        ext = ".m4a";
+                    } else {
+                        ext = ".mp3";
+                    }
+                    if (validAudioLinks.size() > 1) {
+                        link.setFinalFileName(trackTitle + "_" + (index + 1) + ext);
+                    } else {
+                        link.setFinalFileName(trackTitle + ext);
+                    }
+                    /*
+                     * Do not set availablestatus for HLS items otherwise they won't be processed by the generic HLS crawler and this won't
+                     * appear in the linkgrabber.
+                     */
+                    if (!isHLSStreaming) {
+                        link.setAvailable(true);
+                    }
                     ret.add(link);
                     index++;
                 }
             }
+        }
+        /*
+         * Look for single audio podcast e.g.:
+         * https://dvojka.rozhlas.cz/radost-mi-dela-pohled-z-terasy-pripadam-si-jako-knezna-libuse-omeletky-o-radosti-8689401
+         */
+        final String directurl = br.getRegex("\"(https?://dvojka\\.rozhlas\\.cz/sites/default/files/audios/[a-f0-9]+\\.mp3[^\"]*)\"").getMatch(0);
+        if (directurl != null) {
+            final DownloadLink dl = this.createDownloadlink(directurl);
+            dl.setFinalFileName(title + ".mp3");
+            dl.setAvailable(true);
+            ret.add(dl);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);

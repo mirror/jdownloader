@@ -111,6 +111,7 @@ public class FilestoreTo extends PluginForHost {
                         logger.info("Trust cookies without login");
                         return false;
                     }
+                    logger.info("Validating login cookies...");
                     br.getPage("http://" + this.getHost() + "/konto");
                     if (this.isLoggedinHTML(br)) {
                         logger.info("Cookie login successful");
@@ -120,10 +121,10 @@ public class FilestoreTo extends PluginForHost {
                     } else {
                         logger.info("Cookie login failed");
                         br.clearCookies(br.getHost());
+                        account.clearCookies("");
                     }
                 }
                 logger.info("Performing full login");
-                account.clearCookies("");
                 br.getPage("http://" + this.getHost() + "/login");
                 final Form form = br.getFormbyKey("Email");
                 form.put("EMail", Encoding.urlEncode(account.getUser()));
@@ -227,7 +228,7 @@ public class FilestoreTo extends PluginForHost {
             if (filesizeStr != null) {
                 link.setDownloadSize(SizeFormatter.getSize(filesizeStr.replaceAll(",", "\\.").trim()));
             }
-            checkFileErrors(link);
+            checkErrors(link);
             return AvailableStatus.TRUE;
         }
         if (exception != null) {
@@ -237,8 +238,14 @@ public class FilestoreTo extends PluginForHost {
         }
     }
 
-    private void checkFileErrors(final DownloadLink link) throws PluginException {
-        if (br.containsHTML("(?i)>\\s*Datei nicht gefunden") || br.containsHTML("(?i)>\\s*DIE DATEI EXISTIERT LEIDER NICHT MEHR")) {
+    private void checkErrors(final DownloadLink link) throws PluginException {
+        if (br.containsHTML("(?i)Derzeit haben wir leider keinen freien Downloadslots frei\\. Bitte nochmal versuchen\\.")) {
+            errorNoFreeSlots();
+        } else if (br.getURL().contains("/error/limit")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
+        } else if (br.containsHTML("(?i)>\\s*Datei nicht gefunden")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*DIE DATEI EXISTIERT LEIDER NICHT MEHR")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("(?i)>\\s*Datei gesperrt")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -255,7 +262,7 @@ public class FilestoreTo extends PluginForHost {
         final String errorMsg = br.getRegex("class=\"alert alert-danger page-alert mb-2\">\\s*<strong>([^<>]+)</strong>").getMatch(0);
         if (errorMsg != null) {
             /* Check if we should retry */
-            if (errorMsg.matches("Datei noch nicht bereit")) {
+            if (errorMsg.matches("(?i)Datei noch nicht bereit")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg, 5 * 60 * 1000l);
             } else {
                 /* Unknown error: Display to user but do not retry */
@@ -263,13 +270,13 @@ public class FilestoreTo extends PluginForHost {
             }
         }
         // form 1
-        Form f = br.getFormByRegex("(?i)>Download</button>");
-        if (f != null) {
-            br.submitForm(f);
+        Form dlform = br.getFormByRegex("(?i)>Download</button>");
+        if (dlform != null) {
+            br.submitForm(dlform);
         }
         // form 2
-        f = br.getFormByRegex("(?i)>Download starten</button>");
-        if (f != null) {
+        dlform = br.getFormByRegex("(?i)>Download starten</button>");
+        if (dlform != null) {
             // not enforced
             if (account == null || AccountType.FREE.equals(account.getType())) {
                 final String waittime = br.getRegex("data-wait=\"(\\d+)\"").getMatch(0);
@@ -279,14 +286,11 @@ public class FilestoreTo extends PluginForHost {
                 }
                 sleep(wait * 1001l, getDownloadLink());
             }
-            br.submitForm(f);
+            br.submitForm(dlform);
         }
         final String dllink = getDllink(br);
         if (StringUtils.isEmpty(dllink)) {
-            checkFileErrors(link);
-            if (br.containsHTML("(?i)>\\s*Leider sind aktuell keine freien Downloadslots für Freeuser verfügbar")) {
-                errorNoFreeSlots();
-            }
+            checkErrors(link);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!resume) {
@@ -300,14 +304,7 @@ public class FilestoreTo extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.getPage(location);
             }
-            checkFileErrors(link);
-            if (br.containsHTML("(?i)Derzeit haben wir leider keinen freien Downloadslots frei\\. Bitte nochmal versuchen\\.")) {
-                errorNoFreeSlots();
-            } else if (br.getURL().contains("/error/limit")) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            checkErrors(link);
         }
         try {
             /* Add a download slot */
@@ -345,7 +342,7 @@ public class FilestoreTo extends PluginForHost {
     public void handleFree(final DownloadLink link) throws Exception {
         /** Wait user defined number of seconds between downloadstarts if downloads are supposed to start sequentially. */
         final FilestoreToConfig cfg = PluginJsonConfig.get(FilestoreToConfig.class);
-        if (cfg.isStartFreeDownloadsSequentially() && this.freeRunning.get() > 0) {
+        if (cfg.isStartFreeDownloadsSequentially() && freeRunning.get() > 0) {
             this.sleep(cfg.getWaittimeBetweenDownloadStartsSeconds() * 1000l, link);
         }
         requestFileInformation(link);
