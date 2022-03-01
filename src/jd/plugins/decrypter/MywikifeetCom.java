@@ -27,6 +27,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -82,6 +83,13 @@ public class MywikifeetCom extends PluginForDecrypt {
         final String json = br.getRegex("g\\.plan = (\\{.*?\\})</script>").getMatch(0);
         final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
         final Map<String, Object> data = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "populate/data");
+        final int price = ((Number) data.get("price")).intValue();
+        final Map<String, Object> userinfo = (Map<String, Object>) data.get("userinfo");
+        /* Check for paid content according to: https://mywikifeet.com/mwf.js */
+        final Object galleryType = userinfo.get("type");
+        if ((galleryType != null && !galleryType.toString().equals("1")) || price > 0) {
+            throw new AccountRequiredException();
+        }
         final Map<String, Object> model = (Map<String, Object>) data.get("model");
         final String galleryTitle = (String) data.get("name");
         final String description = (String) data.get("description");
