@@ -94,16 +94,14 @@ public class VideoFCTwoCom extends PluginForHost {
     private String              hlsDownloadurl               = null;
     private String              trailerURL                   = null;
     private static final String SETTING_fastLinkCheck        = "fastLinkCheck";
-    private final boolean       fastLinkCheck_default        = true;
     private static final String SETTING_allowTrailerDownload = "allowTrailerDownload";
-    private final boolean       allowTrailerDownload_default = false;
+    private final boolean       default_SETTING_fastLinkCheck        = true;
+    private final boolean       default_allowTrailerDownload = false;
     private static final String PROPERTY_PREMIUMONLY         = "PREMIUMONLY";
 
     private void setConfigElements() {
-        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_fastLinkCheck, "Enable fast
-        // linkcheck, doesn't perform filesize checks! Filesize will be updated when download
-        // starts.").setDefaultValue(fastLinkCheck_default));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_allowTrailerDownload, "Download trailer if full video is not available?").setDefaultValue(allowTrailerDownload_default));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_fastLinkCheck, "Enable fastlinkch?\r\nFilesize won't be displayed until download is started.").setDefaultValue(default_SETTING_fastLinkCheck));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_allowTrailerDownload, "Download trailer if full video is not available?").setDefaultValue(default_allowTrailerDownload));
     }
 
     @Override
@@ -201,7 +199,7 @@ public class VideoFCTwoCom extends PluginForHost {
         this.hlsMaster = (String) playlist.get("master");
         /* Trailer -> Also http stream */
         this.trailerURL = (String) playlist.get("sample");
-        if (StringUtils.isEmpty(this.httpDownloadurl) && StringUtils.isEmpty(this.hlsMaster) && !StringUtils.isEmpty(this.trailerURL) && this.getPluginConfig().getBooleanProperty(SETTING_allowTrailerDownload, allowTrailerDownload_default)) {
+        if (StringUtils.isEmpty(this.httpDownloadurl) && StringUtils.isEmpty(this.hlsMaster) && !StringUtils.isEmpty(this.trailerURL) && this.getPluginConfig().getBooleanProperty(SETTING_allowTrailerDownload, default_allowTrailerDownload)) {
             logger.info("Trailer download is allowed and trailer is available");
             /* Trailers are always available as http streams */
             this.httpDownloadurl = this.trailerURL;
@@ -224,7 +222,7 @@ public class VideoFCTwoCom extends PluginForHost {
             filename += ".mp4";
             link.setFinalFileName(filename);
         }
-        if (isDownload || !this.getPluginConfig().getBooleanProperty(SETTING_fastLinkCheck, fastLinkCheck_default) && !StringUtils.isEmpty(httpDownloadurl)) {
+        if (isDownload || !this.getPluginConfig().getBooleanProperty(SETTING_fastLinkCheck, default_SETTING_fastLinkCheck) && !StringUtils.isEmpty(httpDownloadurl)) {
             br.getHeaders().put("Referer", null);
             URLConnectionAdapter con = null;
             try {
