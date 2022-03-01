@@ -417,7 +417,7 @@ public abstract class K2SApi extends PluginForHost {
                             final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                             if (StringUtils.equals((String) root.get("message"), "Invalid request params")) {
                                 /**
-                                 * 2022-02-25: Workaround for when checking only one fileID which is invalid e.g.
+                                 * 2022-02-25: Workaround for when checking only one <b>invalid</b> fileID e.g.
                                  * "2ahUKEwiUlaOqlZv2AhWLyIUKHXOjAmgQuZ0HegQIARBG". </br>
                                  * This may also happen when there are multiple fileIDs to check and all of them are invalid.
                                  */
@@ -437,6 +437,10 @@ public abstract class K2SApi extends PluginForHost {
                         final String fuid = getFUID(dl);
                         Map<String, Object> fileInfo = null;
                         for (final Map<String, Object> fileInfoTmp : files) {
+                            /*
+                             * Every link has this id but can have an unlimited number of "requested_id" values pointing to the same
+                             * content.
+                             */
                             final String id = fileInfoTmp.get("id").toString();
                             final String requested_id = (String) fileInfoTmp.get("requested_id");
                             if (id.equals(fuid)) {
@@ -452,10 +456,9 @@ public abstract class K2SApi extends PluginForHost {
                             /* ID was not in result --> Probably ID has invalid format --> It's also definitely offline! */
                             dl.setAvailable(false);
                         } else {
-                            /* 2022-02-28: Some links basically have two fileIDs */
                             final String id = (String) fileInfo.get("id");
                             if (!StringUtils.equals(fuid, id)) {
-                                /* Convert special ID to normal ID */
+                                /* Save internal ID as we use this for dupe-checking. */
                                 dl.setProperty(PROPERTY_FILE_ID, id);
                             }
                             if (((Boolean) fileInfo.get("is_available")) == Boolean.TRUE) {
