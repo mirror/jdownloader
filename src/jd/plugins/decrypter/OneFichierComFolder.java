@@ -20,6 +20,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -40,10 +44,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.OneFichierCom;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OneFichierComFolder extends PluginForDecrypt {
@@ -84,9 +84,10 @@ public class OneFichierComFolder extends PluginForDecrypt {
                 }
             }
         }
-        /*
+        /**
          * 2019-04-05: Folder support via API does not work (serverside) as it requires us to have the internal folder-IDs which we do not
-         * have! Basically their folder API call is only for internal folders of the current user -> Not useful for us! See also:
+         * have! </br>
+         * Basically their folder API call is only for internal folders of the current user -> Not useful for us! See also:
          * https://1fichier.com/api.html
          */
         if (jd.plugins.hoster.OneFichierCom.canUseAPI(account) && false) {

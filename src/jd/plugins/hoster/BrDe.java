@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Scanner;
 import java.util.TimeZone;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.config.BrDeConfigInterface;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 
@@ -83,7 +84,7 @@ public class BrDe extends PluginForHost {
         try {
             br.getHeaders().put("Accept-Encoding", "identity");
             con = br.openHeadConnection(dllink);
-            if (this.looksLikeDownloadableContent(con)) {
+            if (this.looksLikeDownloadableContent(con, link)) {
                 if (con.getURL().toString().matches("(?i)^https://[^/]+/tafeln/br-fernsehen/br-fernsehen-tafel_E\\.mp4$")) {
                     /*
                      * 2021-06-08 Redirect to static "GEO-blocked" video:
@@ -114,6 +115,38 @@ public class BrDe extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    public static boolean isVideoContent(final URLConnectionAdapter con) {
+        return con != null && con.getResponseCode() == 200 && StringUtils.containsIgnoreCase(con.getContentType(), "video") && con.getCompleteContentLength() > 512 * 1024l;
+    }
+
+    private static boolean isAudioContent(final URLConnectionAdapter con) {
+        return con != null && con.getResponseCode() == 200 && StringUtils.containsIgnoreCase(con.getContentType(), "audio") && con.getCompleteContentLength() > 512 * 1024l;
+    }
+
+    private static boolean isSubtitleContent(final URLConnectionAdapter con) {
+        return con != null && con.getResponseCode() == 200 && StringUtils.containsIgnoreCase(con.getContentType(), "text/vtt");
+    }
+
+    private boolean isSubtitle(final DownloadLink dl) {
+        if ("subtitle".equalsIgnoreCase(dl.getStringProperty("streamingType"))) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter con, final DownloadLink link) {
+        if (super.looksLikeDownloadableContent(con)) {
+            return true;
+        } else if (isVideoContent(con) || isAudioContent(con) || con.isContentDisposition()) {
+            return true;
+        } else if (isSubtitle(link) && isSubtitleContent(con)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
@@ -126,7 +159,7 @@ public class BrDe extends PluginForHost {
         }
         br.getHeaders().put("Accept-Encoding", "identity");
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection(), link)) {
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
@@ -206,14 +239,22 @@ public class BrDe extends PluginForHost {
         try {
             /* Find hex color text --> code assignments */
             final HashMap<String, String> color_codes = new HashMap<String, String>();
-            final String[][] found_color_codes = new Regex(xmlContent, "xml:id=\"([A-Za-z0-9]+)\"[^>]+(?:tts|ebuttm):color=\"(#[A-Z0-9]+)\"").getMatches();
-            if (found_color_codes != null && found_color_codes.length != 0) {
-                for (final String[] color_info : found_color_codes) {
-                    color_codes.put(color_info[0], color_info[1]);
-                }
+            final String styling = new Regex(xmlContent, "<tt:styling>(.*?)</tt:styling>").getMatch(0);
+            final String[] colorCodesLines = new Regex(styling, "<tt:style[^>]*tts:color=\"[^>]*?/>").getColumn(-1);
+            for (final String colorCodesLine : colorCodesLines) {
+                final String colorName = new Regex(colorCodesLine, "xml:id=\"([A-Za-z0-9]+)\"").getMatch(0);
+                final String colorCode = new Regex(colorCodesLine, "tts:color=\"(#[A-Fa-f0-9]+)\"").getMatch(0);
+                color_codes.put(colorName, colorCode);
             }
+            // final String[][] found_color_codes = new Regex(xmlContent,
+            // "xml:id=\"([A-Za-z0-9]+)\"[^>]+(?:tts|ebuttm):color=\"(#[A-Z0-9]+)\"").getMatches();
+            // if (found_color_codes != null && found_color_codes.length != 0) {
+            // for (final String[] color_info : found_color_codes) {
+            // color_codes.put(color_info[0], color_info[1]);
+            // }
+            // }
             /* empty subtitle|subtitle with text */
-            final String[] matches = new Regex(xmlContent, "(<tt:p[^>]*?xml:id=\"[A-Za-z0-9]+\".*?(?:end=\"\\d{2}:\\d{2}:\\d{2}\\.\\d{3}\" />|</tt:p>))").getColumn(0);
+            final String[] matches = new Regex(xmlContent, "(<tt:p[^>]*?xml:id=\"[A-Za-z0-9]+\"([^>]*?/>\\s+|.*?</tt:p>))").getColumn(0);
             boolean offsetSet = false;
             for (final String info : matches) {
                 dest.write(counter++ + lineseparator);

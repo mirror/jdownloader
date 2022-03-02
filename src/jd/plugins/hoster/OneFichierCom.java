@@ -27,6 +27,22 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -51,22 +67,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OneFichierCom extends PluginForHost {
@@ -131,7 +131,7 @@ public class OneFichierCom extends PluginForHost {
     @Override
     public void init() {
         /** 2021-02-10: 1 request per second is also fine according to admin */
-        Browser.setRequestIntervalLimitGlobal(this.getHost(), 2000);
+        Browser.setRequestIntervalLimitGlobal(this.getHost(), 2500);
     }
 
     private String correctProtocol(final String input) {
@@ -246,7 +246,7 @@ public class OneFichierCom extends PluginForHost {
         return true;
     }
 
-    /** 2021-01-29: Not required at this moment. Review this before using it! */
+    /** 2021-01-29: Not required at this moment. Review this before using it! Do not use this as it will cause IP-blocks!! */
     // /** Checks single URLs via API, TODO: Add crawler compatibility once crawler is done */
     // public AvailableStatus requestFileInformationAPI(final Browser br, final DownloadLink link, final Account account, final boolean
     // isDownload) throws IOException, PluginException {
@@ -526,8 +526,8 @@ public class OneFichierCom extends PluginForHost {
     }
 
     /**
-     * Access restricted by IP / only registered users / only premium users / only owner. </br> See here for all possible reasons (login
-     * required): https://1fichier.com/console/acl.pl
+     * Access restricted by IP / only registered users / only premium users / only owner. </br>
+     * See here for all possible reasons (login required): https://1fichier.com/console/acl.pl
      *
      * @throws PluginException
      */
@@ -665,7 +665,7 @@ public class OneFichierCom extends PluginForHost {
         /* 2021-02-18: Remove linebreaks from the end RE forum: https://board.jdownloader.org/showthread.php?t=83954 */
         account.setPass(StringUtils.trim(account.getPass()));
         if (!isApiKey(account.getPass())) {
-            invalidApiKey(account);
+            errorInvalidAPIKey(account);
         }
         prepareBrowserAPI(br, account);
         /*
@@ -775,9 +775,9 @@ public class OneFichierCom extends PluginForHost {
                 throw new AccountUnavailableException("API flood detection has been triggered", 5 * 60 * 1000l);
             } else if (message.matches("(?i)Not authenticated #\\d+")) {
                 /* Login required but not logged in (this should never happen) */
-                invalidApiKey(account);
+                errorInvalidAPIKey(account);
             } else if (message.matches("(?i)No such user #\\d+")) {
-                invalidApiKey(account);
+                errorInvalidAPIKey(account);
             } else if (message.matches("(?i)Owner locked #\\d+")) {
                 /* 2021-01-29 */
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account banned: " + message, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -815,10 +815,16 @@ public class OneFichierCom extends PluginForHost {
     }
 
     private boolean isAPIErrorPassword(final String errorMsg) {
-        return errorMsg != null && errorMsg.matches("(?i).*(Invalid password\\.|Password not provided\\.).*Resource not allowed #\\d+");
+        if (errorMsg == null) {
+            return false;
+        } else if (errorMsg.matches("(?i).*(Invalid password\\.|Password not provided\\.).*Resource not allowed #\\d+")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
-    private void invalidApiKey(final Account account) throws PluginException {
+    private void errorInvalidAPIKey(final Account account) throws PluginException {
         if (account != null) {
             /* Assume APIKey is invalid or simply not valid anymore (e.g. user disabled or changed APIKey) */
             throw new AccountInvalidException("Invalid API Key - you can find your API Key here: 1fichier.com/console/params.pl\r\nPlease keep in mind that API Keys are only available for premium customers.\r\nIf you do not own a premium account, disable the API Key setting in JD plugin settings so that you can login via username & password!\r\nKeep in mind that 2-factor-authentification login via JD and username/password is not supported!\r\nIf you want to login into your FREE 1fichier account in JD via username & password you will first have to disable 2-factor-authentication in your 1fichier account!");
@@ -970,8 +976,8 @@ public class OneFichierCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         /**
-         * 2021-02-11: Don't do availablecheck in premium mode to reduce requests. </br> According to their admin, using the public
-         * availablecheck call just before downloading via API can be troublesome
+         * 2021-02-11: Don't do availablecheck in premium mode to reduce requests. </br>
+         * According to their admin, using the public availablecheck call just before downloading via API can be troublesome
          */
         if (AccountType.FREE.equals(account.getType())) {
             /**
@@ -1024,8 +1030,8 @@ public class OneFichierCom extends PluginForHost {
 
     private String getDllinkPremiumAPI(final DownloadLink link, final Account account) throws IOException, PluginException {
         /**
-         * 2019-04-05: At the moment there are no benefits for us when using this. </br> 2021-01-29: Removed this because if login is
-         * blocked because of "flood control" this won't work either!
+         * 2019-04-05: At the moment there are no benefits for us when using this. </br>
+         * 2021-01-29: Removed this because if login is blocked because of "flood control" this won't work either!
          */
         // requestFileInformationAPI(this.br, link, account, true);
         // this.checkErrorsAPI(account);
@@ -1165,6 +1171,7 @@ public class OneFichierCom extends PluginForHost {
                 throw new IOException();
             }
         } catch (final Throwable e) {
+            link.removeProperty(property);
             logger.log(e);
             try {
                 dl.getConnection().disconnect();

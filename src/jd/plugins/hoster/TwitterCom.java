@@ -155,15 +155,18 @@ public class TwitterCom extends PluginForHost {
             tweetID = new Regex(link.getPluginPatternMatcher(), TYPE_VIDEO_EMBED).getMatch(0);
             final String username = link.getStringProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_USERNAME);
             this.dllink = getStoredVideoDirecturl(link);
-            this.dllink = null;
             if (StringUtils.isEmpty(this.dllink)) {
                 final boolean useCrawler;
                 /*
                  * 2022-02-02: Legacy handling: TODO: Hardcode set 'useCrawler' to false after 04-2022 to fix rare issue with single
                  * embedded video URLs. Don't do this earlier as it will kill filenames of existing videos!
                  */
-                if (link.hasProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_FILENAME_FROM_CRAWLER)) {
-                    useCrawler = false;
+                if (link.hasProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY)) {
+                    if (link.getBooleanProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, false)) {
+                        useCrawler = true;
+                    } else {
+                        useCrawler = false;
+                    }
                 } else {
                     useCrawler = true;
                 }

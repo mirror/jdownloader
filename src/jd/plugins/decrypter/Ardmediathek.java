@@ -73,12 +73,13 @@ import jd.plugins.hoster.ARDMediathek;
         "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?ndr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?tagesschau\\.de/[^<>\"]+\\.html" })
 public class Ardmediathek extends PluginForDecrypt {
     /* Constants */
-    private static final String type_embedded       = "https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js";
+    private static final String  type_embedded                          = "https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js";
     /* Variables */
-    private final List<String>  all_known_qualities = new ArrayList<String>();
-    private final List<String>  selectedQualities   = new ArrayList<String>();
-    private boolean             grabHLS             = false;
-    private ArdConfigInterface  cfg                 = null;
+    private final List<String>   all_known_qualities                    = new ArrayList<String>();
+    private final List<String>   selectedQualities                      = new ArrayList<String>();
+    private boolean              grabHLS                                = false;
+    private ArdConfigInterface   cfg                                    = null;
+    private static final boolean FILESIZE_NEEDED_FOR_QUALITY_COMPARISON = false;
 
     public Ardmediathek(final PluginWrapper wrapper) {
         super(wrapper);
@@ -617,10 +618,10 @@ public class Ardmediathek extends PluginForDecrypt {
                                  * Sometimes the resolutions is given, sometimes we have to assume it and sometimes (e.g. HLS streaming)
                                  * there are multiple qualities available for one stream URL.
                                  */
-                                final Object widthO = mediaStream.get("_width");
-                                final Object heightO = mediaStream.get("_height");
+                                final Number widthO = (Number) mediaStream.get("_width");
+                                final Number heightO = (Number) mediaStream.get("_height");
                                 if (widthO != null && heightO != null) {
-                                    resolution = VideoResolution.getByWidth(Integer.parseInt(widthO.toString()));
+                                    resolution = VideoResolution.getByWidth(widthO.intValue());
                                     if (resolution == null) {
                                         logger.warning("Unknown width: " + widthO);
                                     }
@@ -677,10 +678,6 @@ public class Ardmediathek extends PluginForDecrypt {
                                 final DownloadLink download = addQuality(param, metadata, foundQualitiesMap, url, null, 0, resolution, false);
                                 if (download != null) {
                                     httpStreamsQualityIdentifiers.add(getQualityIdentifier(url, resolution));
-                                    if (cfg.isGrabBESTEnabled()) {
-                                        // we iterate mediaStreamArray from best to lowest
-                                        break mediaArray;
-                                    }
                                 }
                             }
                         }
@@ -1132,6 +1129,8 @@ public class Ardmediathek extends PluginForDecrypt {
         }
     }
 
+    private boolean foundAtLeastOneValidItem = false;
+
     private DownloadLink addQuality(final CryptedLink param, final ArdMetadata metadata, final HashMap<String, DownloadLink> qualitiesMap, final String directurl, final String filesize_str, long bitrate, final VideoResolution resolution, final boolean isAudioDescription) {
         /* Errorhandling */
         final String ext;
@@ -1155,7 +1154,7 @@ public class Ardmediathek extends PluginForDecrypt {
         } else {
             protocol = "http";
             /* Only grab filesize if we need it for BEST-comparison later. */
-            if (filesize == -1 && (cfg.isGrabBESTEnabled() || cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled())) {
+            if (filesize == -1 && (cfg.isGrabBESTEnabled() || cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled()) && !foundAtLeastOneValidItem && FILESIZE_NEEDED_FOR_QUALITY_COMPARISON) {
                 final Browser brc = br.cloneBrowser();
                 brc.setFollowRedirects(true);
                 URLConnectionAdapter con = null;
@@ -1170,6 +1169,7 @@ public class Ardmediathek extends PluginForDecrypt {
                             filesize = con.getCompleteContentLength();
                             setVerifiedFilesize = true;
                         }
+                        foundAtLeastOneValidItem = true;
                     }
                 } catch (IOException e) {
                     logger.log(e);
@@ -1314,7 +1314,7 @@ public class Ardmediathek extends PluginForDecrypt {
                     data_subtitle.setReleaseDate(data_src.getReleaseDate());
                 }
                 subtitle.setAvailable(true);
-                final String finalFilename = MediathekHelper.getMediathekFilename(subtitle, data_subtitle, true, true);
+                final String finalFilename = MediathekHelper.getMediathekFilename(subtitle, data_subtitle, true, false);
                 subtitle.setFinalFileName(finalFilename);
                 subtitle.setProperty(ARDMediathek.PROPERTY_CRAWLER_FORCED_FILENAME, finalFilename);
                 subtitle.setProperty("itemId", dl.getProperty("itemId", null));
