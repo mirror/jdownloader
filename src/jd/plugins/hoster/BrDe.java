@@ -246,13 +246,6 @@ public class BrDe extends PluginForHost {
                 final String colorCode = new Regex(colorCodesLine, "tts:color=\"(#[A-Fa-f0-9]+)\"").getMatch(0);
                 color_codes.put(colorName, colorCode);
             }
-            // final String[][] found_color_codes = new Regex(xmlContent,
-            // "xml:id=\"([A-Za-z0-9]+)\"[^>]+(?:tts|ebuttm):color=\"(#[A-Z0-9]+)\"").getMatches();
-            // if (found_color_codes != null && found_color_codes.length != 0) {
-            // for (final String[] color_info : found_color_codes) {
-            // color_codes.put(color_info[0], color_info[1]);
-            // }
-            // }
             /* empty subtitle|subtitle with text */
             final String[] matches = new Regex(xmlContent, "(<tt:p[^>]*?xml:id=\"[A-Za-z0-9]+\"([^>]*?/>\\s+|.*?</tt:p>))").getColumn(0);
             boolean offsetSet = false;
