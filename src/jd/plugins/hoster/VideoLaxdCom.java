@@ -19,21 +19,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class VideoFCTwoCom extends VideoFCTwoCore {
-    public VideoFCTwoCom(PluginWrapper wrapper) {
+public class VideoLaxdCom extends VideoFCTwoCore {
+    public VideoLaxdCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://secure.id.fc2.com/signup.php?ref=video");
+        this.enablePremium("https://home.laxd.com/signup.php?switch_language=en&ref=video");
     }
 
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "video.fc2.com", "xiaojiadianvideo.asia", "jinniumovie.be" });
+        ret.add(new String[] { "video.laxd.com" });
         return ret;
     }
 
@@ -49,7 +48,7 @@ public class VideoFCTwoCom extends VideoFCTwoCore {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://" + buildHostsPatternPart(domains) + "/((?:[a-z]{2}/)?(?:a/)?flv2\\.swf\\?i=|(?:[a-z]{2}/)?(?:a/)?content/)\\w+");
+            ret.add("https?://" + buildHostsPatternPart(domains) + "/a/content/\\w+");
         }
         return ret.toArray(new String[0]);
     }
@@ -57,13 +56,6 @@ public class VideoFCTwoCom extends VideoFCTwoCore {
     @Override
     public String getAGBLink() {
         return "https://help.fc2.com/common/tos/en/";
-    }
-
-    @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        final String fid = this.getFID(link);
-        final boolean subContent = new Regex(link.getPluginPatternMatcher(), "/a/content/").matches();
-        link.setPluginPatternMatcher("https://video.fc2.com/en" + (subContent ? "/a/content/" : "/content/") + fid);
     }
 
     @Override
@@ -76,16 +68,16 @@ public class VideoFCTwoCom extends VideoFCTwoCore {
 
     @Override
     protected String getAccountNameSpaceLogin() {
-        return "https://fc2.com/en/login.php?ref=video&switch_language=en";
+        return "https://login.laxd.com/en/?ref=video";
     }
 
     @Override
     protected String getAccountNameSpacePremium() {
-        return "https://" + this.getHost() + "/payment/fc2_premium/";
+        return null;
     }
 
     @Override
     protected String getAccountNameSpaceForLoginCheck() {
-        return "https://" + this.getHost() + "/";
+        return "https://" + this.getHost() + "/en/";
     }
 }
