@@ -50,13 +50,12 @@ public class UnknownPornScript8 extends PluginForHost {
         return "http://www.pornziz.com/static/terms/";
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         serverissue = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -85,17 +84,16 @@ public class UnknownPornScript8 extends PluginForHost {
                 dllink = br.getRegex("<source src=\"(https?[^<>\"]+)\"").getMatch(0);
             }
         }
-        if (filename == null || dllink == null) {
+        if (dllink == null) {
             logger.info("filename: " + filename + ", dllink: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        if (!filename.endsWith(ext)) {
-            filename += ext;
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename);
+            filename = filename.trim();
+            filename = encodeUnicode(filename);
+            filename += ".mp4";
         }
         link.setFinalFileName(filename);
         URLConnectionAdapter con = null;
