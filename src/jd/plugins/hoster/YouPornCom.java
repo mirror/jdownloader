@@ -209,7 +209,7 @@ public class YouPornCom extends PluginForHost {
         /* Find highest quality */
         int qualityMax = 0;
         /* 2020-07-02: Try to obey users' selected quality in this block only */
-        final String mediaDefinition = br.getRegex("(?:video\\.)?mediaDefinition\\s*[=:]\\s*(\\[.*?\\]);").getMatch(0);
+        final String mediaDefinition = br.getRegex("(?:video\\.)?mediaDefinition\\s*[=:]\\s*(\\[.*?\\]),\\n").getMatch(0);
         String fileSizeString = null;
         if (mediaDefinition != null) {
             ArrayList<HashMap<String, Object>> list = JSonStorage.restoreFromString(mediaDefinition, TypeRef.LIST_HASHMAP);
