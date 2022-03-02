@@ -29,6 +29,15 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -53,35 +62,27 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(?:www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/status/\\d+|https?://(?:www\\.|mobile\\.)?twitter\\.com/(?!i/)[A-Za-z0-9_\\-]{2,}(?:/(?:media|likes))?(\\?.*)?|https://twitter\\.com/i/cards/tfw/v1/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" })
 public class TwitterCom extends PornEmbedParser {
     public TwitterCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String            TYPE_CARD                      = "https?://[^/]+/i/cards/tfw/v1/(\\d+)";
-    private static final String            TYPE_USER_ALL                  = "https?://[^/]+/([A-Za-z0-9_\\-]+)(?:/(?:media|likes))?(\\?.*)?";
-    private static final String            TYPE_USER_POST                 = "https?://[^/]+/([^/]+)/status/(\\d+).*?";
-    private static final String            TYPE_REDIRECT                  = "https?://t\\.co/[a-zA-Z0-9]+";
-    private ArrayList<DownloadLink>        decryptedLinks                 = new ArrayList<DownloadLink>();
-    private static AtomicReference<String> GUEST_TOKEN                    = new AtomicReference<String>();
-    private static AtomicLong              GUEST_TOKEN_TS                 = new AtomicLong(-1);
-    public static final String             PROPERTY_USERNAME              = "username";
-    private static final String            PROPERTY_DATE                  = "date";
-    public static final String             PROPERTY_MEDIA_INDEX           = "mediaindex";
-    public static final String             PROPERTY_MEDIA_ID              = "mediaid";
-    public static final String             PROPERTY_BITRATE               = "bitrate";
-    public static final String             PROPERTY_POST_TEXT             = "post_text";
-    public static final String             PROPERTY_FILENAME_FROM_CRAWLER = "crawlerfilename";
+    private static final String            TYPE_CARD                                                        = "https?://[^/]+/i/cards/tfw/v1/(\\d+)";
+    private static final String            TYPE_USER_ALL                                                    = "https?://[^/]+/([A-Za-z0-9_\\-]+)(?:/(?:media|likes))?(\\?.*)?";
+    private static final String            TYPE_USER_POST                                                   = "https?://[^/]+/([^/]+)/status/(\\d+).*?";
+    private static final String            TYPE_REDIRECT                                                    = "https?://t\\.co/[a-zA-Z0-9]+";
+    // private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    private static AtomicReference<String> GUEST_TOKEN                                                      = new AtomicReference<String>();
+    private static AtomicLong              GUEST_TOKEN_TS                                                   = new AtomicLong(-1);
+    public static final String             PROPERTY_USERNAME                                                = "username";
+    private static final String            PROPERTY_DATE                                                    = "date";
+    public static final String             PROPERTY_MEDIA_INDEX                                             = "mediaindex";
+    public static final String             PROPERTY_MEDIA_ID                                                = "mediaid";
+    public static final String             PROPERTY_BITRATE                                                 = "bitrate";
+    public static final String             PROPERTY_POST_TEXT                                               = "post_text";
+    public static final String             PROPERTY_FILENAME_FROM_CRAWLER                                   = "crawlerfilename";
+    public static final String             PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY = "video_direct_urls_are_available_via_api_extended_entity";
 
     protected DownloadLink createDownloadlink(final String link, final String tweetid) {
         final DownloadLink ret = super.createDownloadlink(link);
@@ -90,13 +91,17 @@ public class TwitterCom extends PornEmbedParser {
     }
 
     @SuppressWarnings("deprecation")
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setAllowedResponseCodes(new int[] { 429 });
-        final String parameter = param.toString().replaceAll("https?://(www\\.|mobile\\.)?twitter\\.com/", "https://twitter.com/");
-        String tweet_id = null;
-        if (parameter.matches(TYPE_REDIRECT)) {
+        final String newURL = param.getCryptedUrl().replaceAll("https?://(www\\.|mobile\\.)?twitter\\.com/", "https://twitter.com/");
+        if (!newURL.equals(param.getCryptedUrl())) {
+            logger.info("Currected URL: " + newURL);
+            param.setCryptedUrl(newURL);
+        }
+        if (param.getCryptedUrl().matches(TYPE_REDIRECT)) {
             br.setFollowRedirects(false);
-            getPage(parameter);
+            getPage(param.getCryptedUrl());
             String finallink = br.getRedirectLocation();
             if (finallink == null) {
                 finallink = br.getRegex("http\\-equiv=\"refresh\" content=\"\\d+;URL=(https?[^<>\"]*?)(#_=_)?\"").getMatch(0);
@@ -115,14 +120,14 @@ public class TwitterCom extends PornEmbedParser {
         } else {
             logger.info("No account available or login failed");
         }
-        if (parameter.matches(TYPE_CARD)) {
-            getPage(parameter);
+        if (param.getCryptedUrl().matches(TYPE_CARD)) {
+            getPage(param.getCryptedUrl());
             if (br.getRequest().getHttpConnection().getResponseCode() == 403 || br.getRequest().getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.containsHTML("class=\"ProtectedTimeline\"")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            tweet_id = new Regex(parameter, TYPE_CARD).getMatch(0);
+            final String tweetID = new Regex(param.getCryptedUrl(), TYPE_CARD).getMatch(0);
             /* First check for external urls */
             decryptedLinks.addAll(this.findEmbedUrls(null));
             String externID = br.getRegex("u\\-linkClean js\\-openLink\" href=\"(https?://t\\.co/[^<>\"]*?)\"").getMatch(0);
@@ -140,29 +145,29 @@ public class TwitterCom extends PornEmbedParser {
                     return null;
                 }
                 dllink = dllink.replace("\\", "");
-                final String filename = tweet_id + "_" + new Regex(dllink, "([^/]+\\.[a-z0-9]+)$").getMatch(0);
-                final DownloadLink dl = this.createDownloadlink(dllink, tweet_id);
+                final String filename = tweetID + "_" + new Regex(dllink, "([^/]+\\.[a-z0-9]+)$").getMatch(0);
+                final DownloadLink dl = this.createDownloadlink(dllink, tweetID);
                 dl.setProperty(PROPERTY_FILENAME_FROM_CRAWLER, filename);
                 dl.setName(filename);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
-        } else if (parameter.matches(jd.plugins.hoster.TwitterCom.TYPE_VIDEO_EMBED)) {
+        } else if (param.getCryptedUrl().matches(jd.plugins.hoster.TwitterCom.TYPE_VIDEO_EMBED)) {
             /* 2021-06-22: Support for those has been removed in crawler but is still required in host plugin so let's leave it here! */
             final String tweetID = new Regex(param.getCryptedUrl(), jd.plugins.hoster.TwitterCom.TYPE_VIDEO_EMBED).getMatch(0);
-            crawlAPITweet(param, tweetID, account);
-        } else if (parameter.matches(TYPE_USER_POST)) {
+            crawlAPITweet(decryptedLinks, param, tweetID, account);
+        } else if (param.getCryptedUrl().matches(TYPE_USER_POST)) {
             final boolean prefer_mobile_website = false;
             if (prefer_mobile_website) {
                 /* Single Tweet */
                 if (switchtoMobile()) {
-                    crawlTweetViaMobileWebsite(parameter, null);
+                    crawlTweetViaMobileWebsite(decryptedLinks, param.getCryptedUrl(), null);
                     return decryptedLinks;
                 }
                 /* Fallback to API/normal website */
             }
             final String tweetID = new Regex(param.getCryptedUrl(), TYPE_USER_POST).getMatch(1);
-            crawlAPITweet(param, tweetID, account);
+            crawlAPITweet(decryptedLinks, param, tweetID, account);
         } else {
             crawlUserViaAPI(param, account);
         }
@@ -199,7 +204,7 @@ public class TwitterCom extends PornEmbedParser {
         }
     }
 
-    private void crawlAPITweet(final CryptedLink param, final String tweetID, final Account account) throws Exception {
+    private void crawlAPITweet(final ArrayList<DownloadLink> decryptedLinks, final CryptedLink param, final String tweetID, final Account account) throws Exception {
         logger.info("Crawling API tweet");
         final FilePackage fp = FilePackage.getInstance();
         prepareAPI(this.br, account);
@@ -218,6 +223,28 @@ public class TwitterCom extends PornEmbedParser {
             }
             final boolean useOriginalFilenames = PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class).isUseOriginalFilenames();
             final List<Map<String, Object>> medias = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "extended_entities/media");
+            if (medias == null) {
+                /* Fallback handling for very old (???) content */
+                final String vmapURL = (String) JavaScriptEngineFactory.walkJson(entries, "card/binding_values/amplify_url_vmap/string_value");
+                if (StringUtils.isEmpty(vmapURL)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                /* Expect such URLs which our host plugin can handle: https://video.twimg.com/amplify_video/vmap/<numbers>.vmap */
+                final DownloadLink singleVideo = this.createDownloadlink(vmapURL);
+                final String finalFilename = formattedDate + "_" + username + "_" + tweetID + ".mp4";
+                singleVideo.setFinalFileName(finalFilename);
+                singleVideo.setProperty(PROPERTY_FILENAME_FROM_CRAWLER, finalFilename);
+                singleVideo.setProperty(PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, false);
+                singleVideo.setProperty(PROPERTY_USERNAME, username);
+                singleVideo.setProperty(PROPERTY_DATE, formattedDate);
+                singleVideo.setProperty(PROPERTY_MEDIA_INDEX, 0);
+                if (!StringUtils.isEmpty(postText)) {
+                    singleVideo.setProperty(PROPERTY_POST_TEXT, postText);
+                }
+                singleVideo.setAvailable(true);
+                decryptedLinks.add(singleVideo);
+                return;
+            }
             int mediaIndex = 0;
             for (final Map<String, Object> media : medias) {
                 final String type = (String) media.get("type");
@@ -250,14 +277,17 @@ public class TwitterCom extends PornEmbedParser {
                         dl = this.createDownloadlink(createVideourl(tweetID));
                         if (useOriginalFilenames) {
                             dl.setFinalFileName(tweetID + "_" + Plugin.getFileNameFromURL(new URL(streamURL)));
-                        } else {
+                        } else if (medias.size() > 1) {
                             dl.setFinalFileName(formattedDate + "_" + username + "_" + tweetID + "_" + mediaIndex + ".mp4");
+                        } else {
+                            dl.setFinalFileName(formattedDate + "_" + username + "_" + tweetID + ".mp4");
                         }
                         dl.setProperty(PROPERTY_BITRATE, highestBitrate);
                         dl.setProperty(jd.plugins.hoster.TwitterCom.PROPERTY_DIRECTURL, streamURL);
                         if (!StringUtils.isEmpty(hlsMaster)) {
                             dl.setProperty(jd.plugins.hoster.TwitterCom.PROPERTY_DIRECTURL_hls_master, hlsMaster);
                         }
+                        dl.setProperty(PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, true);
                     } else if (type.equals("photo")) {
                         final String url = (String) media.get("media_url"); /* Also available as "media_url_https" */
                         if (url == null) {
@@ -266,9 +296,10 @@ public class TwitterCom extends PornEmbedParser {
                         dl = this.createDownloadlink(url);
                         if (useOriginalFilenames) {
                             dl.setFinalFileName(tweetID + "_" + Plugin.getFileNameFromURL(new URL(url)));
+                        } else if (medias.size() > 1) {
+                            dl.setFinalFileName(formattedDate + "_" + username + "_" + tweetID + "_" + mediaIndex + Plugin.getFileNameExtensionFromURL(url));
                         } else {
-                            final String filename = formattedDate + "_" + username + "_" + tweetID + "_" + mediaIndex + Plugin.getFileNameExtensionFromURL(url);
-                            dl.setFinalFileName(filename);
+                            dl.setFinalFileName(formattedDate + "_" + username + "_" + tweetID + Plugin.getFileNameExtensionFromURL(url));
                         }
                     } else {
                         /* Unknown type -> This should never happen! */
@@ -288,7 +319,7 @@ public class TwitterCom extends PornEmbedParser {
                     if (fp != null) {
                         fp.add(dl);
                     }
-                    this.decryptedLinks.add(dl);
+                    decryptedLinks.add(dl);
                     distribute(dl);
                 } catch (PluginException e) {
                     logger.log(e);
@@ -299,7 +330,7 @@ public class TwitterCom extends PornEmbedParser {
             br.getPage("https://api.twitter.com/2/timeline/conversation/" + tweetID + ".json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweets=true&count=20&ext=mediaStats%2CcameraMoment");
             Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "globalObjects/tweets/" + tweetID);
-            crawlTweetMediaObjectsAPI(fp, null, entries);
+            crawlTweetMediaObjectsAPI(decryptedLinks, fp, null, entries);
         }
     }
 
@@ -373,7 +404,7 @@ public class TwitterCom extends PornEmbedParser {
      *
      * @throws MalformedURLException
      */
-    private void crawlTweetMediaObjectsAPI(final FilePackage fp, final String username, Map<String, Object> entries) throws MalformedURLException {
+    private void crawlTweetMediaObjectsAPI(final ArrayList<DownloadLink> decryptedLinks, final FilePackage fp, final String username, Map<String, Object> entries) throws MalformedURLException {
         final boolean useOriginalFilenames = PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class).isUseOriginalFilenames();
         final String tweetID = (String) entries.get("id_str");
         final String formattedDate = formatTwitterDate((String) entries.get("created_at"));
@@ -401,8 +432,10 @@ public class TwitterCom extends PornEmbedParser {
                     tempFilename = tweetID + "_" + Plugin.getFileNameFromURL(new URL(url));
                     /* Fix extension as the URL we got may point to a thumbnail image but we want a video extension. */
                     tempFilename = correctOrApplyFileNameExtension(tempFilename, ".mp4");
-                } else {
+                } else if (ressourcelist.size() > 1) {
                     tempFilename = formattedDate + "_" + username + "_" + tweetID + "_" + mediaIndex + ".mp4";
+                } else {
+                    tempFilename = formattedDate + "_" + username + "_" + tweetID + ".mp4";
                 }
                 dl.setName(tempFilename);
             } else {
@@ -415,8 +448,10 @@ public class TwitterCom extends PornEmbedParser {
                 /* 2020-06-08: Let it survive users' reset especially for items which are handled by directhttp plugin. */
                 if (useOriginalFilenames) {
                     dl.setFinalFileName(tweetID + "_" + Plugin.getFileNameFromURL(new URL(url)));
-                } else {
+                } else if (ressourcelist.size() > 1) {
                     dl.setFinalFileName(formattedDate + "_" + username + "_" + tweetID + "_" + mediaIndex + Plugin.getFileNameExtensionFromURL(url));
+                } else {
+                    dl.setFinalFileName(formattedDate + "_" + username + "_" + tweetID + Plugin.getFileNameExtensionFromURL(url));
                 }
             }
             dl.setAvailable(true);
@@ -454,9 +489,9 @@ public class TwitterCom extends PornEmbedParser {
     }
 
     @Deprecated
-    private void crawlTweetViaMobileWebsite(final String parameter, final FilePackage fp) throws IOException {
+    private void crawlTweetViaMobileWebsite(final ArrayList<DownloadLink> decryptedLinks, final String tweetURL, final FilePackage fp) throws IOException {
         logger.info("Crawling mobile website tweet");
-        final String tweet_id = new Regex(parameter, "/(?:tweet|status)/(\\d+)").getMatch(0);
+        final String tweet_id = new Regex(param.getCryptedUrl(), "/(?:tweet|status)/(\\d+)").getMatch(0);
         if (br.containsHTML("/status/" + tweet_id + "/video/1")) {
             /* Video */
             final DownloadLink dl = createDownloadlink(createVideourl(tweet_id));
@@ -506,12 +541,13 @@ public class TwitterCom extends PornEmbedParser {
             }
             if (decryptedLinks.isEmpty()) {
                 logger.warning("Found nothing - either only text or plugin broken :(");
-                decryptedLinks.add(this.createOfflinelink(parameter));
+                decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
             }
         }
     }
 
-    private void crawlUserViaAPI(final CryptedLink param, final Account account) throws Exception {
+    private ArrayList<DownloadLink> crawlUserViaAPI(final CryptedLink param, final Account account) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         logger.info("Crawling API user");
         final String username = new Regex(param.getCryptedUrl(), TYPE_USER_ALL).getMatch(0);
         this.prepareAPI(br, account);
@@ -647,7 +683,7 @@ public class TwitterCom extends PornEmbedParser {
             String lastCreatedAtDateStr = null;
             while (iterator.hasNext()) {
                 final Map<String, Object> tweet = (Map<String, Object>) iterator.next().getValue();
-                crawlTweetMediaObjectsAPI(fp, username, tweet);
+                crawlTweetMediaObjectsAPI(decryptedLinks, fp, username, tweet);
                 crawled_tweet_count++;
                 lastCreatedAtDateStr = (String) tweet.get("created_at");
                 final long currentTweetTimestamp = TimeFormatter.getMilliSeconds(lastCreatedAtDateStr, "EEE MMM dd HH:mm:ss Z yyyy", Locale.ENGLISH);
@@ -700,10 +736,12 @@ public class TwitterCom extends PornEmbedParser {
         if (decryptedLinks.isEmpty()) {
             logger.info("Found nothing --> Either user has posts containing media or those can only be viewed by certain users or only when logged in (explicit content)");
         }
+        return decryptedLinks;
     }
 
     /**
-     * https://developer.twitter.com/en/support/twitter-api/error-troubleshooting </br> Scroll down to "Twitter API error codes"
+     * https://developer.twitter.com/en/support/twitter-api/error-troubleshooting </br>
+     * Scroll down to "Twitter API error codes"
      */
     private void handleErrorsAPI(final Browser br) throws Exception {
         Map<String, Object> entries = null;
@@ -749,15 +787,16 @@ public class TwitterCom extends PornEmbedParser {
 
     /* 2020-01-30: Mobile website will only show 1 tweet per page */
     @Deprecated
-    private void crawlUserViaMobileWebsite(final String parameter) throws IOException {
+    private ArrayList<DownloadLink> crawlUserViaMobileWebsite(final String parameter) throws IOException {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         logger.info("Crawling mobile website user");
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
-            return;
+            return decryptedLinks;
         } else if (!this.switchtoMobile()) {
             logger.warning("Unable to crawl: Failed to switch to mobile website");
-            return;
+            return decryptedLinks;
         }
         final String username = new Regex(parameter, "https?://[^/]+/([^/]+)").getMatch(0);
         int index = 0;
@@ -782,12 +821,13 @@ public class TwitterCom extends PornEmbedParser {
                 decryptedLinks.add(dl);
                 distribute(dl);
             } else {
-                crawlTweetViaMobileWebsite(tweet_url, fp);
+                crawlTweetViaMobileWebsite(decryptedLinks, tweet_url, fp);
             }
             index++;
             nextURL = br.getRegex("(/[^/]+/media/grid\\?idx=" + index + ")").getMatch(0);
         } while (nextURL != null && !this.isAbort());
         logger.info(String.format("Done after %d pages", index));
+        return decryptedLinks;
     }
 
     protected void getPage(final Browser br, final String url) throws Exception {

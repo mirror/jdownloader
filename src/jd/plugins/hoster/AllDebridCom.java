@@ -112,8 +112,8 @@ public class AllDebridCom extends antiDDoSForHost {
                     } catch (final PluginException elogin) {
                         final String error = parseError();
                         if ("AUTH_BAD_APIKEY".equalsIgnoreCase(error)) {
+                            /* Full login required */
                             logger.info("Apikey login failed");
-                            /* Perform full login */
                         } else {
                             throw elogin;
                         }
@@ -172,7 +172,10 @@ public class AllDebridCom extends antiDDoSForHost {
             this.setAuthHeader(br, apikey);
             getPage(api_base + "/user?" + agent);
             handleErrors(account, null);
-            final String userName = PluginJSonUtils.getJson(br, "username");
+            final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Map<String, Object> data = (Map<String, Object>) root.get("data");
+            final Map<String, Object> user = (Map<String, Object>) data.get("user");
+            final String userName = (String) user.get("username");
             if (!StringUtils.isEmpty(userName)) {
                 account.setUser(userName);
             }
@@ -181,43 +184,40 @@ public class AllDebridCom extends antiDDoSForHost {
              * property in our Account object!
              */
             account.setPass(null);
-            final boolean isPremium = PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(br, "isPremium"));
-            final boolean isTrial = PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(br, "isTrial"));
-            if (!isPremium) {
-                /*
-                 * "Real" free account (or expired trial premium [= user downloaded more than 25GB trial quota]) --> Cannot download and
-                 * cannot even login via API officially!
-                 */
-                freeAccountsAreUnsupported();
-            } else {
-                final String premiumUntilStr = PluginJSonUtils.getJson(br, "premiumUntil");
-                final long premiumUntil = Long.parseLong(premiumUntilStr) * 1000l;
-                if (ai != null) {
-                    ai.setValidUntil(premiumUntil, br);
+            if ((Boolean) user.get("isPremium") == Boolean.TRUE) {
+                final Number premiumUntil = (Number) user.get("premiumUntil");
+                if (premiumUntil != null) {
+                    ai.setValidUntil(premiumUntil.longValue() * 1000l, br);
                 }
                 /* Only save apikey for premium accounts */
-                if (premiumUntil < System.currentTimeMillis()) {
-                    throw new AccountInvalidException("Premium expired!");
-                }
                 account.setProperty(PROPERTY_apikey, apikey);
-                if (isTrial) {
+                if ((Boolean) user.get("isTrial") == Boolean.TRUE) {
                     /*
                      * 2020-03-27: Premium "test" accounts which last 7 days and have a total of 25GB as quota. Once that limit is reached,
                      * they can only download from "Free" hosts (only a hand full of hosts).
                      */
                     ai.setStatus("Premium Account (Free trial, reverts to free once traffic is used up)");
-                    /* 2020-03-27: Hardcoded */
-                    final long maxTraffic = SizeFormatter.getSize("25GB");
-                    final long remainingTraffic = Long.parseLong(PluginJSonUtils.getJson(br, "remainingTrialQuota")) * 1000 * 1000;
-                    ai.setTrafficLeft(remainingTraffic);
-                    if (remainingTraffic <= remainingTraffic) {
-                        ai.setTrafficMax(maxTraffic);
+                    final Number remainingTrialQuota = (Number) user.get("remainingTrialQuota");
+                    if (remainingTrialQuota != null) {
+                        /* 2020-03-27: Hardcoded maxTraffic value */
+                        final long maxTraffic = SizeFormatter.getSize("25GB");
+                        final long remainingTrialTraffic = remainingTrialQuota.longValue() * 1000 * 1000;
+                        ai.setTrafficLeft(remainingTrialTraffic);
+                        if (remainingTrialTraffic <= maxTraffic) {
+                            ai.setTrafficMax(maxTraffic);
+                        }
                     }
                 } else {
                     /* "Real" premium account. */
                     ai.setStatus("Premium Account");
                 }
                 account.setType(AccountType.PREMIUM);
+            } else {
+                /*
+                 * "Real" free account (or expired trial premium [= user downloaded more than 25GB trial quota]) --> Cannot download and
+                 * cannot even login via API officially!
+                 */
+                freeAccountsAreUnsupported();
             }
         }
     }
@@ -232,9 +232,9 @@ public class AllDebridCom extends antiDDoSForHost {
         fetchApikey(account, accountInfo);
         /* They got 3 arrays of types of supported websites --> We want to have the "hosts" Array only! */
         getPage(api_base + "/user/hosts?" + agent + "&hostsOnly=true");
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/hosts");
-        final Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> supportedHostsInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/hosts");
+        final Iterator<Entry<String, Object>> iterator = supportedHostsInfo.entrySet().iterator();
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         while (iterator.hasNext()) {
             try {
@@ -458,6 +458,7 @@ public class AllDebridCom extends antiDDoSForHost {
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         mhm.runCheck(account, link);
         final String directlinkproperty = getDirectLinkProperty(link, account);
+        final String pawsProperty = getDirectLinkProperty(link, account) + "_paws";
         /* Try to re-use previously generated directurl */
         String dllink = checkDirectLink(account, link, directlinkproperty);
         if (StringUtils.isEmpty(dllink)) {
@@ -506,12 +507,17 @@ public class AllDebridCom extends antiDDoSForHost {
                 }
             }
             try {
-                Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                entries = (Map<String, Object>) entries.get("data");
-                if (entries.containsKey("max_chunks")) {
-                    link.setProperty(PROPERTY_maxchunks, entries.get("max_chunks"));
+                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+                final Object max_chunksO = data.get("max_chunks");
+                if (max_chunksO != null) {
+                    link.setProperty(PROPERTY_maxchunks, max_chunksO.toString());
                 }
-                dllink = (String) entries.get("link");
+                final Boolean pawsO = (Boolean) data.get("paws");
+                if (pawsO != null) {
+                    link.setProperty(pawsProperty, pawsO.booleanValue());
+                }
+                dllink = (String) data.get("link");
             } catch (final Throwable ignore) {
                 logger.log(ignore);
             }
@@ -519,9 +525,117 @@ public class AllDebridCom extends antiDDoSForHost {
                 mhm.handleErrorGeneric(account, link, "dllinknull", 50, 1 * 60 * 1000l);
             }
             // final String filename = PluginJSonUtils.getJsonValue(br, "filename");
-            link.setProperty(directlinkproperty, dllink);
         }
-        handleDL(account, link, dllink);
+        if (dllink == null || !dllink.matches("https?://.+")) {
+            mhm.handleErrorGeneric(account, link, "Failed to find final downloadurl", 50, 1 * 60 * 1000l);
+        }
+        link.setProperty(directlinkproperty, dllink);
+        showMessage(link, "Task 2: Download begins!");
+        final boolean useVerifiedFileSize;
+        /* "paws" handling = old handling to disable setting verified filesize via API. */
+        final boolean paws = link.getBooleanProperty(pawsProperty, false);
+        if (!paws) {
+            logger.info("don't use verified filesize because 'paws'!");
+            useVerifiedFileSize = false;
+        } else if (link.getVerifiedFileSize() > 0) {
+            final Browser brc = br.cloneBrowser();
+            brc.setFollowRedirects(true);
+            final URLConnectionAdapter check = openAntiDDoSRequestConnection(brc, brc.createGetRequest(dllink));
+            try {
+                if (!looksLikeDownloadableContent(check)) {
+                    try {
+                        brc.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content");
+                } else if (check.getCompleteContentLength() < 0) {
+                    logger.info("don't use verified filesize because complete content length isn't available:" + check.getCompleteContentLength() + "==" + link.getVerifiedFileSize());
+                    useVerifiedFileSize = false;
+                } else if (check.getCompleteContentLength() == link.getVerifiedFileSize()) {
+                    logger.info("use verified filesize because it matches complete content length:" + check.getCompleteContentLength() + "==" + link.getVerifiedFileSize());
+                    useVerifiedFileSize = true;
+                } else {
+                    if (link.getDownloadCurrent() > 0) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Cannot resume different file:" + check.getCompleteContentLength() + "!=" + link.getVerifiedFileSize());
+                    } else {
+                        logger.info("don't use verified filesize because it doesn't match complete content length:" + check.getCompleteContentLength() + "!=" + link.getVerifiedFileSize());
+                        useVerifiedFileSize = false;
+                    }
+                }
+            } finally {
+                check.disconnect();
+            }
+        } else {
+            logger.info("use verified filesize");
+            useVerifiedFileSize = true;
+        }
+        final String host = Browser.getHost(link.getDownloadURL());
+        final DownloadLinkDownloadable downloadLinkDownloadable = new DownloadLinkDownloadable(link) {
+            @Override
+            public HashInfo getHashInfo() {
+                return null;
+            }
+
+            @Override
+            public long getVerifiedFileSize() {
+                if (useVerifiedFileSize) {
+                    return super.getVerifiedFileSize();
+                } else {
+                    return -1;
+                }
+            }
+
+            @Override
+            public String getHost() {
+                final DownloadInterface dli = getDownloadInterface();
+                if (dli != null) {
+                    final URLConnectionAdapter connection = dli.getConnection();
+                    if (connection != null) {
+                        return connection.getURL().getHost();
+                    }
+                }
+                return host;
+            }
+        };
+        if (!PluginJsonConfig.get(AlldebridComConfig.class).isUseHTTPSForDownloads()) {
+            // https://svn.jdownloader.org/issues/87886
+            final URL url = new URL(dllink);
+            if (StringUtils.equals("https", url.getProtocol())) {
+                logger.info("https for final downloadurls is disabled:" + dllink);
+                String newDllink = dllink.replaceFirst("https://", "http://");
+                if (url.getPort() != -1) {
+                    // remove custom https port
+                    newDllink = dllink.replace(":" + url.getPort() + "/", "/");
+                }
+                /* Check if link has changed */
+                if (!newDllink.equals(dllink)) {
+                    logger.info("New final downloadurl: " + newDllink);
+                    dllink = newDllink;
+                }
+            }
+        }
+        final int chunks = getMaxChunks(account, link);
+        logger.info("Max allowed chunks: " + chunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLinkDownloadable, br.createGetRequest(dllink), true, chunks);
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
+            checkRateLimit(br, dl.getConnection(), account, link);
+            if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
+            } else if (br.containsHTML("range not ok")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            } else {
+                /* unknown error */
+                logger.severe("Error: Unknown Error");
+                mhm.handleErrorGeneric(account, link, "Final downloadurl does not lead to a file", 50);
+            }
+        }
+        dl.startDownload();
     }
 
     /* Stolen from LinkSnappyCom */
@@ -696,121 +810,6 @@ public class AllDebridCom extends antiDDoSForHost {
 
     @SuppressWarnings("deprecation")
     private void handleDL(final Account account, final DownloadLink link, String genlink) throws Exception {
-        if (StringUtils.isEmpty(genlink)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        showMessage(link, "Task 2: Download begins!");
-        final boolean useVerifiedFileSize;
-        /* "paws" handling = old handling to disable setting verified filesize via API. */
-        final String pawsProperty = getDirectLinkProperty(link, account) + "_paws";
-        final Boolean paws;
-        if (br != null && PluginJSonUtils.getJsonValue(br, "paws") != null) {
-            paws = PluginJSonUtils.parseBoolean(PluginJSonUtils.getJsonValue(br, "paws"));
-            link.setProperty(pawsProperty, paws.booleanValue());
-        } else if (link.hasProperty(pawsProperty)) {
-            paws = link.getBooleanProperty(pawsProperty, false);
-        } else {
-            paws = false;
-        }
-        if (Boolean.FALSE.equals(paws)) {
-            logger.info("don't use verified filesize because 'paws'!");
-            useVerifiedFileSize = false;
-        } else if (link.getVerifiedFileSize() > 0) {
-            final Browser brc = br.cloneBrowser();
-            brc.setFollowRedirects(true);
-            final URLConnectionAdapter check = openAntiDDoSRequestConnection(brc, brc.createGetRequest(genlink));
-            try {
-                if (!looksLikeDownloadableContent(check)) {
-                    try {
-                        brc.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else if (check.getCompleteContentLength() < 0) {
-                    logger.info("don't use verified filesize because complete content length isn't available:" + check.getCompleteContentLength() + "==" + link.getVerifiedFileSize());
-                    useVerifiedFileSize = false;
-                } else if (check.getCompleteContentLength() == link.getVerifiedFileSize()) {
-                    logger.info("use verified filesize because it matches complete content length:" + check.getCompleteContentLength() + "==" + link.getVerifiedFileSize());
-                    useVerifiedFileSize = true;
-                } else {
-                    if (link.getDownloadCurrent() > 0) {
-                        logger.info("cannot resume different file:" + check.getCompleteContentLength() + "!=" + link.getVerifiedFileSize());
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else {
-                        logger.info("don't use verified filesize because it doesn't match complete content length:" + check.getCompleteContentLength() + "!=" + link.getVerifiedFileSize());
-                        useVerifiedFileSize = false;
-                    }
-                }
-            } finally {
-                check.disconnect();
-            }
-        } else {
-            logger.info("use verified filesize");
-            useVerifiedFileSize = true;
-        }
-        final String host = Browser.getHost(link.getDownloadURL());
-        final DownloadLinkDownloadable downloadLinkDownloadable = new DownloadLinkDownloadable(link) {
-            @Override
-            public HashInfo getHashInfo() {
-                return null;
-            }
-
-            @Override
-            public long getVerifiedFileSize() {
-                if (useVerifiedFileSize) {
-                    return super.getVerifiedFileSize();
-                } else {
-                    return -1;
-                }
-            }
-
-            @Override
-            public String getHost() {
-                final DownloadInterface dli = getDownloadInterface();
-                if (dli != null) {
-                    final URLConnectionAdapter connection = dli.getConnection();
-                    if (connection != null) {
-                        return connection.getURL().getHost();
-                    }
-                }
-                return host;
-            }
-        };
-        if (!PluginJsonConfig.get(AlldebridComConfig.class).isUseHTTPSForDownloads()) {
-            // https://svn.jdownloader.org/issues/87886
-            final URL url = new URL(genlink);
-            if (StringUtils.equals("https", url.getProtocol())) {
-                logger.info("https for final downloadurls is disabled:" + genlink);
-                genlink = genlink.replace("https://", "http://");
-                if (url.getPort() != -1) {
-                    // remove custom https port
-                    genlink = genlink.replace(":" + url.getPort() + "/", "/");
-                }
-                logger.info("New final downloadurl: " + genlink);
-            }
-        }
-        final int chunks = getMaxChunks(account, link);
-        logger.info("Max allowed chunks: " + chunks);
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLinkDownloadable, br.createGetRequest(genlink), true, chunks);
-        if (!looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (IOException e) {
-                logger.log(e);
-            }
-            checkRateLimit(br, dl.getConnection(), account, link);
-            if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
-            } else if (br.containsHTML("range not ok")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            } else {
-                /* unknown error */
-                logger.severe("Error: Unknown Error");
-                mhm.handleErrorGeneric(account, link, "Final downloadurl does not lead to a file", 50);
-            }
-        }
-        dl.startDownload();
     }
 
     private static WeakHashMap<Account, HashSet<String>> RATE_LIMITED = new WeakHashMap<Account, HashSet<String>>();

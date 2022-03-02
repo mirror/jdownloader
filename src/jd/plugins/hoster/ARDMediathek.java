@@ -236,7 +236,11 @@ public class ARDMediathek extends PluginForHost {
 
     private boolean isSubtitle(final DownloadLink dl) {
         final MediathekProperties data_src = dl.bindData(MediathekProperties.class);
-        return "subtitle".equalsIgnoreCase(data_src.getStreamingType());
+        if ("subtitle".equalsIgnoreCase(data_src.getStreamingType())) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -269,7 +273,7 @@ public class ARDMediathek extends PluginForHost {
             BufferedWriter dest;
             try {
                 dest = new BufferedWriter(new FileWriter(new File(source.getAbsolutePath().replace(".xml", ".srt"))));
-            } catch (IOException e1) {
+            } catch (final IOException e1) {
                 return false;
             }
             final String[] matches = new Regex(xmlContent, "(<p id=\"subtitle\\d+\".*?</p>)").getColumn(0);
@@ -286,6 +290,7 @@ public class ARDMediathek extends PluginForHost {
                         }
                     }
                 }
+                /* Add static key value pairs. */
                 styles_color_names.put("s1", "black");
                 for (final String info : matches) {
                     dest.write(counter++ + lineseparator);
