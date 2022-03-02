@@ -473,82 +473,71 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             link.setProperty(PROPERTY_IS_PRIVATE_VIDEO, true);
         } else {
             link.removeProperty(PROPERTY_IS_PRIVATE_VIDEO);
-        }
-        /* Only look for downloadurl if we need it! */
-        if (isDownload || !this.enableFastLinkcheck()) {
-            try {
-                dllink = getDllink(link, this.br);
-            } catch (final PluginException e) {
-                if (this.isPrivateVideo(link) && e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
-                    logger.info("ERROR_FILE_NOT_FOUND in getDllink but we have a private video so it is not offline ...");
-                } else {
-                    throw e;
-                }
-            }
-        }
-        if (!StringUtils.isEmpty(this.dllink) && !this.isHLS(this.dllink) && !isDownload && !enableFastLinkcheck()) {
-            URLConnectionAdapter con = null;
-            try {
-                /* if you don't do this then referrer is fked for the download! -raztoki */
-                final Browser brc = this.br.cloneBrowser();
-                brc.setFollowRedirects(true);
-                brc.setAllowedResponseCodes(new int[] { 405 });
-                // In case the link redirects to the finallink -
-                // br.getHeaders().put("Accept-Encoding", "identity");
-                con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(dllink));
-                final String workaroundURL = getHttpServerErrorWorkaroundURL(con);
-                if (workaroundURL != null) {
-                    con.disconnect();
-                    con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(workaroundURL));
-                }
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                    this.dllink = con.getRequest().getUrl();
-                    logger.info("dllink: " + dllink);
-                    /* Save directurl for later usage */
-                    link.setProperty(PROPERTY_DIRECTURL, this.dllink);
-                    if (StringUtils.isEmpty(finalFilename)) {
-                        /* Fallback - attempt to find final filename */
-                        final String headerFilename = Plugin.getFileNameFromHeader(con);
-                        final String filenameFromFinalDownloadurl = Plugin.getFileNameFromURL(con.getURL());
-                        if (!StringUtils.isEmpty(headerFilename)) {
-                            logger.info("Using final filename from content-disposition header: " + headerFilename);
-                            finalFilename = headerFilename;
-                            link.setFinalFileName(finalFilename);
-                        } else if (!StringUtils.isEmpty(filenameFromFinalDownloadurl)) {
-                            logger.info("Using final filename from inside final downloadurl: " + filenameFromFinalDownloadurl);
-                            finalFilename = filenameFromFinalDownloadurl;
-                            link.setFinalFileName(finalFilename);
-                        } else {
-                            logger.warning("Failed to find any final filename so far");
-                        }
-                    }
-                } else {
-                    try {
-                        brc.followConnection(true);
-                    } catch (IOException e) {
-                        logger.log(e);
-                    }
-                    exceptionNoFile();
-                }
-            } finally {
+            /* Only look for downloadurl if we need it! */
+            if (isDownload || !this.enableFastLinkcheck()) {
                 try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+                    dllink = getDllink(link, this.br);
+                } catch (final PluginException e) {
+                    if (this.isPrivateVideo(link) && e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                        logger.info("ERROR_FILE_NOT_FOUND in getDllink but we have a private video so it is not offline ...");
+                    } else {
+                        throw e;
+                    }
                 }
             }
-        }
-        if (StringUtils.isEmpty(finalFilename)) {
-            /* Last chance fallback */
-            logger.info("Looking for last chance final filename --> Trying to use FUID as filename");
-            if (this.getFUID(link) != null) {
-                logger.info("Using fuid as filename");
-                finalFilename = this.getFUID(link) + ".mp4";
-                link.setFinalFileName(finalFilename);
-            } else {
-                logger.warning("Failed to find any filename!");
+            if (!StringUtils.isEmpty(this.dllink) && !this.isHLS(this.dllink) && !isDownload && !enableFastLinkcheck()) {
+                URLConnectionAdapter con = null;
+                try {
+                    /* if you don't do this then referrer is fked for the download! -raztoki */
+                    final Browser brc = this.br.cloneBrowser();
+                    brc.setFollowRedirects(true);
+                    brc.setAllowedResponseCodes(new int[] { 405 });
+                    // In case the link redirects to the finallink -
+                    // br.getHeaders().put("Accept-Encoding", "identity");
+                    con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(dllink));
+                    final String workaroundURL = getHttpServerErrorWorkaroundURL(con);
+                    if (workaroundURL != null) {
+                        con.disconnect();
+                        con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(workaroundURL));
+                    }
+                    if (this.looksLikeDownloadableContent(con)) {
+                        if (con.getCompleteContentLength() > 0) {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
+                        this.dllink = con.getRequest().getUrl();
+                        logger.info("dllink: " + dllink);
+                        /* Save directurl for later usage */
+                        link.setProperty(PROPERTY_DIRECTURL, this.dllink);
+                        if (StringUtils.isEmpty(finalFilename)) {
+                            /* Fallback - attempt to find final filename */
+                            final String headerFilename = Plugin.getFileNameFromHeader(con);
+                            final String filenameFromFinalDownloadurl = Plugin.getFileNameFromURL(con.getURL());
+                            if (!StringUtils.isEmpty(headerFilename)) {
+                                logger.info("Using final filename from content-disposition header: " + headerFilename);
+                                finalFilename = headerFilename;
+                                link.setFinalFileName(finalFilename);
+                            } else if (!StringUtils.isEmpty(filenameFromFinalDownloadurl)) {
+                                logger.info("Using final filename from inside final downloadurl: " + filenameFromFinalDownloadurl);
+                                finalFilename = filenameFromFinalDownloadurl;
+                                link.setFinalFileName(finalFilename);
+                            } else {
+                                logger.warning("Failed to find any final filename so far");
+                            }
+                        }
+                    } else {
+                        try {
+                            brc.followConnection(true);
+                        } catch (IOException e) {
+                            logger.log(e);
+                        }
+                        exceptionNoFile();
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
             }
         }
         return AvailableStatus.TRUE;
@@ -653,7 +642,11 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     protected boolean isPrivateVideoWebsite(final Browser br) {
         /* 2020-10-09: Tested for pornyeah.com, anyporn.com, camwhoreshd.com */
-        return br.containsHTML("(?i)>\\s*This video is a private video uploaded by |Only active members can watch private videos");
+        if (br.containsHTML("(?i)>\\s*This video is a private video uploaded by |Only active members can watch private videos")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     protected boolean isPrivateVideo(final DownloadLink link) {
@@ -1110,7 +1103,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 dllink = uncryptedUrlWithoutQualityIndicator;
             } else {
                 /* Rare case */
-                logger.info("Failed to find any quality so far");
+                logger.info("Failed to find any quality in stage 3");
             }
             /*
              * TODO: Find/Implement/prefer download of "official" downloadlinks e.g. xcafe.com - in this case, "get_file" URLs won't contain
