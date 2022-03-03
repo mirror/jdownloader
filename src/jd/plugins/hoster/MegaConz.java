@@ -1105,19 +1105,20 @@ public class MegaConz extends PluginForHost {
         byte[] iv = aInt_to_aByte(0, 0, 0, 0);
         final IvParameterSpec ivSpec = new IvParameterSpec(iv);
         final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
-        Cipher cipher = Cipher.getInstance("AES/CBC/nopadding");
+        Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
         cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
         byte[] unPadded = b64decode(input);
         int len = 16 - ((unPadded.length - 1) & 15) - 1;
         byte[] payLoadBytes = new byte[unPadded.length + len];
         System.arraycopy(unPadded, 0, payLoadBytes, 0, unPadded.length);
         payLoadBytes = cipher.doFinal(payLoadBytes);
-        final String ret = new String(payLoadBytes, "UTF-8");
-        if (ret != null && !ret.startsWith("MEGA{")) {
+        String ret = new String(payLoadBytes, "UTF-8");
+        ret = new Regex(ret, "MEGA(\\{.+\\})").getMatch(0);
+        if (ret == null) {
             /* verify if the keyString is correct */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
-            return JSonStorage.restoreFromString(ret.substring(4).trim(), TypeRef.HASHMAP);
+            return JSonStorage.restoreFromString(ret, TypeRef.HASHMAP);
         }
     }
 
