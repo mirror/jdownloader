@@ -418,13 +418,13 @@ public class FreeDiscPl extends PluginForHost {
                                 throw new AccountRequiredException();
                             } else if (br.containsHTML("(?i)Wykorzystałeś limit \\d+ darmowych pobrań w tym tygodniu")) {
                                 /*
-                                 * Zypically limit reached for 5 downloads per week in free account mode (probably bad translation as more
-                                 * downloads are possible the next day.)
+                                 * Typically limit reached for 5 downloads per week in free account mode. Probably bad translation as more
+                                 * downloads are possible some minutes/hours later.
                                  */
                                 if (account != null) {
-                                    throw new AccountUnavailableException("Daily downloadlimit reached", 10 * 60 * 1000l);
+                                    throw new AccountUnavailableException("Daily downloadlimit reached", 5 * 60 * 1000l);
                                 } else {
-                                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily downloadlimit reached", 10 * 60 * 1000l);
+                                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily downloadlimit reached", 5 * 60 * 1000l);
                                 }
                             } else {
                                 logger.warning("Download impossible for unknown reasons");
