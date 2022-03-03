@@ -128,7 +128,7 @@ public class FreeDiscPl extends PluginForHost {
                 return true;
             } else {
                 /* Free(anonymous) and unknown account type */
-                return false;
+                return true;
             }
         }
     }
@@ -511,7 +511,7 @@ public class FreeDiscPl extends PluginForHost {
     }
 
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final Account account) throws Exception {
-        final String url = link.getStringProperty(getDirecturlproperty(null));
+        final String url = link.getStringProperty(getDirecturlproperty(account));
         if (StringUtils.isEmpty(url)) {
             return false;
         }
