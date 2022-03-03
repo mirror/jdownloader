@@ -241,6 +241,8 @@ public class FilestoreTo extends PluginForHost {
     private void checkErrors(final DownloadLink link) throws PluginException {
         if (br.containsHTML("(?i)Derzeit haben wir leider keinen freien Downloadslots frei\\. Bitte nochmal versuchen\\.")) {
             errorNoFreeSlots();
+        } else if (br.containsHTML("(?i)>\\s*Leider sind aktuell keine freien Downloadslots")) {
+            errorNoFreeSlots();
         } else if (br.getURL().contains("/error/limit")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
         } else if (br.containsHTML("(?i)>\\s*Datei nicht gefunden")) {
