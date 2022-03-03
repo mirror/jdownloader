@@ -139,9 +139,9 @@ public class MegaConz extends PluginForDecrypt {
                         }
                     } else {
                         con = br.openRequestConnection(br.createJSonPostRequest("https://g.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + folderID
-                                /*
-                                 * + "&domain=meganz
-                                 */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
+                        /*
+                         * + "&domain=meganz
+                         */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
                         // ->
                         // !nocache,
                         // commands.cpp
@@ -308,19 +308,19 @@ public class MegaConz extends PluginForDecrypt {
         }
         /*
          * p = parent node (ID)
-         *
+         * 
          * s = size
-         *
+         * 
          * t = type (0=file, 1=folder, 2=root, 3=inbox, 4=trash
-         *
+         * 
          * ts = timestamp
-         *
+         * 
          * h = node (ID)
-         *
+         * 
          * u = owner
-         *
+         * 
          * a = attribute (contains name)
-         *
+         * 
          * k = node key
          */
         final HashMap<String, MegaFolder> folders = new HashMap<String, MegaFolder>();
@@ -496,12 +496,13 @@ public class MegaConz extends PluginForDecrypt {
         byte[] payLoadBytes = new byte[unPadded.length + len];
         System.arraycopy(unPadded, 0, payLoadBytes, 0, unPadded.length);
         payLoadBytes = cipher.doFinal(payLoadBytes);
-        final String ret = new String(payLoadBytes, "UTF-8");
-        if (ret != null && !ret.startsWith("MEGA{")) {
+        String ret = new String(payLoadBytes, "UTF-8");
+        ret = new Regex(ret, "MEGA(\\{.+\\})").getMatch(0);
+        if (ret == null) {
             /* verify if the keyString is correct */
             return null;
         } else {
-            return ret.trim();
+            return ret;
         }
     }
 
