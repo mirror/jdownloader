@@ -392,7 +392,13 @@ public class FreeDiscPl extends PluginForHost {
                 String dllink = null;
                 final StreamDownloadMode mode = PluginJsonConfig.get(FreeDiscPlConfig.class).getStreamDownloadMode();
                 final boolean streamIsAvailable = isStreamAvailable(link);
-                if (mode == StreamDownloadMode.PREFER_STREAM && streamIsAvailable) {
+                if (this.hasAttemptedStreamDownload(link)) {
+                    /*
+                     * Prevent users from trying to resume started stream downloads with original file download --> This wouldend up in
+                     * corrupt files!
+                     */
+                    logger.info("User used streaming download last time -> Force stream download this time too");
+                } else if (mode == StreamDownloadMode.PREFER_STREAM && streamIsAvailable) {
                     logger.info("User prefers stream download over original file download");
                 } else {
                     final String fid = this.getFID(link);
