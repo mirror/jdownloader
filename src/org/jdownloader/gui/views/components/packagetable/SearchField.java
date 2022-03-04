@@ -39,6 +39,7 @@ import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRuleWrapper;
@@ -57,7 +58,6 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
     private Image                                                                              img;
     private DelayedRunnable                                                                    delayedFilter;
     private PackageControllerTable<PackageType, ChildType>                                     table2Filter;
-
     private volatile JLabel                                                                    label;
     private int                                                                                labelWidth;
     private Color                                                                              bgColor;
@@ -66,7 +66,6 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
     private int                                                                                iconGap                 = 38;
     private Border                                                                             orgBorder;
     private Image                                                                              close;
-
     private int                                                                                closeXPos               = -1;
     private boolean                                                                            mouseoverClose          = false;
     private volatile boolean                                                                   closeEnabled            = false;
@@ -85,14 +84,11 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
         this.table2Filter = table2Filter;
         img = NewTheme.I().getImage(IconKey.ICON_SEARCH, SIZE);
         close = NewTheme.I().getImage(IconKey.ICON_CLOSE, -1);
-
         LAFOptions lafo = LAFOptions.getInstance();
         bgColor = (lafo.getColorForPanelHeaderBackground());
-
         setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         popIcon = NewTheme.I().getImage(IconKey.ICON_POPUPSMALL, -1);
         delayedFilter = new DelayedRunnable(150l, 2000l) {
-
             @Override
             public String getID() {
                 return "SearchField" + table2Filter.getModel().getModelID();
@@ -102,7 +98,6 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
             public void delayedrun() {
                 updateFilter();
             }
-
         };
         orgBorder = getBorder();
         setBorder(BorderFactory.createCompoundBorder(orgBorder, BorderFactory.createEmptyBorder(0, 28, 0, 18)));
@@ -110,7 +105,6 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
         addMouseListener(this);
         // setSelectedCategory(defCategory);,
         focusAction = new AppAction() {
-
             @Override
             public void actionPerformed(ActionEvent e) {
                 requestFocus();
@@ -259,14 +253,19 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
         return false;
     }
 
+    private final static String REGEX_FILTER = "regex:";
+
     private void updateFilter() {
-        final String filterRegex = this.getText();
+        String filterRegex = this.getText();
         final boolean enabled = filterRegex != null && filterRegex.length() > 0;
         PackageControllerTableModelFilter<PackageType, ChildType> newFilter = null;
         if (enabled) {
             final List<Pattern> list = new ArrayList<Pattern>();
             try {
-                if (JsonConfig.create(GeneralSettings.class).isFilterRegex()) {
+                if (JsonConfig.create(GeneralSettings.class).isFilterRegex() || filterRegex.startsWith(REGEX_FILTER)) {
+                    if (filterRegex.startsWith(REGEX_FILTER)) {
+                        filterRegex = filterRegex.substring(REGEX_FILTER.length());
+                    }
                     list.add(LinkgrabberFilterRuleWrapper.createPattern(filterRegex, true));
                 } else {
                     String[] filters = filterRegex.split("\\|");
@@ -276,7 +275,9 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
                 }
                 newFilter = getFilter(list, getSelectedCategory());
             } catch (final Throwable e) {
-                e.printStackTrace();
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    e.printStackTrace();
+                }
             }
         }
         final PackageControllerTableModelFilter<PackageType, ChildType> oldFilter = appliedFilter.getAndSet(newFilter);
@@ -343,14 +344,11 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
     }
 
     private void onCategoryPopup() {
-
         JPopupMenu popup = new JPopupMenu();
         final SearchCat selectedCat = getSelectedCategory();
         for (final SearchCat sc : searchCategories) {
-
             popup.add(new AppAction() {
                 private final SearchCat category = sc;
-
                 {
                     setName(sc.getLabel());
                     setSmallIcon(sc.getIcon());
@@ -369,7 +367,6 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
         // pref.width = positionComp.getWidth() + ((Component)
         // e.getSource()).getWidth() + insets[1] + insets[3];
         popup.setPreferredSize(new Dimension(labelWidth + 5 + iconGap + 8 + insets.left + insets.left + insets.right, (int) pref.getHeight()));
-
         popup.show(this, -insets.left, -popup.getPreferredSize().height + insets.bottom);
     }
 
@@ -411,7 +408,6 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
         this.searchCategories = searchCategories;
         label = new JLabel() {
             public boolean isShowing() {
-
                 return true;
             }
 
@@ -419,10 +415,8 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
                 return true;
             }
         };
-
         final SearchCat preSel = getSelectedCategory();
         boolean found = false;
-
         for (SearchCat sc : searchCategories) {
             if (sc == preSel) {
                 found = true;
@@ -430,7 +424,6 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
             label.setText(sc.getLabel());
             labelWidth = Math.max(label.getPreferredSize().width, labelWidth);
         }
-
         if (!found) {
             final SearchCat old = this.selectedCategory.getAndSet(searchCategories[0]);
             if (old != searchCategories[0]) {
@@ -444,5 +437,4 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
         label.setText(sel.getLabel());
         setHelpText(sel.getHelpText());
     }
-
 }
