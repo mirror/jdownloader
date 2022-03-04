@@ -19,10 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.jdownloader.plugins.components.YetiShareCore;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -35,6 +31,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.jdownloader.plugins.components.YetiShareCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class LetsuploadCo extends YetiShareCore {
@@ -211,7 +211,7 @@ public class LetsuploadCo extends YetiShareCore {
     }
 
     @Override
-    protected boolean allowDirectDownloadAlsoWhenOnlyStoredInternalFileIDIsAvailable() {
+    protected boolean allowDirectDownloadAlsoWhenOnlyStoredInternalFileIDIsAvailable(final DownloadLink link, final Account account) {
         /* 2022-03-04: Tested */
         return true;
     }
