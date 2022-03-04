@@ -649,20 +649,65 @@ public class YetiShareCore extends antiDDoSForHost {
                 /* Now handle pre-download-waittime, captcha and other pre-download steps. */
                 if (this.dl == null) {
                     checkErrors(br, link, account);
-                    String continueLink = getContinueLink(this.br);
-                    /* Handle up to x pre-download pages before the (eventually existing) captcha */
-                    final int startValue = 0;
                     /*
                      * loopLog holds information about the continue_link of each loop so afterwards we get an overview via log output.
                      */
-                    String loopLog = continueLink;
-                    final int maxLoops = 8;
+                    String loopLog = null;
+                    /* Handle up to x pre-download pages before the (eventually existing) captcha */
+                    final int maxPreDownloadPages = 8;
+                    final int maxCaptchaAttempts = 3;
+                    int preDownloadPageCounter = 0;
+                    int captchaAttemptCounter = 0;
                     long timeBeforeCaptchaInput;
-                    boolean captchaRequired = false;
-                    for (int i = startValue; i <= maxLoops; i++) {
-                        logger.info("Handling pre-download page " + (i + 1) + " of max. allowed " + maxLoops);
+                    boolean hasRequestedCaptcha = false; // true if user has been asked for captcha at least once
+                    preDownloadLoop: do {
+                        logger.info("Handling pre-download page " + (preDownloadPageCounter + 1) + " of max " + maxPreDownloadPages + " | Captcha attempts needed: " + captchaAttemptCounter + "/" + maxCaptchaAttempts);
                         timeBeforeCaptchaInput = Time.systemIndependentCurrentJVMTimeMillis();
-                        if (i > startValue) {
+                        if (hasRequestedCaptcha && this.containsCaptcha(br)) {
+                            /* Retry on wrong captcha */
+                            captchaAttemptCounter++;
+                        } else {
+                            /* Pass to next download page */
+                            preDownloadPageCounter++;
+                        }
+                        /* Captcha, pre-download pages or new YetiShare direct_download API-style handling. */
+                        /* Check if new YetiShare API-like handling can be used. */
+                        final String continueLink;
+                        final String storedInternalFileID = this.getStoredInternalFileID(link);
+                        String internalFileID = br.getRegex("showFileInformation\\((\\d+)").getMatch(0);
+                        if (internalFileID != null || (this.getStoredInternalFileID(link) != null && this.allowDirectDownloadAlsoWhenOnlyStoredInternalFileIDIsAvailable())) {
+                            /* For new website layout handling: Assume that direct_download is available. */
+                            if (storedInternalFileID == null) {
+                                link.setProperty(PROPERTY_INTERNAL_FILE_ID, internalFileID);
+                            }
+                            internalFileID = this.getStoredInternalFileID(link);
+                            this.postPage("/account/ajax/file_details", "u=" + internalFileID);
+                            final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                            final String html = (String) root.get("html");
+                            /* Small workaround to have this html code available in our current browser instance. */
+                            br.getRequest().setHtmlCode(html);
+                            /* Check for rare case: Final downloadurl inside html provided by via json (e.g. mediafile.cc). */
+                            continueLink = getContinueLink(this.br);
+                            if (!StringUtils.isEmpty(continueLink)) {
+                                logger.info("Found possible continueLink in html provided via json: " + continueLink);
+                            } else {
+                                /* Assume that direct_download handling is possible. */
+                                this.hookBeforeV2DirectDownload(link, account, br);
+                                dl = jd.plugins.BrowserAdapter.openDownload(br, link, "/account/direct_download/" + internalFileID, resume, maxchunks);
+                                break;
+                            }
+                        } else {
+                            continueLink = getContinueLink(this.br);
+                        }
+                        final Form continueform = getContinueForm(this.br, preDownloadPageCounter, continueLink);
+                        if (continueform == null && StringUtils.isEmpty(continueLink)) {
+                            logger.info("No continue_form/continue_link available, plugin broken --> Step: " + (preDownloadPageCounter + 1));
+                            checkErrors(br, link, account);
+                            checkErrorsLastResort(br, link, account);
+                        }
+                        if (loopLog == null) {
+                            loopLog = continueLink;
+                        } else {
                             loopLog += " --> " + continueLink;
                         }
                         if (isDownloadlink(continueLink)) {
@@ -672,91 +717,91 @@ public class YetiShareCore extends antiDDoSForHost {
                              */
                             waitTime(this.br, link, timeBeforeCaptchaInput);
                             dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueLink, resume, maxchunks);
-                        } else {
-                            /* Captcha or pre-download pages */
-                            final String internalFileID = br.getRegex("showFileInformation\\((\\d+)").getMatch(0);
-                            if (internalFileID != null) {
-                                /* For new website layout handling: Assume that direct_download is available. */
-                                if (!link.hasProperty(PROPERTY_INTERNAL_FILE_ID)) {
-                                    link.setProperty(PROPERTY_INTERNAL_FILE_ID, internalFileID);
+                            break;
+                        }
+                        if (continueform == null) {
+                            /* Check if link to next download-page redirects directly to final downloadurl. */
+                            waitTime(this.br, link, timeBeforeCaptchaInput);
+                            br.setFollowRedirects(false);
+                            getPage(continueLink);
+                            /* Loop to handle redirects */
+                            while (true) {
+                                if (this.isAbort()) {
+                                    throw new InterruptedException();
                                 }
-                                this.hookBeforeV2DirectDownload(link, account, br);
-                                dl = jd.plugins.BrowserAdapter.openDownload(br, link, "/account/direct_download/" + internalFileID, resume, maxchunks);
-                                break;
-                            } else {
-                                final Form continueform = getContinueForm(this.br, i, continueLink);
-                                if (continueform == null && continueLink == null) {
-                                    logger.info("No continue_form/continue_link available, plugin broken --> Step: " + (i + 1));
-                                    checkErrors(br, link, account);
-                                    checkErrorsLastResort(br, link, account);
-                                }
-                                if (continueform == null) {
-                                    waitTime(this.br, link, timeBeforeCaptchaInput);
-                                    br.setFollowRedirects(false);
-                                    getPage(continueLink);
-                                    /* Loop to handle redirects */
-                                    while (true) {
-                                        final String redirect = this.br.getRedirectLocation();
-                                        if (redirect != null) {
-                                            if (isDownloadlink(redirect)) {
-                                                continueLink = redirect;
-                                                break;
-                                            } else {
-                                                br.followRedirect();
-                                            }
-                                        } else {
-                                            continueLink = this.getContinueLink(this.br);
-                                            break;
-                                        }
-                                    }
-                                    br.setFollowRedirects(true);
-                                    continue;
-                                } else if (br.containsHTML("data\\-sitekey=|g\\-recaptcha\\'")) {
-                                    loopLog += " --> reCaptchaV2";
-                                    captchaRequired = true;
-                                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                                    waitTime(this.br, link, timeBeforeCaptchaInput);
-                                    continueform.put("capcode", "false");
-                                    continueform.put("g-recaptcha-response", recaptchaV2Response);
-                                    continueform.setMethod(MethodType.POST);
-                                    br.setFollowRedirects(true);
-                                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
-                                } else if (br.containsHTML("solvemedia\\.com/papi/")) {
-                                    loopLog += " --> SolvemediaCaptcha";
-                                    captchaRequired = true;
-                                    logger.info("Detected captcha method \"solvemedia\" for this host");
-                                    final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-                                    if (br.containsHTML("api\\-secure\\.solvemedia\\.com/")) {
-                                        sm.setSecure(true);
-                                    }
-                                    File cf = null;
-                                    try {
-                                        cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                                    } catch (final Exception e) {
-                                        if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
-                                            throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support", -1, e);
-                                        } else {
-                                            throw e;
-                                        }
-                                    }
-                                    final String code = getCaptchaCode("solvemedia", cf, link);
-                                    final String chid = sm.getChallenge(code);
-                                    waitTime(this.br, link, timeBeforeCaptchaInput);
-                                    continueform.put("adcopy_challenge", Encoding.urlEncode(chid));
-                                    continueform.put("adcopy_response", Encoding.urlEncode(code));
-                                    continueform.setMethod(MethodType.POST);
-                                    br.setFollowRedirects(true);
-                                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
-                                } else if (continueform != null && continueform.getMethod() == MethodType.POST) {
-                                    loopLog += " --> Form_POST";
-                                    waitTime(this.br, link, timeBeforeCaptchaInput);
-                                    br.setFollowRedirects(true);
-                                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
-                                } else {
-                                    logger.warning("Unknown state");
+                                final String redirect = this.br.getRedirectLocation();
+                                if (redirect == null) {
                                     break;
                                 }
+                                if (isDownloadlink(redirect)) {
+                                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, resume, maxchunks);
+                                    break preDownloadLoop;
+                                } else {
+                                    br.followRedirect();
+                                }
                             }
+                            br.setFollowRedirects(true);
+                            continue;
+                        } else if (br.containsHTML("data\\-sitekey=|g\\-recaptcha\\'")) {
+                            loopLog += " --> reCaptchaV2";
+                            hasRequestedCaptcha = true;
+                            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                            waitTime(this.br, link, timeBeforeCaptchaInput);
+                            continueform.put("capcode", "false");
+                            continueform.put("g-recaptcha-response", recaptchaV2Response);
+                            continueform.setMethod(MethodType.POST);
+                            br.setFollowRedirects(true);
+                            dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
+                        } else if (br.containsHTML("solvemedia\\.com/papi/")) {
+                            loopLog += " --> SolvemediaCaptcha";
+                            hasRequestedCaptcha = true;
+                            logger.info("Detected captcha method \"solvemedia\" for this host");
+                            final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
+                            if (br.containsHTML("api\\-secure\\.solvemedia\\.com/")) {
+                                sm.setSecure(true);
+                            }
+                            File cf = null;
+                            try {
+                                cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                            } catch (final Exception e) {
+                                if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                                    throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support", -1, e);
+                                } else {
+                                    throw e;
+                                }
+                            }
+                            final String code = getCaptchaCode("solvemedia", cf, link);
+                            String chid = null;
+                            try {
+                                chid = sm.getChallenge(code);
+                            } catch (final PluginException e) {
+                                if (e.getLinkStatus() == LinkStatus.ERROR_CAPTCHA) {
+                                    logger.info("Wrong captcha");
+                                    if (captchaAttemptCounter >= maxCaptchaAttempts) {
+                                        logger.info("Ending main loop because: Many wrong captchas");
+                                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                                    } else {
+                                        this.invalidateLastChallengeResponse();
+                                        continue;
+                                    }
+                                } else {
+                                    throw e;
+                                }
+                            }
+                            waitTime(this.br, link, timeBeforeCaptchaInput);
+                            continueform.put("adcopy_challenge", Encoding.urlEncode(chid));
+                            continueform.put("adcopy_response", Encoding.urlEncode(code));
+                            continueform.setMethod(MethodType.POST);
+                            br.setFollowRedirects(true);
+                            dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
+                        } else if (continueform != null && continueform.getMethod() == MethodType.POST) {
+                            loopLog += " --> Form_POST";
+                            waitTime(this.br, link, timeBeforeCaptchaInput);
+                            br.setFollowRedirects(true);
+                            dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
+                        } else {
+                            logger.warning("Unknown state");
+                            break;
                         }
                         try {
                             checkResponseCodeErrors(dl.getConnection());
@@ -769,7 +814,7 @@ public class YetiShareCore extends antiDDoSForHost {
                             throw e;
                         }
                         if (looksLikeDownloadableContent(dl.getConnection())) {
-                            loopLog += " --> " + dl.getConnection().getURL().toString();
+                            logger.info("Successfully initiated download");
                             break;
                         } else {
                             try {
@@ -778,14 +823,26 @@ public class YetiShareCore extends antiDDoSForHost {
                                 logger.log(e);
                             }
                             /* Get new continue_link for the next run */
-                            continueLink = getContinueLink(this.br);
+                            logger.info("Failed to find downloadurl in this round");
                             checkErrors(br, link, account);
-                            if (captchaRequired && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                                logger.info("Wrong captcha");
-                                continue;
+                            if (preDownloadPageCounter >= maxPreDownloadPages) {
+                                logger.info("Breaking main loop because: Too many pre-download-pages");
+                                break;
+                            } else if (captchaAttemptCounter >= maxCaptchaAttempts) {
+                                logger.info("Ending main loop because: Many wrong captchas");
+                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                            }
+                            /* Captcha logger */
+                            if (hasRequestedCaptcha) {
+                                if (containsCaptcha(br)) {
+                                    this.invalidateLastChallengeResponse();
+                                    logger.info("Wrong captcha");
+                                } else {
+                                    this.validateLastChallengeResponse();
+                                }
                             }
                         }
-                    }
+                    } while (true);
                     logger.info("loopLog: " + loopLog);
                 }
             }
@@ -820,6 +877,14 @@ public class YetiShareCore extends antiDDoSForHost {
         }
         dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), link));
         dl.startDownload();
+    }
+
+    protected boolean containsCaptcha(final Browser br) {
+        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     protected void hookBeforeV2DirectDownload(final DownloadLink link, final Account account, final Browser br) throws Exception {
@@ -867,8 +932,13 @@ public class YetiShareCore extends antiDDoSForHost {
      * Most of all times we don't have this but if a website is using the "new" YetiShare script version and files were added as part of a
      * folder, we do have these internal fileIDs available!
      */
-    protected String getInternalFileID(final DownloadLink link) {
+    protected String getStoredInternalFileID(final DownloadLink link) {
         return link.getStringProperty(PROPERTY_INTERNAL_FILE_ID);
+    }
+
+    /** In some cases this can be useful to skip captchas and waittimes. */
+    protected boolean allowDirectDownloadAlsoWhenOnlyStoredInternalFileIDIsAvailable() {
+        return false;
     }
 
     protected Form getContinueForm(final Browser br, final int loop_counter, final String continue_link) throws PluginException {
@@ -1440,7 +1510,7 @@ public class YetiShareCore extends antiDDoSForHost {
     protected boolean isOfflineWebsite(final Browser br, final DownloadLink link) throws Exception {
         // final boolean currentURLContainsFID = br.getURL().contains(this.getFUIDFromURL(link));
         final boolean isDownloadableOldWebsiteOrFreeMode = this.getContinueLink(br) != null;
-        final boolean isDownloadableNewWebsite = this.getInternalFileID(link) != null;
+        final boolean isDownloadableNewWebsite = this.getStoredInternalFileID(link) != null;
         final boolean isDownloadable = isDownloadableOldWebsiteOrFreeMode || isDownloadableNewWebsite;
         final boolean isFileWebsite = br.containsHTML("class=\"downloadPageTable(V2)?\"") || br.containsHTML("class=\"download\\-timer\"");
         final boolean isErrorPage = br.getURL().contains("/error.html") || br.getURL().contains("/index.html");
@@ -2363,7 +2433,7 @@ public class YetiShareCore extends antiDDoSForHost {
         final UrlQuery query = new UrlQuery();
         query.add("access_token", this.getAPIAccessToken(account));
         query.add("account_id", Integer.toString(this.getAPIAccountID(account)));
-        query.add("file_id", getInternalFileID(link));
+        query.add("file_id", getStoredInternalFileID(link));
         /* Availablecheck not required as we do check for offline here! */
         if (this.enableAPIOnlyMode()) {
             prepBrowserAPI(br);
@@ -2457,7 +2527,7 @@ public class YetiShareCore extends antiDDoSForHost {
             final UrlQuery query = new UrlQuery();
             query.add("access_token", this.getAPIAccessToken(account, apikey1, apikey2));
             query.add("account_id", Integer.toString(this.getAPIAccountID(account, apikey1, apikey2)));
-            query.add("file_id", getInternalFileID(link));
+            query.add("file_id", getStoredInternalFileID(link));
             /* Availablecheck not required as download call will return offline message. */
             // this.requestFileInformationAPI(link, account);
             this.getPage(this.getAPIBase() + "/file/download?" + query.toString());

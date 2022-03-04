@@ -143,7 +143,7 @@ public class LetsuploadCo extends YetiShareCore {
 
     @Override
     protected void handlePasswordProtection(final DownloadLink link, final Account account, final Browser br) throws Exception {
-        final String internalFileID = this.getInternalFileID(link);
+        final String internalFileID = this.getStoredInternalFileID(link);
         if (getPasswordProtectedForm(this.br) == null && internalFileID != null) {
             /* 2022-01-12: Special handling */
             final Browser brc = br.cloneBrowser();
@@ -208,5 +208,11 @@ public class LetsuploadCo extends YetiShareCore {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    protected boolean allowDirectDownloadAlsoWhenOnlyStoredInternalFileIDIsAvailable() {
+        /* 2022-03-04: Tested */
+        return true;
     }
 }
