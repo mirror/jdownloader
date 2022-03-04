@@ -691,9 +691,15 @@ public class YetiShareCore extends antiDDoSForHost {
                                 logger.info("Found possible continueLink in html provided via json: " + continueLink);
                             } else {
                                 /* Assume that direct_download handling is possible. */
-                                this.hookBeforeV2DirectDownload(link, account, br);
-                                dl = jd.plugins.BrowserAdapter.openDownload(br, link, "/account/direct_download/" + this.getStoredInternalFileID(link), resume, maxchunks);
-                                break;
+                                if (br.containsHTML("triggerFileDownload\\(" + this.getStoredInternalFileID(link))) {
+                                    logger.info("Attempting direct_download");
+                                    this.hookBeforeV2DirectDownload(link, account, br);
+                                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, "/account/direct_download/" + this.getStoredInternalFileID(link), resume, maxchunks);
+                                    break;
+                                } else {
+                                    /* This should never happen */
+                                    logger.warning("direct_download impossible for unknown reasons");
+                                }
                             }
                         } else {
                             continueLink = getContinueLink(this.br);
@@ -715,7 +721,7 @@ public class YetiShareCore extends antiDDoSForHost {
                              * We don't need a captcha in this case/loop/pass for sure! E.g. host 'filecad.com'.
                              */
                             waitTime(this.br, link, timeBeforeCaptchaInput);
-                            dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueLink, resume, maxchunks);
+                            this.dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueLink, resume, maxchunks);
                             break;
                         }
                         if (continueform == null) {
@@ -723,24 +729,28 @@ public class YetiShareCore extends antiDDoSForHost {
                             waitTime(this.br, link, timeBeforeCaptchaInput);
                             br.setFollowRedirects(false);
                             getPage(continueLink);
+                            this.dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueLink, resume, maxchunks);
+                            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                                break preDownloadLoop;
+                            }
+                            br.followConnection();
                             /* Loop to handle redirects */
                             while (true) {
-                                if (this.isAbort()) {
-                                    throw new InterruptedException();
-                                }
                                 final String redirect = this.br.getRedirectLocation();
                                 if (redirect == null) {
                                     break;
                                 }
-                                if (isDownloadlink(redirect)) {
-                                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, resume, maxchunks);
+                                this.dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, resume, maxchunks);
+                                if (this.looksLikeDownloadableContent(dl.getConnection())) {
                                     break preDownloadLoop;
-                                } else {
-                                    br.followRedirect();
+                                }
+                                br.followConnection();
+                                br.followRedirect();
+                                if (this.isAbort()) {
+                                    throw new InterruptedException();
                                 }
                             }
                             br.setFollowRedirects(true);
-                            continue;
                         } else if (br.containsHTML("data\\-sitekey=|g\\-recaptcha\\'")) {
                             loopLog += " --> reCaptchaV2";
                             hasRequestedCaptcha = true;
@@ -812,7 +822,7 @@ public class YetiShareCore extends antiDDoSForHost {
                             }
                             throw e;
                         }
-                        if (looksLikeDownloadableContent(dl.getConnection())) {
+                        if (looksLikeDownloadableContent(this.dl.getConnection())) {
                             logger.info("Successfully initiated download");
                             break;
                         } else {
@@ -821,6 +831,7 @@ public class YetiShareCore extends antiDDoSForHost {
                             } catch (final IOException e) {
                                 logger.log(e);
                             }
+                            this.dl = null;
                             /* Get new continue_link for the next run */
                             logger.info("Failed to find downloadurl in this round");
                             checkErrors(br, link, account);
@@ -879,7 +890,7 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     protected boolean containsCaptcha(final Browser br) {
-        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|solvemedia\\.com/papi/)")) {
             return true;
         } else {
             return false;
