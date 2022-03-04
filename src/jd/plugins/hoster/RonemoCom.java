@@ -18,10 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -30,6 +26,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RonemoCom extends antiDDoSForHost {
@@ -42,7 +42,7 @@ public class RonemoCom extends antiDDoSForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "ronemo.com" });
+        ret.add(new String[] { "ronemo.com", "ronemo.net" });
         return ret;
     }
 
@@ -106,14 +106,17 @@ public class RonemoCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        final Regex hlsinfo = br.getRegex("https?://rocdn\\.org/([a-z0-9]+)/f/playlist\\.m3u8");
+        final Regex hlsinfo = br.getRegex("(https?://rocdn\\.(?:org|net)/([a-z0-9]+)/f/playlist\\.m3u8)");
         if (!hlsinfo.matches()) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String hlsContentID = hlsinfo.getMatch(0);
-        final String hlsMaster = "https://hls." + this.getHost() + "/" + hlsContentID + "/f/playlist.m3u8";
+        final String hlsMaster = hlsinfo.getMatch(0);
         br.getPage(hlsMaster);
-        final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+        final List<HlsContainer> qualities = HlsContainer.getHlsQualities(this.br);
+        final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(qualities);
+        if (hlsbest == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         checkFFmpeg(link, "Download a HLS Stream");
         dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
         dl.startDownload();

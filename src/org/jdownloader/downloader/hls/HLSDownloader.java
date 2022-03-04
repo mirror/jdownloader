@@ -1204,7 +1204,7 @@ public class HLSDownloader extends DownloadInterface {
                         MeteredThrottledInputStream meteredThrottledInputStream = null;
                         final long timeoutBuffer = 10 * 1000l;
                         try {
-                            retryLoop: for (int retry = 0; retry < 10; retry++) {
+                            retryLoop: for (int retry = 0; retry < 5; retry++) {
                                 try {
                                     final jd.http.requests.GetRequest getRequest = new jd.http.requests.GetRequest(buildDownloadUrl(downloadURL));
                                     final long byteRange[] = segment.getByteRange();
@@ -1508,13 +1508,13 @@ public class HLSDownloader extends DownloadInterface {
                 case 504:
                 case 503:
                 case 502:
-                    Thread.sleep(250 + (retry * 1000));
+                    Thread.sleep(250 + (retry * 100));
                     return true;
                 default:
                     return false;
                 }
             } else {
-                Thread.sleep(250 + (retry * 1000));
+                Thread.sleep(250 + (retry * 100));
                 return true;
             }
         } catch (InterruptedException ie) {
