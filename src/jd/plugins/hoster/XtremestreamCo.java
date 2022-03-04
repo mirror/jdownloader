@@ -20,7 +20,12 @@ import java.util.List;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.FEmbedComConfig;
+import org.jdownloader.plugins.components.config.FEmbedComConfig.Quality;
+import org.jdownloader.plugins.components.config.XtremestreamCoConfig;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -119,9 +124,24 @@ public class XtremestreamCo extends antiDDoSForHost {
         requestFileInformation(link);
         /* 2022-02-28: They're using an abnormal kind of m3u8 lists which is why a plugin is required in the first place. */
         br.getPage("/player/load_m3u8_xtremestream.php?data=" + this.getFID(link));
-        final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+        final List<HlsContainer> qualities = HlsContainer.getHlsQualities(this.br);
+        final HlsContainer bestQuality = HlsContainer.findBestVideoByBandwidth(qualities);
+        HlsContainer selectedQuality = null;
+        final int preferredQualityHeight = this.getUserPreferredQualityHeight();
+        for (final HlsContainer quality : qualities) {
+            if (quality.getHeight() == preferredQualityHeight) {
+                selectedQuality = quality;
+                break;
+            }
+        }
+        final String downloadurl;
+        if (selectedQuality != null) {
+            downloadurl = selectedQuality.getDownloadurl();
+        } else {
+            downloadurl = bestQuality.getDownloadurl();
+        }
         checkFFmpeg(link, "Download a HLS Stream");
-        dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
+        dl = new HLSDownloader(link, br, downloadurl);
         dl.startDownload();
     }
 
@@ -140,5 +160,27 @@ public class XtremestreamCo extends antiDDoSForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return XtremestreamCoConfig.class;
+    }
+
+    private int getUserPreferredQualityHeight() {
+        final Quality quality = PluginJsonConfig.get(FEmbedComConfig.class).getPreferredStreamQuality();
+        switch (quality) {
+        case Q360:
+            return 360;
+        case Q480:
+            return 480;
+        case Q720:
+            return 720;
+        case Q1080:
+            return 1080;
+        default:
+            /* E.g. BEST */
+            return 1080;
+        }
     }
 }

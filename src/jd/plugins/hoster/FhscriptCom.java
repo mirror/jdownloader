@@ -112,11 +112,11 @@ public class FhscriptCom extends YetiShareCore {
     @Override
     protected boolean supportsAPIDownloads(final DownloadLink link, final Account account) {
         /* 2021-04-23: API allows downloads (well it's a demo website so that makes sense ;) ) */
-        return this.getInternalFileID(link) != null && this.canUseAPI();
+        return this.getStoredInternalFileID(link) != null && this.canUseAPI();
     }
 
     @Override
     protected boolean supportsAPISingleAvailablecheck(final DownloadLink link) {
-        return this.getInternalFileID(link) != null && this.canUseAPI();
+        return this.getStoredInternalFileID(link) != null && this.canUseAPI();
     }
 }
