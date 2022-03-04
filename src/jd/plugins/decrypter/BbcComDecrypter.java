@@ -307,6 +307,13 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
         }
+        /* 2022-03-04 e.g. https://www.bbc.com/news/av/world-europe-60608706 */
+        final String[] newsVpids = br.getRegex("version_offset:(p[a-z0-9]+)").getColumn(0);
+        for (final String newsVpid : newsVpids) {
+            final DownloadLink dl = generateDownloadlink(newsVpid);
+            dl.setContentUrl(parameter);
+            decryptedLinks.add(dl);
+        }
         // final String jsonMorphMultiple = br.getRegex("Morph\\.setPayload\\('[^\\']+', (\\{.*?\\})\\);").getMatch(0);
         if (this.br.getURL().matches(TYPE_PROGRAMMES)) {
             if (decryptedLinks.isEmpty()) {

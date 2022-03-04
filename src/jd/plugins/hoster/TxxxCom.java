@@ -70,8 +70,8 @@ public class TxxxCom extends KernelVideoSharingComV2 {
 
     @Override
     protected String getAPIParam1(final String videoID) {
-        if (videoID.length() > 3) {
-            return videoID.substring(0, 2) + "000000";
+        if (videoID.length() >= 2) {
+            return videoID.substring(0, 1) + "000000";
         } else {
             return null;
         }
@@ -79,8 +79,8 @@ public class TxxxCom extends KernelVideoSharingComV2 {
 
     @Override
     protected String getAPICroppedVideoID(final String videoID) {
-        if (videoID.length() > 5) {
-            return videoID.substring(0, 5) + "000";
+        if (videoID.length() > 4) {
+            return videoID.substring(0, 4) + "000";
         } else {
             return null;
         }
