@@ -167,6 +167,9 @@ public class TwitterCom extends PluginForHost {
                     } else {
                         useCrawler = false;
                     }
+                } else if (!link.hasProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_BITRATE)) {
+                    /* Link was added to host plugin directly -> Don't use crawler handling. */
+                    useCrawler = false;
                 } else {
                     useCrawler = true;
                 }
