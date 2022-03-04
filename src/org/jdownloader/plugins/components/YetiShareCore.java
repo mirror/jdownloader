@@ -674,14 +674,13 @@ public class YetiShareCore extends antiDDoSForHost {
                         /* Check if new YetiShare API-like handling can be used. */
                         final String continueLink;
                         final String storedInternalFileID = this.getStoredInternalFileID(link);
-                        String internalFileID = br.getRegex("showFileInformation\\((\\d+)").getMatch(0);
-                        if (internalFileID != null || (this.getStoredInternalFileID(link) != null && this.allowDirectDownloadAlsoWhenOnlyStoredInternalFileIDIsAvailable())) {
+                        final String internalFileIDFromHTML = br.getRegex("showFileInformation\\((\\d+)").getMatch(0);
+                        if (internalFileIDFromHTML != null || (this.getStoredInternalFileID(link) != null && this.allowDirectDownloadAlsoWhenOnlyStoredInternalFileIDIsAvailable())) {
                             /* For new website layout handling: Assume that direct_download is available. */
                             if (storedInternalFileID == null) {
-                                link.setProperty(PROPERTY_INTERNAL_FILE_ID, internalFileID);
+                                link.setProperty(PROPERTY_INTERNAL_FILE_ID, internalFileIDFromHTML);
                             }
-                            internalFileID = this.getStoredInternalFileID(link);
-                            this.postPage("/account/ajax/file_details", "u=" + internalFileID);
+                            this.postPage("/account/ajax/file_details", "u=" + this.getStoredInternalFileID(link));
                             final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                             final String html = (String) root.get("html");
                             /* Small workaround to have this html code available in our current browser instance. */
@@ -693,7 +692,7 @@ public class YetiShareCore extends antiDDoSForHost {
                             } else {
                                 /* Assume that direct_download handling is possible. */
                                 this.hookBeforeV2DirectDownload(link, account, br);
-                                dl = jd.plugins.BrowserAdapter.openDownload(br, link, "/account/direct_download/" + internalFileID, resume, maxchunks);
+                                dl = jd.plugins.BrowserAdapter.openDownload(br, link, "/account/direct_download/" + this.getStoredInternalFileID(link), resume, maxchunks);
                                 break;
                             }
                         } else {
