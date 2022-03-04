@@ -35,7 +35,7 @@ public interface FreeDiscPlConfig extends PluginConfigInterface {
         NONE {
             @Override
             public String getLabel() {
-                return "Do not download videostreams";
+                return "Do not download audio-/videostreams";
             }
         },
         PREFER_STREAM {

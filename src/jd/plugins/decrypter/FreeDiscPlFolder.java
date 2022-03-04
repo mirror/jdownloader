@@ -78,20 +78,31 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
         final Regex dir = new Regex(param.getCryptedUrl(), this.getSupportedLinks());
         final String user = dir.getMatch(0);
         final String folderID = dir.getMatch(1);
-        final String folderSlug = dir.getMatch(3);
-        final String parameter = param.toString();
+        // final String folderSlug = dir.getMatch(3);
         br.setFollowRedirects(true);
         prepBR(this.br);
         FreeDiscPl.prepBRAjax(this.br);
-        getPage("https://" + this.getHost() + "/directory/directory_data/get/" + user + "/" + folderID, param);
-        if (this.br.getHttpConnection().getResponseCode() == 410) {
-            decryptedLinks.add(createOfflinelink(parameter));
+        /* First let's find the absolute path to the folder we want. If we fail to do so we can assume that it is offline. */
+        getPage("https://" + this.getHost() + "/directory/directory_data/get_tree/" + user, param);
+        final Map<String, Object> responseFolderTree = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Map<String, Object>> folderTree = (Map<String, Map<String, Object>>) JavaScriptEngineFactory.walkJson(responseFolderTree, "response/data");
+        final Map<String, Object> folderInfo = findFolderMap(folderTree, folderID);
+        if (folderInfo == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String folderPath = findFolderPath(folderTree, folderID);
+        final String dir_count = folderInfo.get("dir_count").toString();
+        final String file_count = folderInfo.get("file_count").toString();
+        if (dir_count.equals("0") && file_count.equals("0")) {
+            /* Folder is empty --> Return dummy item */
+            final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER_" + folderPath, "This folder is empty");
+            decryptedLinks.add(dummy);
             return decryptedLinks;
         }
-        final String fpName = folderSlug;
+        getPage("https://" + this.getHost() + "/directory/directory_data/get/" + user + "/" + folderID, param);
         final boolean crawlSubfolders = PluginJsonConfig.get(FreeDiscPlConfig.class).isCrawlSubfolders();
-        final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final Map<String, Map<String, Object>> data = (Map<String, Map<String, Object>>) JavaScriptEngineFactory.walkJson(root, "response/data/data");
+        final Map<String, Object> responseFolder = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Map<String, Object>> data = (Map<String, Map<String, Object>>) JavaScriptEngineFactory.walkJson(responseFolder, "response/data/data");
         for (final Map<String, Object> resource : data.values()) {
             final String type = resource.get("type").toString();
             final boolean isFolder = type.equalsIgnoreCase("d");
@@ -108,21 +119,60 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
                 realTitle += realExtension;
             }
             final DownloadLink dl = this.createDownloadlink("https://" + this.getHost() + "/" + user + "," + type + "-" + id + "-" + name_url);
-            if (isFolder) {
-                /* TODO */
-            } else {
+            if (!isFolder) {
                 dl.setName(realTitle);
                 dl.setDownloadSize(SizeFormatter.getSize(filesize));
                 dl.setAvailable(true);
             }
+            dl.setRelativeDownloadFolderPath(folderPath);
             decryptedLinks.add(dl);
         }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
-        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(folderPath);
+        fp.addLinks(decryptedLinks);
         return decryptedLinks;
+    }
+
+    private Map<String, Object> findFolderMap(final Map<String, Map<String, Object>> folderTree, final String folderID) {
+        for (final Map<String, Object> folders : folderTree.values()) {
+            for (final Object folderO : folders.values()) {
+                final Map<String, Object> folder = (Map<String, Object>) folderO;
+                if (folder.get("id").toString().equals(folderID)) {
+                    return folder;
+                }
+            }
+        }
+        return null;
+    }
+
+    private String findFolderPath(final Map<String, Map<String, Object>> folderTree, final String currentFolderID) {
+        final ArrayList<String> dupes = new ArrayList<String>();
+        Map<String, Object> folderInfo = null;
+        String path = null;
+        int depth = 0;
+        do {
+            final String parent_id;
+            if (depth == 0) {
+                parent_id = currentFolderID;
+            } else {
+                parent_id = folderInfo.get("parent_id").toString();
+            }
+            if (dupes.contains(parent_id)) {
+                /* Root has parent_id of itself --> Prevent infinite root - we're done! */
+                return path;
+            }
+            dupes.add(parent_id);
+            folderInfo = findFolderMap(folderTree, parent_id);
+            final String folderName = folderInfo.get("name").toString();
+            if (path == null) {
+                path = folderName;
+            } else {
+                /* Build path from inside to root. */
+                path = folderName + "/" + path;
+            }
+            depth++;
+        } while (!this.isAbort());
+        return path;
     }
 
     private void getPage(final String url, final CryptedLink param) throws Exception {

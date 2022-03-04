@@ -269,7 +269,7 @@ public class FreeDiscPl extends PluginForHost {
         /*
          * TODO: Check/fix strange bug: Sometimes we get redirected to an empty template e.g. resulting in filename with value "{{name}}".
          */
-        String fileName = br.getRegex("itemprop=\"name\">\\s*[^\\{]([^<>\"]*?)</h").getMatch(0);
+        String fileName = br.getRegex("itemprop=\"name\">\\s*([^\\{][^<>\"]*?)</h").getMatch(0);
         // itemprop="name" style=" font-size: 17px; margin-top: 6px;">Alternatywne Metody Analizy technicznej .pdf</h1>
         if (fileName == null) {
             fileName = br.getRegex("itemprop=\"name\"( style=\"[^<>\"/]+\")?>([^<>\"]*?)</h1>").getMatch(1);
@@ -478,6 +478,8 @@ public class FreeDiscPl extends PluginForHost {
                     }
                     /* This will ensure that file-extension will be corrected later on downloadstart! */
                     link.setProperty(HAS_ATTEMPTED_STREAM_DOWNLOAD, true);
+                    /* Important! Stream-filesize can be different than previously set verifiedFilesize! */
+                    link.setVerifiedFileSize(-1);
                 }
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(link, account));
                 if (!this.looksLikeDownloadableContent(dl.getConnection())) {
