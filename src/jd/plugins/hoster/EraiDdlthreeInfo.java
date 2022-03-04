@@ -156,7 +156,7 @@ public class EraiDdlthreeInfo extends YetiShareCore {
 
     @Override
     protected void checkErrorsLastResort(final Browser br, final DownloadLink link, final Account account) throws PluginException {
-        if (getInternalFileID(link, br) == null) {
+        if (getInternalFileID(link) == null) {
             /*
              * 2020-11-12: Cannot download without this ID! Needs to be set in crawler in beforehand!
              */
