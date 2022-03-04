@@ -357,7 +357,7 @@ public class PremboxCom extends PluginForHost {
         br.getPage(API_SERVER + "/supportedHosts");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
-        final ArrayList<Object> ressourcelist = (ArrayList) entries.get("data");
+        final List<Object> ressourcelist = (List) entries.get("data");
         /**
          * Explanation of their status-types: Healthy = working, Fragile = may work or not - if not will be fixed within the next 72 hours
          * (support also said it means that they currently have no accounts for this host), Limited = broken, will be fixed tomorrow, dead =

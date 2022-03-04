@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -108,8 +109,12 @@ public class BaixarPremiumNetContaComboComBr extends PluginForHost {
             handleErrorRetries("dllinknull", 50, 2 * 60 * 1000l);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             jd.plugins.hoster.BaixarPremiumNet.handleDlErrors(this.br, this.currAcc);
             logger.info("Unhandled download error on baixarpremium.net: " + br.toString());
             handleErrorRetries("unknowndlerror", 50, 2 * 60 * 1000l);

@@ -126,15 +126,15 @@ public class AudioMa extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             filename = artist + " - " + songname;
-        } else if (link.getDownloadURL().matches(TYPE_API)) {
+        } else if (link.getPluginPatternMatcher().matches(TYPE_API)) {
             br.getPage(link.getStringProperty("mainlink", null));
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = link.getStringProperty("plain_filename", null);
         } else {
-            br.getPage(link.getDownloadURL());
-            if (br.containsHTML(">Page not found<")) {
+            br.getPage(link.getPluginPatternMatcher());
+            if (br.containsHTML(">\\s*Page not found<")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = br.getRegex("<aside class=\"span2\">[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
@@ -163,6 +163,10 @@ public class AudioMa extends PluginForHost {
             if (StringUtils.isEmpty(dllink)) {
                 dllink = PluginJSonUtils.getJsonValue(br, "streaming_url");
             }
+            // if (StringUtils.isEmpty(dllink)) {
+            // final String dlurl = getOAuthQueryStringDownload(br);
+            // br.postPage(dlurl, "session=TODO&environment=desktop-web&section=Play%20Song");
+            // }
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -220,18 +224,31 @@ public class AudioMa extends PluginForHost {
         String apiConsumerSecret = cbr.getRegex("API_CONSUMER_SECRET:\"([^\"]+)\"").getMatch(0);
         apiConsumerSecret = "f3ac5b086f3eab260520d8e3049561e6";
         String method = "GET";
-        String requestUrlFmt;
+        final String requestUrl;
         if ("playlist".equals(musicType)) {
-            requestUrlFmt = "%s/%s/%s/%s/%s";
+            requestUrl = apiUrl + "/" + apiVersion + "/" + musicType + "/" + artistId + "/" + musicSlug;
         } else {
-            requestUrlFmt = "%s/%s/music/%s/%s/%s";
+            requestUrl = apiUrl + "/" + apiVersion + "/music/" + musicType + "/" + artistId + "/" + musicSlug;
         }
-        String requestUrl = String.format(requestUrlFmt, apiUrl, apiVersion, musicType, artistId, musicSlug);
         String requestParam = String.format("oauth_consumer_key=%s&oauth_nonce=%s&oauth_signature_method=HMAC-SHA1&oauth_timestamp=%d&oauth_version=1.0", apiConsumerKey, generateNonce(32), (int) (System.currentTimeMillis() / 1000l));
         String seed = String.format("%s&%s&%s", method, Encoding.urlEncode(requestUrl), Encoding.urlEncode(requestParam));
         String oauthSignature = getOAuthSignature(seed, apiConsumerSecret + "&");
         return String.format("%s?%s&oauth_signature=%s", requestUrl, requestParam, oauthSignature);
     }
+    // public static String getOAuthQueryStringDownload(final Browser br) throws Exception {
+    // final String apiUrl = "https://api.audiomack.com";
+    // final String apiVersion = "v1";
+    // final String apiConsumerKey = "audiomack-js";
+    // final String apiConsumerSecret = "f3ac5b086f3eab260520d8e3049561e6";
+    // String method = "POST";
+    // String requestUrl = "https://api.audiomack.com/v1/music/123456/play";
+    // String requestParam =
+    // String.format("oauth_consumer_key=%s&oauth_nonce=%s&oauth_signature_method=HMAC-SHA1&oauth_timestamp=%d&oauth_version=1.0",
+    // apiConsumerKey, generateNonce(32), (int) (System.currentTimeMillis() / 1000l));
+    // String seed = String.format("%s&%s&%s", method, Encoding.urlEncode(requestUrl), Encoding.urlEncode(requestParam));
+    // String oauthSignature = getOAuthSignature(seed, apiConsumerSecret + "&");
+    // return String.format("%s?%s&oauth_signature=%s", requestUrl, requestParam, oauthSignature);
+    // }
 
     private static String generateNonce(final int range) {
         String alphaNum = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
