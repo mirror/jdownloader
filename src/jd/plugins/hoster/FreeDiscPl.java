@@ -23,8 +23,10 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.config.FreeDiscPlConfig;
 import org.jdownloader.plugins.components.config.FreeDiscPlConfig.StreamDownloadMode;
@@ -167,6 +169,12 @@ public class FreeDiscPl extends PluginForHost {
         return br;
     }
 
+    public static Browser prepBRAjax(final Browser br) {
+        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        return br;
+    }
+
     @Override
     public String getLinkID(final DownloadLink link) {
         final String linkid = getFID(link);
@@ -193,7 +201,7 @@ public class FreeDiscPl extends PluginForHost {
     private String getWeakFilename(final DownloadLink link) {
         if (link.getPluginPatternMatcher().matches(TYPE_FILE)) {
             final String titleWithExtHint = new Regex(link.getPluginPatternMatcher(), TYPE_FILE).getMatch(0);
-            final String extFromURL = getExtensionFromFileURL(link.getPluginPatternMatcher());
+            final String extFromURL = getExtensionFromNameInFileURL(link.getPluginPatternMatcher());
             if (extFromURL != null) {
                 final String titleWithoutExtHint = titleWithExtHint.substring(0, titleWithExtHint.lastIndexOf("-"));
                 return titleWithoutExtHint + extFromURL;
@@ -282,7 +290,7 @@ public class FreeDiscPl extends PluginForHost {
         }
         if (fileName != null) {
             fileName = Encoding.htmlDecode(fileName).trim();
-            final String extensionFromURL = getExtensionFromFileURL(regexFileURL(br, fid));
+            final String extensionFromURL = getExtensionFromNameInFileURL(regexFileURL(br, fid));
             /* Apply or fix filename extension if needed. */
             if (extensionFromURL != null && !fileName.toLowerCase(Locale.ENGLISH).endsWith(extensionFromURL.toLowerCase(Locale.ENGLISH))) {
                 fileName += extensionFromURL;
@@ -299,7 +307,7 @@ public class FreeDiscPl extends PluginForHost {
         return br.getRegex("(https?://[^/\"]+/[^,\"]+,f-" + fid + ",[^/\"]+)").getMatch(0);
     }
 
-    private static String getExtensionFromFileURL(final String fileURL) {
+    public static String getExtensionFromNameInFileURL(final String fileURL) {
         final String unsafeExt = new Regex(fileURL, "-([A-Za-z0-9]+)$").getMatch(0);
         if (unsafeExt == null) {
             return null;
@@ -711,8 +719,31 @@ public class FreeDiscPl extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
+        final Browser brc = br.cloneBrowser();
+        prepBRAjax(brc);
+        brc.getPage("/settings/get/");
+        final Map<String, Object> root = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> response = (Map<String, Object>) root.get("response");
+        final Map<String, Object> profile = (Map<String, Object>) response.get("profile");
+        final Map<String, Object> user_settings = (Map<String, Object>) response.get("user_settings");
+        final long points = ((Number) profile.get("points")).longValue();
+        final String register_date = profile.get("register_date").toString();
+        ai.setCreateTime(TimeFormatter.getMilliSeconds(register_date, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
+        ai.setPremiumPoints(points);
         ai.setUnlimitedTraffic();
-        account.setType(AccountType.FREE);
+        /* TODO: Find out differences between Free and Premium accounts */
+        final String accStatus;
+        if (((Boolean) profile.get("is_premium")) == Boolean.TRUE) {
+            account.setType(AccountType.PREMIUM);
+            accStatus = "Premium Account";
+        } else {
+            account.setType(AccountType.FREE);
+            accStatus = "Free Account";
+        }
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            final int free_downloads_count = Integer.parseInt(user_settings.get("free_downloads_count").toString());
+            ai.setStatus(accStatus + " | Free DLs: " + free_downloads_count);
+        }
         account.setMaxSimultanDownloads(-1);
         account.setConcurrentUsePossible(false);
         return ai;
