@@ -3,6 +3,7 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
@@ -56,16 +57,28 @@ public class BentBoxCo extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please enter your e-mail/password for bentbox.co website!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                     account.clearCookies("");
+                    br.getPage("https://bentbox.co/");
                     br.getPage("https://bentbox.co/signin");
+                    br.cloneBrowser().getPage("https://bentbox.co/get_pre_check.php");
+                    br.cloneBrowser().postPage("https://bentbox.co/signin_scripts/__get_pre_assessment_.php", "");
+                    br.cloneBrowser().postPage("https://bentbox.co/signin_scripts/session_check_one.php", "");
+                    br.cloneBrowser().postPage("https://bentbox.co/signin_scripts/session_check_two.php", "");
+                    br.cloneBrowser().postPage("https://bentbox.co/signin_scripts/session_check_three.php", "");
+                    final String signin_check = br.getRegex("\"(signin_check.*?)\"").getMatch(0);
                     final Form login = new Form();
                     login.setMethod(MethodType.POST);
-                    login.setAction("https://bentbox.co/signin_check");
+                    login.setAction("https://bentbox.co/" + signin_check);
                     login.put("email_address", Encoding.urlEncode(userName));
                     login.put("password", Encoding.urlEncode(account.getPass()));
                     // login.put("robot_check", "notarobot");
                     login.put("robot_check", br.getRegex("robot_check\\s*=\\s*\"([^<>\"]+)\"").getMatch(0));
-                    login.put("redirectURL", "?");
-                    br.submitForm(login);
+                    login.put("redirectURL", "");
+                    login.put("message", "");
+                    final PostRequest request = (PostRequest) br.createFormRequest(login);
+                    request.setContentType("application/x-www-form-urlencoded; charset=UTF-8");
+                    request.getHeaders().put("Origin", "https://bentbox.co");
+                    request.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    br.getPage(request);
                     if (!isCookieSet(br, "userId") || !isCookieSet(br, "accessToken")) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
