@@ -642,10 +642,6 @@ public class YetiShareCore extends antiDDoSForHost {
             } while (true);
             if (this.dl == null) {
                 parseAndSetYetiShareVersion(this.br, account);
-                this.checkErrors(br, link, account);
-                if (isOfflineWebsite(this.br, link)) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
                 /* Check for password protected */
                 this.handlePasswordProtection(link, account, this.br);
                 /* Now handle pre-download-waittime, captcha and other pre-download steps. */
@@ -676,7 +672,7 @@ public class YetiShareCore extends antiDDoSForHost {
                         /* Check if new YetiShare API-like handling can be used. */
                         final String continueLink;
                         final String storedInternalFileID = this.getStoredInternalFileID(link);
-                        final String htmlFileID = br.getRegex("showFileInformation\\((\\d+)").getMatch(0);
+                        final String htmlFileID = regexInternalFileID(this.br);
                         if (htmlFileID != null || (storedInternalFileID != null && this.allowDirectDownloadAlsoWhenOnlyStoredInternalFileIDIsAvailable(link, account))) {
                             /* For new website layout handling: Assume that direct_download is available. */
                             if (storedInternalFileID == null) {
@@ -868,6 +864,9 @@ public class YetiShareCore extends antiDDoSForHost {
         }
         if (dl == null) {
             checkErrors(br, link, account);
+            if (isOfflineWebsite(this.br, link)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             checkErrorsLastResort(br, link, account);
         }
         /*
@@ -896,6 +895,10 @@ public class YetiShareCore extends antiDDoSForHost {
         }
         dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), link));
         dl.startDownload();
+    }
+
+    private String regexInternalFileID(final Browser br) {
+        return br.getRegex("showFileInformation\\((\\d+)").getMatch(0);
     }
 
     protected boolean containsCaptcha(final Browser br) {
@@ -1532,9 +1535,11 @@ public class YetiShareCore extends antiDDoSForHost {
         final boolean isDownloadableNewWebsite = this.getStoredInternalFileID(link) != null;
         final boolean isDownloadable = isDownloadableOldWebsiteOrFreeMode || isDownloadableNewWebsite;
         final boolean isFileWebsite = br.containsHTML("class=\"downloadPageTable(V2)?\"") || br.containsHTML("class=\"download\\-timer\"");
+        final boolean isFileWebsiteV2 = this.regexInternalFileID(br) != null;
+        final boolean isAnyFileWebsite = isFileWebsite || isFileWebsiteV2;
         final boolean isErrorPage = br.getURL().contains("/error.html") || br.getURL().contains("/index.html");
         final boolean isOffline404 = br.getHttpConnection().getResponseCode() == 404;
-        if ((!isFileWebsite || isErrorPage || isOffline404) && !isDownloadable) {
+        if ((!isAnyFileWebsite || isErrorPage || isOffline404) && !isDownloadable) {
             return true;
         } else {
             return false;
