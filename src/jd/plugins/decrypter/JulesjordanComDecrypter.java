@@ -23,10 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -45,6 +41,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.JulesjordanCom.JulesjordanComConfigInterface;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "julesjordan.com" }, urls = { "https?://(?:www\\.)?julesjordan\\.com/(?:trial|members)/(?:movies|scenes)/[^/]+\\.html" })
 public class JulesjordanComDecrypter extends PluginForDecrypt {
@@ -95,17 +95,14 @@ public class JulesjordanComDecrypter extends PluginForDecrypt {
             ((jd.plugins.hoster.JulesjordanCom) plg).login(account, false);
             this.br.getPage(jd.plugins.hoster.JulesjordanCom.getURLPremium(param.getCryptedUrl()));
             /**
-             * 2022-02-21: This may happen randomly- or only for specific links. </br>
-             * Once confirmed in JD (or browser!) we should be able to proceed. The website seems to do this by-IP which is why we do not
-             * have to update the account cookies to prevent further activation-code-prompts.
+             * 2022-02-21: This may happen randomly- or only for specific links. </br> Once confirmed in JD (or browser!) we should be able
+             * to proceed. The website seems to do this by-IP which is why we do not have to update the account cookies to prevent further
+             * activation-code-prompts.
              */
             if (isNewDeviceProtectionActive(this.br)) {
                 String activationCode = null;
                 do {
-                    activationCode = getUserInput("Enter activation code sent by mail", param);
-                    if (activationCode != null) {
-                        activationCode = activationCode.trim();
-                    }
+                    activationCode = getUserInput("Enter activation code sent by mail", param).trim();
                     if (this.isAbort()) {
                         throw new InterruptedException();
                     } else if (!activationCode.matches("[a-z0-9]{6,}")) {
@@ -119,7 +116,13 @@ public class JulesjordanComDecrypter extends PluginForDecrypt {
                 if (isNewDeviceProtectionActive(this.br)) {
                     final String infoText = this.getHost() + " claims 'New Device or Location Detected!'.\r\nAn activation code was sent to your via E-Mail.\r\nYou seem to have entered the wrong activation code for this attempt!\r\nTry again later.";
                     throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "NEW_DEVICE_OR_LOCATION_DETECTION_NOT_PASSED_" + br._getURL().getPath(), infoText, null);
+                } else {
+                    // refresh stored cookies
+                    account.saveCookies(br.getCookies(account.getHoster()), "");
                 }
+            } else {
+                // refresh stored cookies
+                account.saveCookies(br.getCookies(account.getHoster()), "");
             }
         }
         if (isOffline(this.br)) {
