@@ -135,7 +135,7 @@ public class YetiShareCore extends antiDDoSForHost {
      * captchatype: null, solvemedia, reCaptchaV2, hcaptcha<br />
      * Another alternative method of linkchecking (displays filename only): host.tld/<fid>~s (statistics) 2019-06-12: Consider adding API
      * support: https://fhscript.com/api Examples for websites which have the API enabled (but not necessarily unlocked for all users,
-     * usually only special-uploaders): easylinkz.net, freefile.me, fastdrive.io <br />
+     * usually only special-uploaders): freefile.me, fastdrive.io <br />
      * 2020-03-30: I failed to make ANY successful API tests. 100% of all websites which support this API are running a broken version!
      */
     @Override
