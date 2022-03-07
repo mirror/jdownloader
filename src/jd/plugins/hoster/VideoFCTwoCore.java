@@ -152,12 +152,17 @@ public abstract class VideoFCTwoCore extends PluginForHost {
         entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final Map<String, Object> playlist = (Map<String, Object>) entries.get("playlist");
         /* HTTP Streams */
+        String chosenQuality = null;
         final String[] qualitiesInBestOrder = new String[] { "hq", "nq", "lq" };
         for (final String possibleQuality : qualitiesInBestOrder) {
             this.httpDownloadurl = (String) playlist.get(possibleQuality);
             if (!StringUtils.isEmpty(this.httpDownloadurl)) {
+                chosenQuality = possibleQuality;
                 break;
             }
+        }
+        if (chosenQuality != null) {
+            logger.info("Chosen quality: " + chosenQuality);
         }
         /* HLS streams */
         this.hlsMaster = (String) playlist.get("master");
