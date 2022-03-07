@@ -599,7 +599,12 @@ public class GoogleDrive extends PluginForHost {
     }
 
     private static String regexConfirmDownloadurl(final Browser br) {
-        String res = br.getRegex("\"([^\"]*?/uc[^\"]+export=download\\&(amp;)?confirm=[^<>\"]+)\"").getMatch(0);
+        String res = br.getRegex("\"([^\"]*?/uc[^\"]+export=download[^<>\"]*?confirm=[^<>\"]+)\"").getMatch(0);
+        res = null;
+        if (res == null) {
+            /* Fallback */
+            res = br.getRegex("form id=\"downloadForm\"[^<]*action=\"(https?://[^\"]+)\"").getMatch(0);
+        }
         if (res != null) {
             res = HTMLEntities.unhtmlentities(res);
         }
