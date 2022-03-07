@@ -2,6 +2,7 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -19,6 +20,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bentbox.co" }, urls = { "https?://(?:www\\.)?bentbox\\.co/box(_view)?\\?[a-zA-Z0-9]+" })
@@ -60,6 +63,8 @@ public class BentBoxCo extends PluginForDecrypt {
         boxView.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         boxView.setContentType("application/x-www-form-urlencoded; charset=UTF-8");
         br.getPage(boxView);
+        final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        br.getRequest().setHtmlCode((String) map.get("html"));
         final DecimalFormat df = new DecimalFormat("000");
         int index = 1;
         final String downloadFiles[][] = br.getRegex("data-fileurl=\"(https?://.*?)\"\\s*data-filename=\"(.*?)\"[^<>]*onclick='downloadFile").getMatches();
