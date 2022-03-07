@@ -20,11 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -36,6 +31,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bibeltv.de" }, urls = { "https?://(?:www\\.)?bibeltv\\.de/mediathek/(videos/crn/\\d+|videos/([a-z0-9\\-]+-\\d+|\\d+-[a-z0-9\\-]+))" })
 public class BibeltvDe extends PluginForHost {
@@ -257,7 +257,6 @@ public class BibeltvDe extends PluginForHost {
             }
         }
         if (!StringUtils.isEmpty(mp4URL)) {
-            // mp4URL = Encoding.htmlDecode(mp4URL);
             URLConnectionAdapter con = null;
             try {
                 final Browser brc = br.cloneBrowser();
